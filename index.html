@@ -24,12 +24,14 @@
             background: linear-gradient(45deg, #e74c3c, #f1c40f);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-align: center;
         }
 
         p.subtitle {
             color: #a9a9b3;
             font-size: 1.2em;
             margin-bottom: 50px;
+            text-align: center;
         }
 
         /* La grille des jeux */
@@ -38,7 +40,7 @@
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 30px;
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
         }
 
         /* Le style des carrés */
@@ -68,6 +70,16 @@
         .game-icon { font-size: 4em; margin-bottom: 15px; }
         .game-title { font-size: 1.5em; font-weight: bold; margin: 0; text-transform: uppercase; }
         .game-desc { color: #a9a9b3; font-size: 0.9em; margin-top: 10px; }
+        
+        /* Petit badge pour les liens externes */
+        .external-link {
+            font-size: 0.7em;
+            background: #e94560;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -102,6 +114,22 @@
             <div class="game-icon">⚔️</div>
             <div class="game-title">Edge of War</div>
             <div class="game-desc">Gérez votre armée et écrasez l'adversaire.</div>
+        </a>
+
+        <!-- Jeu 5 : Nathan -->
+        <a href="https://huyu-you.github.io/Go-FAST/" target="_blank" class="game-card">
+            <div class="game-icon">🏎️</div>
+            <div class="game-title">Go-Fast</div>
+            <div class="game-desc">Défiez Nathan sur l'asphalte.</div>
+            <div class="external-link">Nouveau Tab</div>
+        </a>
+
+        <!-- Jeu 6 : Romain -->
+        <a href="https://huyu-you.github.io/The-Prisonner/" target="_blank" class="game-card">
+            <div class="game-icon">⛓️</div>
+            <div class="game-title">The Prisoner</div>
+            <div class="game-desc">Résolvez le dilemme de Romain.</div>
+            <div class="external-link">Nouveau Tab</div>
         </a>
     </div>
 
