@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Edge of War - Tactical</title>
     <style>
-        :root { --bg: #0a0e17; --panel: rgba(18, 25, 43, 0.9); --primary: #0088ff; --enemy: #ff2a2a; --gold: #ffd700; --xp: #b82aff; }
+        :root { --bg: #0a0e17; --panel: rgba(18, 25, 43, 0.9); --primary: #0088ff; --enemy: #ff2a2a; --gold: #ffd700; --xp: #b82aff; --spell: #00ffcc;}
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;}
         h1 { margin-top: 0; color: #fff; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px var(--primary); }
         #game-container { background: var(--panel); padding: 25px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 850px; border: 1px solid rgba(0, 136, 255, 0.2); backdrop-filter: blur(10px); }
@@ -24,10 +24,20 @@
         #btn-evolve { display: none; width: 100%; background: var(--xp); color: white; border: none; padding: 10px; margin-top: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 15px var(--xp); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 15px var(--xp); } 50% { transform: scale(1.03); box-shadow: 0 0 25px var(--xp); } 100% { transform: scale(1); box-shadow: 0 0 15px var(--xp); } }
         canvas { background: linear-gradient(to bottom, #1a2536 50%, #111a26 50%, #0d141e 100%); border-radius: 8px; width: 100%; box-shadow: inset 0 0 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
-        .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
+        
+        .panel-title { color: #9ca3af; font-size: 0.9em; text-transform: uppercase; margin: 15px 0 5px 0; letter-spacing: 1px;}
+        .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .spells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 10px;}
+        
         .unit-btn { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; backdrop-filter: blur(5px); }
         .unit-btn:hover:not(:disabled) { background: rgba(0, 136, 255, 0.15); border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 136, 255, 0.2); }
         .unit-btn:disabled { opacity: 0.4; cursor: not-allowed; background: rgba(0,0,0,0.3); }
+        
+        .spell-btn { background: rgba(0, 255, 204, 0.1); border: 1px solid var(--spell); color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; position: relative; overflow: hidden;}
+        .spell-btn:hover:not(:disabled) { background: rgba(0, 255, 204, 0.3); box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);}
+        .spell-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #555;}
+        .cooldown-overlay { position: absolute; bottom: 0; left: 0; height: 100%; width: 0%; background: rgba(0,0,0,0.6); transition: width 0.1s linear; pointer-events: none;}
+        
         .unit-cost { color: var(--gold); font-size: 1.1em; margin-top: 8px; text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
         .unit-locked { position: absolute; font-size: 1.4em; color: var(--enemy); transform: rotate(-20deg); opacity: 0.9; top: 25%; font-weight: 900; background: rgba(0,0,0,0.8); padding: 2px 10px; border-radius: 5px; border: 1px solid var(--enemy); text-shadow: 0 0 5px var(--enemy); }
         #game-over { display: none; text-align: center; margin-top: 20px; }
@@ -54,6 +64,20 @@
             </div>
         </div>
         <canvas id="gameCanvas" width="800" height="250"></canvas>
+        
+        <div class="panel-title">Support Tactique (Sorts)</div>
+        <div class="spells">
+            <button class="spell-btn" id="btn-spell1" onclick="castSpell(1)">
+                Pluie de Plasma (40 💰) <br><small>Dégâts sur toute la ligne</small>
+                <div class="cooldown-overlay" id="cd-spell1"></div>
+            </button>
+            <button class="spell-btn" id="btn-spell2" onclick="castSpell(2)">
+                Nanobots Médicaux (60 💰) <br><small>Soigne unités & base</small>
+                <div class="cooldown-overlay" id="cd-spell2"></div>
+            </button>
+        </div>
+
+        <div class="panel-title">Déploiement</div>
         <div class="controls">
             <button class="unit-btn" id="btn-u1" onclick="spawnUnit('gourdin')">Fantassin <span class="unit-cost">15 💰</span></button>
             <button class="unit-btn" id="btn-u2" onclick="spawnUnit('lance')">Tireur <span class="unit-cost">35 💰</span></button>
@@ -70,29 +94,56 @@
     <script>
         const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
         let gold = 50, xp = 0, xpToEvolve = 100, playerAge = 1, enemyLevel = 1, isGameOver = false, units = [], timeElapsed = 0;
+        let spells = { 
+            1: { cost: 40, cdMax: 300, cd: 0 }, 
+            2: { cost: 60, cdMax: 400, cd: 0 } 
+        };
         const bases = { player: { x: 0, y: 130, w: 90, h: 120, hp: 500, maxHp: 500, color: '#0088ff' }, enemy: { x: 710, y: 130, w: 90, h: 120, hp: 600, maxHp: 600, color: '#ff2a2a' } };
+        
+        // Ajout du Sniper (distance) et du Medic (soin) ennemis
         const unitStats = {
-            gourdin: { cost: 15, hp: 40, dmg: 5, spd: 1.2, rng: 10, cd: 50, color: '#3498db', w: 20, h: 40 }, lance: { cost: 35, hp: 30, dmg: 12, spd: 1.5, rng: 60, cd: 60, color: '#2ecc71', w: 15, h: 35 },
-            chevalier: { cost: 100, hp: 180, dmg: 25, spd: 0.8, rng: 15, cd: 40, color: '#9b59b6', w: 30, h: 50 }, archer: { cost: 75, hp: 50, dmg: 20, spd: 1.3, rng: 120, cd: 45, color: '#f1c40f', w: 20, h: 45 },
-            e_weak: { hp: 35, dmg: 5, spd: 1.2, rng: 10, cd: 50, color: '#e74c3c', w: 20, h: 40, rew: 10, xp: 10 }, e_strong: { hp: 90, dmg: 15, spd: 0.7, rng: 15, cd: 70, color: '#c0392b', w: 25, h: 45, rew: 20, xp: 25 },
-            e_boss: { hp: 300, dmg: 40, spd: 0.5, rng: 20, cd: 90, color: '#8e44ad', w: 40, h: 60, rew: 100, xp: 0 }
+            gourdin: { cost: 15, hp: 40, dmg: 5, spd: 1.2, rng: 10, cd: 50, color: '#3498db', w: 20, h: 40, type: 'melee' }, 
+            lance: { cost: 35, hp: 30, dmg: 12, spd: 1.5, rng: 80, cd: 60, color: '#2ecc71', w: 15, h: 35, type: 'ranged' },
+            chevalier: { cost: 100, hp: 180, dmg: 25, spd: 0.8, rng: 15, cd: 40, color: '#9b59b6', w: 30, h: 50, type: 'melee' }, 
+            archer: { cost: 75, hp: 50, dmg: 20, spd: 1.3, rng: 150, cd: 45, color: '#f1c40f', w: 20, h: 45, type: 'ranged' },
+            e_weak: { hp: 35, dmg: 5, spd: 1.2, rng: 10, cd: 50, color: '#e74c3c', w: 20, h: 40, rew: 10, xp: 10, type: 'melee' }, 
+            e_strong: { hp: 90, dmg: 15, spd: 0.7, rng: 15, cd: 70, color: '#c0392b', w: 25, h: 45, rew: 20, xp: 25, type: 'melee' },
+            e_sniper: { hp: 30, dmg: 12, spd: 1.0, rng: 130, cd: 80, color: '#ff6600', w: 18, h: 40, rew: 15, xp: 15, type: 'ranged' },
+            e_medic: { hp: 40, dmg: -10, spd: 0.9, rng: 80, cd: 60, color: '#ff99cc', w: 20, h: 35, rew: 20, xp: 20, type: 'healer' }, // Dégât négatif = soin
+            e_boss: { hp: 400, dmg: 40, spd: 0.4, rng: 20, cd: 90, color: '#8e44ad', w: 40, h: 60, rew: 100, xp: 0, type: 'melee' }
         };
 
         class Unit {
             constructor(isP, type) {
                 const s = unitStats[type]; this.isP = isP; this.w = s.w; this.h = s.h; this.x = isP ? bases.player.w : canvas.width - bases.enemy.w - this.w; this.y = 250 - this.h;
-                this.speed = isP ? s.spd : -s.spd; this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; this.cdMax = s.cd; this.cd = 0; this.color = s.color; this.rew = s.rew || 0; this.xp = s.xp || 0; this.action = 'walk';
+                this.speed = isP ? s.spd : -s.spd; this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; this.cdMax = s.cd; this.cd = 0; this.color = s.color; this.rew = s.rew || 0; this.xp = s.xp || 0; this.action = 'walk'; this.type = s.type;
             }
             draw() {
                 ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(this.x, this.y - 10, this.w, 4); ctx.fillStyle = '#2ecc71'; ctx.fillRect(this.x, this.y - 10, this.w * (this.hp / this.maxHp), 4);
                 ctx.fillStyle = this.color;
                 if (this.action === 'attack' && this.cd > this.cdMax - 10) { ctx.save(); ctx.translate(this.x + this.w/2, this.y + this.h); ctx.rotate(this.isP ? 0.3 : -0.3); ctx.fillRect(-this.w/2, -this.h, this.w, this.h); ctx.restore(); }
                 else ctx.fillRect(this.x, this.y, this.w, this.h);
-                ctx.fillStyle = '#fff'; ctx.fillRect(this.x + (this.isP ? this.w - 6 : 2), this.y + 6, 4, 4);
+                if(this.type === 'healer') { ctx.fillStyle = 'white'; ctx.fillText('+', this.x + 5, this.y + 15); }
+                else { ctx.fillStyle = '#fff'; ctx.fillRect(this.x + (this.isP ? this.w - 6 : 2), this.y + 6, 4, 4); }
             }
         }
 
         window.spawnUnit = (type) => { if (gold >= unitStats[type].cost) { gold -= unitStats[type].cost; units.push(new Unit(true, type)); updateHUD(); } };
+        window.castSpell = (id) => {
+            if (gold >= spells[id].cost && spells[id].cd === 0) {
+                gold -= spells[id].cost; spells[id].cd = spells[id].cdMax;
+                if(id === 1) { // Dégâts
+                    ctx.fillStyle = "rgba(0, 255, 204, 0.5)"; ctx.fillRect(0, 0, canvas.width, canvas.height); // Flash
+                    units.filter(u => !u.isP).forEach(u => u.hp -= 40);
+                } else if (id === 2) { // Soin
+                    ctx.fillStyle = "rgba(46, 204, 113, 0.5)"; ctx.fillRect(0, 0, canvas.width, canvas.height); // Flash vert
+                    units.filter(u => u.isP).forEach(u => u.hp = Math.min(u.maxHp, u.hp + 50));
+                    bases.player.hp = Math.min(bases.player.maxHp, bases.player.hp + 100);
+                }
+                updateHUD();
+            }
+        };
+
         window.evolveBase = () => { if (xp >= xpToEvolve && playerAge === 1) { playerAge = 2; xp = 0; bases.player.maxHp = 1000; bases.player.hp = 1000; bases.player.color = '#b82aff'; bases.player.h = 150; bases.player.y = 100;
             document.getElementById('lock-3').style.display = 'none'; document.getElementById('lock-4').style.display = 'none'; document.getElementById('btn-evolve').style.display = 'none'; document.getElementById('player-age').innerText = "MAX"; updateHUD(); }
         };
@@ -102,10 +153,15 @@
             if (timeElapsed === 60) { enemyLevel = 2; document.getElementById('enemy-level').innerText = 2; bases.enemy.color = '#aa0000'; }
             if (timeElapsed === 180) { enemyLevel = 3; document.getElementById('enemy-level').innerText = "MAX"; bases.enemy.color = '#7a00cc'; }
             let r = Math.random();
-            if (enemyLevel === 1) units.push(new Unit(false, r > 0.8 ? 'e_strong' : 'e_weak'));
-            else if (enemyLevel === 2) units.push(new Unit(false, r > 0.5 ? 'e_strong' : 'e_weak'));
-            else units.push(new Unit(false, r > 0.9 ? 'e_boss' : 'e_strong'));
+            if (enemyLevel === 1) units.push(new Unit(false, r > 0.7 ? 'e_strong' : 'e_weak'));
+            else if (enemyLevel === 2) {
+                if(r < 0.2) units.push(new Unit(false, 'e_medic'));
+                else if(r < 0.5) units.push(new Unit(false, 'e_sniper'));
+                else units.push(new Unit(false, 'e_strong'));
+            }
+            else units.push(new Unit(false, r > 0.85 ? 'e_boss' : (r > 0.5 ? 'e_sniper' : 'e_strong')));
         }, 3000);
+        
         setInterval(() => { if(!isGameOver) { gold += 3 + playerAge; updateHUD(); } }, 1000);
 
         function updateHUD() {
@@ -115,16 +171,52 @@
             else { document.getElementById('xp-text').innerText = "MAX"; document.getElementById('xp-bar').style.width = '100%'; }
             ['gourdin', 'lance'].forEach((t, i) => document.getElementById(`btn-u${i+1}`).disabled = gold < unitStats[t].cost);
             ['chevalier', 'archer'].forEach((t, i) => document.getElementById(`btn-u${i+3}`).disabled = gold < unitStats[t].cost || playerAge < 2);
+            
+            [1, 2].forEach(i => {
+                let btn = document.getElementById(`btn-spell${i}`);
+                btn.disabled = (gold < spells[i].cost) || (spells[i].cd > 0);
+                document.getElementById(`cd-spell${i}`).style.width = (spells[i].cd / spells[i].cdMax * 100) + '%';
+            });
         }
 
         function gameLoop() {
             if (isGameOver) return; ctx.clearRect(0, 0, canvas.width, canvas.height);
+            [1, 2].forEach(i => { if(spells[i].cd > 0) { spells[i].cd--; updateHUD(); } });
+
             ctx.fillStyle = bases.player.color; ctx.fillRect(bases.player.x, bases.player.y, bases.player.w, bases.player.h); ctx.fillStyle = bases.enemy.color; ctx.fillRect(bases.enemy.x, bases.enemy.y, bases.enemy.w, bases.enemy.h);
+            
             for (let i = units.length - 1; i >= 0; i--) {
                 let u = units[i]; let target = null; u.action = 'walk';
-                for (let j = 0; j < units.length; j++) { let other = units[j]; if (u.isP !== other.isP) { let dist = u.isP ? (other.x - (u.x + u.w)) : (u.x - (other.x + other.w)); if (dist <= u.rng && dist >= -10) { target = other; break; } } }
-                if (!target) { let distToBase = u.isP ? (bases.enemy.x - (u.x + u.w)) : (u.x - (bases.player.x + bases.player.w)); if (distToBase <= u.rng) target = u.isP ? bases.enemy : bases.player; }
-                if (target) { u.action = 'attack'; if (u.cd <= 0) { target.hp -= u.dmg; u.cd = u.cdMax; } } else u.x += u.speed;
+                
+                // Le healer cherche les alliés, les autres cherchent les ennemis
+                for (let j = 0; j < units.length; j++) { 
+                    let other = units[j]; 
+                    if (u.type === 'healer' ? (u.isP === other.isP && u !== other) : (u.isP !== other.isP)) { 
+                        let dist = u.isP ? (other.x - (u.x + u.w)) : (u.x - (other.x + other.w)); 
+                        // Le Medic cible si l'allié a perdu des PV
+                        if(u.type === 'healer' && other.hp >= other.maxHp) continue;
+                        if (Math.abs(dist) <= u.rng) { target = other; break; } 
+                    } 
+                }
+                
+                if (!target && u.type !== 'healer') { 
+                    let distToBase = u.isP ? (bases.enemy.x - (u.x + u.w)) : (u.x - (bases.player.x + bases.player.w)); 
+                    if (distToBase <= u.rng) target = u.isP ? bases.enemy : bases.player; 
+                }
+                
+                if (target) { 
+                    u.action = 'attack'; 
+                    if (u.cd <= 0) { 
+                        if(u.type === 'healer') target.hp = Math.min(target.maxHp, target.hp - u.dmg); // Soin (dmg est négatif)
+                        else target.hp -= u.dmg; 
+                        u.cd = u.cdMax; 
+                    } 
+                } else {
+                    // Stop le Medic s'il est au bord de la base pour ne pas s'enfuir
+                    if(u.type === 'healer' && ((!u.isP && u.x < 150) || (u.isP && u.x > canvas.width - 150))) {}
+                    else u.x += u.speed;
+                }
+                
                 if (u.cd > 0) u.cd--;
                 if (u.hp <= 0) { if (!u.isP) { gold += u.rew; if (playerAge === 1) xp += u.xp; updateHUD(); } units.splice(i, 1); } else u.draw();
             }
