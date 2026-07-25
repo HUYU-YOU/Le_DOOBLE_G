@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Defense</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { margin-top: 0; color: #f1c40f; text-transform: uppercase; letter-spacing: 2px;}
+
+        #game-container {
+            display: flex;
+            gap: 20px;
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            background-color: #2ecc71; /* Herbe */
+            border: 2px solid #ecf0f1;
+            border-radius: 5px;
+            cursor: crosshair;
+        }
+
+        #ui-panel {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stat-box {
+            background-color: #2c3e50;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #7f8c8d;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .gold { color: #f1c40f; }
+        .lives { color: #e74c3c; }
+
+        .tower-btn {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: left;
+            border: 3px solid transparent;
+        }
+
+        .tower-btn:hover { background-color: #bdc3c7; }
+        .tower-btn.selected { border-color: #3498db; background-color: #d6eaf8; }
+        .tower-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: transparent;}
+
+        #btn-wave {
+            background-color: #e67e22;
+            color: white;
+            text-align: center;
+            font-size: 20px;
+            margin-top: auto;
+        }
+        #btn-wave:hover { background-color: #d35400; }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e74c3c;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Castle Defense</h1>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="600" height="450"></canvas>
+        
+        <div id="ui-panel">
+            <div class="stat-box">
+                <div>Vies : <span class="lives" id="lives-display">10</span> ❤️</div>
+                <div>Or : <span class="gold" id="gold-display">50</span> 💰</div>
+                <div>Vague : <span id="wave-display">0</span></div>
+            </div>
+
+            <h3>Construire (Cliquez sur la carte)</h3>
+            <button class="tower-btn selected" id="btn-tower-1" onclick="selectTower(1)">
+                Tour Basique (20 💰)<br>
+                <small style="font-weight: normal;">Portée moyenne, tir rapide</small>
+            </button>
+            <button class="tower-btn" id="btn-tower-2" onclick="selectTower(2)">
+                Tour Lourde (50 💰)<br>
+                <small style="font-weight: normal;">Longue portée, gros dégâts</small>
+            </button>
+
+            <button class="tower-btn" id="btn-wave" onclick="startWave()">Lancer la Vague !</button>
+        </div>
+    </div>
+
+    <div id="game-over">
+        <h2 style="color: #e74c3c; font-size: 30px; margin-top:0;">Défenses Percées !</h2>
+        <p>Les bugs ont envahi le système.</p>
+        <button class="tower-btn" style="background-color: #3498db; color: white; text-align:center;" onclick="location.reload()">Rejouer</button>
+        <br><br>
+        <a href="../index.html" style="color: #bdc3c7; text-decoration: none;">⬅ Retour au Menu</a>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const tileSize = 30;
+        const cols = canvas.width / tileSize; // 20
+        const rows = canvas.height / tileSize; // 15
+
+        // UI
+        const goldDisplay = document.getElementById('gold-display');
+        const livesDisplay = document.getElementById('lives-display');
+        const waveDisplay = document.getElementById('wave-display');
+        const btnWave = document.getElementById('btn-wave');
+        let selectedTowerType = 1;
+
+        // Variables du jeu
+        let gold = 50;
+        let lives = 10;
+        let wave = 0;
+        let isWaveActive = false;
+        let enemiesToSpawn = 0;
+        let spawnTimer = 0;
+        let gameOver = false;
+
+        let towers = [];
+        let enemies = [];
+        let projectiles = [];
+
+        // Le chemin (coordonnées en grille x, y)
+        const pathGrid = [
+            {x: 0, y: 3}, {x: 1, y: 3}, {x: 2, y: 3}, {x: 3, y: 3}, {x: 4, y: 3}, {x: 5, y: 3},
+            {x: 5, y: 4}, {x: 5, y: 5}, {x: 5, y: 6}, {x: 5, y: 7}, {x: 5, y: 8}, {x: 5, y: 9},
+            {x: 6, y: 9}, {x: 7, y: 9}, {x: 8, y: 9}, {x: 9, y: 9}, {x: 10, y: 9}, {x: 11, y: 9},
+            {x: 12, y: 9}, {x: 13, y: 9}, {x: 14, y: 9},
+            {x: 14, y: 8}, {x: 14, y: 7}, {x: 14, y: 6}, {x: 14, y: 5}, {x: 14, y: 4}, {x: 14, y: 3},
+            {x: 15, y: 3}, {x: 16, y: 3}, {x: 17, y: 3}, {x: 18, y: 3}, {x: 19, y: 3}
+        ];
+
+        // Convertir le chemin de la grille vers les pixels (centre de la case)
+        const path = pathGrid.map(p => ({ x: p.x * tileSize + tileSize/2, y: p.y * tileSize + tileSize/2 }));
+
+        // Types de tours
+        const towerDefs = {
+            1: { cost: 20, range: 100, damage: 10, cooldown: 30, color: '#34495e', size: 12 },
+            2: { cost: 50, range: 160, damage: 35, cooldown: 80, color: '#2c3e50', size: 14 }
+        };
+
+        window.selectTower = function(type) {
+            selectedTowerType = type;
+            document.getElementById('btn-tower-1').classList.remove('selected');
+            document.getElementById('btn-tower-2').classList.remove('selected');
+            document.getElementById(`btn-tower-${type}`).classList.add('selected');
+        };
+
+        window.startWave = function() {
+            if (!isWaveActive) {
+                wave++;
+                waveDisplay.innerText = wave;
+                enemiesToSpawn = 5 + (wave * 3);
+                isWaveActive = true;
+                btnWave.disabled = true;
+                btnWave.innerText = "Vague en cours...";
+            }
+        };
+
+        // --- CLASSES ---
+
+        class Enemy {
+            constructor() {
+                this.x = path[0].x;
+                this.y = path[0].y;
+                this.pathIndex = 0;
+                // Plus la vague est haute, plus ils sont rapides et résistants
+                this.speed = 1.5 + (wave * 0.1); 
+                this.maxHp = 30 + (wave * 15);
+                this.hp = this.maxHp;
+                this.reward = 5;
+                this.radius = 8;
+            }
+
+            draw() {
+                // Barre de vie
+                ctx.fillStyle = 'black';
+                ctx.fillRect(this.x - 10, this.y - 15, 20, 4);
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(this.x - 10, this.y - 15, 20 * (this.hp / this.maxHp), 4);
+
+                // Corps de l'ennemi (le bug)
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#e74c3c';
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            update() {
+                let target = path[this.pathIndex];
+                let dx = target.x - this.x;
+                let dy = target.y - this.y;
+                let dist = Math.hypot(dx, dy);
+
+                if (dist < this.speed) {
+                    this.x = target.x;
+                    this.y = target.y;
+                    this.pathIndex++;
+                    if (this.pathIndex >= path.length) {
+                        return "reached_end";
+                    }
+                } else {
+                    this.x += (dx / dist) * this.speed;
+                    this.y += (dy / dist) * this.speed;
+                }
+                return "alive";
+            }
+        }
+
+        class Tower {
+            constructor(gridX, gridY, type) {
+                this.x = gridX * tileSize + tileSize / 2;
+                this.y = gridY * tileSize + tileSize / 2;
+                this.type = type;
+                let def = towerDefs[type];
+                this.range = def.range;
+                this.damage = def.damage;
+                this.cooldownMax = def.cooldown;
+                this.cooldown = 0;
+                this.color = def.color;
+                this.size = def.size;
+                this.angle = 0;
+            }
+
+            draw() {
+                // Base
+                ctx.fillStyle = '#95a5a6';
+                ctx.fillRect(this.x - tileSize/2 + 2, this.y - tileSize/2 + 2, tileSize - 4, tileSize - 4);
+                
+                // Tourelle
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                // Canon
+                ctx.fillStyle = '#7f8c8d';
+                ctx.fillRect(0, -3, this.size + 10, 6);
+                ctx.restore();
+            }
+
+            update() {
+                if (this.cooldown > 0) this.cooldown--;
+
+                // Trouver l'ennemi le plus proche
+                let target = null;
+                let minDst = this.range;
+
+                for (let e of enemies) {
+                    let d = Math.hypot(e.x - this.x, e.y - this.y);
+                    if (d < minDst) {
+                        minDst = d;
+                        target = e;
+                    }
+                }
+
+                if (target) {
+                    // Orienter le canon
+                    this.angle = Math.atan2(target.y - this.y, target.x - this.x);
+                    
+                    // Tirer
+                    if (this.cooldown <= 0) {
+                        projectiles.push(new Projectile(this.x, this.y, target, this.damage));
+                        this.cooldown = this.cooldownMax;
+                    }
+                }
+            }
+        }
+
+        class Projectile {
+            constructor(x, y, target, damage) {
+                this.x = x;
+                this.y = y;
+                this.target = target;
+                this.damage = damage;
+                this.speed = 8;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#f1c40f';
+                ctx.fill();
+            }
+
+            update() {
+                let dx = this.target.x - this.x;
+                let dy = this.target.y - this.y;
+                let dist = Math.hypot(dx, dy);
+
+                if (dist < this.speed) {
+                    this.target.hp -= this.damage;
+                    return true; // touché
+                } else {
+                    this.x += (dx / dist) * this.speed;
+                    this.y += (dy / dist) * this.speed;
+                    return false; // en vol
+                }
+            }
+        }
+
+        // --- INTERACTIONS ---
+
+        // Clic pour placer une tour
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const gridX = Math.floor(mouseX / tileSize);
+            const gridY = Math.floor(mouseY / tileSize);
+
+            // Vérifier si c'est sur le chemin
+            const onPath = pathGrid.some(p => p.x === gridX && p.y === gridY);
+            if (onPath) return;
+
+            // Vérifier si une tour est déjà là
+            const occupied = towers.some(t => Math.floor(t.x/tileSize) === gridX && Math.floor(t.y/tileSize) === gridY);
+            if (occupied) return;
+
+            // Vérifier l'or
+            const def = towerDefs[selectedTowerType];
+            if (gold >= def.cost) {
+                gold -= def.cost;
+                towers.push(new Tower(gridX, gridY, selectedTowerType));
+                updateUI();
+            }
+        });
+
+        // --- BOUCLE PRINCIPALE ---
+
+        function updateUI() {
+            goldDisplay.innerText = gold;
+            livesDisplay.innerText = lives;
+            document.getElementById('btn-tower-1').disabled = gold < towerDefs[1].cost;
+            document.getElementById('btn-tower-2').disabled = gold < towerDefs[2].cost;
+        }
+
+        function drawMap() {
+            // Dessiner le chemin (terre)
+            ctx.fillStyle = '#d35400';
+            for (let p of pathGrid) {
+                ctx.fillRect(p.x * tileSize, p.y * tileSize, tileSize, tileSize);
+            }
+            
+            // Ligne d'arrivée
+            let end = pathGrid[pathGrid.length - 1];
+            ctx.fillStyle = '#c0392b';
+            ctx.fillRect(end.x * tileSize, end.y * tileSize, tileSize, tileSize);
+        }
+
+        function gameLoop() {
+            if (gameOver) return;
+
+            // Effacer l'écran
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawMap();
+
+            // Gestion de l'apparition des ennemis
+            if (isWaveActive) {
+                spawnTimer++;
+                if (spawnTimer >= 40 && enemiesToSpawn > 0) { // Un ennemi toutes les 40 frames
+                    enemies.push(new Enemy());
+                    enemiesToSpawn--;
+                    spawnTimer = 0;
+                }
+                if (enemiesToSpawn === 0 && enemies.length === 0) {
+                    isWaveActive = false;
+                    btnWave.disabled = false;
+                    btnWave.innerText = "Lancer la Vague !";
+                    gold += 20 + (wave * 5); // Bonus de fin de vague
+                }
+            }
+
+            // Mise à jour des tours
+            for (let t of towers) {
+                t.update();
+                t.draw();
+            }
+
+            // Mise à jour des projectiles
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let p = projectiles[i];
+                if (p.update()) {
+                    projectiles.splice(i, 1);
+                } else {
+                    p.draw();
+                }
+            }
+
+            // Mise à jour des ennemis
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                let status = e.update();
+                
+                if (status === "reached_end") {
+                    lives--;
+                    enemies.splice(i, 1);
+                    if (lives <= 0) {
+                        gameOver = true;
+                        document.getElementById('game-over').style.display = 'block';
+                    }
+                } else if (e.hp <= 0) {
+                    gold += e.reward;
+                    enemies.splice(i, 1);
+                } else {
+                    e.draw();
+                }
+            }
+
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Lancement
+        updateUI();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
