@@ -3,135 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L'Arcade du Bureau</title>
+    <title>Arcade du Bureau</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a2e;
-            color: #fff;
-            margin: 0;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1 {
-            font-size: 3em;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #e74c3c, #f1c40f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-        }
-
-        p.subtitle {
-            color: #a9a9b3;
-            font-size: 1.2em;
-            margin-bottom: 50px;
-            text-align: center;
-        }
-
-        /* La grille des jeux */
-        .game-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            width: 100%;
-            max-width: 1000px;
-        }
-
-        /* Le style des carrés */
-        .game-card {
-            background-color: #16213e;
-            border-radius: 15px;
-            padding: 30px 20px;
-            text-align: center;
-            text-decoration: none;
-            color: white;
-            border: 2px solid #0f3460;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
-        }
-
-        .game-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            border-color: #e94560;
-            box-shadow: 0 15px 30px rgba(233, 69, 96, 0.4);
-        }
-
-        .game-icon { font-size: 4em; margin-bottom: 15px; }
-        .game-title { font-size: 1.5em; font-weight: bold; margin: 0; text-transform: uppercase; }
-        .game-desc { color: #a9a9b3; font-size: 0.9em; margin-top: 10px; }
-        
-        /* Petit badge pour les liens externes */
-        .external-link {
-            font-size: 0.7em;
-            background: #e94560;
-            padding: 3px 8px;
-            border-radius: 10px;
-            margin-top: 10px;
-            font-weight: bold;
-        }
+        :root { --bg: #0b0c10; --panel: rgba(31, 40, 51, 0.8); --cyan: #66fcf1; --teal: #45a29e; --text: #c5c6c7; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-image: radial-gradient(circle at 50% 0%, #1f2833 0%, #0b0c10 70%); }
+        h1 { font-size: 3.5em; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 5px; color: var(--cyan); text-shadow: 0 0 20px rgba(102, 252, 241, 0.5); text-align: center; }
+        p.subtitle { color: var(--teal); font-size: 1.2em; margin-bottom: 50px; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; width: 100%; max-width: 1100px; }
+        .game-card { background: var(--panel); backdrop-filter: blur(10px); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 15px; padding: 40px 20px; text-align: center; text-decoration: none; color: white; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        .game-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent); transform: skewX(-25deg); transition: 0.5s; }
+        .game-card:hover::before { left: 150%; }
+        .game-card:hover { transform: translateY(-10px); border-color: var(--cyan); box-shadow: 0 15px 40px rgba(102, 252, 241, 0.3); }
+        .game-icon { font-size: 4.5em; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        .game-title { font-size: 1.6em; font-weight: bold; margin: 0; color: #fff; letter-spacing: 1px; }
+        .game-desc { color: var(--teal); font-size: 0.95em; margin-top: 15px; line-height: 1.4; }
+        .external-link { font-size: 0.75em; background: transparent; border: 1px solid var(--cyan); color: var(--cyan); padding: 5px 12px; border-radius: 20px; margin-top: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .game-card:hover .external-link { background: var(--cyan); color: var(--bg); }
     </style>
 </head>
 <body>
-
-    <h1>L'Arcade du Bureau</h1>
-    <p class="subtitle">Sélectionnez votre adversaire et votre champ de bataille.</p>
+    <h1>Arcade Network</h1>
+    <p class="subtitle">Initialisation du système de combat...</p>
 
     <div class="game-grid">
-        <!-- Jeu 1 : Tom -->
         <a href="tom-poker/index.html" class="game-card">
             <div class="game-icon">🃏</div>
             <div class="game-title">Texas Poker</div>
-            <div class="game-desc">Affrontez l'esprit de Tom en réseau local.</div>
+            <div class="game-desc">Affrontez l'esprit de Tom en réseau local (P2P).</div>
         </a>
-
-        <!-- Jeu 2 : Dylan -->
         <a href="dylan-guess/index.html" class="game-card">
             <div class="game-icon">👁️</div>
             <div class="game-title">Guess The Manga</div>
             <div class="game-desc">Testez vos connaissances otakus avec Dylan.</div>
         </a>
-
-        <!-- Jeu 3 : Lucas -->
         <a href="lucas-tower/index.html" class="game-card">
             <div class="game-icon">🏰</div>
             <div class="game-title">Tower Defense</div>
-            <div class="game-desc">Protégez le serveur contre les bugs.</div>
+            <div class="game-desc">Protégez le serveur contre les anomalies.</div>
         </a>
-
-        <!-- Jeu 4 : Antoine -->
         <a href="antoine-edge/index.html" class="game-card">
             <div class="game-icon">⚔️</div>
             <div class="game-title">Edge of War</div>
-            <div class="game-desc">Gérez votre armée et écrasez l'adversaire.</div>
+            <div class="game-desc">Évoluez, gérez votre armée et écrasez l'adversaire.</div>
         </a>
-
-        <!-- Jeu 5 : Nathan -->
         <a href="https://huyu-you.github.io/Go-FAST/" target="_blank" class="game-card">
             <div class="game-icon">🏎️</div>
             <div class="game-title">Go-Fast</div>
-            <div class="game-desc">Défiez Nathan sur l'asphalte.</div>
-            <div class="external-link">Nouveau Tab</div>
+            <div class="game-desc">Défiez Nathan sur l'asphalte brûlant.</div>
+            <div class="external-link">Connexion Externe</div>
         </a>
-
-        <!-- Jeu 6 : Romain -->
         <a href="https://huyu-you.github.io/The-Prisonner/" target="_blank" class="game-card">
             <div class="game-icon">⛓️</div>
             <div class="game-title">The Prisoner</div>
-            <div class="game-desc">Résolvez le dilemme de Romain.</div>
-            <div class="external-link">Nouveau Tab</div>
+            <div class="game-desc">Résolvez le redoutable dilemme de Romain.</div>
+            <div class="external-link">Connexion Externe</div>
         </a>
     </div>
-
 </body>
 </html>
