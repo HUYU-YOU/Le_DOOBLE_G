@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Arcade du Bureau</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 3em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #e74c3c, #f1c40f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: #a9a9b3;
+            font-size: 1.2em;
+            margin-bottom: 50px;
+        }
+
+        /* La grille des jeux */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* Le style des carrés */
+        .game-card {
+            background-color: #16213e;
+            border-radius: 15px;
+            padding: 30px 20px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            border: 2px solid #0f3460;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: #e94560;
+            box-shadow: 0 15px 30px rgba(233, 69, 96, 0.4);
+        }
+
+        .game-icon { font-size: 4em; margin-bottom: 15px; }
+        .game-title { font-size: 1.5em; font-weight: bold; margin: 0; text-transform: uppercase; }
+        .game-desc { color: #a9a9b3; font-size: 0.9em; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>L'Arcade du Bureau</h1>
+    <p class="subtitle">Sélectionnez votre adversaire et votre champ de bataille.</p>
+
+    <div class="game-grid">
+        <!-- Jeu 1 : Tom -->
+        <a href="tom-poker/index.html" class="game-card">
+            <div class="game-icon">🃏</div>
+            <div class="game-title">Texas Poker</div>
+            <div class="game-desc">Affrontez l'esprit de Tom en réseau local.</div>
+        </a>
+
+        <!-- Jeu 2 : Dylan -->
+        <a href="dylan-guess/index.html" class="game-card">
+            <div class="game-icon">👁️</div>
+            <div class="game-title">Guess The Manga</div>
+            <div class="game-desc">Testez vos connaissances otakus avec Dylan.</div>
+        </a>
+
+        <!-- Jeu 3 : Lucas -->
+        <a href="lucas-tower/index.html" class="game-card">
+            <div class="game-icon">🏰</div>
+            <div class="game-title">Tower Defense</div>
+            <div class="game-desc">Protégez le serveur contre les bugs.</div>
+        </a>
+
+        <!-- Jeu 4 : Antoine -->
+        <a href="antoine-edge/index.html" class="game-card">
+            <div class="game-icon">⚔️</div>
+            <div class="game-title">Edge of War</div>
+            <div class="game-desc">Gérez votre armée et écrasez l'adversaire.</div>
+        </a>
+    </div>
+
+</body>
+</html>
