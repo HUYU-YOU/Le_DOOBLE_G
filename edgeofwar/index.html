@@ -3,291 +3,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edge of War - Antoine</title>
+    <title>Edge of War - Evolution</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #87CEEB; /* Bleu ciel */
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1 {
-            color: #333;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 0px white;
-        }
-
-        #game-ui {
-            width: 800px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #fff;
-            padding: 10px 20px;
-            border-radius: 10px 10px 0 0;
-            box-sizing: border-box;
-            border: 4px solid #333;
-            border-bottom: none;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .gold { color: #f39c12; font-size: 24px;}
-        .health { color: #e74c3c; }
-
-        canvas {
-            background-color: #a4b0be;
-            border: 4px solid #333;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            background-image: linear-gradient(to bottom, #87CEEB 60%, #8B4513 60%); /* Ciel et Terre */
-        }
-
-        #controls {
-            width: 800px;
-            background-color: #333;
-            padding: 15px;
-            border-radius: 0 0 10px 10px;
-            box-sizing: border-box;
-            display: flex;
-            gap: 15px;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background-color: #2ecc71;
+            background-color: #2c3e50;
             color: white;
-            transition: 0.2s;
-            flex: 1;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        button:hover { background-color: #27ae60; }
-        button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+        h1 { margin-top: 0; color: #ecf0f1; text-transform: uppercase; letter-spacing: 2px;}
 
-        #game-over {
-            display: none;
-            position: absolute;
-            top: 40%;
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            border: 5px solid #333;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        #game-container {
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+            width: 800px;
         }
 
-        #game-over h2 { margin-top: 0; font-size: 30px;}
+        /* Interface utilisateur (HUD) */
+        .hud {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 15px; background: #1a252f; padding: 15px; border-radius: 10px;
+            border: 2px solid #7f8c8d;
+        }
+
+        .base-stats { display: flex; flex-direction: column; width: 30%; }
+        .base-name { font-weight: bold; font-size: 1.2em; margin-bottom: 5px; }
+        .player-name { color: #3498db; }
+        .enemy-name { color: #e74c3c; text-align: right; }
+
+        .health-bar-container { width: 100%; height: 15px; background: #333; border-radius: 8px; overflow: hidden; border: 1px solid #000;}
+        .health-bar { height: 100%; transition: width 0.3s; }
+        #player-hp-bar { background-color: #3498db; width: 100%; }
+        #enemy-hp-bar { background-color: #e74c3c; width: 100%; float: right;}
+
+        .economy { text-align: center; width: 30%; }
+        .gold { font-size: 1.8em; color: #f1c40f; font-weight: bold; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);}
+        
+        .xp-container { margin-top: 5px; background: #333; height: 10px; border-radius: 5px; border: 1px solid #000; overflow: hidden;}
+        #xp-bar { height: 100%; background: #9b59b6; width: 0%; transition: width 0.3s;}
+
+        #btn-evolve {
+            display: none; width: 100%; background-color: #9b59b6; color: white;
+            border: none; padding: 8px; margin-top: 5px; border-radius: 5px; cursor: pointer;
+            font-weight: bold; text-transform: uppercase; animation: pulse 1s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* Zone de jeu */
+        canvas {
+            background: linear-gradient(to bottom, #87CEEB 55%, #27ae60 55%, #2ecc71 100%);
+            border: 4px solid #1a252f;
+            border-radius: 5px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+            width: 100%;
+        }
+
+        /* Contrôles / Achat d'unités */
+        .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        
+        .unit-btn {
+            background-color: #ecf0f1; color: #2c3e50; border: none; padding: 10px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
+            display: flex; flex-direction: column; align-items: center; border: 3px solid transparent;
+        }
+        .unit-btn:hover:not(:disabled) { background-color: #bdc3c7; transform: translateY(-2px); }
+        .unit-btn:active:not(:disabled) { transform: translateY(2px); }
+        .unit-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%); }
+        .unit-cost { color: #d35400; font-size: 1.1em; margin-top: 5px; }
+        .unit-locked { position: absolute; font-size: 2em; color: red; transform: rotate(-20deg); opacity: 0.8;}
+
+        #game-over { display: none; text-align: center; margin-top: 20px; }
+        .btn-main { background-color: #3498db; color: white; border: none; padding: 10px 20px; font-size: 1.2em; border-radius: 5px; cursor: pointer; }
+        .hub-link { color: #95a5a6; text-decoration: none; margin-top: 15px; display: inline-block;}
     </style>
 </head>
 <body>
 
-    <h1>Edge of War</h1>
+    <h1>Edge of War : Évolution</h1>
 
-    <div id="game-ui">
-        <div class="health">Base Bleue : <span id="player-hp">500</span> PV</div>
-        <div class="gold">💰 <span id="gold-display">50</span></div>
-        <div class="health">Base Rouge : <span id="enemy-hp">500</span> PV</div>
-    </div>
+    <div id="game-container">
+        <!-- HUD -->
+        <div class="hud">
+            <div class="base-stats">
+                <div class="base-name player-name">Garnison (Âge <span id="player-age">1</span>)</div>
+                <div class="health-bar-container"><div class="health-bar" id="player-hp-bar"></div></div>
+                <div style="font-size: 0.8em; margin-top: 3px;">XP : <span id="xp-text">0/100</span></div>
+                <div class="xp-container"><div id="xp-bar"></div></div>
+                <button id="btn-evolve" onclick="evolveBase()">Évoluer !</button>
+            </div>
 
-    <canvas id="gameCanvas" width="800" height="300"></canvas>
+            <div class="economy">
+                <div class="gold"><span id="gold-display">50</span> 💰</div>
+            </div>
 
-    <div id="controls">
-        <button id="btn-unit1" onclick="spawnPlayerUnit('gourdin')">Gourdin (15 💰)</button>
-        <button id="btn-unit2" onclick="spawnPlayerUnit('lance')">Lance (40 💰)</button>
-    </div>
+            <div class="base-stats">
+                <div class="base-name enemy-name">Horde (Niveau <span id="enemy-level">1</span>)</div>
+                <div class="health-bar-container"><div class="health-bar" id="enemy-hp-bar"></div></div>
+            </div>
+        </div>
 
-    <div id="game-over">
-        <h2 id="end-message">Victoire !</h2>
-        <button onclick="location.reload()" style="background-color: #3498db;">Rejouer</button>
-        <br><br>
-        <a href="../index.html" style="color: #555; text-decoration: none; font-weight: bold;">⬅ Retour au Hub</a>
+        <canvas id="gameCanvas" width="800" height="250"></canvas>
+
+        <!-- ACHAT UNITES -->
+        <div class="controls">
+            <!-- Age 1 -->
+            <button class="unit-btn" id="btn-u1" onclick="spawnUnit('gourdin')">
+                Gourdin <span class="unit-cost">15 💰</span>
+            </button>
+            <button class="unit-btn" id="btn-u2" onclick="spawnUnit('lance')">
+                Lance-Pierre <span class="unit-cost">35 💰</span>
+            </button>
+            <!-- Age 2 -->
+            <button class="unit-btn" id="btn-u3" onclick="spawnUnit('chevalier')" disabled>
+                Chevalier <span class="unit-cost">100 💰</span><span class="unit-locked" id="lock-3">ÂGE 2</span>
+            </button>
+            <button class="unit-btn" id="btn-u4" onclick="spawnUnit('archer')" disabled>
+                Archer Lourd <span class="unit-cost">75 💰</span><span class="unit-locked" id="lock-4">ÂGE 2</span>
+            </button>
+        </div>
+
+        <div id="game-over">
+            <h2 id="end-message" style="font-size: 2em; margin-bottom: 10px;"></h2>
+            <button class="btn-main" onclick="location.reload()">🔄 Relancer la Bataille</button>
+            <br>
+            <a href="../index.html" class="hub-link">⬅ Retour à l'Arcade</a>
+        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Eléments de l'interface
-        const goldDisplay = document.getElementById('gold-display');
-        const playerHpDisplay = document.getElementById('player-hp');
-        const enemyHpDisplay = document.getElementById('enemy-hp');
-        const btnUnit1 = document.getElementById('btn-unit1');
-        const btnUnit2 = document.getElementById('btn-unit2');
-        const gameOverScreen = document.getElementById('game-over');
-        const endMessage = document.getElementById('end-message');
-
-        // Variables du jeu
         let gold = 50;
+        let xp = 0;
+        let xpToEvolve = 100;
+        let playerAge = 1;
+        let enemyLevel = 1;
         let isGameOver = false;
         let units = [];
-        let particles = [];
-        
-        // Bases
+        let timeElapsed = 0;
+
         const bases = {
-            player: { x: 0, y: 120, width: 80, height: 120, hp: 500, maxHp: 500, color: '#3498db' },
-            enemy: { x: 720, y: 120, width: 80, height: 120, hp: 500, maxHp: 500, color: '#e74c3c' }
+            player: { x: 0, y: 130, w: 90, h: 120, hp: 500, maxHp: 500, color: '#2980b9' },
+            enemy: { x: 710, y: 130, w: 90, h: 120, hp: 600, maxHp: 600, color: '#c0392b' }
         };
 
-        // Caractéristiques des unités
-        const unitTypes = {
-            gourdin: { cost: 15, hp: 30, dmg: 5, speed: 1.5, range: 10, cooldown: 60, color: '#2980b9', width: 20, height: 40 },
-            lance: { cost: 40, hp: 80, dmg: 15, speed: 0.8, range: 25, cooldown: 100, color: '#8e44ad', width: 25, height: 50 },
-            enemyFaible: { hp: 30, dmg: 5, speed: 1.2, range: 10, cooldown: 60, color: '#c0392b', width: 20, height: 40, reward: 10 },
-            enemyFort: { hp: 90, dmg: 20, speed: 0.6, range: 25, cooldown: 120, color: '#d35400', width: 25, height: 50, reward: 25 }
+        const unitStats = {
+            gourdin: { cost: 15, hp: 40, dmg: 5, spd: 1.2, rng: 10, cd: 50, color: '#f39c12', w: 20, h: 40, age: 1 },
+            lance: { cost: 35, hp: 30, dmg: 12, spd: 1.5, rng: 60, cd: 60, color: '#d35400', w: 15, h: 35, age: 1 },
+            chevalier: { cost: 100, hp: 180, dmg: 25, spd: 0.8, rng: 15, cd: 40, color: '#7f8c8d', w: 30, h: 50, age: 2 },
+            archer: { cost: 75, hp: 50, dmg: 20, spd: 1.3, rng: 120, cd: 45, color: '#16a085', w: 20, h: 45, age: 2 },
+            
+            e_weak: { hp: 35, dmg: 5, spd: 1.2, rng: 10, cd: 50, color: '#e74c3c', w: 20, h: 40, rew: 10, xp: 10 },
+            e_strong: { hp: 90, dmg: 15, spd: 0.7, rng: 15, cd: 70, color: '#922b21', w: 25, h: 45, rew: 20, xp: 25 },
+            e_boss: { hp: 300, dmg: 40, spd: 0.5, rng: 20, cd: 90, color: '#4a235a', w: 40, h: 60, rew: 100, xp: 0 }
         };
 
-        // Classe pour gérer les unités
         class Unit {
-            constructor(isPlayer, typeKey) {
-                const stats = unitTypes[typeKey];
+            constructor(isPlayer, type) {
+                const s = unitStats[type];
                 this.isPlayer = isPlayer;
-                this.width = stats.width;
-                this.height = stats.height;
-                this.x = isPlayer ? bases.player.width : canvas.width - bases.enemy.width - this.width;
-                this.y = 240 - this.height; // Ligne d'horizon (sol)
-                this.speed = isPlayer ? stats.speed : -stats.speed;
-                this.hp = stats.hp;
-                this.maxHp = stats.hp;
-                this.dmg = stats.dmg;
-                this.range = stats.range;
-                this.cooldownMax = stats.cooldown;
-                this.cooldown = 0;
-                this.color = stats.color;
-                this.reward = stats.reward || 0;
+                this.w = s.w; this.h = s.h;
+                this.x = isPlayer ? bases.player.w : canvas.width - bases.enemy.w - this.w;
+                this.y = 250 - this.h; // Sol
+                this.speed = isPlayer ? s.spd : -s.spd;
+                this.hp = s.hp; this.maxHp = s.hp;
+                this.dmg = s.dmg; this.rng = s.rng;
+                this.cdMax = s.cd; this.cd = 0;
+                this.color = s.color;
+                this.rew = s.rew || 0;
+                this.xp = s.xp || 0;
+                this.action = 'walk'; // walk, attack
             }
 
             draw() {
-                // Barre de vie de l'unité
-                ctx.fillStyle = 'red';
-                ctx.fillRect(this.x, this.y - 10, this.width, 5);
-                ctx.fillStyle = '#2ecc71';
-                ctx.fillRect(this.x, this.y - 10, this.width * (this.hp / this.maxHp), 5);
+                // Barre de vie
+                ctx.fillStyle = 'black'; ctx.fillRect(this.x, this.y - 12, this.w, 4);
+                ctx.fillStyle = '#2ecc71'; ctx.fillRect(this.x, this.y - 12, this.w * (this.hp / this.maxHp), 4);
 
-                // Corps de l'unité
+                // Corps
                 ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
                 
-                // Petit oeil pour savoir dans quel sens ils regardent
-                ctx.fillStyle = 'white';
-                if(this.isPlayer) {
-                    ctx.fillRect(this.x + this.width - 8, this.y + 5, 5, 5);
+                // Animation d'attaque (bascule en avant)
+                if (this.action === 'attack' && this.cd > this.cdMax - 10) {
+                    ctx.save();
+                    ctx.translate(this.x + this.w/2, this.y + this.h);
+                    ctx.rotate(this.isPlayer ? 0.3 : -0.3);
+                    ctx.fillRect(-this.w/2, -this.h, this.w, this.h);
+                    ctx.restore();
                 } else {
-                    ctx.fillRect(this.x + 3, this.y + 5, 5, 5);
+                    ctx.fillRect(this.x, this.y, this.w, this.h);
                 }
+
+                // Oeil
+                ctx.fillStyle = 'white';
+                ctx.fillRect(this.x + (this.isPlayer ? this.w - 8 : 4), this.y + 6, 4, 4);
             }
         }
 
-        // Action du joueur : Acheter une unité
-        window.spawnPlayerUnit = function(type) {
-            const cost = unitTypes[type].cost;
+        window.spawnUnit = function(type) {
+            const cost = unitStats[type].cost;
             if (gold >= cost) {
                 gold -= cost;
                 units.push(new Unit(true, type));
-                updateUI();
+                updateHUD();
             }
         };
 
-        // Intelligence Artificielle (Ennemi)
+        window.evolveBase = function() {
+            if (xp >= xpToEvolve && playerAge === 1) {
+                playerAge = 2;
+                xp = 0;
+                
+                // Buff de la base
+                bases.player.maxHp = 1000;
+                bases.player.hp = 1000;
+                bases.player.color = '#8e44ad'; // Devient violette
+                bases.player.h = 150; // Plus grande
+                bases.player.y = 250 - bases.player.h;
+
+                // Débloque les unités
+                document.getElementById('lock-3').style.display = 'none';
+                document.getElementById('lock-4').style.display = 'none';
+                document.getElementById('btn-evolve').style.display = 'none';
+                document.getElementById('player-age').innerText = "2 (Max)";
+                
+                updateHUD();
+            }
+        };
+
+        // IA Ennemi & Difficulté
         setInterval(() => {
             if(isGameOver) return;
-            // Choisi aléatoirement de spawner un ennemi faible ou fort selon la progression
-            if (Math.random() > 0.7) {
-                units.push(new Unit(false, 'enemyFort'));
+            timeElapsed++;
+
+            // La difficulté augmente avec le temps
+            if (timeElapsed === 60) { enemyLevel = 2; document.getElementById('enemy-level').innerText = 2; bases.enemy.color = '#8b0000'; }
+            if (timeElapsed === 180) { enemyLevel = 3; document.getElementById('enemy-level').innerText = 3; bases.enemy.color = '#4a235a'; }
+
+            // Spawn logick
+            let r = Math.random();
+            if (enemyLevel === 1) {
+                units.push(new Unit(false, r > 0.8 ? 'e_strong' : 'e_weak'));
+            } else if (enemyLevel === 2) {
+                units.push(new Unit(false, r > 0.5 ? 'e_strong' : 'e_weak'));
             } else {
-                units.push(new Unit(false, 'enemyFaible'));
+                if (r > 0.9) units.push(new Unit(false, 'e_boss'));
+                else units.push(new Unit(false, 'e_strong'));
             }
-        }, 3500); // Un ennemi toutes les 3.5 secondes
+        }, 3000); // Spawn toutes les 3s
 
         // Revenu passif
-        setInterval(() => {
-            if(isGameOver) return;
-            gold += 2;
-            updateUI();
-        }, 1000);
+        setInterval(() => { if(!isGameOver) { gold += 3 + playerAge; updateHUD(); } }, 1000);
 
-        function updateUI() {
-            goldDisplay.innerText = gold;
-            playerHpDisplay.innerText = Math.max(0, bases.player.hp);
-            enemyHpDisplay.innerText = Math.max(0, bases.enemy.hp);
+        function updateHUD() {
+            document.getElementById('gold-display').innerText = gold;
+            document.getElementById('player-hp-bar').style.width = (bases.player.hp / bases.player.maxHp * 100) + '%';
+            document.getElementById('enemy-hp-bar').style.width = (bases.enemy.hp / bases.enemy.maxHp * 100) + '%';
+            
+            if (playerAge === 1) {
+                document.getElementById('xp-text').innerText = `${xp}/${xpToEvolve}`;
+                document.getElementById('xp-bar').style.width = Math.min(100, (xp / xpToEvolve * 100)) + '%';
+                if (xp >= xpToEvolve) document.getElementById('btn-evolve').style.display = 'block';
+            } else {
+                document.getElementById('xp-text').innerText = "MAX";
+                document.getElementById('xp-bar').style.width = '100%';
+            }
 
-            btnUnit1.disabled = gold < unitTypes.gourdin.cost;
-            btnUnit2.disabled = gold < unitTypes.lance.cost;
+            // Boutons
+            ['gourdin', 'lance'].forEach((t, i) => document.getElementById(`btn-u${i+1}`).disabled = gold < unitStats[t].cost);
+            ['chevalier', 'archer'].forEach((t, i) => document.getElementById(`btn-u${i+3}`).disabled = gold < unitStats[t].cost || playerAge < 2);
         }
 
-        // Boucle principale du jeu
+        function drawBases() {
+            ctx.fillStyle = bases.player.color;
+            ctx.fillRect(bases.player.x, bases.player.y, bases.player.w, bases.player.h);
+            ctx.fillStyle = bases.enemy.color;
+            ctx.fillRect(bases.enemy.x, bases.enemy.y, bases.enemy.w, bases.enemy.h);
+        }
+
         function gameLoop() {
             if (isGameOver) return;
-
-            // Effacer l'écran
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBases();
 
-            // Dessiner les bases
-            ctx.fillStyle = bases.player.color;
-            ctx.fillRect(bases.player.x, bases.player.y, bases.player.width, bases.player.height);
-            ctx.fillStyle = bases.enemy.color;
-            ctx.fillRect(bases.enemy.x, bases.enemy.y, bases.enemy.width, bases.enemy.height);
-
-            // Logique et dessin des unités
             for (let i = units.length - 1; i >= 0; i--) {
                 let u = units[i];
                 let target = null;
-                let stopMoving = false;
+                u.action = 'walk';
 
-                // Chercher un ennemi à portée
+                // Chercher cible
                 for (let j = 0; j < units.length; j++) {
                     let other = units[j];
                     if (u.isPlayer !== other.isPlayer) {
-                        // Calcul de la distance entre les bords des unités
-                        let dist = u.isPlayer ? (other.x - (u.x + u.width)) : (u.x - (other.x + other.width));
-                        
-                        if (dist >= 0 && dist <= u.range) {
-                            target = other;
-                            stopMoving = true;
-                            break;
-                        } else if (dist < 0) {
-                            // S'ils se touchent ou se chevauchent
-                            target = other;
-                            stopMoving = true;
-                            break;
-                        }
+                        let dist = u.isPlayer ? (other.x - (u.x + u.w)) : (u.x - (other.x + other.w));
+                        if (dist <= u.rng && dist >= -10) { target = other; break; }
                     }
                 }
 
-                // S'il n'y a pas d'unité ennemie, on attaque la base si elle est à portée
+                // Cible base si pas d'ennemi
                 if (!target) {
-                    let distToBase = u.isPlayer ? (bases.enemy.x - (u.x + u.width)) : (u.x - (bases.player.x + bases.player.width));
-                    if (distToBase <= u.range) {
-                        target = u.isPlayer ? bases.enemy : bases.player;
-                        stopMoving = true;
-                    }
+                    let distToBase = u.isPlayer ? (bases.enemy.x - (u.x + u.w)) : (u.x - (bases.player.x + bases.player.w));
+                    if (distToBase <= u.rng) target = u.isPlayer ? bases.enemy : bases.player;
                 }
 
-                // Combat ou Mouvement
+                // Action
                 if (target) {
-                    if (u.cooldown <= 0) {
+                    u.action = 'attack';
+                    if (u.cd <= 0) {
                         target.hp -= u.dmg;
-                        u.cooldown = u.cooldownMax;
+                        u.cd = u.cdMax;
                     }
                 } else {
                     u.x += u.speed;
                 }
 
-                if (u.cooldown > 0) u.cooldown--;
+                if (u.cd > 0) u.cd--;
 
-                // Mort de l'unité
+                // Mort
                 if (u.hp <= 0) {
                     if (!u.isPlayer) {
-                        gold += u.reward; // Récompense pour avoir tué un ennemi
-                        updateUI();
+                        gold += u.rew;
+                        if (playerAge === 1) xp += u.xp;
+                        updateHUD();
                     }
                     units.splice(i, 1);
                 } else {
@@ -295,31 +337,20 @@
                 }
             }
 
-            // Vérification de victoire/défaite
-            if (bases.player.hp <= 0) {
-                endGame(false);
-            } else if (bases.enemy.hp <= 0) {
-                endGame(true);
+            // Fin de jeu
+            if (bases.player.hp <= 0 || bases.enemy.hp <= 0) {
+                isGameOver = true;
+                const go = document.getElementById('game-over');
+                const msg = document.getElementById('end-message');
+                go.style.display = 'block';
+                if (bases.player.hp <= 0) { msg.innerText = "❌ LA BASE EST DÉTRUITE"; msg.style.color = '#e74c3c'; }
+                else { msg.innerText = "🏆 VICTOIRE ÉCRASANTE"; msg.style.color = '#f1c40f'; }
             }
 
-            updateUI();
             requestAnimationFrame(gameLoop);
         }
 
-        function endGame(win) {
-            isGameOver = true;
-            gameOverScreen.style.display = 'block';
-            if (win) {
-                endMessage.innerText = "Victoire ! L'open space est sauvé.";
-                endMessage.style.color = "#2ecc71";
-            } else {
-                endMessage.innerText = "Défaite... L'ennemi a pris ton bureau.";
-                endMessage.style.color = "#e74c3c";
-            }
-        }
-
-        // Lancement
-        updateUI();
+        updateHUD();
         requestAnimationFrame(gameLoop);
     </script>
 </body>
