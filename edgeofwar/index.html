@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge of War - Antoine</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #87CEEB; /* Bleu ciel */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px white;
+        }
+
+        #game-ui {
+            width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px 10px 0 0;
+            box-sizing: border-box;
+            border: 4px solid #333;
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .gold { color: #f39c12; font-size: 24px;}
+        .health { color: #e74c3c; }
+
+        canvas {
+            background-color: #a4b0be;
+            border: 4px solid #333;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            background-image: linear-gradient(to bottom, #87CEEB 60%, #8B4513 60%); /* Ciel et Terre */
+        }
+
+        #controls {
+            width: 800px;
+            background-color: #333;
+            padding: 15px;
+            border-radius: 0 0 10px 10px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #2ecc71;
+            color: white;
+            transition: 0.2s;
+            flex: 1;
+        }
+
+        button:hover { background-color: #27ae60; }
+        button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 40%;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            border: 5px solid #333;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #game-over h2 { margin-top: 0; font-size: 30px;}
+    </style>
+</head>
+<body>
+
+    <h1>Edge of War</h1>
+
+    <div id="game-ui">
+        <div class="health">Base Bleue : <span id="player-hp">500</span> PV</div>
+        <div class="gold">💰 <span id="gold-display">50</span></div>
+        <div class="health">Base Rouge : <span id="enemy-hp">500</span> PV</div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="300"></canvas>
+
+    <div id="controls">
+        <button id="btn-unit1" onclick="spawnPlayerUnit('gourdin')">Gourdin (15 💰)</button>
+        <button id="btn-unit2" onclick="spawnPlayerUnit('lance')">Lance (40 💰)</button>
+    </div>
+
+    <div id="game-over">
+        <h2 id="end-message">Victoire !</h2>
+        <button onclick="location.reload()" style="background-color: #3498db;">Rejouer</button>
+        <br><br>
+        <a href="../index.html" style="color: #555; text-decoration: none; font-weight: bold;">⬅ Retour au Hub</a>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Eléments de l'interface
+        const goldDisplay = document.getElementById('gold-display');
+        const playerHpDisplay = document.getElementById('player-hp');
+        const enemyHpDisplay = document.getElementById('enemy-hp');
+        const btnUnit1 = document.getElementById('btn-unit1');
+        const btnUnit2 = document.getElementById('btn-unit2');
+        const gameOverScreen = document.getElementById('game-over');
+        const endMessage = document.getElementById('end-message');
+
+        // Variables du jeu
+        let gold = 50;
+        let isGameOver = false;
+        let units = [];
+        let particles = [];
+        
+        // Bases
+        const bases = {
+            player: { x: 0, y: 120, width: 80, height: 120, hp: 500, maxHp: 500, color: '#3498db' },
+            enemy: { x: 720, y: 120, width: 80, height: 120, hp: 500, maxHp: 500, color: '#e74c3c' }
+        };
+
+        // Caractéristiques des unités
+        const unitTypes = {
+            gourdin: { cost: 15, hp: 30, dmg: 5, speed: 1.5, range: 10, cooldown: 60, color: '#2980b9', width: 20, height: 40 },
+            lance: { cost: 40, hp: 80, dmg: 15, speed: 0.8, range: 25, cooldown: 100, color: '#8e44ad', width: 25, height: 50 },
+            enemyFaible: { hp: 30, dmg: 5, speed: 1.2, range: 10, cooldown: 60, color: '#c0392b', width: 20, height: 40, reward: 10 },
+            enemyFort: { hp: 90, dmg: 20, speed: 0.6, range: 25, cooldown: 120, color: '#d35400', width: 25, height: 50, reward: 25 }
+        };
+
+        // Classe pour gérer les unités
+        class Unit {
+            constructor(isPlayer, typeKey) {
+                const stats = unitTypes[typeKey];
+                this.isPlayer = isPlayer;
+                this.width = stats.width;
+                this.height = stats.height;
+                this.x = isPlayer ? bases.player.width : canvas.width - bases.enemy.width - this.width;
+                this.y = 240 - this.height; // Ligne d'horizon (sol)
+                this.speed = isPlayer ? stats.speed : -stats.speed;
+                this.hp = stats.hp;
+                this.maxHp = stats.hp;
+                this.dmg = stats.dmg;
+                this.range = stats.range;
+                this.cooldownMax = stats.cooldown;
+                this.cooldown = 0;
+                this.color = stats.color;
+                this.reward = stats.reward || 0;
+            }
+
+            draw() {
+                // Barre de vie de l'unité
+                ctx.fillStyle = 'red';
+                ctx.fillRect(this.x, this.y - 10, this.width, 5);
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(this.x, this.y - 10, this.width * (this.hp / this.maxHp), 5);
+
+                // Corps de l'unité
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Petit oeil pour savoir dans quel sens ils regardent
+                ctx.fillStyle = 'white';
+                if(this.isPlayer) {
+                    ctx.fillRect(this.x + this.width - 8, this.y + 5, 5, 5);
+                } else {
+                    ctx.fillRect(this.x + 3, this.y + 5, 5, 5);
+                }
+            }
+        }
+
+        // Action du joueur : Acheter une unité
+        window.spawnPlayerUnit = function(type) {
+            const cost = unitTypes[type].cost;
+            if (gold >= cost) {
+                gold -= cost;
+                units.push(new Unit(true, type));
+                updateUI();
+            }
+        };
+
+        // Intelligence Artificielle (Ennemi)
+        setInterval(() => {
+            if(isGameOver) return;
+            // Choisi aléatoirement de spawner un ennemi faible ou fort selon la progression
+            if (Math.random() > 0.7) {
+                units.push(new Unit(false, 'enemyFort'));
+            } else {
+                units.push(new Unit(false, 'enemyFaible'));
+            }
+        }, 3500); // Un ennemi toutes les 3.5 secondes
+
+        // Revenu passif
+        setInterval(() => {
+            if(isGameOver) return;
+            gold += 2;
+            updateUI();
+        }, 1000);
+
+        function updateUI() {
+            goldDisplay.innerText = gold;
+            playerHpDisplay.innerText = Math.max(0, bases.player.hp);
+            enemyHpDisplay.innerText = Math.max(0, bases.enemy.hp);
+
+            btnUnit1.disabled = gold < unitTypes.gourdin.cost;
+            btnUnit2.disabled = gold < unitTypes.lance.cost;
+        }
+
+        // Boucle principale du jeu
+        function gameLoop() {
+            if (isGameOver) return;
+
+            // Effacer l'écran
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dessiner les bases
+            ctx.fillStyle = bases.player.color;
+            ctx.fillRect(bases.player.x, bases.player.y, bases.player.width, bases.player.height);
+            ctx.fillStyle = bases.enemy.color;
+            ctx.fillRect(bases.enemy.x, bases.enemy.y, bases.enemy.width, bases.enemy.height);
+
+            // Logique et dessin des unités
+            for (let i = units.length - 1; i >= 0; i--) {
+                let u = units[i];
+                let target = null;
+                let stopMoving = false;
+
+                // Chercher un ennemi à portée
+                for (let j = 0; j < units.length; j++) {
+                    let other = units[j];
+                    if (u.isPlayer !== other.isPlayer) {
+                        // Calcul de la distance entre les bords des unités
+                        let dist = u.isPlayer ? (other.x - (u.x + u.width)) : (u.x - (other.x + other.width));
+                        
+                        if (dist >= 0 && dist <= u.range) {
+                            target = other;
+                            stopMoving = true;
+                            break;
+                        } else if (dist < 0) {
+                            // S'ils se touchent ou se chevauchent
+                            target = other;
+                            stopMoving = true;
+                            break;
+                        }
+                    }
+                }
+
+                // S'il n'y a pas d'unité ennemie, on attaque la base si elle est à portée
+                if (!target) {
+                    let distToBase = u.isPlayer ? (bases.enemy.x - (u.x + u.width)) : (u.x - (bases.player.x + bases.player.width));
+                    if (distToBase <= u.range) {
+                        target = u.isPlayer ? bases.enemy : bases.player;
+                        stopMoving = true;
+                    }
+                }
+
+                // Combat ou Mouvement
+                if (target) {
+                    if (u.cooldown <= 0) {
+                        target.hp -= u.dmg;
+                        u.cooldown = u.cooldownMax;
+                    }
+                } else {
+                    u.x += u.speed;
+                }
+
+                if (u.cooldown > 0) u.cooldown--;
+
+                // Mort de l'unité
+                if (u.hp <= 0) {
+                    if (!u.isPlayer) {
+                        gold += u.reward; // Récompense pour avoir tué un ennemi
+                        updateUI();
+                    }
+                    units.splice(i, 1);
+                } else {
+                    u.draw();
+                }
+            }
+
+            // Vérification de victoire/défaite
+            if (bases.player.hp <= 0) {
+                endGame(false);
+            } else if (bases.enemy.hp <= 0) {
+                endGame(true);
+            }
+
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(win) {
+            isGameOver = true;
+            gameOverScreen.style.display = 'block';
+            if (win) {
+                endMessage.innerText = "Victoire ! L'open space est sauvé.";
+                endMessage.style.color = "#2ecc71";
+            } else {
+                endMessage.innerText = "Défaite... L'ennemi a pris ton bureau.";
+                endMessage.style.color = "#e74c3c";
+            }
+        }
+
+        // Lancement
+        updateUI();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
