@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Poker des Collègues</title>
+    <!-- Librairie magique pour le multijoueur sans serveur -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #2c3e50; color: white; text-align: center; }
+        #game-board { display: none; background-color: #27ae60; padding: 20px; border-radius: 10px; max-width: 800px; margin: 20px auto; border: 5px solid #1e8449; }
+        .card { display: inline-block; width: 60px; height: 90px; background: white; color: black; border-radius: 5px; margin: 5px; line-height: 90px; font-size: 24px; font-weight: bold; border: 1px solid #ccc; }
+        .red { color: red; }
+        .black { color: black; }
+        .hidden-card { background: #c0392b; color: #c0392b; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.1) 10px, rgba(0,0,0,0.1) 20px); }
+        input, button { padding: 10px; margin: 5px; font-size: 16px; border-radius: 5px; border: none; }
+        button { background-color: #f1c40f; color: #333; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #f39c12; }
+        #dealer-controls { margin-top: 20px; padding-top: 20px; border-top: 2px dashed rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body>
+
+    <h1>🃏 Le Poker du Bureau 🃏</h1>
+
+    <!-- MENU DE CONNEXION -->
+    <div id="lobby">
+        <h3>Créer ou rejoindre une partie</h3>
+        <button onclick="hostGame()">Créer une partie (Hôte)</button>
+        <p>OU</p>
+        <input type="text" id="join-id" placeholder="Code de la partie...">
+        <button onclick="joinGame()">Rejoindre</button>
+        <p id="status-msg">En attente...</p>
+    </div>
+
+    <!-- PLATEAU DE JEU -->
+    <div id="game-board">
+        <h2>Table Commune</h2>
+        <div id="table-cards">
+            <!-- Les cartes communes apparaitront ici -->
+        </div>
+
+        <h2>Votre Main</h2>
+        <div id="my-hand">
+            <!-- Vos 2 cartes apparaitront ici -->
+        </div>
+
+        <!-- Contrôles réservés à l'hôte -->
+        <div id="dealer-controls" style="display: none;">
+            <h3>Commandes du Croupier</h3>
+            <button onclick="dealCards()">Distribuer les mains</button>
+            <button onclick="dealFlop()">Le Flop (3 cartes)</button>
+            <button onclick="dealTurnRiver()">Turn / River (1 carte)</button>
+            <button onclick="resetTable()">Nouvelle Manche</button>
+        </div>
+    </div>
+
+    <script>
+        let peer;
+        let connection;
+        let isHost = false;
+        let deck = [];
+        let tableCards = [];
+
+        const suits = ['♠', '♥', '♦', '♣'];
+        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+        // Initialisation de la partie (Hôte)
+        function hostGame() {
+            peer = new Peer();
+            peer.on('open', (id) => {
+                document.getElementById('status-msg').innerHTML = `Partie créée ! Donnez ce code à votre collègue : <b style="color:#f1c40f; font-size: 20px;">${id}</b>`;
+            });
+            peer.on('connection', (conn) => {
+                connection = conn;
+                setupConnection();
+                isHost = true;
+                document.getElementById('dealer-controls').style.display = 'block';
+                startGameUI();
+            });
+        }
+
+        // Rejoindre une partie (Client)
+        function joinGame() {
+            const hostId = document.getElementById('join-id').value;
+            peer = new Peer();
+            peer.on('open', () => {
+                connection = peer.connect(hostId);
+                setupConnection();
+            });
+        }
+
+        // Configurer les messages réseau
+        function setupConnection() {
+            connection.on('open', () => {
+                if (!isHost) startGameUI();
+            });
+            connection.on('data', (data) => {
+                if (data.type === 'HAND') displayHand(data.cards);
+                if (data.type === 'TABLE') displayTable(data.cards);
+                if (data.type === 'RESET') {
+                    document.getElementById('my-hand').innerHTML = '';
+                    document.getElementById('table-cards').innerHTML = '';
+                }
+            });
+        }
+
+        // Affichage du plateau
+        function startGameUI() {
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game-board').style.display = 'block';
+        }
+
+        /* --- LOGIQUE DU JEU (Côté Hôte uniquement) --- */
+
+        function createDeck() {
+            deck = [];
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({ suit, value, isRed: (suit === '♥' || suit === '♦') });
+                }
+            }
+            // Mélange de Fisher-Yates
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function dealCards() {
+            createDeck();
+            tableCards = [];
+            // Distribue 2 cartes au client
+            const clientHand = [deck.pop(), deck.pop()];
+            connection.send({ type: 'HAND', cards: clientHand });
+            
+            // Distribue 2 cartes à l'hôte
+            const hostHand = [deck.pop(), deck.pop()];
+            displayHand(hostHand);
+        }
+
+        function dealFlop() {
+            tableCards.push(deck.pop(), deck.pop(), deck.pop());
+            updateTableData();
+        }
+
+        function dealTurnRiver() {
+            if (tableCards.length < 5) {
+                tableCards.push(deck.pop());
+                updateTableData();
+            }
+        }
+
+        function resetTable() {
+            document.getElementById('my-hand').innerHTML = '';
+            document.getElementById('table-cards').innerHTML = '';
+            connection.send({ type: 'RESET' });
+        }
+
+        function updateTableData() {
+            displayTable(tableCards);
+            connection.send({ type: 'TABLE', cards: tableCards });
+        }
+
+        /* --- AFFICHAGE HTML --- */
+
+        function getCardHTML(card) {
+            const colorClass = card.isRed ? 'red' : 'black';
+            return `<div class="card ${colorClass}">${card.value}${card.suit}</div>`;
+        }
+
+        function displayHand(cards) {
+            document.getElementById('my-hand').innerHTML = cards.map(getCardHTML).join('');
+        }
+
+        function displayTable(cards) {
+            document.getElementById('table-cards').innerHTML = cards.map(getCardHTML).join('');
+        }
+    </script>
+</body>
+</html>
