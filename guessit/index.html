@@ -3,250 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guess the Manga - Dylan</title>
+    <title>Guess the Manga - Survie</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #ff9f43; /* Couleur un peu manga/shonen */
-            color: #222;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
             min-height: 100vh;
         }
 
         #game-container {
-            background-color: white;
-            border-radius: 15px;
+            background-color: #1e1e2e;
+            border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            max-width: 600px;
-            width: 100%;
-            border: 4px solid #ee5253;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(138, 43, 226, 0.4);
+            max-width: 700px; width: 100%;
+            margin-top: 2vh;
+            border: 2px solid #8a2be2;
+            transition: transform 0.1s;
         }
 
-        h1 { margin-top: 0; color: #ee5253; text-transform: uppercase; letter-spacing: 2px;}
-
-        /* Ecrans du jeu */
-        #game-screen, #end-screen { display: none; }
-
-        /* Le Timer */
-        #timer {
-            font-size: 24px;
-            font-weight: bold;
-            color: #ee5253;
-            margin: 15px 0;
+        /* L'effet de tremblement quand on perd une vie */
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
         }
 
-        /* La zone de la question ou de l'image */
+        h1 {
+            color: #ff69b4; text-transform: uppercase; letter-spacing: 4px;
+            font-size: 2.5em; margin-top: 0; text-align: center;
+            text-shadow: 3px 3px 0px #8a2be2;
+        }
+
+        .top-bar {
+            display: flex; justify-content: space-between; font-size: 1.3em;
+            font-weight: bold; margin-bottom: 20px; background: rgba(0,0,0,0.4);
+            padding: 15px 20px; border-radius: 10px; border-bottom: 2px solid #333;
+        }
+
+        .lives { color: #ff4757; letter-spacing: 3px; text-shadow: 0 0 10px #ff4757;}
+        .score-info { color: #2ed573; text-shadow: 0 0 10px #2ed573;}
+        .combo { color: #ffa502; font-size: 0.9em; margin-left: 10px; transition: 0.2s; display: inline-block; text-shadow: 0 0 10px #ffa502;}
+        .combo-active { transform: scale(1.5) rotate(-10deg); color: #ff6348;}
+
+        /* La barre de temps */
+        #timer-container { width: 100%; height: 20px; background-color: #2f3542; border-radius: 10px; margin-bottom: 25px; overflow: hidden; border: 2px solid #000; box-shadow: inset 0 0 10px black;}
+        #timer-bar { height: 100%; width: 100%; background-color: #2ed573; transition: width 0.1s linear, background-color 0.3s;}
+
         #question-area {
-            font-size: 22px;
-            font-weight: bold;
-            margin: 20px 0;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-size: 1.6em; font-weight: bold; text-align: center;
+            min-height: 120px; display: flex; align-items: center; justify-content: center;
+            background: #2f3542; border-radius: 10px; padding: 20px; margin-bottom: 25px;
+            border-left: 6px solid #ff69b4; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
-        /* Si tu mets une image plus tard, elle aura cette taille */
-        #question-area img {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 10px;
+        /* Si tu remplaces une question par une image ( <img src="X"> ) */
+        #question-area img { max-width: 100%; max-height: 300px; border-radius: 10px; border: 2px solid #fff;}
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        button.option-btn {
+            background-color: #3742fa; color: white; border: none; padding: 20px;
+            font-size: 1.2em; font-weight: bold; border-radius: 10px; cursor: pointer;
+            transition: 0.2s; box-shadow: 0 6px 0 #1e90ff; text-transform: uppercase;
         }
 
-        /* Boutons de réponses */
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-        }
+        button.option-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #1e90ff; filter: brightness(1.2);}
+        button.option-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1e90ff; }
+        
+        button.option-btn:disabled { opacity: 0.8; cursor: not-allowed; }
 
-        button {
-            padding: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border: 2px solid #222;
-            background-color: #f1f2f6;
-            border-radius: 8px;
-            transition: 0.2s;
-        }
+        .correct { background-color: #2ed573 !important; box-shadow: 0 6px 0 #2bad60 !important; color: black !important; }
+        .wrong { background-color: #ff4757 !important; box-shadow: 0 6px 0 #ff1e33 !important; }
 
-        button:hover { background-color: #dfe4ea; transform: scale(1.05); }
-        .btn-start { background-color: #10ac84; color: white; border: none; font-size: 20px; padding: 15px 30px; margin-top: 20px;}
-        .btn-start:hover { background-color: #01a3a4; }
+        #start-screen, #end-screen { text-align: center; }
+        .btn-main { background-color: #ff69b4; color: white; border: none; padding: 15px 40px; font-size: 1.5em; font-weight: bold; border-radius: 50px; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4); transition: 0.3s; margin-top: 20px;}
+        .btn-main:hover { transform: scale(1.05); background-color: #ff1493; }
 
-        .correct { background-color: #1dd1a1 !important; color: white; border-color: #1dd1a1; }
-        .wrong { background-color: #ff6b6b !important; color: white; border-color: #ff6b6b; }
-
-        #score-display { font-size: 18px; margin-top: 15px; font-weight: bold; }
+        .hub-link { color: #747d8c; text-decoration: none; display: inline-block; margin-top: 30px; font-weight: bold; font-size: 1.2em; transition: 0.2s;}
+        .hub-link:hover { color: white; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <h1>Guess the Manga</h1>
+        <h1>GUESS THE MANGA</h1>
 
         <!-- ECRAN D'ACCUEIL -->
         <div id="start-screen">
-            <p>Bienvenue dans le défi de Dylan !<br>Tu as 10 secondes par question pour trouver le bon manga.</p>
-            <button class="btn-start" onclick="startGame()">Commencer le Quiz</button>
+            <p style="font-size: 1.3em; color: #ced6e0; line-height: 1.6;">
+                <b>Mode Survie Activé.</b><br>
+                Enchaînez les bonnes réponses le plus vite possible pour faire exploser le <b>Combo</b>.<br>
+                <span style="color: #ff4757;">3 erreurs et la partie est terminée.</span>
+            </p>
+            <button class="btn-main" onclick="startGame()">▶ Lancer la Partie</button><br>
+            <a href="../index.html" class="hub-link">⬅ Retour au Menu Principal</a>
         </div>
 
         <!-- ECRAN DE JEU -->
-        <div id="game-screen">
-            <div id="timer">⏱️ 10</div>
-            <div id="question-area">
-                <!-- La question ou l'image apparaitra ici -->
+        <div id="game-screen" style="display: none;">
+            <div class="top-bar">
+                <div class="lives" id="lives-display">❤️❤️❤️</div>
+                <div class="score-info">
+                    Score: <span id="current-score" style="color: white;">0</span>
+                    <span class="combo" id="combo-display">x1</span>
+                </div>
             </div>
-            <div class="options-grid" id="options-area">
-                <!-- Les 4 boutons apparaitront ici -->
-            </div>
-            <div id="score-display">Score : <span id="current-score">0</span></div>
+
+            <div id="timer-container"><div id="timer-bar"></div></div>
+
+            <div id="question-area"></div>
+            
+            <div class="options-grid" id="options-area"></div>
         </div>
 
         <!-- ECRAN DE FIN -->
-        <div id="end-screen">
-            <h2>Partie terminée !</h2>
-            <p>Ton score final est de : <strong id="final-score">0</strong></p>
-            <button class="btn-start" onclick="location.reload()">Rejouer</button>
-            <br><br>
-            <!-- Lien pour retourner au hub (à adapter quand ton hub existera) -->
-            <a href="../index.html" style="color: #555; text-decoration: none; font-weight: bold;">⬅ Retour au menu principal</a>
+        <div id="end-screen" style="display: none;">
+            <h2 style="font-size: 3.5em; color: #ff4757; margin-bottom: 10px; text-shadow: 2px 2px 0px #000;">GAME OVER</h2>
+            <p style="font-size: 1.8em;">Score Final : <br><strong id="final-score" style="color: #2ed573; font-size: 1.5em; text-shadow: 0 0 10px #2ed573;">0</strong></p>
+            <button class="btn-main" onclick="location.reload()">🔄 Rejouer</button><br>
+            <a href="../index.html" class="hub-link">⬅ Retour au Menu Principal</a>
         </div>
     </div>
 
     <script>
-        // --- BASE DE DONNÉES DES QUESTIONS ---
-        // Tu peux ajouter autant de questions que tu veux ici !
-        // Pour utiliser une image au lieu du texte, remplace le texte par : "<img src='chemin/vers/image.jpg'>"
+        // Ta base de données ! Tu peux ajouter des "<img src='image.jpg'>" à la place du texte !
         const questionsData = [
-            {
-                question: "Quel manga met en scène un carnet capable de tuer la personne dont on y inscrit le nom ?",
-                options: ["Bleach", "Death Note", "Naruto", "Tokyo Ghoul"],
-                correct: 1 // L'index de la bonne réponse (commence à 0, donc ici 1 = Death Note)
-            },
-            {
-                question: "Je veux devenir le roi des pirates !",
-                options: ["One Piece", "Fairy Tail", "Hunter x Hunter", "Dragon Ball"],
-                correct: 0
-            },
-            {
-                question: "Dans quel univers trouve-t-on le Bataillon d'Exploration ?",
-                options: ["Sword Art Online", "Demon Slayer", "L'Attaque des Titans", "My Hero Academia"],
-                correct: 2
-            },
-            {
-                question: "Quel manga a pour héros Izuku Midoriya ?",
-                options: ["Jujutsu Kaisen", "Black Clover", "Blue Lock", "My Hero Academia"],
-                correct: 3
-            }
+            { q: "Quel manga met en scène un carnet capable de tuer ?", options: ["Bleach", "Death Note", "Naruto", "Tokyo Ghoul"], correct: 1 },
+            { q: "Je veux devenir le roi des pirates !", options: ["One Piece", "Fairy Tail", "Hunter x Hunter", "Dragon Ball"], correct: 0 },
+            { q: "Dans quel univers trouve-t-on le Bataillon d'Exploration ?", options: ["Sword Art Online", "Demon Slayer", "L'Attaque des Titans", "My Hero Academia"], correct: 2 },
+            { q: "Quel manga a pour héros Izuku Midoriya ?", options: ["Jujutsu Kaisen", "Black Clover", "Blue Lock", "My Hero Academia"], correct: 3 },
+            { q: "Qui cherche à retrouver le corps de son frère Alphonse ?", options: ["Edward Elric", "Gintoki", "Tanjiro", "Shinra"], correct: 0 },
+            { q: "Quel est le nom de l'attaque signature de Goku ?", options: ["Rasengan", "Getsuga Tensho", "Kamehameha", "Gomu Gomu no Pistol"], correct: 2 },
+            { q: "Dans quel manga joue-t-on au volley-ball ?", options: ["Kuroko no Basket", "Blue Lock", "Haikyuu!!", "Slam Dunk"], correct: 2 }
         ];
 
         let currentQuestionIndex = 0;
         let score = 0;
-        let timeLeft = 10;
+        let lives = 3;
+        let combo = 1;
+        let timeLeft = 100; 
         let timerInterval;
-        let isAnswering = false; // Empêche de cliquer plusieurs fois
+        let isAnswering = false;
 
-        // Récupération des éléments HTML
         const startScreen = document.getElementById('start-screen');
         const gameScreen = document.getElementById('game-screen');
         const endScreen = document.getElementById('end-screen');
         const questionArea = document.getElementById('question-area');
         const optionsArea = document.getElementById('options-area');
-        const timerDisplay = document.getElementById('timer');
-        const currentScoreDisplay = document.getElementById('current-score');
-        const finalScoreDisplay = document.getElementById('final-score');
+        const timerBar = document.getElementById('timer-bar');
+        const container = document.getElementById('game-container');
 
-        // Lancement du jeu
         function startGame() {
             startScreen.style.display = 'none';
             gameScreen.style.display = 'block';
-            currentQuestionIndex = 0;
-            score = 0;
-            currentScoreDisplay.innerText = score;
-            
-            // Mélange l'ordre des questions (Optionnel mais sympa)
-            questionsData.sort(() => Math.random() - 0.5);
-            
+            questionsData.sort(() => Math.random() - 0.5); // Mélange l'ordre des questions
             loadQuestion();
         }
 
-        // Charger une question
+        function updateHUD() {
+            document.getElementById('current-score').innerText = score;
+            const comboEl = document.getElementById('combo-display');
+            comboEl.innerText = `x${combo}`;
+            
+            let hearts = "";
+            for(let i=0; i<3; i++) hearts += i < lives ? "❤️" : "🖤";
+            document.getElementById('lives-display').innerText = hearts;
+        }
+
         function loadQuestion() {
             isAnswering = false;
-            timeLeft = 10;
-            timerDisplay.innerText = `⏱️ ${timeLeft}`;
+            timeLeft = 100;
+            updateHUD();
             
-            const currentQuestion = questionsData[currentQuestionIndex];
-            questionArea.innerHTML = currentQuestion.question;
+            const q = questionsData[currentQuestionIndex];
+            questionArea.innerHTML = q.q; 
             
-            optionsArea.innerHTML = ""; // On vide les anciens boutons
-            
-            // Créer les 4 boutons
-            currentQuestion.options.forEach((option, index) => {
+            optionsArea.innerHTML = "";
+            q.options.forEach((opt, index) => {
                 const btn = document.createElement('button');
-                btn.innerText = option;
+                btn.className = 'option-btn';
+                btn.innerText = opt;
                 btn.onclick = () => checkAnswer(index, btn);
                 optionsArea.appendChild(btn);
             });
 
-            // Lancer le chronomètre
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                timerDisplay.innerText = `⏱️ ${timeLeft}`;
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    checkAnswer(-1, null); // -1 car temps écoulé
-                }
-            }, 1000);
+            startTimer();
         }
 
-        // Vérifier la réponse
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerBar.style.width = "100%";
+            timerBar.style.backgroundColor = "#2ed573";
+
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.6; // Vitesse d'écoulement du temps
+                timerBar.style.width = Math.max(0, timeLeft) + "%";
+
+                if(timeLeft <= 50) timerBar.style.backgroundColor = "#ffa502";
+                if(timeLeft <= 25) timerBar.style.backgroundColor = "#ff4757";
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    checkAnswer(-1, null); // -1 = Temps écoulé
+                }
+            }, 50);
+        }
+
         function checkAnswer(selectedIndex, buttonClicked) {
-            if (isAnswering) return; // Bloque les clics supplémentaires
+            if (isAnswering) return;
             isAnswering = true;
             clearInterval(timerInterval);
 
-            const currentQuestion = questionsData[currentQuestionIndex];
-            const buttons = optionsArea.querySelectorAll('button');
+            const q = questionsData[currentQuestionIndex];
+            const buttons = optionsArea.querySelectorAll('.option-btn');
 
-            // Afficher la bonne réponse en vert
-            buttons[currentQuestion.correct].classList.add('correct');
+            // Désactiver les boutons
+            buttons.forEach(b => b.disabled = true);
+            
+            // Met en vert la bonne réponse quoiqu'il arrive
+            buttons[q.correct].classList.add('correct');
 
-            if (selectedIndex === currentQuestion.correct) {
-                // Bonne réponse
-                score += 100 + (timeLeft * 10); // Bonus de temps
-                currentScoreDisplay.innerText = score;
-            } else if (buttonClicked !== null) {
-                // Mauvaise réponse (mettre en rouge le bouton cliqué)
-                buttonClicked.classList.add('wrong');
+            if (selectedIndex === q.correct) {
+                // Bonne réponse ! Bonus selon le temps restant
+                const points = Math.floor(100 + (timeLeft * 2)) * combo;
+                score += points;
+                combo++;
+                
+                // Animation du Combo
+                const comboEl = document.getElementById('combo-display');
+                comboEl.classList.add('combo-active');
+                setTimeout(() => comboEl.classList.remove('combo-active'), 300);
+                
+                setTimeout(nextQuestion, 1200);
+            } else {
+                // Mauvaise réponse ou temps écoulé
+                if (buttonClicked) buttonClicked.classList.add('wrong');
+                lives--;
+                combo = 1; 
+                
+                // L'écran tremble !
+                container.classList.add('shake');
+                setTimeout(() => container.classList.remove('shake'), 400);
+
+                updateHUD();
+                
+                if (lives <= 0) setTimeout(endGame, 1500);
+                else setTimeout(nextQuestion, 1500);
             }
-
-            // Passer à la question suivante après 1.5 seconde
-            setTimeout(() => {
-                currentQuestionIndex++;
-                if (currentQuestionIndex < questionsData.length) {
-                    loadQuestion();
-                } else {
-                    endGame();
-                }
-            }, 1500);
         }
 
-        // Fin de la partie
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questionsData.length) {
+                loadQuestion();
+            } else {
+                endGame(); // Si on a fait toutes les questions
+            }
+        }
+
         function endGame() {
             gameScreen.style.display = 'none';
             endScreen.style.display = 'block';
-            finalScoreDisplay.innerText = score;
+            document.getElementById('final-score').innerText = score;
         }
     </script>
 </body>
