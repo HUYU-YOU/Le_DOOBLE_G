@@ -7,126 +7,187 @@
     <style>
         :root { --bg: #0b0c10; --accent: #45a29e; --gold: #f1c40f; --danger: #ff003c; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: white; text-align: center; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 15px rgba(69, 162, 158, 0.5); }
+        h1 { margin:0; color: var(--accent); text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 15px rgba(69, 162, 158, 0.5); }
         #lobby { background: rgba(31, 40, 51, 0.9); padding: 40px; border-radius: 15px; border: 1px solid var(--accent); box-shadow: 0 0 30px rgba(69, 162, 158, 0.2); }
-        input { padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid var(--accent); background: #0b0c10; color: white; outline: none; text-align: center; margin: 10px 0;}
-        button { padding: 15px 25px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; color: #0b0c10; background: var(--accent); box-shadow: 0 0 15px rgba(69, 162, 158, 0.4); }
+        input { padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid var(--accent); background: #0b0c10; color: white; outline: none; text-align: center;}
+        button { padding: 12px 20px; font-size: 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; color: #0b0c10; background: var(--accent); box-shadow: 0 0 15px rgba(69, 162, 158, 0.4); }
         button:hover { transform: translateY(-3px); box-shadow: 0 0 25px rgba(69, 162, 158, 0.7); }
         .btn-fold { background: transparent; color: var(--danger); border: 2px solid var(--danger); box-shadow: none; }
         .btn-fold:hover { background: var(--danger); color: white; box-shadow: 0 0 20px rgba(255, 0, 60, 0.5); }
-        #game-board { display: none; background: radial-gradient(circle, #1f2833 0%, #0b0c10 100%); padding: 40px; border-radius: 20px; width: 100%; max-width: 900px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
-        .card { display: inline-block; width: 80px; height: 115px; background: linear-gradient(135deg, #ffffff, #e0e0e0); color: #111; border-radius: 10px; margin: 8px; line-height: 115px; font-size: 32px; font-weight: bold; box-shadow: 0 10px 20px rgba(0,0,0,0.5); position: relative; }
+        #game-board { display: none; width: 100%; max-width: 900px; display: flex; gap: 20px;}
+        #table-area { flex: 2; background: radial-gradient(circle, #1f2833 0%, #0b0c10 100%); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
+        #chat-area { flex: 1; background: rgba(0,0,0,0.5); border-radius: 15px; border: 1px solid var(--accent); display: flex; flex-direction: column; padding: 15px; max-height: 600px;}
+        #chat-history { flex: 1; overflow-y: auto; text-align: left; font-size: 0.9em; margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;}
+        .msg { margin-bottom: 8px; } .msg-me { color: var(--accent); } .msg-enemy { color: var(--gold); } .msg-sys { color: var(--danger); font-style: italic;}
+        .card { display: inline-block; width: 70px; height: 100px; background: linear-gradient(135deg, #ffffff, #e0e0e0); color: #111; border-radius: 8px; margin: 5px; line-height: 100px; font-size: 28px; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         .red { color: #d32f2f; } .black { color: #212121; }
-        .chip-board { display: flex; justify-content: space-between; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 1px solid rgba(241, 196, 15, 0.3); margin-bottom: 30px;}
-        .pot-display { font-size: 26px; color: var(--gold); text-shadow: 0 0 15px var(--gold); }
-        .my-chips { font-size: 22px; color: var(--accent); }
-        .actions { margin-top: 30px; display: flex; gap: 15px; justify-content: center; align-items: center;}
-        #dealer-controls { margin-top: 40px; padding: 20px; border: 1px dashed rgba(69, 162, 158, 0.5); background: rgba(31, 40, 51, 0.5); border-radius: 10px; }
+        .hidden-card { background: repeating-linear-gradient(45deg, #222, #222 10px, #333 10px, #333 20px); color: transparent; }
+        .chip-board { display: flex; justify-content: space-between; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 12px; border: 1px solid rgba(241, 196, 15, 0.3); margin-bottom: 20px;}
+        .pot-display { font-size: 22px; color: var(--gold); text-shadow: 0 0 15px var(--gold); }
+        .my-chips { font-size: 18px; color: var(--accent); }
+        #dealer-controls { margin-top: 30px; padding: 15px; border: 1px dashed rgba(69, 162, 158, 0.5); background: rgba(31, 40, 51, 0.5); border-radius: 10px; }
         .hub-link { color: #66fcf1; text-decoration: none; display: block; margin-top: 30px; opacity: 0.7; transition: 0.2s;}
-        .hub-link:hover { opacity: 1; text-shadow: 0 0 10px #66fcf1; }
     </style>
 </head>
 <body>
-    <h1>♦ Cyber Poker ♠</h1>
     <div id="lobby">
-        <button onclick="hostGame()">Créer une partie</button>
-        <p style="color: #66fcf1; margin: 20px 0;">OU</p>
-        <input type="text" id="join-id" placeholder="Code secret...">
-        <br><button onclick="joinGame()">Rejoindre</button>
+        <h1>♦ Cyber Poker ♠</h1><br>
+        <button onclick="hostGame()">Créer une partie</button><p style="color: #66fcf1; margin: 15px 0;">OU</p>
+        <input type="text" id="join-id" placeholder="Code secret..."><br><br>
+        <button onclick="joinGame()">Rejoindre</button>
         <h2 id="status-msg" style="color: var(--gold); margin-top: 20px;"></h2>
-        <a href="../index.html" class="hub-link">⬅ Déconnexion vers le Hub</a>
+        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     </div>
 
-    <div id="game-board">
-        <div class="chip-board">
-            <div class="my-chips">Moi: <span id="my-chips">1000</span> 🟡</div>
-            <div class="pot-display">POT: <span id="pot">0</span> 🏆</div>
-            <div class="my-chips">Adversaire: <span id="enemy-chips">1000</span> 🟡</div>
+    <div id="game-board" style="display: none;">
+        <div id="table-area">
+            <div class="chip-board">
+                <div class="my-chips">Moi: <span id="my-chips">1000</span> 🟡</div>
+                <div class="pot-display">POT: <span id="pot">0</span> 🏆</div>
+                <div class="my-chips">Adv.: <span id="enemy-chips">1000</span> 🟡</div>
+            </div>
+            <h3 style="color: #c5c6c7; margin:5px;">Table</h3>
+            <div id="table-cards" style="min-height: 110px;"></div>
+            <h3 style="color: #c5c6c7; margin:5px;">Ma Main</h3>
+            <div id="my-hand" style="min-height: 110px;"></div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; align-items: center;">
+                <input type="number" id="bet-amount" value="50" style="width: 80px;">
+                <button onclick="placeBet()">Miser / Suivre</button>
+                <button class="btn-fold" onclick="fold()">Se Coucher</button>
+            </div>
+            
+            <!-- Contrôles Hôte -->
+            <div id="dealer-controls" style="display: none;">
+                <h4 style="margin:0 0 10px 0; color: var(--accent);">🔧 Commandes Hôte</h4>
+                <button style="font-size: 11px; padding: 8px;" onclick="dealCards()">1. Distri.</button>
+                <button style="font-size: 11px; padding: 8px;" onclick="dealFlop()">2. Flop</button>
+                <button style="font-size: 11px; padding: 8px;" onclick="dealTurnRiver()">3. T/R</button>
+                <button style="font-size: 11px; padding: 8px; background: #9b59b6; color:white;" onclick="autoJudge()">🤖 Juger</button>
+            </div>
         </div>
-        <h2 style="color: #c5c6c7;">Table Commune</h2>
-        <div id="table-cards" style="min-height: 130px;"></div>
-        <h2 style="color: #c5c6c7; margin-top: 30px;">Ma Main</h2>
-        <div id="my-hand" style="min-height: 130px;"></div>
-        <div class="actions">
-            <input type="number" id="bet-amount" value="50" style="width: 100px;">
-            <button onclick="placeBet()">Miser / Suivre</button>
-            <button class="btn-fold" onclick="fold()">Se Coucher</button>
-        </div>
-        <div id="dealer-controls" style="display: none;">
-            <h3 style="margin-top:0; color: var(--accent);">🔧 Commandes Hôte</h3>
-            <button style="font-size: 14px; padding: 10px;" onclick="dealCards()">1. Distribuer</button>
-            <button style="font-size: 14px; padding: 10px;" onclick="dealFlop()">2. Flop</button>
-            <button style="font-size: 14px; padding: 10px;" onclick="dealTurnRiver()">3. Turn/River</button>
-            <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
-                <button style="font-size: 12px; background: #3498db; color: white;" onclick="awardPot(true)">Je gagne le Pot</button>
-                <button style="font-size: 12px; background: #e74c3c; color: white;" onclick="awardPot(false)">L'adversaire gagne</button>
+
+        <!-- Fenêtre de Chat -->
+        <div id="chat-area">
+            <h3 style="margin-top:0; color:var(--accent);">Chat Réseau</h3>
+            <div id="chat-history"></div>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="chat-input" placeholder="Message..." style="flex:1;" onkeypress="if(event.key === 'Enter') sendChat()">
+                <button onclick="sendChat()" style="padding: 10px;">Envoyer</button>
             </div>
         </div>
     </div>
 
     <script>
-        let peer; let connection; let isHost = false;
-        let deck = []; let tableCards = [];
-        let myChips = 1000; let enemyChips = 1000; let pot = 0;
-        const suits = ['♠', '♥', '♦', '♣'];
-        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        // Moteur Audio Synthétisé (Zéro fichier externe)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration, vol=0.1) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        function soundChip() { playTone(800, 'sine', 0.1, 0.2); setTimeout(() => playTone(1200, 'sine', 0.1, 0.2), 50); }
+        function soundCard() { playTone(150, 'noise', 0.1, 0.1); } // Fausse un "swoosh"
 
-        function updateUI() {
-            document.getElementById('my-chips').innerText = myChips;
-            document.getElementById('enemy-chips').innerText = enemyChips;
-            document.getElementById('pot').innerText = pot;
+        let peer, connection, isHost = false;
+        let deck = [], tableCards = [], myHand = [], enemyHand = [];
+        let myChips = 1000, enemyChips = 1000, pot = 0;
+        const suits = ['♠', '♥', '♦', '♣']; const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        
+        // Valeur numérique pour l'évaluation (2 = 2, J = 11, A = 14)
+        const valMap = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14};
+
+        function addChatMsg(sender, msg, type) {
+            const hist = document.getElementById('chat-history');
+            hist.innerHTML += `<div class="msg ${type}"><b>${sender}</b>: ${msg}</div>`;
+            hist.scrollTop = hist.scrollHeight;
         }
 
+        function sendChat() {
+            const inp = document.getElementById('chat-input');
+            if(inp.value.trim() !== '') {
+                addChatMsg('Moi', inp.value, 'msg-me');
+                if(connection) connection.send({ type: 'CHAT', msg: inp.value });
+                inp.value = '';
+            }
+        }
+
+        function updateUI() { document.getElementById('my-chips').innerText = myChips; document.getElementById('enemy-chips').innerText = enemyChips; document.getElementById('pot').innerText = pot; }
+
         function hostGame() {
-            peer = new Peer();
-            peer.on('open', (id) => { document.getElementById('status-msg').innerText = `Code à partager : ${id}`; });
+            peer = new Peer(); peer.on('open', (id) => { document.getElementById('status-msg').innerText = `Code à partager : ${id}`; });
             peer.on('connection', (conn) => { connection = conn; isHost = true; document.getElementById('dealer-controls').style.display = 'block'; setupConnection(); startGameUI(); });
         }
 
-        function joinGame() {
-            peer = new Peer();
-            peer.on('open', () => { connection = peer.connect(document.getElementById('join-id').value); setupConnection(); startGameUI(); });
-        }
+        function joinGame() { peer = new Peer(); peer.on('open', () => { connection = peer.connect(document.getElementById('join-id').value); setupConnection(); startGameUI(); }); }
 
         function setupConnection() {
             connection.on('data', (data) => {
-                if (data.type === 'HAND') displayHand(data.cards);
-                if (data.type === 'TABLE') displayTable(data.cards);
+                if (data.type === 'HAND') { myHand = data.cards; displayHand(myHand); soundCard(); }
+                if (data.type === 'TABLE') { tableCards = data.cards; displayTable(tableCards); soundCard(); }
                 if (data.type === 'SYNC_CHIPS') { myChips = data.enemyChips; enemyChips = data.myChips; pot = data.pot; updateUI(); }
-                if (data.type === 'FOLD') alert("L'adversaire s'est couché !");
+                if (data.type === 'CHAT') { addChatMsg('Adversaire', data.msg, 'msg-enemy'); playTone(500, 'square', 0.1); }
+                if (data.type === 'FOLD') { addChatMsg('Système', "L'adversaire s'est couché !", 'msg-sys'); }
+                if (data.type === 'ENEMY_HAND_REVEAL') { enemyHand = data.cards; } // L'hôte reçoit la main pour juger
+                if (data.type === 'RESULT') { addChatMsg('Croupier (Auto)', data.msg, 'msg-sys'); }
             });
         }
 
-        function syncChipsNetwork() { if(connection) connection.send({ type: 'SYNC_CHIPS', myChips, enemyChips, pot }); }
-        function startGameUI() { document.getElementById('lobby').style.display = 'none'; document.getElementById('game-board').style.display = 'block'; updateUI(); }
+        function startGameUI() { document.getElementById('lobby').style.display = 'none'; document.getElementById('game-board').style.display = 'flex'; updateUI(); }
 
         function placeBet() {
-            let amount = parseInt(document.getElementById('bet-amount').value);
-            if(amount > myChips) amount = myChips;
-            myChips -= amount; pot += amount; updateUI(); syncChipsNetwork();
+            let amount = parseInt(document.getElementById('bet-amount').value); if(amount > myChips) amount = myChips;
+            myChips -= amount; pot += amount; updateUI(); soundChip();
+            addChatMsg('Système', `J'ai misé ${amount} 🟡`, 'msg-sys');
+            if(connection) { connection.send({ type: 'SYNC_CHIPS', myChips, enemyChips, pot }); connection.send({ type: 'CHAT', msg: `*a misé ${amount} 🟡*` }); }
         }
-        function fold() { if(connection) connection.send({ type: 'FOLD' }); alert("Tu t'es couché !"); }
+        function fold() { if(connection) connection.send({ type: 'FOLD' }); addChatMsg('Système', "Tu t'es couché.", 'msg-sys'); }
 
-        function createDeck() {
-            deck = [];
-            for (let suit of suits) for (let value of values) deck.push({ suit, value, isRed: (suit === '♥' || suit === '♦') });
-            deck.sort(() => Math.random() - 0.5);
-        }
-
+        // --- CROUPIER (HOTE UNIQUEMENT) ---
+        function createDeck() { deck = []; for (let suit of suits) for (let value of values) deck.push({ suit, value, isRed: (suit === '♥' || suit === '♦'), num: valMap[value] }); deck.sort(() => Math.random() - 0.5); }
         function dealCards() {
             createDeck(); tableCards = []; displayTable([]); connection.send({ type: 'TABLE', cards: [] });
-            connection.send({ type: 'HAND', cards: [deck.pop(), deck.pop()] }); displayHand([deck.pop(), deck.pop()]);
+            enemyHand = [deck.pop(), deck.pop()]; myHand = [deck.pop(), deck.pop()];
+            connection.send({ type: 'HAND', cards: enemyHand }); displayHand(myHand); soundCard();
         }
-
         function dealFlop() { tableCards.push(deck.pop(), deck.pop(), deck.pop()); sendTable(); }
         function dealTurnRiver() { if (tableCards.length < 5) { tableCards.push(deck.pop()); sendTable(); } }
-        function sendTable() { displayTable(tableCards); connection.send({ type: 'TABLE', cards: tableCards }); }
+        function sendTable() { displayTable(tableCards); connection.send({ type: 'TABLE', cards: tableCards }); soundCard(); }
 
-        function awardPot(hostWins) {
-            if (hostWins) myChips += pot; else enemyChips += pot;
-            pot = 0; updateUI(); syncChipsNetwork(); alert("Pot distribué. Prêt pour la prochaine manche !");
+        // Moteur d'évaluation basique (Pair, Brelan, Carré)
+        function getHandScore(cards) {
+            if(cards.length < 2) return 0;
+            let counts = {}; let maxFreq = 0; let pairCount = 0;
+            cards.forEach(c => { counts[c.num] = (counts[c.num] || 0) + 1; });
+            Object.values(counts).forEach(v => { if(v > maxFreq) maxFreq = v; if(v === 2) pairCount++; });
+            if (maxFreq === 4) return 8; // Carré
+            if (maxFreq === 3 && pairCount >= 1) return 7; // Full House
+            if (maxFreq === 3) return 4; // Brelan
+            if (pairCount >= 2) return 3; // Double Paire
+            if (pairCount === 1) return 2; // Paire
+            return 1; // Hauteur
         }
 
+        function autoJudge() {
+            if(tableCards.length < 5) { alert("Le board n'est pas complet !"); return; }
+            let myScore = getHandScore(myHand.concat(tableCards));
+            let enScore = getHandScore(enemyHand.concat(tableCards));
+            
+            let msg = "";
+            if(myScore > enScore) { msg = "L'Hôte gagne le pot !"; myChips += pot; }
+            else if(enScore > myScore) { msg = "L'Adversaire gagne le pot !"; enemyChips += pot; }
+            else { msg = "Égalité ! Partage du pot."; myChips += pot/2; enemyChips += pot/2; }
+            
+            pot = 0; updateUI(); soundChip();
+            addChatMsg('Croupier (Auto)', msg, 'msg-sys');
+            connection.send({ type: 'SYNC_CHIPS', myChips, enemyChips, pot });
+            connection.send({ type: 'RESULT', msg: msg });
+        }
+
+        // --- AFFICHAGE ---
         function getCardHTML(card) { return `<div class="card ${card.isRed ? 'red' : 'black'}">${card.value}${card.suit}</div>`; }
         function displayHand(cards) { document.getElementById('my-hand').innerHTML = cards.map(getCardHTML).join(''); }
         function displayTable(cards) { document.getElementById('table-cards').innerHTML = cards.map(getCardHTML).join(''); }
