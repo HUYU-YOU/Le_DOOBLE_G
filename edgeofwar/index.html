@@ -143,6 +143,24 @@
                 updateHUD();
             }
         };
+        // Dans la classe/fonction de mise à jour de l'Unité :
+let canMove = true;
+let hitboxSpacing = this.w + 10; // Espace requis entre deux alliés
+
+for (let other of allUnits) {
+    // Si c'est un allié, qu'il n'est pas moi-même, et qu'il est vivant
+    if (other.team === this.team && other !== this && !other.isDead) {
+        // L'équipe 1 avance vers la droite
+        if (this.team === 1 && other.x > this.x && (other.x - this.x) < hitboxSpacing) canMove = false;
+        // L'équipe 2 avance vers la gauche
+        if (this.team === 2 && this.x > other.x && (this.x - other.x) < hitboxSpacing) canMove = false;
+    }
+}
+
+// Si la voie est libre et que l'unité n'attaque pas, elle avance
+if (canMove && !this.isAttacking) {
+    this.x += (this.team === 1 ? this.speed : -this.speed);
+}
 
         window.evolveBase = () => { if (xp >= xpToEvolve && playerAge === 1) { playerAge = 2; xp = 0; bases.player.maxHp = 1000; bases.player.hp = 1000; bases.player.color = '#b82aff'; bases.player.h = 150; bases.player.y = 100;
             document.getElementById('lock-3').style.display = 'none'; document.getElementById('lock-4').style.display = 'none'; document.getElementById('btn-evolve').style.display = 'none'; document.getElementById('player-age').innerText = "MAX"; updateHUD(); }
