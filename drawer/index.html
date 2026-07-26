@@ -6,7 +6,7 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #0b0c10; --panel: rgba(31, 40, 51, 0.95); --cyan: #66fcf1; --teal: #45a29e; --text: #c5c6c7; --draw-bg: #ffffff; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; user-select: none; }
         h1 { color: var(--cyan); text-transform: uppercase; letter-spacing: 3px; margin: 10px 0; text-shadow: 0 0 15px rgba(102, 252, 241, 0.5); }
         
         .menu-container { background: var(--panel); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); text-align: center; margin-top: 20px; border: 1px solid rgba(102,252,241,0.3); max-width: 600px; width: 100%; }
@@ -43,9 +43,9 @@
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .gartic-input { font-size: 1.5em; padding: 15px; width: 80%; border-radius: 10px; border: 2px solid var(--cyan); background: #111; color: #fff; text-align: center; margin: 20px 0; }
 
-        #toolbar { display: flex; gap: 10px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; justify-content: center; align-items: center; flex-wrap: wrap; border: 1px solid var(--teal); }
-        .tool-btn { background: #222; border: 1px solid #444; color: white; padding: 10px; border-radius: 5px; cursor: pointer; transition: 0.2s; }
-        .tool-btn.active { background: var(--cyan); color: #000; border-color: #fff; }
+        #toolbar { display: flex; gap: 8px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; justify-content: center; align-items: center; flex-wrap: wrap; border: 1px solid var(--teal); }
+        .tool-btn { background: #222; border: 1px solid #444; color: white; padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: 0.2s; font-size: 1em; }
+        .tool-btn.active { background: var(--cyan); color: #000; border-color: #fff; font-weight: bold; }
         input[type="color"] { cursor: pointer; height: 35px; border: none; background: none; }
 
         #results-screen { display: none; flex-direction: column; gap: 30px; width: 100%; max-width: 800px; margin-top: 20px; }
@@ -92,7 +92,7 @@
         </div>
 
         <button class="btn" style="background:#ff007f; padding: 15px 30px; width:100%; margin-bottom:10px;" onclick="startGame('gartic')">📞 Lancer GARTIC PHONE</button>
-        <button class="btn" style="background:#00f0ff; padding: 15px 30px; width:100%;" onclick="startGame('classic')">🖌️ Lancer CLASSIQUE</button>
+        <button class="btn" style="background:#00f0ff; padding: 15px 30px; width:100%;" onclick="startGame('classic')">🖌️ Lancer CLASSIQUE (3 Tours)</button>
     </div>
 
     <!-- ECRAN JEU -->
@@ -133,21 +133,33 @@
                     <h2 style="color:#fff;">Veuillez patienter...</h2>
                     <p id="wait-desc">En attente des autres joueurs.</p>
                 </div>
+
+                <!-- OVERLAY GRAND GAGNANT -->
+                <div class="overlay" id="winner-overlay" style="display:none; background:rgba(0,0,0,0.95); z-index: 1000;">
+                    <h1 style="color:#ff007f; font-size:4em; margin-bottom:10px; text-shadow:0 0 20px #ff007f;">🏆 FIN DE LA PARTIE 🏆</h1>
+                    <h2 id="winner-name" style="color:var(--cyan); font-size:3em; text-transform:uppercase;"></h2>
+                    <p style="color:#fff; font-size:1.5em; margin-top:20px;">Retour au lobby dans 10 secondes...</p>
+                </div>
             </div>
 
+            <!-- NOUVELLE BARRE D'OUTILS AVEC LES FORMES -->
             <div id="toolbar" style="display:none;">
-                <button class="tool-btn active" onclick="setTool('pen', this)">✏️ Pinceau</button>
-                <button class="tool-btn" onclick="setTool('eraser', this)">🧹 Gomme</button>
+                <button class="tool-btn active" onclick="setTool('pen', this)">✏️</button>
+                <button class="tool-btn" onclick="setTool('eraser', this)">🧹</button>
+                <button class="tool-btn" onclick="setTool('line', this)">📏 Ligne</button>
+                <button class="tool-btn" onclick="setTool('rect', this)">⬜ Rect</button>
+                <button class="tool-btn" onclick="setTool('circle', this)">⭕ Cercle</button>
+                <button class="tool-btn" onclick="setTool('triangle', this)">🔺 Tri</button>
                 <input type="color" id="colorPicker" value="#000000">
                 <input type="range" id="sizePicker" min="1" max="50" value="5">
-                <button class="tool-btn" style="background:#ff2a2a;" onclick="clearCanvas()">🗑️ Effacer</button>
+                <button class="tool-btn" style="background:#ff2a2a; margin-left:auto;" onclick="clearCanvas()">🗑️ Tout effacer</button>
                 
                 <button class="btn" id="btn-submit-draw" style="display:none; margin-left:auto; background:#39ff14;" onclick="submitGarticAction()">✅ Terminé !</button>
             </div>
         </div>
     </div>
 
-    <!-- RESULTATS -->
+    <!-- RESULTATS GARTIC -->
     <div id="results-screen">
         <h1 style="text-align:center;">Le Téléphone Arabe est terminé !</h1>
         <div id="chains-container"></div>
@@ -155,8 +167,14 @@
     </div>
 
     <script>
-        const defaultDict = [{fr:"chat",en:"cat"},{fr:"voiture",en:"car"},{fr:"pomme",en:"apple"}];
-        let dict = (typeof dictionary !== 'undefined') ? dictionary : defaultDict;
+        // Dico de secours solide (Au cas où tu n'as pas de words.js)
+        const defaultDict = [
+            {fr:"chat",en:"cat"}, {fr:"voiture",en:"car"}, {fr:"pomme",en:"apple"}, {fr:"soleil",en:"sun"}, {fr:"maison",en:"house"}, 
+            {fr:"ordinateur",en:"computer"}, {fr:"avion",en:"airplane"}, {fr:"poisson",en:"fish"}, {fr:"banane",en:"banana"}, 
+            {fr:"fleur",en:"flower"}, {fr:"chaise",en:"chair"}, {fr:"train",en:"train"}, {fr:"montagne",en:"mountain"}, {fr:"guitare",en:"guitar"}
+        ];
+        let dict = (typeof dictionary !== 'undefined' && dictionary.length > 0) ? dictionary : defaultDict;
+        let availableWords = []; // Le sac à mots pour éviter les répétitions
 
         const peer = new Peer();
         let myId = null, myName = "", isHost = false, myConn = null;
@@ -164,8 +182,10 @@
         
         let state = {
             mode: "", lang: "fr", players: [],
-            turnIndex: -1, currentWord: "", timeLeft: 0,
-            round: 0, chains: []
+            // Classic
+            turnIndex: -1, currentWord: "", timeLeft: 0, round: 1, maxRounds: 3,
+            // Gartic
+            chains: []
         };
 
         // --- GESTION RESEAU ---
@@ -181,17 +201,8 @@
                     broadcastState();
                 }
                 if(data.type === 'chat') handleChat(conn.peer, data.msg);
-                
-                // CORRECTION 1: L'hôte traite ses dessins ET les renvoie aux autres
-                if(data.type === 'draw') {
-                    remoteDraw(data);
-                    relayData(data, conn.peer); 
-                }
-                if(data.type === 'clear') {
-                    clearCanvasLocal();
-                    relayData(data, conn.peer);
-                }
-                
+                if(data.type === 'draw' || data.type === 'shape') { remoteDraw(data); relayData(data, conn.peer); }
+                if(data.type === 'clear') { clearCanvasLocal(); relayData(data, conn.peer); }
                 if(data.type === 'submit_gartic') handleGarticSubmission(conn.peer, data.content);
             });
             conn.on('close', () => {
@@ -238,11 +249,12 @@
             
             myConn.on('data', data => {
                 if(data.type === 'state') { state = data.state; renderUI(); }
-                if(data.type === 'tick') updateTimerUI(data.time); // CORRECTION 2: Timer sans refresh tout l'écran
+                if(data.type === 'tick') updateTimerUI(data.time);
                 if(data.type === 'chat') renderChat(data.sender, data.msg, data.sys, data.success);
-                if(data.type === 'draw') remoteDraw(data);
+                if(data.type === 'draw' || data.type === 'shape') remoteDraw(data);
                 if(data.type === 'clear') clearCanvasLocal();
                 if(data.type === 'gartic_results') showResults(data.chains);
+                if(data.type === 'end_classic') showWinner(data.winner);
             });
         }
 
@@ -258,23 +270,48 @@
             document.getElementById('host-lobby').style.display = 'none';
             document.getElementById('game-layout').style.display = 'flex';
             
-            if(mode === 'classic') { state.turnIndex = -1; nextClassicTurn(); } 
+            if(mode === 'classic') { 
+                state.round = 1; 
+                state.turnIndex = -1; 
+                state.players.forEach(p => p.score = 0);
+                availableWords = []; // Reset du sac de mots
+                nextClassicTurn(); 
+            } 
             else { startGarticPhone(); }
         }
 
         // =====================================
-        // MODE CLASSIQUE
+        // MODE CLASSIQUE (Mots sans répétition + 3 Tours)
         // =====================================
         let classicTimer = null;
         let correctGuessers = [];
 
+        function getRandomWord() {
+            if(availableWords.length === 0) {
+                // Remplir et mélanger le sac
+                availableWords = [...dict];
+                availableWords.sort(() => Math.random() - 0.5);
+            }
+            return availableWords.pop()[state.lang];
+        }
+
         function nextClassicTurn() {
             clearInterval(classicTimer);
-            state.turnIndex = (state.turnIndex + 1) % state.players.length;
-            correctGuessers = [];
             
-            let randWord = dict[Math.floor(Math.random() * dict.length)][state.lang];
-            state.currentWord = randWord;
+            state.turnIndex++;
+            if(state.turnIndex >= state.players.length) {
+                state.turnIndex = 0;
+                state.round++;
+            }
+
+            // Vérification de la FIN DU JEU (Après les 3 tours)
+            if(state.round > state.maxRounds) {
+                endClassicGame();
+                return;
+            }
+
+            correctGuessers = [];
+            state.currentWord = getRandomWord();
             state.timeLeft = 60; 
             
             clearCanvasLocal();
@@ -284,7 +321,7 @@
             classicTimer = setInterval(() => {
                 state.timeLeft--;
                 updateTimerUI(state.timeLeft);
-                broadcastData({ type: 'tick', time: state.timeLeft }); // Envoi léger du timer
+                broadcastData({ type: 'tick', time: state.timeLeft });
                 
                 if(state.timeLeft <= 0) {
                     clearInterval(classicTimer);
@@ -326,6 +363,28 @@
                 broadcastData({ type: 'chat', sender: p.name, msg: msg });
                 if(isHost) renderChat(p.name, msg);
             }
+        }
+
+        function endClassicGame() {
+            // Trouver le meilleur score
+            let maxScore = -1;
+            let winners = [];
+            state.players.forEach(p => {
+                if(p.score > maxScore) { maxScore = p.score; winners = [p.name]; }
+                else if(p.score === maxScore) { winners.push(p.name); }
+            });
+            
+            let winnerText = winners.join(' et ') + " avec " + maxScore + " points !";
+            
+            broadcastData({ type: 'end_classic', winner: winnerText });
+            showWinner(winnerText);
+
+            setTimeout(() => { location.reload(); }, 10000); // Retour accueil après 10s
+        }
+
+        function showWinner(winnerText) {
+            document.getElementById('winner-name').innerText = winnerText;
+            document.getElementById('winner-overlay').style.display = 'flex';
         }
 
         // =====================================
@@ -384,7 +443,7 @@
         // =====================================
         // INTERFACE
         // =====================================
-        let lastRenderedRound = -1; // CORRECTION 3: Evite de vider le canvas des autres en Gartic
+        let lastRenderedRound = -1;
 
         function renderUI() {
             let myPlayerId = isHost ? 'host' : myId;
@@ -410,6 +469,9 @@
                 document.getElementById('btn-submit-draw').style.display = 'none';
                 updateTimerUI(state.timeLeft);
                 
+                // Afficher le round en haut
+                document.getElementById('timer').innerHTML = `Tours : ${state.round}/${state.maxRounds} <br> <span style="color:#ff007f">${state.timeLeft}s</span>`;
+                
                 if(state.turnIndex === myIndex) {
                     document.getElementById('turn-info').innerText = "À toi de dessiner !";
                     document.getElementById('word-display').innerText = state.currentWord;
@@ -425,9 +487,8 @@
                 document.getElementById('chat-box').style.display = 'none';
                 updateTimerUI(`Round ${state.round + 1}/${state.players.length}`);
                 
-                let isNewRound = (state.round !== lastRenderedRound);
-                if(isNewRound) {
-                    clearCanvasLocal(); // On vide UNIQUEMENT quand un nouveau round commence
+                if(state.round !== lastRenderedRound) {
+                    clearCanvasLocal(); 
                     document.getElementById('action-input').value = "";
                     lastRenderedRound = state.round;
                 }
@@ -464,7 +525,10 @@
 
         function updateTimerUI(txt) {
             let t = document.getElementById('timer');
-            if(t) t.innerText = typeof txt === 'number' ? txt + "s" : txt;
+            if(t && state.mode === 'gartic') t.innerText = txt;
+            else if(t && state.mode === 'classic' && typeof txt === 'number') {
+                 t.innerHTML = `Tours : ${state.round}/${state.maxRounds} <br> <span style="color:#ff007f">${txt}s</span>`;
+            }
         }
 
         function sendChat() {
@@ -501,11 +565,12 @@
         }
 
         // =====================================
-        // MOTEUR DESSIN CANVAS
+        // MOTEUR DESSIN CANVAS (AVEC FORMES)
         // =====================================
         const drawCanvas = document.getElementById('drawCanvas');
         const ctx = drawCanvas.getContext('2d', { willReadFrequently: true });
-        let isDrawing = false, lastX = 0, lastY = 0, currentTool = 'pen'; 
+        let isDrawing = false, startX = 0, startY = 0, lastX = 0, lastY = 0, currentTool = 'pen'; 
+        let snapshot; // Pour l'aperçu des formes (Rect, Cercle, etc.)
 
         ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
         
@@ -537,7 +602,15 @@
         drawCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawing(e); });
         drawCanvas.addEventListener('touchend', stopDraw);
 
-        function startDraw(e) { isDrawing = true; let pos = getMousePos(e); lastX = pos.x; lastY = pos.y; }
+        function startDraw(e) { 
+            isDrawing = true; 
+            let pos = getMousePos(e); 
+            startX = pos.x; startY = pos.y; 
+            lastX = pos.x; lastY = pos.y;
+            
+            // Sauvegarder l'état actuel du canvas pour la prévisualisation des formes
+            snapshot = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+        }
 
         function drawing(e) {
             if (!isDrawing) return; 
@@ -545,25 +618,70 @@
             let color = currentTool === 'eraser' ? '#ffffff' : document.getElementById('colorPicker').value;
             let size = document.getElementById('sizePicker').value;
             
-            drawLineLocal(lastX, lastY, pos.x, pos.y, color, size);
-            
-            // CORRECTION 4: Le réseau ne spamme les autres qu'en mode Classique
-            if (state.mode === 'classic') {
-                let drawData = { type: 'draw', x0: lastX, y0: lastY, x1: pos.x, y1: pos.y, color: color, size: size };
-                if(isHost) relayData(drawData, 'host');
-                else myConn.send(drawData);
+            if (currentTool === 'pen' || currentTool === 'eraser') {
+                drawLineLocal(lastX, lastY, pos.x, pos.y, color, size);
+                if (state.mode === 'classic') {
+                    let drawData = { type: 'draw', x0: lastX, y0: lastY, x1: pos.x, y1: pos.y, color: color, size: size };
+                    if(isHost) relayData(drawData, 'host'); else myConn.send(drawData);
+                }
+                lastX = pos.x; lastY = pos.y;
+            } else {
+                // PRÉVISUALISATION DES FORMES EN DIRECT
+                ctx.putImageData(snapshot, 0, 0); // On remet le canvas intact
+                drawShapeLocal(currentTool, startX, startY, pos.x, pos.y, color, size); // On trace la forme par dessus
             }
-            
-            lastX = pos.x; lastY = pos.y;
         }
-        function stopDraw() { isDrawing = false; }
 
+        function stopDraw(e) { 
+            if (!isDrawing) return;
+            isDrawing = false; 
+            
+            // Si on utilise une forme, on envoie le résultat FINAL sur le réseau quand on relâche le clic
+            if (currentTool !== 'pen' && currentTool !== 'eraser') {
+                let pos = getMousePos(e);
+                let color = document.getElementById('colorPicker').value;
+                let size = document.getElementById('sizePicker').value;
+                
+                if (state.mode === 'classic') {
+                    let shapeData = { type: 'shape', shape: currentTool, x0: startX, y0: startY, x1: pos.x, y1: pos.y, color: color, size: size };
+                    if(isHost) relayData(shapeData, 'host'); else myConn.send(shapeData);
+                }
+            }
+        }
+
+        // Trace une ligne standard
         function drawLineLocal(x0, y0, x1, y1, color, size) {
             ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
             ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = size; ctx.strokeStyle = color; ctx.stroke();
         }
 
-        function remoteDraw(data) { drawLineLocal(data.x0, data.y0, data.x1, data.y1, data.color, data.size); }
+        // Trace une forme géométrique
+        function drawShapeLocal(shapeType, x0, y0, x1, y1, color, size) {
+            ctx.beginPath();
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = size; ctx.strokeStyle = color;
+            
+            if (shapeType === 'line') {
+                ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+            } else if (shapeType === 'rect') {
+                ctx.rect(x0, y0, x1 - x0, y1 - y0);
+            } else if (shapeType === 'circle') {
+                let radius = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
+                ctx.arc(x0, y0, radius, 0, 2 * Math.PI);
+            } else if (shapeType === 'triangle') {
+                // Triangle isocèle depuis la base vers la pointe
+                ctx.moveTo(x0 + (x1 - x0) / 2, y0); // Pointe en haut
+                ctx.lineTo(x1, y1);                 // Bas Droite
+                ctx.lineTo(x0, y1);                 // Bas Gauche
+                ctx.closePath();                    // Retourne en haut
+            }
+            ctx.stroke();
+        }
+
+        // Réception réseau
+        function remoteDraw(data) { 
+            if(data.type === 'draw') drawLineLocal(data.x0, data.y0, data.x1, data.y1, data.color, data.size); 
+            else if(data.type === 'shape') drawShapeLocal(data.shape, data.x0, data.y0, data.x1, data.y1, data.color, data.size); 
+        }
     </script>
 </body>
 </html>
