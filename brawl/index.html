@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Cyber Smash - Ultimate 4P</title>
+    <title>Cyber Smash - Ultimate Arcade</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; }
@@ -10,8 +11,9 @@
         #game-container { position: relative; background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
         canvas { background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%); border-radius: 10px; border: 2px solid #333; display: block; box-shadow: inset 0 0 50px #000; }
         
-        #menu-overlay, #game-over-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; }
         .menu-title { font-size: 1.8em; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+        
         .selection-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
         .card { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; text-align: center; transition: 0.2s; width: 100px; }
         .card:hover { background: rgba(255,255,255,0.2); }
@@ -20,36 +22,43 @@
         .card.p3-sel { border-color: var(--p3); box-shadow: 0 0 10px var(--p3); }
         .card.p4-sel { border-color: var(--p4); box-shadow: 0 0 10px var(--p4); }
         
-        .btn-main { background: #fff; color: #000; border: none; padding: 12px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 10px; }
+        .btn-main { background: #fff; color: #000; border: none; padding: 12px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin: 10px; }
         .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
-        
+        input { padding: 10px; border-radius: 5px; border: none; font-weight: bold; text-align: center; margin: 10px; background: #333; color: #fff; }
+
         #hud { position: absolute; bottom: 20px; left: 20px; right: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; pointer-events: none; }
-        .player-hud { background: rgba(0,0,0,0.75); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid; }
-        #h1 { border-color: var(--p1); color: var(--p1); }
-        #h2 { border-color: var(--p2); color: var(--p2); }
-        #h3 { border-color: var(--p3); color: var(--p3); }
-        #h4 { border-color: var(--p4); color: var(--p4); }
+        .player-hud { background: rgba(0,0,0,0.75); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid; display: none; }
+        #h1 { border-color: var(--p1); color: var(--p1); } #h2 { border-color: var(--p2); color: var(--p2); }
+        #h3 { border-color: var(--p3); color: var(--p3); } #h4 { border-color: var(--p4); color: var(--p4); }
         .percent { font-size: 2em; font-weight: 900; }
         
-        .controls-info { font-size: 0.75em; color: #aaa; margin-top: 10px; line-height: 1.4; max-width: 700px; }
+        .controls-info { font-size: 0.8em; color: #aaa; margin-top: 15px; line-height: 1.4; max-width: 700px; }
         .hub-link { color: rgba(255,255,255,0.5); text-decoration: none; display: inline-block; margin-top: 20px; transition: 0.2s; }
         .hub-link:hover { color: #fff; }
     </style>
 </head>
 <body>
-    <h1>Cyber Smash Ultimate</h1>
+    <h1>Cyber Smash</h1>
     
     <div id="game-container">
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
         <div id="hud" style="display: none;">
-            <div class="player-hud" id="h1"><div style="font-weight:bold">J1</div><div class="percent" id="p1-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p1-l">3</span></div></div>
-            <div class="player-hud" id="h2"><div style="font-weight:bold">J2</div><div class="percent" id="p2-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p2-l">3</span></div></div>
-            <div class="player-hud" id="h3"><div style="font-weight:bold">J3</div><div class="percent" id="p3-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p3-l">3</span></div></div>
-            <div class="player-hud" id="h4"><div style="font-weight:bold">J4</div><div class="percent" id="p4-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p4-l">3</span></div></div>
+            <div class="player-hud" id="h1"><div style="font-weight:bold" id="n1">J1</div><div class="percent" id="p1-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p1-l">3</span></div></div>
+            <div class="player-hud" id="h2"><div style="font-weight:bold" id="n2">J2</div><div class="percent" id="p2-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p2-l">3</span></div></div>
+            <div class="player-hud" id="h3"><div style="font-weight:bold" id="n3">J3</div><div class="percent" id="p3-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p3-l">3</span></div></div>
+            <div class="player-hud" id="h4"><div style="font-weight:bold" id="n4">J4</div><div class="percent" id="p4-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p4-l">3</span></div></div>
         </div>
 
-        <div id="menu-overlay">
+        <!-- 1. MENU PRINCIPAL -->
+        <div class="overlay" id="main-menu">
+            <div class="menu-title" style="font-size: 3em; margin-bottom: 40px; color: var(--p1);">CHOOSE YOUR BATTLE</div>
+            <button class="btn-main" onclick="openMenu('local')" style="background:var(--p1); font-size: 1.5em; padding: 20px 40px;">Mode Local (1 à 4 Joueurs)</button>
+            <button class="btn-main" onclick="openMenu('network')" style="background:var(--p2); font-size: 1.5em; padding: 20px 40px;">Mode Réseau (1v1 P2P)</button>
+        </div>
+
+        <!-- 2. MENU LOCAL -->
+        <div class="overlay" id="local-menu" style="display: none;">
             <div class="menu-title" id="instruction-title">Sélection Joueur 1</div>
             <div class="selection-grid" id="char-select">
                 <div class="card" onclick="chooseChar('ninja')"><b>Ninja</b><br><span style="font-size:0.7em;color:#0ff">Rapide</span></div>
@@ -57,24 +66,39 @@
                 <div class="card" onclick="chooseChar('gunner')"><b>Gunner</b><br><span style="font-size:0.7em;color:#ff0">Distance</span></div>
                 <div class="card" onclick="chooseChar('mage')"><b>Mage</b><br><span style="font-size:0.7em;color:#39ff14">Polyvalent</span></div>
             </div>
-            
             <div class="menu-title" style="font-size: 1.2em; margin-top:10px;">Choix de la Map</div>
-            <div class="selection-grid" id="map-select">
+            <div class="selection-grid">
                 <div class="card" style="width: 120px;" onclick="chooseMap(0)">Standard</div>
                 <div class="card" style="width: 120px;" onclick="chooseMap(1)">Plateformes</div>
                 <div class="card" style="width: 120px;" onclick="chooseMap(2)">Gouffre</div>
             </div>
-            
-            <button class="btn-main" id="start-btn" style="display:none;" onclick="startGame()">FIGHT !</button>
+            <button class="btn-main" id="start-local-btn" style="display:none;" onclick="startLocalGame()">FIGHT !</button>
             <div class="controls-info">
-                <b>J1:</b> ZQSD (Bouger) / F (Atk) / E (Dash) | <b>J2:</b> Flèches (Bouger) / L (Atk) / M (Dash)<br>
-                <b>J3:</b> IJKL (Bouger) / O (Atk) / U (Dash) | <b>J4:</b> Pavé Num 8456 (Bouger) / 5 (Atk) / 0 (Dash)
+                <b>J1:</b> ZQSD/F/E | <b>J2:</b> Flèches/L/M | <b>J3:</b> IJKL/O/U | <b>J4:</b> Pavé Num 8456/5/0
             </div>
+            <button class="btn-main" style="font-size:0.8em; margin-top:20px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
         </div>
 
-        <div id="game-over-overlay" style="display: none;">
+        <!-- 3. MENU RÉSEAU -->
+        <div class="overlay" id="network-menu" style="display: none;">
+            <h2 style="color: var(--p1); font-size: 2.5em;">Terminal Réseau</h2>
+            <p>Votre ID : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
+            <button class="btn-main" onclick="hostGame()">Héberger la partie</button>
+            <p style="margin: 20px 0;">OU</p>
+            <input type="text" id="join-id" placeholder="ID de l'Hôte">
+            <button class="btn-main" onclick="joinGame()" style="background:var(--p2);color:#fff;">Rejoindre</button>
+            <p id="status-text" style="color: #aaa; margin-top: 20px;"></p>
+            <div class="controls-info">
+                <b>Contrôles Réseau :</b> Flèches (Mouvements) | Espace (Saut)<br>
+                Clic Droit ou Q (Coup Normal) | Clic Gauche ou E (Gros Smash)
+            </div>
+            <button class="btn-main" style="font-size:0.8em; margin-top:20px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
+        </div>
+
+        <!-- ECRAN DE FIN -->
+        <div class="overlay" id="game-over-overlay" style="display: none;">
             <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
-            <button class="btn-main" onclick="location.reload()">Revanche</button>
+            <button class="btn-main" onclick="location.reload()">Retour au Menu</button>
         </div>
     </div>
     
@@ -83,6 +107,7 @@
     <script>
         const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
         
+        // --- AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -90,383 +115,260 @@
             osc.connect(gain); gain.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
             
-            if(type === 'jump') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-            } else if(type === 'hit') {
-                osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-            } else if(type === 'shoot') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
-                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            } else if(type === 'powerup') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-            } else if(type === 'death') {
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4);
-                gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-            }
+            if(type === 'jump') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
+            else if(type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
+            else if(type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); } 
+            else if(type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); } 
+            else if(type === 'death') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); }
             osc.start(now); osc.stop(now + 0.15);
         }
 
+        // --- DATA & CLASSES GLOBALES ---
         const charData = {
             ninja: { color: '#00f0ff', w: 28, h: 48, speed: 7.5, jump: -12.5, weight: 0.9, dmg: 7, kb: 7, proj: false },
             tank: { color: '#ff007f', w: 45, h: 58, speed: 3.2, jump: -8.5, weight: 1.7, dmg: 16, kb: 13, proj: false },
             gunner: { color: '#ffbf00', w: 28, h: 48, speed: 5, jump: -11, weight: 0.8, dmg: 6, kb: 6, proj: true },
             mage: { color: '#39ff14', w: 30, h: 50, speed: 5.5, jump: -11.5, weight: 1.0, dmg: 10, kb: 8, proj: true }
         };
-
         const mapData = [
             [{x: 100, y: 400, w: 600, h: 20}], 
             [{x: 150, y: 420, w: 500, h: 20}, {x: 200, y: 310, w: 100, h: 10}, {x: 500, y: 310, w: 100, h: 10}, {x: 350, y: 220, w: 100, h: 10}], 
             [{x: 50, y: 400, w: 250, h: 20}, {x: 500, y: 400, w: 250, h: 20}] 
         ];
 
-        let selections = [];
-        let mapChoice = null;
-        let players = [], platforms = [], projectiles = [], particles = [], items = [], gameActive = false;
+        let gameMode = null; // 'local' | 'host' | 'client'
+        let gameActive = false, players = [], platforms = [], projectiles = [], particles = [], items = [];
         let screenShake = 0, itemSpawnTimer = 0;
-        const keys = {};
-
-        function chooseChar(type) {
-            selections.push(type);
-            playSound('powerup');
-            if (selections.length < 4) {
-                document.getElementById('instruction-title').innerText = `Sélection Joueur ${selections.length + 1}`;
-            } else {
-                document.getElementById('instruction-title').innerText = `Tous les joueurs prêts ! Choisissez la map :`;
-            }
+        const keys = {}; // Clavier global (Mode Local)
+        
+        class Particle {
+            constructor(x, y, color) { this.x = x; this.y = y; this.color = color; this.vx = (Math.random()-0.5)*8; this.vy = (Math.random()-0.5)*8; this.life = 1.0; this.decay = Math.random()*0.06+0.03; }
+            update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; ctx.fillStyle = this.color; ctx.globalAlpha = Math.max(0, this.life); ctx.fillRect(this.x, this.y, 3, 3); ctx.globalAlpha = 1.0; }
         }
-
-        function chooseMap(idx) {
-            mapChoice = idx;
-            playSound('powerup');
-            if (selections.length === 4 && mapChoice !== null) {
-                document.getElementById('start-btn').style.display = 'block';
+        class Item {
+            constructor(x, y) { this.x = x; this.y = y; this.w = 22; this.h = 22; const types = ['dmg', 'heal', 'spd']; this.type = types[Math.floor(Math.random() * types.length)]; this.color = this.type === 'dmg' ? '#ef4444' : (this.type === 'heal' ? '#39ff14' : '#3b82f6'); }
+            draw() { ctx.fillStyle = this.color; ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fillRect(this.x, this.y, this.w, this.h); ctx.fillStyle = '#fff'; ctx.font = "bold 11px Arial"; ctx.fillText(this.type==='dmg'?'💥':(this.type==='heal'?'💖':'⚡'), this.x+3, this.y+15); ctx.shadowBlur = 0; }
+        }
+        class Projectile {
+            constructor(x, y, dir, ownerId, dmg, kb, color) { this.x=x; this.y=y; this.vx=dir*13; this.ownerId=ownerId; this.dmg=dmg; this.kb=kb; this.w=14; this.h=5; this.active=true; this.color=color; }
+            draw() { ctx.fillStyle=this.color; ctx.shadowBlur=8; ctx.shadowColor=this.color; ctx.fillRect(this.x, this.y, this.w, this.h); ctx.shadowBlur=0; }
+            update() { this.x+=this.vx; if(this.x<0||this.x>canvas.width) this.active=false;
+                players.forEach(pl => { if(pl.id!==this.ownerId && this.active && this.x<pl.x+pl.w && this.x+this.w>pl.x && this.y<pl.y+pl.h && this.y+this.h>pl.y) { pl.takeDamage(this.dmg, this.kb, this.vx>0?1:-1); this.active=false; } });
             }
         }
 
         class Player {
             constructor(id, x, type) {
-                this.id = id; this.x = x; this.y = 80;
-                let c = charData[type];
-                this.w = c.w; this.h = c.h; 
-                this.colors = ['#00f0ff', '#ff007f', '#39ff14', '#ffbf00'];
-                this.color = this.colors[id - 1];
-                this.speed = c.speed; this.jumpForce = c.jump; this.weight = c.weight;
-                this.baseDmg = c.dmg; this.baseKb = c.kb; this.isRanged = c.proj;
-                
-                this.vx = 0; this.vy = 0; this.percent = 0; this.lives = 3;
-                this.jumps = 2; this.grounded = false; this.facing = id % 2 !== 0 ? 1 : -1;
-                this.attackTimer = 0; this.stunTimer = 0; this.invincibleTimer = 120; this.dashTimer = 0;
-                this.buffType = null; this.buffTimer = 0;
+                this.id = id; this.x = x; this.y = 80; let c = charData[type]; this.w = c.w; this.h = c.h; 
+                this.colors = ['#00f0ff', '#ff007f', '#39ff14', '#ffbf00']; this.color = this.colors[id - 1];
+                this.speed = c.speed; this.jumpForce = c.jump; this.weight = c.weight; this.baseDmg = c.dmg; this.baseKb = c.kb; this.isRanged = c.proj;
+                this.vx = 0; this.vy = 0; this.percent = 0; this.lives = 3; this.jumps = 2; this.grounded = false; this.facing = id%2!==0?1:-1;
+                this.attackTimer = 0; this.stunTimer = 0; this.invincibleTimer = 120; this.dashTimer = 0; this.buffType = null; this.buffTimer = 0;
             }
-
             draw() {
-                if (this.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
-
-                ctx.fillStyle = this.color; ctx.font = "bold 12px Arial";
-                ctx.fillText(`J${this.id}: ${this.percent}%`, this.x - 5, this.y - 12);
-                
-                ctx.fillStyle = this.dashTimer > 0 ? '#fff' : (this.stunTimer > 0 ? '#aaa' : this.color);
-                ctx.shadowBlur = this.buffType ? 20 : 10;
-                ctx.shadowColor = this.color;
-                ctx.fillRect(this.x, this.y, this.w, this.h);
-                ctx.shadowBlur = 0;
-
-                if (this.attackTimer > 10 && !this.isRanged) {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                    ctx.fillRect(this.facing === 1 ? this.x + this.w : this.x - 35, this.y + 10, 35, 25);
-                }
+                if(this.invincibleTimer>0 && Math.floor(Date.now()/100)%2===0) return;
+                ctx.fillStyle = this.color; ctx.font = "bold 12px Arial"; ctx.fillText(`J${this.id}: ${Math.floor(this.percent)}%`, this.x-5, this.y-12);
+                ctx.fillStyle = this.dashTimer>0?'#fff':(this.stunTimer>0?'#aaa':this.color); ctx.shadowBlur = this.buffType?20:10; ctx.shadowColor = this.color; ctx.fillRect(this.x, this.y, this.w, this.h); ctx.shadowBlur = 0;
+                if(this.attackTimer>10 && !this.isRanged) { ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillRect(this.facing===1?this.x+this.w:this.x-35, this.y+10, 35, 25); }
             }
-
-            update(ctrl) {
-                if (this.invincibleTimer > 0) this.invincibleTimer--;
-                if (this.buffTimer > 0) {
-                    this.buffTimer--;
-                    if (this.buffTimer === 0) this.buffType = null;
-                }
-                
-                let currentSpeed = this.speed * (this.buffType === 'spd' ? 1.4 : 1.0);
-                let currentJump = this.jumpForce * (this.buffType === 'spd' ? 1.15 : 1.0);
-
-                if (this.dashTimer > 0) {
-                    this.dashTimer--;
-                    this.vx = this.facing * (currentSpeed * 2.5);
-                    this.vy = 0;
-                } else if (this.stunTimer > 0) { 
-                    this.stunTimer--; 
-                } else {
-                    if (keys[ctrl.left]) { this.vx = -currentSpeed; this.facing = -1; }
-                    else if (keys[ctrl.right]) { this.vx = currentSpeed; this.facing = 1; }
-                    else { this.vx *= 0.8; }
-                    
-                    if (keys[ctrl.jump] && this.jumps > 0) {
-                        this.vy = currentJump; this.jumps--; this.grounded = false;
-                        keys[ctrl.jump] = false; playSound('jump');
-                    }
-
-                    if (keys[ctrl.dash] && this.grounded && this.dashTimer === 0) {
-                        this.dashTimer = 12;
-                        keys[ctrl.dash] = false; playSound('powerup');
-                    }
-                    
-                    if (keys[ctrl.atk] && this.attackTimer === 0) {
-                        this.attackTimer = 22;
-                        let multiplier = (this.buffType === 'dmg' ? 1.8 : 1.0);
-                        if (this.isRanged) {
-                            playSound('shoot');
-                            projectiles.push(new Projectile(this.facing === 1 ? this.x + this.w : this.x - 15, this.y + 15, this.facing, this.id, this.baseDmg * multiplier, this.baseKb * multiplier, this.color));
-                        } else {
-                            checkMeleeHit(this, multiplier);
-                        }
+            update(ctrl) { // Utilisé par Mode Local ET Mode Host
+                if(this.invincibleTimer>0) this.invincibleTimer--;
+                if(this.buffTimer>0) { this.buffTimer--; if(this.buffTimer===0) this.buffType = null; }
+                let cSpd = this.speed*(this.buffType==='spd'?1.4:1.0); let cJmp = this.jumpForce*(this.buffType==='spd'?1.15:1.0);
+                if(this.dashTimer>0) { this.dashTimer--; this.vx = this.facing*(cSpd*2.5); this.vy = 0; } 
+                else if(this.stunTimer>0) { this.stunTimer--; } 
+                else {
+                    if(ctrl.left) { this.vx = -cSpd; this.facing = -1; } else if(ctrl.right) { this.vx = cSpd; this.facing = 1; } else { this.vx *= 0.8; }
+                    if(ctrl.jump && this.jumps>0) { this.vy = cJmp; this.jumps--; this.grounded = false; ctrl.jump = false; playSound('jump'); }
+                    if(ctrl.dash && this.grounded && this.dashTimer===0) { this.dashTimer = 12; ctrl.dash = false; playSound('powerup'); }
+                    if(ctrl.atk && this.attackTimer===0) {
+                        this.attackTimer = 22; let mult = (this.buffType==='dmg'?1.8:1.0);
+                        if(this.isRanged) { playSound('shoot'); projectiles.push(new Projectile(this.facing===1?this.x+this.w:this.x-15, this.y+15, this.facing, this.id, this.baseDmg*mult, this.baseKb*mult, this.color)); } 
+                        else { let hitX = this.facing===1?this.x+this.w:this.x-35; players.forEach(pl => { if(pl.id!==this.id && hitX<pl.x+pl.w && hitX+35>pl.x && this.y+10<pl.y+pl.h && this.y+40>pl.y) pl.takeDamage(this.baseDmg*mult, this.baseKb*mult, this.facing); }); }
                     }
                 }
-                
-                if (this.attackTimer > 0) this.attackTimer--;
-
-                if(this.dashTimer === 0) this.vy += 0.55;
-                this.x += this.vx; this.y += this.vy;
-
+                if(this.attackTimer>0) this.attackTimer--;
+                if(this.dashTimer===0) this.vy += 0.55; this.x += this.vx; this.y += this.vy;
                 this.grounded = false;
-                for (let p of platforms) {
-                    if (this.vy > 0 && this.x + this.w > p.x && this.x < p.x + p.w && 
-                        this.y + this.h >= p.y && this.y + this.h <= p.y + this.vy + 2) {
-                        this.y = p.y - this.h; this.vy = 0; this.grounded = true; this.jumps = 2;
-                    }
-                }
-
-                if (this.y > canvas.height + 100 || this.x < -100 || this.x > canvas.width + 100) {
-                    this.die();
-                }
+                for(let p of platforms) { if(this.vy>0 && this.x+this.w>p.x && this.x<p.x+p.w && this.y+this.h>=p.y && this.y+this.h<=p.y+this.vy+2) { this.y = p.y-this.h; this.vy = 0; this.grounded = true; this.jumps = 2; } }
+                if(this.y>canvas.height+100 || this.x<-100 || this.x>canvas.width+100) this.die();
             }
-            
             die() {
-                playSound('death');
-                screenShake = 15;
-                this.lives--; this.percent = 0; this.buffType = null; this.buffTimer = 0;
-                updateHUD();
-                
-                for(let i=0; i<20; i++) particles.push(new Particle(this.x, this.y, this.color));
-
-                if (this.lives <= 0) {
-                    checkGameEnd();
-                } else {
-                    this.x = canvas.width / 2 + (Math.random() * 100 - 50); this.y = 50; this.vx = 0; this.vy = 0; 
-                    this.invincibleTimer = 120;
-                }
+                playSound('death'); screenShake = 15; this.lives--; this.percent = 0; this.buffType = null; this.buffTimer = 0; updateHUD();
+                for(let i=0;i<20;i++) particles.push(new Particle(this.x, this.y, this.color));
+                if(this.lives<=0) { checkGameEnd(); } else { this.x = canvas.width/2+(Math.random()*100-50); this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; }
             }
-
             takeDamage(dmg, baseKb, dir) {
-                if (this.invincibleTimer > 0 || this.dashTimer > 0) return;
-                
-                playSound('hit');
-                this.percent += dmg;
-                updateHUD();
-                
-                let kbMultiplier = 1 + (this.percent / 100);
-                let appliedKb = (baseKb * kbMultiplier) / this.weight;
-                
-                this.vx = dir * appliedKb;
-                this.vy = -appliedKb * 0.55; 
-                this.stunTimer = Math.floor(appliedKb * 1.2);
-                
-                screenShake = Math.min(15, Math.floor(appliedKb / 2));
-                for(let i=0; i<8; i++) particles.push(new Particle(this.x + this.w/2, this.y + this.h/2, '#fff'));
+                if(this.invincibleTimer>0 || this.dashTimer>0) return; playSound('hit'); this.percent += dmg; updateHUD();
+                let kb = (baseKb * (1 + (this.percent/100))) / this.weight;
+                this.vx = dir*kb; this.vy = -kb*0.55; this.stunTimer = Math.floor(kb*1.2); screenShake = Math.min(15, Math.floor(kb/2));
+                for(let i=0;i<8;i++) particles.push(new Particle(this.x+this.w/2, this.y+this.h/2, '#fff'));
             }
-
-            applyBuff(type) {
-                playSound('powerup');
-                if (type === 'heal') {
-                    this.percent = Math.max(0, this.percent - 25);
-                } else {
-                    this.buffType = type;
-                    this.buffTimer = 250;
-                }
-                updateHUD();
-            }
+            applyBuff(type) { playSound('powerup'); if(type==='heal') this.percent=Math.max(0,this.percent-25); else { this.buffType=type; this.buffTimer=250; } updateHUD(); }
         }
 
-        class Item {
-            constructor(x, y) {
-                this.x = x; this.y = y; this.w = 22; this.h = 22;
-                const types = ['dmg', 'heal', 'spd'];
-                this.type = types[Math.floor(Math.random() * types.length)];
-                this.color = this.type === 'dmg' ? '#ef4444' : (this.type === 'heal' ? '#39ff14' : '#3b82f6');
-            }
-            draw() {
-                ctx.fillStyle = this.color; ctx.shadowBlur = 10; ctx.shadowColor = this.color;
-                ctx.fillRect(this.x, this.y, this.w, this.h);
-                ctx.fillStyle = '#fff'; ctx.font = "bold 11px Arial";
-                let symbol = this.type === 'dmg' ? '💥' : (this.type === 'heal' ? '💖' : '⚡');
-                ctx.fillText(symbol, this.x + 3, this.y + 15);
-                ctx.shadowBlur = 0;
-            }
-        }
-
-        class Projectile {
-            constructor(x, y, dir, ownerId, dmg, kb, color) {
-                this.x = x; this.y = y; this.vx = dir * 13; this.ownerId = ownerId;
-                this.dmg = dmg; this.kb = kb; this.w = 14; this.h = 5; this.active = true; this.color = color;
-            }
-            draw() {
-                ctx.fillStyle = this.color; ctx.shadowBlur = 8; ctx.shadowColor = this.color;
-                ctx.fillRect(this.x, this.y, this.w, this.h); ctx.shadowBlur = 0;
-            }
-            update() {
-                this.x += this.vx;
-                if (this.x < 0 || this.x > canvas.width) this.active = false;
-                
-                players.forEach(pl => {
-                    if (pl.id !== this.ownerId && this.active &&
-                        this.x < pl.x + pl.w && this.x + this.w > pl.x &&
-                        this.y < pl.y + pl.h && this.y + this.h > pl.y) {
-                        pl.takeDamage(this.dmg, this.kb, this.vx > 0 ? 1 : -1);
-                        this.active = false;
-                    }
-                });
-            }
-        }
-
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y; this.color = color;
-                this.vx = (Math.random() - 0.5) * 8; this.vy = (Math.random() - 0.5) * 8;
-                this.life = 1.0; this.decay = Math.random() * 0.06 + 0.03;
-            }
-            update() {
-                this.x += this.vx; this.y += this.vy; this.life -= this.decay;
-                ctx.fillStyle = this.color; ctx.globalAlpha = Math.max(0, this.life);
-                ctx.fillRect(this.x, this.y, 3, 3); ctx.globalAlpha = 1.0;
-            }
-        }
-
-        function checkMeleeHit(attacker, multiplier) {
-            let hitX = attacker.facing === 1 ? attacker.x + attacker.w : attacker.x - 35;
-            let hitW = 35;
-            
-            players.forEach(pl => {
-                if (pl.id !== attacker.id && 
-                    hitX < pl.x + pl.w && hitX + hitW > pl.x &&
-                    attacker.y + 10 < pl.y + pl.h && attacker.y + 40 > pl.y) {
-                    pl.takeDamage(attacker.baseDmg * multiplier, attacker.baseKb * multiplier, attacker.facing);
-                }
-            });
+        // --- GESTION DES MENUS ---
+        function openMenu(type) {
+            document.getElementById('main-menu').style.display = 'none';
+            if (type === 'local') { document.getElementById('local-menu').style.display = 'flex'; gameMode = 'local'; }
+            else if (type === 'network') { document.getElementById('network-menu').style.display = 'flex'; gameMode = 'network'; }
         }
 
         function updateHUD() {
             players.forEach(pl => {
-                let pctEl = document.getElementById(`p${pl.id}-pct`);
-                let lEl = document.getElementById(`p${pl.id}-l`);
-                if (pctEl && lEl) {
-                    pctEl.innerText = pl.percent + "%";
-                    lEl.innerText = pl.lives;
-                    pctEl.style.color = pl.percent > 100 ? '#ef4444' : (pl.percent > 50 ? '#f59e0b' : pl.color);
-                }
+                let pctEl = document.getElementById(`p${pl.id}-pct`); let lEl = document.getElementById(`p${pl.id}-l`);
+                if(pctEl && lEl) { pctEl.innerText = Math.floor(pl.percent)+"%"; lEl.innerText = pl.lives; pctEl.style.color = pl.percent>100?'#ef4444':(pl.percent>50?'#f59e0b':pl.color); }
             });
         }
-
-        function startGame() {
-            document.getElementById('menu-overlay').style.display = 'none';
-            document.getElementById('hud').style.display = 'grid';
-            
-            platforms = mapData[mapChoice];
-            players = [
-                new Player(1, 150, selections[0]),
-                new Player(2, 300, selections[1]),
-                new Player(3, 450, selections[2]),
-                new Player(4, 600, selections[3])
-            ];
-            
-            items = []; itemSpawnTimer = 0; gameActive = true;
-            updateHUD();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            requestAnimationFrame(gameLoop);
+        function checkGameEnd() {
+            let alive = players.filter(pl => pl.lives>0);
+            if(alive.length <= 1) {
+                gameActive = false; document.getElementById('game-over-overlay').style.display = 'flex';
+                let txt = alive.length===1 ? `JOUEUR ${alive[0].id} GAGNE !` : "MATCH NUL !";
+                document.getElementById('winner-text').innerText = txt;
+                if(alive.length===1) document.getElementById('winner-text').style.color = alive[0].color;
+            }
         }
 
-        function checkGameEnd() {
-            let alivePlayers = players.filter(pl => pl.lives > 0);
-            if (alivePlayers.length <= 1) {
-                gameActive = false;
-                document.getElementById('game-over-overlay').style.display = 'flex';
-                let winText = alivePlayers.length === 1 ? `JOUEUR ${alivePlayers[0].id} GAGNE !` : `MATCH NUL !`;
-                document.getElementById('winner-text').innerText = winText;
-                if (alivePlayers.length === 1) {
-                    document.getElementById('winner-text').style.color = alivePlayers[0].color;
-                }
-            }
+        // ==========================================
+        // ====== MODE LOCAL (Jusqu'à 4 Joueurs) ====
+        // ==========================================
+        let locSelections = [], locMapChoice = null;
+        function chooseChar(type) { locSelections.push(type); playSound('powerup'); document.getElementById('instruction-title').innerText = locSelections.length<4 ? `Sélection Joueur ${locSelections.length+1}` : "Choisissez la map"; }
+        function chooseMap(idx) { locMapChoice = idx; playSound('powerup'); if(locSelections.length>0) document.getElementById('start-local-btn').style.display = 'block'; }
+        
+        function startLocalGame() {
+            document.getElementById('local-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid';
+            platforms = mapData[locMapChoice];
+            players = locSelections.map((char, i) => { document.getElementById(`h${i+1}`).style.display = 'block'; return new Player(i+1, 150 + (i*150), char); });
+            gameActive = true; updateHUD(); if(audioCtx.state==='suspended') audioCtx.resume();
+            requestAnimationFrame(gameLoopLocal);
         }
 
         window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-        function gameLoop() {
-            if (!gameActive) return;
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.save();
-            if (screenShake > 0) {
-                ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
-                screenShake--;
-            }
+        function getCtrl(pId) {
+            if(pId===1) return {left: keys['q'], right: keys['d'], jump: keys['z'], atk: keys['f'], dash: keys['e']};
+            if(pId===2) return {left: keys['arrowleft'], right: keys['arrowright'], jump: keys['arrowup'], atk: keys['l'], dash: keys['m']};
+            if(pId===3) return {left: keys['j'], right: keys['l'], jump: keys['i'], atk: keys['o'], dash: keys['u']};
+            if(pId===4) return {left: keys['4'], right: keys['6'], jump: keys['8'], atk: keys['5'], dash: keys['0']};
+            return {};
+        }
 
-            itemSpawnTimer++;
-            if (itemSpawnTimer > 500 && items.length === 0) {
-                items.push(new Item(Math.random() * 500 + 150, 100));
-                itemSpawnTimer = 0;
-            }
+        function gameLoopLocal() {
+            if(!gameActive) return; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save();
+            if(screenShake>0) { ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake); screenShake--; }
+            itemSpawnTimer++; if(itemSpawnTimer>500 && items.length===0) { items.push(new Item(Math.random()*500+150, 100)); itemSpawnTimer=0; }
 
-            // Plateformes
-            ctx.fillStyle = '#1f2937'; ctx.shadowBlur = 8; ctx.shadowColor = '#000';
-            platforms.forEach(p => { 
-                ctx.fillRect(p.x, p.y, p.w, p.h); 
-                ctx.fillStyle = '#0ff'; ctx.globalAlpha = 0.2; ctx.fillRect(p.x, p.y, p.w, 2); ctx.globalAlpha = 1;
-                ctx.fillStyle = '#1f2937';
-            });
-            ctx.shadowBlur = 0;
+            ctx.fillStyle='#1f2937'; ctx.shadowBlur=8; ctx.shadowColor='#000';
+            platforms.forEach(p => { ctx.fillRect(p.x,p.y,p.w,p.h); ctx.fillStyle='#0ff'; ctx.globalAlpha=0.2; ctx.fillRect(p.x,p.y,p.w,2); ctx.globalAlpha=1; ctx.fillStyle='#1f2937'; }); ctx.shadowBlur=0;
 
-            // Items
-            for (let i = items.length - 1; i >= 0; i--) {
-                items[i].draw();
-                items[i].y += 2;
-                for (let p of platforms) {
-                    if (items[i].y + items[i].h >= p.y && items[i].x + items[i].w > p.x && items[i].x < p.x + p.w) {
-                        items[i].y = p.y - items[i].h;
-                    }
+            items.forEach((it, i) => { it.draw(); it.y+=2; platforms.forEach(p=>{if(it.y+it.h>=p.y && it.x+it.w>p.x && it.x<p.x+p.w) it.y=p.y-it.h;});
+                players.forEach(pl=>{if(pl.x<it.x+it.w && pl.x+pl.w>it.x && pl.y<it.y+it.h && pl.y+pl.h>it.y) { pl.applyBuff(it.type); items.splice(i,1); }}); });
+
+            players.forEach(pl => { pl.update(getCtrl(pl.id)); pl.draw(); });
+            for(let i=projectiles.length-1;i>=0;i--){ projectiles[i].update(); if(projectiles[i].active) projectiles[i].draw(); else projectiles.splice(i,1); }
+            for(let i=particles.length-1;i>=0;i--){ particles[i].update(); if(particles[i].life<=0) particles.splice(i,1); }
+            ctx.restore(); requestAnimationFrame(gameLoopLocal);
+        }
+
+        // ==========================================
+        // ====== MODE RÉSEAU (1v1 P2P Souris) ======
+        // ==========================================
+        const peerNet = new Peer();
+        let connNet = null, isHost = false;
+        const myNetKeys = { left: false, right: false, jump: false, atk: false, dash: false }; // atk = normal (right click), dash = heavy (left click)
+        const p2NetKeys = { left: false, right: false, jump: false, atk: false, dash: false };
+
+        peerNet.on('open', id => { document.getElementById('my-id').innerText = id; });
+
+        function hostGame() { document.getElementById('status-text').innerText = "En attente..."; isHost = true; peerNet.on('connection', c => { connNet = c; setupNetwork(); }); }
+        function joinGame() { let id = document.getElementById('join-id').value; if(!id) return; document.getElementById('status-text').innerText = "Connexion..."; connNet = peerNet.connect(id); isHost = false; setupNetwork(); }
+
+        function setupNetwork() {
+            connNet.on('open', () => {
+                document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid';
+                document.getElementById('h1').style.display = 'block'; document.getElementById('n1').innerText = "Hôte";
+                document.getElementById('h2').style.display = 'block'; document.getElementById('n2').innerText = "Client";
+                gameActive = true;
+                if(isHost) {
+                    platforms = mapData[0]; // Map Standard forcée pour le réseau
+                    players = [new Player(1, 200, 'ninja'), new Player(2, 550, 'tank')];
+                    if(audioCtx.state==='suspended') audioCtx.resume();
+                    requestAnimationFrame(hostLoop);
+                } else {
+                    canvas.style.cursor = 'crosshair'; // Viseur pour le client
                 }
-                players.forEach(pl => {
-                    if (pl.x < items[i].x + items[i].w && pl.x + pl.w > items[i].x &&
-                        pl.y < items[i].y + items[i].h && pl.y + pl.h > items[i].y) {
-                        pl.applyBuff(items[i].type);
-                        items.splice(i, 1);
-                    }
-                });
-            }
+            });
+            connNet.on('data', data => {
+                if(isHost && data.type==='inputs') Object.assign(p2NetKeys, data.keys);
+                if(!isHost && data.type==='state') {
+                    // Client reçoit l'état complet du jeu calculé par l'Hôte
+                    platforms = data.state.platforms; projectiles = data.state.projectiles; items = data.state.items;
+                    // Mise à jour visuelle des joueurs
+                    if(players.length === 0) players = [new Player(1, 0, 'ninja'), new Player(2, 0, 'tank')];
+                    players[0] = Object.assign(players[0], data.state.p1);
+                    players[1] = Object.assign(players[1], data.state.p2);
+                    drawClientGame(); updateHUD();
+                }
+            });
+        }
 
-            // Contrôles 4 joueurs: 
-            // J1: ZQSD+F+E | J2: Flèches+L+M | J3: IJKL+O+U | J4: 8456+5+0 (Pavé numérique géré par keycodes)
-            players[0].update({left: 'q', right: 'd', jump: 'z', atk: 'f', dash: 'e'});
-            players[1].update({left: 'arrowleft', right: 'arrowright', jump: 'arrowup', atk: 'l', dash: 'm'});
-            players[2].update({left: 'j', right: 'l', jump: 'i', atk: 'o', dash: 'u'}); // Simplifié pour J3
-            players[3].update({left: '4', right: '6', jump: '8', atk: '5', dash: '0'}); // Pavé numérique J4
-            
-            for (let i = projectiles.length - 1; i >= 0; i--) {
-                projectiles[i].update();
-                if (projectiles[i].active) projectiles[i].draw();
-                else projectiles.splice(i, 1);
-            }
-            
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                if (particles[i].life <= 0) particles.splice(i, 1);
-            }
+        function sendNetInputs() { if(connNet && connNet.open && !isHost) connNet.send({type:'inputs', keys:myNetKeys}); }
 
+        // Contrôles Souris / Clavier exclusifs au mode réseau
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        canvas.addEventListener('mousedown', e => { if(gameMode==='network') { if(e.button===0) myNetKeys.dash=true; if(e.button===2) myNetKeys.atk=true; sendNetInputs(); } });
+        canvas.addEventListener('mouseup', e => { if(gameMode==='network') { if(e.button===0) myNetKeys.dash=false; if(e.button===2) myNetKeys.atk=false; sendNetInputs(); } });
+        window.addEventListener('keydown', e => { if(gameMode==='network') { 
+            if(e.key==='ArrowLeft'||e.key==='q') myNetKeys.left=true; if(e.key==='ArrowRight'||e.key==='d') myNetKeys.right=true; 
+            if(e.key===' '){ myNetKeys.jump=true; e.preventDefault(); } if(e.key==='e') myNetKeys.dash=true;
+            sendNetInputs(); 
+        }});
+        window.addEventListener('keyup', e => { if(gameMode==='network') { 
+            if(e.key==='ArrowLeft'||e.key==='q') myNetKeys.left=false; if(e.key==='ArrowRight'||e.key==='d') myNetKeys.right=false; 
+            if(e.key===' ') myNetKeys.jump=false; if(e.key==='e') myNetKeys.dash=false;
+            sendNetInputs(); 
+        }});
+
+        function hostLoop() { // Seul l'hôte exécute ce code
+            if(!gameActive) return; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save();
+            if(screenShake>0) { ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake); screenShake--; }
+            
+            itemSpawnTimer++; if(itemSpawnTimer>500 && items.length===0) { items.push(new Item(Math.random()*500+150, 100)); itemSpawnTimer=0; }
+
+            ctx.fillStyle='#1f2937'; ctx.shadowBlur=8; ctx.shadowColor='#000';
+            platforms.forEach(p => { ctx.fillRect(p.x,p.y,p.w,p.h); ctx.fillStyle='#0ff'; ctx.globalAlpha=0.2; ctx.fillRect(p.x,p.y,p.w,2); ctx.globalAlpha=1; ctx.fillStyle='#1f2937'; }); ctx.shadowBlur=0;
+
+            items.forEach((it, i) => { it.draw(); it.y+=2; platforms.forEach(p=>{if(it.y+it.h>=p.y && it.x+it.w>p.x && it.x<p.x+p.w) it.y=p.y-it.h;});
+                players.forEach(pl=>{if(pl.x<it.x+it.w && pl.x+pl.w>it.x && pl.y<it.y+it.h && pl.y+pl.h>it.y) { pl.applyBuff(it.type); items.splice(i,1); }}); });
+
+            players[0].update(myNetKeys); players[1].update(p2NetKeys);
             players.forEach(pl => pl.draw());
-            ctx.restore();
+            
+            for(let i=projectiles.length-1;i>=0;i--){ projectiles[i].update(); if(projectiles[i].active) projectiles[i].draw(); else projectiles.splice(i,1); }
+            for(let i=particles.length-1;i>=0;i--){ particles[i].update(); if(particles[i].life<=0) particles.splice(i,1); }
+            
+            // L'Hôte envoie le "monde" au Client
+            if(connNet && connNet.open) {
+                connNet.send({type: 'state', state: { p1: players[0], p2: players[1], platforms: platforms, projectiles: projectiles, items: items }});
+            }
+            
+            ctx.restore(); requestAnimationFrame(hostLoop);
+        }
 
-            requestAnimationFrame(gameLoop);
+        function drawClientGame() { // Seul le Client exécute ça pour dessiner
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle='#1f2937'; platforms.forEach(p => { ctx.fillRect(p.x,p.y,p.w,p.h); ctx.fillStyle='#0ff'; ctx.globalAlpha=0.2; ctx.fillRect(p.x,p.y,p.w,2); ctx.globalAlpha=1; ctx.fillStyle='#1f2937'; });
+            items.forEach(it => { ctx.fillStyle=it.color; ctx.shadowBlur=10; ctx.shadowColor=it.color; ctx.fillRect(it.x, it.y, it.w, it.h); ctx.fillStyle='#fff'; ctx.font="bold 11px Arial"; ctx.fillText(it.type==='dmg'?'💥':(it.type==='heal'?'💖':'⚡'), it.x+3, it.y+15); ctx.shadowBlur=0; });
+            players.forEach(pl => {
+                if(pl.invincibleTimer>0 && Math.floor(Date.now()/100)%2===0) return;
+                ctx.fillStyle = pl.color; ctx.font = "bold 12px Arial"; ctx.fillText(`J${pl.id}: ${Math.floor(pl.percent)}%`, pl.x-5, pl.y-12);
+                ctx.fillStyle = pl.dashTimer>0?'#fff':(pl.stunTimer>0?'#aaa':pl.color); ctx.shadowBlur = pl.buffType?20:10; ctx.shadowColor = pl.color; ctx.fillRect(pl.x, pl.y, pl.w, pl.h); ctx.shadowBlur = 0;
+                if(pl.attackTimer>10 && !pl.isRanged) { ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fillRect(pl.facing===1?pl.x+pl.w:pl.x-35, pl.y+10, 35, 25); }
+            });
+            projectiles.forEach(pr => { ctx.fillStyle=pr.color; ctx.shadowBlur=8; ctx.shadowColor=pr.color; ctx.fillRect(pr.x, pr.y, pr.w, pr.h); ctx.shadowBlur=0; });
         }
     </script>
 </body>
