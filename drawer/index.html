@@ -91,7 +91,7 @@
             <div class="flag" id="flag-en" onclick="setLang('en')">🇬🇧</div>
         </div>
 
-        <button class="btn" style="background:#ff007f; padding: 15px 30px; width:100%; margin-bottom:10px;" onclick="startGame('gartic')">📞 Lancer GARTIC PHONE</button>
+        <button class="btn" style="background:#ff007f; padding: 15px 30px; width:100%; margin-bottom:10px;" onclick="startGame('gartic')">📞 Draw the sentence</button>
         <button class="btn" style="background:#00f0ff; padding: 15px 30px; width:100%;" onclick="startGame('classic')">🖌️ Lancer CLASSIQUE (3 Tours)</button>
     </div>
 
@@ -161,7 +161,7 @@
 
     <!-- RESULTATS GARTIC -->
     <div id="results-screen">
-        <h1 style="text-align:center;">Le Téléphone Arabe est terminé !</h1>
+        <h1 style="text-align:center;">Le Téléphone Arabe est Arabe !</h1>
         <div id="chains-container"></div>
         <button class="btn" style="margin: 0 auto; display:block;" onclick="location.reload()">Quitter</button>
     </div>
@@ -505,7 +505,7 @@
                 if(state.round % 2 === 0) {
                     document.getElementById('action-overlay').style.display = 'flex';
                     if(state.round === 0) {
-                        document.getElementById('action-title').innerText = "Invente une phrase farfelue !";
+                        document.getElementById('action-title').innerText = "Invente une phrase de ZINZIN !";
                         document.getElementById('turn-info').innerText = "Écriture du mot secret";
                     } else {
                         document.getElementById('action-title').innerText = "Que représente ce dessin ?";
@@ -515,7 +515,7 @@
                     }
                 } else {
                     document.getElementById('word-display').innerText = myChain.steps[myChain.steps.length - 1].content;
-                    document.getElementById('turn-info').innerText = "Dessine ceci :";
+                    document.getElementById('turn-info').innerText = "Dessine moi ca: :";
                     document.getElementById('toolbar').style.display = 'flex';
                     document.getElementById('btn-submit-draw').style.display = 'block';
                     drawCanvas.style.pointerEvents = 'auto'; 
