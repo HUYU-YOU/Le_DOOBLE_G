@@ -87,10 +87,18 @@ p.subtitle {
     box-shadow: 0 15px 40px rgba(102, 252, 241, 0.3); 
 }
 
-/* On force le texte à rester par-dessus la vidéo */
+/* ÉLÉMENTS DE LA CARTE (Icone, Titre, Desc) */
 .game-icon, .game-title, .game-desc {
     position: relative;
     z-index: 1;
+    transition: opacity 0.3s ease; /* Disparition fluide */
+}
+
+/* AU SURVOL : On cache les textes et l'icône ! */
+.game-card:hover .game-icon,
+.game-card:hover .game-title,
+.game-card:hover .game-desc {
+    opacity: 0;
 }
 
 .game-icon { 
@@ -114,7 +122,7 @@ p.subtitle {
     line-height: 1.4; 
 }
 
-/* Vidéos de fond au survol */
+/* Vidéos de fond */
 .bg-video {
     position: absolute;
     top: 0;
@@ -128,6 +136,7 @@ p.subtitle {
     pointer-events: none;
 }
 
+/* AU SURVOL : La vidéo passe à 100% visible (vu que le texte est caché) */
 .game-card:hover .bg-video {
-    opacity: 0.6; /* Sombre la vidéo pour lire le texte */
+    opacity: 1; 
 }
