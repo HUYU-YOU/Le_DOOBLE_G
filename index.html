@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arcade du Bureau</title>
-    <!-- Lien vers ton nouveau fichier CSS -->
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,6 @@
     
     <p class="subtitle">Initialisation du système de combat...</p>
     
-    <!-- LA GRILLE COMMENCE ICI, AVANT LE PREMIER JEU -->
     <div class="game-grid">
         
         <a href="poker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
@@ -78,10 +77,10 @@
             <div class="game-desc">Teste qui est le gros puant</div>
         </a>
         
-    </div> <!-- LA GRILLE SE FERME ICI, APRÈS LE DERNIER JEU -->
+    </div> 
 
     <script>
-        // Scripts pour lancer et pauser la vidéo au survol
+  
         function playVid(card) {
             let vid = card.querySelector('.bg-video');
             if(vid) vid.play();
@@ -91,7 +90,7 @@
             let vid = card.querySelector('.bg-video');
             if(vid) {
                 vid.pause();
-                vid.currentTime = 0; // Rembobine
+                vid.currentTime = 0; 
             }
         }
     </script>
