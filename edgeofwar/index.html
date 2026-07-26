@@ -2,335 +2,487 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Edge of War - Tactical Strike</title>
+    <title>Edge of War - Tactical Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; }
-        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 20px; text-shadow: 0 0 10px #fff; }
+        :root { --bg: #0a0e17; --panel: rgba(18, 25, 43, 0.9); --primary: #0088ff; --enemy: #ff2a2a; --gold: #ffd700; --xp: #b82aff; --spell: #00ffcc;}
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none;}
+        h1 { margin-top: 0; color: #fff; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px var(--primary); }
         
-        .menu-container { background: var(--panel); padding: 30px; border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); text-align: center; margin-top: 50px; border: 1px solid rgba(255,255,255,0.1); }
-        .input-box { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #45a29e; background: #0b0c10; color: #fff; text-align: center; font-weight: bold; }
-        .btn { background: #fff; color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; margin: 10px; transition: 0.2s; }
-        .btn:hover { transform: scale(1.05); box-shadow: 0 0 15px #fff; }
+        #game-container { position: relative; background: var(--panel); padding: 25px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 850px; border: 1px solid rgba(0, 136, 255, 0.2); backdrop-filter: blur(10px); overflow: hidden; }
         
-        #game-container { display: none; position: relative; margin-top: 20px; background: #1a1a2e; border: 2px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px #000; overflow: hidden; }
-        canvas { display: block; }
-        
-        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; }
-        .base-hp { background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 8px; font-size: 1.2em; font-weight: bold; border: 1px solid; }
-        #hp-left { border-color: var(--p1); color: var(--p1); }
-        #hp-right { border-color: var(--p2); color: var(--p2); }
-        
-        #controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); }
-        .unit-btn { background: #333; border: 2px solid #555; color: #fff; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .unit-btn:hover:not(:disabled) { border-color: var(--p1); background: #444; }
-        .unit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        #money-display { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #ffd700; border: 1px solid #ffd700; }
+        /* Overlays Menus */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 14, 23, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 15px 35px; font-size: 1.2em; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 136, 255, 0.4); margin: 10px; transition: 0.2s; }
+        .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 136, 255, 0.6); }
+        input.net-input { padding: 12px; border-radius: 5px; border: 1px solid var(--primary); font-weight: bold; text-align: center; margin: 10px; background: #111; color: #fff; font-size: 1.1em; }
 
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
-        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); border-color: #fff; transform: scale(1.05); }
+        .hud { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .base-stats { display: flex; flex-direction: column; width: 32%; }
+        .base-name { font-weight: bold; font-size: 1.1em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;}
+        .player-name { color: var(--primary); text-shadow: 0 0 10px rgba(0, 136, 255, 0.5); }
+        .enemy-name { color: var(--enemy); text-align: right; text-shadow: 0 0 10px rgba(255, 42, 42, 0.5); }
+        .health-bar-container { width: 100%; height: 12px; background: rgba(0,0,0,0.6); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        .health-bar { height: 100%; transition: width 0.3s ease; }
+        #p1-hp-bar { background: linear-gradient(90deg, #0055ff, var(--primary)); width: 100%; box-shadow: 0 0 10px var(--primary); }
+        #p2-hp-bar { background: linear-gradient(90deg, #aa0000, var(--enemy)); width: 100%; float: right; box-shadow: 0 0 10px var(--enemy); }
+        .economy { text-align: center; width: 30%; display: flex; flex-direction: column; justify-content: center;}
+        .gold { font-size: 2em; color: var(--gold); font-weight: bold; text-shadow: 0 0 15px rgba(255, 215, 0, 0.5); margin-bottom: 5px;}
+        .xp-container { margin-top: 8px; background: rgba(0,0,0,0.6); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);}
+        #xp-bar { height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--xp);}
+        #btn-evolve { display: none; width: 100%; background: var(--xp); color: white; border: none; padding: 10px; margin-top: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 15px var(--xp); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 15px var(--xp); } 50% { transform: scale(1.03); box-shadow: 0 0 25px var(--xp); } 100% { transform: scale(1); box-shadow: 0 0 15px var(--xp); } }
+        canvas { border-radius: 8px; width: 100%; box-shadow: inset 0 0 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); background: #111; }
+        
+        .panel-title { color: #9ca3af; font-size: 0.9em; text-transform: uppercase; margin: 15px 0 5px 0; letter-spacing: 1px;}
+        .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .spells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 10px;}
+        
+        .unit-btn { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; backdrop-filter: blur(5px); }
+        .unit-btn img { height: 40px; object-fit: contain; margin-bottom: 5px; }
+        .unit-btn:hover:not(:disabled) { background: rgba(0, 136, 255, 0.15); border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 136, 255, 0.2); }
+        .unit-btn:disabled { opacity: 0.4; cursor: not-allowed; background: rgba(0,0,0,0.3); filter: grayscale(100%); }
+        
+        .spell-btn { background: rgba(0, 255, 204, 0.1); border: 1px solid var(--spell); color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; position: relative; overflow: hidden;}
+        .spell-btn:hover:not(:disabled) { background: rgba(0, 255, 204, 0.3); box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);}
+        .spell-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #555;}
+        .cooldown-overlay { position: absolute; bottom: 0; left: 0; height: 100%; width: 0%; background: rgba(0,0,0,0.6); transition: width 0.1s linear; pointer-events: none;}
+        
+        .unit-cost { color: var(--gold); font-size: 1.1em; text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+        .unit-locked { position: absolute; font-size: 1.4em; color: var(--enemy); transform: rotate(-20deg); opacity: 0.9; top: 25%; font-weight: 900; background: rgba(0,0,0,0.8); padding: 2px 10px; border-radius: 5px; border: 1px solid var(--enemy); text-shadow: 0 0 5px var(--enemy); }
+        
+        .hub-link { color: rgba(255,255,255,0.5); text-decoration: none; margin-top: 20px; display: inline-block; transition: 0.2s; font-size: 0.9em; }
+        .hub-link:hover { color: #fff; }
     </style>
 </head>
 <body>
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <h1>Edge of War</h1>
-
-    <!-- MENU PRINCIPAL -->
-    <div class="menu-container" id="main-menu">
-        <h2 style="color:var(--p1);">DÉPLOIEMENT TACTIQUE</h2>
-        <button class="btn" onclick="startSolo()">Campagne Solo (Vs IA)</button>
-        <button class="btn" onclick="showNetMenu()" style="background:var(--p2);color:#fff;">Mode Réseau (P2P)</button>
-    </div>
-
-    <!-- MENU RESEAU -->
-    <div class="menu-container" id="net-menu" style="display: none;">
-        <h2>Connexion Serveur</h2>
-        <p>Votre ID : <span id="my-id" style="color:var(--p1);font-weight:bold;">Création...</span></p>
-        <button class="btn" onclick="hostGame()">Héberger la partie</button>
-        <p>OU</p>
-        <input type="text" id="join-id" class="input-box" placeholder="ID de la partie">
-        <button class="btn" onclick="joinGame()" style="background:var(--p2);color:#fff;">Rejoindre</button>
-        <p id="status-text" style="color: #aaa; margin-top: 15px;"></p>
-        <button class="btn" style="background:#333; color:#fff; margin-top:20px; font-size:0.8em;" onclick="location.reload()">Retour</button>
-    </div>
-
-    <!-- JEU -->
+    <h1>Tactical Command</h1>
     <div id="game-container">
-        <canvas id="gameCanvas" width="900" height="400"></canvas>
-        <div id="hud">
-            <div class="base-hp" id="hp-left">BASE GAUCHE: <span id="b1-hp">1000</span></div>
-            <div class="base-hp" id="hp-right">BASE DROITE: <span id="b2-hp">1000</span></div>
+        
+        <!-- MENU PRINCIPAL -->
+        <div class="overlay" id="main-menu">
+            <h1 style="font-size: 3em; margin-bottom: 40px; color: var(--primary);">SÉLECTION DU MODE</h1>
+            <button class="btn-main" onclick="startSolo()">Mode Solo (Vs IA)</button>
+            <button class="btn-main" onclick="showNetworkMenu()" style="background:var(--enemy);">Mode Réseau (P2P)</button>
         </div>
-        <div id="money-display">Crédits: <span id="money">0</span></div>
-        <div id="controls">
-            <button class="unit-btn" id="btn-fantassin" onclick="spawnUnit('fantassin')">Fantassin (10)</button>
-            <button class="unit-btn" id="btn-drone" onclick="spawnUnit('drone')">Drone (30)</button>
-            <button class="unit-btn" id="btn-tank" onclick="spawnUnit('tank')">Tank (50)</button>
+
+        <!-- MENU RÉSEAU -->
+        <div class="overlay" id="network-menu" style="display: none;">
+            <h2 style="color: var(--primary); font-size: 2.5em;">Lobby Réseau</h2>
+            <p style="font-size: 1.2em;">Votre ID : <span id="my-id" style="color:var(--primary);font-weight:bold;">Création...</span></p>
+            <button class="btn-main" onclick="hostGame()">Créer (Hôte - Base Ouest)</button>
+            <p style="margin: 20px 0;">OU</p>
+            <input type="text" id="join-id" class="net-input" placeholder="Coller l'ID de l'hôte">
+            <button class="btn-main" onclick="joinGame()" style="background:var(--enemy);">Rejoindre (Client - Base Est)</button>
+            <p id="status-text" style="color: #aaa; margin-top: 20px; font-weight:bold;"></p>
+            <button class="btn-main" style="background:#333; font-size: 0.9em; margin-top: 30px;" onclick="location.reload()">Retour</button>
+        </div>
+
+        <!-- ECRAN DE FIN -->
+        <div class="overlay" id="game-over" style="display: none;">
+            <h2 id="end-message" style="font-size: 3.5em; margin-bottom: 15px; text-transform: uppercase;"></h2>
+            <button class="btn-main" onclick="location.reload()">Nouvelle Bataille</button><br>
+        </div>
+
+        <!-- HUD EN JEU -->
+        <div class="hud" id="game-hud" style="visibility: hidden;">
+            <div class="base-stats">
+                <div class="base-name player-name">Base Ouest (Tech <span id="p1-age">1</span>)</div>
+                <div class="health-bar-container"><div class="health-bar" id="p1-hp-bar"></div></div>
+                <div style="font-size: 0.75em; margin-top: 6px; color: #a9a9b3;">XP : <span id="xp-text">0/100</span></div>
+                <div class="xp-container"><div id="xp-bar"></div></div>
+                <button id="btn-evolve" onclick="sendAction('evolve')">Upgrade Tech !</button>
+            </div>
+            <div class="economy">
+                <div style="font-size: 0.9em; color: #aaa; text-transform:uppercase;">Vos Ressources</div>
+                <div class="gold"><span id="gold-display">50</span> 💰</div>
+            </div>
+            <div class="base-stats">
+                <div class="base-name enemy-name">Base Est (Tech <span id="p2-age">1</span>)</div>
+                <div class="health-bar-container"><div class="health-bar" id="p2-hp-bar"></div></div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="250"></canvas>
+        
+        <div class="panel-title">Support Tactique (Sorts)</div>
+        <div class="spells">
+            <button class="spell-btn" id="btn-spell1" onclick="sendAction('spell', 1)">
+                Pluie de Plasma (40 💰) <br><small>Dégâts sur toute la ligne</small>
+                <div class="cooldown-overlay" id="cd-spell1"></div>
+            </button>
+            <button class="spell-btn" id="btn-spell2" onclick="sendAction('spell', 2)">
+                Nanobots Médicaux (60 💰) <br><small>Soigne vos unités & base</small>
+                <div class="cooldown-overlay" id="cd-spell2"></div>
+            </button>
+        </div>
+
+        <div class="panel-title">Déploiement</div>
+        <div class="controls" id="deployment-controls">
+            <!-- Remplis dynamiquement par JS pour afficher les bons sprites (est/ouest) -->
         </div>
     </div>
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
     <script>
-        // --- ASSETS ---
+        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+        
+        // --- CHARGEMENT IMAGES ---
         const imgs = {};
         const imgFiles = {
-            'fantassin': 'img/fantassin.png',
-            'drone': 'img/drone.png',
-            'tank': 'img/tank.png',
-            'bg': 'img/bg.png' // Image de fond facultative
+            'map1': 'img/map1.png', 'map2': 'img/map2.png',
+            'fantassin_est': 'img/fantassin_est.png', 'fantassin_ouest': 'img/fantassin_ouest.png',
+            'tirreur_est': 'img/tirreur_est.png', 'tirreur_ouest': 'img/tirreur_ouest.png',
+            'blindé_est': 'img/blindé_est.png', 'blindé_ouest': 'img/blindé_ouest.png',
+            'sniper_est': 'img/sniper_est.png', 'sniper_ouest': 'img/sniper_ouest.png'
         };
-        Object.keys(imgFiles).forEach(key => { imgs[key] = new Image(); imgs[key].src = imgFiles[key]; });
+        Object.keys(imgFiles).forEach(k => { imgs[k] = new Image(); imgs[k].src = imgFiles[k]; });
 
-        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
-        const peer = new Peer(); let conn = null, isHost = false, gameMode = null, gameActive = false;
-        let gameLoopId = null;
+        // --- RESEAU & ETAT ---
+        const peer = new Peer();
+        let conn = null, gameMode = null, myTeam = 1, gameActive = false, timeElapsed = 0;
+        
+        // L'Hôte (ou Solo) gère l'état central du jeu
+        let gameState = {
+            p1: { gold: 50, xp: 0, age: 1, hp: 500, maxHp: 500, spells: { 1: 0, 2: 0 } },
+            p2: { gold: 50, xp: 0, age: 1, hp: 500, maxHp: 500, spells: { 1: 0, 2: 0 } }, // P2 est l'IA en Solo, ou le Client en Réseau
+            units: [],
+            effects: [] // Animations partagées (lasers, soins)
+        };
 
+        const xpToEvolve = 100;
+        const bases = { 
+            1: { x: -20, w: 90, h: 120, spawnX: 70, dir: 1 }, 
+            2: { x: 730, w: 90, h: 120, spawnX: 730, dir: -1 } 
+        };
+        
+        // STATS UNIFIEES (Vitesse divisée par 2, PvP équilibré)
+        const unitStats = {
+            fantassin: { cost: 15, hp: 45, dmg: 6, spd: 0.6, rng: 15, cd: 50, skin: 'fantassin', w: 25, h: 40, type: 'melee', rew: 10, xp: 10 }, 
+            tireur: { cost: 35, hp: 30, dmg: 12, spd: 0.75, rng: 90, cd: 60, skin: 'tirreur', w: 20, h: 35, type: 'ranged', rew: 15, xp: 15 },
+            blindé: { cost: 100, hp: 180, dmg: 25, spd: 0.4, rng: 20, cd: 40, skin: 'blindé', w: 35, h: 50, type: 'melee', rew: 25, xp: 25 }, 
+            sniper: { cost: 75, hp: 50, dmg: 20, spd: 0.65, rng: 160, cd: 45, skin: 'sniper', w: 25, h: 45, type: 'ranged', rew: 20, xp: 20 }
+        };
+        const spellStats = { 1: { cost: 40, cdMax: 300 }, 2: { cost: 60, cdMax: 400 } };
+
+        class Unit {
+            constructor(team, type) {
+                const s = unitStats[type]; 
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.team = team; this.type = type;
+                this.w = s.w; this.h = s.h; 
+                this.x = team === 1 ? bases[1].spawnX : bases[2].spawnX - this.w; 
+                this.y = 215 - this.h; // Spawn plus bas sur le chemin !
+                
+                this.speed = s.spd * bases[team].dir; 
+                this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; 
+                this.cdMax = s.cd; this.cd = 0; 
+                this.skin = s.skin; this.rew = s.rew; this.xp = s.xp;
+                this.action = 'walk'; this.animCycle = 0;
+            }
+        }
+
+        // --- GESTION MENUS & PEERJS ---
         peer.on('open', id => { document.getElementById('my-id').innerText = id; });
 
-        function showNetMenu() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('net-menu').style.display = 'block'; }
-        
         function startSolo() {
-            gameMode = 'solo'; isHost = true;
-            document.getElementById('main-menu').style.display = 'none'; document.getElementById('game-container').style.display = 'block';
-            gameActive = true; startGameLoop();
+            gameMode = 'solo'; myTeam = 1; 
+            startGame();
+        }
+
+        function showNetworkMenu() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('network-menu').style.display = 'flex';
         }
 
         function hostGame() {
-            let id = document.getElementById('my-id').innerText;
-            if(id && id !== "Création...") {
-                navigator.clipboard.writeText(id).catch(e => console.log(e)); // COPIE AUTOMATIQUE DE L'ID
-                document.getElementById('status-text').innerText = "ID COPIÉ ! En attente d'un adversaire..."; 
-            } else {
-                document.getElementById('status-text').innerText = "En attente...";
-            }
-            isHost = true; gameMode = 'network';
-            peer.on('connection', c => { conn = c; setupConnection(); });
+            document.getElementById('status-text').innerText = "En attente d'un joueur...";
+            gameMode = 'host'; myTeam = 1;
+            peer.on('connection', connection => { conn = connection; setupConnection(); });
         }
 
         function joinGame() {
-            let id = document.getElementById('join-id').value; if(!id) return;
-            document.getElementById('status-text').innerText = "Connexion..."; isHost = false; gameMode = 'network';
-            conn = peer.connect(id); setupConnection();
+            const hostId = document.getElementById('join-id').value;
+            if(!hostId) return;
+            document.getElementById('status-text').innerText = "Connexion...";
+            gameMode = 'client'; myTeam = 2;
+            conn = peer.connect(hostId);
+            setupConnection();
         }
 
         function setupConnection() {
-            conn.on('open', () => {
-                document.getElementById('net-menu').style.display = 'none'; document.getElementById('game-container').style.display = 'block';
-                gameActive = true;
-                if(isHost) { startGameLoop(); }
-            });
+            conn.on('open', () => { startGame(); });
             conn.on('data', data => {
-                if(isHost && data.type === 'spawn') createUnit(data.unitType, 2);
-                if(!isHost && data.type === 'state') {
-                    gameState = data.state; updateHUDClient(); drawGame();
+                if (gameMode === 'host' && data.type === 'action') processAction(2, data.action, data.val);
+                if (gameMode === 'client' && data.type === 'state') {
+                    gameState = data.state;
+                    updateHUD();
                 }
             });
         }
 
-        // --- DONNÉES DU JEU ---
-        const unitData = {
-            'fantassin': { cost: 10, hp: 40, dmg: 5, range: 40, speed: 0.8, w: 30, h: 40, type: 'melee' },
-            'drone': { cost: 30, hp: 60, dmg: 8, range: 150, speed: 1.2, w: 40, h: 40, type: 'ranged' },
-            'tank': { cost: 50, hp: 200, dmg: 20, range: 60, speed: 0.5, w: 70, h: 50, type: 'melee' }
-        };
+        function startGame() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('network-menu').style.display = 'none';
+            document.getElementById('game-hud').style.visibility = 'visible';
+            
+            // Initialisation des boutons avec les bons sprites selon l'équipe
+            let dir = myTeam === 1 ? 'est' : 'ouest';
+            document.getElementById('deployment-controls').innerHTML = `
+                <button class="unit-btn" id="btn-u1" onclick="sendAction('spawn', 'fantassin')"><img src="img/fantassin_${dir}.png">Fantassin <br><span class="unit-cost">15 💰</span></button>
+                <button class="unit-btn" id="btn-u2" onclick="sendAction('spawn', 'tireur')"><img src="img/tirreur_${dir}.png">Tireur <br><span class="unit-cost">35 💰</span></button>
+                <button class="unit-btn" id="btn-u3" onclick="sendAction('spawn', 'blindé')" disabled><img src="img/blindé_${dir}.png">Blindé <br><span class="unit-cost">100 💰</span><span class="unit-locked" id="lock-3">TECH 2</span></button>
+                <button class="unit-btn" id="btn-u4" onclick="sendAction('spawn', 'sniper')" disabled><img src="img/sniper_${dir}.png">Sniper <br><span class="unit-cost">75 💰</span><span class="unit-locked" id="lock-4">TECH 2</span></button>
+            `;
 
-        let gameState = {
-            base1: { hp: 1000, maxHp: 1000, x: 50 },
-            base2: { hp: 1000, maxHp: 1000, x: 850 },
-            units: [], particles: [], money: 20
-        };
+            gameActive = true;
+            if(gameMode === 'host' || gameMode === 'solo') {
+                setInterval(economyTick, 1000);
+            }
+            requestAnimationFrame(gameLoop);
+        }
 
-        // --- GESTION DES UNITÉS ET PHYSIQUE ---
-        let moneyTimer = 0;
-
-        function spawnUnit(type) {
-            if(gameMode === 'solo' || isHost) {
-                if(gameState.money >= unitData[type].cost) {
-                    gameState.money -= unitData[type].cost;
-                    createUnit(type, 1);
+        // --- MOTEUR DE JEU (Géré par Hôte ou Solo) ---
+        function economyTick() {
+            if(!gameActive) return;
+            timeElapsed++;
+            gameState.p1.gold += 3 + gameState.p1.age;
+            gameState.p2.gold += 3 + gameState.p2.age;
+            
+            // IA en Solo
+            if(gameMode === 'solo') {
+                if(timeElapsed === 60) { gameState.p2.age = 2; document.getElementById('p2-age').innerText = 2; }
+                let r = Math.random();
+                if(gameState.p2.age === 1) {
+                    if(gameState.p2.gold >= 35 && r > 0.6) processAction(2, 'spawn', 'tireur');
+                    else if(gameState.p2.gold >= 15) processAction(2, 'spawn', 'fantassin');
+                } else {
+                    if(gameState.p2.gold >= 100 && r > 0.7) processAction(2, 'spawn', 'blindé');
+                    else if(gameState.p2.gold >= 75 && r > 0.4) processAction(2, 'spawn', 'sniper');
+                    else if(gameState.p2.gold >= 35) processAction(2, 'spawn', 'tireur');
                 }
-            } else {
-                // Le client envoie la requête
-                conn.send({type: 'spawn', unitType: type});
             }
         }
 
-        function createUnit(type, team) {
-            let u = unitData[type];
-            gameState.units.push({
-                id: Math.random().toString(36).substr(2, 9),
-                type: type, team: team, hp: u.hp, maxHp: u.hp, dmg: u.dmg, range: u.range, speed: u.speed,
-                w: u.w, h: u.h, atkType: u.type,
-                x: team === 1 ? gameState.base1.x + 40 : gameState.base2.x - 40,
-                y: type === 'drone' ? 100 + Math.random()*50 : 320,
-                cooldown: 0
-            });
-            // Effet visuel Nanobots (Vert)
-            for(let i=0; i<10; i++) gameState.particles.push(new Particle(team===1?100:800, 320, '#39ff14'));
+        function sendAction(action, val) {
+            if(gameMode === 'client') conn.send({type: 'action', action: action, val: val});
+            else processAction(myTeam, action, val);
         }
 
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y; this.color = color;
-                this.vx = (Math.random()-0.5)*4; this.vy = (Math.random()-0.5)*4;
-                this.life = 1.0; this.decay = Math.random()*0.05 + 0.02;
+        function processAction(team, action, val) {
+            let p = team === 1 ? gameState.p1 : gameState.p2;
+            if(action === 'spawn' && p.gold >= unitStats[val].cost) {
+                p.gold -= unitStats[val].cost;
+                gameState.units.push(new Unit(team, val));
+            }
+            else if(action === 'spell' && p.gold >= spellStats[val].cost && p.spells[val] === 0) {
+                p.gold -= spellStats[val].cost;
+                p.spells[val] = spellStats[val].cdMax;
+                if(val === 1) {
+                    gameState.effects.push({ type: 'plasma', team: team, life: 30 });
+                    gameState.units.filter(u => u.team !== team).forEach(u => u.hp -= 40);
+                } else if(val === 2) {
+                    gameState.effects.push({ type: 'nano', team: team, life: 30 });
+                    gameState.units.filter(u => u.team === team).forEach(u => u.hp = Math.min(u.maxHp, u.hp + 50));
+                    p.hp = Math.min(p.maxHp, p.hp + 100);
+                }
+            }
+            else if(action === 'evolve' && p.xp >= xpToEvolve && p.age === 1) {
+                p.age = 2; p.xp = 0; p.maxHp = 1000; p.hp = 1000;
             }
         }
-        
-        class PlasmaBeam {
-            constructor(x1, y1, x2, y2, color) {
-                this.x1=x1; this.y1=y1; this.x2=x2; this.y2=y2; this.color=color; this.life=10;
-            }
-        }
-
-        let beams = [];
 
         function updatePhysics() {
-            moneyTimer++;
-            if(moneyTimer >= 60) { gameState.money += 2; moneyTimer = 0; } // 2 crédits par seconde
-
-            // IA Solo basique
-            if(gameMode === 'solo' && Math.random() < 0.01) {
-                const types = ['fantassin', 'drone', 'tank'];
-                createUnit(types[Math.floor(Math.random()*types.length)], 2);
-            }
-
-            gameState.units.forEach(u => {
-                if(u.cooldown > 0) u.cooldown--;
-
-                // Trouver cible
-                let target = null; let minDist = Infinity;
-                gameState.units.forEach(enemy => {
-                    if(enemy.team !== u.team) {
-                        let dist = Math.abs(enemy.x - u.x);
-                        if(dist < minDist) { minDist = dist; target = enemy; }
-                    }
-                });
-
-                // Cibler la base si aucune unité
-                let enemyBase = u.team === 1 ? gameState.base2 : gameState.base1;
-                if(!target) {
-                    minDist = Math.abs(enemyBase.x - u.x);
-                    target = { isBase: true, x: enemyBase.x, obj: enemyBase };
-                }
-
-                // Avancer ou attaquer
-                if(minDist > u.range) {
-                    u.x += u.team === 1 ? u.speed : -u.speed;
-                } else if(u.cooldown === 0) {
-                    u.cooldown = 60; // 1 attaque par seconde
-                    if(target.isBase) {
-                        target.obj.hp -= u.dmg;
-                        for(let i=0; i<5; i++) gameState.particles.push(new Particle(target.x, 320, '#ffaa00'));
-                    } else {
-                        target.hp -= u.dmg;
-                        for(let i=0; i<5; i++) gameState.particles.push(new Particle(target.x, target.y, '#ff0000'));
-                    }
-                    
-                    if(u.atkType === 'ranged') {
-                        beams.push(new PlasmaBeam(u.x, u.y, target.x, target.y||320, u.team===1?'#00f0ff':'#ff007f'));
-                    }
-                }
+            // Refroidissement des sorts
+            [gameState.p1, gameState.p2].forEach(p => {
+                if(p.spells[1] > 0) p.spells[1]--;
+                if(p.spells[2] > 0) p.spells[2]--;
             });
-
-            // Nettoyage morts
-            gameState.units = gameState.units.filter(u => u.hp > 0);
-
-            // Particules et Lasers
-            for(let i=gameState.particles.length-1; i>=0; i--) {
-                let p = gameState.particles[i]; p.x+=p.vx; p.y+=p.vy; p.life-=p.decay;
-                if(p.life <= 0) gameState.particles.splice(i,1);
+            
+            // Effets
+            for(let i = gameState.effects.length-1; i >= 0; i--) {
+                gameState.effects[i].life--;
+                if(gameState.effects[i].life <= 0) gameState.effects.splice(i, 1);
             }
-            for(let i=beams.length-1; i>=0; i--) {
-                beams[i].life--; if(beams[i].life <= 0) beams.splice(i,1);
+
+            // Unités
+            for (let i = gameState.units.length - 1; i >= 0; i--) {
+                let u = gameState.units[i]; let target = null; u.action = 'walk';
+                
+                // Recherche de cible
+                for (let j = 0; j < gameState.units.length; j++) { 
+                    let other = gameState.units[j]; 
+                    if (u.team !== other.team) { 
+                        let dist = u.team === 1 ? (other.x - (u.x + u.w)) : (u.x - (other.x + other.w)); 
+                        if (dist <= u.rng && dist >= -10) { target = other; break; } 
+                    } 
+                }
+                if (!target) { 
+                    let distToBase = u.team === 1 ? (bases[2].x - (u.x + u.w)) : (u.x - (bases[1].x + bases[1].w)); 
+                    if (distToBase <= u.rng) target = u.team === 1 ? gameState.p2 : gameState.p1; 
+                }
+                
+                if (target) { 
+                    u.action = 'attack'; 
+                    if (u.cd <= 0) { 
+                        target.hp -= u.dmg; u.cd = u.cdMax; 
+                    } 
+                } else {
+                    // Anti-Stacking
+                    let canMove = true; let hitboxSpacing = u.w + 10;
+                    for (let j = 0; j < gameState.units.length; j++) {
+                        let other = gameState.units[j];
+                        if (u.team === other.team && u.id !== other.id) {
+                            if (u.team === 1 && other.x > u.x && (other.x - u.x) < hitboxSpacing) canMove = false;
+                            if (u.team === 2 && u.x > other.x && (u.x - other.x) < hitboxSpacing) canMove = false;
+                        }
+                    }
+                    if(canMove) u.x += u.speed;
+                }
+                
+                if (u.cd > 0) u.cd--;
+                if (u.hp <= 0) { 
+                    let killer = u.team === 1 ? gameState.p2 : gameState.p1;
+                    killer.gold += u.rew; 
+                    if (killer.age === 1) killer.xp += u.xp; 
+                    gameState.units.splice(i, 1); 
+                }
+            }
+
+            // Conditions de Victoire
+            if (gameState.p1.hp <= 0 || gameState.p2.hp <= 0) {
+                gameActive = false; document.getElementById('game-over').style.display = 'flex'; 
+                const msg = document.getElementById('end-message');
+                if (gameState.p1.hp <= 0 && myTeam === 1 || gameState.p2.hp <= 0 && myTeam === 2) { 
+                    msg.innerText = "DÉFAITE TACTIQUE"; msg.style.color = 'var(--enemy)'; msg.style.textShadow = '0 0 20px var(--enemy)'; 
+                } else { 
+                    msg.innerText = "VICTOIRE ABSOLUE"; msg.style.color = 'var(--gold)'; msg.style.textShadow = '0 0 20px var(--gold)'; 
+                }
             }
         }
 
-        // --- RENDU ---
-        function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // --- AFFICHAGE & RENDU ---
+        function drawBackground() {
+            if (imgs['map1'].complete && imgs['map1'].naturalWidth !== 0) ctx.drawImage(imgs['map1'], 0, 0, canvas.width / 2, canvas.height);
+            if (imgs['map2'].complete && imgs['map2'].naturalWidth !== 0) ctx.drawImage(imgs['map2'], canvas.width / 2, 0, canvas.width / 2, canvas.height);
+        }
+
+        function updateHUD() {
+            let myP = myTeam === 1 ? gameState.p1 : gameState.p2;
+            document.getElementById('gold-display').innerText = Math.floor(myP.gold);
             
-            // Background
-            if(imgs['bg'].complete && imgs['bg'].naturalWidth !== 0) ctx.drawImage(imgs['bg'], 0, 0, canvas.width, canvas.height);
-            else {
-                ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0,0,canvas.width,canvas.height);
-                ctx.fillStyle = '#222'; ctx.fillRect(0,350,canvas.width,50); // Sol
+            document.getElementById('p1-hp-bar').style.width = (gameState.p1.hp / gameState.p1.maxHp * 100) + '%'; 
+            document.getElementById('p2-hp-bar').style.width = (gameState.p2.hp / gameState.p2.maxHp * 100) + '%';
+            
+            if (myP.age === 1) { 
+                document.getElementById('xp-text').innerText = `${myP.xp}/${xpToEvolve}`; 
+                document.getElementById('xp-bar').style.width = Math.min(100, (myP.xp / xpToEvolve * 100)) + '%'; 
+                if (myP.xp >= xpToEvolve) document.getElementById('btn-evolve').style.display = 'block'; else document.getElementById('btn-evolve').style.display = 'none';
+            } else { 
+                document.getElementById('xp-text').innerText = "MAX"; document.getElementById('xp-bar').style.width = '100%'; document.getElementById('btn-evolve').style.display = 'none';
+                if(document.getElementById('lock-3')) { document.getElementById('lock-3').style.display = 'none'; document.getElementById('lock-4').style.display = 'none'; }
             }
 
-            // Hitbox des Bases Invisibles (On dessine juste la barre de vie si besoin, mais HUD le fait déjà)
-            // On peut ajouter une lueur pour montrer où est la base
-            ctx.shadowBlur = 30; ctx.shadowColor = '#00f0ff'; ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
-            ctx.fillRect(0, 200, 50, 150);
-            ctx.shadowColor = '#ff007f'; ctx.fillStyle = 'rgba(255, 0, 127, 0.2)';
-            ctx.fillRect(850, 200, 50, 150);
-            ctx.shadowBlur = 0;
+            document.getElementById('p1-age').innerText = gameState.p1.age === 1 ? "1" : "MAX";
+            if(gameMode === 'solo') document.getElementById('p2-age').innerText = gameState.p2.age === 1 ? "1" : "MAX";
+            else document.getElementById('p2-age').innerText = gameState.p2.age === 1 ? "1" : "MAX";
 
-            // Unités
+            // Boutons
+            ['fantassin', 'tireur'].forEach((t, i) => { let b = document.getElementById(`btn-u${i+1}`); if(b) b.disabled = myP.gold < unitStats[t].cost; });
+            ['blindé', 'sniper'].forEach((t, i) => { let b = document.getElementById(`btn-u${i+3}`); if(b) b.disabled = myP.gold < unitStats[t].cost || myP.age < 2; });
+            
+            [1, 2].forEach(i => {
+                let btn = document.getElementById(`btn-spell${i}`);
+                if(btn) {
+                    btn.disabled = (myP.gold < spellStats[i].cost) || (myP.spells[i] > 0);
+                    document.getElementById(`cd-spell${i}`).style.width = (myP.spells[i] / spellStats[i].cdMax * 100) + '%';
+                }
+            });
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+
+            // BASES (Invisibles physiquement, mais on garde la logique de position, on dessine rien)
+            ctx.fillStyle = 'rgba(0,0,0,0)'; 
+            ctx.fillRect(bases[1].x, 130, bases[1].w, bases[1].h); 
+            ctx.fillRect(bases[2].x, 130, bases[2].w, bases[2].h);
+
+            // ANIMATION DES SORTS
+            gameState.effects.forEach(eff => {
+                if(eff.type === 'plasma') {
+                    ctx.fillStyle = eff.team === 1 ? 'rgba(0, 136, 255, 0.6)' : 'rgba(255, 42, 42, 0.6)';
+                    for(let i=0; i<15; i++) {
+                        let lx = Math.random() * canvas.width;
+                        ctx.fillRect(lx, 0, 3, canvas.height); // Lasers tombants
+                    }
+                } else if (eff.type === 'nano') {
+                    ctx.fillStyle = '#39ff14';
+                    gameState.units.filter(u => u.team === eff.team).forEach(u => {
+                        ctx.fillText('+', u.x + u.w/2 - 5, u.y - eff.life); // Croix qui montent
+                    });
+                }
+            });
+
+            // UNITES
             gameState.units.forEach(u => {
-                ctx.save();
-                ctx.translate(u.x, u.y);
+                // Barre de vie
+                ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(u.x, u.y - 10, u.w, 4); 
+                ctx.fillStyle = '#2ecc71'; ctx.fillRect(u.x, u.y - 10, u.w * (u.hp / u.maxHp), 4);
                 
-                // --- INVERSION DU FANTASSIN ---
-                let flip = (u.team === 2);
-                // Si l'image de base du fantassin regarde à l'Est, et que tu veux qu'il regarde à l'Ouest par défaut (ou inversement), on inverse sa logique.
-                if(u.type === 'fantassin') flip = !flip; 
-                
-                if(flip) ctx.scale(-1, 1);
+                let imgKey = `${u.skin}_${u.team === 1 ? 'est' : 'ouest'}`;
+                let img = imgs[imgKey];
 
-                if(imgs[u.type].complete && imgs[u.type].naturalWidth !== 0) {
-                    ctx.drawImage(imgs[u.type], -u.w/2, -u.h/2, u.w, u.h);
+                ctx.save();
+                ctx.translate(u.x + u.w/2, u.y + u.h/2); // Centre de l'unité
+
+                if (u.action === 'walk') {
+                    u.animCycle = (u.animCycle || 0) + 0.15;
+                    let bob = Math.abs(Math.sin(u.animCycle)) * 3;
+                    let rot = Math.sin(u.animCycle) * 0.05;
+                    if(u.type === 'melee' && u.hp > 100) { bob *= 0.5; rot = 0; } // Blindé bouge lourdement
+                    ctx.translate(0, -bob);
+                    ctx.rotate(rot);
+                } else if (u.action === 'attack') {
+                    let progress = (u.cdMax - u.cd) / u.cdMax;
+                    if(unitStats[u.type].type === 'melee') { // Coup physique
+                        let thrust = (progress < 0.2) ? progress * 60 : 0;
+                        ctx.translate(u.team === 1 ? thrust : -thrust, 0);
+                    } else { // Recul tireur
+                        let recoil = (progress < 0.2) ? -3 : 0;
+                        ctx.translate(u.team === 1 ? recoil : -recoil, 0);
+                        // Flash du tir
+                        if(u.cd === u.cdMax - 1) {
+                            ctx.fillStyle = '#ff0';
+                            ctx.beginPath(); ctx.arc(u.team === 1 ? u.w : -u.w, 0, 8, 0, Math.PI*2); ctx.fill();
+                        }
+                    }
+                }
+
+                if (img && img.complete && img.naturalWidth !== 0) {
+                    ctx.drawImage(img, -u.w/2, -u.h/2, u.w, u.h);
                 } else {
-                    ctx.fillStyle = u.team === 1 ? '#00f0ff' : '#ff007f';
+                    ctx.fillStyle = u.team === 1 ? '#0088ff' : '#ff2a2a';
                     ctx.fillRect(-u.w/2, -u.h/2, u.w, u.h);
                 }
                 ctx.restore();
-
-                // Barre de vie de l'unité
-                ctx.fillStyle = 'red'; ctx.fillRect(u.x - 15, u.y - u.h/2 - 10, 30, 4);
-                ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x - 15, u.y - u.h/2 - 10, 30 * (u.hp / u.maxHp), 4);
-            });
-
-            // Lasers Plasma
-            beams.forEach(b => {
-                ctx.strokeStyle = b.color; ctx.lineWidth = 3; ctx.shadowBlur = 10; ctx.shadowColor = b.color;
-                ctx.beginPath(); ctx.moveTo(b.x1, b.y1); ctx.lineTo(b.x2, b.y2); ctx.stroke(); ctx.shadowBlur = 0;
-            });
-
-            // Particules (Nanobots et Explosions)
-            gameState.particles.forEach(p => {
-                ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life);
-                ctx.fillRect(p.x, p.y, 4, 4); ctx.globalAlpha = 1.0;
             });
         }
 
-        function updateHUDHost() {
-            document.getElementById('b1-hp').innerText = Math.floor(gameState.base1.hp);
-            document.getElementById('b2-hp').innerText = Math.floor(gameState.base2.hp);
-            document.getElementById('money').innerText = Math.floor(gameState.money);
-
-            // Boutons Grisables
-            document.getElementById('btn-fantassin').disabled = gameState.money < 10;
-            document.getElementById('btn-drone').disabled = gameState.money < 30;
-            document.getElementById('btn-tank').disabled = gameState.money < 50;
-
-            if(gameState.base1.hp <= 0 || gameState.base2.hp <= 0) {
-                gameActive = false;
-                alert(gameState.base1.hp <= 0 ? "DEFAITE !" : "VICTOIRE !");
-                location.reload();
-            }
-        }
-        function updateHUDClient() {
-            document.getElementById('b1-hp').innerText = Math.floor(gameState.base1.hp);
-            document.getElementById('b2-hp').innerText = Math.floor(gameState.base2.hp);
-            document.getElementById('money').parentElement.style.display = 'none'; // Client gère pas l'argent visuellement de la même façon si P2P basique
-        }
-
-        function startGameLoop() {
+        function gameLoop() {
             if(!gameActive) return;
-            updatePhysics(); drawGame(); updateHUDHost();
-            if(gameMode === 'network' && conn && conn.open) conn.send({type: 'state', state: gameState});
-            gameLoopId = requestAnimationFrame(startGameLoop);
+            
+            if(gameMode === 'host' || gameMode === 'solo') {
+                updatePhysics();
+                if(gameMode === 'host' && conn && conn.open) {
+                    conn.send({type: 'state', state: gameState});
+                }
+            }
+            
+            updateHUD();
+            drawGame();
+            requestAnimationFrame(gameLoop);
         }
     </script>
 </body>
