@@ -31,11 +31,15 @@
         .percent { font-size: 2em; font-weight: 900; }
         
         .controls-info { font-size: 0.85em; color: #aaa; margin-top: 15px; line-height: 1.5; max-width: 700px; }
-        .hub-link { color: rgba(255,255,255,0.5); text-decoration: none; display: inline-block; margin-top: 20px; transition: 0.2s; }
-        .hub-link:hover { color: #fff; }
+        
+        /* Bouton Retour Hub Flottant Universel */
+        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
+        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); border-color: #fff; transform: scale(1.05); }
     </style>
 </head>
 <body>
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    
     <h1>Cyber Smash</h1>
     
     <div id="game-container">
@@ -72,8 +76,10 @@
             </div>
             <button class="btn-main" id="start-local-btn" style="display:none;" onclick="startLocalGame()">FIGHT !</button>
             <div class="controls-info">
-                <b>J1:</b> A/D (Bouger) / W (Saut) / Q (Petit Coup) / E (Gros Coup)<br>
-                <b>J2:</b> Flèches (Bouger & Saut) / K (Petit Coup) / L (Gros Coup)
+                <b>Contrôles Universels :</b><br>
+                Mouvement: <b>A/D</b> ou <b>Flèches Gauche/Droite</b><br>
+                Saut: <b>W</b> ou <b>Espace</b> ou <b>Flèche Haut</b><br>
+                Petit Coup: <b>Q</b> ou <b>Clic Gauche</b> | Gros Coup: <b>E</b> ou <b>Clic Droit</b>
             </div>
             <button class="btn-main" style="font-size:0.8em; margin-top:20px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
         </div>
@@ -100,8 +106,6 @@
             <button class="btn-main" onclick="location.reload()">Retour au Menu</button>
         </div>
     </div>
-    
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
     <script>
         const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
@@ -131,25 +135,55 @@
             osc.start(now); osc.stop(now + 0.15);
         }
 
-        // --- DONNEES (Tailles +30% & Plateformes recalibrées sur les images) ---
+        // --- GESTION GLOBALE DES ENTREES (Clavier + Souris) ---
+        const keys = {};
+        window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+        window.addEventListener('mousedown', e => {
+            if(e.button === 0) keys['mouse_left'] = true;
+            if(e.button === 2) keys['mouse_right'] = true;
+        });
+        window.addEventListener('mouseup', e => {
+            if(e.button === 0) keys['mouse_left'] = false;
+            if(e.button === 2) keys['mouse_right'] = false;
+        });
+        canvas.addEventListener('contextmenu', e => e.preventDefault()); // Empêche le menu clic droit
+
+        function getCtrl(pId) {
+            // Touches unifiées pour J1 (ou tout joueur réseau). 
+            // A/D ou Flèches pour bouger. W ou Espace ou FlècheHaut pour sauter.
+            // Q ou Clic Gauche pour Petit Coup. E ou Clic Droit pour Gros Coup.
+            if(pId === 1) return {
+                left: keys['a'] || keys['arrowleft'],
+                right: keys['d'] || keys['arrowright'],
+                jump: keys['w'] || keys[' '] || keys['arrowup'],
+                atkL: keys['q'] || keys['mouse_left'],
+                atkH: keys['e'] || keys['mouse_right']
+            };
+            // Contrôles alternatifs pour J2, J3, J4 en Local (si branchés)
+            if(pId === 2) return { left: keys['j'], right: keys['l'], jump: keys['i'], atkL: keys['u'], atkH: keys['o'] };
+            if(pId === 3) return { left: keys['f'], right: keys['h'], jump: keys['t'], atkL: keys['r'], atkH: keys['y'] };
+            if(pId === 4) return { left: keys['4'], right: keys['6'], jump: keys['8'], atkL: keys['7'], atkH: keys['9'] };
+            return {};
+        }
+
+        // --- DONNEES (Plateformes surélevées) ---
         const charData = {
             ninja: { skinKey: 'ninja', color: '#00f0ff', w: 42, h: 65, speed: 7.5, jump: -12.5, weight: 0.9, dmg: 7, kb: 7, proj: false },
             tank: { skinKey: 'sumo', color: '#ff007f', w: 62, h: 78, speed: 3.2, jump: -8.5, weight: 1.7, dmg: 16, kb: 13, proj: false },
             gunner: { skinKey: 'gunner', color: '#ffbf00', w: 42, h: 65, speed: 5, jump: -11, weight: 0.8, dmg: 6, kb: 6, proj: true },
             mage: { skinKey: 'mage', color: '#39ff14', w: 44, h: 68, speed: 5.5, jump: -11.5, weight: 1.0, dmg: 10, kb: 8, proj: true }
         };
+        
+        // PLATEFORMES REMONTEES (Plus Y est petit, plus c'est haut)
         const mapData = [
-            // Map 1 : Plateforme remontée et étirée
-            [{x: 40, y: 350, w: 720, h: 20}], 
-            // Map 2 : Tout remonté
-            [{x: 150, y: 350, w: 500, h: 20}, {x: 180, y: 220, w: 120, h: 10}, {x: 500, y: 220, w: 120, h: 10}, {x: 340, y: 120, w: 120, h: 10}], 
-            // Map 3 : Falaises latérales remontées
-            [{x: 0, y: 350, w: 320, h: 20}, {x: 480, y: 350, w: 320, h: 20}] 
+            [{x: 40, y: 280, w: 720, h: 20}], 
+            [{x: 150, y: 300, w: 500, h: 20}, {x: 180, y: 170, w: 120, h: 10}, {x: 500, y: 170, w: 120, h: 10}, {x: 340, y: 80, w: 120, h: 10}], 
+            [{x: 0, y: 280, w: 320, h: 20}, {x: 480, y: 280, w: 320, h: 20}] 
         ];
 
         let gameMode = null, gameActive = false, players = [], platforms = [], projectiles = [], particles = [], items = [];
         let screenShake = 0, itemSpawnTimer = 0, currentMapIdx = 0;
-        const keys = {};
         
         class Particle {
             constructor(x, y, color) { this.x = x; this.y = y; this.color = color; this.vx = (Math.random()-0.5)*8; this.vy = (Math.random()-0.5)*8; this.life = 1.0; this.decay = Math.random()*0.06+0.03; }
@@ -195,7 +229,7 @@
                 }
 
                 if (this.attackTimer > 10) {
-                    ctx.scale(1.2, 1.2); // Effet d'agrandissement quand on frappe
+                    ctx.scale(1.2, 1.2); 
                     ctx.rotate(this.facing * 0.2);
                 }
 
@@ -207,7 +241,6 @@
                 }
                 ctx.restore();
 
-                // Hitbox d'attaque visuelle
                 if(this.attackTimer>10 && !this.isRanged) { 
                     ctx.fillStyle='rgba(255, 255, 255, 0.5)'; 
                     ctx.fillRect(this.facing===1 ? this.x+this.w : this.x-45, this.y+10, 45, 30); 
@@ -226,7 +259,7 @@
                     if((ctrl.atkL || ctrl.atkH) && this.attackTimer===0) {
                         let isHeavy = ctrl.atkH;
                         this.attackTimer = isHeavy ? 40 : 20; 
-                        let mult = (this.buffType==='dmg'?1.8:1.0) * (isHeavy ? 2.0 : 1.0); // Gros coup = 2x dégâts et KB
+                        let mult = (this.buffType==='dmg'?1.8:1.0) * (isHeavy ? 2.0 : 1.0);
                         
                         if(this.isRanged) { 
                             playSound('shoot'); 
@@ -247,7 +280,7 @@
                 if(this.y>canvas.height+100 || this.x<-100 || this.x>canvas.width+100) this.die();
             }
             die() {
-                playSound('death'); screenShake = 40; // Grosse secousse !
+                playSound('death'); screenShake = 40; 
                 this.lives--; this.percent = 0; this.buffType = null; this.buffTimer = 0; updateHUD();
                 for(let i=0;i<30;i++) particles.push(new Particle(this.x, this.y, this.color));
                 if(this.lives<=0) { checkGameEnd(); } else { this.x = canvas.width/2+(Math.random()*100-50); this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; }
@@ -305,18 +338,6 @@
             requestAnimationFrame(gameLoopLocal);
         }
 
-        window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
-        function getCtrl(pId) {
-            // Mouvement A/D/W/S ou Flèches. Petit Coup: Q / K. Gros Coup: E / L.
-            if(pId===1) return {left: keys['a']||keys['q'], right: keys['d'], jump: keys['w'], atkL: keys['q'], atkH: keys['e']};
-            if(pId===2) return {left: keys['arrowleft'], right: keys['arrowright'], jump: keys['arrowup'], atkL: keys['k'], atkH: keys['l']};
-            if(pId===3) return {left: keys['g'], right: keys['j'], jump: keys['y'], atkL: keys['h'], atkH: keys['u']};
-            if(pId===4) return {left: keys['4'], right: keys['6'], jump: keys['8'], atkL: keys['5'], atkH: keys['0']};
-            return {};
-        }
-
         function gameLoopLocal() {
             if(!gameActive) return; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save();
             if(screenShake>0) { ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake); screenShake--; }
@@ -325,7 +346,6 @@
 
             itemSpawnTimer++; if(itemSpawnTimer>500 && items.length===0) { items.push(new Item(Math.random()*500+150, 100)); itemSpawnTimer=0; }
 
-            // Rendre les plateformes transparentes pour n'utiliser que l'image en fond !
             ctx.fillStyle='rgba(0, 0, 0, 0)'; 
             platforms.forEach(p => { ctx.fillRect(p.x,p.y,p.w,p.h); }); 
 
@@ -341,8 +361,7 @@
         // ====== MODE RÉSEAU ======
         const peerNet = new Peer();
         let connNet = null, isHost = false;
-        const myNetKeys = { left: false, right: false, jump: false, atkL: false, atkH: false };
-        const p2NetKeys = { left: false, right: false, jump: false, atkL: false, atkH: false };
+        let p2NetKeys = { left: false, right: false, jump: false, atkL: false, atkH: false };
 
         peerNet.on('open', id => { document.getElementById('my-id').innerText = id; });
 
@@ -356,16 +375,14 @@
                 document.getElementById('h2').style.display = 'block'; document.getElementById('n2').innerText = "Client";
                 gameActive = true;
                 if(isHost) {
-                    platforms = mapData[0]; currentMapIdx = 0;
+                    platforms = mapData[0]; currentMapIdx = 0; // Map Royale de base en réseau
                     players = [new Player(1, 200, 'ninja'), new Player(2, 550, 'tank')];
                     if(audioCtx.state==='suspended') audioCtx.resume();
                     requestAnimationFrame(hostLoop);
-                } else {
-                    canvas.style.cursor = 'crosshair';
                 }
             });
             connNet.on('data', data => {
-                if(isHost && data.type==='inputs') Object.assign(p2NetKeys, data.keys);
+                if(isHost && data.type==='inputs') p2NetKeys = data.keys;
                 if(!isHost && data.type==='state') {
                     platforms = data.state.platforms; projectiles = data.state.projectiles; items = data.state.items;
                     if(players.length === 0) players = [new Player(1, 0, 'ninja'), new Player(2, 0, 'tank')];
@@ -374,28 +391,14 @@
                     drawClientGame(); updateHUD();
                 }
             });
+            
+            // Boucle d'envoi des inputs pour le client
+            if(!isHost) {
+                setInterval(() => {
+                    if(connNet && connNet.open) connNet.send({type: 'inputs', keys: getCtrl(1)});
+                }, 1000/60);
+            }
         }
-
-        function sendNetInputs() { if(connNet && connNet.open && !isHost) connNet.send({type:'inputs', keys:myNetKeys}); }
-
-        // Souris pour le réseau : Clic Gauche = Petit Coup / Clic Droit = Gros Coup
-        canvas.addEventListener('contextmenu', e => e.preventDefault());
-        canvas.addEventListener('mousedown', e => { if(gameMode==='network') { if(e.button===0) myNetKeys.atkL=true; if(e.button===2) myNetKeys.atkH=true; sendNetInputs(); } });
-        canvas.addEventListener('mouseup', e => { if(gameMode==='network') { if(e.button===0) myNetKeys.atkL=false; if(e.button===2) myNetKeys.atkH=false; sendNetInputs(); } });
-        window.addEventListener('keydown', e => { if(gameMode==='network') { 
-            let k = e.key.toLowerCase();
-            if(k==='arrowleft'||k==='a') myNetKeys.left=true; if(k==='arrowright'||k==='d') myNetKeys.right=true; 
-            if(k==='arrowup'||k==='w'||k===' '){ myNetKeys.jump=true; e.preventDefault(); } 
-            if(k==='q') myNetKeys.atkL=true; if(k==='e') myNetKeys.atkH=true;
-            sendNetInputs(); 
-        }});
-        window.addEventListener('keyup', e => { if(gameMode==='network') { 
-            let k = e.key.toLowerCase();
-            if(k==='arrowleft'||k==='a') myNetKeys.left=false; if(k==='arrowright'||k==='d') myNetKeys.right=false; 
-            if(k==='arrowup'||k==='w'||k===' ') myNetKeys.jump=false;
-            if(k==='q') myNetKeys.atkL=false; if(k==='e') myNetKeys.atkH=false;
-            sendNetInputs(); 
-        }});
 
         function hostLoop() {
             if(!gameActive) return; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save();
@@ -411,7 +414,8 @@
             items.forEach((it, i) => { it.draw(); it.y+=2; platforms.forEach(p=>{if(it.y+it.h>=p.y && it.x+it.w>p.x && it.x<p.x+p.w) it.y=p.y-it.h;});
                 players.forEach(pl=>{if(pl.x<it.x+it.w && pl.x+pl.w>it.x && pl.y<it.y+it.h && pl.y+pl.h>it.y) { pl.applyBuff(it.type); items.splice(i,1); }}); });
 
-            players[0].update(myNetKeys); players[1].update(p2NetKeys);
+            // Mise à jour (Hôte = getCtrl(1), Client = p2NetKeys envoyé par le réseau)
+            players[0].update(getCtrl(1)); players[1].update(p2NetKeys);
             players.forEach(pl => pl.draw());
             
             for(let i=projectiles.length-1;i>=0;i--){ projectiles[i].update(); if(projectiles[i].active) projectiles[i].draw(); else projectiles.splice(i,1); }
