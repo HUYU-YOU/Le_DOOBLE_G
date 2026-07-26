@@ -431,7 +431,13 @@
                 ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(u.x, u.y - 10, u.w, 4); 
                 ctx.fillStyle = '#2ecc71'; ctx.fillRect(u.x, u.y - 10, u.w * (u.hp / u.maxHp), 4);
                 
-                let imgKey = `${u.skin}_${u.team === 1 ? 'est' : 'ouest'}`;
+                // --- CORRECTION DU FANTASSIN ICI ---
+                let direction = (u.team === 1) ? 'est' : 'ouest';
+                if (u.type === 'fantassin') {
+                    direction = (u.team === 1) ? 'ouest' : 'est'; // On inverse juste pour le fantassin !
+                }
+                
+                let imgKey = `${u.skin}_${direction}`;
                 let img = imgs[imgKey];
 
                 ctx.save();
