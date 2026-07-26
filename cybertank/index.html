@@ -203,13 +203,12 @@
             [gameState.p1, gameState.p2].forEach(p => {
                 if(p.invincibility > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
                 
-                ctx.save(); ctx.translate(p.x, p.y);
+                ctx.save(); 
+                ctx.translate(p.x, p.y);
                 
-                // ORIENTATION MIROIR (Gauche / Droite) au lieu de rotation
-                let isFacingRight = Math.cos(p.angle * Math.PI / 180) >= 0;
-                if (!isFacingRight) {
-                    ctx.scale(-1, 1); // Retourne l'image si on vise à gauche
-                }
+
+                let rad = p.angle * Math.PI / 180;
+                ctx.rotate(rad);
                 
                 if(tankImg.complete && tankImg.naturalWidth !== 0) {
                     ctx.drawImage(tankImg, -25, -25, 50, 50); // Légèrement agrandi
@@ -219,7 +218,7 @@
                 }
                 ctx.restore();
                 
-                // Dessin du viseur/canon (Optionnel, pour bien voir où on tire)
+                // Dessin du viseur/canon
                 ctx.strokeStyle = p.color; ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y);
