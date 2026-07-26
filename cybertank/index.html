@@ -9,8 +9,8 @@
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; }
         h1 { color: var(--p1); text-transform: uppercase; letter-spacing: 5px; margin-top: 20px; text-shadow: 0 0 10px var(--p1); }
         
-        #menu, #game-container { background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 30px; border: 1px solid rgba(255,255,255,0.1); margin-top: 20px; text-align: center; }
-        #game-container { display: none; padding: 15px; position: relative; }
+        .menu-container { background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 30px; border: 1px solid rgba(255,255,255,0.1); margin-top: 20px; text-align: center; }
+        #game-container { display: none; padding: 15px; position: relative; background: var(--panel); border-radius: 15px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);}
         canvas { border: 2px solid #333; border-radius: 10px; display: block; box-shadow: inset 0 0 50px #000; }
         
         .btn { background: #fff; color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; margin: 10px; transition: 0.2s; }
@@ -20,12 +20,25 @@
         #hud { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 1.5em; font-weight: bold; }
         .p1-lives { color: var(--p1); text-shadow: 0 0 10px var(--p1); }
         .p2-lives { color: var(--p2); text-shadow: 0 0 10px var(--p2); }
+
+        /* Bouton Retour Hub Flottant Universel */
+        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
+        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); border-color: #fff; transform: scale(1.05); }
     </style>
 </head>
 <body>
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     <h1>Cyber Tanks</h1>
 
-    <div id="menu">
+    <!-- Menu Principal -->
+    <div class="menu-container" id="main-menu">
+        <h2 style="color:var(--p1);">CHOISIS TON MODE</h2>
+        <button class="btn" onclick="startSolo()">Mode Solo (Vs IA)</button>
+        <button class="btn" onclick="showNetMenu()" style="background:var(--p2);color:#fff;">Mode Réseau (P2P)</button>
+    </div>
+
+    <!-- Menu Réseau -->
+    <div class="menu-container" id="net-menu" style="display: none;">
         <h2>Initialisation du Réseau</h2>
         <p>Votre ID : <span id="my-id" style="color:var(--p1);font-weight:bold;">Création...</span></p>
         <hr style="border-color:#333; margin: 20px 0;">
@@ -34,12 +47,13 @@
         <input type="text" id="join-id" placeholder="ID de l'Hôte">
         <button class="btn" onclick="joinGame()" style="background:var(--p2);color:#fff;">Rejoindre</button>
         <p id="status-text" style="color: #aaa; margin-top: 20px;"></p>
+        <button class="btn" style="background:#333; color:#fff; font-size:0.8em;" onclick="location.reload()">Retour</button>
     </div>
 
     <div id="game-container">
         <div id="hud">
             <div class="p1-lives">J1 VIES: <span id="l1">3</span></div>
-            <div class="p2-lives">J2 VIES: <span id="l2">3</span></div>
+            <div class="p2-lives" id="j2-label">J2 VIES: <span id="l2">3</span></div>
         </div>
         <canvas id="gameCanvas" width="800" height="500"></canvas>
     </div>
@@ -51,18 +65,36 @@
         const mapImg = new Image(); mapImg.src = 'img/map1.png';
 
         const peer = new Peer();
-        let conn = null, isHost = false, gameActive = false;
+        let conn = null, isHost = false, gameActive = false, gameMode = null;
         const keys = { up: false, down: false, left: false, right: false, space: false };
+        let p2 = { keys: { up: false, down: false, left: false, right: false, space: false } };
         
-        peer.on('open', id => document.getElementById('my-id').innerText = id);
+        peer.on('open', id => { if(document.getElementById('my-id')) document.getElementById('my-id').innerText = id; });
         
+        function showNetMenu() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('net-menu').style.display = 'block';
+        }
+
+        function startSolo() {
+            gameMode = 'solo';
+            isHost = true;
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            document.getElementById('j2-label').innerHTML = `IA VIES: <span id="l2">3</span>`;
+            gameActive = true;
+            startGameLoop();
+        }
+
         function hostGame() {
+            gameMode = 'network';
             document.getElementById('status-text').innerText = "En attente...";
             isHost = true;
             peer.on('connection', connection => { conn = connection; setupConnection(); });
         }
         
         function joinGame() {
+            gameMode = 'network';
             const hostId = document.getElementById('join-id').value;
             if(!hostId) return;
             document.getElementById('status-text').innerText = "Connexion...";
@@ -72,7 +104,7 @@
 
         function setupConnection() {
             conn.on('open', () => {
-                document.getElementById('menu').style.display = 'none';
+                document.getElementById('net-menu').style.display = 'none';
                 document.getElementById('game-container').style.display = 'block';
                 gameActive = true;
                 if(isHost) startGameLoop();
@@ -93,21 +125,20 @@
                 e.preventDefault();
                 let key = e.key === ' ' ? 'space' : e.key.replace('Arrow','').toLowerCase();
                 keys[key] = true;
-                if(!isHost && conn) conn.send({type: 'input', keys: keys});
+                if(gameMode === 'network' && !isHost && conn) conn.send({type: 'input', keys: keys});
             }
         });
         window.addEventListener('keyup', e => {
             if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) {
                 let key = e.key === ' ' ? 'space' : e.key.replace('Arrow','').toLowerCase();
                 keys[key] = false;
-                if(!isHost && conn) conn.send({type: 'input', keys: keys});
+                if(gameMode === 'network' && !isHost && conn) conn.send({type: 'input', keys: keys});
             }
         });
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // MURS & ROCHERS (OBSTACLES)
         const rocks = [
             { x: 250, y: 150, w: 60, h: 60 },
             { x: 490, y: 150, w: 60, h: 60 },
@@ -120,14 +151,37 @@
             p2: { x: 700, y: 250, angle: 180, lives: 3, color: '#ff007f', cooldown: 0, invincibility: 0 },
             bullets: []
         };
-        
-        let p2 = { keys: { up: false, down: false, left: false, right: false, space: false } };
 
         function checkRockCollision(x, y, radius) {
             return rocks.some(r => x + radius > r.x && x - radius < r.x + r.w && y + radius > r.y && y - radius < r.y + r.h);
         }
 
+        // --- IA SOLO ---
+        function updateAI() {
+            let dx = gameState.p1.x - gameState.p2.x;
+            let dy = gameState.p1.y - gameState.p2.y;
+            let targetAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // Différence d'angle pour savoir de quel côté tourner
+            let diff = targetAngle - gameState.p2.angle;
+            while(diff < -180) diff += 360;
+            while(diff > 180) diff -= 360;
+            
+            p2.keys.left = false; p2.keys.right = false; p2.keys.up = false; p2.keys.space = false;
+            
+            // Tourner le tank vers le joueur
+            if(diff > 5) p2.keys.right = true;
+            else if(diff < -5) p2.keys.left = true;
+            else {
+                // Si on vise bien, on avance et on tire (avec un peu d'aléatoire pour pas spammer)
+                if(Math.hypot(dx, dy) > 150) p2.keys.up = true;
+                if(Math.random() < 0.05) p2.keys.space = true; 
+            }
+        }
+
         function updatePhysics() {
+            if(gameMode === 'solo') updateAI();
+
             const speed = 3; const rotSpeed = 4;
             
             // Tank 1
@@ -155,7 +209,6 @@
                 p.y = Math.max(20, Math.min(canvas.height - 20, p.y));
             });
 
-            // Bullets
             for(let i = gameState.bullets.length - 1; i >= 0; i--) {
                 let b = gameState.bullets[i];
                 b.x += b.vx; b.y += b.vy; b.life--;
@@ -163,10 +216,7 @@
                 if(b.x < 0 || b.x > canvas.width) b.vx *= -1;
                 if(b.y < 0 || b.y > canvas.height) b.vy *= -1;
                 
-                // Collision avec les rochers
-                if(checkRockCollision(b.x, b.y, 5)) {
-                    gameState.bullets.splice(i, 1); continue;
-                }
+                if(checkRockCollision(b.x, b.y, 5)) { gameState.bullets.splice(i, 1); continue; }
 
                 if(gameState.p1.invincibility === 0 && Math.hypot(b.x - gameState.p1.x, b.y - gameState.p1.y) < 20) {
                     gameState.p1.lives--; gameState.p1.invincibility = 100;
@@ -195,37 +245,30 @@
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Fond MAP
-            if(mapImg.complete && mapImg.naturalWidth !== 0) {
-                ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height);
-            } else {
-                ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0,0,canvas.width,canvas.height);
-            }
+            if(mapImg.complete && mapImg.naturalWidth !== 0) ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height);
+            else { ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0,0,canvas.width,canvas.height); }
 
-            // Rochers
             rocks.forEach(r => {
-                if(rockImg.complete && rockImg.naturalWidth !== 0) {
-                    ctx.drawImage(rockImg, r.x, r.y, r.w, r.h);
-                } else {
-                    ctx.fillStyle = '#555'; ctx.fillRect(r.x, r.y, r.w, r.h);
-                }
+                if(rockImg.complete && rockImg.naturalWidth !== 0) ctx.drawImage(rockImg, r.x, r.y, r.w, r.h);
+                else { ctx.fillStyle = '#555'; ctx.fillRect(r.x, r.y, r.w, r.h); }
             });
 
-            // Tanks
             [gameState.p1, gameState.p2].forEach(p => {
                 if(p.invincibility > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
                 
                 ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180);
                 
                 if(tankImg.complete && tankImg.naturalWidth !== 0) {
+                    // Si on est J2, on peut teinter légèrement l'image ou juste la laisser telle quelle
                     ctx.drawImage(tankImg, -20, -20, 40, 40);
+                    // Hitbox colorée par dessus pour les différencier si le skin est le même
+                    ctx.fillStyle = p.color; ctx.globalAlpha = 0.3; ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
                 } else {
                     ctx.fillStyle = p.color; ctx.fillRect(-15, -15, 30, 30); ctx.fillRect(0, -5, 25, 10);
                 }
                 ctx.restore();
             });
 
-            // Obus
             gameState.bullets.forEach(b => {
                 ctx.fillStyle = b.color; ctx.shadowBlur = 10; ctx.shadowColor = b.color;
                 ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
@@ -235,7 +278,11 @@
         function updateHUD(l1, l2) {
             document.getElementById('l1').innerText = l1;
             document.getElementById('l2').innerText = l2;
-            if(l1 <= 0 || l2 <= 0) { gameActive = false; alert(l1 <= 0 ? "J2 GAGNE!" : "J1 GAGNE!"); location.reload(); }
+            if(l1 <= 0 || l2 <= 0) { 
+                gameActive = false; 
+                let winner = l1 <= 0 ? (gameMode === 'solo' ? "L'IA GAGNE !" : "J2 GAGNE !") : "TU AS GAGNÉ !";
+                alert(winner); location.reload(); 
+            }
         }
 
         function startGameLoop() {
@@ -243,7 +290,7 @@
             updatePhysics();
             drawGame();
             updateHUD(gameState.p1.lives, gameState.p2.lives);
-            conn.send({type: 'state', state: gameState});
+            if(gameMode === 'network' && conn) conn.send({type: 'state', state: gameState});
             requestAnimationFrame(startGameLoop);
         }
     </script>
