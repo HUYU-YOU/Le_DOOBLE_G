@@ -2,38 +2,57 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Texas Poker - Arcade</title>
+    <title>Neon Poker Suite - Arcade</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #0b0c10; --panel: #1f2833; --accent: #66fcf1; --chat: rgba(0,0,0,0.5); }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        :root { --bg: #0b0c10; --panel: #1f2833; --accent: #66fcf1; --chat: rgba(0,0,0,0.5); --red: #ff3b3b; --green: #39ff14; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
         h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px var(--accent); margin-top: 20px; }
         
         .menu-container { background: var(--panel); padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); text-align: center; margin-top: 50px; border: 1px solid rgba(102,252,241,0.3); }
         .input-box { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #45a29e; background: #0b0c10; color: #fff; text-align: center; font-weight: bold; }
         .btn { background: var(--accent); color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; margin: 5px; transition: 0.2s; }
         .btn:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--accent); }
+        .btn:disabled { background: #555; color: #888; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-red { background: var(--red); color: white; }
+        .btn-green { background: var(--green); color: black; }
         
-        #game-layout { display: none; width: 90%; max-width: 1200px; margin-top: 20px; gap: 20px; }
-        #table-area { flex: 2; background: radial-gradient(circle, #0e3d2c 0%, #061c14 100%); border-radius: 150px; border: 10px solid #2a1f1a; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-height: 400px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 0 30px rgba(0,0,0,0.5); }
+        #game-layout { display: none; width: 95%; max-width: 1400px; margin-top: 20px; gap: 20px; flex-direction: column; align-items: center; }
+        
+        /* Table et Joueurs */
+        #poker-table-container { position: relative; width: 100%; max-width: 1000px; display: flex; flex-direction: column; align-items: center; gap: 30px; }
+        #table-center { background: radial-gradient(circle, #0e3d2c 0%, #061c14 100%); border-radius: 100px; border: 8px solid #2a1f1a; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 700px; min-height: 200px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 0 30px rgba(0,0,0,0.5); }
+        
+        #pot-display { font-size: 1.5em; color: #f1c40f; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
         
         .card-zone { display: flex; gap: 10px; min-height: 100px; justify-content: center; align-items: center; }
-        .card { width: 70px; height: 100px; background: white; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 1.5em; font-weight: bold; color: black; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); border: 2px solid #ccc; }
+        .card { width: 50px; height: 75px; background: white; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 1.2em; font-weight: bold; color: black; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); border: 2px solid #ccc; }
         .card.red { color: red; }
         .card.hidden { background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px); border-color: #fff; color: transparent; }
         
-        .player-label { background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; color: var(--accent); border: 1px solid var(--accent); }
+        #players-ring { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%; margin-top: 20px; }
         
-        #chat-area { flex: 1; background: var(--panel); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(102,252,241,0.2); }
-        #chat-messages { flex: 1; padding: 15px; overflow-y: auto; background: var(--chat); font-size: 0.9em; display: flex; flex-direction: column; gap: 5px; min-height: 200px; }
+        .player-seat { background: var(--panel); border: 2px solid #333; border-radius: 10px; padding: 10px; width: 140px; text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
+        .player-seat.active-turn { border-color: var(--accent); box-shadow: 0 0 20px var(--accent); }
+        .player-seat.folded { opacity: 0.5; filter: grayscale(100%); }
+        .player-name { font-weight: bold; color: var(--accent); font-size: 1.1em; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        .player-chips { color: #f1c40f; font-weight: bold; margin: 5px 0; }
+        .player-bet { color: #fff; font-size: 0.9em; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 10px; margin-bottom: 10px; }
+        .dealer-btn { position: absolute; top: -10px; right: -10px; background: white; color: black; border-radius: 50%; width: 25px; height: 25px; font-weight: bold; line-height: 25px; box-shadow: 0 0 5px rgba(0,0,0,0.5); font-size: 0.8em; }
+        .timer-bar { height: 5px; background: var(--red); width: 100%; position: absolute; bottom: 0; left: 0; border-radius: 0 0 10px 10px; transition: width 1s linear; display: none; }
+        .player-seat.active-turn .timer-bar { display: block; }
+
+        /* Actions du Joueur Local */
+        #action-bar { display: none; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; border: 1px solid var(--accent); gap: 10px; margin-top: 20px; align-items: center; }
+        
+        /* Chat */
+        #chat-area { width: 100%; max-width: 800px; background: var(--panel); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(102,252,241,0.2); margin-top: 20px; }
+        #chat-messages { padding: 15px; overflow-y: auto; background: var(--chat); font-size: 0.9em; display: flex; flex-direction: column; gap: 5px; height: 150px; }
         .msg { margin: 0; }
         .msg-sys { color: #f1c40f; font-weight: bold; text-align: center; margin: 5px 0; }
         #chat-input-area { display: flex; padding: 10px; background: rgba(0,0,0,0.8); }
         #chat-input { flex: 1; padding: 8px; border-radius: 5px; border: none; background: #333; color: white; }
         
-        #host-controls { margin-top: 20px; display: none; }
-        
-        /* Bouton Retour Hub Flottant Universel */
         .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
         .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); border-color: #fff; transform: scale(1.05); }
     </style>
@@ -44,42 +63,48 @@
 
     <!-- Menu Principal -->
     <div class="menu-container" id="main-menu">
-        <h2 style="color:var(--accent);">Sélection du Mode</h2>
-        <input type="text" id="player-name" class="input-box" placeholder="Votre Pseudo" value="Joueur1"><br><br>
-        <button class="btn" onclick="startSolo()">Mode Solo (Entraînement)</button>
-        <button class="btn" onclick="showNetworkMenu()" style="background:#45a29e;color:#fff;">Mode Réseau (P2P)</button>
-    </div>
-
-    <!-- Menu Réseau -->
-    <div class="menu-container" id="network-menu" style="display: none;">
-        <h2>Connexion P2P</h2>
-        <p>Votre ID : <span id="my-id" style="color:var(--accent);font-weight:bold;">Création...</span></p>
-        <hr style="border-color:#333; margin: 20px 0;">
+        <h2 style="color:var(--accent);">Bienvenue à la table</h2>
+        <input type="text" id="player-name" class="input-box" placeholder="Votre Pseudo" value="Joueur"><br><br>
+        <p><i>Tables de 8 joueurs max. Cave initiale : 1000$</i></p>
         <button class="btn" onclick="hostGame()">Créer une Table (Hôte)</button>
-        <p>OU</p>
+        <br><p>OU</p>
         <input type="text" id="join-id" class="input-box" placeholder="ID de la table">
         <button class="btn" onclick="joinGame()" style="background:#45a29e;color:#fff;">Rejoindre</button>
         <p id="status-text" style="color: #aaa; margin-top: 15px;"></p>
-        <button class="btn" style="background:#333; color:#fff; margin-top:20px; font-size:0.8em;" onclick="location.reload()">Retour</button>
     </div>
 
     <!-- Interface Jeu -->
     <div id="game-layout">
-        <div id="table-area">
-            <div style="text-align: center;">
-                <div class="player-label" id="opp-name-label">Adversaire</div>
-                <div class="card-zone" id="opp-cards"></div>
+        
+        <div id="poker-table-container">
+            <!-- Hôte Info -->
+            <div id="host-lobby-panel" style="display:none; text-align:center; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px;">
+                ID de la table à partager : <b style="color:var(--accent);" id="my-id">...</b><br>
+                <button class="btn" style="margin-top:10px;" onclick="startGame()">Lancer la partie</button>
             </div>
-            <div style="text-align: center;">
-                <div style="color:#aaa; font-size:0.8em; margin-bottom:5px; text-transform:uppercase;">Board</div>
+
+            <!-- Centre de table -->
+            <div id="table-center">
+                <div id="pot-display">Pot: 0$</div>
                 <div class="card-zone" id="community-cards"></div>
+                <div id="game-status" style="margin-top:15px; color:var(--accent); font-weight:bold; text-transform:uppercase;">En attente de joueurs...</div>
             </div>
-            <div style="text-align: center;">
-                <div class="player-label" id="my-name-label">Moi</div>
-                <div class="card-zone" id="my-cards"></div>
+            
+            <!-- Joueurs -->
+            <div id="players-ring"></div>
+        </div>
+
+        <!-- Actions du joueur (Mises) -->
+        <div id="action-bar">
+            <button class="btn btn-red" onclick="sendAction('fold')">Se Coucher</button>
+            <button class="btn btn-green" id="btn-call" onclick="sendAction('call')">Suivre</button>
+            <div style="display:flex; align-items:center; gap:5px;">
+                <input type="number" id="raise-amount" class="input-box" style="width:80px; margin:0;" value="0">
+                <button class="btn" onclick="sendAction('raise')">Relancer</button>
             </div>
         </div>
         
+        <!-- Chat -->
         <div id="chat-area">
             <div style="background: rgba(0,0,0,0.8); padding: 10px; text-align: center; font-weight: bold; border-bottom: 1px solid #333;">Com-Link</div>
             <div id="chat-messages"></div>
@@ -89,121 +114,327 @@
             </div>
         </div>
     </div>
-    
-    <div id="host-controls">
-        <button class="btn" onclick="advanceGame()">Action Croupier (Étape suivante)</button>
-    </div>
 
     <script>
         const peer = new Peer();
-        let conn = null, isHost = false, gameMode = null;
-        let myName = "", oppName = "Adversaire";
+        let myId = null;
+        let myName = "";
+        let isHost = false;
         
-        const suits = ['♠', '♥', '♦', '♣'];
-        const values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-        let deck = [], gameState = { step: 0, p1Cards: [], p2Cards: [], board: [] };
+        // --- VARIABLES RÉSEAU (HÔTE) ---
+        let connections = []; // Liste des clients connectés { peerId, conn }
         
-        peer.on('open', id => { if(document.getElementById('my-id')) document.getElementById('my-id').innerText = id; });
+        // --- ETAT DU JEU (Source de vérité sur l'Hôte) ---
+        const SB_AMOUNT = 10;
+        const BB_AMOUNT = 20;
+        
+        let state = {
+            step: 0, // 0:Lobby, 1:PreFlop, 2:Flop, 3:Turn, 4:River, 5:Showdown
+            pot: 0,
+            currentBet: 0,
+            board: [],
+            players: [], // { id, name, chips, roundBet, totalBet, cards, status (active/fold/out), hasActed }
+            turnIndex: -1,
+            dealerIndex: 0,
+            timeLeft: 10,
+            msg: "En attente..."
+        };
 
-        function showNetworkMenu() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('network-menu').style.display = 'block';
-            gameMode = 'network';
-        }
+        let timerInterval = null;
+        let deck = [];
 
-        function startSolo() {
-            gameMode = 'solo';
-            myName = document.getElementById('player-name').value || "Joueur";
-            oppName = "IA (Bot)";
-            isHost = true; // En solo, on est l'hôte de la partie
-            document.getElementById('main-menu').style.display = 'none';
-            startGameUI();
-            addChatSys("Mode Entraînement activé.");
-        }
+        // --- INITIALISATION PEERJS ---
+        peer.on('open', id => { 
+            myId = id; 
+            if(document.getElementById('my-id')) document.getElementById('my-id').innerText = id; 
+        });
 
+        // Hôte reçoit une connexion
+        peer.on('connection', conn => {
+            if(!isHost) return;
+            if(state.players.length >= 8 || state.step > 0) {
+                conn.on('open', () => conn.send({ type: 'sys', msg: 'Table pleine ou partie en cours.' }));
+                setTimeout(() => conn.close(), 1000);
+                return;
+            }
+            
+            connections.push({ peerId: conn.peer, conn: conn });
+            
+            conn.on('data', data => {
+                if(data.type === 'join') {
+                    state.players.push({ id: conn.peer, name: data.name, chips: 1000, roundBet: 0, totalBet: 0, cards: [], status: 'active', hasActed: false });
+                    broadcastSys(`${data.name} a rejoint la table.`);
+                    syncStateToAll();
+                }
+                if(data.type === 'chat') broadcastChat(data.name, data.msg);
+                if(data.type === 'action') processAction(conn.peer, data.action, data.amount);
+            });
+            
+            conn.on('close', () => {
+                connections = connections.filter(c => c.peerId !== conn.peer);
+                let p = state.players.find(x => x.id === conn.peer);
+                if(p) { p.status = 'fold'; broadcastSys(`${p.name} a quitté la table.`); syncStateToAll(); }
+            });
+        });
+
+        // --- ACTIONS BOUTONS MENU ---
         function hostGame() {
             myName = document.getElementById('player-name').value || "Hôte";
-            document.getElementById('status-text').innerText = "En attente d'un adversaire...";
             isHost = true;
-            peer.on('connection', connection => { conn = connection; setupConnection(); });
+            
+            // L'hôte s'ajoute lui-même comme premier joueur
+            state.players.push({ id: 'host-local', name: myName, chips: 1000, roundBet: 0, totalBet: 0, cards: [], status: 'active', hasActed: false });
+            
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-layout').style.display = 'flex';
+            document.getElementById('host-lobby-panel').style.display = 'block';
+            addChatSys("Vous avez créé la table. Partagez votre ID.");
+            renderState(state);
         }
 
+        let myConnToServer = null;
         function joinGame() {
             myName = document.getElementById('player-name').value || "Client";
             const hostId = document.getElementById('join-id').value;
             if(!hostId) return;
             document.getElementById('status-text').innerText = "Connexion...";
-            conn = peer.connect(hostId);
-            isHost = false;
-            setupConnection();
-        }
-
-        function setupConnection() {
-            conn.on('open', () => {
-                startGameUI();
-                conn.send({ type: 'init', name: myName });
-                addChatSys("Connexion établie avec le réseau.");
+            
+            myConnToServer = peer.connect(hostId);
+            myConnToServer.on('open', () => {
+                document.getElementById('main-menu').style.display = 'none';
+                document.getElementById('game-layout').style.display = 'flex';
+                myConnToServer.send({ type: 'join', name: myName });
+                addChatSys("Connecté à la table.");
             });
-            conn.on('data', data => {
-                if (data.type === 'init') { oppName = data.name; document.getElementById('opp-name-label').innerText = oppName; }
-                if (data.type === 'chat') addChatMsg(oppName, data.msg);
-                if (data.type === 'state') { gameState = data.state; renderGame(); }
-                if (data.type === 'sys') addChatSys(data.msg);
+            
+            myConnToServer.on('data', data => {
+                if(data.type === 'state') renderState(data.state);
+                if(data.type === 'chat') addChatMsg(data.sender, data.msg);
+                if(data.type === 'sys') addChatSys(data.msg);
             });
         }
 
-        function startGameUI() {
-            document.getElementById('network-menu').style.display = 'none';
-            document.getElementById('game-layout').style.display = 'flex';
-            document.getElementById('my-name-label').innerText = myName;
-            document.getElementById('opp-name-label').innerText = oppName;
-            if(isHost) document.getElementById('host-controls').style.display = 'block';
-        }
-
-        // --- MOTEUR CROUPIER ---
-        function createDeck() {
-            let d = [];
-            for(let s of suits) {
-                for(let i=0; i<values.length; i++) {
-                    d.push({ suit: s, face: values[i], value: i+2 });
+        // --- MOTEUR POKER (HÔTE UNIQUEMENT) ---
+        function syncStateToAll() {
+            if(!isHost) return;
+            // Pour chaque client, on masque les cartes des autres si on n'est pas au Showdown
+            connections.forEach(c => {
+                let stateCopy = JSON.parse(JSON.stringify(state)); // Deep copy
+                if(stateCopy.step < 5) {
+                    stateCopy.players.forEach(p => {
+                        if(p.id !== c.peerId && p.cards.length > 0) {
+                            p.cards = [{hidden:true}, {hidden:true}]; // Masquer cartes
+                        }
+                    });
                 }
+                c.conn.send({ type: 'state', state: stateCopy });
+            });
+            
+            // Rendu local pour l'Hôte (qui cache aussi les cartes des autres !)
+            let localState = JSON.parse(JSON.stringify(state));
+            if(localState.step < 5) {
+                localState.players.forEach(p => {
+                    if(p.id !== 'host-local' && p.cards.length > 0) p.cards = [{hidden:true}, {hidden:true}];
+                });
             }
+            renderState(localState);
+        }
+
+        function createDeck() {
+            const suits = ['♠', '♥', '♦', '♣']; const values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+            let d = [];
+            for(let s of suits) for(let i=0; i<values.length; i++) d.push({ suit: s, face: values[i], value: i+2 });
             return d.sort(() => Math.random() - 0.5);
         }
 
-        function advanceGame() {
-            if(!isHost) return;
+        function startGame() {
+            if(state.players.length < 2) { alert("Il faut au moins 2 joueurs !"); return; }
+            document.getElementById('host-lobby-panel').style.display = 'none';
+            state.dealerIndex = Math.floor(Math.random() * state.players.length);
+            startNewHand();
+        }
+
+        function startNewHand() {
+            clearInterval(timerInterval);
+            deck = createDeck();
+            state.step = 1;
+            state.pot = 0;
+            state.board = [];
+            state.msg = "Distribution...";
             
-            if(gameState.step === 0 || gameState.step === 5) {
-                deck = createDeck();
-                gameState = { step: 1, p1Cards: [deck.pop(), deck.pop()], p2Cards: [deck.pop(), deck.pop()], board: [] };
-                broadcastSys("Distribution des cartes.");
-            } else if(gameState.step === 1) {
-                deck.pop(); gameState.board.push(deck.pop(), deck.pop(), deck.pop()); gameState.step = 2; broadcastSys("Flop !");
-            } else if(gameState.step === 2) {
-                deck.pop(); gameState.board.push(deck.pop()); gameState.step = 3; broadcastSys("Turn !");
-            } else if(gameState.step === 3) {
-                deck.pop(); gameState.board.push(deck.pop()); gameState.step = 4; broadcastSys("River !");
-            } else if(gameState.step === 4) {
-                gameState.step = 5;
-                let s1 = evaluatePokerHand(gameState.p1Cards, gameState.board);
-                let s2 = evaluatePokerHand(gameState.p2Cards, gameState.board);
-                let winnerText = "";
-                if(s1 > s2) winnerText = `💥 ${myName} A GAGNÉ LA MAIN !`;
-                else if(s2 > s1) winnerText = `💥 ${oppName} A GAGNÉ LA MAIN !`;
-                else winnerText = "🤝 ÉGALITÉ (Split) !";
-                broadcastSys(winnerText);
+            // Exclure les joueurs ruinés
+            state.players.forEach(p => {
+                p.status = p.chips <= 0 ? 'out' : 'active';
+                p.roundBet = 0; p.totalBet = 0; p.hasActed = false;
+                if(p.status === 'active') p.cards = [deck.pop(), deck.pop()];
+                else p.cards = [];
+            });
+
+            if(state.players.filter(p=>p.status === 'active').length < 2) {
+                broadcastSys("Partie terminée, pas assez de joueurs avec des jetons !");
+                return;
+            }
+
+            // Blinds
+            state.dealerIndex = getNextActiveIndex(state.dealerIndex);
+            let sbIndex = getNextActiveIndex(state.dealerIndex);
+            let bbIndex = getNextActiveIndex(sbIndex);
+            
+            forceBet(sbIndex, Math.min(SB_AMOUNT, state.players[sbIndex].chips));
+            forceBet(bbIndex, Math.min(BB_AMOUNT, state.players[bbIndex].chips));
+            state.currentBet = BB_AMOUNT;
+            
+            // Premier à jouer (UTG)
+            state.turnIndex = getNextActiveIndex(bbIndex);
+            
+            startTurnTimer();
+            syncStateToAll();
+        }
+
+        function forceBet(pIndex, amount) {
+            let p = state.players[pIndex];
+            p.chips -= amount;
+            p.roundBet += amount;
+            p.totalBet += amount;
+            state.pot += amount;
+        }
+
+        function startTurnTimer() {
+            clearInterval(timerInterval);
+            state.timeLeft = 10;
+            timerInterval = setInterval(() => {
+                state.timeLeft--;
+                if(state.timeLeft <= 0) {
+                    let pId = state.players[state.turnIndex].id;
+                    broadcastSys(`Temps écoulé pour ${state.players[state.turnIndex].name} (Se couche)`);
+                    processAction(pId, 'fold', 0); // Fold automatique
+                }
+                syncStateToAll();
+            }, 1000);
+        }
+
+        function getNextActiveIndex(currentIndex) {
+            let i = currentIndex;
+            do {
+                i = (i + 1) % state.players.length;
+            } while (state.players[i].status !== 'active');
+            return i;
+        }
+
+        function processAction(playerId, action, amount = 0) {
+            if(!isHost) {
+                // Si on est client, on envoie au serveur
+                if(playerId === 'host-local') playerId = myId; // Géré par la fonction d'envoi UI
+                myConnToServer.send({ type: 'action', action, amount: parseInt(amount) });
+                return;
             }
             
-            if(gameMode === 'network' && conn) conn.send({ type: 'state', state: gameState });
-            renderGame();
+            // Logique Serveur (Hôte)
+            let p = state.players[state.turnIndex];
+            if(p.id !== playerId) return; // Pas son tour
+
+            p.hasActed = true;
+
+            if(action === 'fold') {
+                p.status = 'fold';
+            } 
+            else if(action === 'call') {
+                let toCall = state.currentBet - p.roundBet;
+                let actualCall = Math.min(toCall, p.chips); // All-in possible
+                forceBet(state.turnIndex, actualCall);
+            } 
+            else if(action === 'raise') {
+                let raiseAmt = parseInt(amount);
+                let toCall = state.currentBet - p.roundBet;
+                let totalNeeded = toCall + raiseAmt;
+                if(totalNeeded > p.chips) totalNeeded = p.chips; // All-in
+                
+                forceBet(state.turnIndex, totalNeeded);
+                state.currentBet = p.roundBet; // Nouvelle mise de référence
+                
+                // Si relance, les autres doivent réagir
+                state.players.forEach((otherP, idx) => {
+                    if(otherP.status === 'active' && idx !== state.turnIndex) otherP.hasActed = false;
+                });
+            }
+
+            checkRoundEnd();
         }
 
-        function broadcastSys(msg) {
-            addChatSys(msg);
-            if(gameMode === 'network' && conn) conn.send({ type: 'sys', msg: msg });
+        function checkRoundEnd() {
+            let actives = state.players.filter(p => p.status === 'active');
+            
+            // Victoire par abandon
+            if(actives.length === 1) {
+                actives[0].chips += state.pot;
+                broadcastSys(`${actives[0].name} gagne le pot de ${state.pot}$ ! (Les autres se sont couchés)`);
+                setTimeout(startNewHand, 4000);
+                return;
+            }
+
+            // Tout le monde a joué ET a égalisé la mise ? (ou est à tapis/0 chip)
+            let roundComplete = actives.every(p => p.hasActed && (p.roundBet === state.currentBet || p.chips === 0));
+
+            if(roundComplete) {
+                advanceGameStep();
+            } else {
+                state.turnIndex = getNextActiveIndex(state.turnIndex);
+                startTurnTimer();
+                syncStateToAll();
+            }
         }
 
+        function advanceGameStep() {
+            // Réinitialisation des mises du tour
+            state.players.forEach(p => { p.roundBet = 0; p.hasActed = false; });
+            state.currentBet = 0;
+            
+            if(state.step === 1) { // -> Flop
+                state.step = 2; state.msg = "Le Flop";
+                deck.pop(); state.board.push(deck.pop(), deck.pop(), deck.pop());
+            } else if(state.step === 2) { // -> Turn
+                state.step = 3; state.msg = "La Turn";
+                deck.pop(); state.board.push(deck.pop());
+            } else if(state.step === 3) { // -> River
+                state.step = 4; state.msg = "La River";
+                deck.pop(); state.board.push(deck.pop());
+            } else if(state.step === 4) { // -> Showdown
+                state.step = 5; state.msg = "Abattage !";
+                clearInterval(timerInterval);
+                resolveShowdown();
+                return; // Ne pas relancer le timer
+            }
+
+            // Le premier à parler post-flop est la Small Blind (ou le suivant actif)
+            state.turnIndex = getNextActiveIndex(state.dealerIndex);
+            startTurnTimer();
+            syncStateToAll();
+        }
+
+        function resolveShowdown() {
+            let actives = state.players.filter(p => p.status === 'active');
+            let bestScore = -1;
+            let winners = [];
+
+            actives.forEach(p => {
+                let score = evaluatePokerHand(p.cards, state.board);
+                if(score > bestScore) { bestScore = score; winners = [p]; }
+                else if(score === bestScore) { winners.push(p); }
+            });
+
+            let winAmount = Math.floor(state.pot / winners.length);
+            let winNames = [];
+            winners.forEach(w => {
+                w.chips += winAmount;
+                winNames.push(w.name);
+            });
+
+            broadcastSys(`Showdown ! ${winNames.join(" et ")} remporte(nt) ${winAmount}$ !`);
+            syncStateToAll();
+            setTimeout(startNewHand, 6000);
+        }
+
+        // --- MOTEUR DE SCORE (Conservé) ---
         function evaluatePokerHand(holeCards, communityCards) {
             if(!communityCards || communityCards.length < 5) return 0;
             const allCards = holeCards.concat(communityCards);
@@ -234,39 +465,95 @@
             return score;
         }
 
-        // --- AFFICHAGE ---
-        function getCardHTML(card, hidden = false) {
+        // --- AFFICHAGE (CLIENT & HÔTE) ---
+        function getCardHTML(card) {
             if(!card) return '';
-            if(hidden) return `<div class="card hidden">?</div>`;
+            if(card.hidden) return `<div class="card hidden">?</div>`;
             const colorClass = (card.suit === '♥' || card.suit === '♦') ? 'red' : '';
             return `<div class="card ${colorClass}">${card.face}${card.suit}</div>`;
         }
 
-        function renderGame() {
-            let myC = isHost ? gameState.p1Cards : gameState.p2Cards;
-            let oppC = isHost ? gameState.p2Cards : gameState.p1Cards;
-            document.getElementById('my-cards').innerHTML = myC.map(c => getCardHTML(c)).join('');
-            let showOpp = (gameState.step === 5);
-            document.getElementById('opp-cards').innerHTML = oppC.map(c => getCardHTML(c, !showOpp)).join('');
-            document.getElementById('community-cards').innerHTML = gameState.board.map(c => getCardHTML(c)).join('');
+        function renderState(newState) {
+            state = newState; // Maj locale
+
+            document.getElementById('pot-display').innerText = `Pot: ${state.pot}$`;
+            document.getElementById('game-status').innerText = state.msg;
+            document.getElementById('community-cards').innerHTML = state.board.map(c => getCardHTML(c)).join('');
+            
+            const ring = document.getElementById('players-ring');
+            ring.innerHTML = '';
+            
+            let myPlayerId = isHost ? 'host-local' : myId;
+            let isMyTurn = false;
+            let toCallAmount = 0;
+            let myChips = 0;
+
+            state.players.forEach((p, idx) => {
+                const isTurn = (idx === state.turnIndex);
+                if(isTurn && p.id === myPlayerId) {
+                    isMyTurn = true;
+                    toCallAmount = state.currentBet - p.roundBet;
+                    myChips = p.chips;
+                }
+
+                let seat = document.createElement('div');
+                seat.className = `player-seat ${isTurn ? 'active-turn' : ''} ${p.status === 'fold' ? 'folded' : ''}`;
+                
+                let dealerHtml = (idx === state.dealerIndex) ? `<div class="dealer-btn">D</div>` : '';
+                let cardsHtml = `<div class="card-zone" style="min-height:80px;">${p.cards.map(c => getCardHTML(c)).join('')}</div>`;
+                let actionTxt = p.status === 'fold' ? "Couché" : `Mise: ${p.roundBet}$`;
+
+                seat.innerHTML = `
+                    ${dealerHtml}
+                    <div class="player-name">${p.name}</div>
+                    <div class="player-chips">${p.chips}$</div>
+                    <div class="player-bet">${actionTxt}</div>
+                    ${cardsHtml}
+                    <div class="timer-bar" style="width: ${isTurn ? (state.timeLeft / 10 * 100) : 0}%;"></div>
+                `;
+                ring.appendChild(seat);
+            });
+
+            // Afficher/Cacher la barre d'action si c'est notre tour
+            const actionBar = document.getElementById('action-bar');
+            if(isMyTurn && state.step < 5) {
+                actionBar.style.display = 'flex';
+                let callBtn = document.getElementById('btn-call');
+                if(toCallAmount === 0) {
+                    callBtn.innerText = "Check";
+                } else {
+                    callBtn.innerText = `Suivre (${toCallAmount}$)`;
+                }
+                document.getElementById('raise-amount').min = 10;
+                document.getElementById('raise-amount').max = myChips;
+                document.getElementById('raise-amount').value = Math.max(10, BB_AMOUNT);
+            } else {
+                actionBar.style.display = 'none';
+            }
         }
 
-        // --- TCHAT ---
+        // --- COMMUNICATION ---
+        function sendAction(action) {
+            let amt = document.getElementById('raise-amount').value;
+            let localId = isHost ? 'host-local' : myId;
+            processAction(localId, action, amt); // Envoi au moteur (qui route si client ou traite si hôte)
+        }
+
         function sendChat() {
             let input = document.getElementById('chat-input');
             let msg = input.value.trim();
             if(!msg) return;
             addChatMsg(myName, msg);
-            if(gameMode === 'network' && conn) conn.send({ type: 'chat', msg: msg });
-            
-            // Fausse réponse de l'IA en solo
-            if(gameMode === 'solo') {
-                setTimeout(() => {
-                    const iaReplies = ["Je lis dans ton jeu...", "C'est bluffé ça !", "Hmmm...", "Intéressant.", "On parie ?"];
-                    addChatMsg(oppName, iaReplies[Math.floor(Math.random() * iaReplies.length)]);
-                }, 1000);
-            }
+            if(isHost) broadcastChat(myName, msg);
+            else if(myConnToServer) myConnToServer.send({ type: 'chat', name: myName, msg: msg });
             input.value = "";
+        }
+        function broadcastChat(sender, msg) {
+            connections.forEach(c => c.conn.send({ type: 'chat', sender, msg }));
+        }
+        function broadcastSys(msg) {
+            addChatSys(msg);
+            connections.forEach(c => c.conn.send({ type: 'sys', msg }));
         }
         function addChatMsg(sender, msg) {
             let box = document.getElementById('chat-messages');
@@ -275,7 +562,7 @@
         }
         function addChatSys(msg) {
             let box = document.getElementById('chat-messages');
-            box.innerHTML += `<p class="msg-sys">[SYSTÈME] ${msg}</p>`;
+            box.innerHTML += `<p class="msg-sys">[Croupier] ${msg}</p>`;
             box.scrollTop = box.scrollHeight;
         }
     </script>
