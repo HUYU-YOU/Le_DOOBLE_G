@@ -13,7 +13,6 @@
         .input-box { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #45a29e; background: #0b0c10; color: #fff; text-align: center; font-weight: bold; }
         .btn { background: var(--accent); color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; margin: 5px; transition: 0.2s; }
         .btn:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--accent); }
-        .btn:disabled { background: #555; color: #888; cursor: not-allowed; box-shadow: none; transform: none; }
         .btn-red { background: var(--red); color: white; }
         .btn-green { background: var(--green); color: black; }
         
@@ -24,6 +23,7 @@
         #table-center { background: radial-gradient(circle, #0e3d2c 0%, #061c14 100%); border-radius: 100px; border: 8px solid #2a1f1a; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 700px; min-height: 200px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 0 30px rgba(0,0,0,0.5); }
         
         #pot-display { font-size: 1.5em; color: #f1c40f; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        #game-status { margin-top:15px; color:var(--accent); font-weight:bold; text-transform:uppercase; font-size: 1.2em; text-align: center; }
         
         .card-zone { display: flex; gap: 10px; min-height: 100px; justify-content: center; align-items: center; }
         .card { width: 50px; height: 75px; background: white; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 1.2em; font-weight: bold; color: black; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); border: 2px solid #ccc; }
@@ -35,6 +35,7 @@
         .player-seat { background: var(--panel); border: 2px solid #333; border-radius: 10px; padding: 10px; width: 140px; text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
         .player-seat.active-turn { border-color: var(--accent); box-shadow: 0 0 20px var(--accent); }
         .player-seat.folded { opacity: 0.5; filter: grayscale(100%); }
+        .player-seat.out { opacity: 0.2; filter: grayscale(100%); }
         .player-name { font-weight: bold; color: var(--accent); font-size: 1.1em; overflow: hidden; text-overflow: ellipsis; width: 100%; }
         .player-chips { color: #f1c40f; font-weight: bold; margin: 5px 0; }
         .player-bet { color: #fff; font-size: 0.9em; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 10px; margin-bottom: 10px; }
@@ -43,7 +44,7 @@
         .player-seat.active-turn .timer-bar { display: block; }
 
         /* Actions du Joueur Local */
-        #action-bar { display: none; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; border: 1px solid var(--accent); gap: 10px; margin-top: 20px; align-items: center; }
+        #action-bar { display: none; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; border: 1px solid var(--accent); gap: 10px; margin-top: 20px; align-items: center; flex-wrap: wrap; justify-content: center; }
         
         /* Chat */
         #chat-area { width: 100%; max-width: 800px; background: var(--panel); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(102,252,241,0.2); margin-top: 20px; }
@@ -77,7 +78,6 @@
     <div id="game-layout">
         
         <div id="poker-table-container">
-            <!-- Hôte Info -->
             <div id="host-lobby-panel" style="display:none; text-align:center; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px;">
                 ID de la table à partager : <b style="color:var(--accent);" id="my-id">...</b><br>
                 <button class="btn" style="margin-top:10px;" onclick="startGame()">Lancer la partie</button>
@@ -87,18 +87,18 @@
             <div id="table-center">
                 <div id="pot-display">Pot: 0$</div>
                 <div class="card-zone" id="community-cards"></div>
-                <div id="game-status" style="margin-top:15px; color:var(--accent); font-weight:bold; text-transform:uppercase;">En attente de joueurs...</div>
+                <div id="game-status">En attente de joueurs...</div>
             </div>
             
             <!-- Joueurs -->
             <div id="players-ring"></div>
         </div>
 
-        <!-- Actions du joueur (Mises) -->
+        <!-- Actions du joueur -->
         <div id="action-bar">
             <button class="btn btn-red" onclick="sendAction('fold')">Se Coucher</button>
             <button class="btn btn-green" id="btn-call" onclick="sendAction('call')">Suivre</button>
-            <div style="display:flex; align-items:center; gap:5px;">
+            <div id="raise-group" style="display:flex; align-items:center; gap:5px;">
                 <input type="number" id="raise-amount" class="input-box" style="width:80px; margin:0;" value="0">
                 <button class="btn" onclick="sendAction('raise')">Relancer</button>
             </div>
@@ -121,35 +121,36 @@
         let myName = "";
         let isHost = false;
         
-        // --- VARIABLES RÉSEAU (HÔTE) ---
-        let connections = []; // Liste des clients connectés { peerId, conn }
+        // --- VARIABLES RÉSEAU ---
+        let connections = []; // Uniquement pour l'Hôte
+        let myConnToServer = null; // Uniquement pour le Client
         
-        // --- ETAT DU JEU (Source de vérité sur l'Hôte) ---
+        // --- ETAT DU JEU ---
         const SB_AMOUNT = 10;
         const BB_AMOUNT = 20;
         
         let state = {
-            step: 0, // 0:Lobby, 1:PreFlop, 2:Flop, 3:Turn, 4:River, 5:Showdown
+            step: 0, 
             pot: 0,
             currentBet: 0,
             board: [],
-            players: [], // { id, name, chips, roundBet, totalBet, cards, status (active/fold/out), hasActed }
+            players: [], 
             turnIndex: -1,
             dealerIndex: 0,
-            timeLeft: 10,
+            timeLeft: 15, // Passage à 15 secondes
             msg: "En attente..."
         };
 
         let timerInterval = null;
         let deck = [];
 
-        // --- INITIALISATION PEERJS ---
+        // --- INIT PEERJS ---
         peer.on('open', id => { 
-            myId = id; 
+            if(!myId) myId = id; // Sécurité
             if(document.getElementById('my-id')) document.getElementById('my-id').innerText = id; 
         });
 
-        // Hôte reçoit une connexion
+        // (HÔTE) Reçoit des connexions
         peer.on('connection', conn => {
             if(!isHost) return;
             if(state.players.length >= 8 || state.step > 0) {
@@ -162,8 +163,11 @@
             
             conn.on('data', data => {
                 if(data.type === 'join') {
+                    // C'EST ICI LA CORRECTION MAJEURE : On renvoie l'ID exact validé au client !
+                    conn.send({ type: 'welcome', id: conn.peer }); 
+                    
                     state.players.push({ id: conn.peer, name: data.name, chips: 1000, roundBet: 0, totalBet: 0, cards: [], status: 'active', hasActed: false });
-                    broadcastSys(`${data.name} a rejoint la table.`);
+                    broadcastSys(`✅ ${data.name} a rejoint la table.`);
                     syncStateToAll();
                 }
                 if(data.type === 'chat') broadcastChat(data.name, data.msg);
@@ -177,13 +181,13 @@
             });
         });
 
-        // --- ACTIONS BOUTONS MENU ---
+        // --- BOUTONS MENU ---
         function hostGame() {
             myName = document.getElementById('player-name').value || "Hôte";
             isHost = true;
+            myId = 'host-local'; 
             
-            // L'hôte s'ajoute lui-même comme premier joueur
-            state.players.push({ id: 'host-local', name: myName, chips: 1000, roundBet: 0, totalBet: 0, cards: [], status: 'active', hasActed: false });
+            state.players.push({ id: myId, name: myName, chips: 1000, roundBet: 0, totalBet: 0, cards: [], status: 'active', hasActed: false });
             
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('game-layout').style.display = 'flex';
@@ -192,7 +196,6 @@
             renderState(state);
         }
 
-        let myConnToServer = null;
         function joinGame() {
             myName = document.getElementById('player-name').value || "Client";
             const hostId = document.getElementById('join-id').value;
@@ -208,6 +211,7 @@
             });
             
             myConnToServer.on('data', data => {
+                if(data.type === 'welcome') { myId = data.id; } // Le client reçoit son identité officielle
                 if(data.type === 'state') renderState(data.state);
                 if(data.type === 'chat') addChatMsg(data.sender, data.msg);
                 if(data.type === 'sys') addChatSys(data.msg);
@@ -217,24 +221,28 @@
         // --- MOTEUR POKER (HÔTE UNIQUEMENT) ---
         function syncStateToAll() {
             if(!isHost) return;
-            // Pour chaque client, on masque les cartes des autres si on n'est pas au Showdown
+            
+            // Envoi aux clients
             connections.forEach(c => {
-                let stateCopy = JSON.parse(JSON.stringify(state)); // Deep copy
+                let stateCopy = JSON.parse(JSON.stringify(state)); 
                 if(stateCopy.step < 5) {
                     stateCopy.players.forEach(p => {
+                        // Si la carte n'appartient pas à ce client précis, on la cache.
                         if(p.id !== c.peerId && p.cards.length > 0) {
-                            p.cards = [{hidden:true}, {hidden:true}]; // Masquer cartes
+                            p.cards = [{hidden:true}, {hidden:true}];
                         }
                     });
                 }
                 c.conn.send({ type: 'state', state: stateCopy });
             });
             
-            // Rendu local pour l'Hôte (qui cache aussi les cartes des autres !)
+            // Rendu local pour l'Hôte lui-même
             let localState = JSON.parse(JSON.stringify(state));
             if(localState.step < 5) {
                 localState.players.forEach(p => {
-                    if(p.id !== 'host-local' && p.cards.length > 0) p.cards = [{hidden:true}, {hidden:true}];
+                    if(p.id !== 'host-local' && p.cards.length > 0) {
+                        p.cards = [{hidden:true}, {hidden:true}];
+                    }
                 });
             }
             renderState(localState);
@@ -254,6 +262,30 @@
             startNewHand();
         }
 
+        // Récupère le prochain joueur toujours en jeu (même s'il n'a plus de jetons)
+        function getNextInGameIndex(currentIndex) {
+            let i = currentIndex;
+            let loops = 0;
+            do {
+                i = (i + 1) % state.players.length;
+                loops++;
+                if (loops > state.players.length) return 0;
+            } while (state.players[i].status === 'out');
+            return i;
+        }
+
+        // Récupère le prochain joueur QUI PEUT JOUER (Actif ET a des jetons)
+        function getNextTurnIndex(currentIndex) {
+            let i = currentIndex;
+            let loops = 0;
+            do {
+                i = (i + 1) % state.players.length;
+                loops++;
+                if (loops > state.players.length) return -1; // Personne ne peut jouer (Tous Tapis)
+            } while (state.players[i].status !== 'active' || state.players[i].chips === 0);
+            return i;
+        }
+
         function startNewHand() {
             clearInterval(timerInterval);
             deck = createDeck();
@@ -262,7 +294,6 @@
             state.board = [];
             state.msg = "Distribution...";
             
-            // Exclure les joueurs ruinés
             state.players.forEach(p => {
                 p.status = p.chips <= 0 ? 'out' : 'active';
                 p.roundBet = 0; p.totalBet = 0; p.hasActed = false;
@@ -271,23 +302,32 @@
             });
 
             if(state.players.filter(p=>p.status === 'active').length < 2) {
-                broadcastSys("Partie terminée, pas assez de joueurs avec des jetons !");
+                broadcastSys("Partie terminée, pas assez de joueurs en lice !");
                 return;
             }
 
             // Blinds
-            state.dealerIndex = getNextActiveIndex(state.dealerIndex);
-            let sbIndex = getNextActiveIndex(state.dealerIndex);
-            let bbIndex = getNextActiveIndex(sbIndex);
+            state.dealerIndex = getNextInGameIndex(state.dealerIndex);
+            let sbIndex = getNextInGameIndex(state.dealerIndex);
+            let bbIndex = getNextInGameIndex(sbIndex);
             
             forceBet(sbIndex, Math.min(SB_AMOUNT, state.players[sbIndex].chips));
             forceBet(bbIndex, Math.min(BB_AMOUNT, state.players[bbIndex].chips));
-            state.currentBet = BB_AMOUNT;
+            state.currentBet = state.players[bbIndex].roundBet; 
             
-            // Premier à jouer (UTG)
-            state.turnIndex = getNextActiveIndex(bbIndex);
+            // GESTION DU TAPIS : Les joueurs à 0 jetons sont considérés comme ayant "déjà parlé"
+            state.players.forEach(p => {
+                if (p.status === 'active' && p.chips === 0) p.hasActed = true;
+            });
+
+            state.turnIndex = getNextTurnIndex(bbIndex);
             
-            startTurnTimer();
+            if(state.turnIndex === -1) {
+                // Extrême : tout le monde est all-in pré-flop !
+                setTimeout(advanceGameStep, 1000);
+            } else {
+                startTurnTimer();
+            }
             syncStateToAll();
         }
 
@@ -301,37 +341,26 @@
 
         function startTurnTimer() {
             clearInterval(timerInterval);
-            state.timeLeft = 10;
+            state.timeLeft = 15; // Modifié : 15 secondes
             timerInterval = setInterval(() => {
                 state.timeLeft--;
                 if(state.timeLeft <= 0) {
                     let pId = state.players[state.turnIndex].id;
-                    broadcastSys(`Temps écoulé pour ${state.players[state.turnIndex].name} (Se couche)`);
-                    processAction(pId, 'fold', 0); // Fold automatique
+                    broadcastSys(`⏳ Temps écoulé pour ${state.players[state.turnIndex].name} (Se couche)`);
+                    processAction(pId, 'fold', 0);
                 }
                 syncStateToAll();
             }, 1000);
         }
 
-        function getNextActiveIndex(currentIndex) {
-            let i = currentIndex;
-            do {
-                i = (i + 1) % state.players.length;
-            } while (state.players[i].status !== 'active');
-            return i;
-        }
-
         function processAction(playerId, action, amount = 0) {
             if(!isHost) {
-                // Si on est client, on envoie au serveur
-                if(playerId === 'host-local') playerId = myId; // Géré par la fonction d'envoi UI
                 myConnToServer.send({ type: 'action', action, amount: parseInt(amount) });
                 return;
             }
             
-            // Logique Serveur (Hôte)
             let p = state.players[state.turnIndex];
-            if(p.id !== playerId) return; // Pas son tour
+            if(p.id !== playerId) return; 
 
             p.hasActed = true;
 
@@ -344,17 +373,19 @@
                 forceBet(state.turnIndex, actualCall);
             } 
             else if(action === 'raise') {
-                let raiseAmt = parseInt(amount);
+                let raiseAmt = parseInt(amount); // Montant ajouté au call
                 let toCall = state.currentBet - p.roundBet;
                 let totalNeeded = toCall + raiseAmt;
-                if(totalNeeded > p.chips) totalNeeded = p.chips; // All-in
+                if(totalNeeded > p.chips) totalNeeded = p.chips; 
                 
                 forceBet(state.turnIndex, totalNeeded);
-                state.currentBet = p.roundBet; // Nouvelle mise de référence
+                state.currentBet = p.roundBet; // Le roundBet de ce joueur devient la mise à suivre
                 
-                // Si relance, les autres doivent réagir
+                // Si relance, on remet hasActed à false pour ceux qui ont des jetons
                 state.players.forEach((otherP, idx) => {
-                    if(otherP.status === 'active' && idx !== state.turnIndex) otherP.hasActed = false;
+                    if(otherP.status === 'active' && idx !== state.turnIndex && otherP.chips > 0) {
+                        otherP.hasActed = false;
+                    }
                 });
             }
 
@@ -364,54 +395,75 @@
         function checkRoundEnd() {
             let actives = state.players.filter(p => p.status === 'active');
             
-            // Victoire par abandon
+            // Tout le monde se couche sauf un
             if(actives.length === 1) {
+                state.step = 5; // On force l'étape 5 pour dévoiler les cartes (optionnel mais sympa)
                 actives[0].chips += state.pot;
-                broadcastSys(`${actives[0].name} gagne le pot de ${state.pot}$ ! (Les autres se sont couchés)`);
-                setTimeout(startNewHand, 4000);
+                let msg = `🏆 ${actives[0].name} gagne ${state.pot}$ ! (Les autres se sont couchés)`;
+                broadcastSys(msg);
+                state.msg = msg;
+                syncStateToAll();
+                setTimeout(startNewHand, 5000);
                 return;
             }
 
-            // Tout le monde a joué ET a égalisé la mise ? (ou est à tapis/0 chip)
+            // Un tour est fini quand tout le monde a joué ET (a égalisé la mise OU est à tapis)
             let roundComplete = actives.every(p => p.hasActed && (p.roundBet === state.currentBet || p.chips === 0));
 
             if(roundComplete) {
                 advanceGameStep();
             } else {
-                state.turnIndex = getNextActiveIndex(state.turnIndex);
-                startTurnTimer();
-                syncStateToAll();
+                state.turnIndex = getNextTurnIndex(state.turnIndex);
+                if(state.turnIndex === -1) {
+                    // Tous les joueurs restants sont à tapis ! On avance auto.
+                    advanceGameStep();
+                } else {
+                    startTurnTimer();
+                    syncStateToAll();
+                }
             }
         }
 
         function advanceGameStep() {
-            // Réinitialisation des mises du tour
-            state.players.forEach(p => { p.roundBet = 0; p.hasActed = false; });
+            // Remise à zéro pour le nouveau tour de table
+            state.players.forEach(p => { 
+                p.roundBet = 0; 
+                p.hasActed = (p.chips === 0); // Si 0 jetons, on considère qu'il a "déjà joué" pour cette rue
+            });
             state.currentBet = 0;
             
-            if(state.step === 1) { // -> Flop
+            if(state.step === 1) { 
                 state.step = 2; state.msg = "Le Flop";
                 deck.pop(); state.board.push(deck.pop(), deck.pop(), deck.pop());
-            } else if(state.step === 2) { // -> Turn
+            } else if(state.step === 2) { 
                 state.step = 3; state.msg = "La Turn";
                 deck.pop(); state.board.push(deck.pop());
-            } else if(state.step === 3) { // -> River
+            } else if(state.step === 3) { 
                 state.step = 4; state.msg = "La River";
                 deck.pop(); state.board.push(deck.pop());
-            } else if(state.step === 4) { // -> Showdown
-                state.step = 5; state.msg = "Abattage !";
-                clearInterval(timerInterval);
+            } else if(state.step === 4) { 
                 resolveShowdown();
-                return; // Ne pas relancer le timer
+                return; 
             }
 
-            // Le premier à parler post-flop est la Small Blind (ou le suivant actif)
-            state.turnIndex = getNextActiveIndex(state.dealerIndex);
+            // GESTION DU TAPIS AUTOMATIQUE
+            let capablePlayers = state.players.filter(p => p.status === 'active' && p.chips > 0);
+            if(capablePlayers.length <= 1) {
+                // Si personne ne peut relancer, on accélère jusqu'au Showdown !
+                setTimeout(advanceGameStep, 1000); 
+                syncStateToAll();
+                return;
+            }
+
+            state.turnIndex = getNextTurnIndex(state.dealerIndex);
             startTurnTimer();
             syncStateToAll();
         }
 
         function resolveShowdown() {
+            state.step = 5; 
+            clearInterval(timerInterval);
+            
             let actives = state.players.filter(p => p.status === 'active');
             let bestScore = -1;
             let winners = [];
@@ -423,18 +475,19 @@
             });
 
             let winAmount = Math.floor(state.pot / winners.length);
-            let winNames = [];
-            winners.forEach(w => {
-                w.chips += winAmount;
-                winNames.push(w.name);
-            });
+            let winNames = winners.map(w => w.name);
+            winners.forEach(w => w.chips += winAmount);
 
-            broadcastSys(`Showdown ! ${winNames.join(" et ")} remporte(nt) ${winAmount}$ !`);
-            syncStateToAll();
-            setTimeout(startNewHand, 6000);
+            let msg = `🏆 ABATTAGE ! ${winNames.join(" et ")} remporte(nt) ${winAmount}$ !`;
+            broadcastSys(msg);
+            state.msg = msg;
+            syncStateToAll(); // Va dévoiler les cartes à tout le monde
+            
+            // Attente de 5 secondes exactes avant de reprendre !
+            setTimeout(startNewHand, 5000);
         }
 
-        // --- MOTEUR DE SCORE (Conservé) ---
+        // --- MOTEUR DE SCORE ---
         function evaluatePokerHand(holeCards, communityCards) {
             if(!communityCards || communityCards.length < 5) return 0;
             const allCards = holeCards.concat(communityCards);
@@ -474,7 +527,7 @@
         }
 
         function renderState(newState) {
-            state = newState; // Maj locale
+            state = newState; 
 
             document.getElementById('pot-display').innerText = `Pot: ${state.pot}$`;
             document.getElementById('game-status').innerText = state.msg;
@@ -483,25 +536,30 @@
             const ring = document.getElementById('players-ring');
             ring.innerHTML = '';
             
-            let myPlayerId = isHost ? 'host-local' : myId;
             let isMyTurn = false;
             let toCallAmount = 0;
             let myChips = 0;
 
             state.players.forEach((p, idx) => {
                 const isTurn = (idx === state.turnIndex);
-                if(isTurn && p.id === myPlayerId) {
+                if(isTurn && p.id === myId) {
                     isMyTurn = true;
                     toCallAmount = state.currentBet - p.roundBet;
                     myChips = p.chips;
                 }
 
                 let seat = document.createElement('div');
-                seat.className = `player-seat ${isTurn ? 'active-turn' : ''} ${p.status === 'fold' ? 'folded' : ''}`;
+                // Gestion visuelle si on est couché ou éliminé
+                let seatClass = `player-seat ${isTurn ? 'active-turn' : ''} ${p.status === 'fold' ? 'folded' : ''} ${p.status === 'out' ? 'out' : ''}`;
+                seat.className = seatClass;
                 
                 let dealerHtml = (idx === state.dealerIndex) ? `<div class="dealer-btn">D</div>` : '';
                 let cardsHtml = `<div class="card-zone" style="min-height:80px;">${p.cards.map(c => getCardHTML(c)).join('')}</div>`;
-                let actionTxt = p.status === 'fold' ? "Couché" : `Mise: ${p.roundBet}$`;
+                
+                let actionTxt = `Mise: ${p.roundBet}$`;
+                if(p.status === 'fold') actionTxt = "Couché";
+                if(p.status === 'out') actionTxt = "Éliminé";
+                if(p.chips === 0 && p.status === 'active') actionTxt = "TAPIS !";
 
                 seat.innerHTML = `
                     ${dealerHtml}
@@ -509,24 +567,36 @@
                     <div class="player-chips">${p.chips}$</div>
                     <div class="player-bet">${actionTxt}</div>
                     ${cardsHtml}
-                    <div class="timer-bar" style="width: ${isTurn ? (state.timeLeft / 10 * 100) : 0}%;"></div>
+                    <div class="timer-bar" style="width: ${isTurn ? (state.timeLeft / 15 * 100) : 0}%;"></div>
                 `;
                 ring.appendChild(seat);
             });
 
-            // Afficher/Cacher la barre d'action si c'est notre tour
+            // GESTION DU BOUTON RELANCER LORS D'UN TAPIS
             const actionBar = document.getElementById('action-bar');
             if(isMyTurn && state.step < 5) {
                 actionBar.style.display = 'flex';
                 let callBtn = document.getElementById('btn-call');
+                
                 if(toCallAmount === 0) {
                     callBtn.innerText = "Check";
                 } else {
-                    callBtn.innerText = `Suivre (${toCallAmount}$)`;
+                    // Si je n'ai pas assez d'argent pour suivre, ça devient un Tapis
+                    let textCall = myChips <= toCallAmount ? "Tapis !" : `Suivre (${toCallAmount}$)`;
+                    callBtn.innerText = textCall;
                 }
-                document.getElementById('raise-amount').min = 10;
-                document.getElementById('raise-amount').max = myChips;
-                document.getElementById('raise-amount').value = Math.max(10, BB_AMOUNT);
+                
+                let maxRaise = myChips - toCallAmount;
+                // Si on a plus de jetons que nécessaire pour suivre, on peut relancer
+                if (maxRaise > 0) {
+                    document.getElementById('raise-group').style.display = 'flex';
+                    document.getElementById('raise-amount').min = 10;
+                    document.getElementById('raise-amount').max = maxRaise;
+                    document.getElementById('raise-amount').value = Math.min(BB_AMOUNT, maxRaise);
+                } else {
+                    // Sinon (on est en train de faire tapis juste en suivant), on cache la relance
+                    document.getElementById('raise-group').style.display = 'none';
+                }
             } else {
                 actionBar.style.display = 'none';
             }
@@ -535,8 +605,7 @@
         // --- COMMUNICATION ---
         function sendAction(action) {
             let amt = document.getElementById('raise-amount').value;
-            let localId = isHost ? 'host-local' : myId;
-            processAction(localId, action, amt); // Envoi au moteur (qui route si client ou traite si hôte)
+            processAction(myId, action, amt); 
         }
 
         function sendChat() {
@@ -562,7 +631,7 @@
         }
         function addChatSys(msg) {
             let box = document.getElementById('chat-messages');
-            box.innerHTML += `<p class="msg-sys">[Croupier] ${msg}</p>`;
+            box.innerHTML += `<p class="msg-sys">🎰 ${msg}</p>`;
             box.scrollTop = box.scrollHeight;
         }
     </script>
