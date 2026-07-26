@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Cyber Tanks - Arcade</title>
+    <title>Cyber Tanks - Skins Edition</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; }
@@ -11,7 +11,7 @@
         
         #menu, #game-container { background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 30px; border: 1px solid rgba(255,255,255,0.1); margin-top: 20px; text-align: center; }
         #game-container { display: none; padding: 15px; position: relative; }
-        canvas { background: #1a1a2e; border: 2px solid #333; border-radius: 10px; display: block; box-shadow: inset 0 0 50px #000; }
+        canvas { border: 2px solid #333; border-radius: 10px; display: block; box-shadow: inset 0 0 50px #000; }
         
         .btn { background: #fff; color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; margin: 10px; transition: 0.2s; }
         .btn:hover { transform: scale(1.05); box-shadow: 0 0 15px #fff; }
@@ -25,7 +25,6 @@
 <body>
     <h1>Cyber Tanks</h1>
 
-    <!-- Menu Multijoueur -->
     <div id="menu">
         <h2>Initialisation du Réseau</h2>
         <p>Votre ID : <span id="my-id" style="color:var(--p1);font-weight:bold;">Création...</span></p>
@@ -37,7 +36,6 @@
         <p id="status-text" style="color: #aaa; margin-top: 20px;"></p>
     </div>
 
-    <!-- Jeu -->
     <div id="game-container">
         <div id="hud">
             <div class="p1-lives">J1 VIES: <span id="l1">3</span></div>
@@ -47,7 +45,11 @@
     </div>
 
     <script>
-        // === RÉSEAU (PEERJS) ===
+        // CHARGEMENT IMAGES
+        const tankImg = new Image(); tankImg.src = 'img/tank1.png';
+        const rockImg = new Image(); rockImg.src = 'img/rocher.png';
+        const mapImg = new Image(); mapImg.src = 'img/map1.png';
+
         const peer = new Peer();
         let conn = null, isHost = false, gameActive = false;
         const keys = { up: false, down: false, left: false, right: false, space: false };
@@ -55,12 +57,9 @@
         peer.on('open', id => document.getElementById('my-id').innerText = id);
         
         function hostGame() {
-            document.getElementById('status-text').innerText = "En attente d'un adversaire...";
+            document.getElementById('status-text').innerText = "En attente...";
             isHost = true;
-            peer.on('connection', connection => {
-                conn = connection;
-                setupConnection();
-            });
+            peer.on('connection', connection => { conn = connection; setupConnection(); });
         }
         
         function joinGame() {
@@ -68,8 +67,7 @@
             if(!hostId) return;
             document.getElementById('status-text').innerText = "Connexion...";
             conn = peer.connect(hostId);
-            isHost = false;
-            setupConnection();
+            isHost = false; setupConnection();
         }
 
         function setupConnection() {
@@ -77,15 +75,12 @@
                 document.getElementById('menu').style.display = 'none';
                 document.getElementById('game-container').style.display = 'block';
                 gameActive = true;
-                if(isHost) startGameLoop(); // Seul l'hôte gère la boucle physique
+                if(isHost) startGameLoop();
             });
             
             conn.on('data', data => {
-                if(isHost && data.type === 'input') {
-                    p2.keys = data.keys; // Hôte reçoit les inputs du J2
-                }
+                if(isHost && data.type === 'input') p2.keys = data.keys;
                 if(!isHost && data.type === 'state') {
-                    // Client reçoit l'état du jeu et l'affiche
                     gameState = data.state;
                     updateHUD(gameState.p1.lives, gameState.p2.lives);
                     drawGame();
@@ -93,7 +88,6 @@
             });
         }
 
-        // Contrôles locaux envoyés au réseau
         window.addEventListener('keydown', e => {
             if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) {
                 e.preventDefault();
@@ -110,38 +104,50 @@
             }
         });
 
-        // === LOGIQUE DE JEU (Gérée par l'Hôte) ===
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // État partagé
+        // MURS & ROCHERS (OBSTACLES)
+        const rocks = [
+            { x: 250, y: 150, w: 60, h: 60 },
+            { x: 490, y: 150, w: 60, h: 60 },
+            { x: 250, y: 290, w: 60, h: 60 },
+            { x: 490, y: 290, w: 60, h: 60 }
+        ];
+
         let gameState = {
             p1: { x: 100, y: 250, angle: 0, lives: 3, color: '#00f0ff', cooldown: 0, invincibility: 0 },
             p2: { x: 700, y: 250, angle: 180, lives: 3, color: '#ff007f', cooldown: 0, invincibility: 0 },
             bullets: []
         };
         
-        // Le J2 est un "fantôme" côté hôte pour stocker ses inputs
         let p2 = { keys: { up: false, down: false, left: false, right: false, space: false } };
+
+        function checkRockCollision(x, y, radius) {
+            return rocks.some(r => x + radius > r.x && x - radius < r.x + r.w && y + radius > r.y && y - radius < r.y + r.h);
+        }
 
         function updatePhysics() {
             const speed = 3; const rotSpeed = 4;
             
-            // Update TANK 1 (Local Hôte)
+            // Tank 1
+            let oldX1 = gameState.p1.x, oldY1 = gameState.p1.y;
             if(keys.left) gameState.p1.angle -= rotSpeed;
             if(keys.right) gameState.p1.angle += rotSpeed;
             if(keys.up) { gameState.p1.x += Math.cos(gameState.p1.angle * Math.PI / 180) * speed; gameState.p1.y += Math.sin(gameState.p1.angle * Math.PI / 180) * speed; }
             if(keys.down) { gameState.p1.x -= Math.cos(gameState.p1.angle * Math.PI / 180) * speed; gameState.p1.y -= Math.sin(gameState.p1.angle * Math.PI / 180) * speed; }
+            if(checkRockCollision(gameState.p1.x, gameState.p1.y, 18)) { gameState.p1.x = oldX1; gameState.p1.y = oldY1; }
             if(keys.space && gameState.p1.cooldown === 0) fireBullet(gameState.p1);
 
-            // Update TANK 2 (Inputs réseau)
+            // Tank 2
+            let oldX2 = gameState.p2.x, oldY2 = gameState.p2.y;
             if(p2.keys.left) gameState.p2.angle -= rotSpeed;
             if(p2.keys.right) gameState.p2.angle += rotSpeed;
             if(p2.keys.up) { gameState.p2.x += Math.cos(gameState.p2.angle * Math.PI / 180) * speed; gameState.p2.y += Math.sin(gameState.p2.angle * Math.PI / 180) * speed; }
             if(p2.keys.down) { gameState.p2.x -= Math.cos(gameState.p2.angle * Math.PI / 180) * speed; gameState.p2.y -= Math.sin(gameState.p2.angle * Math.PI / 180) * speed; }
+            if(checkRockCollision(gameState.p2.x, gameState.p2.y, 18)) { gameState.p2.x = oldX2; gameState.p2.y = oldY2; }
             if(p2.keys.space && gameState.p2.cooldown === 0) fireBullet(gameState.p2);
 
-            // Cooldowns & Murs
             [gameState.p1, gameState.p2].forEach(p => {
                 if(p.cooldown > 0) p.cooldown--;
                 if(p.invincibility > 0) p.invincibility--;
@@ -149,16 +155,19 @@
                 p.y = Math.max(20, Math.min(canvas.height - 20, p.y));
             });
 
-            // Update Bullets
+            // Bullets
             for(let i = gameState.bullets.length - 1; i >= 0; i--) {
                 let b = gameState.bullets[i];
                 b.x += b.vx; b.y += b.vy; b.life--;
                 
-                // Rebond
                 if(b.x < 0 || b.x > canvas.width) b.vx *= -1;
                 if(b.y < 0 || b.y > canvas.height) b.vy *= -1;
                 
-                // Collisions Tanks
+                // Collision avec les rochers
+                if(checkRockCollision(b.x, b.y, 5)) {
+                    gameState.bullets.splice(i, 1); continue;
+                }
+
                 if(gameState.p1.invincibility === 0 && Math.hypot(b.x - gameState.p1.x, b.y - gameState.p1.y) < 20) {
                     gameState.p1.lives--; gameState.p1.invincibility = 100;
                     gameState.p1.x = 100; gameState.p1.y = 250; gameState.bullets.splice(i, 1); continue;
@@ -186,19 +195,37 @@
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw Tanks
+            // Fond MAP
+            if(mapImg.complete && mapImg.naturalWidth !== 0) {
+                ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            }
+
+            // Rochers
+            rocks.forEach(r => {
+                if(rockImg.complete && rockImg.naturalWidth !== 0) {
+                    ctx.drawImage(rockImg, r.x, r.y, r.w, r.h);
+                } else {
+                    ctx.fillStyle = '#555'; ctx.fillRect(r.x, r.y, r.w, r.h);
+                }
+            });
+
+            // Tanks
             [gameState.p1, gameState.p2].forEach(p => {
-                if(p.invincibility > 0 && Math.floor(Date.now() / 100) % 2 === 0) return; // Clignotement
+                if(p.invincibility > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
                 
                 ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180);
                 
-                ctx.fillStyle = p.color; ctx.shadowBlur = 15; ctx.shadowColor = p.color;
-                ctx.fillRect(-15, -15, 30, 30); // Corps
-                ctx.fillRect(0, -5, 25, 10); // Canon
+                if(tankImg.complete && tankImg.naturalWidth !== 0) {
+                    ctx.drawImage(tankImg, -20, -20, 40, 40);
+                } else {
+                    ctx.fillStyle = p.color; ctx.fillRect(-15, -15, 30, 30); ctx.fillRect(0, -5, 25, 10);
+                }
                 ctx.restore();
             });
 
-            // Draw Bullets
+            // Obus
             gameState.bullets.forEach(b => {
                 ctx.fillStyle = b.color; ctx.shadowBlur = 10; ctx.shadowColor = b.color;
                 ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
@@ -216,7 +243,7 @@
             updatePhysics();
             drawGame();
             updateHUD(gameState.p1.lives, gameState.p2.lives);
-            conn.send({type: 'state', state: gameState}); // Envoi état au J2
+            conn.send({type: 'state', state: gameState});
             requestAnimationFrame(startGameLoop);
         }
     </script>
