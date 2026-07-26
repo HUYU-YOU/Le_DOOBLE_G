@@ -6,7 +6,7 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #0b0c10; --panel: #1f2833; --accent: #66fcf1; --chat: rgba(0,0,0,0.5); --red: #ff3b3b; --green: #39ff14; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; user-select: none; }
         h1 { color: var(--accent); text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px var(--accent); margin-top: 20px; }
         
         .menu-container { background: var(--panel); padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); text-align: center; margin-top: 50px; border: 1px solid rgba(102,252,241,0.3); }
@@ -62,7 +62,6 @@
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     <h1>Neon Poker Suite</h1>
 
-    <!-- Menu Principal -->
     <div class="menu-container" id="main-menu">
         <h2 style="color:var(--accent);">Bienvenue à la table</h2>
         <input type="text" id="player-name" class="input-box" placeholder="Votre Pseudo" value="Joueur"><br><br>
@@ -74,37 +73,34 @@
         <p id="status-text" style="color: #aaa; margin-top: 15px;"></p>
     </div>
 
-    <!-- Interface Jeu -->
     <div id="game-layout">
         
         <div id="poker-table-container">
             <div id="host-lobby-panel" style="display:none; text-align:center; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px;">
-                ID de la table à partager : <b style="color:var(--accent);" id="my-id">...</b><br>
+                ID de la table à partager : <b style="color:var(--accent); user-select:all;" id="my-id">...</b><br>
                 <button class="btn" style="margin-top:10px;" onclick="startGame()">Lancer la partie</button>
             </div>
 
-            <!-- Centre de table -->
             <div id="table-center">
                 <div id="pot-display">Pot: 0$</div>
                 <div class="card-zone" id="community-cards"></div>
                 <div id="game-status">En attente de joueurs...</div>
             </div>
             
-            <!-- Joueurs -->
             <div id="players-ring"></div>
         </div>
 
-        <!-- Actions du joueur -->
         <div id="action-bar">
             <button class="btn btn-red" onclick="sendAction('fold')">Se Coucher</button>
             <button class="btn btn-green" id="btn-call" onclick="sendAction('call')">Suivre</button>
             <div id="raise-group" style="display:flex; align-items:center; gap:5px;">
-                <input type="number" id="raise-amount" class="input-box" style="width:80px; margin:0;" value="0">
+                <button class="btn" style="padding:8px 12px; font-size:1.2em;" onclick="adjustRaise(-10)">-10</button>
+                <input type="number" id="raise-amount" class="input-box" style="width:90px; margin:0;" value="20">
+                <button class="btn" style="padding:8px 12px; font-size:1.2em;" onclick="adjustRaise(10)">+10</button>
                 <button class="btn" onclick="sendAction('raise')">Relancer</button>
             </div>
         </div>
         
-        <!-- Chat -->
         <div id="chat-area">
             <div style="background: rgba(0,0,0,0.8); padding: 10px; text-align: center; font-weight: bold; border-bottom: 1px solid #333;">Com-Link</div>
             <div id="chat-messages"></div>
@@ -137,20 +133,20 @@
             players: [], 
             turnIndex: -1,
             dealerIndex: 0,
-            timeLeft: 15, // Passage à 15 secondes
+            timeLeft: 15, // Timer fixe à 15 secondes
             msg: "En attente..."
         };
 
         let timerInterval = null;
         let deck = [];
+        let handResolved = false; // Verrou pour éviter de compter les gains plusieurs fois
 
         // --- INIT PEERJS ---
         peer.on('open', id => { 
-            if(!myId) myId = id; // Sécurité
+            if(!myId) myId = id; 
             if(document.getElementById('my-id')) document.getElementById('my-id').innerText = id; 
         });
 
-        // (HÔTE) Reçoit des connexions
         peer.on('connection', conn => {
             if(!isHost) return;
             if(state.players.length >= 8 || state.step > 0) {
@@ -163,7 +159,7 @@
             
             conn.on('data', data => {
                 if(data.type === 'join') {
-                    // C'EST ICI LA CORRECTION MAJEURE : On renvoie l'ID exact validé au client !
+                    // Transmission de l'ID officiel au client
                     conn.send({ type: 'welcome', id: conn.peer }); 
                     
                     state.players.push({ id: conn.peer, name: data.name, chips: 1000, roundBet: 0, totalBet: 0, cards: [], status: 'active', hasActed: false });
@@ -181,7 +177,7 @@
             });
         });
 
-        // --- BOUTONS MENU ---
+        // --- MENUS ---
         function hostGame() {
             myName = document.getElementById('player-name').value || "Hôte";
             isHost = true;
@@ -198,7 +194,7 @@
 
         function joinGame() {
             myName = document.getElementById('player-name').value || "Client";
-            const hostId = document.getElementById('join-id').value;
+            const hostId = document.getElementById('join-id').value.trim();
             if(!hostId) return;
             document.getElementById('status-text').innerText = "Connexion...";
             
@@ -211,37 +207,34 @@
             });
             
             myConnToServer.on('data', data => {
-                if(data.type === 'welcome') { myId = data.id; } // Le client reçoit son identité officielle
+                if(data.type === 'welcome') { myId = data.id; } 
                 if(data.type === 'state') renderState(data.state);
                 if(data.type === 'chat') addChatMsg(data.sender, data.msg);
                 if(data.type === 'sys') addChatSys(data.msg);
             });
         }
 
-        // --- MOTEUR POKER (HÔTE UNIQUEMENT) ---
+        // --- MOTEUR POKER ---
         function syncStateToAll() {
             if(!isHost) return;
             
-            // Envoi aux clients
             connections.forEach(c => {
                 let stateCopy = JSON.parse(JSON.stringify(state)); 
                 if(stateCopy.step < 5) {
                     stateCopy.players.forEach(p => {
-                        // Si la carte n'appartient pas à ce client précis, on la cache.
                         if(p.id !== c.peerId && p.cards.length > 0) {
-                            p.cards = [{hidden:true}, {hidden:true}];
+                            p.cards = p.cards.map(() => ({ hidden: true }));
                         }
                     });
                 }
                 c.conn.send({ type: 'state', state: stateCopy });
             });
             
-            // Rendu local pour l'Hôte lui-même
             let localState = JSON.parse(JSON.stringify(state));
             if(localState.step < 5) {
                 localState.players.forEach(p => {
                     if(p.id !== 'host-local' && p.cards.length > 0) {
-                        p.cards = [{hidden:true}, {hidden:true}];
+                        p.cards = p.cards.map(() => ({ hidden: true }));
                     }
                 });
             }
@@ -262,7 +255,6 @@
             startNewHand();
         }
 
-        // Récupère le prochain joueur toujours en jeu (même s'il n'a plus de jetons)
         function getNextInGameIndex(currentIndex) {
             let i = currentIndex;
             let loops = 0;
@@ -274,20 +266,20 @@
             return i;
         }
 
-        // Récupère le prochain joueur QUI PEUT JOUER (Actif ET a des jetons)
         function getNextTurnIndex(currentIndex) {
             let i = currentIndex;
             let loops = 0;
             do {
                 i = (i + 1) % state.players.length;
                 loops++;
-                if (loops > state.players.length) return -1; // Personne ne peut jouer (Tous Tapis)
+                if (loops > state.players.length) return -1;
             } while (state.players[i].status !== 'active' || state.players[i].chips === 0);
             return i;
         }
 
         function startNewHand() {
             clearInterval(timerInterval);
+            handResolved = false;
             deck = createDeck();
             state.step = 1;
             state.pot = 0;
@@ -315,7 +307,6 @@
             forceBet(bbIndex, Math.min(BB_AMOUNT, state.players[bbIndex].chips));
             state.currentBet = state.players[bbIndex].roundBet; 
             
-            // GESTION DU TAPIS : Les joueurs à 0 jetons sont considérés comme ayant "déjà parlé"
             state.players.forEach(p => {
                 if (p.status === 'active' && p.chips === 0) p.hasActed = true;
             });
@@ -323,7 +314,6 @@
             state.turnIndex = getNextTurnIndex(bbIndex);
             
             if(state.turnIndex === -1) {
-                // Extrême : tout le monde est all-in pré-flop !
                 setTimeout(advanceGameStep, 1000);
             } else {
                 startTurnTimer();
@@ -341,7 +331,7 @@
 
         function startTurnTimer() {
             clearInterval(timerInterval);
-            state.timeLeft = 15; // Modifié : 15 secondes
+            state.timeLeft = 15;
             timerInterval = setInterval(() => {
                 state.timeLeft--;
                 if(state.timeLeft <= 0) {
@@ -360,7 +350,7 @@
             }
             
             let p = state.players[state.turnIndex];
-            if(p.id !== playerId) return; 
+            if(!p || p.id !== playerId) return; 
 
             p.hasActed = true;
 
@@ -369,19 +359,18 @@
             } 
             else if(action === 'call') {
                 let toCall = state.currentBet - p.roundBet;
-                let actualCall = Math.min(toCall, p.chips); // All-in possible
+                let actualCall = Math.min(toCall, p.chips);
                 forceBet(state.turnIndex, actualCall);
             } 
             else if(action === 'raise') {
-                let raiseAmt = parseInt(amount); // Montant ajouté au call
+                let raiseAmt = parseInt(amount) || 0;
                 let toCall = state.currentBet - p.roundBet;
                 let totalNeeded = toCall + raiseAmt;
                 if(totalNeeded > p.chips) totalNeeded = p.chips; 
                 
                 forceBet(state.turnIndex, totalNeeded);
-                state.currentBet = p.roundBet; // Le roundBet de ce joueur devient la mise à suivre
+                state.currentBet = p.roundBet; 
                 
-                // Si relance, on remet hasActed à false pour ceux qui ont des jetons
                 state.players.forEach((otherP, idx) => {
                     if(otherP.status === 'active' && idx !== state.turnIndex && otherP.chips > 0) {
                         otherP.hasActed = false;
@@ -396,10 +385,16 @@
             let actives = state.players.filter(p => p.status === 'active');
             
             // Tout le monde se couche sauf un
-            if(actives.length === 1) {
-                state.step = 5; // On force l'étape 5 pour dévoiler les cartes (optionnel mais sympa)
-                actives[0].chips += state.pot;
-                let msg = `🏆 ${actives[0].name} gagne ${state.pot}$ ! (Les autres se sont couchés)`;
+            if(actives.length === 1 && !handResolved) {
+                handResolved = true;
+                state.step = 5;
+                clearInterval(timerInterval);
+                let winner = actives[0];
+                let potWon = state.pot;
+                winner.chips += potWon;
+                state.pot = 0; // Réinitialisation immédiate du pot
+
+                let msg = `🏆 ${winner.name} gagne le pot de ${potWon}$ ! (Les autres se sont couchés)`;
                 broadcastSys(msg);
                 state.msg = msg;
                 syncStateToAll();
@@ -407,7 +402,6 @@
                 return;
             }
 
-            // Un tour est fini quand tout le monde a joué ET (a égalisé la mise OU est à tapis)
             let roundComplete = actives.every(p => p.hasActed && (p.roundBet === state.currentBet || p.chips === 0));
 
             if(roundComplete) {
@@ -415,7 +409,6 @@
             } else {
                 state.turnIndex = getNextTurnIndex(state.turnIndex);
                 if(state.turnIndex === -1) {
-                    // Tous les joueurs restants sont à tapis ! On avance auto.
                     advanceGameStep();
                 } else {
                     startTurnTimer();
@@ -425,10 +418,9 @@
         }
 
         function advanceGameStep() {
-            // Remise à zéro pour le nouveau tour de table
             state.players.forEach(p => { 
                 p.roundBet = 0; 
-                p.hasActed = (p.chips === 0); // Si 0 jetons, on considère qu'il a "déjà joué" pour cette rue
+                p.hasActed = (p.chips === 0);
             });
             state.currentBet = 0;
             
@@ -446,10 +438,8 @@
                 return; 
             }
 
-            // GESTION DU TAPIS AUTOMATIQUE
             let capablePlayers = state.players.filter(p => p.status === 'active' && p.chips > 0);
             if(capablePlayers.length <= 1) {
-                // Si personne ne peut relancer, on accélère jusqu'au Showdown !
                 setTimeout(advanceGameStep, 1000); 
                 syncStateToAll();
                 return;
@@ -461,6 +451,8 @@
         }
 
         function resolveShowdown() {
+            if (handResolved) return;
+            handResolved = true;
             state.step = 5; 
             clearInterval(timerInterval);
             
@@ -478,16 +470,18 @@
             let winNames = winners.map(w => w.name);
             winners.forEach(w => w.chips += winAmount);
 
-            let msg = `🏆 ABATTAGE ! ${winNames.join(" et ")} remporte(nt) ${winAmount}$ !`;
+            let potWon = state.pot;
+            state.pot = 0; // Réinitialisation immédiate du pot
+
+            let msg = `🏆 ABATTAGE ! ${winNames.join(" et ")} remporte(nt) le pot de ${potWon}$ !`;
             broadcastSys(msg);
             state.msg = msg;
-            syncStateToAll(); // Va dévoiler les cartes à tout le monde
+            syncStateToAll(); // Révèle les cartes de tout le monde
             
-            // Attente de 5 secondes exactes avant de reprendre !
-            setTimeout(startNewHand, 5000);
+            setTimeout(startNewHand, 5000); // Pause de 5 secondes avant la main suivante
         }
 
-        // --- MOTEUR DE SCORE ---
+        // --- MOTEUR DE EVALUATION DES MAINS ---
         function evaluatePokerHand(holeCards, communityCards) {
             if(!communityCards || communityCards.length < 5) return 0;
             const allCards = holeCards.concat(communityCards);
@@ -518,13 +512,23 @@
             return score;
         }
 
-        // --- AFFICHAGE (CLIENT & HÔTE) ---
+        // --- AFFICHAGE ---
         function getCardHTML(card) {
             if(!card) return '';
             if(card.hidden) return `<div class="card hidden">?</div>`;
             const colorClass = (card.suit === '♥' || card.suit === '♦') ? 'red' : '';
             return `<div class="card ${colorClass}">${card.face}${card.suit}</div>`;
         }
+
+        function adjustRaise(delta) {
+            let inp = document.getElementById('raise-amount');
+            let currentVal = parseInt(inp.value) || 0;
+            let minVal = parseInt(inp.min) || 10;
+            let maxVal = parseInt(inp.max) || 1000;
+            inp.value = Math.min(maxVal, Math.max(minVal, currentVal + delta));
+        }
+
+        let wasActionVisible = false;
 
         function renderState(newState) {
             state = newState; 
@@ -549,7 +553,6 @@
                 }
 
                 let seat = document.createElement('div');
-                // Gestion visuelle si on est couché ou éliminé
                 let seatClass = `player-seat ${isTurn ? 'active-turn' : ''} ${p.status === 'fold' ? 'folded' : ''} ${p.status === 'out' ? 'out' : ''}`;
                 seat.className = seatClass;
                 
@@ -572,7 +575,7 @@
                 ring.appendChild(seat);
             });
 
-            // GESTION DU BOUTON RELANCER LORS D'UN TAPIS
+            // GESTION DES BOUTONS DE MISE ET Saisie
             const actionBar = document.getElementById('action-bar');
             if(isMyTurn && state.step < 5) {
                 actionBar.style.display = 'flex';
@@ -581,24 +584,30 @@
                 if(toCallAmount === 0) {
                     callBtn.innerText = "Check";
                 } else {
-                    // Si je n'ai pas assez d'argent pour suivre, ça devient un Tapis
                     let textCall = myChips <= toCallAmount ? "Tapis !" : `Suivre (${toCallAmount}$)`;
                     callBtn.innerText = textCall;
                 }
                 
                 let maxRaise = myChips - toCallAmount;
-                // Si on a plus de jetons que nécessaire pour suivre, on peut relancer
                 if (maxRaise > 0) {
                     document.getElementById('raise-group').style.display = 'flex';
-                    document.getElementById('raise-amount').min = 10;
-                    document.getElementById('raise-amount').max = maxRaise;
-                    document.getElementById('raise-amount').value = Math.min(BB_AMOUNT, maxRaise);
+                    let inp = document.getElementById('raise-amount');
+                    inp.min = 10;
+                    inp.max = maxRaise;
+                    
+                    // Initialise la valeur de relance uniquement lors du passage de tour
+                    if (!wasActionVisible) {
+                        inp.value = Math.min(BB_AMOUNT, maxRaise);
+                    } else if (parseInt(inp.value) > maxRaise) {
+                        inp.value = maxRaise;
+                    }
                 } else {
-                    // Sinon (on est en train de faire tapis juste en suivant), on cache la relance
                     document.getElementById('raise-group').style.display = 'none';
                 }
+                wasActionVisible = true;
             } else {
                 actionBar.style.display = 'none';
+                wasActionVisible = false;
             }
         }
 
