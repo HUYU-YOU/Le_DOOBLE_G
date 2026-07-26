@@ -1,0 +1,24 @@
+/* Style pour la vidéo de fond */
+.bg-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Remplit toute la carte */
+    opacity: 0; /* Caché par défaut */
+    transition: opacity 0.4s ease; /* Apparition fluide */
+    z-index: 0;
+    pointer-events: none; /* Empêche la vidéo de bloquer le clic */
+}
+
+/* Quand on survole la carte, la vidéo apparaît */
+.game-card:hover .bg-video {
+    opacity: 0.6; /* Assombri légèrement pour qu'on lise encore le texte */
+}
+
+/* Assure-toi que le contenu de ta carte reste par-dessus la vidéo */
+.game-icon, .game-title, .game-desc {
+    position: relative;
+    z-index: 1;
+}
