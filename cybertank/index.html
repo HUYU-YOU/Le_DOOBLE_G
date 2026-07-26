@@ -245,4 +245,18 @@
         }
     </script>
 </body>
+    <script>
+    function playVid(card) {
+        let vid = card.querySelector('.bg-video');
+        if(vid) vid.play();
+    }
+
+    function pauseVid(card) {
+        let vid = card.querySelector('.bg-video');
+        if(vid) {
+            vid.pause();
+            vid.currentTime = 0; // Remet la vidéo à zéro quand on enlève la souris
+        }
+    }
+</script>
 </html>
