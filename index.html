@@ -11,6 +11,10 @@
     <h1>Arcade Network</h1>
     
     <p class="subtitle">Initialisation du système de combat...</p>
+    
+    <!-- LA GRILLE COMMENCE ICI, AVANT LE PREMIER JEU -->
+    <div class="game-grid">
+        
         <a href="poker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">🃏</div>
@@ -53,7 +57,6 @@
             <div class="game-desc">Combats de chars ou t'explose ton khey !</div>
         </a>
     
-        <div class="game-grid">
         <a href="drawer/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="img/drawer_cinematic.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">🎨</div>
@@ -74,7 +77,8 @@
             <div class="game-title">Guess The Manga</div>
             <div class="game-desc">Teste qui est le gros puant</div>
         </a>
-    </div>
+        
+    </div> <!-- LA GRILLE SE FERME ICI, APRÈS LE DERNIER JEU -->
 
     <script>
         // Scripts pour lancer et pauser la vidéo au survol
