@@ -62,44 +62,44 @@
 
     <!-- MENU -->
     <div class="menu-container" id="main-menu">
-        <h2 style="color:var(--cyan);">Rejoindre ou Créer une table</h2>
+        <h2 style="color:var(--cyan);">Join or Create a table</h2>
         <input type="text" id="player-name" class="input-box" placeholder="Votre Pseudo" value="Joueur">
         
         <div style="margin-top:20px;">
-            <button class="btn" style="padding: 15px 30px; font-size:1.2em;" onclick="hostGame()">Créer une Table (Hôte)</button>
+            <button class="btn" style="padding: 15px 30px; font-size:1.2em;" onclick="hostGame()">Create a table (Hôte)</button>
         </div>
         
         <hr style="border-color:#333; margin: 25px 0;">
         <input type="text" id="join-id" class="input-box" placeholder="ID de la table">
-        <button class="btn" onclick="joinGame()" style="background:#45a29e; color:#fff;">Rejoindre</button>
+        <button class="btn" onclick="joinGame()" style="background:#45a29e; color:#fff;">Join</button>
         <p id="status-text" style="color: #aaa; margin-top: 15px;"></p>
     </div>
 
     <!-- LOBBY HÔTE -->
     <div class="menu-container" id="host-lobby" style="display:none;">
-        <h2 style="color:var(--cyan);">Configuration de la partie</h2>
+        <h2 style="color:var(--cyan);">Configuration</h2>
         <p>Partagez ce code aux joueurs : <b style="color:var(--cyan); font-size:1.5em; user-select:all;" id="my-id">Chargement...</b></p>
         
         <div class="panel-box" style="margin:20px 0;">
-            <h3>Joueurs connectés :</h3>
+            <h3>Player connected :</h3>
             <div id="lobby-players" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div>
         </div>
 
-        <h3>Langue du Dictionnaire</h3>
+        <h3>Dictionary language</h3>
         <div class="flag-container">
             <div class="flag active" id="flag-fr" onclick="setLang('fr')">🇫🇷</div>
             <div class="flag" id="flag-en" onclick="setLang('en')">🇬🇧</div>
         </div>
 
         <button class="btn" style="background:#ff007f; padding: 15px 30px; width:100%; margin-bottom:10px;" onclick="startGame('gartic')">📞 Draw the sentence</button>
-        <button class="btn" style="background:#00f0ff; padding: 15px 30px; width:100%;" onclick="startGame('classic')">🖌️ Lancer CLASSIQUE (3 Tours)</button>
+        <button class="btn" style="background:#00f0ff; padding: 15px 30px; width:100%;" onclick="startGame('classic')">🖌️ CLASSIQUE </button>
     </div>
 
     <!-- ECRAN JEU -->
     <div id="game-layout">
         <div id="left-panel">
             <div class="panel-box">
-                <h3 style="margin-top:0; color:var(--cyan); text-align:center;">Joueurs</h3>
+                <h3 style="margin-top:0; color:var(--cyan); text-align:center;">Players</h3>
                 <div id="players-list"></div>
             </div>
 
@@ -114,7 +114,7 @@
 
         <div id="center-panel">
             <div id="top-bar">
-                <div id="turn-info" style="color:var(--teal); font-weight:bold;">En attente...</div>
+                <div id="turn-info" style="color:var(--teal); font-weight:bold;">Waiting... </div>
                 <div id="word-display">_ _ _</div>
                 <div id="timer">--</div>
             </div>
@@ -126,7 +126,7 @@
                 <div class="overlay" id="action-overlay" style="display:none;">
                     <h2 id="action-title" style="color:var(--cyan);">Action requise</h2>
                     <input type="text" id="action-input" class="gartic-input" placeholder="...">
-                    <button class="btn" onclick="submitGarticAction()" style="padding:15px 40px; font-size:1.2em;">Valider</button>
+                    <button class="btn" onclick="submitGarticAction()" style="padding:15px 40px; font-size:1.2em;">Validate</button>
                 </div>
                 
                 <div class="overlay" id="wait-overlay" style="display:none; background:rgba(0,0,0,0.95);">
@@ -136,9 +136,9 @@
 
                 <!-- OVERLAY GRAND GAGNANT -->
                 <div class="overlay" id="winner-overlay" style="display:none; background:rgba(0,0,0,0.95); z-index: 1000;">
-                    <h1 style="color:#ff007f; font-size:4em; margin-bottom:10px; text-shadow:0 0 20px #ff007f;">🏆 FIN DE LA PARTIE 🏆</h1>
+                    <h1 style="color:#ff007f; font-size:4em; margin-bottom:10px; text-shadow:0 0 20px #ff007f;">🏆 END OF THE GAME 🏆</h1>
                     <h2 id="winner-name" style="color:var(--cyan); font-size:3em; text-transform:uppercase;"></h2>
-                    <p style="color:#fff; font-size:1.5em; margin-top:20px;">Retour au lobby dans 10 secondes...</p>
+                    <p style="color:#fff; font-size:1.5em; margin-top:20px;">Return in lobby in 10 seconds...</p>
                 </div>
             </div>
 
@@ -162,16 +162,16 @@
                 <button class="tool-btn" title="Annuler (Ctrl+Z)" onclick="undoDraw()">↩️</button>
                 <button class="tool-btn" style="background:#ff2a2a; margin-left:auto;" onclick="clearCanvas()">🗑️ Tout effacer</button>
                 
-                <button class="btn" id="btn-submit-draw" style="display:none; margin-left:auto; background:#39ff14;" onclick="submitGarticAction()">✅ Terminé !</button>
+                <button class="btn" id="btn-submit-draw" style="display:none; margin-left:auto; background:#39ff14;" onclick="submitGarticAction()">✅ finish !</button>
             </div>
         </div>
     </div>
 
     <!-- RESULTATS GARTIC -->
     <div id="results-screen">
-        <h1 style="text-align:center;">Le Téléphone Arabe est terminé !</h1>
+        <h1 style="text-align:center;">Le Téléphone Arabe est arabe !</h1>
         <div id="chains-container"></div>
-        <button class="btn" style="margin: 0 auto; display:block;" onclick="location.reload()">Quitter</button>
+        <button class="btn" style="margin: 0 auto; display:block;" onclick="location.reload()">Leave</button>
     </div>
 
     <script>
@@ -284,21 +284,19 @@
                 state.round = 1; 
                 state.turnIndex = -1; 
                 state.players.forEach(p => p.score = 0);
-                availableWords = []; // Reset du sac de mots
+                availableWords = []; 
                 nextClassicTurn(); 
             } 
             else { startGarticPhone(); }
         }
 
-        // =====================================
-        // MODE CLASSIQUE (Mots sans répétition + 3 Tours)
-        // =====================================
+  
         let classicTimer = null;
         let correctGuessers = [];
 
         function getRandomWord() {
             if(availableWords.length === 0) {
-                // Remplir et mélanger le sac
+
                 availableWords = [...dict];
                 availableWords.sort(() => Math.random() - 0.5);
             }
@@ -307,7 +305,7 @@
 
         function nextClassicTurn() {
             clearInterval(classicTimer);
-            undoStack = []; // Reset l'historique de dessin à chaque tour
+            undoStack = []; 
             
             state.turnIndex++;
             if(state.turnIndex >= state.players.length) {
@@ -315,7 +313,7 @@
                 state.round++;
             }
 
-            // Vérification de la FIN DU JEU (Après les 3 tours)
+
             if(state.round > state.maxRounds) {
                 endClassicGame();
                 return;
@@ -581,7 +579,7 @@
         const ctx = drawCanvas.getContext('2d', { willReadFrequently: true });
         let isDrawing = false, startX = 0, startY = 0, lastX = 0, lastY = 0, currentTool = 'pen'; 
         let snapshot; 
-        let undoStack = []; // Historique pour le Ctrl+Z
+        let undoStack = []; 
 
         ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
         
@@ -602,7 +600,7 @@
         }
 
         function clearCanvas() {
-            saveState(); // Sauvegarde l'état avant d'effacer pour pouvoir annuler
+            saveState(); 
             clearCanvasLocal();
             if (state.mode === 'classic') {
                 if(isHost) relayData({ type: 'clear' }, 'host');
@@ -611,17 +609,15 @@
         }
         function clearCanvasLocal() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height); }
 
-        // --- SYSTEME ANNULER (Ctrl+Z) ---
         function saveState() {
-            if (undoStack.length > 15) undoStack.shift(); // Garde les 15 dernières actions
+            if (undoStack.length > 15) undoStack.shift(); 
             undoStack.push(drawCanvas.toDataURL('image/png'));
         }
 
         function undoDraw() {
             if (undoStack.length > 0) {
                 let imgData = undoStack.pop();
-                syncImage(imgData); // Mets à jour le canvas local
-                // Synchronise avec les autres joueurs
+                syncImage(imgData); 
                 if (state.mode === 'classic') {
                     let syncObj = { type: 'img_sync', src: imgData };
                     if(isHost) relayData(syncObj, 'host'); else myConn.send(syncObj);
@@ -638,12 +634,11 @@
             };
         }
 
-        // Raccourci clavier Ctrl+Z
         window.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoDraw(); }
         });
 
-        // --- EVENTS DESSIN ---
+
         drawCanvas.addEventListener('mousedown', startDraw); drawCanvas.addEventListener('mousemove', drawing);
         drawCanvas.addEventListener('mouseup', stopDraw); drawCanvas.addEventListener('mouseout', stopDraw);
         drawCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
@@ -655,7 +650,6 @@
             return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255, a: 255 };
         }
 
-        // Algorithme de Remplissage (Flood Fill)
         function floodFill(startX, startY, fillColorHex) {
             let imgData = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
             let data = imgData.data;
@@ -687,7 +681,7 @@
         }
 
         function startDraw(e) { 
-            saveState(); // Sauvegarde pour l'annulation
+            saveState(); 
             isDrawing = true; 
             let pos = getMousePos(e); 
             startX = pos.x; startY = pos.y; 
@@ -695,11 +689,11 @@
             
             snapshot = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
 
-            // Action immédiate si c'est le pot de peinture
+   
             if (currentTool === 'fill') {
                 let color = document.getElementById('colorPicker').value;
                 floodFill(startX, startY, color);
-                isDrawing = false; // Bloque le dessin au mouvement de souris
+                isDrawing = false; 
                 
                 if (state.mode === 'classic') {
                     let fillData = { type: 'img_sync', src: drawCanvas.toDataURL() };
@@ -722,7 +716,7 @@
                 }
                 lastX = pos.x; lastY = pos.y;
             } else if (currentTool !== 'fill') {
-                // PRÉVISUALISATION DES FORMES EN DIRECT
+    
                 ctx.putImageData(snapshot, 0, 0); 
                 drawShapeLocal(currentTool, startX, startY, pos.x, pos.y, color, size);
             }
@@ -744,13 +738,13 @@
             }
         }
 
-        // Trace une ligne standard
+
         function drawLineLocal(x0, y0, x1, y1, color, size) {
             ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
             ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = size; ctx.strokeStyle = color; ctx.stroke();
         }
 
-        // Trace une forme géométrique
+
         function drawShapeLocal(shapeType, x0, y0, x1, y1, color, size) {
             ctx.beginPath();
             ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = size; ctx.strokeStyle = color;
@@ -771,7 +765,7 @@
             ctx.stroke();
         }
 
-        // Réception réseau
+
         function remoteDraw(data) { 
             if(data.type === 'draw') drawLineLocal(data.x0, data.y0, data.x1, data.y1, data.color, data.size); 
             else if(data.type === 'shape') drawShapeLocal(data.shape, data.x0, data.y0, data.x1, data.y1, data.color, data.size); 
@@ -781,8 +775,7 @@
     <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
     <!-- ========================================== -->
     <script>
-        // 1. Liste de tes jeux dans l'ordre souhaité. 
-        // /!\ Vérifie que les noms des dossiers correspondent bien aux tiens.
+
         const gamesHubList = [
             "../cybertank/index.html",
             "../tower_defense/index.html",
@@ -797,14 +790,14 @@
         let touchendX = 0;
         
         function handleSwipeGesture() {
-            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
+            const swipeThreshold = 75; 
             
             if (touchendX < touchstartX - swipeThreshold) {
-                // Swipe vers la gauche (Jeu suivant)
+
                 navigateGames(1);
             }
             if (touchendX > touchstartX + swipeThreshold) {
-                // Swipe vers la droite (Jeu précédent)
+    
                 navigateGames(-1);
             }
         }
@@ -812,30 +805,28 @@
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
             
-            // Trouve l'index du jeu actuel en regardant l'URL
+
             let currentIndex = gamesHubList.findIndex(game => {
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
             });
             
-            // Si on ne trouve pas (erreur de nom de dossier), on annule
+
             if (currentIndex === -1) return;
 
-            // Calcul du prochain jeu avec une boucle (le dernier ramène au premier)
+     
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
-            
-            // Redirection
+
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Écoute du début du touché
+
         document.addEventListener('touchstart', e => {
-            // On ignore le swipe si on touche le canvas pour ne pas gâcher le gameplay
+
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchstartX = e.changedTouches[0].screenX;
         }, { passive: true });
 
-        // Écoute de la fin du touché
         document.addEventListener('touchend', e => {
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchendX = e.changedTouches[0].screenX;
