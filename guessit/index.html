@@ -82,25 +82,25 @@
     </div>
 
     <script>
-        // La nouvelle liste complète de 50 mangas pointant de 1.jpg à 50.jpg
+
         const baseMangaList = [
-            { title: "Naruto", img: "img/1.jpg" }, { title: "One Piece", img: "img/2.jpg" }, { title: "Bleach", img: "img/3.jpg" },
-            { title: "Dragon Ball", img: "img/4.jpg" }, { title: "Death Note", img: "img/5.jpg" }, { title: "Attack on Titan", img: "img/6.jpg" },
-            { title: "My Hero Academia", img: "img/7.jpg" }, { title: "Demon Slayer", img: "img/8.jpg" }, { title: "Jujutsu Kaisen", img: "img/9.jpg" },
-            { title: "Hunter x Hunter", img: "img/10.jpg" }, { title: "Fullmetal Alchemist", img: "img/11.jpg" }, { title: "Tokyo Ghoul", img: "img/12.jpg" },
-            { title: "One Punch Man", img: "img/13.jpg" }, { title: "Sword Art Online", img: "img/14.jpg" }, { title: "Fairy Tail", img: "img/15.jpg" },
-            { title: "JoJo's Bizarre Adventure", img: "img/16.jpg" }, { title: "Black Clover", img: "img/17.jpg" }, { title: "Chainsaw Man", img: "img/18.jpg" },
-            { title: "Haikyuu", img: "img/19.jpg" }, { title: "Gintama", img: "img/20.jpg" }, { title: "Mob Psycho 100", img: "img/21.jpg" },
-            { title: "Evangelion", img: "img/22.jpg" }, { title: "Cowboy Bebop", img: "img/23.jpg" }, { title: "Code Geass", img: "img/24.jpg" },
-            { title: "Steins;Gate", img: "img/25.jpg" }, { title: "Berserk", img: "img/26.jpg" }, { title: "Vinland Saga", img: "img/27.jpg" },
-            { title: "Spy x Family", img: "img/28.jpg" }, { title: "Kaguya-sama", img: "img/29.jpg" }, { title: "Dr. Stone", img: "img/30.jpg" },
-            { title: "Promised Neverland", img: "img/31.jpg" }, { title: "Fire Force", img: "img/32.jpg" }, { title: "Blue Lock", img: "img/33.jpg" },
-            { title: "Tokyo Revengers", img: "img/34.jpg" }, { title: "Kuroko no Basket", img: "img/35.jpg" }, { title: "Assassination Classroom", img: "img/36.jpg" },
-            { title: "Nanatsu no Taizai", img: "img/37.jpg" }, { title: "Akame ga Kill", img: "img/38.jpg" }, { title: "Parasyte", img: "img/39.jpg" },
-            { title: "Psycho-Pass", img: "img/40.jpg" }, { title: "Erased", img: "img/41.jpg" }, { title: "Your Lie in April", img: "img/42.jpg" },
-            { title: "Fate/Zero", img: "img/43.jpg" }, { title: "No Game No Life", img: "img/44.jpg" }, { title: "Re:Zero", img: "img/45.jpg" },
-            { title: "Mushoku Tensei", img: "img/46.jpg" }, { title: "Oshi no Ko", img: "img/47.jpg" }, { title: "Solo Leveling", img: "img/48.jpg" },
-            { title: "Boruto", img: "img/49.jpg" }, { title: "Vagabond", img: "img/50.jpg" }
+            { title: "Naruto", img: "guessit/img/1.jpg" }, { title: "One Piece", img: "guessit/img/2.jpg" }, { title: "Bleach", img: "guessit/img/3.jpg" },
+            { title: "Dragon Ball", img: "guessit/img/4.jpg" }, { title: "Death Note", img: "guessit/img/5.jpg" }, { title: "Attack on Titan", img: "guessit/img/6.jpg" },
+            { title: "My Hero Academia", img: "guessit/img/7.jpg" }, { title: "Demon Slayer", img: "guessit/img/8.jpg" }, { title: "Jujutsu Kaisen", img: "guessit/img/9.jpg" },
+            { title: "Hunter x Hunter", img: "guessit/img/10.jpg" }, { title: "Fullmetal Alchemist", img: "guessit/img/11.jpg" }, { title: "Tokyo Ghoul", img: "guessit/img/12.jpg" },
+            { title: "One Punch Man", img: "guessit/img/13.jpg" }, { title: "Sword Art Online", img: "guessit/img/14.jpg" }, { title: "Fairy Tail", img: "guessit/img/15.jpg" },
+            { title: "JoJo's Bizarre Adventure", img: "guessit/img/16.jpg" }, { title: "Black Clover", img: "guessit/img/17.jpg" }, { title: "Chainsaw Man", img: "guessit/img/18.jpg" },
+            { title: "Haikyuu", img: "guessit/img/19.jpg" }, { title: "Gintama", img: "guessit/img/20.jpg" }, { title: "Mob Psycho 100", img: "guessit/img/21.jpg" },
+            { title: "Evangelion", img: "guessit/img/22.jpg" }, { title: "Cowboy Bebop", img: "guessit/img/23.jpg" }, { title: "Code Geass", img: "guessit/img/24.jpg" },
+            { title: "Steins;Gate", img: "guessit/img/25.jpg" }, { title: "Berserk", img: "guessit/img/26.jpg" }, { title: "Vinland Saga", img: "guessit/img/27.jpg" },
+            { title: "Spy x Family", img: "guessit/img/28.jpg" }, { title: "Kaguya-sama", img: "guessit/img/29.jpg" }, { title: "Dr. Stone", img: "guessit/img/30.jpg" },
+            { title: "Promised Neverland", img: "guessit/img/31.jpg" }, { title: "Fire Force", img: "guessit/img/32.jpg" }, { title: "Blue Lock", img: "guessit/img/33.jpg" },
+            { title: "Tokyo Revengers", img: "guessit/img/34.jpg" }, { title: "Kuroko no Basket", img: "guessit/img/35.jpg" }, { title: "Assassination Classroom", img: "guessit/img/36.jpg" },
+            { title: "Nanatsu no Taizai", img: "guessit/img/37.jpg" }, { title: "Akame ga Kill", img: "guessit/img/38.jpg" }, { title: "Parasyte", img: "guessit/img/39.jpg" },
+            { title: "Psycho-Pass", img: "guessit/img/40.jpg" }, { title: "Erased", img: "guessit/img/41.jpg" }, { title: "Your Lie in April", img: "guessit/img/42.jpg" },
+            { title: "Fate/Zero", img: "guessit/img/43.jpg" }, { title: "No Game No Life", img: "guessit/img/44.jpg" }, { title: "Re:Zero", img: "guessit/img/45.jpg" },
+            { title: "Mushoku Tensei", img: "guessit/img/46.jpg" }, { title: "Oshi no Ko", img: "guessit/img/47.jpg" }, { title: "Solo Leveling", img: "guessit/img/48.jpg" },
+            { title: "Boruto", img: "guessit/img/49.jpg" }, { title: "Vagabond", img: "guessit/img/50.jpg" }
         ];
 
         let questionsData = [];
@@ -113,21 +113,18 @@
             screens.start.style.display = 'none'; 
             screens.game.style.display = 'block'; 
             
-            // Mélange la liste des 50 mangas pour que ce soit aléatoire
             let shuffledList = [...baseMangaList].sort(() => Math.random() - 0.5);
-            
-            // Génère les questions avec les 3 fausses propositions
+     
             questionsData = shuffledList.map(manga => {
                 let wrongOptions = [];
-                // Pioche 3 mangas au hasard dans la liste globale (différents de la bonne réponse)
+ 
                 while(wrongOptions.length < 3) {
                     let rManga = baseMangaList[Math.floor(Math.random() * baseMangaList.length)];
                     if (rManga.title !== manga.title && !wrongOptions.includes(rManga.title)) {
                         wrongOptions.push(rManga.title);
                     }
                 }
-                
-                // Rassemble la bonne + les fausses et mélange tout ça
+
                 let options = [...wrongOptions, manga.title].sort(() => Math.random() - 0.5);
                 let correctIndex = options.indexOf(manga.title);
                 
@@ -224,8 +221,7 @@
     <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
     <!-- ========================================== -->
     <script>
-        // 1. Liste de tes jeux dans l'ordre souhaité. 
-        // /!\ Vérifie que les noms des dossiers correspondent bien aux tiens.
+
         const gamesHubList = [
             "../cybertank/index.html",
             "../tower_defense/index.html",
@@ -240,14 +236,14 @@
         let touchendX = 0;
         
         function handleSwipeGesture() {
-            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
+            const swipeThreshold = 75; 
             
             if (touchendX < touchstartX - swipeThreshold) {
-                // Swipe vers la gauche (Jeu suivant)
+
                 navigateGames(1);
             }
             if (touchendX > touchstartX + swipeThreshold) {
-                // Swipe vers la droite (Jeu précédent)
+
                 navigateGames(-1);
             }
         }
@@ -255,30 +251,24 @@
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
             
-            // Trouve l'index du jeu actuel en regardant l'URL
             let currentIndex = gamesHubList.findIndex(game => {
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
             });
             
-            // Si on ne trouve pas (erreur de nom de dossier), on annule
             if (currentIndex === -1) return;
 
-            // Calcul du prochain jeu avec une boucle (le dernier ramène au premier)
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
-            
-            // Redirection
+
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Écoute du début du touché
         document.addEventListener('touchstart', e => {
-            // On ignore le swipe si on touche le canvas pour ne pas gâcher le gameplay
+
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchstartX = e.changedTouches[0].screenX;
         }, { passive: true });
 
-        // Écoute de la fin du touché
         document.addEventListener('touchend', e => {
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchendX = e.changedTouches[0].screenX;
