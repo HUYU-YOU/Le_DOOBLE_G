@@ -66,13 +66,13 @@
     <h1>Neon Poker Suite</h1>
 
     <div class="menu-container" id="main-menu">
-        <h2 style="color:var(--accent);">Bienvenue à la table</h2>
+        <h2 style="color:var(--accent);">Welcome</h2>
         <input type="text" id="player-name" class="input-box" placeholder="Votre Pseudo" value="Joueur"><br><br>
-        <p><i>Tables de 8 joueurs max. Cave initiale : 1000$</i></p>
-        <button class="btn" onclick="hostGame()">Créer une Table (Hôte)</button>
+        <p><i>8 player max, initiale : 1000$</i></p>
+        <button class="btn" onclick="hostGame()">Create a table (Hôte)</button>
         <br><p>OU</p>
         <input type="text" id="join-id" class="input-box" placeholder="ID de la table">
-        <button class="btn" onclick="joinGame()" style="background:#45a29e;color:#fff;">Rejoindre</button>
+        <button class="btn" onclick="joinGame()" style="background:#45a29e;color:#fff;">Join</button>
         <p id="status-text" style="color: #aaa; margin-top: 15px;"></p>
     </div>
 
@@ -81,13 +81,13 @@
         <div id="poker-table-container">
             <div id="host-lobby-panel" style="display:none; text-align:center; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px;">
                 ID de la table à partager : <b style="color:var(--accent); user-select:all;" id="my-id">...</b><br>
-                <button class="btn" style="margin-top:10px;" onclick="startGame()">Lancer la partie</button>
+                <button class="btn" style="margin-top:10px;" onclick="startGame()">Ready</button>
             </div>
 
             <div id="table-center">
                 <div id="pot-display">Pot: 0$</div>
                 <div class="card-zone" id="community-cards"></div>
-                <div id="game-status">En attente de joueurs...</div>
+                <div id="game-status">Waiting for players..</div>
             </div>
             
             <div id="players-ring"></div>
