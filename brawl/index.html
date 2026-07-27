@@ -639,7 +639,6 @@
             projectiles.forEach(pr => { ctx.fillStyle = pr.color; ctx.shadowBlur = 8; ctx.shadowColor = pr.color; ctx.beginPath(); ctx.arc(pr.x, pr.y, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; });
         }
     </script>
-</body>
     <!-- ========================================== -->
     <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
     <!-- ========================================== -->
@@ -705,4 +704,5 @@
             handleSwipeGesture();
         }, { passive: true });
     </script>
+</body>
 </html>
