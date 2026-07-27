@@ -184,7 +184,9 @@
         function fireBullet(player) {
             player.cooldown = 40;
             gameState.bullets.push({
-                x: player.x + Math.cos(player.angle * Math.PI / 180) * 30, y: player.y + Math.sin(player.angle * Math.PI / 180) * 30,
+                // J'ai mis *35 au lieu de *30 pour que la balle sorte bien du canon qui est long
+                x: player.x + Math.cos(player.angle * Math.PI / 180) * 35, 
+                y: player.y + Math.sin(player.angle * Math.PI / 180) * 35,
                 vx: Math.cos(player.angle * Math.PI / 180) * 10, vy: Math.sin(player.angle * Math.PI / 180) * 10,
                 color: player.color, life: 150
             });
@@ -206,12 +208,19 @@
                 ctx.save(); 
                 ctx.translate(p.x, p.y);
                 
-
+                // CORRECTION 1 : On ajoute 90° (Math.PI/2) car ton image de base regarde vers le HAUT
                 let rad = p.angle * Math.PI / 180;
-                ctx.rotate(rad);
+                ctx.rotate(rad + Math.PI / 2); 
                 
                 if(tankImg.complete && tankImg.naturalWidth !== 0) {
-                    ctx.drawImage(tankImg, -25, -25, 50, 50); // Légèrement agrandi
+                    // CORRECTION 2 : On calcule le ratio pour ne pas écraser l'image
+                    let aspect = tankImg.naturalWidth / tankImg.naturalHeight;
+                    let th = 60; // Hauteur fixe
+                    let tw = th * aspect; // Largeur dynamique respectée !
+                    
+                    ctx.drawImage(tankImg, -tw/2, -th/2, tw, th); 
+                    
+                    // On garde l'indicateur de couleur du joueur
                     ctx.fillStyle = p.color; ctx.globalAlpha = 0.3; ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
                 } else {
                     ctx.fillStyle = p.color; ctx.fillRect(-15, -15, 30, 30);
@@ -222,7 +231,8 @@
                 ctx.strokeStyle = p.color; ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p.x + Math.cos(p.angle * Math.PI / 180) * 30, p.y + Math.sin(p.angle * Math.PI / 180) * 30);
+                // J'ai mis *35 ici aussi pour que la petite ligne colorée suive bien le bout du canon
+                ctx.lineTo(p.x + Math.cos(p.angle * Math.PI / 180) * 35, p.y + Math.sin(p.angle * Math.PI / 180) * 35);
                 ctx.stroke();
             });
 
@@ -243,19 +253,21 @@
             requestAnimationFrame(startGameLoop);
         }
     </script>
-</body>
+    
     <script>
-    function playVid(card) {
-        let vid = card.querySelector('.bg-video');
-        if(vid) vid.play();
-    }
-
-    function pauseVid(card) {
-        let vid = card.querySelector('.bg-video');
-        if(vid) {
-            vid.pause();
-            vid.currentTime = 0; // Remet la vidéo à zéro quand on enlève la souris
+        // J'ai intégré tes scripts de vidéos ici pour garder le code propre à l'intérieur du body
+        function playVid(card) {
+            let vid = card.querySelector('.bg-video');
+            if(vid) vid.play();
         }
-    }
-</script>
+
+        function pauseVid(card) {
+            let vid = card.querySelector('.bg-video');
+            if(vid) {
+                vid.pause();
+                vid.currentTime = 0; 
+            }
+        }
+    </script>
+</body>
 </html>
