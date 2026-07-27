@@ -29,6 +29,9 @@
         #h1 { border-color: var(--p1); color: var(--p1); } #h2 { border-color: var(--p2); color: var(--p2); }
         #h3 { border-color: var(--p3); color: var(--p3); } #h4 { border-color: var(--p4); color: var(--p4); }
         .percent { font-size: 2em; font-weight: 900; }
+        .super-bar-container { width: 100%; height: 8px; background: #222; margin-top: 5px; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
+        .super-bar { height: 100%; background: #f1c40f; width: 0%; transition: width 0.2s; }
+        .super-bar.full { box-shadow: 0 0 10px #f1c40f; background: #fff; }
         
         .controls-info { font-size: 0.85em; color: #aaa; margin-top: 15px; line-height: 1.5; max-width: 700px; }
         
@@ -45,10 +48,10 @@
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
         <div id="hud" style="display: none;">
-            <div class="player-hud" id="h1"><div style="font-weight:bold" id="n1">J1</div><div class="percent" id="p1-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p1-l">3</span></div></div>
-            <div class="player-hud" id="h2"><div style="font-weight:bold" id="n2">J2</div><div class="percent" id="p2-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p2-l">3</span></div></div>
-            <div class="player-hud" id="h3"><div style="font-weight:bold" id="n3">J3</div><div class="percent" id="p3-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p3-l">3</span></div></div>
-            <div class="player-hud" id="h4"><div style="font-weight:bold" id="n4">J4</div><div class="percent" id="p4-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p4-l">3</span></div></div>
+            <div class="player-hud" id="h1"><div style="font-weight:bold" id="n1">J1</div><div class="percent" id="p1-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p1-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p1-super"></div></div></div>
+            <div class="player-hud" id="h2"><div style="font-weight:bold" id="n2">J2</div><div class="percent" id="p2-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p2-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p2-super"></div></div></div>
+            <div class="player-hud" id="h3"><div style="font-weight:bold" id="n3">J3</div><div class="percent" id="p3-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p3-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p3-super"></div></div></div>
+            <div class="player-hud" id="h4"><div style="font-weight:bold" id="n4">J4</div><div class="percent" id="p4-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p4-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p4-super"></div></div></div>
         </div>
 
         <!-- MENU PRINCIPAL -->
@@ -62,7 +65,6 @@
         <div class="overlay" id="local-menu" style="display: none;">
             <div class="menu-title" id="instruction-title">Sélection Joueur 1</div>
             
-            <!-- BOUTON IA / HUMAIN -->
             <button class="btn-main" id="bot-toggle-btn" onclick="toggleBot()" style="background:#555; color:#fff; font-size:1em; padding:8px 20px; margin-bottom:15px; border:2px solid #333;">👤 Contrôlé par : Humain</button>
 
             <div class="selection-grid" id="char-select">
@@ -79,8 +81,9 @@
             </div>
             <button class="btn-main" id="start-local-btn" style="display:none;" onclick="startLocalGame()">FIGHT !</button>
             <div class="controls-info">
-                <b>Contrôles J1 :</b> A/D ou Flèches (Mouvement) | W/Espace (Saut/Haut) | S (Bas)<br>
-                Q ou Clic Gauche (Petit Coup) | E ou Clic Droit (Gros Coup / Spécial)
+                <b>Contrôles J1 :</b> A/D (Bouger) | W (Saut) | S (Bas)<br>
+                Q / Clic Gauche (Petit Coup) | E / Clic Droit (Gros Coup)<br>
+                <b>MAJ (Shift)</b> : Bloquer | <b>R</b> : Attaque Ultime !
             </div>
             <button class="btn-main" style="font-size:0.8em; margin-top:20px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
         </div>
@@ -89,7 +92,6 @@
         <div class="overlay" id="network-menu" style="display: none;">
             <h2 style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px;">Terminal Réseau</h2>
             
-            <!-- SÉLECTION DU PERSONNAGE RESEAU -->
             <div style="margin-bottom: 20px;">
                 <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Ninja</span></div>
                 <div class="selection-grid" id="net-char-grid">
@@ -144,7 +146,8 @@
             else if (type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); } 
             else if (type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); } 
             else if (type === 'death') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); }
-            osc.start(now); osc.stop(now + 0.15);
+            else if (type === 'shatter') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); } // Bouclier cassé
+            osc.start(now); osc.stop(now + 0.3);
         }
 
         // --- GESTION DES ENTREES ---
@@ -156,10 +159,10 @@
         canvas.addEventListener('contextmenu', e => e.preventDefault());
 
         function getCtrl(pId) {
-            if (pId === 1) return { left: keys['a'] || keys['arrowleft'], right: keys['d'] || keys['arrowright'], up: keys['w'] || keys['arrowup'], down: keys['s'] || keys['arrowdown'], jump: keys['w'] || keys[' '] || keys['arrowup'], atkL: keys['q'] || keys['mouse_left'], atkH: keys['e'] || keys['mouse_right'] };
-            if (pId === 2) return { left: keys['j'], right: keys['l'], up: keys['i'], down: keys['k'], jump: keys['i'], atkL: keys['u'], atkH: keys['o'] };
-            if (pId === 3) return { left: keys['f'], right: keys['h'], up: keys['t'], down: keys['g'], jump: keys['t'], atkL: keys['r'], atkH: keys['y'] };
-            return {};
+            if (pId === 1) return { left: keys['a'] || keys['arrowleft'], right: keys['d'] || keys['arrowright'], up: keys['w'] || keys['arrowup'], down: keys['s'] || keys['arrowdown'], jump: keys['w'] || keys[' '] || keys['arrowup'], atkL: keys['q'] || keys['mouse_left'], atkH: keys['e'] || keys['mouse_right'], block: keys['shift'], ult: keys['r'] };
+            if (pId === 2) return { left: keys['j'], right: keys['l'], up: keys['i'], down: keys['k'], jump: keys['i'], atkL: keys['u'], atkH: keys['o'], block: keys['m'], ult: keys['p'] };
+            if (pId === 3) return { left: keys['f'], right: keys['h'], up: keys['t'], down: keys['g'], jump: keys['t'], atkL: keys['r'], atkH: keys['y'], block: keys['v'], ult: keys['z'] };
+            return {left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false, block: false, ult: false};
         }
 
         const charData = {
@@ -194,7 +197,6 @@
             draw() { 
                 ctx.shadowBlur = 15; ctx.shadowColor = this.color; 
                 ctx.font = "24px Arial"; 
-                // Emojis au lieu de cubes colorés !
                 ctx.fillText(this.type==='dmg'?'💥':(this.type==='heal'?'❤️':'⚡'), this.x, this.y+22); 
                 ctx.shadowBlur = 0; 
             }
@@ -214,15 +216,20 @@
                 this.vx = 0; this.vy = 0; this.percent = 0; this.lives = 3; this.jumps = 2; this.grounded = false; this.facing = id % 2 !== 0 ? 1 : -1;
                 this.attackTimer = 0; this.invincibleTimer = 120; this.buffType = null; this.buffTimer = 0; this.walkCycle = 0; this.jumpPressed = false; this.atkDirY = 0; this.atkDirX = 0; this.atkIsRanged = false;
                 
-                this.hitstun = 0; // Nouvelle variable pour bloquer les mouvements quand on se fait frapper
-                this.outOfBoundsTimer = 0; // Timer de 3 secondes
-                this.isBot = false; // Par défaut, joueur humain
+                this.hitstun = 0;
+                this.outOfBoundsTimer = 0;
+                this.isBot = false;
+                
+                // NOUVEAU : SUPER & BOUCLIER
+                this.superMeter = 0;
+                this.isBlocking = false;
+                this.shieldHealth = 100;
+                this.stunTimer = 0; // Stun du bouclier brisé
             }
             
             draw() {
                 if (this.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
                 
-                // Si on est presque mort (Hors map), afficher un gros DANGER
                 if (this.outOfBoundsTimer > 0) {
                     ctx.fillStyle = 'red'; ctx.font = "35px Arial";
                     let warnX = Math.max(20, Math.min(canvas.width - 40, this.x));
@@ -232,11 +239,32 @@
 
                 ctx.fillStyle = this.color; ctx.font = "bold 14px Arial"; ctx.fillText(`J${this.id}: ${Math.floor(this.percent)}%`, this.x - 5, this.y - 12);
                 let spriteKey = `${this.skinKey}_${this.facing === 1 ? 'est' : 'ouest'}`; let img = imgs[spriteKey];
+                
                 ctx.save(); ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-                if (Math.abs(this.vx) > 0.5 && this.grounded) { this.walkCycle += 0.2; ctx.rotate(Math.sin(this.walkCycle) * 0.15); ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); }
+                
+                // Visuel Stun (Bouclier brisé)
+                if(this.stunTimer > 0) {
+                    ctx.filter = "grayscale(100%) brightness(50%)";
+                    ctx.fillStyle = "yellow"; ctx.fillText("STUN", -15, -this.h/2 - 10);
+                }
+
+                if (Math.abs(this.vx) > 0.5 && this.grounded && this.stunTimer === 0) { this.walkCycle += 0.2; ctx.rotate(Math.sin(this.walkCycle) * 0.15); ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); }
                 if (this.attackTimer > 10) { ctx.scale(1.2, 1.2); ctx.rotate(this.facing * 0.2); }
                 if (img && img.complete && img.naturalWidth !== 0) { ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h); } else { ctx.fillStyle = this.color; ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h); }
+                
+                // Visuel Bouclier
+                if (this.isBlocking) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.w, 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(0, 240, 255, ${this.shieldHealth/300})`; // Plus de santé = Plus opaque
+                    ctx.fill();
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = `rgba(0, 240, 255, ${this.shieldHealth/100})`;
+                    ctx.stroke();
+                }
+                
                 ctx.restore();
+
                 if (this.attackTimer > 10 && !this.atkIsRanged) { ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; if (this.atkDirY === -1) ctx.fillRect(this.x, this.y - 60, this.w, 60); else if (this.atkDirY === 1) ctx.fillRect(this.x, this.y + this.h, this.w, 60); else ctx.fillRect(this.facing === 1 ? this.x + this.w : this.x - 60, this.y + 10, 60, 40); }
             }
             
@@ -244,60 +272,130 @@
                 if (this.invincibleTimer > 0) this.invincibleTimer--; if (this.buffTimer > 0) { this.buffTimer--; if (this.buffTimer === 0) this.buffType = null; }
                 let cSpd = this.speed * (this.buffType === 'spd' ? 1.4 : 1.0); let cJmp = this.jumpForce * (this.buffType === 'spd' ? 1.15 : 1.0);
                 
-                // GESTION DES MOUVEMENTS & DU HITSTUN (Ejection réparée)
-                if (this.hitstun > 0) {
-                    this.hitstun--;
-                    this.vx *= 0.98; // Très légère friction de l'air pendant le vol
-                } else {
-                    if (ctrl.left) { this.vx = -cSpd; this.facing = -1; } 
-                    else if (ctrl.right) { this.vx = cSpd; this.facing = 1; } 
-                    else { this.vx *= 0.8; } // Friction au sol activée uniquement si on n'est pas éjecté !
+                // STUN BOUCLIER
+                if (this.stunTimer > 0) {
+                    this.stunTimer--;
+                    this.isBlocking = false;
+                    this.vx *= 0.9;
                 }
-
-                if (ctrl.jump) { if (this.jumps > 0 && !this.jumpPressed) { this.vy = cJmp; this.jumps--; this.grounded = false; this.jumpPressed = true; playSound('jump'); } } else { this.jumpPressed = false; }
-                
-                if ((ctrl.atkL || ctrl.atkH) && this.attackTimer === 0 && this.hitstun === 0) {
-                    let isHeavy = ctrl.atkH; this.attackTimer = isHeavy ? 35 : 20; let mult = (this.buffType === 'dmg' ? 1.8 : 1.0) * (isHeavy ? 1.5 : 1.0);
-                    let doRanged = this.isRanged; if (isHeavy) doRanged = !this.isRanged;
-                    let aimX = 0, aimY = 0; if (ctrl.up) aimY = -1; else if (ctrl.down) aimY = 1; else aimX = this.facing;
-                    this.atkDirX = aimX; this.atkDirY = aimY; this.atkIsRanged = doRanged;
-                    if (doRanged) { 
-                        playSound('shoot'); let px = this.x + this.w / 2; let py = this.y + this.h / 2; let isShortRange = isHeavy && !this.isRanged; let pColor = this.color;
-                        if (isShortRange) { if (this.skinKey === 'ninja') pColor = '#ddd'; if (this.skinKey === 'sumo') pColor = '#ff69b4'; }
-                        let projVx = aimX * 15; let projVy = aimY * 15; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 15;
-                        projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, pColor, isShortRange)); 
-                    } else { 
-                        playSound('hit'); let hitX = this.x, hitY = this.y, hitW = this.w, hitH = this.h;
-                        if (aimY === -1) { hitY -= 60; hitH = 60; } else if (aimY === 1) { hitY += this.h; hitH = 60; } else { hitX += (aimX === 1 ? this.w : -60); hitW = 60; }
-                        players.forEach(pl => { if (pl.id !== this.id && hitX < pl.x + pl.w && hitX + hitW > pl.x && hitY < pl.y + pl.h && hitY + hitH > pl.y) { pl.takeDamage(this.baseDmg * mult, this.baseKb * mult, aimX === 0 ? this.facing : aimX); } }); 
+                // HITSTUN CLASSIQUE
+                else if (this.hitstun > 0) {
+                    this.hitstun--;
+                    this.vx *= 0.98; 
+                } 
+                // MOUVEMENTS NORMAUX
+                else {
+                    this.isBlocking = ctrl.block;
+                    
+                    if (this.isBlocking) {
+                        this.vx *= 0.5; // Très lent en bloquant
+                    } else {
+                        if (this.shieldHealth < 100) this.shieldHealth += 0.5; // Régénération du bouclier
+                        
+                        if (ctrl.left) { this.vx = -cSpd; this.facing = -1; } 
+                        else if (ctrl.right) { this.vx = cSpd; this.facing = 1; } 
+                        else { this.vx *= 0.8; }
+                        
+                        if (ctrl.jump) { if (this.jumps > 0 && !this.jumpPressed) { this.vy = cJmp; this.jumps--; this.grounded = false; this.jumpPressed = true; playSound('jump'); } } else { this.jumpPressed = false; }
+                        
+                        // ULTIME !
+                        if (ctrl.ult && this.superMeter >= 150) {
+                            this.superMeter = 0; updateHUD();
+                            this.fireUltimate();
+                        }
+                        // ATTAQUE !
+                        else if ((ctrl.atkL || ctrl.atkH) && this.attackTimer === 0) {
+                            let isHeavy = ctrl.atkH; this.attackTimer = isHeavy ? 35 : 20; let mult = (this.buffType === 'dmg' ? 1.8 : 1.0) * (isHeavy ? 1.5 : 1.0);
+                            let doRanged = this.isRanged; if (isHeavy) doRanged = !this.isRanged;
+                            let aimX = 0, aimY = 0; if (ctrl.up) aimY = -1; else if (ctrl.down) aimY = 1; else aimX = this.facing;
+                            this.atkDirX = aimX; this.atkDirY = aimY; this.atkIsRanged = doRanged;
+                            if (doRanged) { 
+                                playSound('shoot'); let px = this.x + this.w / 2; let py = this.y + this.h / 2; let isShortRange = isHeavy && !this.isRanged; let pColor = this.color;
+                                if (isShortRange) { if (this.skinKey === 'ninja') pColor = '#ddd'; if (this.skinKey === 'sumo') pColor = '#ff69b4'; }
+                                let projVx = aimX * 15; let projVy = aimY * 15; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 15;
+                                projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, pColor, isShortRange)); 
+                            } else { 
+                                playSound('hit'); let hitX = this.x, hitY = this.y, hitW = this.w, hitH = this.h;
+                                if (aimY === -1) { hitY -= 60; hitH = 60; } else if (aimY === 1) { hitY += this.h; hitH = 60; } else { hitX += (aimX === 1 ? this.w : -60); hitW = 60; }
+                                players.forEach(pl => { if (pl.id !== this.id && hitX < pl.x + pl.w && hitX + hitW > pl.x && hitY < pl.y + pl.h && hitY + hitH > pl.y) { pl.takeDamage(this.baseDmg * mult, this.baseKb * mult, aimX === 0 ? this.facing : aimX); } }); 
+                            }
+                        }
                     }
                 }
                 
                 if (this.attackTimer > 0) this.attackTimer--; this.vy += 0.55; this.x += this.vx; this.y += this.vy; this.grounded = false;
                 for (let p of platforms) { if (this.vy > 0 && this.x + this.w > p.x && this.x < p.x + p.w && this.y + this.h >= p.y && this.y + this.h <= p.y + this.vy + 2) { this.y = p.y - this.h; this.vy = 0; this.grounded = true; this.jumps = 2; } }
                 
-                // MORT HORS DE L'ECRAN (3 Secondes Timer ou instantané si on tombe dans le vide tout en bas)
                 if (this.x < -150 || this.x > canvas.width + 150 || this.y < -300 || this.y > canvas.height + 50) {
                     this.outOfBoundsTimer++;
-                    if (this.outOfBoundsTimer > 180) this.die(); // 3 Secondes à 60FPS
+                    if (this.outOfBoundsTimer > 180) this.die(); 
                 } else {
                     this.outOfBoundsTimer = 0;
                 }
-                if (this.y > canvas.height + 200) this.die(); // Tomber dans le trou = Mort quasi instantanée
+                if (this.y > canvas.height + 200) this.die();
             }
             
+            fireUltimate() {
+                playSound('powerup');
+                let target = null; let minDist = Infinity;
+                players.forEach(p => {
+                    if (p.id !== this.id && p.lives > 0) {
+                        let d = Math.hypot(p.x - this.x, p.y - this.y);
+                        if (d < minDist) { minDist = d; target = p; }
+                    }
+                });
+                
+                if (target) {
+                    // Téléportation sur la cible
+                    this.x = target.x - (this.facing * 40); 
+                    this.y = target.y;
+                    
+                    // Frappe dévastatrice
+                    target.isBlocking = false; // L'ultime casse la garde
+                    target.takeDamage(80, 25, this.facing); // Dégâts de fou, knockback de fou
+                    screenShake = 35;
+                    for (let i = 0; i < 50; i++) particles.push(new Particle(target.x + 25, target.y + 25, this.color));
+                }
+            }
+
             die() {
-                playSound('death'); screenShake = 40; this.lives--; this.percent = 0; this.buffType = null; this.buffTimer = 0; this.outOfBoundsTimer = 0; updateHUD();
+                playSound('death'); 
+                screenShake = 15; // REDUIT A 15 !
+                this.lives--; this.percent = 0; this.superMeter = 0; this.buffType = null; this.buffTimer = 0; this.outOfBoundsTimer = 0; this.shieldHealth = 100; this.stunTimer = 0;
+                updateHUD();
                 for (let i = 0; i < 30; i++) particles.push(new Particle(this.x, this.y, this.color));
                 if (this.lives <= 0) { checkGameEnd(); } else { this.x = canvas.width / 2 + (Math.random() * 100 - 50); this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; }
             }
             
             takeDamage(dmg, baseKb, dir) {
-                if (this.invincibleTimer > 0) return; playSound('hit'); this.percent += dmg; updateHUD();
+                if (this.invincibleTimer > 0) return; 
+                
+                // GESTION DU BOUCLIER
+                if (this.isBlocking) {
+                    this.shieldHealth -= dmg * 6; // 10 de degats = 60 point de bouclier perdus
+                    if (this.shieldHealth <= 0) {
+                        playSound('shatter'); // Bouclier brisé !
+                        this.shieldHealth = 0;
+                        this.stunTimer = 120; // 2 Secondes sans bouger
+                        this.isBlocking = false;
+                        for (let i = 0; i < 20; i++) particles.push(new Particle(this.x + this.w/2, this.y + this.h/2, '#00f0ff'));
+                    } else {
+                        // Coup bloqué !
+                        this.vx = dir * (baseKb * 0.2); // Recule juste un peu
+                    }
+                    return; // Ne prend pas de pourcentages et pas de gros knockback
+                }
+
+                // SI PAS BLOQUE : Dégâts et Charge le Super
+                playSound('hit'); 
+                this.percent += dmg; 
+                this.superMeter = Math.min(150, this.superMeter + (dmg * 1.5)); 
+                updateHUD();
+                
                 let kb = (baseKb * (1 + (this.percent / 50))) / this.weight; 
-                this.vx = dir * kb; // Ejection Horizontale!
-                this.vy = -kb * 0.55; // Ejection Verticale!
-                this.hitstun = Math.min(60, Math.floor(kb * 2.5)); // Empêche de bouger pendant qu'on vole (max 1 sec)
+                this.vx = dir * kb; 
+                this.vy = -kb * 0.55; 
+                this.hitstun = Math.min(60, Math.floor(kb * 2.5)); 
                 screenShake = Math.min(25, Math.floor(kb / 1.5));
                 for (let i = 0; i < 12; i++) particles.push(new Particle(this.x + this.w / 2, this.y + this.h / 2, '#fff'));
             }
@@ -307,8 +405,8 @@
 
         // --- INTELLIGENCE ARTIFICIELLE ---
         function getAICtrl(bot) {
-            let ctrl = { left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false };
-            if (bot.hitstun > 0) return ctrl; // Impossible de bouger si étourdi
+            let ctrl = { left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false, block: false, ult: false };
+            if (bot.hitstun > 0 || bot.stunTimer > 0) return ctrl; 
             
             let target = null;
             let minDist = Infinity;
@@ -337,8 +435,19 @@
                 if (bot.x > 700) ctrl.left = true;
             }
             
+            // L'IA sait bloquer !
+            if (minDist < 100 && target.attackTimer > 0 && bot.shieldHealth > 30 && Math.random() < 0.4) {
+                ctrl.block = true;
+                ctrl.right = false; ctrl.left = false;
+            }
+            
+            // L'IA utilise l'ultime !
+            if (bot.superMeter >= 150 && minDist < 300) {
+                ctrl.ult = true;
+            }
+            
             // Attaquer
-            if (minDist < (bot.isRanged ? 300 : 70) && Math.random() < (bot.isRanged ? 0.05 : 0.15)) {
+            if (!ctrl.block && minDist < (bot.isRanged ? 300 : 70) && Math.random() < (bot.isRanged ? 0.05 : 0.15)) {
                 if (Math.random() < 0.3) ctrl.atkH = true; else ctrl.atkL = true;
             }
             
@@ -352,7 +461,20 @@
         }
 
         function updateHUD() {
-            players.forEach(pl => { let pctEl = document.getElementById(`p${pl.id}-pct`); let lEl = document.getElementById(`p${pl.id}-l`); if (pctEl && lEl) { pctEl.innerText = Math.floor(pl.percent) + "%"; lEl.innerText = pl.lives; pctEl.style.color = pl.percent > 100 ? '#ef4444' : (pl.percent > 50 ? '#f59e0b' : pl.color); } });
+            players.forEach(pl => { 
+                let pctEl = document.getElementById(`p${pl.id}-pct`); 
+                let lEl = document.getElementById(`p${pl.id}-l`); 
+                let superEl = document.getElementById(`p${pl.id}-super`);
+                if (pctEl && lEl && superEl) { 
+                    pctEl.innerText = Math.floor(pl.percent) + "%"; 
+                    lEl.innerText = pl.lives; 
+                    pctEl.style.color = pl.percent > 100 ? '#ef4444' : (pl.percent > 50 ? '#f59e0b' : pl.color); 
+                    
+                    let superPct = Math.min(100, (pl.superMeter / 150) * 100);
+                    superEl.style.width = superPct + "%";
+                    if(superPct >= 100) superEl.classList.add('full'); else superEl.classList.remove('full');
+                } 
+            });
         }
 
         function checkGameEnd() {
@@ -398,7 +520,6 @@
             locSelections.push({ char: type, bot: currentIsBot }); 
             playSound('powerup'); 
             
-            // Remet le bouton sur "Humain" pour le prochain joueur par défaut
             currentIsBot = false;
             let btn = document.getElementById('bot-toggle-btn');
             btn.innerHTML = "👤 Contrôlé par : Humain";
@@ -415,7 +536,7 @@
             players = locSelections.map((selection, i) => { 
                 document.getElementById(`h${i + 1}`).style.display = 'block'; 
                 let p = new Player(i + 1, 150 + (i * 150), selection.char); 
-                p.isBot = selection.bot; // Applique le choix d'IA
+                p.isBot = selection.bot; 
                 return p;
             });
             gameActive = true; updateHUD(); if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -440,7 +561,7 @@
             ctx.restore(); gameLoopId = requestAnimationFrame(gameLoopLocal);
         }
 
-        const peerNet = new Peer(); let connNet = null, isHost = false; let p2NetKeys = { left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false };
+        const peerNet = new Peer(); let connNet = null, isHost = false; let p2NetKeys = { left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false, block: false, ult: false };
         peerNet.on('open', id => { document.getElementById('my-id').innerText = id; });
 
         function hostGame() { 
