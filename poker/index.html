@@ -648,5 +648,70 @@
             box.scrollTop = box.scrollHeight;
         }
     </script>
+    <!-- ========================================== -->
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
+    <!-- ========================================== -->
+    <script>
+        // 1. Liste de tes jeux dans l'ordre souhaité. 
+        // /!\ Vérifie que les noms des dossiers correspondent bien aux tiens.
+        const gamesHubList = [
+            "../cybertank/index.html",
+            "../tower_defense/index.html",
+            "../edgeofwar/index.html",
+            "../cyber_smash/index.html",
+            "../guessthemanga/index.html",
+            "../drawer/index.html",
+            "../texas_poker/index.html"
+        ];
+
+        let touchstartX = 0;
+        let touchendX = 0;
+        
+        function handleSwipeGesture() {
+            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
+            
+            if (touchendX < touchstartX - swipeThreshold) {
+                // Swipe vers la gauche (Jeu suivant)
+                navigateGames(1);
+            }
+            if (touchendX > touchstartX + swipeThreshold) {
+                // Swipe vers la droite (Jeu précédent)
+                navigateGames(-1);
+            }
+        }
+
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            
+            // Trouve l'index du jeu actuel en regardant l'URL
+            let currentIndex = gamesHubList.findIndex(game => {
+                let folderName = game.split('/')[1]; 
+                return currentPath.includes(folderName);
+            });
+            
+            // Si on ne trouve pas (erreur de nom de dossier), on annule
+            if (currentIndex === -1) return;
+
+            // Calcul du prochain jeu avec une boucle (le dernier ramène au premier)
+            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
+            
+            // Redirection
+            window.location.href = gamesHubList[nextIndex];
+        }
+
+        // Écoute du début du touché
+        document.addEventListener('touchstart', e => {
+            // On ignore le swipe si on touche le canvas pour ne pas gâcher le gameplay
+            if (e.target.tagName.toLowerCase() === 'canvas') return;
+            touchstartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        // Écoute de la fin du touché
+        document.addEventListener('touchend', e => {
+            if (e.target.tagName.toLowerCase() === 'canvas') return;
+            touchendX = e.changedTouches[0].screenX;
+            handleSwipeGesture();
+        }, { passive: true });
+    </script>
 </body>
 </html>
