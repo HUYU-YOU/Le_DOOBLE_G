@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Guess the Manga - Blind Test</title>
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --pink: #ff007f; --cyan: #00f0ff; --green: #39ff14; --red: #ff003c; }
+        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --pink: #ff007f; --cyan: #00f0ff; --green: #39ff14; --red: #ff003c; --gold: #ffd700; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; background: radial-gradient(circle at 50% -20%, #2b1055, var(--bg)); }
         #game-container { background: var(--panel); backdrop-filter: blur(10px); border-radius: 20px; padding: 40px; box-shadow: 0 0 40px rgba(255, 0, 127, 0.15); max-width: 750px; width: 100%; border: 1px solid rgba(255, 0, 127, 0.3); }
         .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
@@ -19,7 +19,8 @@
         #timer-bar { height: 100%; width: 100%; background-color: var(--cyan); transition: width 0.1s linear, background-color 0.3s; box-shadow: 0 0 15px var(--cyan); }
         
         #question-area { position: relative; width: 100%; height: 350px; background: #000; border-radius: 15px; margin-bottom: 25px; overflow: hidden; border: 2px solid var(--pink); box-shadow: 0 0 20px rgba(255, 0, 127, 0.3); display: flex; justify-content: center; align-items: center;}
-        #manga-image { width: 100%; height: 100%; object-fit: cover; filter: blur(25px); transition: filter 0.1s linear; }
+        /* MODIFICATION ICI : object-fit: contain; au lieu de cover pour ne plus rogner les images */
+        #manga-image { width: 100%; height: 100%; object-fit: contain; filter: blur(25px); transition: filter 0.1s linear; }
         
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         button.option-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3); color: white; padding: 15px; font-size: 1.1em; font-weight: bold; border-radius: 12px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; backdrop-filter: blur(5px); }
@@ -42,12 +43,19 @@
     <div id="game-container">
         <h1>BLIND TEST SURVIVAL</h1>
         <div id="start-screen">
-            <p style="font-size: 1.2em; color: #a9a9b3; line-height: 1.8; margin-bottom: 30px;">
+            <!-- AJOUT DU BEST SCORE ICI -->
+            <h2 style="color: var(--cyan); text-shadow: 0 0 10px var(--cyan); margin-bottom: 20px; text-align: center;">
+                🏆 BEST SCORE : <span id="best-score-display">0</span>
+            </h2>
+            
+            <p style="font-size: 1.2em; color: #a9a9b3; line-height: 1.8; margin-bottom: 30px; text-align: center;">
                 Mode <span style="color: var(--cyan);">VISUEL</span>.<br>
                 L'image est floue ! Devinez vite pour faire exploser le <b style="color: #f1c40f;">COMBO</b>.<br>
             </p>
-            <button class="btn-main" onclick="startGame()">Initier la séquence</button><br>
-            <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+            <div style="text-align: center;">
+                <button class="btn-main" onclick="startGame()">Initier la séquence</button><br>
+                <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+            </div>
         </div>
 
         <div id="game-screen" style="display: none;">
@@ -62,7 +70,7 @@
             <div class="options-grid" id="options-area"></div>
         </div>
 
-        <div id="end-screen" style="display: none;">
+        <div id="end-screen" style="display: none; text-align: center;">
             <h2 style="font-size: 3em; color: var(--red); margin-bottom: 10px; text-shadow: 0 0 20px var(--red);">SYSTEM FAILURE</h2>
             <p style="font-size: 1.5em; color: #fff;">Score Final : <strong id="final-score" style="color: var(--cyan);">0</strong></p>
             
@@ -82,32 +90,40 @@
     </div>
 
     <script>
-
-const baseMangaList = [
-    { title: "Naruto", img: "img/img1.png" }, { title: "One Piece", img: "img/img2.png" }, { title: "Bleach", img: "img/img3.png" },
-    { title: "Dragon Ball", img: "img/img4.png" }, { title: "Death Note", img: "img/img5.png" }, { title: "Attack on Titan", img: "img/img6.png" },
-    { title: "My Hero Academia", img: "img/img7.png" }, { title: "Demon Slayer", img: "img/img8.png" }, { title: "Jujutsu Kaisen", img: "img/img9.png" },
-    { title: "Hunter x Hunter", img: "img/img10.png" }, { title: "Fullmetal Alchemist", img: "img/img11.png" }, { title: "Tokyo Ghoul", img: "img/img12.png" },
-    { title: "One Punch Man", img: "img/img13.png" }, { title: "Sword Art Online", img: "img/img14.png" }, { title: "Fairy Tail", img: "img/img15.png" },
-    { title: "JoJo's Bizarre Adventure", img: "img/img16.png" }, { title: "Black Clover", img: "img/img17.png" }, { title: "Chainsaw Man", img: "img/img18.png" },
-    { title: "Haikyuu", img: "img/img19.png" }, { title: "Gintama", img: "img/img20.png" }, { title: "Mob Psycho 100", img: "img/img21.png" },
-    { title: "Evangelion", img: "img/img22.png" }, { title: "Cowboy Bebop", img: "img/img23.png" }, { title: "Code Geass", img: "img/img24.png" },
-    { title: "Steins;Gate", img: "img/img25.png" }, { title: "Berserk", img: "img/img26.png" }, { title: "Vinland Saga", img: "img/img27.png" },
-    { title: "Spy x Family", img: "img/img28.png" }, { title: "Kaguya-sama", img: "img/img29.png" }, { title: "Dr. Stone", img: "img/img30.png" },
-    { title: "Promised Neverland", img: "img/img31.png" }, { title: "Fire Force", img: "img/img32.png" }, { title: "Blue Lock", img: "img/img33.png" },
-    { title: "Tokyo Revengers", img: "img/img34.png" }, { title: "Kuroko no Basket", img: "img/img35.png" }, { title: "Assassination Classroom", img: "img/img36.png" },
-    { title: "Nanatsu no Taizai", img: "img/img37.png" }, { title: "Akame ga Kill", img: "img/img38.png" }, { title: "Parasyte", img: "img/img39.png" },
-    { title: "Psycho-Pass", img: "img/img40.png" }, { title: "Erased", img: "img/img41.png" }, { title: "Your Lie in April", img: "img/img42.png" },
-    { title: "Fate/Zero", img: "img/img43.png" }, { title: "No Game No Life", img: "img/img44.png" }, { title: "Re:Zero", img: "img/img45.png" },
-    { title: "Mushoku Tensei", img: "img/img46.png" }, { title: "Oshi no Ko", img: "img/img47.png" }, { title: "Solo Leveling", img: "img/img48.png" },
-    { title: "Boruto", img: "img/img49.png" }, { title: "Vagabond", img: "img/img50.png" }
-];
+        const baseMangaList = [
+            { title: "Naruto", img: "img/img1.png" }, { title: "One Piece", img: "img/img2.png" }, { title: "Bleach", img: "img/img3.png" },
+            { title: "Dragon Ball", img: "img/img4.png" }, { title: "Death Note", img: "img/img5.png" }, { title: "Attack on Titan", img: "img/img6.png" },
+            { title: "My Hero Academia", img: "img/img7.png" }, { title: "Demon Slayer", img: "img/img8.png" }, { title: "Jujutsu Kaisen", img: "img/img9.png" },
+            { title: "Hunter x Hunter", img: "img/img10.png" }, { title: "Fullmetal Alchemist", img: "img/img11.png" }, { title: "Tokyo Ghoul", img: "img/img12.png" },
+            { title: "One Punch Man", img: "img/img13.png" }, { title: "Sword Art Online", img: "img/img14.png" }, { title: "Fairy Tail", img: "img/img15.png" },
+            { title: "JoJo's Bizarre Adventure", img: "img/img16.png" }, { title: "Black Clover", img: "img/img17.png" }, { title: "Chainsaw Man", img: "img/img18.png" },
+            { title: "Haikyuu", img: "img/img19.png" }, { title: "Gintama", img: "img/img20.png" }, { title: "Mob Psycho 100", img: "img/img21.png" },
+            { title: "Evangelion", img: "img/img22.png" }, { title: "Cowboy Bebop", img: "img/img23.png" }, { title: "Code Geass", img: "img/img24.png" },
+            { title: "Steins;Gate", img: "img/img25.png" }, { title: "Berserk", img: "img/img26.png" }, { title: "Vinland Saga", img: "img/img27.png" },
+            { title: "Spy x Family", img: "img/img28.png" }, { title: "Kaguya-sama", img: "img/img29.png" }, { title: "Dr. Stone", img: "img/img30.png" },
+            { title: "Promised Neverland", img: "img/img31.png" }, { title: "Fire Force", img: "img/img32.png" }, { title: "Blue Lock", img: "img/img33.png" },
+            { title: "Tokyo Revengers", img: "img/img34.png" }, { title: "Kuroko no Basket", img: "img/img35.png" }, { title: "Assassination Classroom", img: "img/img36.png" },
+            { title: "Nanatsu no Taizai", img: "img/img37.png" }, { title: "Akame ga Kill", img: "img/img38.png" }, { title: "Parasyte", img: "img/img39.png" },
+            { title: "Psycho-Pass", img: "img/img40.png" }, { title: "Erased", img: "img/img41.png" }, { title: "Your Lie in April", img: "img/img42.png" },
+            { title: "Fate/Zero", img: "img/img43.png" }, { title: "No Game No Life", img: "img/img44.png" }, { title: "Re:Zero", img: "img/img45.png" },
+            { title: "Mushoku Tensei", img: "img/img46.png" }, { title: "Oshi no Ko", img: "img/img47.png" }, { title: "Solo Leveling", img: "img/img48.png" },
+            { title: "Boruto", img: "img/img49.png" }, { title: "Vagabond", img: "img/img50.png" }
+        ];
 
         let questionsData = [];
         let currentQuestionIndex = 0; let score = 0; let lives = 3; let combo = 1; let timeLeft = 100; let timerInterval; let isAnswering = false;
         
+        // --- GESTION DU BEST SCORE ---
+        let bestMangaScore = localStorage.getItem('guessitBestScore') || 0;
+        
         const screens = { start: document.getElementById('start-screen'), game: document.getElementById('game-screen'), end: document.getElementById('end-screen') };
         const ui = { img: document.getElementById('manga-image'), opt: document.getElementById('options-area'), timer: document.getElementById('timer-bar'), container: document.getElementById('game-container') };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            let display = document.getElementById('best-score-display');
+            if (display) display.innerText = bestMangaScore;
+            displayLeaderboard();
+        });
 
         function startGame() { 
             screens.start.style.display = 'none'; 
@@ -132,6 +148,7 @@ const baseMangaList = [
             });
 
             currentQuestionIndex = 0;
+            score = 0; lives = 3; combo = 1;
             loadQuestion(); 
         }
         
@@ -191,6 +208,15 @@ const baseMangaList = [
         function endGame() { 
             screens.game.style.display = 'none'; screens.end.style.display = 'block'; 
             document.getElementById('final-score').innerText = score;
+            
+            // --- SAUVEGARDE DU BEST SCORE ---
+            if (score > bestMangaScore) {
+                bestMangaScore = score;
+                localStorage.setItem('guessitBestScore', bestMangaScore);
+                let display = document.getElementById('best-score-display');
+                if (display) display.innerText = bestMangaScore;
+            }
+            
             displayLeaderboard();
         }
 
@@ -221,7 +247,6 @@ const baseMangaList = [
     <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
     <!-- ========================================== -->
     <script>
-
         const gamesHubList = [
             "../cybertank/index.html",
             "../tower_defense/index.html",
@@ -239,11 +264,9 @@ const baseMangaList = [
             const swipeThreshold = 75; 
             
             if (touchendX < touchstartX - swipeThreshold) {
-
                 navigateGames(1);
             }
             if (touchendX > touchstartX + swipeThreshold) {
-
                 navigateGames(-1);
             }
         }
@@ -264,7 +287,6 @@ const baseMangaList = [
         }
 
         document.addEventListener('touchstart', e => {
-
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchstartX = e.changedTouches[0].screenX;
         }, { passive: true });
