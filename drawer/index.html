@@ -142,16 +142,24 @@
                 </div>
             </div>
 
-            <!-- NOUVELLE BARRE D'OUTILS AVEC LES FORMES -->
+            <!-- NOUVELLE BARRE D'OUTILS AVEC LES FORMES ET OUTILS -->
             <div id="toolbar" style="display:none;">
-                <button class="tool-btn active" onclick="setTool('pen', this)">✏️</button>
-                <button class="tool-btn" onclick="setTool('eraser', this)">🧹</button>
-                <button class="tool-btn" onclick="setTool('line', this)">📏 Ligne</button>
-                <button class="tool-btn" onclick="setTool('rect', this)">⬜ Rect</button>
-                <button class="tool-btn" onclick="setTool('circle', this)">⭕ Cercle</button>
-                <button class="tool-btn" onclick="setTool('triangle', this)">🔺 Tri</button>
+                <button class="tool-btn active" onclick="setTool('pen', this)" title="Pinceau">✏️</button>
+                <button class="tool-btn" onclick="setTool('eraser', this)" title="Gomme">🧹</button>
+                <button class="tool-btn" onclick="setTool('fill', this)" title="Remplissage (Pot de peinture)">🪣</button>
+                
+                <select id="shapePicker" class="tool-btn" onchange="setTool(this.value, null)" style="background:#222; color:#fff; border:1px solid #444; border-radius:5px; padding:5px; cursor: pointer;">
+                    <option value="pen">Formes...</option>
+                    <option value="line">📏 Ligne</option>
+                    <option value="rect">⬜ Rectangle</option>
+                    <option value="circle">⭕ Cercle</option>
+                    <option value="triangle">🔺 Triangle</option>
+                </select>
+
                 <input type="color" id="colorPicker" value="#000000">
                 <input type="range" id="sizePicker" min="1" max="50" value="5">
+                
+                <button class="tool-btn" title="Annuler (Ctrl+Z)" onclick="undoDraw()">↩️</button>
                 <button class="tool-btn" style="background:#ff2a2a; margin-left:auto;" onclick="clearCanvas()">🗑️ Tout effacer</button>
                 
                 <button class="btn" id="btn-submit-draw" style="display:none; margin-left:auto; background:#39ff14;" onclick="submitGarticAction()">✅ Terminé !</button>
@@ -161,7 +169,7 @@
 
     <!-- RESULTATS GARTIC -->
     <div id="results-screen">
-        <h1 style="text-align:center;">Le Téléphone Arabe est Arabe !</h1>
+        <h1 style="text-align:center;">Le Téléphone Arabe est terminé !</h1>
         <div id="chains-container"></div>
         <button class="btn" style="margin: 0 auto; display:block;" onclick="location.reload()">Quitter</button>
     </div>
@@ -203,6 +211,7 @@
                 if(data.type === 'chat') handleChat(conn.peer, data.msg);
                 if(data.type === 'draw' || data.type === 'shape') { remoteDraw(data); relayData(data, conn.peer); }
                 if(data.type === 'clear') { clearCanvasLocal(); relayData(data, conn.peer); }
+                if(data.type === 'img_sync') { syncImage(data.src); relayData(data, conn.peer); }
                 if(data.type === 'submit_gartic') handleGarticSubmission(conn.peer, data.content);
             });
             conn.on('close', () => {
@@ -252,6 +261,7 @@
                 if(data.type === 'tick') updateTimerUI(data.time);
                 if(data.type === 'chat') renderChat(data.sender, data.msg, data.sys, data.success);
                 if(data.type === 'draw' || data.type === 'shape') remoteDraw(data);
+                if(data.type === 'img_sync') syncImage(data.src);
                 if(data.type === 'clear') clearCanvasLocal();
                 if(data.type === 'gartic_results') showResults(data.chains);
                 if(data.type === 'end_classic') showWinner(data.winner);
@@ -297,6 +307,7 @@
 
         function nextClassicTurn() {
             clearInterval(classicTimer);
+            undoStack = []; // Reset l'historique de dessin à chaque tour
             
             state.turnIndex++;
             if(state.turnIndex >= state.players.length) {
@@ -366,7 +377,6 @@
         }
 
         function endClassicGame() {
-            // Trouver le meilleur score
             let maxScore = -1;
             let winners = [];
             state.players.forEach(p => {
@@ -375,11 +385,10 @@
             });
             
             let winnerText = winners.join(' et ') + " avec " + maxScore + " points !";
-            
             broadcastData({ type: 'end_classic', winner: winnerText });
             showWinner(winnerText);
 
-            setTimeout(() => { location.reload(); }, 10000); // Retour accueil après 10s
+            setTimeout(() => { location.reload(); }, 10000); 
         }
 
         function showWinner(winnerText) {
@@ -394,6 +403,7 @@
             state.round = 0;
             state.chains = state.players.map(p => ({ originalAuthor: p.name, steps: [] }));
             state.players.forEach(p => p.isDone = false);
+            undoStack = [];
             broadcastState();
             renderUI();
         }
@@ -414,6 +424,7 @@
             if(state.players.every(p => p.isDone)) {
                 state.round++;
                 state.players.forEach(p => p.isDone = false);
+                undoStack = [];
                 
                 if(state.round >= state.players.length) {
                     broadcastData({ type: 'gartic_results', chains: state.chains });
@@ -469,7 +480,6 @@
                 document.getElementById('btn-submit-draw').style.display = 'none';
                 updateTimerUI(state.timeLeft);
                 
-                // Afficher le round en haut
                 document.getElementById('timer').innerHTML = `Tours : ${state.round}/${state.maxRounds} <br> <span style="color:#ff007f">${state.timeLeft}s</span>`;
                 
                 if(state.turnIndex === myIndex) {
@@ -515,7 +525,7 @@
                     }
                 } else {
                     document.getElementById('word-display').innerText = myChain.steps[myChain.steps.length - 1].content;
-                    document.getElementById('turn-info').innerText = "Dessine moi ca: :";
+                    document.getElementById('turn-info').innerText = "Dessine moi ca :";
                     document.getElementById('toolbar').style.display = 'flex';
                     document.getElementById('btn-submit-draw').style.display = 'block';
                     drawCanvas.style.pointerEvents = 'auto'; 
@@ -565,12 +575,13 @@
         }
 
         // =====================================
-        // MOTEUR DESSIN CANVAS (AVEC FORMES)
+        // MOTEUR DESSIN CANVAS (AVEC FORMES ET REMPLISSAGE)
         // =====================================
         const drawCanvas = document.getElementById('drawCanvas');
         const ctx = drawCanvas.getContext('2d', { willReadFrequently: true });
         let isDrawing = false, startX = 0, startY = 0, lastX = 0, lastY = 0, currentTool = 'pen'; 
-        let snapshot; // Pour l'aperçu des formes (Rect, Cercle, etc.)
+        let snapshot; 
+        let undoStack = []; // Historique pour le Ctrl+Z
 
         ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
         
@@ -584,10 +595,14 @@
         function setTool(tool, btn) {
             currentTool = tool;
             document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
+            if(btn) {
+                btn.classList.add('active');
+                if(btn.tagName !== 'SELECT') document.getElementById('shapePicker').value = 'pen';
+            }
         }
 
         function clearCanvas() {
+            saveState(); // Sauvegarde l'état avant d'effacer pour pouvoir annuler
             clearCanvasLocal();
             if (state.mode === 'classic') {
                 if(isHost) relayData({ type: 'clear' }, 'host');
@@ -596,20 +611,101 @@
         }
         function clearCanvasLocal() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height); }
 
+        // --- SYSTEME ANNULER (Ctrl+Z) ---
+        function saveState() {
+            if (undoStack.length > 15) undoStack.shift(); // Garde les 15 dernières actions
+            undoStack.push(drawCanvas.toDataURL('image/png'));
+        }
+
+        function undoDraw() {
+            if (undoStack.length > 0) {
+                let imgData = undoStack.pop();
+                syncImage(imgData); // Mets à jour le canvas local
+                // Synchronise avec les autres joueurs
+                if (state.mode === 'classic') {
+                    let syncObj = { type: 'img_sync', src: imgData };
+                    if(isHost) relayData(syncObj, 'host'); else myConn.send(syncObj);
+                }
+            }
+        }
+
+        function syncImage(dataUrl) {
+            let img = new Image();
+            img.src = dataUrl;
+            img.onload = () => {
+                clearCanvasLocal();
+                ctx.drawImage(img, 0, 0);
+            };
+        }
+
+        // Raccourci clavier Ctrl+Z
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoDraw(); }
+        });
+
+        // --- EVENTS DESSIN ---
         drawCanvas.addEventListener('mousedown', startDraw); drawCanvas.addEventListener('mousemove', drawing);
         drawCanvas.addEventListener('mouseup', stopDraw); drawCanvas.addEventListener('mouseout', stopDraw);
         drawCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
         drawCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawing(e); });
         drawCanvas.addEventListener('touchend', stopDraw);
 
+        function hexToRgb(hex) {
+            let bigint = parseInt(hex.slice(1), 16);
+            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255, a: 255 };
+        }
+
+        // Algorithme de Remplissage (Flood Fill)
+        function floodFill(startX, startY, fillColorHex) {
+            let imgData = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+            let data = imgData.data;
+            let startPos = (Math.floor(startY) * drawCanvas.width + Math.floor(startX)) * 4;
+            
+            let startR = data[startPos], startG = data[startPos + 1], startB = data[startPos + 2], startA = data[startPos + 3];
+            let fillRgb = hexToRgb(fillColorHex);
+
+            if (startR === fillRgb.r && startG === fillRgb.g && startB === fillRgb.b && startA === fillRgb.a) return;
+
+            let stack = [[Math.floor(startX), Math.floor(startY)]];
+            
+            function matchStartColor(pos) { return data[pos] === startR && data[pos + 1] === startG && data[pos + 2] === startB && data[pos + 3] === startA; }
+            function colorPixel(pos) { data[pos] = fillRgb.r; data[pos + 1] = fillRgb.g; data[pos + 2] = fillRgb.b; data[pos + 3] = fillRgb.a; }
+
+            while (stack.length > 0) {
+                let [x, y] = stack.pop();
+                let left = x, right = x;
+                while (left > 0 && matchStartColor((y * drawCanvas.width + (left - 1)) * 4)) left--;
+                while (right < drawCanvas.width - 1 && matchStartColor((y * drawCanvas.width + (right + 1)) * 4)) right++;
+
+                for (let i = left; i <= right; i++) {
+                    colorPixel((y * drawCanvas.width + i) * 4);
+                    if (y > 0 && matchStartColor(((y - 1) * drawCanvas.width + i) * 4)) stack.push([i, y - 1]);
+                    if (y < drawCanvas.height - 1 && matchStartColor(((y + 1) * drawCanvas.width + i) * 4)) stack.push([i, y + 1]);
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
         function startDraw(e) { 
+            saveState(); // Sauvegarde pour l'annulation
             isDrawing = true; 
             let pos = getMousePos(e); 
             startX = pos.x; startY = pos.y; 
             lastX = pos.x; lastY = pos.y;
             
-            // Sauvegarder l'état actuel du canvas pour la prévisualisation des formes
             snapshot = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+
+            // Action immédiate si c'est le pot de peinture
+            if (currentTool === 'fill') {
+                let color = document.getElementById('colorPicker').value;
+                floodFill(startX, startY, color);
+                isDrawing = false; // Bloque le dessin au mouvement de souris
+                
+                if (state.mode === 'classic') {
+                    let fillData = { type: 'img_sync', src: drawCanvas.toDataURL() };
+                    if(isHost) relayData(fillData, 'host'); else myConn.send(fillData);
+                }
+            }
         }
 
         function drawing(e) {
@@ -625,10 +721,10 @@
                     if(isHost) relayData(drawData, 'host'); else myConn.send(drawData);
                 }
                 lastX = pos.x; lastY = pos.y;
-            } else {
+            } else if (currentTool !== 'fill') {
                 // PRÉVISUALISATION DES FORMES EN DIRECT
-                ctx.putImageData(snapshot, 0, 0); // On remet le canvas intact
-                drawShapeLocal(currentTool, startX, startY, pos.x, pos.y, color, size); // On trace la forme par dessus
+                ctx.putImageData(snapshot, 0, 0); 
+                drawShapeLocal(currentTool, startX, startY, pos.x, pos.y, color, size);
             }
         }
 
@@ -636,8 +732,7 @@
             if (!isDrawing) return;
             isDrawing = false; 
             
-            // Si on utilise une forme, on envoie le résultat FINAL sur le réseau quand on relâche le clic
-            if (currentTool !== 'pen' && currentTool !== 'eraser') {
+            if (currentTool !== 'pen' && currentTool !== 'eraser' && currentTool !== 'fill') {
                 let pos = getMousePos(e);
                 let color = document.getElementById('colorPicker').value;
                 let size = document.getElementById('sizePicker').value;
@@ -668,11 +763,10 @@
                 let radius = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
                 ctx.arc(x0, y0, radius, 0, 2 * Math.PI);
             } else if (shapeType === 'triangle') {
-                // Triangle isocèle depuis la base vers la pointe
-                ctx.moveTo(x0 + (x1 - x0) / 2, y0); // Pointe en haut
-                ctx.lineTo(x1, y1);                 // Bas Droite
-                ctx.lineTo(x0, y1);                 // Bas Gauche
-                ctx.closePath();                    // Retourne en haut
+                ctx.moveTo(x0 + (x1 - x0) / 2, y0); 
+                ctx.lineTo(x1, y1);                 
+                ctx.lineTo(x0, y1);                 
+                ctx.closePath();                    
             }
             ctx.stroke();
         }
