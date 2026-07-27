@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber 2048 : Slime Edition</title>
+    <style>
+        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --grid-bg: #1a1a2e; --cell-bg: #2a2a40; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; touch-action: none; }
+        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px #fff; text-align: center; }
+        
+        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; }
+        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); }
+
+        #game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin-bottom: 20px; margin-top: 40px; }
+        .score-box { background: var(--panel); padding: 15px 25px; border-radius: 10px; border: 1px solid rgba(0, 240, 255, 0.3); text-align: center; box-shadow: 0 0 15px rgba(0, 240, 255, 0.1); }
+        .score-title { font-size: 0.8em; color: var(--p1); text-transform: uppercase; letter-spacing: 1px; }
+        .score-value { font-size: 1.8em; font-weight: bold; margin-top: 5px; }
+
+        /* LE PLATEAU DE JEU */
+        #game-container { position: relative; width: 400px; height: 400px; background: var(--grid-bg); border-radius: 15px; padding: 10px; box-sizing: border-box; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); border: 2px solid rgba(255,255,255,0.1); }
+        
+        /* LA GRILLE DE FOND (les cases vides) */
+        .grid-background { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; width: 100%; height: 100%; }
+        .grid-cell { background: var(--cell-bg); border-radius: 10px; }
+
+        /* LES TUILES (Les Slimes) */
+        #tiles-container { position: absolute; top: 10px; left: 10px; width: calc(100% - 20px); height: calc(100% - 20px); pointer-events: none; }
+        .tile { position: absolute; width: calc(25% - 7.5px); height: calc(25% - 7.5px); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 2em; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); background-size: contain; background-position: center; background-repeat: no-repeat; transition: transform 150ms ease-in-out, top 150ms ease-in-out, left 150ms ease-in-out; }
+        
+        /* ANIMATION DE FUSION (Le Pop) */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .tile-merged { animation: pop 200ms ease-in-out; }
+        .tile-new { animation: pop 200ms ease-in-out; }
+
+        /* COULEURS DE SECOURS (Si l'image ne charge pas) */
+        .tile-2 { background-color: #3d3a4e; }
+        .tile-4 { background-color: #4a4563; }
+        .tile-8 { background-color: #6a4c7a; }
+        .tile-16 { background-color: #8c4c7a; }
+        .tile-32 { background-color: #ac4c6a; }
+        .tile-64 { background-color: #cc4c4a; }
+        .tile-128 { background-color: #cca44a; box-shadow: 0 0 10px #cca44a; }
+        .tile-256 { background-color: #ccca4a; box-shadow: 0 0 15px #ccca4a; }
+        .tile-512 { background-color: #a4cc4a; box-shadow: 0 0 20px #a4cc4a; }
+        .tile-1024 { background-color: #4acc6a; box-shadow: 0 0 25px #4acc6a; }
+        .tile-2048 { background-color: #4acccc; box-shadow: 0 0 30px #4acccc; }
+
+        /* ÉCRAN DE FIN */
+        #game-over { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; border-radius: 15px; z-index: 100; backdrop-filter: blur(4px); }
+        #game-over h2 { font-size: 3em; margin-bottom: 10px; color: var(--p1); }
+        .btn-restart { background: #fff; color: #000; border: none; padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 20px; }
+        .btn-restart:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
+
+        @media (max-width: 450px) {
+            #game-container { width: 90vw; height: 90vw; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    
+    <div id="game-header">
+        <h1>SLIME 2048</h1>
+        <div class="score-box">
+            <div class="score-title">Score</div>
+            <div class="score-value" id="score">0</div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <!-- Grille visuelle statique -->
+        <div class="grid-background" id="grid-bg"></div>
+        <!-- Conteneur des tuiles animées -->
+        <div id="tiles-container"></div>
+        
+        <!-- Ecran de fin -->
+        <div id="game-over">
+            <h2>GAME OVER</h2>
+            <p>Les slimes sont coincés !</p>
+            <button class="btn-restart" onclick="resetGame()">Rejouer</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION DES IMAGES DE SLIME ---
+        // Le code charge img/slime1.png pour la tuile 2, slime2.png pour 4, etc.
+        const slimeImages = {
+            2: 'img/slime1.png',
+            4: 'img/slime2.png',
+            8: 'img/slime3.png',
+            16: 'img/slime4.png',
+            32: 'img/slime5.png',
+            64: 'img/slime6.png',
+            128: 'img/slime7.png',
+            256: 'img/slime8.png',
+            512: 'img/slime9.png',
+            1024: 'img/slime10.png',
+            2048: 'img/slime11.png'
+        };
+
+        const gridBg = document.getElementById('grid-bg');
+        const tilesContainer = document.getElementById('tiles-container');
+        const scoreElement = document.getElementById('score');
+        const gameOverScreen = document.getElementById('game-over');
+
+        let board = [];
+        let score = 0;
+        let tileIdCounter = 0;
+        let tiles = {}; // Dictionnaire pour garder la trace des divs (pour l'animation)
+
+        // Générer les 16 cases de fond
+        for (let i = 0; i < 16; i++) {
+            let cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            gridBg.appendChild(cell);
+        }
+
+        function initBoard() {
+            board = [[null,null,null,null],[null,null,null,null],[null,null,null,null],[null,null,null,null]];
+            tiles = {};
+            tilesContainer.innerHTML = '';
+            score = 0;
+            updateScore();
+            gameOverScreen.style.display = 'none';
+            addRandomTile();
+            addRandomTile();
+        }
+
+        function addRandomTile() {
+            let emptyCells = [];
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    if (!board[r][c]) emptyCells.push({r, c});
+                }
+            }
+            if (emptyCells.length === 0) return;
+
+            let randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            let value = Math.random() < 0.9 ? 2 : 4;
+            
+            let id = tileIdCounter++;
+            let tileObj = { id: id, value: value, r: randomCell.r, c: randomCell.c };
+            
+            board[randomCell.r][randomCell.c] = tileObj;
+            tiles[id] = tileObj;
+            
+            createTileElement(tileObj, true);
+        }
+
+        // Calcule la position en % pour le positionnement absolu
+        function getPosition(index) {
+            return `calc(${index * 25}% + ${index * 10 / 3}px)`; 
+        }
+
+        function createTileElement(tile, isNew = false) {
+            let div = document.createElement('div');
+            div.className = `tile tile-${tile.value}`;
+            div.id = `tile-${tile.id}`;
+            div.innerText = tile.value; // Le texte reste en sécurité si l'image crash
+            
+            // Appliquer l'image de fond si elle existe
+            if(slimeImages[tile.value]) {
+                div.style.backgroundImage = `url('${slimeImages[tile.value]}')`;
+                div.style.color = 'transparent'; // Cache le texte si on a une image
+            }
+
+            div.style.top = getPosition(tile.r);
+            div.style.left = getPosition(tile.c);
+            
+            if (isNew) div.classList.add('tile-new');
+            
+            tilesContainer.appendChild(div);
+        }
+
+        function updateTileElements() {
+            for (let id in tiles) {
+                let tile = tiles[id];
+                let div = document.getElementById(`tile-${tile.id}`);
+                if (div) {
+                    div.style.top = getPosition(tile.r);
+                    div.style.left = getPosition(tile.c);
+                }
+            }
+        }
+
+        function removeTileElement(id) {
+            let div = document.getElementById(`tile-${id}`);
+            if (div) {
+                setTimeout(() => { div.remove(); }, 150); // Attend la fin de la transition CSS
+            }
+            delete tiles[id];
+        }
+
+        function updateScore() { scoreElement.innerText = score; }
+
+        // Moteur de déplacement
+        function move(direction) {
+            let moved = false;
+            let merged = [[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false]];
+
+            const moveTile = (r, c, dr, dc) => {
+                let tile = board[r][c];
+                if (!tile) return false;
+
+                let currR = r; let currC = c;
+                let nextR = r + dr; let nextC = c + dc;
+
+                while (nextR >= 0 && nextR < 4 && nextC >= 0 && nextC < 4) {
+                    let nextTile = board[nextR][nextC];
+                    
+                    if (!nextTile) {
+                        // Glisse dans le vide
+                        board[nextR][nextC] = tile;
+                        board[currR][currC] = null;
+                        tile.r = nextR; tile.c = nextC;
+                        currR = nextR; currC = nextC;
+                        nextR += dr; nextC += dc;
+                        moved = true;
+                    } else if (nextTile.value === tile.value && !merged[nextR][nextC]) {
+                        // FUSION
+                        let newValue = tile.value * 2;
+                        score += newValue;
+                        
+                        // L'ancienne tuile disparait visuellement après avoir glissé
+                        tile.r = nextR; tile.c = nextC; 
+                        removeTileElement(tile.id);
+                        removeTileElement(nextTile.id);
+                        
+                        // Création du nouveau slime évolué
+                        let newId = tileIdCounter++;
+                        let newTile = { id: newId, value: newValue, r: nextR, c: nextC };
+                        board[nextR][nextC] = newTile;
+                        board[currR][currC] = null;
+                        tiles[newId] = newTile;
+                        
+                        merged[nextR][nextC] = true;
+                        
+                        // Créer le DOM de la nouvelle tuile après un court délai pour l'effet visuel
+                        setTimeout(() => {
+                            createTileElement(newTile);
+                            document.getElementById(`tile-${newId}`).classList.add('tile-merged');
+                        }, 150);
+                        
+                        moved = true;
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+                return moved;
+            };
+
+            if (direction === 'up') { for(let c=0; c<4; c++) for(let r=1; r<4; r++) moveTile(r,c,-1,0); }
+            if (direction === 'down') { for(let c=0; c<4; c++) for(let r=2; r>=0; r--) moveTile(r,c,1,0); }
+            if (direction === 'left') { for(let r=0; r<4; r++) for(let c=1; c<4; c++) moveTile(r,c,0,-1); }
+            if (direction === 'right') { for(let r=0; r<4; r++) for(let c=2; c>=0; c--) moveTile(r,c,0,1); }
+
+            if (moved) {
+                updateTileElements();
+                updateScore();
+                setTimeout(() => {
+                    addRandomTile();
+                    checkGameOver();
+                }, 150); // Attend la fin de l'animation pour spawn
+            }
+        }
+
+        function checkGameOver() {
+            // Reste-t-il des vides ?
+            for(let r=0; r<4; r++) for(let c=0; c<4; c++) if(!board[r][c]) return;
+            // Reste-t-il des fusions possibles ?
+            for(let r=0; r<4; r++) {
+                for(let c=0; c<4; c++) {
+                    let val = board[r][c].value;
+                    if(c < 3 && val === board[r][c+1].value) return;
+                    if(r < 3 && val === board[r+1][c].value) return;
+                }
+            }
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function resetGame() { initBoard(); }
+
+        // --- CONTRÔLES CLAVIER ---
+        document.addEventListener('keydown', (e) => {
+            if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+            if (e.key === 'ArrowUp') move('up');
+            if (e.key === 'ArrowDown') move('down');
+            if (e.key === 'ArrowLeft') move('left');
+            if (e.key === 'ArrowRight') move('right');
+        });
+
+        // --- CONTRÔLES TACTILES (Swipe IN-GAME) ---
+        const gameContainer = document.getElementById('game-container');
+        let gameTouchX = 0, gameTouchY = 0;
+
+        gameContainer.addEventListener('touchstart', e => {
+            gameTouchX = e.touches[0].clientX;
+            gameTouchY = e.touches[0].clientY;
+            e.stopPropagation(); // Bloque le swipe global du hub
+        }, {passive: false});
+
+        gameContainer.addEventListener('touchend', e => {
+            if (!gameTouchX || !gameTouchY) return;
+            let diffX = e.changedTouches[0].clientX - gameTouchX;
+            let diffY = e.changedTouches[0].clientY - gameTouchY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX > 50) move('right');
+                else if (diffX < -50) move('left');
+            } else {
+                if (diffY > 50) move('down');
+                else if (diffY < -50) move('up');
+            }
+            gameTouchX = 0; gameTouchY = 0;
+            e.stopPropagation(); // Bloque le swipe global du hub
+        }, {passive: false});
+
+        // Empêcher le scroll en jouant sur mobile
+        gameContainer.addEventListener('touchmove', e => { e.preventDefault(); }, {passive: false});
+
+        // Lancement !
+        initBoard();
+    </script>
+    
+    <!-- ========================================== -->
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE (GLOBAL)    -->
+    <!-- ========================================== -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html",
+            "../tower_defense/index.html",
+            "../edgeofwar/index.html",
+            "../cyber_smash/index.html",
+            "../guessthemanga/index.html",
+            "../drawer/index.html",
+            "../texas_poker/index.html",
+            "../blindtest/index.html",
+            "../2048slime/index.html" // Ton nouveau jeu est listé ici !
+        ];
+
+        let globalTouchStartX = 0;
+        let globalTouchEndX = 0;
+        
+        function handleSwipeGesture() {
+            const swipeThreshold = 75; 
+            if (globalTouchEndX < globalTouchStartX - swipeThreshold) navigateGames(1);
+            if (globalTouchEndX > globalTouchStartX + swipeThreshold) navigateGames(-1);
+        }
+
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => {
+                let folderName = game.split('/')[1]; 
+                return currentPath.includes(folderName);
+            });
+            if (currentIndex === -1) return;
+            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
+            window.location.href = gamesHubList[nextIndex];
+        }
+
+        // Le swipe global ne s'active QUE sur le document (en dehors de la grille de jeu)
+        document.addEventListener('touchstart', e => {
+            if (e.target.closest('#game-container') || e.target.tagName.toLowerCase() === 'button') return;
+            globalTouchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            if (e.target.closest('#game-container') || e.target.tagName.toLowerCase() === 'button') return;
+            globalTouchEndX = e.changedTouches[0].screenX;
+            handleSwipeGesture();
+        }, { passive: true });
+    </script>
+</body>
+</html>
