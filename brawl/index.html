@@ -146,7 +146,7 @@
             else if (type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); } 
             else if (type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); } 
             else if (type === 'death') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); }
-            else if (type === 'shatter') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); } // Bouclier cassé
+            else if (type === 'shatter') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); } 
             osc.start(now); osc.stop(now + 0.3);
         }
 
@@ -205,7 +205,7 @@
         class Projectile {
             constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange) { this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.ownerId = ownerId; this.dmg = dmg; this.kb = kb; this.w = 16; this.h = 16; this.active = true; this.color = color; this.life = isShortRange ? 12 : 60; }
             draw() { ctx.fillStyle = this.color; ctx.shadowBlur = 8; ctx.shadowColor = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; }
-            update() { this.x += this.vx; this.y += this.vy; this.life--; if (this.life <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.active = false; players.forEach(pl => { if (pl.id !== this.ownerId && this.active && this.x < pl.x + pl.w && this.x + 16 > pl.x && this.y < pl.y + pl.h && this.y + 16 > pl.y) { pl.takeDamage(this.dmg, this.kb, this.vx > 0 ? 1 : -1); this.active = false; } }); }
+            update() { this.x += this.vx; this.y += this.vy; this.life--; if (this.life <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.active = false; players.forEach(pl => { if (pl.id !== this.ownerId && !pl.isDead && this.active && this.x < pl.x + pl.w && this.x + 16 > pl.x && this.y < pl.y + pl.h && this.y + 16 > pl.y) { pl.takeDamage(this.dmg, this.kb, this.vx > 0 ? 1 : -1); this.active = false; } }); }
         }
 
         class Player {
@@ -220,14 +220,15 @@
                 this.outOfBoundsTimer = 0;
                 this.isBot = false;
                 
-                // NOUVEAU : SUPER & BOUCLIER
                 this.superMeter = 0;
                 this.isBlocking = false;
                 this.shieldHealth = 100;
-                this.stunTimer = 0; // Stun du bouclier brisé
+                this.stunTimer = 0; 
+                this.isDead = false; // NOUVEAU: Empêche la boucle infinie de mort !
             }
             
             draw() {
+                if (this.isDead) return;
                 if (this.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
                 
                 if (this.outOfBoundsTimer > 0) {
@@ -242,7 +243,6 @@
                 
                 ctx.save(); ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
                 
-                // Visuel Stun (Bouclier brisé)
                 if(this.stunTimer > 0) {
                     ctx.filter = "grayscale(100%) brightness(50%)";
                     ctx.fillStyle = "yellow"; ctx.fillText("STUN", -15, -this.h/2 - 10);
@@ -252,11 +252,10 @@
                 if (this.attackTimer > 10) { ctx.scale(1.2, 1.2); ctx.rotate(this.facing * 0.2); }
                 if (img && img.complete && img.naturalWidth !== 0) { ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h); } else { ctx.fillStyle = this.color; ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h); }
                 
-                // Visuel Bouclier
                 if (this.isBlocking) {
                     ctx.beginPath();
                     ctx.arc(0, 0, this.w, 0, Math.PI*2);
-                    ctx.fillStyle = `rgba(0, 240, 255, ${this.shieldHealth/300})`; // Plus de santé = Plus opaque
+                    ctx.fillStyle = `rgba(0, 240, 255, ${this.shieldHealth/300})`; 
                     ctx.fill();
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = `rgba(0, 240, 255, ${this.shieldHealth/100})`;
@@ -269,6 +268,8 @@
             }
             
             update(ctrl) {
+                if (this.isDead) return;
+
                 if (this.invincibleTimer > 0) this.invincibleTimer--; if (this.buffTimer > 0) { this.buffTimer--; if (this.buffTimer === 0) this.buffType = null; }
                 let cSpd = this.speed * (this.buffType === 'spd' ? 1.4 : 1.0); let cJmp = this.jumpForce * (this.buffType === 'spd' ? 1.15 : 1.0);
                 
@@ -317,7 +318,7 @@
                             } else { 
                                 playSound('hit'); let hitX = this.x, hitY = this.y, hitW = this.w, hitH = this.h;
                                 if (aimY === -1) { hitY -= 60; hitH = 60; } else if (aimY === 1) { hitY += this.h; hitH = 60; } else { hitX += (aimX === 1 ? this.w : -60); hitW = 60; }
-                                players.forEach(pl => { if (pl.id !== this.id && hitX < pl.x + pl.w && hitX + hitW > pl.x && hitY < pl.y + pl.h && hitY + hitH > pl.y) { pl.takeDamage(this.baseDmg * mult, this.baseKb * mult, aimX === 0 ? this.facing : aimX); } }); 
+                                players.forEach(pl => { if (pl.id !== this.id && !pl.isDead && hitX < pl.x + pl.w && hitX + hitW > pl.x && hitY < pl.y + pl.h && hitY + hitH > pl.y) { pl.takeDamage(this.baseDmg * mult, this.baseKb * mult, aimX === 0 ? this.facing : aimX); } }); 
                             }
                         }
                     }
@@ -339,7 +340,7 @@
                 playSound('powerup');
                 let target = null; let minDist = Infinity;
                 players.forEach(p => {
-                    if (p.id !== this.id && p.lives > 0) {
+                    if (p.id !== this.id && p.lives > 0 && !p.isDead) {
                         let d = Math.hypot(p.x - this.x, p.y - this.y);
                         if (d < minDist) { minDist = d; target = p; }
                     }
@@ -359,16 +360,23 @@
             }
 
             die() {
+                if (this.isDead) return; // FIX BUCLE INFINIE
                 playSound('death'); 
                 screenShake = 15; // REDUIT A 15 !
                 this.lives--; this.percent = 0; this.superMeter = 0; this.buffType = null; this.buffTimer = 0; this.outOfBoundsTimer = 0; this.shieldHealth = 100; this.stunTimer = 0;
                 updateHUD();
                 for (let i = 0; i < 30; i++) particles.push(new Particle(this.x, this.y, this.color));
-                if (this.lives <= 0) { checkGameEnd(); } else { this.x = canvas.width / 2 + (Math.random() * 100 - 50); this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; }
+                if (this.lives <= 0) { 
+                    this.isDead = true; 
+                    checkGameEnd(); 
+                } else { 
+                    this.x = canvas.width / 2 + (Math.random() * 100 - 50); 
+                    this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; 
+                }
             }
             
             takeDamage(dmg, baseKb, dir) {
-                if (this.invincibleTimer > 0) return; 
+                if (this.isDead || this.invincibleTimer > 0) return; 
                 
                 // GESTION DU BOUCLIER
                 if (this.isBlocking) {
@@ -411,7 +419,7 @@
             let target = null;
             let minDist = Infinity;
             players.forEach(p => {
-                if (p.id !== bot.id && p.lives > 0) {
+                if (p.id !== bot.id && p.lives > 0 && !p.isDead) {
                     let d = Math.hypot(p.x - bot.x, p.y - bot.y);
                     if (d < minDist) { minDist = d; target = p; }
                 }
@@ -548,7 +556,7 @@
             if (screenShake > 0) { ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake); screenShake--; } drawMapBackground();
             itemSpawnTimer++; if (itemSpawnTimer > 500 && items.length === 0) { items.push(new Item(Math.random() * 500 + 150, 100)); itemSpawnTimer = 0; }
             ctx.fillStyle = 'rgba(0, 0, 0, 0)'; platforms.forEach(p => { ctx.fillRect(p.x, p.y, p.w, p.h); }); 
-            items.forEach((it, i) => { it.draw(); it.y += 2; platforms.forEach(p => { if (it.y + it.h >= p.y && it.x + it.w > p.x && it.x < p.x + p.w) it.y = p.y - it.h; }); players.forEach(pl => { if (pl.x < it.x + it.w && pl.x + pl.w > it.x && pl.y < it.y + it.h && pl.y + pl.h > it.y) { pl.applyBuff(it.type); items.splice(i, 1); } }); });
+            items.forEach((it, i) => { it.draw(); it.y += 2; platforms.forEach(p => { if (it.y + it.h >= p.y && it.x + it.w > p.x && it.x < p.x + p.w) it.y = p.y - it.h; }); players.forEach(pl => { if (!pl.isDead && pl.x < it.x + it.w && pl.x + pl.w > it.x && pl.y < it.y + it.h && pl.y + pl.h > it.y) { pl.applyBuff(it.type); items.splice(i, 1); } }); });
             
             players.forEach(pl => { 
                 let ctrl = pl.isBot ? getAICtrl(pl) : getCtrl(pl.id);
@@ -616,7 +624,7 @@
             if (screenShake > 0) { ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake); screenShake--; } drawMapBackground();
             itemSpawnTimer++; if (itemSpawnTimer > 500 && items.length === 0) { items.push(new Item(Math.random() * 500 + 150, 100)); itemSpawnTimer = 0; }
             ctx.fillStyle = 'rgba(0,0,0,0)'; platforms.forEach(p => { ctx.fillRect(p.x, p.y, p.w, p.h); }); 
-            items.forEach((it, i) => { it.draw(); it.y += 2; platforms.forEach(p => { if (it.y + it.h >= p.y && it.x + it.w > p.x && it.x < p.x + p.w) it.y = p.y - it.h; }); players.forEach(pl => { if (pl.x < it.x + it.w && pl.x + pl.w > it.x && pl.y < it.y + it.h && pl.y + pl.h > it.y) { pl.applyBuff(it.type); items.splice(i, 1); } }); });
+            items.forEach((it, i) => { it.draw(); it.y += 2; platforms.forEach(p => { if (it.y + it.h >= p.y && it.x + it.w > p.x && it.x < p.x + p.w) it.y = p.y - it.h; }); players.forEach(pl => { if (!pl.isDead && pl.x < it.x + it.w && pl.x + pl.w > it.x && pl.y < it.y + it.h && pl.y + pl.h > it.y) { pl.applyBuff(it.type); items.splice(i, 1); } }); });
             
             players[0].update(getCtrl(1)); players[1].update(p2NetKeys); players.forEach(pl => pl.draw());
             for (let i = projectiles.length - 1; i >= 0; i--) { projectiles[i].update(); if (projectiles[i].active) projectiles[i].draw(); else projectiles.splice(i, 1); }
@@ -632,6 +640,7 @@
                 ctx.fillText(it.type==='dmg'?'💥':(it.type==='heal'?'❤️':'⚡'), it.x, it.y+22); ctx.shadowBlur = 0; 
             });
             players.forEach(pl => {
+                if (pl.isDead) return;
                 if (pl.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
                 let pObj = new Player(pl.id, pl.x, pl.skinKey === 'sumo' ? 'tank' : (pl.skinKey === 'ninja' ? 'ninja' : (pl.skinKey === 'gunner' ? 'gunner' : 'mage')));
                 Object.assign(pObj, pl); pObj.draw();
