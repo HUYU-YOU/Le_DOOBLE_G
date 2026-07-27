@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Cyber Blind Test - Multiplayer</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px #fff; text-align: center; }
+        
+        #game-container { position: relative; background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: 650px; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
+        .menu-title { font-size: 2em; margin-bottom: 20px; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .btn-main { background: #fff; color: #000; border: none; padding: 15px 35px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin: 10px; }
+        .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
+        input[type="text"] { padding: 12px; border-radius: 5px; border: 1px solid var(--p1); font-weight: bold; text-align: center; margin: 10px; background: #111; color: #fff; font-size: 1.1em; width: 250px; }
+
+        /* HEADER (SCORES & TEMPS) */
+        #game-header { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 15px; }
+        .score-box { font-size: 1.5em; font-weight: bold; }
+        #score-p1 { color: var(--p1); text-shadow: 0 0 10px var(--p1); }
+        #score-p2 { color: var(--p2); text-shadow: 0 0 10px var(--p2); }
+        #timer-box { font-size: 2em; color: #f1c40f; font-weight: 900; text-shadow: 0 0 15px #f1c40f; }
+
+        /* TRACK INFO */
+        #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        .mystery-box { background: #1a1a2e; padding: 20px; border-radius: 10px; border: 2px solid #444; font-size: 1.5em; text-align: center; letter-spacing: 3px; text-transform: uppercase; transition: 0.3s; }
+        .mystery-box.found { background: rgba(57, 255, 20, 0.2); border-color: var(--sys); color: var(--sys); text-shadow: 0 0 10px var(--sys); letter-spacing: 1px; }
+
+        /* TCHAT */
+        #chat-container { flex-grow: 1; background: #0b0c10; border-radius: 10px; border: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
+        #chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        #chat-input-area { display: flex; background: #1f2833; padding: 10px; border-top: 1px solid #333; }
+        #guess-input { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; background: #111; color: #fff; font-size: 1.2em; outline: none; }
+        #guess-input:focus { box-shadow: inset 0 0 10px var(--p1); }
+        #btn-send { background: var(--p1); color: #000; border: none; font-weight: bold; padding: 0 25px; margin-left: 10px; border-radius: 8px; cursor: pointer; font-size: 1.1em; transition: 0.2s; }
+        #btn-send:hover { background: #fff; box-shadow: 0 0 15px var(--p1); }
+
+        /* BULLES DE TCHAT */
+        .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; word-wrap: break-word; font-size: 1.1em; }
+        .msg-sys { background: rgba(57, 255, 20, 0.1); color: var(--sys); align-self: center; border: 1px solid var(--sys); font-weight: bold; text-align: center; width: 90%; }
+        .msg-p1 { background: rgba(0, 240, 255, 0.1); color: var(--p1); align-self: flex-start; border-left: 3px solid var(--p1); }
+        .msg-p2 { background: rgba(255, 0, 127, 0.1); color: var(--p2); align-self: flex-end; border-right: 3px solid var(--p2); }
+
+        .loader { border: 5px solid #333; border-top: 5px solid var(--p1); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; }
+        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    <h1>Cyber Blind Test</h1>
+
+    <div id="game-container">
+        <!-- HEADER (IN-GAME) -->
+        <div id="game-header">
+            <div class="score-box" id="score-p1">J1 : 0</div>
+            <div id="timer-box">30</div>
+            <div class="score-box" id="score-p2" style="display: none;">J2 : 0</div>
+        </div>
+
+        <!-- TRACK INFO -->
+        <div id="track-info">
+            <div class="mystery-box" id="box-artist">🧑‍🎤 ARTISTE : ? ? ?</div>
+            <div class="mystery-box" id="box-title">🎵 TITRE : ? ? ?</div>
+        </div>
+
+        <!-- CHAT -->
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <div id="chat-input-area">
+                <input type="text" id="guess-input" placeholder="Tapez l'artiste ou le titre ici..." autocomplete="off">
+                <button id="btn-send" onclick="submitGuess()">ENVOYER</button>
+            </div>
+        </div>
+
+        <!-- MENU PRINCIPAL -->
+        <div class="overlay" id="main-menu">
+            <div class="menu-title" style="color: var(--p1);">Choisissez votre mode</div>
+            <button class="btn-main" onclick="openMenu('solo')" style="background:var(--p1);">Entraînement (Solo)</button>
+            <button class="btn-main" onclick="openMenu('network')" style="background:var(--p2);">Duel (Réseau)</button>
+        </div>
+
+        <!-- MENU RÉSEAU -->
+        <div class="overlay" id="network-menu" style="display: none;">
+            <div class="menu-title" style="color: var(--p2);">Connexion Réseau</div>
+            <p>Votre ID : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
+            <button class="btn-main" onclick="hostGame()">Créer une partie</button>
+            <p style="margin: 15px 0;">OU</p>
+            <input type="text" id="join-id" placeholder="ID de l'Hôte">
+            <button class="btn-main" onclick="joinGame()" style="background:var(--p2);color:#fff;">Rejoindre</button>
+            <p id="status-text" style="color: #aaa; margin-top: 15px;"></p>
+            <button class="btn-main" style="font-size:0.8em; margin-top:20px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
+        </div>
+
+        <!-- MENU CATÉGORIE (Hôte / Solo uniquement) -->
+        <div class="overlay" id="category-menu" style="display: none;">
+            <div class="menu-title">Sélectionnez la Playlist</div>
+            <button class="btn-main" onclick="selectCategory('RAP')">🎤 RAP FRANÇAIS</button>
+            <button class="btn-main" onclick="selectCategory('FR')">🥐 VARIÉTÉ FR</button>
+            <button class="btn-main" onclick="selectCategory('MANGA')">⚔️ ANIME OPENINGS</button>
+            <button class="btn-main" onclick="selectCategory('POP')">🌍 POP INTERNATIONALE</button>
+            <div id="loading-api" style="display: none;">
+                <div class="loader"></div>
+                <p>Piratage de la base de données iTunes en cours...</p>
+            </div>
+        </div>
+
+        <!-- ECRAN DE FIN -->
+        <div class="overlay" id="end-screen" style="display: none;">
+            <div class="menu-title" id="winner-text" style="font-size: 3em;">FIN DU JEU</div>
+            <p id="final-scores-text" style="font-size: 1.5em; margin-bottom: 30px;"></p>
+            <button class="btn-main" onclick="location.reload()">Rejouer</button>
+        </div>
+    </div>
+
+    <script>
+        // --- VARIABLES GLOBALES ---
+        let gameMode = 'solo'; // 'solo', 'host', 'client'
+        let myPlayerId = 1; // 1 pour Hôte/Solo, 2 pour Client
+        let playlist = [];
+        let currentTrackIndex = -1;
+        let currentTrack = null;
+        let audioPlayer = new Audio();
+        
+        let scores = { 1: 0, 2: 0 };
+        let state = { artistFound: false, titleFound: false, timeLeft: 30 };
+        let roundInterval = null;
+        let isRoundActive = false;
+
+        // UI Elements
+        const chatMsgs = document.getElementById('chat-messages');
+        const guessInput = document.getElementById('guess-input');
+        const boxArtist = document.getElementById('box-artist');
+        const boxTitle = document.getElementById('box-title');
+        const timerBox = document.getElementById('timer-box');
+
+        // Touche Entrée pour envoyer
+        guessInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") { event.preventDefault(); submitGuess(); }
+        });
+
+        // --- NAVIGATION MENUS ---
+        function openMenu(mode) {
+            gameMode = mode;
+            document.getElementById('main-menu').style.display = 'none';
+            if (mode === 'solo') {
+                document.getElementById('category-menu').style.display = 'flex';
+                myPlayerId = 1;
+            } else {
+                document.getElementById('network-menu').style.display = 'flex';
+            }
+        }
+
+        // --- RESEAU (PEERJS) ---
+        const peer = new Peer(); 
+        let conn = null; 
+        
+        peer.on('open', id => { document.getElementById('my-id').innerText = id; });
+
+        function hostGame() { 
+            let id = document.getElementById('my-id').innerText;
+            if(id && id !== "Création...") { 
+                navigator.clipboard.writeText(id).catch(e => console.log()); 
+                document.getElementById('status-text').innerText = "ID COPIÉ ! En attente d'un adversaire..."; 
+            } 
+            gameMode = 'host'; myPlayerId = 1;
+            peer.on('connection', c => { 
+                conn = c; 
+                setupNetwork(); 
+                document.getElementById('network-menu').style.display = 'none';
+                document.getElementById('category-menu').style.display = 'flex';
+            }); 
+        }
+        
+        function joinGame() { 
+            let id = document.getElementById('join-id').value; if (!id) return; 
+            document.getElementById('status-text').innerText = "Connexion..."; 
+            conn = peer.connect(id); 
+            gameMode = 'client'; myPlayerId = 2;
+            setupNetwork(); 
+        }
+
+        function setupNetwork() {
+            conn.on('open', () => {
+                document.getElementById('score-p2').style.display = 'block';
+                if (gameMode === 'client') {
+                    document.getElementById('network-menu').style.display = 'none';
+                    document.getElementById('main-menu').style.display = 'flex';
+                    document.getElementById('main-menu').innerHTML = '<div class="menu-title">Attente de l\'hôte...</div><div class="loader"></div>';
+                }
+            });
+            
+            conn.on('data', data => {
+                if (data.type === 'chat') displayChat(data.msg, data.pid);
+                if (data.type === 'sys') displaySys(data.msg);
+                if (data.type === 'guess' && gameMode === 'host') processGuess(data.text, 2);
+                if (data.type === 'start_round') clientStartRound(data.track);
+                if (data.type === 'update_state') clientUpdateState(data.stateData);
+                if (data.type === 'end_round') clientEndRound(data.track);
+                if (data.type === 'end_game') showEndScreen();
+            });
+        }
+
+        // --- FETCH API APPLE MUSIC ---
+        async function selectCategory(cat) {
+            document.querySelectorAll('#category-menu button').forEach(b => b.style.display = 'none');
+            document.getElementById('loading-api').style.display = 'block';
+            
+            let term = ''; let country = 'FR';
+            if (cat === 'RAP') { term = 'rap+francais'; }
+            if (cat === 'FR') { term = 'chanson+francaise'; }
+            if (cat === 'MANGA') { term = 'anime+opening'; country = 'JP'; }
+            if (cat === 'POP') { term = 'billboard+top'; country = 'US'; }
+
+            try {
+                const res = await fetch(`https://itunes.apple.com/search?term=${term}&country=${country}&media=music&entity=song&limit=150`);
+                const data = await res.json();
+                
+                // On garde que les sons avec preview et on mélange
+                let validTracks = data.results.filter(t => t.previewUrl);
+                validTracks.sort(() => Math.random() - 0.5);
+                
+                playlist = validTracks.slice(0, 10); // 10 manches
+                document.getElementById('category-menu').style.display = 'none';
+                
+                if (gameMode === 'host' && conn) conn.send({ type: 'sys', msg: `L'hôte a choisi la catégorie ${cat}` });
+                displaySys("🎵 DÉBUT DE LA PARTIE (10 Manches) 🎵");
+                
+                setTimeout(startNextRound, 2000);
+            } catch (err) {
+                alert("Erreur API. Vérifiez votre connexion.");
+                location.reload();
+            }
+        }
+
+        // --- GESTION DES ROUNDS (HOTE & SOLO) ---
+        function startNextRound() {
+            currentTrackIndex++;
+            if (currentTrackIndex >= playlist.length) {
+                endGame();
+                return;
+            }
+
+            currentTrack = playlist[currentTrackIndex];
+            state = { artistFound: false, titleFound: false, timeLeft: 30 };
+            
+            // Setup Host UI
+            resetRoundUI();
+            audioPlayer.src = currentTrack.previewUrl;
+            audioPlayer.play().catch(e => console.log("Autoplay blocked, click inside window"));
+            
+            isRoundActive = true;
+            
+            if (gameMode === 'host') {
+                conn.send({ type: 'start_round', track: { previewUrl: currentTrack.previewUrl } });
+            }
+
+            displaySys(`▶️ Manche ${currentTrackIndex + 1} / 10`);
+
+            clearInterval(roundInterval);
+            roundInterval = setInterval(() => {
+                state.timeLeft--;
+                timerBox.innerText = state.timeLeft;
+                if (gameMode === 'host') conn.send({ type: 'update_state', stateData: state });
+                
+                if (state.timeLeft <= 0) endRound();
+            }, 1000);
+        }
+
+        function endRound() {
+            isRoundActive = false;
+            clearInterval(roundInterval);
+            audioPlayer.pause();
+            
+            // Révéler les réponses
+            revealAnswers(currentTrack.artistName, currentTrack.trackName);
+            displaySys(`Fin de la manche. Préparation de la suivante...`);
+            
+            if (gameMode === 'host') {
+                conn.send({ type: 'end_round', track: currentTrack });
+            }
+
+            setTimeout(startNextRound, 5000); // 5 sec de pause
+        }
+
+        function endGame() {
+            showEndScreen();
+            if (gameMode === 'host') conn.send({ type: 'end_game' });
+        }
+
+        // --- LOGIQUE CLIENT ---
+        function clientStartRound(track) {
+            currentTrack = track; // Client ne connait que l'URL
+            resetRoundUI();
+            audioPlayer.src = track.previewUrl;
+            audioPlayer.play().catch(e => console.log(e));
+            isRoundActive = true;
+            displaySys(`▶️ Manche ${currentTrackIndex + 1}`);
+        }
+
+        function clientUpdateState(stateData) {
+            state.timeLeft = stateData.timeLeft;
+            timerBox.innerText = state.timeLeft;
+            
+            document.getElementById('score-p1').innerText = `J1 : ${stateData.s1}`;
+            document.getElementById('score-p2').innerText = `J2 : ${stateData.s2}`;
+
+            if (stateData.aFound && !boxArtist.classList.contains('found')) {
+                boxArtist.classList.add('found'); boxArtist.innerText = "🧑‍🎤 ARTISTE TROUVÉ !";
+            }
+            if (stateData.tFound && !boxTitle.classList.contains('found')) {
+                boxTitle.classList.add('found'); boxTitle.innerText = "🎵 TITRE TROUVÉ !";
+            }
+        }
+
+        function clientEndRound(track) {
+            isRoundActive = false;
+            audioPlayer.pause();
+            revealAnswers(track.artistName, track.trackName);
+            displaySys(`Fin de la manche. Préparation de la suivante...`);
+        }
+
+        // --- VERIFICATION (MOTEUR DE RECHERCHE) ---
+        function cleanText(str) {
+            if (!str) return '';
+            let s = str.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, ''); // Enlever () et []
+            s = s.split(/feat\.|ft\./i)[0]; // Enlever les feat
+            s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Enlever accents
+            s = s.toLowerCase().replace(/[^a-z0-9]/g, ''); // Garder que lettres/chiffres
+            return s.trim();
+        }
+
+        function checkMatch(guess, target) {
+            let g = cleanText(guess);
+            let t = cleanText(target);
+            if (g.length < 2) return false;
+            if (g === t) return true;
+            if (t.includes(g) && g.length >= t.length * 0.75) return true;
+            if (g.includes(t) && t.length >= g.length * 0.75) return true;
+            return false;
+        }
+
+        function submitGuess() {
+            const text = guessInput.value.trim();
+            if (!text || !isRoundActive) return;
+            guessInput.value = '';
+
+            if (gameMode === 'client') {
+                conn.send({ type: 'guess', text: text });
+            } else {
+                processGuess(text, 1);
+            }
+        }
+
+        function processGuess(text, pid) {
+            let correct = false;
+            let aMatch = !state.artistFound && checkMatch(text, currentTrack.artistName);
+            let tMatch = !state.titleFound && checkMatch(text, currentTrack.trackName);
+
+            if (aMatch) {
+                state.artistFound = true; scores[pid]++; correct = true;
+                let msg = `🔥 J${pid} a trouvé l'Artiste !`;
+                displaySys(msg); if(gameMode==='host') conn.send({type:'sys', msg:msg});
+                
+                boxArtist.classList.add('found');
+                if(gameMode === 'solo') boxArtist.innerText = `🧑‍🎤 ${currentTrack.artistName}`;
+                else boxArtist.innerText = "🧑‍🎤 ARTISTE TROUVÉ !";
+            }
+            if (tMatch) {
+                state.titleFound = true; scores[pid]++; correct = true;
+                let msg = `🔥 J${pid} a trouvé le Titre !`;
+                displaySys(msg); if(gameMode==='host') conn.send({type:'sys', msg:msg});
+                
+                boxTitle.classList.add('found');
+                if(gameMode === 'solo') boxTitle.innerText = `🎵 ${currentTrack.trackName.split('(')[0]}`;
+                else boxTitle.innerText = "🎵 TITRE TROUVÉ !";
+            }
+
+            // Si faux, ou si un seul élément trouvé, on affiche la tentative dans le tchat
+            if (!correct || (!aMatch && tMatch) || (aMatch && !tMatch)) {
+                // On n'affiche pas la bonne réponse dans le tchat pour l'autre joueur
+                let safeText = correct ? "*****" : text; 
+                displayChat(safeText, pid);
+                if (gameMode === 'host') conn.send({ type: 'chat', msg: safeText, pid: pid });
+            }
+
+            updateScoreUI();
+
+            if (state.artistFound && state.titleFound) {
+                endRound(); // Manche finie si tout est trouvé
+            } else if (gameMode === 'host') {
+                conn.send({ type: 'update_state', stateData: { ...state, s1: scores[1], s2: scores[2], aFound: state.artistFound, tFound: state.titleFound } });
+            }
+        }
+
+        // --- INTERFACE UTILE ---
+        function displayChat(msg, pid) {
+            let div = document.createElement('div');
+            div.className = `msg msg-p${pid}`;
+            div.innerText = msg;
+            chatMsgs.appendChild(div);
+            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        }
+
+        function displaySys(msg) {
+            let div = document.createElement('div');
+            div.className = `msg msg-sys`;
+            div.innerText = msg;
+            chatMsgs.appendChild(div);
+            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score-p1').innerText = `J1 : ${scores[1]}`;
+            if (gameMode !== 'solo') document.getElementById('score-p2').innerText = `J2 : ${scores[2]}`;
+        }
+
+        function resetRoundUI() {
+            timerBox.innerText = "30";
+            boxArtist.className = 'mystery-box'; boxArtist.innerText = "🧑‍🎤 ARTISTE : ? ? ?";
+            boxTitle.className = 'mystery-box'; boxTitle.innerText = "🎵 TITRE : ? ? ?";
+            guessInput.focus();
+        }
+
+        function revealAnswers(artist, title) {
+            boxArtist.classList.add('found');
+            boxArtist.innerText = `🧑‍🎤 ${artist}`;
+            boxTitle.classList.add('found');
+            boxTitle.innerText = `🎵 ${title.split('(')[0]}`;
+        }
+
+        function showEndScreen() {
+            document.getElementById('end-screen').style.display = 'flex';
+            let t = document.getElementById('final-scores-text');
+            if (gameMode === 'solo') {
+                t.innerHTML = `Score Final : <b style="color:var(--p1)">${scores[1]} / 20</b>`;
+            } else {
+                let winner = scores[1] > scores[2] ? "JOUEUR 1 GAGNE" : (scores[2] > scores[1] ? "JOUEUR 2 GAGNE" : "ÉGALITÉ");
+                t.innerHTML = `${winner}<br><br><span style="color:var(--p1)">J1: ${scores[1]}</span> - <span style="color:var(--p2)">J2: ${scores[2]}</span>`;
+            }
+        }
+    </script>
+    
+    <!-- ========================================== -->
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
+    <!-- ========================================== -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html",
+            "../tower_defense/index.html",
+            "../edgeofwar/index.html",
+            "../cyber_smash/index.html",
+            "../guessthemanga/index.html",
+            "../drawer/index.html",
+            "../texas_poker/index.html",
+            "../blindtest/index.html" // <- Ajout de ton nouveau jeu !
+        ];
+
+        let touchstartX = 0;
+        let touchendX = 0;
+        
+        function handleSwipeGesture() {
+            const swipeThreshold = 75; 
+            if (touchendX < touchstartX - swipeThreshold) navigateGames(1);
+            if (touchendX > touchstartX + swipeThreshold) navigateGames(-1);
+        }
+
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => {
+                let folderName = game.split('/')[1]; 
+                return currentPath.includes(folderName);
+            });
+            if (currentIndex === -1) return;
+            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
+            window.location.href = gamesHubList[nextIndex];
+        }
+
+        document.addEventListener('touchstart', e => {
+            if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button') return;
+            touchstartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button') return;
+            touchendX = e.changedTouches[0].screenX;
+            handleSwipeGesture();
+        }, { passive: true });
+    </script>
+</body>
+</html>
