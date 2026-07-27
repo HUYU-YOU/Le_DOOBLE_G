@@ -26,10 +26,13 @@
         #game-status { margin-top:15px; color:var(--accent); font-weight:bold; text-transform:uppercase; font-size: 1.2em; text-align: center; }
         
         .card-zone { display: flex; gap: 10px; min-height: 100px; justify-content: center; align-items: center; }
-        .card { width: 50px; height: 75px; background: white; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 1.2em; font-weight: bold; color: black; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); border: 2px solid #ccc; }
-        .card.red { color: red; }
-        .card.hidden { background: repeating-linear-gradient(45deg, #606dbc, #606dbc 10px, #465298 10px, #465298 20px); border-color: #fff; color: transparent; }
-        
+        .card { width: 65px; height: 95px; background: white; border-radius: 8px; box-shadow: 2px 2px 10px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: space-between; padding: 5px; font-size: 1.1em; font-weight: bold; font-family: 'Courier New', monospace; position: relative; border: 1px solid #ddd; box-sizing: border-box; }
+        .card.red { color: #d63031; }
+        .card.hidden { background: repeating-linear-gradient(45deg, #2c3e50, #2c3e50 10px, #34495e 10px, #34495e 20px); border-color: #fff; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        .card .top-left { position: absolute; top: 4px; left: 4px; line-height: 1; text-align: center; font-size: 0.9em; }
+        .card .bottom-right { position: absolute; bottom: 4px; right: 4px; line-height: 1; text-align: center; transform: rotate(180deg); font-size: 0.9em; }
+        .card .center-suit { display: flex; justify-content: center; align-items: center; height: 100%; font-size: 2.5em; }
+
         #players-ring { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%; margin-top: 20px; }
         
         .player-seat { background: var(--panel); border: 2px solid #333; border-radius: 10px; padding: 10px; width: 140px; text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
@@ -139,7 +142,7 @@
 
         let timerInterval = null;
         let deck = [];
-        let handResolved = false; // Verrou pour éviter de compter les gains plusieurs fois
+        let handResolved = false;
 
         // --- INIT PEERJS ---
         peer.on('open', id => { 
@@ -159,7 +162,6 @@
             
             conn.on('data', data => {
                 if(data.type === 'join') {
-                    // Transmission de l'ID officiel au client
                     conn.send({ type: 'welcome', id: conn.peer }); 
                     
                     state.players.push({ id: conn.peer, name: data.name, chips: 1000, roundBet: 0, totalBet: 0, cards: [], status: 'active', hasActed: false });
@@ -222,7 +224,8 @@
                 let stateCopy = JSON.parse(JSON.stringify(state)); 
                 if(stateCopy.step < 5) {
                     stateCopy.players.forEach(p => {
-                        if(p.id !== c.peerId && p.cards.length > 0) {
+                        // FORCER EN STRING : Corrige le bug des clients qui ne voient pas leurs cartes !
+                        if(String(p.id) !== String(c.peerId) && p.cards.length > 0) {
                             p.cards = p.cards.map(() => ({ hidden: true }));
                         }
                     });
@@ -233,7 +236,8 @@
             let localState = JSON.parse(JSON.stringify(state));
             if(localState.step < 5) {
                 localState.players.forEach(p => {
-                    if(p.id !== 'host-local' && p.cards.length > 0) {
+                    // FORCER EN STRING : Pour que l'hôte voie uniquement ses propres cartes !
+                    if(String(p.id) !== String(myId) && p.cards.length > 0) {
                         p.cards = p.cards.map(() => ({ hidden: true }));
                     }
                 });
@@ -384,7 +388,6 @@
         function checkRoundEnd() {
             let actives = state.players.filter(p => p.status === 'active');
             
-            // Tout le monde se couche sauf un
             if(actives.length === 1 && !handResolved) {
                 handResolved = true;
                 state.step = 5;
@@ -392,7 +395,7 @@
                 let winner = actives[0];
                 let potWon = state.pot;
                 winner.chips += potWon;
-                state.pot = 0; // Réinitialisation immédiate du pot
+                state.pot = 0; 
 
                 let msg = `🏆 ${winner.name} gagne le pot de ${potWon}$ ! (Les autres se sont couchés)`;
                 broadcastSys(msg);
@@ -471,17 +474,16 @@
             winners.forEach(w => w.chips += winAmount);
 
             let potWon = state.pot;
-            state.pot = 0; // Réinitialisation immédiate du pot
+            state.pot = 0; 
 
             let msg = `🏆 ABATTAGE ! ${winNames.join(" et ")} remporte(nt) le pot de ${potWon}$ !`;
             broadcastSys(msg);
             state.msg = msg;
-            syncStateToAll(); // Révèle les cartes de tout le monde
+            syncStateToAll(); 
             
-            setTimeout(startNewHand, 5000); // Pause de 5 secondes avant la main suivante
+            setTimeout(startNewHand, 5000); 
         }
 
-        // --- MOTEUR DE EVALUATION DES MAINS ---
         function evaluatePokerHand(holeCards, communityCards) {
             if(!communityCards || communityCards.length < 5) return 0;
             const allCards = holeCards.concat(communityCards);
@@ -512,12 +514,16 @@
             return score;
         }
 
-        // --- AFFICHAGE ---
+        // --- AFFICHAGE NEW DESIGN ---
         function getCardHTML(card) {
             if(!card) return '';
-            if(card.hidden) return `<div class="card hidden">?</div>`;
+            if(card.hidden) return `<div class="card hidden"><div class="center-suit" style="color:rgba(255,255,255,0.2);">🃏</div></div>`;
             const colorClass = (card.suit === '♥' || card.suit === '♦') ? 'red' : '';
-            return `<div class="card ${colorClass}">${card.face}${card.suit}</div>`;
+            return `<div class="card ${colorClass}">
+                        <div class="top-left">${card.face}<br><span style="font-size:0.8em">${card.suit}</span></div>
+                        <div class="center-suit">${card.suit}</div>
+                        <div class="bottom-right">${card.face}<br><span style="font-size:0.8em">${card.suit}</span></div>
+                    </div>`;
         }
 
         function adjustRaise(delta) {
@@ -575,7 +581,6 @@
                 ring.appendChild(seat);
             });
 
-            // GESTION DES BOUTONS DE MISE ET Saisie
             const actionBar = document.getElementById('action-bar');
             if(isMyTurn && state.step < 5) {
                 actionBar.style.display = 'flex';
@@ -595,7 +600,6 @@
                     inp.min = 10;
                     inp.max = maxRaise;
                     
-                    // Initialise la valeur de relance uniquement lors du passage de tour
                     if (!wasActionVisible) {
                         inp.value = Math.min(BB_AMOUNT, maxRaise);
                     } else if (parseInt(inp.value) > maxRaise) {
