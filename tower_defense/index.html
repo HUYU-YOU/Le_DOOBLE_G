@@ -15,7 +15,9 @@
         h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; }
         
         .tower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .tower-btn { background: rgba(255,255,255,0.03); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: 0.2s; text-align: center; }
+        .tower-btn { background: rgba(255,255,255,0.03); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: 0.2s; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70px;}
+        .tower-btn b { font-size: 1.1em; margin-bottom: 2px;}
+        .tower-btn span { font-size: 0.85em; color: #aaa; margin-bottom: 4px; line-height: 1.1;}
         .tower-btn:hover:not(:disabled) { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
         .tower-btn.selected { border-color: var(--accent); background: rgba(16, 185, 129, 0.15); box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.2); }
         .tower-btn:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -37,21 +39,23 @@
         <div id="ui-panel">
             <div class="stat-box">
                 <div>Intégrité: <span class="lives" id="lives-display">20</span> ❤️</div>
-                <div>Ressources: <span class="gold" id="gold-display">120</span> ⚡</div>
+                <div>Ressources: <span class="gold" id="gold-display">150</span> ⚡</div>
                 <div class="wave">Anomalie: <span id="wave-display">0</span> / 15</div>
             </div>
             
-            <p style="font-size: 0.8em; color: #9ca3af; margin:0;">Créez un labyrinthe avec vos tours !</p>
-            <h3>Protocoles</h3>
+            <p style="font-size: 0.8em; color: #9ca3af; margin:0;">Placez vos unités autour de la route !</p>
+            <h3>Arsenal</h3>
             <div class="tower-grid">
-                <button class="tower-btn selected" id="btn-tower-1" onclick="selectTower(1)"><b>Firewall</b><br>Rapide<br><strong class="gold">20 ⚡</strong></button>
-                <button class="tower-btn" id="btn-tower-2" onclick="selectTower(2)"><b>Anti-Malware</b><br>Lourd<br><strong class="gold">50 ⚡</strong></button>
-                <button class="tower-btn" id="btn-tower-3" onclick="selectTower(3)"><b>Cryo-Sub</b><br>Ralentit<br><strong class="gold">40 ⚡</strong></button>
-                <button class="tower-btn" id="btn-tower-4" onclick="selectTower(4)"><b>Mortier AoE</b><br>Zone d'effet<br><strong class="gold">90 ⚡</strong></button>
+                <button class="tower-btn selected" id="btn-tower-1" onclick="selectTower(1)"><b>Fantassin</b><span>Cadence rapide</span><strong class="gold">20 ⚡</strong></button>
+                <button class="tower-btn" id="btn-tower-2" onclick="selectTower(2)"><b>Tireur</b><span>Tir à Ricochets</span><strong class="gold">60 ⚡</strong></button>
+                <button class="tower-btn" id="btn-tower-3" onclick="selectTower(3)"><b>Blindé</b><span>Casse l'armure</span><strong class="gold">120 ⚡</strong></button>
+                <button class="tower-btn" id="btn-tower-4" onclick="selectTower(4)"><b>Sniper</b><span>Tir transperçant</span><strong class="gold">100 ⚡</strong></button>
+                <button class="tower-btn" id="btn-tower-5" onclick="selectTower(5)"><b>Bombardier</b><span>Dégâts de Zone</span><strong class="gold">90 ⚡</strong></button>
+                <button class="tower-btn" id="btn-tower-6" onclick="selectTower(6)"><b>Alchimiste</b><span>Poison & Lenteur</span><strong class="gold">80 ⚡</strong></button>
             </div>
             
             <div id="upgrade-panel">
-                <div style="font-weight:bold; color: #fff;">Noeud Sélectionné</div>
+                <div style="font-weight:bold; color: #fff;" id="tower-name-display">Noeud Sélectionné</div>
                 <div id="tower-stats" style="font-size:12px; color: #9ca3af;"></div>
                 <button class="action-btn" id="btn-upgrade" onclick="upgradeSelectedTower()">Optimiser</button>
                 <button class="action-btn" style="background:transparent; border: 1px solid var(--danger); color:var(--danger);" onclick="sellSelectedTower()">Vendre</button>
@@ -68,62 +72,39 @@
     <script>
         const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d'); 
         const tileSize = 30; const cols = 20; const rows = 15;
-        let gold = 120, lives = 20, wave = 0, isWaveActive = false, enemiesToSpawn = [], spawnTimer = 0, gameOver = false;
-        let towers = [], enemies = [], projectiles = [], particles = [], empWaves = [];
+        let gold = 150, lives = 20, wave = 0, isWaveActive = false, enemiesToSpawn = [], spawnTimer = 0, gameOver = false;
+        let towers = [], enemies = [], projectiles = [], particles = [];
         let selectedTowerType = 1, hoveredGrid = {x: -1, y: -1}, selectedTowerInstance = null;
         
-        const towerDefs = { 
-            1: { cost: 20, range: 90, damage: 10, cooldown: 20, color: '#3b82f6', pColor: '#60a5fa', type: 'normal' }, 
-            2: { cost: 50, range: 120, damage: 45, cooldown: 80, color: '#8b5cf6', pColor: '#a78bfa', type: 'normal' }, 
-            3: { cost: 40, range: 90, damage: 2, cooldown: 10, color: '#06b6d4', pColor: '#22d3ee', type: 'ice' },
-            4: { cost: 90, range: 150, damage: 30, cooldown: 120, color: '#f97316', pColor: '#fdba74', type: 'aoe' } // Nouvelle tour Mortier
-        };
-
-        // Algorithme de Pathfinding (Breadth-First Search)
-        function findPath(gridSystem, startX, startY, endX, endY) {
-            let queue = [{x: startX, y: startY, path: []}];
-            let visited = new Set([`${startX},${startY}`]);
-            const dirs = [[1,0], [0,1], [-1,0], [0,-1]];
-            
-            while(queue.length > 0) {
-                let curr = queue.shift();
-                if(curr.x === endX && curr.y === endY) return curr.path;
-                
-                for(let d of dirs) {
-                    let nx = curr.x + d[0], ny = curr.y + d[1];
-                    if(nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
-                        // Autorise le passage si c'est vide OU si c'est la case d'arrivée
-                        if(gridSystem[nx][ny] === 0 || (nx === endX && ny === endY)) {
-                            let key = `${nx},${ny}`;
-                            if(!visited.has(key)) {
-                                visited.add(key);
-                                queue.push({x: nx, y: ny, path: [...curr.path, {x: nx, y: ny}]});
-                            }
-                        }
-                    }
+        // --- DÉFINITION DU CHEMIN (MAP) ---
+        const pathCoords = [
+            {x: 0, y: 2}, {x: 4, y: 2}, {x: 4, y: 10}, {x: 10, y: 10},
+            {x: 10, y: 4}, {x: 16, y: 4}, {x: 16, y: 12}, {x: 19, y: 12}
+        ];
+        
+        let mapGrid = Array(cols).fill().map(() => Array(rows).fill(0));
+        
+        // Trace le chemin continu dans mapGrid
+        for(let i=0; i<pathCoords.length-1; i++) {
+            let p1 = pathCoords[i], p2 = pathCoords[i+1];
+            let x1 = Math.min(p1.x, p2.x), x2 = Math.max(p1.x, p2.x);
+            let y1 = Math.min(p1.y, p2.y), y2 = Math.max(p1.y, p2.y);
+            for(let x=x1; x<=x2; x++) {
+                for(let y=y1; y<=y2; y++) {
+                    mapGrid[x][y] = 1; // 1 = Route, impossible de construire
                 }
             }
-            return null;
         }
 
-        function getGridMatrix() {
-            let grid = Array(cols).fill().map(() => Array(rows).fill(0));
-            towers.forEach(t => grid[Math.floor(t.x/tileSize)][Math.floor(t.y/tileSize)] = 1);
-            return grid;
-        }
-
-        // Met à jour le chemin de tous les ennemis quand on place une tour
-        function updateAllPaths() {
-            let grid = getGridMatrix();
-            enemies.forEach(e => {
-                let currentX = Math.floor(e.x / tileSize); let currentY = Math.floor(e.y / tileSize);
-                let newPath = findPath(grid, currentX, currentY, 19, 7); // Arrivée fixe en x=19, y=7
-                if(newPath) {
-                    e.pathArr = newPath.map(p => ({ x: p.x * tileSize + tileSize/2, y: p.y * tileSize + tileSize/2 }));
-                    e.pathIndex = 0;
-                }
-            });
-        }
+        // --- STATS DES TOURS ---
+        const towerDefs = { 
+            1: { name: 'Fantassin', cost: 20, range: 90, damage: 15, cooldown: 25, color: '#3b82f6', pColor: '#60a5fa', type: 'normal' }, 
+            2: { name: 'Tireur', cost: 60, range: 100, damage: 20, cooldown: 40, color: '#eab308', pColor: '#fde047', type: 'ricochet' }, 
+            3: { name: 'Blindé', cost: 120, range: 100, damage: 25, cooldown: 80, color: '#6366f1', pColor: '#a7f3d0', type: 'armorBreak' },
+            4: { name: 'Sniper', cost: 100, range: 250, damage: 80, cooldown: 90, color: '#ef4444', pColor: '#fca5a5', type: 'pierce' },
+            5: { name: 'Bombardier', cost: 90, range: 120, damage: 45, cooldown: 100, color: '#f97316', pColor: '#fdba74', type: 'aoe' },
+            6: { name: 'Alchimiste', cost: 80, range: 110, damage: 8, cooldown: 60, color: '#10b981', pColor: '#6ee7b7', type: 'poison' }
+        };
 
         canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); hoveredGrid.x = Math.floor((e.clientX - rect.left) / tileSize); hoveredGrid.y = Math.floor((e.clientY - rect.top) / tileSize); });
         canvas.addEventListener('mouseleave', () => { hoveredGrid = {x: -1, y: -1}; });
@@ -134,199 +115,377 @@
             if (clickedTower) { selectedTowerInstance = clickedTower; updateUpgradePanel(); return; }
             selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none';
             
-            // Interdit zone de spawn (x=0) et zone de fin (x=19)
-            if (hx === 0 || hx === 19) { alert("Zone protégée !"); return; }
+            // Interdit si sur la route ou en dehors
+            if (hx < 0 || hx >= cols || hy < 0 || hy >= rows) return;
+            if (mapGrid[hx][hy] === 1) { alert("Impossible de construire sur la route !"); return; }
             
             const def = towerDefs[selectedTowerType];
             if (gold >= def.cost) {
-                // Test si le placement bloque le chemin global
-                let tempGrid = getGridMatrix();
-                tempGrid[hx][hy] = 1; // Simule le placement
-                let globalPath = findPath(tempGrid, 0, 7, 19, 7);
-                
-                // Test si le placement bloque un ennemi existant
-                let blocksEnemy = false;
-                for(let e of enemies) {
-                    if(!findPath(tempGrid, Math.floor(e.x/tileSize), Math.floor(e.y/tileSize), 19, 7)) { blocksEnemy = true; break; }
-                }
-
-                if (!globalPath || blocksEnemy) {
-                    alert("Ce placement bloque complètement le chemin !");
-                    return; 
-                }
-
                 gold -= def.cost; 
                 towers.push(new Tower(hx, hy, selectedTowerType)); 
-                updateAllPaths(); // Recalcule les trajectoires !
                 updateUI();
             }
         });
 
-        window.selectTower = (t) => { selectedTowerType = t; selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none'; [1,2,3,4].forEach(id => document.getElementById(`btn-tower-${id}`).classList.remove('selected')); document.getElementById(`btn-tower-${t}`).classList.add('selected'); };
-        window.upgradeSelectedTower = () => { if (selectedTowerInstance && selectedTowerInstance.level < 3 && gold >= selectedTowerInstance.upgradeCost) { gold -= selectedTowerInstance.upgradeCost; selectedTowerInstance.upgrade(); updateUI(); updateUpgradePanel(); } };
-        window.sellSelectedTower = () => { if (selectedTowerInstance) { gold += Math.floor(selectedTowerInstance.totalValue * 0.6); towers = towers.filter(t => t !== selectedTowerInstance); selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none'; updateAllPaths(); updateUI(); } };
+        window.selectTower = (t) => { 
+            selectedTowerType = t; selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none'; 
+            [1,2,3,4,5,6].forEach(id => document.getElementById(`btn-tower-${id}`).classList.remove('selected')); 
+            document.getElementById(`btn-tower-${t}`).classList.add('selected'); 
+        };
+        
+        window.upgradeSelectedTower = () => { 
+            if (selectedTowerInstance && selectedTowerInstance.level < 3 && gold >= selectedTowerInstance.upgradeCost) { 
+                gold -= selectedTowerInstance.upgradeCost; selectedTowerInstance.upgrade(); updateUI(); updateUpgradePanel(); 
+            } 
+        };
+        
+        window.sellSelectedTower = () => { 
+            if (selectedTowerInstance) { 
+                gold += Math.floor(selectedTowerInstance.totalValue * 0.6); 
+                towers = towers.filter(t => t !== selectedTowerInstance); 
+                selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none'; 
+                updateUI(); 
+            } 
+        };
 
         function updateUpgradePanel() {
             const panel = document.getElementById('upgrade-panel');
             if (selectedTowerInstance) {
-                panel.style.display = 'flex'; document.getElementById('tower-stats').innerHTML = `Niveau: <span style="color:#fff">${selectedTowerInstance.level}/3</span><br>Puissance: <span style="color:#fff">${selectedTowerInstance.damage}</span><br>Portée: <span style="color:#fff">${selectedTowerInstance.range}</span>`;
+                panel.style.display = 'flex'; 
+                document.getElementById('tower-name-display').innerText = selectedTowerInstance.name;
+                document.getElementById('tower-stats').innerHTML = `Niveau: <span style="color:#fff">${selectedTowerInstance.level}/3</span><br>Puissance: <span style="color:#fff">${selectedTowerInstance.damage}</span><br>Portée: <span style="color:#fff">${selectedTowerInstance.range}</span>`;
                 const btn = document.getElementById('btn-upgrade');
                 if (selectedTowerInstance.level < 3) { btn.innerText = `Optimiser (${selectedTowerInstance.upgradeCost} ⚡)`; btn.disabled = gold < selectedTowerInstance.upgradeCost; } 
                 else { btn.innerText = "MAX"; btn.disabled = true; }
             }
         }
         
-        window.startWave = () => { if (!isWaveActive && wave < 15) { wave++; document.getElementById('wave-display').innerText = wave; generateWaveQueue(); isWaveActive = true; document.getElementById('btn-wave').disabled = true; document.getElementById('btn-wave').innerText = "Analyse..."; } };
+        window.startWave = () => { 
+            if (!isWaveActive && wave < 15) { 
+                wave++; document.getElementById('wave-display').innerText = wave; 
+                generateWaveQueue(); 
+                isWaveActive = true; 
+                document.getElementById('btn-wave').disabled = true; document.getElementById('btn-wave').innerText = "Analyse..."; 
+            } 
+        };
+        
         function generateWaveQueue() { 
-            enemiesToSpawn = []; let count = 5 + (wave * 2); 
-            if(wave === 15) { enemiesToSpawn.push('boss'); return; } // BOSS FINAL
-            for(let i=0; i<count; i++) { let r = Math.random(); if (wave > 3 && r < 0.2) enemiesToSpawn.push('fast'); else if (wave > 5 && r > 0.85) enemiesToSpawn.push('tank'); else enemiesToSpawn.push('normal'); } 
+            enemiesToSpawn = []; let count = 10 + (wave * 4); 
+            if(wave === 15) { enemiesToSpawn.push('boss'); return; } 
+            for(let i=0; i<count; i++) { 
+                let r = Math.random(); 
+                if (wave > 3 && r < 0.3) enemiesToSpawn.push('fast'); 
+                else if (wave > 5 && r > 0.8) enemiesToSpawn.push('tank'); 
+                else enemiesToSpawn.push('normal'); 
+            } 
         }
 
         class Enemy {
             constructor(type) {
-                this.x = 0 * tileSize + tileSize/2; this.y = 7 * tileSize + tileSize/2; 
-                this.type = type; let baseHp = 20 + (wave * 12);
-                if(type === 'normal') { this.maxHp = baseHp; this.speed = 1.2; this.color = '#ef4444'; this.radius = 7; this.rew = 5; }
-                if(type === 'fast') { this.maxHp = baseHp * 0.6; this.speed = 2.2; this.color = '#f59e0b'; this.radius = 5; this.rew = 8; }
-                if(type === 'tank') { this.maxHp = baseHp * 3; this.speed = 0.7; this.color = '#ec4899'; this.radius = 10; this.rew = 15; }
-                if(type === 'boss') { this.maxHp = baseHp * 20; this.speed = 0.5; this.color = '#fff'; this.radius = 15; this.rew = 500; this.empCooldown = 300; } // BOSS
-                this.hp = this.maxHp; this.freezeTimer = 0;
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.type = type; 
+                let baseHp = 30 + (wave * 20) + (wave*wave*2); // HP Scale fortement
+                if(type === 'normal') { this.maxHp = baseHp; this.speed = 1.3; this.color = '#ef4444'; this.radius = 7; this.rew = 5; }
+                if(type === 'fast') { this.maxHp = baseHp * 0.5; this.speed = 2.4; this.color = '#f59e0b'; this.radius = 5; this.rew = 6; }
+                if(type === 'tank') { this.maxHp = baseHp * 3.5; this.speed = 0.8; this.color = '#ec4899'; this.radius = 10; this.rew = 15; }
+                if(type === 'boss') { this.maxHp = baseHp * 25; this.speed = 0.6; this.color = '#fff'; this.radius = 15; this.rew = 500; } 
                 
-                // Init path
-                let grid = getGridMatrix();
-                let p = findPath(grid, 0, 7, 19, 7);
-                this.pathArr = p ? p.map(n => ({ x: n.x * tileSize + tileSize/2, y: n.y * tileSize + tileSize/2 })) : [];
-                this.pathIndex = 0;
+                this.hp = this.maxHp; 
+                
+                // DEBUFFS
+                this.debuffs = {};
+                this.armorBroken = false;
+                
+                // PATHING (Waypoints)
+                this.path = pathCoords.map(p => ({ x: p.x * tileSize + tileSize/2, y: p.y * tileSize + tileSize/2 }));
+                this.wpIndex = 1; // On spawn au wp 0 et on vise le wp 1
+                this.x = this.path[0].x; this.y = this.path[0].y;
             }
+            
+            applyDebuff(name, duration, power) {
+                this.debuffs[name] = { timer: duration, power: power };
+            }
+
             draw() {
-                if (this.freezeTimer > 0) { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 3, 0, Math.PI*2); ctx.fillStyle = 'rgba(34, 211, 238, 0.4)'; ctx.fill(); }
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.shadowBlur = (this.type==='boss') ? 20 : 10; ctx.shadowColor = this.color; ctx.fill(); ctx.shadowBlur = 0; ctx.closePath();
-                ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(this.x - 10, this.y - 15, 20, 3); ctx.fillStyle = (this.type==='boss') ? '#f1c40f' : '#10b981'; ctx.fillRect(this.x - 10, this.y - 15, 20 * (this.hp / this.maxHp), 3);
+                // Aura visuelle selon le debuff
+                if (this.debuffs['slow'] || this.debuffs['armorBreak']) {
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI*2); 
+                    ctx.fillStyle = this.debuffs['armorBreak'] ? 'rgba(99, 102, 241, 0.5)' : 'rgba(16, 185, 129, 0.4)'; 
+                    ctx.fill();
+                }
+                
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); 
+                ctx.fillStyle = this.debuffs['poison'] ? '#10b981' : this.color; // Vert si empoisonné
+                ctx.shadowBlur = (this.type==='boss') ? 20 : 10; ctx.shadowColor = this.color; 
+                ctx.fill(); ctx.shadowBlur = 0; ctx.closePath();
+                
+                ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(this.x - 10, this.y - 15, 20, 3); 
+                ctx.fillStyle = (this.type==='boss') ? '#f1c40f' : '#10b981'; ctx.fillRect(this.x - 10, this.y - 15, 20 * (this.hp / this.maxHp), 3);
             }
+            
             update() {
-                // Boss EMP Logic
-                if (this.type === 'boss') {
-                    this.empCooldown--;
-                    if (this.empCooldown <= 0) {
-                        empWaves.push({x: this.x, y: this.y, radius: 0, maxRadius: 150, alpha: 1});
-                        towers.forEach(t => { if(Math.hypot(t.x - this.x, t.y - this.y) <= 150) t.disabledTimer = 180; }); // Désactive 3 sec
-                        this.empCooldown = 300;
+                // GESTION DES DEBUFFS
+                let speedMult = 1;
+                this.armorBroken = false;
+                
+                if (this.debuffs['slow']) {
+                    speedMult = this.debuffs['slow'].power;
+                    this.debuffs['slow'].timer--;
+                    if(this.debuffs['slow'].timer <= 0) delete this.debuffs['slow'];
+                }
+                if (this.debuffs['poison']) {
+                    if (this.debuffs['poison'].timer % 30 === 0) {
+                        this.hp -= this.debuffs['poison'].power; 
+                        particles.push({x: this.x, y: this.y, vx: 0, vy: -1, life: 10, color: '#10b981'});
                     }
+                    this.debuffs['poison'].timer--;
+                    if(this.debuffs['poison'].timer <= 0) delete this.debuffs['poison'];
+                }
+                if (this.debuffs['armorBreak']) {
+                    this.armorBroken = true;
+                    this.debuffs['armorBreak'].timer--;
+                    if(this.debuffs['armorBreak'].timer <= 0) delete this.debuffs['armorBreak'];
                 }
 
-                let cSpd = this.speed; if (this.freezeTimer > 0) { cSpd *= 0.5; this.freezeTimer--; }
-                if(this.pathArr.length === 0 || this.pathIndex >= this.pathArr.length) return "alive"; // Bloqué temporairement
+                // MOUVEMENT VIA WAYPOINTS FIXES
+                let target = this.path[this.wpIndex];
+                if(!target) return "reached_end"; // Sécurité
                 
-                let target = this.pathArr[this.pathIndex]; 
-                let dx = target.x - this.x; let dy = target.y - this.y; let dist = Math.hypot(dx, dy);
+                let dx = target.x - this.x; let dy = target.y - this.y; 
+                let dist = Math.hypot(dx, dy);
+                let cSpd = this.speed * speedMult;
+                
                 if (dist < cSpd) { 
-                    this.x = target.x; this.y = target.y; this.pathIndex++; 
-                    if (this.x >= 19*tileSize) return "reached_end"; // Fin atteinte
+                    this.x = target.x; this.y = target.y; 
+                    this.wpIndex++; 
+                    if (this.wpIndex >= this.path.length) return "reached_end"; 
                 } 
-                else { this.x += (dx / dist) * cSpd; this.y += (dy / dist) * cSpd; } 
+                else { 
+                    this.x += (dx / dist) * cSpd; this.y += (dy / dist) * cSpd; 
+                } 
                 return "alive";
             }
         }
 
         class Tower {
             constructor(gx, gy, tK) {
-                this.x = gx * tileSize + tileSize / 2; this.y = gy * tileSize + tileSize / 2; let def = towerDefs[tK];
+                this.x = gx * tileSize + tileSize / 2; this.y = gy * tileSize + tileSize / 2; 
+                let def = towerDefs[tK];
+                this.name = def.name;
                 this.dType = def.type; this.range = def.range; this.damage = def.damage; this.cdMax = def.cooldown; this.cd = 0;
-                this.color = def.color; this.pColor = def.pColor; this.angle = 0; this.level = 1; this.baseCost = def.cost; this.upgradeCost = Math.floor(def.cost * 1.5); this.totalValue = def.cost;
-                this.disabledTimer = 0;
+                this.color = def.color; this.pColor = def.pColor; this.angle = 0; this.level = 1; this.baseCost = def.cost; 
+                this.upgradeCost = Math.floor(def.cost * 1.5); this.totalValue = def.cost;
             }
-            upgrade() { this.level++; this.totalValue += this.upgradeCost; this.damage = Math.floor(this.damage * 1.5); this.range += 10; this.upgradeCost = Math.floor(this.upgradeCost * 1.5); }
+            
+            upgrade() { 
+                this.level++; this.totalValue += this.upgradeCost; 
+                this.damage = Math.floor(this.damage * 1.5); 
+                if (this.dType !== 'ricochet') this.range += 15; 
+                this.upgradeCost = Math.floor(this.upgradeCost * 1.5); 
+            }
+            
             draw() {
                 ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(this.x - 14, this.y - 14, 28, 28);
-                ctx.fillStyle = (this.disabledTimer > 0) ? '#555' : this.color; ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+                ctx.fillStyle = this.color; ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
                 
-                // Zap effect if disabled
-                if(this.disabledTimer > 0) {
-                    ctx.strokeStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(this.x-5, this.y-5); ctx.lineTo(this.x+5, this.y+5); ctx.stroke();
-                }
-
                 ctx.fillStyle = 'white'; for(let i=0; i<this.level; i++) ctx.fillRect(this.x - 6 + (i*5), this.y + 12, 3, 3);
+                
                 ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
                 ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.arc(0, 0, (this.dType==='aoe')? 10 : 7, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = (this.disabledTimer > 0) ? '#555' : this.pColor; ctx.fillRect(0, -3, 10 + (this.level*3), 6); ctx.restore();
+                ctx.fillStyle = this.pColor; ctx.fillRect(0, -3, 10 + (this.level*3), 6); 
+                ctx.restore();
             }
+            
             update() {
-                if (this.disabledTimer > 0) { this.disabledTimer--; return; }
-                if (this.cd > 0) this.cd--; let target = null, minDst = this.range;
-                for (let e of enemies) { let d = Math.hypot(e.x - this.x, e.y - this.y); if (d < minDst) { minDst = d; target = e; } }
-                if (target) { this.angle = Math.atan2(target.y - this.y, target.x - this.x); if (this.cd <= 0) { projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.pColor, this.dType, this.level)); this.cd = this.cdMax; } }
+                if (this.cd > 0) this.cd--; 
+                
+                if (this.dType === 'pierce') {
+                    // Sniper : Tire moins souvent mais transperce tout sur une ligne
+                    let target = null; let minDst = this.range;
+                    for (let e of enemies) { let d = Math.hypot(e.x - this.x, e.y - this.y); if (d < minDst) { minDst = d; target = e; } }
+                    if (target) {
+                        this.angle = Math.atan2(target.y - this.y, target.x - this.x); 
+                        if (this.cd <= 0) { 
+                            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.pColor, this.dType, this.level, this.angle, this.range)); 
+                            this.cd = this.cdMax; 
+                        }
+                    }
+                } else {
+                    let target = null; let minDst = this.range;
+                    for (let e of enemies) { let d = Math.hypot(e.x - this.x, e.y - this.y); if (d < minDst) { minDst = d; target = e; } }
+                    if (target) { 
+                        this.angle = Math.atan2(target.y - this.y, target.x - this.x); 
+                        if (this.cd <= 0) { 
+                            let bounces = this.dType === 'ricochet' ? 1 + this.level : 0;
+                            projectiles.push(new Projectile(this.x, this.y, target, this.damage, this.pColor, this.dType, this.level, 0, 0, bounces)); 
+                            this.cd = this.cdMax; 
+                        } 
+                    }
+                }
             }
         }
 
         class Projectile {
-            constructor(x, y, target, dmg, color, type, level) { this.x = x; this.y = y; this.target = target; this.dmg = dmg; this.color = color; this.type = type; this.speed = (type === 'aoe') ? 6 : 12; this.level = level;}
-            draw() { ctx.beginPath(); ctx.arc(this.x, this.y, (this.type==='aoe') ? 6 : 3, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fill(); ctx.shadowBlur = 0; }
+            constructor(x, y, target, dmg, color, type, level, angle = 0, range = 0, bounces = 0) { 
+                this.x = x; this.y = y; this.target = target; this.dmg = dmg; this.color = color; this.type = type; 
+                this.level = level; this.bounces = bounces;
+                
+                if (this.type === 'pierce') {
+                    this.speed = 25; // Balle de sniper ultra rapide
+                    this.angle = angle;
+                    this.maxDist = range;
+                    this.distTraveled = 0;
+                    this.hitSet = new Set(); // Pour ne toucher chaque ennemi qu'une fois
+                } else {
+                    this.speed = (type === 'aoe') ? 6 : 12; 
+                }
+            }
+            
+            draw() { 
+                ctx.beginPath(); ctx.arc(this.x, this.y, (this.type==='aoe') ? 6 : 4, 0, Math.PI * 2); 
+                ctx.fillStyle = this.color; ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fill(); ctx.shadowBlur = 0; 
+            }
+            
             update() {
+                // LOGIQUE BALLE PERFORANTE (SNIPER)
+                if (this.type === 'pierce') {
+                    this.x += Math.cos(this.angle) * this.speed;
+                    this.y += Math.sin(this.angle) * this.speed;
+                    this.distTraveled += this.speed;
+                    
+                    enemies.forEach(e => {
+                        if (!this.hitSet.has(e.id) && Math.hypot(e.x - this.x, e.y - this.y) < e.radius + 8) {
+                            this.hitSet.add(e.id);
+                            e.hp -= e.armorBroken ? this.dmg * 1.5 : this.dmg;
+                            particles.push({x: this.x, y: this.y, vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4, life: 10, color: this.color});
+                        }
+                    });
+                    return this.distTraveled > this.maxDist; // Meurt après sa portée max
+                }
+                
+                // LOGIQUE PROJECTILE CLASSIQUE CHERCHEUR
+                if (!this.target || this.target.hp <= 0) return true; // Disparaît si la cible meurt avant impact
+
                 let dx = this.target.x - this.x, dy = this.target.y - this.y, dist = Math.hypot(dx, dy);
                 if (dist < this.speed) { 
+                    let actualDmg = this.target.armorBroken ? this.dmg * 1.5 : this.dmg;
+
                     if(this.type === 'aoe') {
-                        // Dommages de Zone (Splash)
-                        let splashRadius = 50 + (this.level * 10);
-                        empWaves.push({x: this.x, y: this.y, radius: 0, maxRadius: splashRadius, alpha: 0.8, color: '#f97316'});
-                        enemies.forEach(e => { if(Math.hypot(e.x - this.x, e.y - this.y) <= splashRadius) e.hp -= this.dmg; });
-                    } else {
-                        this.target.hp -= this.dmg; 
-                        if (this.type === 'ice') this.target.freezeTimer = 90;
+                        let splashRadius = 50 + (this.level * 15);
+                        enemies.forEach(e => { 
+                            if(Math.hypot(e.x - this.x, e.y - this.y) <= splashRadius) e.hp -= e.armorBroken ? this.dmg * 1.5 : this.dmg; 
+                        });
+                        // Visual effect AoE
+                        ctx.beginPath(); ctx.arc(this.x, this.y, splashRadius, 0, Math.PI*2); ctx.fillStyle = 'rgba(249, 115, 22, 0.3)'; ctx.fill();
+                    } 
+                    else if (this.type === 'poison') {
+                        this.target.hp -= actualDmg;
+                        this.target.applyDebuff('poison', 150, this.level * 3); // DoT
+                        this.target.applyDebuff('slow', 60, 0.5); // Ralentit beaucoup
                     }
-                    for(let i=0; i<6; i++) particles.push({x: this.x, y: this.y, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, life: 15, color: this.color}); return true; 
+                    else if (this.type === 'armorBreak') {
+                        this.target.hp -= actualDmg;
+                        this.target.applyDebuff('armorBreak', 120, 1.5); // Dégâts x1.5 reçus
+                        this.target.applyDebuff('slow', 60, 0.7); // Ralentit un peu
+                    }
+                    else if (this.type === 'ricochet') {
+                        this.target.hp -= actualDmg;
+                        if (this.bounces > 0) {
+                            let nextTarget = null; let minD = 150;
+                            for(let e of enemies) {
+                                if (e.id !== this.target.id && e.hp > 0) {
+                                    let d = Math.hypot(e.x - this.target.x, e.y - this.target.y);
+                                    if (d < minD) { minD = d; nextTarget = e; }
+                                }
+                            }
+                            if (nextTarget) {
+                                projectiles.push(new Projectile(this.target.x, this.target.y, nextTarget, this.dmg * 0.8, this.color, 'ricochet', this.level, 0, 0, this.bounces - 1));
+                            }
+                        }
+                    }
+                    else {
+                        this.target.hp -= actualDmg; 
+                    }
+                    
+                    for(let i=0; i<6; i++) particles.push({x: this.x, y: this.y, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, life: 15, color: this.color}); 
+                    return true; 
                 } 
-                else { this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed; return false; }
+                else { 
+                    this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed; 
+                    return false; 
+                }
             }
         }
 
-        function updateUI() { document.getElementById('gold-display').innerText = gold; document.getElementById('lives-display').innerText = lives; [1,2,3,4].forEach(i => document.getElementById(`btn-tower-${i}`).disabled = gold < towerDefs[i].cost); if(selectedTowerInstance) updateUpgradePanel(); }
+        function updateUI() { 
+            document.getElementById('gold-display').innerText = gold; 
+            document.getElementById('lives-display').innerText = lives; 
+            [1,2,3,4,5,6].forEach(i => document.getElementById(`btn-tower-${i}`).disabled = gold < towerDefs[i].cost); 
+            if(selectedTowerInstance) updateUpgradePanel(); 
+        }
         
         function drawMapAndHover() {
+            // Dessin du quadrillage
             ctx.fillStyle = 'rgba(255,255,255,0.02)';
             for(let x=0; x<canvas.width; x+=tileSize) { ctx.fillRect(x, 0, 1, canvas.height); }
             for(let y=0; y<canvas.height; y+=tileSize) { ctx.fillRect(0, y, canvas.width, 1); }
 
-            // Dessin des zones d'apparition et d'arrivée
-            ctx.fillStyle = 'rgba(16, 185, 129, 0.2)'; ctx.fillRect(0, 7 * tileSize, tileSize, tileSize);
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.3)'; ctx.fillRect(19 * tileSize, 7 * tileSize, tileSize, tileSize);
+            // Dessin visuel de la Route
+            ctx.fillStyle = 'rgba(40, 50, 70, 0.4)';
+            for(let x=0; x<cols; x++) {
+                for(let y=0; y<rows; y++) {
+                    if (mapGrid[x][y] === 1) ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+                }
+            }
+
+            // Entrée et Sortie colorées
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.3)'; ctx.fillRect(0, 2 * tileSize, tileSize, tileSize);
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.5)'; ctx.fillRect(19 * tileSize, 12 * tileSize, tileSize, tileSize);
             
-            if (selectedTowerInstance) { ctx.beginPath(); ctx.arc(selectedTowerInstance.x, selectedTowerInstance.y, selectedTowerInstance.range, 0, Math.PI*2); ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fill(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.stroke(); }
+            if (selectedTowerInstance) { 
+                ctx.beginPath(); ctx.arc(selectedTowerInstance.x, selectedTowerInstance.y, selectedTowerInstance.range, 0, Math.PI*2); 
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fill(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.stroke(); 
+            }
             
             if (hoveredGrid.x >= 0 && !selectedTowerInstance) {
                 const hx = hoveredGrid.x; const hy = hoveredGrid.y;
                 let occupied = towers.some(t => Math.floor(t.x/tileSize) === hx && Math.floor(t.y/tileSize) === hy);
-                let forbidden = (hx === 0 || hx === 19);
-                ctx.fillStyle = (forbidden || occupied) ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'; ctx.fillRect(hx * tileSize, hy * tileSize, tileSize, tileSize);
-                if (!forbidden && !occupied) { ctx.beginPath(); ctx.arc(hx * tileSize + tileSize/2, hy * tileSize + tileSize/2, towerDefs[selectedTowerType].range, 0, Math.PI*2); ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fill(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.stroke(); }
+                let forbidden = (hx < 0 || hx >= cols || hy < 0 || hy >= rows || mapGrid[hx][hy] === 1);
+                
+                ctx.fillStyle = (forbidden || occupied) ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'; 
+                ctx.fillRect(hx * tileSize, hy * tileSize, tileSize, tileSize);
+                
+                if (!forbidden && !occupied) { 
+                    ctx.beginPath(); ctx.arc(hx * tileSize + tileSize/2, hy * tileSize + tileSize/2, towerDefs[selectedTowerType].range, 0, Math.PI*2); 
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fill(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.stroke(); 
+                }
             }
         }
 
         function gameLoop() {
             if (gameOver) return; ctx.clearRect(0, 0, canvas.width, canvas.height); drawMapAndHover();
             if (isWaveActive) {
-                spawnTimer++; if (spawnTimer >= 60 && enemiesToSpawn.length > 0) { enemies.push(new Enemy(enemiesToSpawn.shift())); spawnTimer = 0; }
+                spawnTimer++; 
+                if (spawnTimer >= 45 && enemiesToSpawn.length > 0) { 
+                    enemies.push(new Enemy(enemiesToSpawn.shift())); spawnTimer = 0; 
+                }
                 if (enemiesToSpawn.length === 0 && enemies.length === 0) {
                     isWaveActive = false; const btn = document.getElementById('btn-wave'); btn.disabled = false;
                     if (wave >= 15) { gameOver = true; document.getElementById('game-over').style.display = 'block'; document.getElementById('end-message').innerText = "MENACE NEUTRALISÉE"; document.getElementById('end-message').style.color = '#10b981'; } 
-                    else { btn.innerText = "Démarrer Scan !"; gold += 50 + (wave * 5); }
+                    else { btn.innerText = "Démarrer Scan !"; gold += 50 + (wave * 10); }
                 }
             }
             towers.forEach(t => { t.update(); t.draw(); });
             for (let i = projectiles.length - 1; i >= 0; i--) { if (projectiles[i].update()) projectiles.splice(i, 1); else projectiles[i].draw(); }
             
-            // Onde EMP (Boss & Mortier)
-            for (let i = empWaves.length - 1; i >= 0; i--) {
-                let w = empWaves[i]; w.radius += 3; w.alpha -= 0.02;
-                ctx.beginPath(); ctx.arc(w.x, w.y, w.radius, 0, Math.PI*2); ctx.strokeStyle = w.color || `rgba(255, 255, 255, ${w.alpha})`; ctx.lineWidth = 3; ctx.stroke();
-                if(w.alpha <= 0) empWaves.splice(i, 1);
-            }
-
             for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life--; ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life / 15); ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; if (p.life <= 0) particles.splice(i, 1); }
             
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i], status = e.update();
-                if (status === "reached_end") { lives -= (e.type==='boss'? 10 : 1); enemies.splice(i, 1); if (lives <= 0) { gameOver = true; document.getElementById('game-over').style.display = 'block'; document.getElementById('end-message').innerText = "SERVEUR CORROMPU"; document.getElementById('end-message').style.color = '#ef4444'; } } 
+                if (status === "reached_end") { 
+                    lives -= (e.type==='boss'? 10 : 1); enemies.splice(i, 1); 
+                    if (lives <= 0) { gameOver = true; document.getElementById('game-over').style.display = 'block'; document.getElementById('end-message').innerText = "SERVEUR CORROMPU"; document.getElementById('end-message').style.color = '#ef4444'; } 
+                } 
                 else if (e.hp <= 0) { gold += e.rew; enemies.splice(i, 1); } else e.draw();
             }
             updateUI(); requestAnimationFrame(gameLoop);
