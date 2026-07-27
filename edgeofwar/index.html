@@ -64,35 +64,35 @@
         
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <h1 style="font-size: 3em; margin-bottom: 40px; color: var(--primary);">SÉLECTION DU MODE</h1>
-            <button class="btn-main" onclick="startSolo('solo')">Mode Solo (Normal)</button>
-            <button class="btn-main" onclick="startSolo('hardcore')" style="background:var(--enemy);">Mode Survie (Hardcore !)</button>
-            <button class="btn-main" onclick="startLocal()" style="background:var(--xp);">Mode Local (1 Clavier)</button>
-            <button class="btn-main" onclick="showNetworkMenu()" style="background:#555;">Mode Réseau (P2P)</button>
+            <h1 style="font-size: 3em; margin-bottom: 40px; color: var(--primary);">SELECT MODE</h1>
+            <button class="btn-main" onclick="startSolo('solo')">Mode Solo </button>
+            <button class="btn-main" onclick="startSolo('hardcore')" style="background:var(--enemy);">Mode Hardcore </button>
+            <button class="btn-main" onclick="startLocal()" style="background:var(--xp);">Mode Local</button>
+            <button class="btn-main" onclick="showNetworkMenu()" style="background:#555;">Mode Réseau PVP </button>
         </div>
 
         <!-- MENU RÉSEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
             <h2 style="color: var(--primary); font-size: 2.5em;">Lobby Réseau</h2>
             <p style="font-size: 1.2em;">Votre ID : <span id="my-id" style="color:var(--primary);font-weight:bold;">Création...</span></p>
-            <button class="btn-main" onclick="hostGame()">Créer (Hôte - Base Ouest)</button>
+            <button class="btn-main" onclick="hostGame()">Create (Hôte - Base West)</button>
             <p style="margin: 20px 0;">OU</p>
             <input type="text" id="join-id" class="net-input" placeholder="Coller l'ID de l'hôte">
-            <button class="btn-main" onclick="joinGame()" style="background:var(--enemy);">Rejoindre (Client - Base Est)</button>
+            <button class="btn-main" onclick="joinGame()" style="background:var(--enemy);">Join (Client - Base East)</button>
             <p id="status-text" style="color: #aaa; margin-top: 20px; font-weight:bold;"></p>
-            <button class="btn-main" style="background:#333; font-size: 0.9em; margin-top: 30px;" onclick="location.reload()">Retour</button>
+            <button class="btn-main" style="background:#333; font-size: 0.9em; margin-top: 30px;" onclick="location.reload()">Return</button>
         </div>
 
         <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over" style="display: none;">
             <h2 id="end-message" style="font-size: 3.5em; margin-bottom: 15px; text-transform: uppercase; text-align: center;"></h2>
-            <button class="btn-main" onclick="location.reload()">Nouvelle Bataille</button><br>
+            <button class="btn-main" onclick="location.reload()">New battle</button><br>
         </div>
 
         <!-- HUD EN JEU -->
         <div class="hud" id="game-hud" style="visibility: hidden;">
             <div class="base-stats">
-                <div class="base-name player-name">Base Ouest (Tech <span id="p1-age">1</span>)</div>
+                <div class="base-name player-name">Base Wuest (Tech <span id="p1-age">1</span>)</div>
                 <div class="health-bar-container"><div class="health-bar" id="p1-hp-bar"></div></div>
                 <div style="font-size: 0.75em; margin-top: 6px; color: #a9a9b3;">XP : <span id="p1-xp-text">0/100</span></div>
                 <div class="xp-container"><div id="p1-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
@@ -111,7 +111,7 @@
             </div>
             
             <div class="base-stats" style="text-align: right;">
-                <div class="base-name enemy-name">Base Est (Tech <span id="p2-age">1</span>)</div>
+                <div class="base-name enemy-name">Base East (Tech <span id="p2-age">1</span>)</div>
                 <div class="health-bar-container"><div class="health-bar" id="p2-hp-bar"></div></div>
                 <div id="p2-xp-info" style="font-size: 0.75em; margin-top: 6px; color: #a9a9b3; display:none;">XP : <span id="p2-xp-text">0/100</span></div>
                 <div class="xp-container" id="p2-xp-container" style="display:none;"><div id="p2-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
