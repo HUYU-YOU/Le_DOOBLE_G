@@ -31,9 +31,9 @@
     <h1>Cyber Tanks</h1>
 
     <div class="menu-container" id="main-menu">
-        <h2 style="color:var(--p1);">CHOISIS TON MODE</h2>
-        <button class="btn" onclick="startSolo()">Mode Solo (Vs IA)</button>
-        <button class="btn" onclick="showNetMenu()" style="background:var(--p2);color:#fff;">Mode Réseau (P2P)</button>
+        <h2 style="color:var(--p1);">CHOOSE YOU'R MODE</h2>
+        <button class="btn" onclick="startSolo()">Mode Solo Vs IA</button>
+        <button class="btn" onclick="showNetMenu()" style="background:var(--p2);color:#fff;">Mode Réseau PVP</button>
         <div class="controls-info"><b>Contrôles :</b> WASD ou Flèches (Déplacements) | Souris (Viser) | Espace (Tirer)</div>
     </div>
 
@@ -41,18 +41,18 @@
         <h2>Initialisation du Réseau</h2>
         <p>Votre ID : <span id="my-id" style="color:var(--p1);font-weight:bold;">Création...</span></p>
         <hr style="border-color:#333; margin: 20px 0;">
-        <button class="btn" onclick="hostGame()">Héberger la partie</button>
+        <button class="btn" onclick="hostGame()">Create a game</button>
         <p>OU</p>
         <input type="text" id="join-id" placeholder="ID de l'Hôte">
-        <button class="btn" onclick="joinGame()" style="background:var(--p2);color:#fff;">Rejoindre</button>
+        <button class="btn" onclick="joinGame()" style="background:var(--p2);color:#fff;">Join</button>
         <p id="status-text" style="color: #aaa; margin-top: 20px;"></p>
-        <button class="btn" style="background:#333; color:#fff; font-size:0.8em;" onclick="location.reload()">Retour</button>
+        <button class="btn" style="background:#333; color:#fff; font-size:0.8em;" onclick="location.reload()">Return</button>
     </div>
 
     <div id="game-container">
         <div id="hud">
-            <div class="p1-lives">J1 VIES: <span id="l1">3</span></div>
-            <div class="p2-lives" id="j2-label">J2 VIES: <span id="l2">3</span></div>
+            <div class="p1-lives">J1 HEALTH: <span id="l1">3</span></div>
+            <div class="p2-lives" id="j2-label">J2 HEALTH: <span id="l2">3</span></div>
         </div>
         <canvas id="gameCanvas" width="800" height="500"></canvas>
     </div>
