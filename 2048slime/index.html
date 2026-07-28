@@ -333,8 +333,8 @@
         initBoard();
     </script>
     
-    <!-- ========================================== -->
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE (GLOBAL)    -->
+<!-- ========================================== -->
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE & SOURIS) -->
     <!-- ========================================== -->
     <script>
         const gamesHubList = [
@@ -346,16 +346,32 @@
             "../drawer/index.html",
             "../texas_poker/index.html",
             "../blindtest/index.html",
-            "../2048slime/index.html" // Ton nouveau jeu est listé ici !
+            "../2048slime/index.html",
+            "../worms/index.html"
         ];
 
         let globalTouchStartX = 0;
+        let globalTouchStartY = 0;
         let globalTouchEndX = 0;
+        let globalTouchEndY = 0;
+        let isDragging = false; // Permet de savoir si on a cliqué avec la souris
         
         function handleSwipeGesture() {
-            const swipeThreshold = 75; 
-            if (globalTouchEndX < globalTouchStartX - swipeThreshold) navigateGames(1);
-            if (globalTouchEndX > globalTouchStartX + swipeThreshold) navigateGames(-1);
+            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
+            
+            let diffX = globalTouchEndX - globalTouchStartX;
+            let diffY = globalTouchEndY - globalTouchStartY;
+
+            // On vérifie quel axe a eu le plus grand mouvement
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                // Swipe Horizontal (Gauche / Droite)
+                if (diffX < -swipeThreshold) navigateGames(1);       // Swipe Gauche -> Suivant
+                else if (diffX > swipeThreshold) navigateGames(-1);  // Swipe Droite -> Précédent
+            } else {
+                // Swipe Vertical (Haut / Bas)
+                if (diffY < -swipeThreshold) navigateGames(1);       // Swipe Haut -> Suivant
+                else if (diffY > swipeThreshold) navigateGames(-1);  // Swipe Bas -> Précédent
+            }
         }
 
         function navigateGames(direction) {
@@ -364,22 +380,54 @@
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
             });
+            
             if (currentIndex === -1) return;
+            
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Le swipe global ne s'active QUE sur le document (en dehors de la grille de jeu)
+        // Exclut les zones où le joueur doit interagir avec le jeu
+        function isExcludedElement(target) {
+            const tag = target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
+            if (target.closest('#game-container') || target.closest('#game-wrapper')) return true;
+            return false;
+        }
+
+        // --- GESTION TACTILE (DOIGT) ---
         document.addEventListener('touchstart', e => {
-            if (e.target.closest('#game-container') || e.target.tagName.toLowerCase() === 'button') return;
+            if (isExcludedElement(e.target)) return;
             globalTouchStartX = e.changedTouches[0].screenX;
+            globalTouchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
 
         document.addEventListener('touchend', e => {
-            if (e.target.closest('#game-container') || e.target.tagName.toLowerCase() === 'button') return;
+            if (isExcludedElement(e.target)) return;
             globalTouchEndX = e.changedTouches[0].screenX;
+            globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
         }, { passive: true });
+
+        // --- GESTION SOURIS (CLIC & GLISSE) ---
+        document.addEventListener('mousedown', e => {
+            // Si c'est un clic droit ou sur un élément du jeu, on ignore
+            if (e.button !== 0 || isExcludedElement(e.target)) return; 
+            isDragging = true;
+            globalTouchStartX = e.clientX;
+            globalTouchStartY = e.clientY;
+        });
+
+        document.addEventListener('mouseup', e => {
+            if (!isDragging) return; // Ignore si on n'avait pas cliqué avant
+            isDragging = false;
+            
+            if (isExcludedElement(e.target)) return;
+            
+            globalTouchEndX = e.clientX;
+            globalTouchEndY = e.clientY;
+            handleSwipeGesture();
+        });
     </script>
 </body>
 </html>
