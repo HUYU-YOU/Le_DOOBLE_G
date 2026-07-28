@@ -167,6 +167,8 @@
             if(slimeImages[tile.value]) {
                 div.style.backgroundImage = `url('${slimeImages[tile.value]}')`;
                 div.style.color = 'transparent'; // Cache le texte si on a une image
+                div.style.backgroundColor = 'transparent'; // BUG FIX : Retire le fond de couleur !
+                div.style.boxShadow = 'none'; // BUG FIX : Retire l'ombre sous l'image
             }
 
             div.style.top = getPosition(tile.r);
@@ -188,12 +190,18 @@
             }
         }
 
-        function removeTileElement(id) {
+        // BUG FIX TELEPORTATION : Mise à jour de la fonction
+        function removeTileElement(id, targetR, targetC) {
             let div = document.getElementById(`tile-${id}`);
             if (div) {
+                div.style.zIndex = "1"; // Le met en arrière plan
+                if (targetR !== undefined && targetC !== undefined) {
+                    div.style.top = getPosition(targetR); // Force le slide visuel
+                    div.style.left = getPosition(targetC);
+                }
                 setTimeout(() => { div.remove(); }, 150); // Attend la fin de la transition CSS
             }
-            delete tiles[id];
+            delete tiles[id]; // Efface la donnée instantanément pour ne pas bloquer le prochain swipe
         }
 
         function updateScore() { scoreElement.innerText = score; }
@@ -226,10 +234,9 @@
                         let newValue = tile.value * 2;
                         score += newValue;
                         
-                        // L'ancienne tuile disparait visuellement après avoir glissé
-                        tile.r = nextR; tile.c = nextC; 
-                        removeTileElement(tile.id);
-                        removeTileElement(nextTile.id);
+                        // Envoi les coordonnées finales à la fonction de suppression pour forcer l'animation
+                        removeTileElement(tile.id, nextR, nextC);
+                        removeTileElement(nextTile.id, nextR, nextC);
                         
                         // Création du nouveau slime évolué
                         let newId = tileIdCounter++;
@@ -240,11 +247,9 @@
                         
                         merged[nextR][nextC] = true;
                         
-                        // Créer le DOM de la nouvelle tuile après un court délai pour l'effet visuel
-                        setTimeout(() => {
-                            createTileElement(newTile);
-                            document.getElementById(`tile-${newId}`).classList.add('tile-merged');
-                        }, 150);
+                        // BUG FIX TELEPORTATION : Création INSTANTANÉE dans le DOM 
+                        createTileElement(newTile);
+                        document.getElementById(`tile-${newId}`).classList.add('tile-merged');
                         
                         moved = true;
                         break;
