@@ -6,41 +6,39 @@
     <title>Cyber Slimes Artillery (Worms-like)</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
+        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --p3: #ffea00; --p4: #39ff14; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; user-select: none; }
         
         .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; }
         .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); }
 
-        /* HEADER UI */
-        #ui-layer { position: absolute; top: 10px; width: 100%; max-width: 800px; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 100; pointer-events: none; }
-        .player-info { background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; border: 1px solid #333; text-align: center; }
-        .hp-bar-bg { width: 150px; height: 15px; background: #222; border-radius: 10px; margin-top: 5px; overflow: hidden; border: 1px solid #555; }
+        /* HEADER UI DYNAMIQUE */
+        #ui-layer { position: absolute; top: 10px; width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 20px; box-sizing: border-box; z-index: 100; pointer-events: none; }
+        .team-container { display: flex; flex-direction: column; gap: 10px; }
+        .player-info { background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 8px; border: 1px solid #333; text-align: center; backdrop-filter: blur(4px); }
+        .hp-bar-bg { width: 130px; height: 12px; background: #222; border-radius: 10px; margin-top: 5px; overflow: hidden; border: 1px solid #555; }
         .hp-bar { height: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        #hp-p1 { background: var(--p1); width: 100%; box-shadow: 0 0 10px var(--p1); }
-        #hp-p2 { background: var(--p2); width: 100%; box-shadow: 0 0 10px var(--p2); }
         
-        #turn-indicator { font-size: 1.5em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.8); padding: 10px 30px; border-radius: 20px; border: 2px solid #fff; transition: 0.3s; }
+        #turn-indicator { font-size: 1.3em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; border: 2px solid #fff; transition: 0.3s; text-align: center; backdrop-filter: blur(4px); }
 
-        /* GAME CONTAINER & CANVASES */
+        /* GAME CONTAINER */
         #game-wrapper { position: relative; width: 100%; max-width: 800px; height: 600px; border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.15); border: 2px solid rgba(255,255,255,0.1); overflow: hidden; background: #000; cursor: crosshair; }
-        
         #bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        
-        #canvas-terrain { z-index: 2; }
-        #canvas-entities { z-index: 3; }
+        #canvas-terrain { z-index: 2; } #canvas-entities { z-index: 3; }
 
         /* MENUS */
         .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(8px); }
         .menu-overlay h1, .menu-overlay h2 { font-size: 3em; margin-bottom: 20px; text-transform: uppercase; color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 2px; text-align: center;}
         
-        .btn { background: rgba(0, 240, 255, 0.1); color: var(--p1); border: 2px solid var(--p1); padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease-in-out; margin: 10px; min-width: 250px; text-align: center; font-family: inherit; }
-        .btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 20px var(--p1); transform: translateY(-2px); }
-        .btn:active { transform: translateY(1px); }
+        .btn { background: rgba(0, 240, 255, 0.1); color: var(--p1); border: 2px solid var(--p1); padding: 12px 25px; font-size: 1.1em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease-in-out; margin: 8px; min-width: 250px; text-align: center; font-family: inherit; }
+        .btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); transform: translateY(-2px); }
         
         .btn-pink { color: var(--p2); border-color: var(--p2); background: rgba(255, 0, 127, 0.1); }
-        .btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 20px var(--p2); }
+        .btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 15px var(--p2); }
+
+        .btn-gold { color: var(--p3); border-color: var(--p3); background: rgba(255, 234, 0, 0.1); }
+        .btn-gold:hover { background: var(--p3); color: #000; box-shadow: 0 0 15px var(--p3); }
 
         .loader { font-size: 1.2em; color: var(--p1); margin-bottom: 20px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -50,8 +48,8 @@
 
         @media (max-width: 800px) {
             #game-wrapper { height: 70vh; border-radius: 0; border: none; }
-            .hp-bar-bg { width: 100px; }
-            #turn-indicator { font-size: 1em; padding: 8px 15px; }
+            .hp-bar-bg { width: 90px; }
+            #turn-indicator { font-size: 1em; padding: 6px 12px; }
         }
     </style>
 </head>
@@ -63,197 +61,117 @@
             <source src="img/background.mp4" type="video/mp4">
         </video>
 
-        <div id="ui-layer" class="hidden">
-            <div class="player-info">
-                <b style="color: var(--p1)">SLIME 1</b>
-                <div class="hp-bar-bg"><div id="hp-p1" class="hp-bar"></div></div>
-            </div>
-            <div id="turn-indicator" style="color: var(--p1); border-color: var(--p1);">Tour J1</div>
-            <div class="player-info">
-                <b style="color: var(--p2)">SLIME 2</b>
-                <div class="hp-bar-bg"><div id="hp-p2" class="hp-bar"></div></div>
-            </div>
-        </div>
+        <!-- L'UI SERA GÉNÉRÉE DYNAMIQUEMENT ICI -->
+        <div id="ui-layer" class="hidden"></div>
 
         <canvas id="canvas-terrain" width="800" height="600"></canvas>
         <canvas id="canvas-entities" width="800" height="600"></canvas>
 
+        <!-- MENU PRINCIPAL -->
         <div id="main-menu" class="menu-overlay">
             <h1>Cyber Slimes</h1>
             <div id="loading-text" class="loader">Chargement des sprites...</div>
-            <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column;">
-                <button class="btn" onclick="startGame('local')">🕹️ 1 vs 1 (Local)</button>
-                <button class="btn btn-pink" onclick="startGame('ai')">🤖 Contre l'IA</button>
-                <button class="btn" onclick="showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multijoueur</button>
+            <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column; align-items: center;">
+                <button class="btn" onclick="startGame('local_1v1')">🕹️ 1 VS 1 (Local)</button>
+                <button class="btn btn-gold" onclick="startGame('local_2v2')">🛡️ 2 VS 2 (Équipes)</button>
+                <button class="btn btn-pink" onclick="startGame('local_ffa')">⚔️ 4 Joueurs (Chacun pour soi)</button>
+                <hr style="width: 80%; border-color: rgba(255,255,255,0.2); margin: 10px 0;">
+                <button class="btn" onclick="startGame('ai')" style="border-color:#fff; color:#fff;">🤖 Contre l'IA</button>
+                <button class="btn" onclick="showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multijoueur En Ligne (1v1)</button>
             </div>
         </div>
 
-        <!-- MENU MULTIJOUEUR WEBRTC -->
+        <!-- MENU MULTIJOUEUR WEBRTC (Inchangé) -->
         <div id="online-menu" class="menu-overlay hidden">
-            <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR</h2>
-            
-            <!-- HOTE -->
+            <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR (1v1)</h2>
             <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 300px;">
                 <button class="btn" style="min-width: 200px; padding: 10px;" onclick="hostGame()">1. Héberger</button>
                 <p style="margin-top: 15px;">Code de votre partie : <br><b id="lobby-code-display" style="color: var(--p1); font-size:2em; letter-spacing:4px;">...</b></p>
             </div>
-
-            <!-- REJOINDRE -->
             <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); text-align: center; width: 300px;">
                 <input type="text" id="join-code-input" placeholder="Code de l'hôte..." style="padding: 12px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase;">
                 <button class="btn btn-pink" style="min-width: 200px; padding: 10px; margin-top: 15px;" onclick="joinGame()">2. Rejoindre</button>
             </div>
-
             <div id="conn-status"></div>
             <button class="btn" style="border-color:#555; color:#aaa; margin-top: 30px; background: transparent;" onclick="hideOnlineMenu()">Retour</button>
         </div>
 
+        <!-- MENU FIN -->
         <div id="game-over" class="menu-overlay hidden">
             <h2 id="winner-text">VICTOIRE</h2>
-            <button class="btn" onclick="location.reload()">Relancer la boucle</button>
+            <button class="btn" onclick="location.reload()">Retour au menu</button>
         </div>
     </div>
 
     <script>
-        // --- CONSTANTES MONDE GEANT ---
-        const WIDTH = 800; 
-        const HEIGHT = 600; 
-        const WORLD_WIDTH = 2000; 
-        const WORLD_HEIGHT = 600;
+        // --- CONSTANTES ---
+        const WIDTH = 800; const HEIGHT = 600; 
+        const WORLD_WIDTH = 2000; const WORLD_HEIGHT = 600;
         const GRAVITY = 0.18; 
         
         let camera = { x: 0, y: 0 };
-        let mouseScreenX = WIDTH / 2; 
-        let manualCameraControl = false; 
+        let mouseScreenX = WIDTH / 2; let manualCameraControl = false; 
 
         const canvasTerrain = document.getElementById('canvas-terrain');
         const ctxTerrain = canvasTerrain.getContext('2d'); 
-        
         const offscreenTerrain = document.createElement('canvas');
-        offscreenTerrain.width = WORLD_WIDTH;
-        offscreenTerrain.height = WORLD_HEIGHT;
+        offscreenTerrain.width = WORLD_WIDTH; offscreenTerrain.height = WORLD_HEIGHT;
         const ctxOffTerrain = offscreenTerrain.getContext('2d', { willReadFrequently: true });
 
         const canvasEnt = document.getElementById('canvas-entities');
         const ctxEnt = canvasEnt.getContext('2d');
 
-        let gameState = 'menu'; 
-        let gameMode = 'local';
-        let currentPlayer = 1;
-        let retreatFrames = 0; 
-        let mapImage = new Image();
+        let gameState = 'menu'; let gameMode = 'local_1v1';
+        let currentPlayer = 1; let retreatFrames = 0; let mapImage = new Image();
 
-        // --- GESTION MULTIJOUEUR (PEERJS) ---
-        let peer = null;
-        let conn = null;
-        let myPlayerId = 1;
+        // --- GESTION MULTIJOUEUR PEERJS (1v1) ---
+        let peer = null; let conn = null; let myPlayerId = 1;
 
         function showOnlineMenu() { document.getElementById('online-menu').classList.remove('hidden'); }
         function hideOnlineMenu() { 
             document.getElementById('online-menu').classList.add('hidden');
             if (peer) { peer.destroy(); peer = null; }
-            document.getElementById('conn-status').innerText = "";
-            document.getElementById('lobby-code-display').innerText = "...";
+            document.getElementById('conn-status').innerText = ""; document.getElementById('lobby-code-display').innerText = "...";
         }
 
         function hostGame() {
             if (peer) peer.destroy();
-            let status = document.getElementById('conn-status');
-            status.style.color = "var(--sys)";
-            status.innerText = "Création du serveur local...";
-            
-            // Génération d'un code court à 4 chiffres facile à taper
+            let status = document.getElementById('conn-status'); status.style.color = "var(--sys)"; status.innerText = "Création du serveur local...";
             let code = 'SLM' + Math.floor(1000 + Math.random() * 9000);
-            
             peer = new Peer(code);
-            
-            peer.on('open', (id) => {
-                document.getElementById('lobby-code-display').innerText = id;
-                status.innerText = "En attente d'un adversaire...";
-                myPlayerId = 1;
-            });
-
-            peer.on('connection', (connection) => {
-                conn = connection;
-                // FIX CRUCIAL : Attendre l'ouverture réelle du canal de données
-                conn.on('open', () => {
-                    setupConnection();
-                    status.innerText = "Adversaire connecté ! Lancement...";
-                    setTimeout(() => startGame('online'), 1000);
-                });
-            });
-
-            peer.on('error', (err) => {
-                console.error(err);
-                status.style.color = "var(--p2)";
-                status.innerText = "Erreur réseau : " + err.type;
-            });
+            peer.on('open', (id) => { document.getElementById('lobby-code-display').innerText = id; status.innerText = "En attente d'un adversaire..."; myPlayerId = 1; });
+            peer.on('connection', (connection) => { conn = connection; conn.on('open', () => { setupConnection(); status.innerText = "Adversaire connecté ! Lancement..."; setTimeout(() => startGame('online'), 1000); }); });
+            peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = "Erreur : " + err.type; });
         }
 
         function joinGame() {
             let code = document.getElementById('join-code-input').value.trim().toUpperCase();
-            if(!code) return alert("Veuillez entrer un code.");
+            if(!code) return alert("Code invalide.");
             if (peer) peer.destroy();
-            
-            let status = document.getElementById('conn-status');
-            status.style.color = "var(--p1)";
-            status.innerText = "Connexion à " + code + "...";
-            
+            let status = document.getElementById('conn-status'); status.style.color = "var(--p1)"; status.innerText = "Connexion...";
             peer = new Peer();
-            
             peer.on('open', () => {
                 conn = peer.connect(code, { reliable: true });
-                
-                conn.on('open', () => {
-                    setupConnection();
-                    myPlayerId = 2;
-                    status.style.color = "var(--sys)";
-                    status.innerText = "Connecté ! Lancement...";
-                    setTimeout(() => startGame('online'), 1000);
-                });
-
-                conn.on('error', (err) => {
-                    status.style.color = "var(--p2)";
-                    status.innerText = "La connexion a échoué.";
-                });
+                conn.on('open', () => { setupConnection(); myPlayerId = 2; status.style.color = "var(--sys)"; status.innerText = "Connecté !"; setTimeout(() => startGame('online'), 1000); });
+                conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Échec de connexion."; });
             });
-
-            peer.on('error', (err) => {
-                status.style.color = "var(--p2)";
-                if (err.type === 'peer-unavailable') {
-                    status.innerText = "La partie " + code + " n'existe pas.";
-                } else {
-                    status.innerText = "Erreur : " + err.type;
-                }
-            });
+            peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = err.type === 'peer-unavailable' ? "Partie introuvable." : "Erreur : " + err.type; });
         }
 
         function setupConnection() {
             conn.on('data', (data) => {
                 if(data.type === 'sync' && gameState === 'playing') {
                     let enemy = worms[myPlayerId === 1 ? 1 : 0];
-                    enemy.x = data.x;
-                    enemy.y = data.y;
-                    enemy.facing = data.facing;
-                    enemy.state = data.state;
-                    enemy.animFrame = data.animFrame;
+                    enemy.x = data.x; enemy.y = data.y; enemy.facing = data.facing; enemy.state = data.state; enemy.animFrame = data.animFrame;
                 }
-                if(data.type === 'fire') {
-                    projectile = new Projectile(data.px, data.py, data.vx, data.vy);
-                    gameState = 'flying';
-                    retreatFrames = 60;
-                }
+                if(data.type === 'fire') { projectile = new Projectile(data.px, data.py, data.vx, data.vy); gameState = 'flying'; retreatFrames = 60; }
             });
         }
 
         function syncPlayerState() {
             if (conn && conn.open && gameMode === 'online' && currentPlayer === myPlayerId) {
                 let me = worms[myPlayerId - 1];
-                conn.send({
-                    type: 'sync',
-                    x: me.x, y: me.y, facing: me.facing, 
-                    state: me.state, animFrame: me.animFrame
-                });
+                conn.send({ type: 'sync', x: me.x, y: me.y, facing: me.facing, state: me.state, animFrame: me.animFrame });
             }
         }
 
@@ -275,18 +193,11 @@
 
         let loadedCount = 0; let totalImages = Object.keys(imagesToLoad).length;
         for (let key in imagesToLoad) {
-            let img = new Image();
-            img.onerror = () => { console.error(`Asset manquant : ${imagesToLoad[key]}`); onLoadComplete(); };
-            img.onload = onLoadComplete; img.src = imagesToLoad[key]; sprites[key] = img;
+            let img = new Image(); img.onload = onLoadComplete; img.src = imagesToLoad[key]; sprites[key] = img;
         }
-
         function onLoadComplete() {
             loadedCount++;
-            if (loadedCount >= totalImages) {
-                document.getElementById('loading-text').classList.add('hidden');
-                document.getElementById('menu-buttons').classList.remove('hidden');
-                mapImage = sprites.map;
-            }
+            if (loadedCount >= totalImages) { document.getElementById('loading-text').classList.add('hidden'); document.getElementById('menu-buttons').classList.remove('hidden'); mapImage = sprites.map; }
         }
 
         // --- INPUTS ---
@@ -301,13 +212,8 @@
             if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
             if (e.key === ' ' || e.code === 'Space') keys.space = false;
         });
+        window.addEventListener('mousemove', (e) => { let rect = document.getElementById('game-wrapper').getBoundingClientRect(); mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width); });
 
-        window.addEventListener('mousemove', (e) => {
-            let rect = document.getElementById('game-wrapper').getBoundingClientRect();
-            mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width);
-        });
-
-        // --- TERRAIN ---
         function generateTerrain() {
             ctxOffTerrain.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
             if (mapImage.complete && mapImage.naturalWidth > 0) ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -329,16 +235,12 @@
 
         // --- MOTEUR PHYSIQUE & ANIMATION ---
         class Slime {
-            constructor(x, y, id, type, color) {
+            constructor(x, y, id, type, color, team, name) {
                 this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
+                this.team = team; this.name = name;
                 this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
-                
-                this.facing = id === 1 ? 'r' : 'l';
-                this.state = 'idle'; // idle, walk, air, landed
-                this.animFrame = 1; 
-                this.animTimer = 0; 
-                this.landTimer = 0; 
-                this.isOnGround = false;
+                this.facing = id % 2 !== 0 ? 'r' : 'l'; // Regard adaptatif
+                this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
             }
 
             update() {
@@ -348,105 +250,74 @@
                 if (gameMode === 'online' && currentPlayer !== myPlayerId) isMyTurn = false;
                 let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0)) && !(gameMode === 'ai' && this.id === 2);
                 
-                // Contrôles
                 if (canMove && !isDragging) {
                     if (keys.left) { this.vx = -1.5; this.facing = 'l'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
                     else if (keys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
                     else { this.vx = 0; if(this.state === 'walk') this.state = 'idle'; }
 
-                    if (keys.space && this.isOnGround) {
-                        this.vy = -6.5; 
-                        this.isOnGround = false;
-                        this.state = 'air'; 
-                        this.animFrame = 2; // Frame décollage
-                        keys.space = false;
-                    }
+                    if (keys.space && this.isOnGround) { this.vy = -6.5; this.isOnGround = false; this.state = 'air'; this.animFrame = 2; keys.space = false; }
                 } else if (!canMove && this.isOnGround) {
-                    this.vx *= 0.5;
-                    if(Math.abs(this.vx) < 0.1) this.vx = 0;
+                    this.vx *= 0.5; if(Math.abs(this.vx) < 0.1) this.vx = 0;
                     if (this.state === 'walk') this.state = 'idle';
                 }
 
-                // Collisions et Pentes
                 if (this.vx !== 0) {
-                    let nextX = this.x + this.vx;
-                    let step = 0; let maxStep = 6; 
+                    let nextX = this.x + this.vx; let step = 0; let maxStep = 6; 
                     while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) step++;
-                    if (step > maxStep) this.vx = 0; 
-                    else { this.x = nextX; this.y -= step; }
+                    if (step > maxStep) this.vx = 0; else { this.x = nextX; this.y -= step; }
                 }
 
-                this.vy += GRAVITY;
-                this.y += this.vy;
-
-                // Sol
+                this.vy += GRAVITY; this.y += this.vy;
                 this.isOnGround = false;
                 if (isSolid(this.x, this.y + this.radius)) {
-                    if (this.state === 'air') {
-                        this.state = 'landed'; // Frame Atterrissage
-                        this.landTimer = 15; // Maintien l'effet d'écrasement 1/4 sec
-                    }
-                    this.vy = 0; 
-                    this.isOnGround = true;
+                    if (this.state === 'air') { this.state = 'landed'; this.landTimer = 15; }
+                    this.vy = 0; this.isOnGround = true;
                     while(isSolid(this.x, this.y + this.radius - 1)) this.y -= 1;
-                } else if (this.vy !== 0) {
-                    this.state = 'air';
-                }
+                } else if (this.vy !== 0) this.state = 'air';
 
-                // Machine à état d'animation rigoureuse
                 if (this.state === 'walk') {
                     this.animTimer++;
-                    if (this.animTimer > 6) {
-                        this.animFrame++;
-                        if (this.animFrame > 3) this.animFrame = 1;
-                        this.animTimer = 0;
-                    }
-                } else if (this.state === 'air') {
-                    this.animFrame = 2; 
-                } else if (this.state === 'landed') {
-                    this.animFrame = 3; 
-                    this.landTimer--;
-                    if (this.landTimer <= 0) this.state = 'idle'; 
-                } else {
-                    this.animFrame = 1; // Idle
-                }
+                    if (this.animTimer > 6) { this.animFrame++; if (this.animFrame > 3) this.animFrame = 1; this.animTimer = 0; }
+                } else if (this.state === 'air') this.animFrame = 2; 
+                else if (this.state === 'landed') { this.animFrame = 3; this.landTimer--; if (this.landTimer <= 0) this.state = 'idle'; } 
+                else this.animFrame = 1;
 
                 if (this.y > WORLD_HEIGHT + 50) { this.hp = 0; this.isDead = true; checkWin(); }
-                if(this.x < 10) this.x = 10;
-                if(this.x > WORLD_WIDTH - 10) this.x = WORLD_WIDTH - 10;
+                if(this.x < 10) this.x = 10; if(this.x > WORLD_WIDTH - 10) this.x = WORLD_WIDTH - 10;
             }
 
             draw() {
                 if (this.isDead) return;
-
                 let spriteName = `s${this.type}_`;
                 if (this.state === 'air' || this.state === 'landed') spriteName += `jump_${this.facing}${this.animFrame}`;
                 else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
                 else spriteName += `idle_${this.facing}`;
 
-                let renderX = this.x - camera.x;
-                let renderY = this.y - camera.y;
-
+                let renderX = this.x - camera.x; let renderY = this.y - camera.y;
                 let img = sprites[spriteName];
-                if (img && img.complete && img.naturalWidth > 0) {
-                    ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
-                } else {
-                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20);
-                }
                 
+                if (img && img.complete && img.naturalWidth > 0) ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
+                else { ctxEnt.fillStyle = this.color; ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20); }
+                
+                // Nameplate
+                ctxEnt.fillStyle = this.color;
+                ctxEnt.font = "bold 12px 'Segoe UI'";
+                ctxEnt.textAlign = "center";
+                ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000";
+                ctxEnt.fillText(this.name, renderX, renderY - 30);
+                ctxEnt.shadowBlur = 0;
+
+                // Tour Actif (Flèche)
                 if (currentPlayer === this.id && gameState !== 'end') {
                     ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
                     ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = ctxEnt.fillStyle;
-                    ctxEnt.beginPath(); ctxEnt.moveTo(renderX - 6, renderY - 32); ctxEnt.lineTo(renderX + 6, renderY - 32); ctxEnt.lineTo(renderX, renderY - 22);
-                    ctxEnt.fill(); ctxEnt.shadowBlur = 0;
+                    ctxEnt.beginPath(); ctxEnt.moveTo(renderX - 6, renderY - 45); ctxEnt.lineTo(renderX + 6, renderY - 45); ctxEnt.lineTo(renderX, renderY - 35); ctxEnt.fill(); ctxEnt.shadowBlur = 0;
                 }
             }
         }
 
         class Projectile {
-            constructor(x, y, vx, vy) {
-                this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.active = true; this.radius = 4;
-            }
+            constructor(x, y, vx, vy) { this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.active = true; this.radius = 4; }
             update() {
                 if (!this.active) return;
                 this.vy += GRAVITY; this.x += this.vx; this.y += this.vy;
@@ -454,8 +325,7 @@
                 if (isSolid(this.x, this.y) || this.y > WORLD_HEIGHT || this.x < 0 || this.x > WORLD_WIDTH) this.explode();
             }
             explode() {
-                this.active = false; let expRadius = 45;
-                explodeTerrain(this.x, this.y, expRadius);
+                this.active = false; let expRadius = 45; explodeTerrain(this.x, this.y, expRadius);
                 for(let i=0; i<35; i++) {
                     let angle = Math.random() * Math.PI * 2; let speed = Math.random() * 6 + 2;
                     particles.push(new Particle(this.x, this.y, Math.cos(angle)*speed, Math.sin(angle)*speed, "#ff5500", Math.random()*4+2, 40));
@@ -466,8 +336,7 @@
                         let damage = Math.floor((1 - dist / (expRadius + 15)) * 45);
                         w.hp -= damage;
                         let kbAngle = Math.atan2(w.y - this.y, w.x - this.x);
-                        w.vx += Math.cos(kbAngle) * (damage * 0.25);
-                        w.vy += Math.sin(kbAngle) * (damage * 0.25) - 4; 
+                        w.vx += Math.cos(kbAngle) * (damage * 0.25); w.vy += Math.sin(kbAngle) * (damage * 0.25) - 4; 
                         if (w.hp <= 0) { w.hp = 0; w.isDead = true; }
                         updateUI();
                     }
@@ -489,6 +358,29 @@
         let worms = []; let projectile = null; let particles = []; let isDragging = false;
         let dragStartX = 0, dragStartY = 0, dragCurrentX = 0, dragCurrentY = 0;
 
+        function buildUI() {
+            const ui = document.getElementById('ui-layer');
+            ui.innerHTML = `
+                <div id="ui-left" class="team-container"></div>
+                <div id="turn-indicator" style="color: var(--p1); border-color: var(--p1);">Tour J1</div>
+                <div id="ui-right" class="team-container"></div>
+            `;
+            
+            let left = document.getElementById('ui-left');
+            let right = document.getElementById('ui-right');
+
+            worms.forEach((w, index) => {
+                let container = (index % 2 === 0) ? left : right;
+                let card = document.createElement('div');
+                card.className = 'player-info';
+                card.innerHTML = `
+                    <b style="color: ${w.color}">${w.name}</b>
+                    <div class="hp-bar-bg"><div id="hp-p${w.id}" class="hp-bar" style="background: ${w.color}; width: 100%; box-shadow: 0 0 10px ${w.color};"></div></div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
         function startGame(mode) {
             gameMode = mode;
             document.getElementById('online-menu').classList.add('hidden');
@@ -496,8 +388,30 @@
             document.getElementById('ui-layer').classList.remove('hidden');
             
             generateTerrain();
-            worms = [new Slime(200, 100, 1, 1, 'var(--p1)'), new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)')];
             
+            // SPAWN LOGIC (Dynamique selon le mode)
+            if (mode === 'local_1v1' || mode === 'ai' || mode === 'online') {
+                worms = [
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'JOUEUR 1'),
+                    new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)', 'B', 'JOUEUR 2')
+                ];
+            } else if (mode === 'local_2v2') {
+                worms = [
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Éq.Cyan)'),
+                    new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Éq.Rose)'),
+                    new Slime(1400, 100, 3, 1, 'var(--p1)', 'A', 'J3 (Éq.Cyan)'),
+                    new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p2)', 'B', 'J4 (Éq.Rose)')
+                ];
+            } else if (mode === 'local_ffa') {
+                worms = [
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)'),
+                    new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)'),
+                    new Slime(1400, 100, 3, 1, 'var(--p3)', 'C', 'J3 (Or)'),
+                    new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p4)', 'D', 'J4 (Vert)')
+                ];
+            }
+            
+            buildUI();
             currentPlayer = 1; gameState = 'playing'; retreatFrames = 0;
             camera.x = worms[0].x - WIDTH / 2; 
             updateUI();
@@ -505,39 +419,67 @@
         }
 
         function updateUI() {
-            document.getElementById('hp-p1').style.width = worms[0].hp + '%';
-            document.getElementById('hp-p2').style.width = worms[1].hp + '%';
-            let turnInd = document.getElementById('turn-indicator');
-            turnInd.innerText = `Tour J${currentPlayer}`;
-            turnInd.style.color = currentPlayer === 1 ? 'var(--p1)' : 'var(--p2)';
-            turnInd.style.borderColor = currentPlayer === 1 ? 'var(--p1)' : 'var(--p2)';
+            worms.forEach(w => {
+                let hpBar = document.getElementById(`hp-p${w.id}`);
+                if (hpBar) hpBar.style.width = w.hp + '%';
+            });
+            
+            let activeWorm = worms[currentPlayer - 1];
+            if (activeWorm && gameState !== 'end') {
+                let turnInd = document.getElementById('turn-indicator');
+                turnInd.innerText = `TOUR ${activeWorm.name}`;
+                turnInd.style.color = activeWorm.color;
+                turnInd.style.borderColor = activeWorm.color;
+            }
         }
 
         function nextTurn() {
             checkWin(); if (gameState === 'end') return;
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
-            if (worms[currentPlayer-1].isDead) currentPlayer = currentPlayer === 1 ? 2 : 1; 
+            
+            // Chercher le prochain joueur vivant
+            let safeCounter = 0;
+            do {
+                currentPlayer = (currentPlayer % worms.length) + 1;
+                safeCounter++;
+            } while (worms[currentPlayer-1].isDead && safeCounter < 10);
+            
             gameState = 'playing'; projectile = null; updateUI();
             if (gameMode === 'ai' && currentPlayer === 2 && !worms[1].isDead) setTimeout(playAITurn, 1000);
         }
 
         function playAITurn() {
-            let ai = worms[1]; let target = worms[0];
+            let ai = worms[1]; let target = worms[0]; // IA ultra basique qui cible toujours P1
             ai.facing = (target.x < ai.x) ? 'l' : 'r';
             let dx = target.x - ai.x; let dy = (target.y - ai.y) - 60; 
-            let angle = Math.atan2(dy, dx);
-            let power = Math.min(Math.abs(dx) * 0.015 + 4, 18); 
+            let angle = Math.atan2(dy, dx); let power = Math.min(Math.abs(dx) * 0.015 + 4, 18); 
             projectile = new Projectile(ai.x, ai.y - 10, Math.cos(angle) * power, Math.sin(angle) * power);
             gameState = 'flying'; retreatFrames = 0; 
         }
 
         function checkWin() {
-            if (worms[0].isDead || worms[1].isDead) {
+            let aliveTeams = new Set();
+            let aliveCount = 0;
+            let lastAlivePlayer = null;
+
+            worms.forEach(w => {
+                if (!w.isDead) { aliveTeams.add(w.team); aliveCount++; lastAlivePlayer = w; }
+            });
+
+            if (aliveTeams.size <= 1) {
                 gameState = 'end';
                 let winnerText = document.getElementById('winner-text');
-                winnerText.style.color = worms[1].isDead ? 'var(--p1)' : 'var(--p2)';
-                winnerText.innerText = worms[1].isDead ? "JOUEUR 1 GAGNE" : "JOUEUR 2 GAGNE";
-                if(worms[0].isDead && worms[1].isDead) { winnerText.innerText = "ÉGALITÉ"; winnerText.style.color="#fff"; }
+                
+                if (aliveCount === 0) {
+                    winnerText.innerText = "ÉGALITÉ (MORT SUBITE)"; winnerText.style.color = "#fff";
+                } else if (gameMode === 'local_2v2') {
+                    let winningTeam = Array.from(aliveTeams)[0];
+                    winnerText.innerText = winningTeam === 'A' ? "ÉQUIPE CYAN GAGNE" : "ÉQUIPE ROSE GAGNE";
+                    winnerText.style.color = winningTeam === 'A' ? 'var(--p1)' : 'var(--p2)';
+                } else {
+                    winnerText.innerText = lastAlivePlayer.name + " GAGNE";
+                    winnerText.style.color = lastAlivePlayer.color;
+                }
+                
                 setTimeout(() => { document.getElementById('game-over').classList.remove('hidden'); }, 1500);
             }
         }
@@ -548,25 +490,19 @@
         function startAim(e) {
             if (gameState !== 'playing' || (gameMode === 'ai' && currentPlayer === 2)) return;
             if (gameMode === 'online' && currentPlayer !== myPlayerId) return; 
-            
             e.stopPropagation();
             let rect = canvasEnt.getBoundingClientRect();
-            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX; let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             dragStartX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) + camera.x;
             dragStartY = ((clientY - rect.top) * (canvasEnt.height / rect.height)); 
-            isDragging = true;
-            worms[currentPlayer - 1].state = 'idle'; 
+            isDragging = true; worms[currentPlayer - 1].state = 'idle'; 
         }
 
         function moveAim(e) {
             if (!isDragging) return;
             e.stopPropagation(); e.preventDefault();
             let rect = canvasEnt.getBoundingClientRect();
-            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX; let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             dragCurrentX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) + camera.x;
             dragCurrentY = ((clientY - rect.top) * (canvasEnt.height / rect.height));
             worms[currentPlayer - 1].facing = (dragStartX - dragCurrentX > 0) ? 'r' : 'l';
@@ -584,20 +520,16 @@
                 let vx = Math.cos(angle) * power; let vy = Math.sin(angle) * power;
                 projectile = new Projectile(activeWorm.x, activeWorm.y - 15, vx, vy);
                 gameState = 'flying'; retreatFrames = 60; 
-                
-                if (conn && conn.open) {
-                    conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy });
-                }
+                if (conn && conn.open) conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy });
             }
         }
 
         gameWrapper.addEventListener('mousedown', startAim); window.addEventListener('mousemove', moveAim); window.addEventListener('mouseup', endAim);
         gameWrapper.addEventListener('touchstart', startAim, {passive: false}); window.addEventListener('touchmove', moveAim, {passive: false}); window.addEventListener('touchend', endAim);
 
-        // --- CAMERA ET RADAR ---
+        // --- CAMERA ET RADAR MULTI-CIBLES ---
         function updateCamera() {
-            let targetX = camera.x;
-            manualCameraControl = false;
+            let targetX = camera.x; manualCameraControl = false;
             if (mouseScreenX < 50) { targetX = camera.x - 15; manualCameraControl = true; }
             if (mouseScreenX > WIDTH - 50) { targetX = camera.x + 15; manualCameraControl = true; }
 
@@ -610,34 +542,38 @@
         }
 
         function drawRadar() {
-            let enemy = worms[currentPlayer === 1 ? 1 : 0];
-            if (enemy.isDead) return;
+            let me = worms[currentPlayer - 1];
+            if (!me || me.isDead) return;
 
-            let screenX = enemy.x - camera.x;
-            let screenY = enemy.y - camera.y;
+            // Dessiner un pointeur pour chaque ennemi en vie hors écran
+            worms.forEach(enemy => {
+                if (enemy.id === me.id || enemy.isDead || enemy.team === me.team) return; 
 
-            if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
-                let radarX = Math.max(20, Math.min(WIDTH - 20, screenX));
-                let radarY = Math.max(20, Math.min(HEIGHT - 20, screenY));
+                let screenX = enemy.x - camera.x;
+                let screenY = enemy.y - camera.y;
 
-                ctxEnt.save();
-                ctxEnt.translate(radarX, radarY);
-                let angle = Math.atan2(screenY - HEIGHT/2, screenX - WIDTH/2);
-                ctxEnt.rotate(angle);
+                if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
+                    let radarX = Math.max(20, Math.min(WIDTH - 20, screenX));
+                    let radarY = Math.max(20, Math.min(HEIGHT - 20, screenY));
 
-                ctxEnt.fillStyle = enemy.color;
-                ctxEnt.shadowBlur = 15; ctxEnt.shadowColor = enemy.color;
-                ctxEnt.beginPath(); ctxEnt.moveTo(15, 0); ctxEnt.lineTo(-10, 10); ctxEnt.lineTo(-10, -10); ctxEnt.fill();
-                ctxEnt.restore();
-            }
+                    ctxEnt.save();
+                    ctxEnt.translate(radarX, radarY);
+                    let angle = Math.atan2(screenY - HEIGHT/2, screenX - WIDTH/2);
+                    ctxEnt.rotate(angle);
+
+                    ctxEnt.fillStyle = enemy.color;
+                    ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = enemy.color;
+                    ctxEnt.beginPath(); ctxEnt.moveTo(15, 0); ctxEnt.lineTo(-10, 10); ctxEnt.lineTo(-10, -10); ctxEnt.fill();
+                    ctxEnt.restore();
+                }
+            });
         }
 
         function gameLoop() {
             if (gameState === 'menu') return;
             if (retreatFrames > 0) retreatFrames--;
 
-            syncPlayerState();
-            updateCamera();
+            syncPlayerState(); updateCamera();
 
             ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
             ctxTerrain.drawImage(offscreenTerrain, camera.x, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT);
@@ -648,11 +584,10 @@
             if (gameState === 'playing' && isDragging) {
                 let activeWorm = worms[currentPlayer - 1];
                 let dx = dragStartX - dragCurrentX; let dy = dragStartY - dragCurrentY;
-                let power = Math.min(Math.hypot(dx, dy), 180);
-                let angle = Math.atan2(dy, dx);
+                let power = Math.min(Math.hypot(dx, dy), 180); let angle = Math.atan2(dy, dx);
                 let startX = activeWorm.x - camera.x; let startY = activeWorm.y - camera.y - 15;
                 ctxEnt.beginPath(); ctxEnt.moveTo(startX, startY); ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
-                ctxEnt.strokeStyle = currentPlayer === 1 ? "rgba(0, 240, 255, 0.7)" : "rgba(255, 0, 127, 0.7)";
+                ctxEnt.strokeStyle = activeWorm.color;
                 ctxEnt.lineWidth = 3; ctxEnt.setLineDash([8, 8]); ctxEnt.stroke(); ctxEnt.setLineDash([]);
             }
 
@@ -665,6 +600,29 @@
             drawRadar();
             requestAnimationFrame(gameLoop);
         }
+    </script>
+    
+    <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL INTACT -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+            "../worms/index.html"
+        ];
+        let globalStartX = 0, globalStartY = 0; let globalEndX = 0, globalEndY = 0; const swipeThreshold = 75;
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname; let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
+            if (currentIndex === -1) return; window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
+        }
+        function handleGlobalSwipe() {
+            let diffX = globalEndX - globalStartX; let diffY = globalEndY - globalStartY;
+            if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) navigateGames(diffX > 0 ? -1 : 1); 
+        }
+        function initSwipe(e, x, y) { if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; globalStartX = x; globalStartY = y; }
+        function endSwipe(e, x, y) { if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; globalEndX = x; globalEndY = y; handleGlobalSwipe(); }
+        document.addEventListener('touchstart', e => initSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true }); document.addEventListener('touchend', e => endSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
+        document.addEventListener('mousedown', e => initSwipe(e, e.screenX, e.screenY)); document.addEventListener('mouseup', e => endSwipe(e, e.screenX, e.screenY));
     </script>
 </body>
 </html>
