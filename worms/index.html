@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title> Slimes Artillery</title>
+    <title>Cyber Slimes Artillery (Worms-like)</title>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; user-select: none; }
@@ -56,12 +56,10 @@
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
     <div id="game-wrapper">
-        <!-- ARRIERE-PLAN VIDEO -->
         <video id="bg-video" autoplay loop muted playsinline>
             <source src="img/background.mp4" type="video/mp4">
         </video>
 
-        <!-- UI -->
         <div id="ui-layer" class="hidden">
             <div class="player-info">
                 <b style="color: var(--p1)">SLIME 1</b>
@@ -77,9 +75,8 @@
         <canvas id="canvas-terrain" width="800" height="600"></canvas>
         <canvas id="canvas-entities" width="800" height="600"></canvas>
 
-        <!-- MENU PRINCIPAL -->
         <div id="main-menu" class="menu-overlay">
-            <h1> Slimes</h1>
+            <h1>Cyber Slimes</h1>
             <div id="loading-text" class="loader">Chargement des assets réseau...</div>
             <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column;">
                 <button class="btn" onclick="startGame('local')">🕹️ 1 vs 1 (Local)</button>
@@ -88,7 +85,6 @@
             </div>
         </div>
 
-        <!-- MENU MULTIJOUEUR EN LIGNE -->
         <div id="online-menu" class="menu-overlay hidden">
             <h2>Lobby Cybernétique</h2>
             <p>Code session : <b style="color: var(--p1); font-size:1.5em; letter-spacing:3px;">SLM-404</b></p>
@@ -97,7 +93,6 @@
             <button class="btn btn-pink" onclick="hideOnlineMenu()">Retour</button>
         </div>
 
-        <!-- MENU FIN DE JEU -->
         <div id="game-over" class="menu-overlay hidden">
             <h2 id="winner-text">VICTOIRE</h2>
             <button class="btn" onclick="location.reload()">Relancer la boucle</button>
@@ -113,11 +108,12 @@
 
         const WIDTH = 800;
         const HEIGHT = 600;
-        const GRAVITY = 0.18; // Légèrement augmenté pour un meilleur "feeling" de saut
+        const GRAVITY = 0.18; 
         
-        let gameState = 'menu'; // menu, playing, aiming, flying, end
+        let gameState = 'menu'; // menu, playing, flying, end
         let gameMode = 'local';
         let currentPlayer = 1;
+        let retreatFrames = 0; // Chrono post-tir (60 = 1 sec)
         let mapImage = new Image();
 
         // --- GESTION DES ASSETS & SPRITES ---
@@ -125,14 +121,14 @@
         const imagesToLoad = {
             map: 'img/map1.png',
             
-            // SLIME 1 (ROUGE/CYAN)
+            // SLIME 1 (Attention orthographe stricte comme demandée)
             s1_idle_r: 'img/slim1_right.png', s1_idle_l: 'img/slim1_left.png',
             s1_walk_r1: 'img/slime1_moveright1.png', s1_walk_r2: 'img/slime1_moveright2.png', s1_walk_r3: 'img/slime1_moveright3.png',
             s1_walk_l1: 'img/slime1_moveleft1.png', s1_walk_l2: 'img/slime1_moveleft2.png', s1_walk_l3: 'img/slime1_moveleft3.png',
             s1_jump_r1: 'img/slime1_jumpright1.png', s1_jump_r2: 'img/slime1_jumpright2.png', s1_jump_r3: 'img/slime1_jumpright3.png',
             s1_jump_l1: 'img/slime1_jumpleft1.png', s1_jump_l2: 'img/slime1_jumpleft2.png', s1_jump_l3: 'img/slime1_jumpleft3.png',
             
-            // SLIME 2 (BLEU/ROSE)
+            // SLIME 2
             s2_idle_r: 'img/slim2_right.png', s2_idle_l: 'img/slim2_left.png',
             s2_walk_r1: 'img/slime2_moveright1.png', s2_walk_r2: 'img/slime2_moveright2.png', s2_walk_r3: 'img/slime2_moveright3.png',
             s2_walk_l1: 'img/slime2_moveleft1.png', s2_walk_l2: 'img/slime2_moveleft2.png', s2_walk_l3: 'img/slime2_moveleft3.png',
@@ -145,7 +141,10 @@
 
         for (let key in imagesToLoad) {
             let img = new Image();
-            img.onerror = () => { console.warn(`Asset manquant : ${imagesToLoad[key]}`); onLoadComplete(); };
+            img.onerror = () => { 
+                console.error(`🚨 ERREUR CHARGEMENT ASSET : ${imagesToLoad[key]} introuvable.`);
+                onLoadComplete(); 
+            };
             img.onload = onLoadComplete;
             img.src = imagesToLoad[key];
             sprites[key] = img;
@@ -160,17 +159,23 @@
             }
         }
 
-        // --- CONTRÔLES CLAVIER ---
+        // --- CONTRÔLES CLAVIER OPTIMISÉS ---
         const keys = { left: false, right: false, space: false };
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
             if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
-            if (e.key === ' ' || e.key === 'Spacebar') keys.space = true;
+            if (e.key === ' ' || e.code === 'Space') {
+                keys.space = true;
+                // Bloque le scroll uniquement si on est sur la fenêtre
+                if (e.target === document.body || e.target.closest('#game-wrapper')) {
+                    e.preventDefault();
+                }
+            }
         });
         window.addEventListener('keyup', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = false;
             if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
-            if (e.key === ' ' || e.key === 'Spacebar') keys.space = false;
+            if (e.key === ' ' || e.code === 'Space') keys.space = false;
         });
 
         // --- PHYSIQUE ET TERRAIN MULTI-CANVAS ---
@@ -188,7 +193,7 @@
             let px = Math.floor(x); let py = Math.floor(y);
             if (px < 0 || px >= WIDTH || py >= HEIGHT) return false;
             if (py < 0) return false;
-            return ctxTerrain.getImageData(px, py, 1, 1).data[3] > 50; // Analyse de l'Alpha
+            return ctxTerrain.getImageData(px, py, 1, 1).data[3] > 50; 
         }
 
         function explodeTerrain(ex, ey, radius) {
@@ -211,7 +216,6 @@
                 this.hp = 100;
                 this.isDead = false;
                 
-                // Animation System
                 this.facing = id === 1 ? 'r' : 'l';
                 this.state = 'idle'; // idle, walk, jump
                 this.animFrame = 1;
@@ -222,49 +226,75 @@
             update() {
                 if (this.isDead) return;
                 
-                this.vy += GRAVITY;
-                this.y += this.vy;
-                this.x += this.vx;
-
-                let isCurrent = (currentPlayer === this.id && gameState === 'playing' && !(gameMode === 'ai' && this.id === 2));
+                // Mouvements possibles si tour J1 ET (partie normale OU pendant le Retreat Time)
+                let canMove = (currentPlayer === this.id) && 
+                              (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0)) && 
+                              !(gameMode === 'ai' && this.id === 2);
                 
-                // Mouvements au sol
-                if (isCurrent && !isDragging) {
+                // Entrées claviers
+                if (canMove && !isDragging) {
                     if (keys.left) { this.vx = -1.5; this.facing = 'l'; if(this.isOnGround) this.state = 'walk'; }
                     else if (keys.right) { this.vx = 1.5; this.facing = 'r'; if(this.isOnGround) this.state = 'walk'; }
                     else { this.vx = 0; if(this.isOnGround) this.state = 'idle'; }
 
                     if (keys.space && this.isOnGround) {
-                        this.vy = -5.5; // Puissance du saut
+                        this.vy = -6; // Saut plus punitif
                         this.isOnGround = false;
                         this.state = 'jump';
                         this.animFrame = 1;
                         this.animTimer = 0;
-                        keys.space = false; // Empêche le saut automatique continu
+                        keys.space = false; // Nécessite de relâcher pour resauter
                     }
-                } else if (!isCurrent && this.isOnGround) {
-                    this.vx *= 0.5; // Friction
+                } else if (!canMove && this.isOnGround) {
+                    this.vx *= 0.5; // Glissade courte et arrêt
+                    if(Math.abs(this.vx) < 0.1) this.vx = 0;
                     this.state = 'idle';
                 }
 
-                // Collisions Terrain
+                // --- GESTION DU DÉPLACEMENT X & PENTES ---
+                if (this.vx !== 0) {
+                    let nextX = this.x + this.vx;
+                    let step = 0;
+                    let maxStep = 6; // Le slime peut franchir un petit obstacle de 6 pixels max
+
+                    // Test si le futur emplacement est un mur qu'on peut escalader
+                    while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) {
+                        step++;
+                    }
+
+                    if (step > maxStep) {
+                        // Mur trop haut, le slime est bloqué, vitesse X tombe à 0
+                        this.vx = 0; 
+                    } else {
+                        // Terrain franchissable, on valide X et on ajuste Y
+                        this.x = nextX;
+                        this.y -= step;
+                    }
+                }
+
+                // Application Gravité
+                this.vy += GRAVITY;
+                this.y += this.vy;
+
+                // --- COLLISION SOL DIRECTE ---
                 this.isOnGround = false;
                 if (isSolid(this.x, this.y + this.radius)) {
                     this.vy = 0;
                     this.isOnGround = true;
-                    if (this.state === 'jump') this.state = 'idle'; // Atterrissage
+                    if (this.state === 'jump') this.state = 'idle'; 
                     
+                    // Repousser au-dessus du sol si enfoncé
                     while(isSolid(this.x, this.y + this.radius - 1)) {
                         this.y -= 1;
                     }
                 } else {
-                    this.state = 'jump'; // Si on tombe, on passe en anim de saut/chute
+                    if (this.vy > 0) this.state = 'jump'; // Chute
                 }
 
-                // Gestion des Frames d'Animation
+                // Animation
                 if (this.state === 'walk' || this.state === 'jump') {
                     this.animTimer++;
-                    let speed = this.state === 'jump' ? 6 : 8; // Le saut s'anime un peu plus vite
+                    let speed = this.state === 'jump' ? 6 : 8; 
                     if (this.animTimer > speed) {
                         this.animFrame = this.animFrame === 3 ? 1 : this.animFrame + 1;
                         this.animTimer = 0;
@@ -273,12 +303,12 @@
                     this.animFrame = 1;
                 }
 
-                // Limites de map (Void)
+                // Limite du vide
                 if (this.y > HEIGHT + 50) {
                     this.hp = 0; this.isDead = true; checkWin();
                 }
                 
-                // Murs invisibles latéraux
+                // Murs arènes
                 if(this.x < 10) this.x = 10;
                 if(this.x > WIDTH - 10) this.x = WIDTH - 10;
             }
@@ -286,7 +316,6 @@
             draw() {
                 if (this.isDead) return;
 
-                // Construction dynamique du nom du sprite
                 let spriteName = `s${this.type}_`;
                 if (this.state === 'jump') {
                     spriteName += `jump_${this.facing}${this.animFrame}`;
@@ -298,19 +327,19 @@
 
                 let img = sprites[spriteName];
                 
+                // Protection: dessin de fallback rouge/bleu seulement si l'image crash
                 if (img && img.complete && img.naturalWidth > 0) {
                     ctxEnt.drawImage(img, this.x - 15, this.y - 18, 30, 30);
                 } else {
-                    // Fallback
                     ctxEnt.fillStyle = this.color;
                     ctxEnt.fillRect(this.x - 10, this.y - 10, 20, 20);
                 }
                 
-                // Indicateur de tour (Flèche)
-                if (currentPlayer === this.id && gameState === 'playing') {
-                    ctxEnt.fillStyle = "#fff";
+                // Flèche tour du joueur
+                if (currentPlayer === this.id && gameState !== 'end') {
+                    ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
                     ctxEnt.shadowBlur = 10;
-                    ctxEnt.shadowColor = "#fff";
+                    ctxEnt.shadowColor = ctxEnt.fillStyle;
                     ctxEnt.beginPath();
                     ctxEnt.moveTo(this.x - 6, this.y - 32);
                     ctxEnt.lineTo(this.x + 6, this.y - 32);
@@ -334,7 +363,6 @@
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // Traînée
                 particles.push(new Particle(this.x, this.y, 0, 0, "#fff", 2, 10));
 
                 if (isSolid(this.x, this.y) || this.y > HEIGHT || this.x < 0 || this.x > WIDTH) {
@@ -347,14 +375,12 @@
                 
                 explodeTerrain(this.x, this.y, expRadius);
                 
-                // FX Explosion
                 for(let i=0; i<35; i++) {
                     let angle = Math.random() * Math.PI * 2;
                     let speed = Math.random() * 6 + 2;
                     particles.push(new Particle(this.x, this.y, Math.cos(angle)*speed, Math.sin(angle)*speed, "#ff5500", Math.random()*4+2, 40));
                 }
 
-                // Dégâts et Knockback
                 worms.forEach(w => {
                     let dist = Math.hypot(w.x - this.x, w.y - this.y);
                     if (dist < expRadius + 15 && !w.isDead) {
@@ -369,7 +395,12 @@
                         updateUI();
                     }
                 });
-                setTimeout(nextTurn, 1500);
+                
+                // Le tour passe après l'explosion, et force le retreatTimer à 0 pour bloquer les mouvements
+                setTimeout(() => {
+                    retreatFrames = 0;
+                    nextTurn();
+                }, 1500);
             }
             draw() {
                 if (!this.active) return;
@@ -418,6 +449,7 @@
             
             currentPlayer = 1;
             gameState = 'playing';
+            retreatFrames = 0;
             updateUI();
             
             requestAnimationFrame(gameLoop);
@@ -459,12 +491,13 @@
             ai.facing = (target.x < ai.x) ? 'l' : 'r';
             
             let dx = target.x - ai.x;
-            let dy = (target.y - ai.y) - 60; // Compensation balistique
+            let dy = (target.y - ai.y) - 60; 
             let angle = Math.atan2(dy, dx);
             let power = Math.min(Math.abs(dx) * 0.025 + 4, 16); 
 
             projectile = new Projectile(ai.x, ai.y - 10, Math.cos(angle) * power, Math.sin(angle) * power);
             gameState = 'flying';
+            retreatFrames = 0; // IA ne bouge pas après tir
         }
 
         function checkWin() {
@@ -483,6 +516,7 @@
         const gameWrapper = document.getElementById('game-wrapper');
 
         function startAim(e) {
+            // Uniquement si c'est notre tour et qu'on a pas déjà tiré
             if (gameState !== 'playing' || (gameMode === 'ai' && currentPlayer === 2)) return;
             e.stopPropagation();
             
@@ -497,7 +531,6 @@
             dragStartY = (clientY - rect.top) * scaleY;
             
             isDragging = true;
-            gameState = 'aiming';
             worms[currentPlayer - 1].state = 'idle'; 
         }
 
@@ -529,8 +562,7 @@
             if (power > 2) {
                 projectile = new Projectile(activeWorm.x, activeWorm.y - 15, Math.cos(angle) * power, Math.sin(angle) * power);
                 gameState = 'flying';
-            } else {
-                gameState = 'playing'; 
+                retreatFrames = 60; // Lance le chrono de fuite d'une seconde (60 frames)
             }
         }
 
@@ -543,11 +575,15 @@
 
         function gameLoop() {
             if (gameState === 'menu') return;
+            
+            // Diminution du chrono de retreat
+            if (retreatFrames > 0) retreatFrames--;
+
             ctxEnt.clearRect(0, 0, WIDTH, HEIGHT);
 
             worms.forEach(w => { w.update(); w.draw(); });
 
-            if (gameState === 'aiming' && isDragging) {
+            if (gameState === 'playing' && isDragging) {
                 let activeWorm = worms[currentPlayer - 1];
                 let dx = dragStartX - dragCurrentX;
                 let dy = dragStartY - dragCurrentY;
@@ -575,7 +611,7 @@
         }
     </script>
     
-    <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL OPTIMISÉ (SOURIS & TACTILE) -->
+    <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL (SOURIS & TACTILE) -->
     <script>
         const gamesHubList = [
             "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
@@ -603,10 +639,9 @@
             let diffX = globalEndX - globalStartX;
             let diffY = globalEndY - globalStartY;
             
-            // On s'assure que c'est un swipe horizontal fort et pas un drag vertical hasardeux
             if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
-                if (diffX > 0) navigateGames(-1); // Swipe Droit -> Précédent
-                else navigateGames(1); // Swipe Gauche -> Suivant
+                if (diffX > 0) navigateGames(-1); 
+                else navigateGames(1); 
             }
         }
 
@@ -621,11 +656,9 @@
             handleGlobalSwipe();
         }
 
-        // Tactile
         document.addEventListener('touchstart', e => initSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
         document.addEventListener('touchend', e => endSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
         
-        // Souris
         document.addEventListener('mousedown', e => initSwipe(e, e.screenX, e.screenY));
         document.addEventListener('mouseup', e => endSwipe(e, e.screenX, e.screenY));
     </script>
