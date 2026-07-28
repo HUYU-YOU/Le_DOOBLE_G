@@ -87,8 +87,13 @@
 
         <div id="online-menu" class="menu-overlay hidden">
             <h2>Lobby Cybernétique</h2>
-            <p>Code session : <b style="color: var(--p1); font-size:1.5em; letter-spacing:3px;">SLM-404</b></p>
-            <input type="text" placeholder="Entrer un code..." style="padding: 12px; font-size: 1.2em; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--p1); background: rgba(0,0,0,0.5); color: #fff; outline:none; text-align:center;">
+            <p>Code de partie : <b id="lobby-code-display" style="color: var(--p1); font-size:1.5em; letter-spacing:3px;">...</b></p>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="btn" style="min-width:150px; padding: 10px;" onclick="copyLobbyCode()">Copier le code</button>
+            </div>
+            <p>Ou rejoignez une partie existante :</p>
+            <input type="text" id="join-code-input" placeholder="Entrer un code..." style="padding: 12px; font-size: 1.2em; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--p1); background: rgba(0,0,0,0.5); color: #fff; outline:none; text-align:center;">
+            
             <button class="btn" onclick="alert('En attente de connexion WebRTC (PeerJS)...')">Connecter</button>
             <button class="btn btn-pink" onclick="hideOnlineMenu()">Retour</button>
         </div>
@@ -100,36 +105,66 @@
     </div>
 
     <script>
+        // --- CONSTANTES MONDE GEANT ---
+        const WIDTH = 800; // Taille Ecran
+        const HEIGHT = 600; 
+        const WORLD_WIDTH = 2000; // Taille réelle de la Map !
+        const WORLD_HEIGHT = 600;
+        const GRAVITY = 0.18; 
+        
+        let camera = { x: 0, y: 0 };
+        let mouseScreenX = WIDTH / 2; // Position de la souris à l'écran
+        let manualCameraControl = false; // Permet de savoir si l'humain bouge la caméra
+
         // --- INITIALISATION DES CANVAS ---
         const canvasTerrain = document.getElementById('canvas-terrain');
-        const ctxTerrain = canvasTerrain.getContext('2d', { willReadFrequently: true });
+        const ctxTerrain = canvasTerrain.getContext('2d'); // Affichage uniquement
+        
+        // OFFSCREEN CANVAS : Il contient la carte complète (2000px). On l'utilise pour piocher l'image et gérer les collisions (hautes perfs)
+        const offscreenTerrain = document.createElement('canvas');
+        offscreenTerrain.width = WORLD_WIDTH;
+        offscreenTerrain.height = WORLD_HEIGHT;
+        const ctxOffTerrain = offscreenTerrain.getContext('2d', { willReadFrequently: true });
+
         const canvasEnt = document.getElementById('canvas-entities');
         const ctxEnt = canvasEnt.getContext('2d');
 
-        const WIDTH = 800;
-        const HEIGHT = 600;
-        const GRAVITY = 0.18; 
-        
         let gameState = 'menu'; // menu, playing, flying, end
         let gameMode = 'local';
         let currentPlayer = 1;
-        let retreatFrames = 0; // Chrono post-tir (60 = 1 sec)
+        let retreatFrames = 0; 
         let mapImage = new Image();
 
-        // --- GESTION DES ASSETS & SPRITES ---
+        // --- GESTION DU MULTIJOUEUR (Lobby Code) ---
+        let currentLobbyCode = "";
+        function generateLobbyCode() {
+            return 'SLM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        }
+        function showOnlineMenu() { 
+            currentLobbyCode = generateLobbyCode();
+            document.getElementById('lobby-code-display').innerText = currentLobbyCode;
+            document.getElementById('online-menu').classList.remove('hidden'); 
+        }
+        function hideOnlineMenu() { document.getElementById('online-menu').classList.add('hidden'); }
+        
+        function copyLobbyCode() {
+            navigator.clipboard.writeText(currentLobbyCode).then(() => {
+                alert("Code " + currentLobbyCode + " copié dans le presse-papier !");
+            });
+        }
+
+        // --- ASSETS ---
         const sprites = {};
         const imagesToLoad = {
             map: 'img/map1.png',
             
-            // SLIME 1 (Attention orthographe stricte comme demandée)
-            s1_idle_r: 'img/slim1_right.png', s1_idle_l: 'img/slim1_left.png',
+            s1_idle_r: 'img/slime1_right.png', s1_idle_l: 'img/slime1_left.png',
             s1_walk_r1: 'img/slime1_moveright1.png', s1_walk_r2: 'img/slime1_moveright2.png', s1_walk_r3: 'img/slime1_moveright3.png',
             s1_walk_l1: 'img/slime1_moveleft1.png', s1_walk_l2: 'img/slime1_moveleft2.png', s1_walk_l3: 'img/slime1_moveleft3.png',
             s1_jump_r1: 'img/slime1_jumpright1.png', s1_jump_r2: 'img/slime1_jumpright2.png', s1_jump_r3: 'img/slime1_jumpright3.png',
             s1_jump_l1: 'img/slime1_jumpleft1.png', s1_jump_l2: 'img/slime1_jumpleft2.png', s1_jump_l3: 'img/slime1_jumpleft3.png',
             
-            // SLIME 2
-            s2_idle_r: 'img/slim2_right.png', s2_idle_l: 'img/slim2_left.png',
+            s2_idle_r: 'img/slime2_right.png', s2_idle_l: 'img/slime2_left.png',
             s2_walk_r1: 'img/slime2_moveright1.png', s2_walk_r2: 'img/slime2_moveright2.png', s2_walk_r3: 'img/slime2_moveright3.png',
             s2_walk_l1: 'img/slime2_moveleft1.png', s2_walk_l2: 'img/slime2_moveleft2.png', s2_walk_l3: 'img/slime2_moveleft3.png',
             s2_jump_r1: 'img/slime2_jumpright1.png', s2_jump_r2: 'img/slime2_jumpright2.png', s2_jump_r3: 'img/slime2_jumpright3.png',
@@ -141,10 +176,7 @@
 
         for (let key in imagesToLoad) {
             let img = new Image();
-            img.onerror = () => { 
-                console.error(`🚨 ERREUR CHARGEMENT ASSET : ${imagesToLoad[key]} introuvable.`);
-                onLoadComplete(); 
-            };
+            img.onerror = () => { console.error(`Asset introuvable : ${imagesToLoad[key]}`); onLoadComplete(); };
             img.onload = onLoadComplete;
             img.src = imagesToLoad[key];
             sprites[key] = img;
@@ -159,17 +191,14 @@
             }
         }
 
-        // --- CONTRÔLES CLAVIER OPTIMISÉS ---
+        // --- CONTRÔLES ---
         const keys = { left: false, right: false, space: false };
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
             if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
             if (e.key === ' ' || e.code === 'Space') {
                 keys.space = true;
-                // Bloque le scroll uniquement si on est sur la fenêtre
-                if (e.target === document.body || e.target.closest('#game-wrapper')) {
-                    e.preventDefault();
-                }
+                if (e.target === document.body || e.target.closest('#game-wrapper')) e.preventDefault();
             }
         });
         window.addEventListener('keyup', (e) => {
@@ -178,120 +207,97 @@
             if (e.key === ' ' || e.code === 'Space') keys.space = false;
         });
 
-        // --- PHYSIQUE ET TERRAIN MULTI-CANVAS ---
+        // Suivi Souris Global pour la Caméra
+        window.addEventListener('mousemove', (e) => {
+            let rect = document.getElementById('game-wrapper').getBoundingClientRect();
+            mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width);
+        });
+
+        // --- PHYSIQUE SUR OFFSCREEN CANVAS ---
         function generateTerrain() {
-            ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
+            ctxOffTerrain.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
             if (mapImage.complete && mapImage.naturalWidth > 0) {
-                ctxTerrain.drawImage(mapImage, 0, 0, WIDTH, HEIGHT);
+                ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
             } else {
-                ctxTerrain.fillStyle = "#45a29e";
-                ctxTerrain.fillRect(0, HEIGHT/2, WIDTH, HEIGHT/2);
+                ctxOffTerrain.fillStyle = "#45a29e";
+                ctxOffTerrain.fillRect(0, WORLD_HEIGHT/2, WORLD_WIDTH, WORLD_HEIGHT/2);
             }
         }
 
         function isSolid(x, y) {
             let px = Math.floor(x); let py = Math.floor(y);
-            if (px < 0 || px >= WIDTH || py >= HEIGHT) return false;
+            if (px < 0 || px >= WORLD_WIDTH || py >= WORLD_HEIGHT) return false;
             if (py < 0) return false;
-            return ctxTerrain.getImageData(px, py, 1, 1).data[3] > 50; 
+            return ctxOffTerrain.getImageData(px, py, 1, 1).data[3] > 50; 
         }
 
         function explodeTerrain(ex, ey, radius) {
-            ctxTerrain.globalCompositeOperation = 'destination-out';
-            ctxTerrain.beginPath();
-            ctxTerrain.arc(ex, ey, radius, 0, Math.PI * 2);
-            ctxTerrain.fill();
-            ctxTerrain.globalCompositeOperation = 'source-over';
+            ctxOffTerrain.globalCompositeOperation = 'destination-out';
+            ctxOffTerrain.beginPath();
+            ctxOffTerrain.arc(ex, ey, radius, 0, Math.PI * 2);
+            ctxOffTerrain.fill();
+            ctxOffTerrain.globalCompositeOperation = 'source-over';
         }
 
-        // --- ENTITÉS (Slimes & Projectiles) ---
+        // --- ENTITÉS (SLIME & PROJECTILES) ---
         class Slime {
             constructor(x, y, id, type, color) {
-                this.x = x; this.y = y;
-                this.id = id; 
-                this.type = type; 
-                this.color = color;
-                this.radius = 12; 
-                this.vx = 0; this.vy = 0;
-                this.hp = 100;
-                this.isDead = false;
+                this.x = x; this.y = y; // Coordonnées absolues du MONDE
+                this.id = id; this.type = type; this.color = color;
+                this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 
                 this.facing = id === 1 ? 'r' : 'l';
-                this.state = 'idle'; // idle, walk, jump
-                this.animFrame = 1;
-                this.animTimer = 0;
-                this.isOnGround = false;
+                this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.isOnGround = false;
             }
 
             update() {
                 if (this.isDead) return;
                 
-                // Mouvements possibles si tour J1 ET (partie normale OU pendant le Retreat Time)
                 let canMove = (currentPlayer === this.id) && 
                               (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0)) && 
                               !(gameMode === 'ai' && this.id === 2);
                 
-                // Entrées claviers
                 if (canMove && !isDragging) {
                     if (keys.left) { this.vx = -1.5; this.facing = 'l'; if(this.isOnGround) this.state = 'walk'; }
                     else if (keys.right) { this.vx = 1.5; this.facing = 'r'; if(this.isOnGround) this.state = 'walk'; }
                     else { this.vx = 0; if(this.isOnGround) this.state = 'idle'; }
 
                     if (keys.space && this.isOnGround) {
-                        this.vy = -6; // Saut plus punitif
+                        this.vy = -6; 
                         this.isOnGround = false;
                         this.state = 'jump';
                         this.animFrame = 1;
                         this.animTimer = 0;
-                        keys.space = false; // Nécessite de relâcher pour resauter
+                        keys.space = false;
                     }
                 } else if (!canMove && this.isOnGround) {
-                    this.vx *= 0.5; // Glissade courte et arrêt
+                    this.vx *= 0.5;
                     if(Math.abs(this.vx) < 0.1) this.vx = 0;
                     this.state = 'idle';
                 }
 
-                // --- GESTION DU DÉPLACEMENT X & PENTES ---
                 if (this.vx !== 0) {
                     let nextX = this.x + this.vx;
                     let step = 0;
-                    let maxStep = 6; // Le slime peut franchir un petit obstacle de 6 pixels max
+                    let maxStep = 6; 
+                    while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) step++;
 
-                    // Test si le futur emplacement est un mur qu'on peut escalader
-                    while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) {
-                        step++;
-                    }
-
-                    if (step > maxStep) {
-                        // Mur trop haut, le slime est bloqué, vitesse X tombe à 0
-                        this.vx = 0; 
-                    } else {
-                        // Terrain franchissable, on valide X et on ajuste Y
-                        this.x = nextX;
-                        this.y -= step;
-                    }
+                    if (step > maxStep) this.vx = 0; 
+                    else { this.x = nextX; this.y -= step; }
                 }
 
-                // Application Gravité
                 this.vy += GRAVITY;
                 this.y += this.vy;
 
-                // --- COLLISION SOL DIRECTE ---
                 this.isOnGround = false;
                 if (isSolid(this.x, this.y + this.radius)) {
-                    this.vy = 0;
-                    this.isOnGround = true;
+                    this.vy = 0; this.isOnGround = true;
                     if (this.state === 'jump') this.state = 'idle'; 
-                    
-                    // Repousser au-dessus du sol si enfoncé
-                    while(isSolid(this.x, this.y + this.radius - 1)) {
-                        this.y -= 1;
-                    }
+                    while(isSolid(this.x, this.y + this.radius - 1)) this.y -= 1;
                 } else {
-                    if (this.vy > 0) this.state = 'jump'; // Chute
+                    if (this.vy > 0) this.state = 'jump'; 
                 }
 
-                // Animation
                 if (this.state === 'walk' || this.state === 'jump') {
                     this.animTimer++;
                     let speed = this.state === 'jump' ? 6 : 8; 
@@ -299,80 +305,58 @@
                         this.animFrame = this.animFrame === 3 ? 1 : this.animFrame + 1;
                         this.animTimer = 0;
                     }
-                } else {
-                    this.animFrame = 1;
-                }
+                } else this.animFrame = 1;
 
-                // Limite du vide
-                if (this.y > HEIGHT + 50) {
-                    this.hp = 0; this.isDead = true; checkWin();
-                }
-                
-                // Murs arènes
+                if (this.y > WORLD_HEIGHT + 50) { this.hp = 0; this.isDead = true; checkWin(); }
                 if(this.x < 10) this.x = 10;
-                if(this.x > WIDTH - 10) this.x = WIDTH - 10;
+                if(this.x > WORLD_WIDTH - 10) this.x = WORLD_WIDTH - 10;
             }
 
             draw() {
                 if (this.isDead) return;
 
                 let spriteName = `s${this.type}_`;
-                if (this.state === 'jump') {
-                    spriteName += `jump_${this.facing}${this.animFrame}`;
-                } else if (this.state === 'walk') {
-                    spriteName += `walk_${this.facing}${this.animFrame}`;
-                } else {
-                    spriteName += `idle_${this.facing}`;
-                }
+                if (this.state === 'jump') spriteName += `jump_${this.facing}${this.animFrame}`;
+                else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
+                else spriteName += `idle_${this.facing}`;
+
+                // DRAW OFFSET PAR RAPPORT A LA CAMERA
+                let renderX = this.x - camera.x;
+                let renderY = this.y - camera.y;
 
                 let img = sprites[spriteName];
-                
-                // Protection: dessin de fallback rouge/bleu seulement si l'image crash
                 if (img && img.complete && img.naturalWidth > 0) {
-                    ctxEnt.drawImage(img, this.x - 15, this.y - 18, 30, 30);
+                    ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
                 } else {
                     ctxEnt.fillStyle = this.color;
-                    ctxEnt.fillRect(this.x - 10, this.y - 10, 20, 20);
+                    ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20);
                 }
                 
-                // Flèche tour du joueur
                 if (currentPlayer === this.id && gameState !== 'end') {
                     ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
-                    ctxEnt.shadowBlur = 10;
-                    ctxEnt.shadowColor = ctxEnt.fillStyle;
+                    ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = ctxEnt.fillStyle;
                     ctxEnt.beginPath();
-                    ctxEnt.moveTo(this.x - 6, this.y - 32);
-                    ctxEnt.lineTo(this.x + 6, this.y - 32);
-                    ctxEnt.lineTo(this.x, this.y - 22);
-                    ctxEnt.fill();
-                    ctxEnt.shadowBlur = 0;
+                    ctxEnt.moveTo(renderX - 6, renderY - 32);
+                    ctxEnt.lineTo(renderX + 6, renderY - 32);
+                    ctxEnt.lineTo(renderX, renderY - 22);
+                    ctxEnt.fill(); ctxEnt.shadowBlur = 0;
                 }
             }
         }
 
         class Projectile {
             constructor(x, y, vx, vy) {
-                this.x = x; this.y = y;
-                this.vx = vx; this.vy = vy;
-                this.active = true;
-                this.radius = 4;
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+                this.active = true; this.radius = 4;
             }
             update() {
                 if (!this.active) return;
-                this.vy += GRAVITY;
-                this.x += this.vx;
-                this.y += this.vy;
-
+                this.vy += GRAVITY; this.x += this.vx; this.y += this.vy;
                 particles.push(new Particle(this.x, this.y, 0, 0, "#fff", 2, 10));
-
-                if (isSolid(this.x, this.y) || this.y > HEIGHT || this.x < 0 || this.x > WIDTH) {
-                    this.explode();
-                }
+                if (isSolid(this.x, this.y) || this.y > WORLD_HEIGHT || this.x < 0 || this.x > WORLD_WIDTH) this.explode();
             }
             explode() {
-                this.active = false;
-                let expRadius = 45;
-                
+                this.active = false; let expRadius = 45;
                 explodeTerrain(this.x, this.y, expRadius);
                 
                 for(let i=0; i<35; i++) {
@@ -386,28 +370,20 @@
                     if (dist < expRadius + 15 && !w.isDead) {
                         let damage = Math.floor((1 - dist / (expRadius + 15)) * 45);
                         w.hp -= damage;
-                        
                         let kbAngle = Math.atan2(w.y - this.y, w.x - this.x);
                         w.vx += Math.cos(kbAngle) * (damage * 0.25);
                         w.vy += Math.sin(kbAngle) * (damage * 0.25) - 4; 
-                        
                         if (w.hp <= 0) { w.hp = 0; w.isDead = true; }
                         updateUI();
                     }
                 });
                 
-                // Le tour passe après l'explosion, et force le retreatTimer à 0 pour bloquer les mouvements
-                setTimeout(() => {
-                    retreatFrames = 0;
-                    nextTurn();
-                }, 1500);
+                setTimeout(() => { retreatFrames = 0; nextTurn(); }, 1500);
             }
             draw() {
                 if (!this.active) return;
-                ctxEnt.fillStyle = "#fff";
-                ctxEnt.beginPath();
-                ctxEnt.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctxEnt.fill();
+                ctxEnt.fillStyle = "#fff"; ctxEnt.beginPath();
+                ctxEnt.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2); ctxEnt.fill();
             }
         }
 
@@ -416,19 +392,14 @@
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy;
                 this.color = color; this.size = size; this.life = life; this.maxLife = life;
             }
-            update() {
-                this.x += this.vx; this.y += this.vy;
-                this.life--;
-            }
+            update() { this.x += this.vx; this.y += this.vy; this.life--; }
             draw() {
-                ctxEnt.fillStyle = this.color;
-                ctxEnt.globalAlpha = this.life / this.maxLife;
-                ctxEnt.fillRect(this.x, this.y, this.size, this.size);
+                ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife;
+                ctxEnt.fillRect(this.x - camera.x, this.y - camera.y, this.size, this.size);
                 ctxEnt.globalAlpha = 1;
             }
         }
 
-        // --- GAME STATE & BOUCLE ---
         let worms = [];
         let projectile = null;
         let particles = [];
@@ -442,21 +413,18 @@
             
             generateTerrain();
             
+            // Placement écarté dans le grand monde
             worms = [
-                new Slime(150, 100, 1, 1, 'var(--p1)'),
-                new Slime(WIDTH - 150, 100, 2, 2, 'var(--p2)')
+                new Slime(200, 100, 1, 1, 'var(--p1)'),
+                new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)')
             ];
             
-            currentPlayer = 1;
-            gameState = 'playing';
-            retreatFrames = 0;
+            currentPlayer = 1; gameState = 'playing'; retreatFrames = 0;
+            camera.x = worms[0].x - WIDTH / 2; // Init camera sur J1
             updateUI();
             
             requestAnimationFrame(gameLoop);
         }
-
-        function showOnlineMenu() { document.getElementById('online-menu').classList.remove('hidden'); }
-        function hideOnlineMenu() { document.getElementById('online-menu').classList.add('hidden'); }
 
         function updateUI() {
             document.getElementById('hp-p1').style.width = worms[0].hp + '%';
@@ -469,15 +437,12 @@
         }
 
         function nextTurn() {
-            checkWin();
-            if (gameState === 'end') return;
+            checkWin(); if (gameState === 'end') return;
             
             currentPlayer = currentPlayer === 1 ? 2 : 1;
             if (worms[currentPlayer-1].isDead) currentPlayer = currentPlayer === 1 ? 2 : 1; 
             
-            gameState = 'playing';
-            projectile = null;
-            updateUI();
+            gameState = 'playing'; projectile = null; updateUI();
 
             if (gameMode === 'ai' && currentPlayer === 2 && !worms[1].isDead) {
                 setTimeout(playAITurn, 1000);
@@ -485,19 +450,15 @@
         }
 
         function playAITurn() {
-            let ai = worms[1];
-            let target = worms[0];
-            
+            let ai = worms[1]; let target = worms[0];
             ai.facing = (target.x < ai.x) ? 'l' : 'r';
             
-            let dx = target.x - ai.x;
-            let dy = (target.y - ai.y) - 60; 
+            let dx = target.x - ai.x; let dy = (target.y - ai.y) - 60; 
             let angle = Math.atan2(dy, dx);
-            let power = Math.min(Math.abs(dx) * 0.025 + 4, 16); 
+            let power = Math.min(Math.abs(dx) * 0.015 + 4, 18); 
 
             projectile = new Projectile(ai.x, ai.y - 10, Math.cos(angle) * power, Math.sin(angle) * power);
-            gameState = 'flying';
-            retreatFrames = 0; // IA ne bouge pas après tir
+            gameState = 'flying'; retreatFrames = 0; 
         }
 
         function checkWin() {
@@ -512,23 +473,21 @@
             }
         }
 
-        // --- VISÉE LANCE-PIERRE ---
+        // --- VISÉE ADAPTÉE AU MONDE ---
         const gameWrapper = document.getElementById('game-wrapper');
 
         function startAim(e) {
-            // Uniquement si c'est notre tour et qu'on a pas déjà tiré
             if (gameState !== 'playing' || (gameMode === 'ai' && currentPlayer === 2)) return;
             e.stopPropagation();
             
             let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
             let scaleX = canvasEnt.width / rect.width;
-            let scaleY = canvasEnt.height / rect.height;
             
-            dragStartX = (clientX - rect.left) * scaleX;
-            dragStartY = (clientY - rect.top) * scaleY;
+            // On ajoute la position de la caméra pour avoir le point du MONDE
+            dragStartX = ((clientX - rect.left) * scaleX) + camera.x;
+            dragStartY = ((clientY - rect.top) * (canvasEnt.height / rect.height)); 
             
             isDragging = true;
             worms[currentPlayer - 1].state = 'idle'; 
@@ -541,17 +500,17 @@
             let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let scaleX = canvasEnt.width / rect.width;
             
-            dragCurrentX = (clientX - rect.left) * (canvasEnt.width / rect.width);
-            dragCurrentY = (clientY - rect.top) * (canvasEnt.height / rect.height);
+            dragCurrentX = ((clientX - rect.left) * scaleX) + camera.x;
+            dragCurrentY = ((clientY - rect.top) * (canvasEnt.height / rect.height));
 
             worms[currentPlayer - 1].facing = (dragStartX - dragCurrentX > 0) ? 'r' : 'l';
         }
 
         function endAim(e) {
             if (!isDragging) return;
-            isDragging = false;
-            e.stopPropagation();
+            isDragging = false; e.stopPropagation();
             
             let activeWorm = worms[currentPlayer - 1];
             let dx = dragStartX - dragCurrentX;
@@ -561,28 +520,56 @@
             
             if (power > 2) {
                 projectile = new Projectile(activeWorm.x, activeWorm.y - 15, Math.cos(angle) * power, Math.sin(angle) * power);
-                gameState = 'flying';
-                retreatFrames = 60; // Lance le chrono de fuite d'une seconde (60 frames)
+                gameState = 'flying'; retreatFrames = 60; 
             }
         }
 
-        gameWrapper.addEventListener('mousedown', startAim);
-        window.addEventListener('mousemove', moveAim);
-        window.addEventListener('mouseup', endAim);
-        gameWrapper.addEventListener('touchstart', startAim, {passive: false});
-        window.addEventListener('touchmove', moveAim, {passive: false});
-        window.addEventListener('touchend', endAim);
+        gameWrapper.addEventListener('mousedown', startAim); window.addEventListener('mousemove', moveAim); window.addEventListener('mouseup', endAim);
+        gameWrapper.addEventListener('touchstart', startAim, {passive: false}); window.addEventListener('touchmove', moveAim, {passive: false}); window.addEventListener('touchend', endAim);
+
+        // --- GESTION CAMERA & BOUCLE JEU ---
+        function updateCamera() {
+            let targetX = camera.x;
+            
+            // 1. Contrôle Souris (Zone sur les bords de l'écran)
+            manualCameraControl = false;
+            if (mouseScreenX < 50) { targetX = camera.x - 15; manualCameraControl = true; }
+            if (mouseScreenX > WIDTH - 50) { targetX = camera.x + 15; manualCameraControl = true; }
+
+            // 2. Tracking auto (Seulement si l'humain ne force pas la vue avec la souris)
+            if (!manualCameraControl) {
+                if (projectile && projectile.active) {
+                    targetX = projectile.x - WIDTH / 2; // Suit la roquette
+                } else if (!isDragging && worms[currentPlayer - 1]) {
+                    targetX = worms[currentPlayer - 1].x - WIDTH / 2; // Suit le joueur actif
+                }
+            }
+            
+            // Interpolation douce
+            camera.x += (targetX - camera.x) * 0.1;
+            
+            // Bloque la caméra aux limites de la map
+            camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH - WIDTH));
+        }
 
         function gameLoop() {
             if (gameState === 'menu') return;
             
-            // Diminution du chrono de retreat
             if (retreatFrames > 0) retreatFrames--;
 
+            updateCamera();
+
+            // Rendu Terrain
+            ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
+            // On découpe la partie de la carte visible par la caméra dans le OffscreenCanvas
+            ctxTerrain.drawImage(offscreenTerrain, camera.x, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT);
+
+            // Rendu Entités
             ctxEnt.clearRect(0, 0, WIDTH, HEIGHT);
 
             worms.forEach(w => { w.update(); w.draw(); });
 
+            // Dessin de la Ligne de Visée
             if (gameState === 'playing' && isDragging) {
                 let activeWorm = worms[currentPlayer - 1];
                 let dx = dragStartX - dragCurrentX;
@@ -590,14 +577,14 @@
                 let power = Math.min(Math.hypot(dx, dy), 180);
                 let angle = Math.atan2(dy, dx);
                 
+                let startX = activeWorm.x - camera.x;
+                let startY = activeWorm.y - camera.y - 15;
+                
                 ctxEnt.beginPath();
-                ctxEnt.moveTo(activeWorm.x, activeWorm.y - 15);
-                ctxEnt.lineTo(activeWorm.x + Math.cos(angle)*power, activeWorm.y - 15 + Math.sin(angle)*power);
+                ctxEnt.moveTo(startX, startY);
+                ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
                 ctxEnt.strokeStyle = currentPlayer === 1 ? "rgba(0, 240, 255, 0.7)" : "rgba(255, 0, 127, 0.7)";
-                ctxEnt.lineWidth = 3;
-                ctxEnt.setLineDash([8, 8]);
-                ctxEnt.stroke();
-                ctxEnt.setLineDash([]);
+                ctxEnt.lineWidth = 3; ctxEnt.setLineDash([8, 8]); ctxEnt.stroke(); ctxEnt.setLineDash([]);
             }
 
             if (projectile) { projectile.update(); projectile.draw(); }
@@ -611,7 +598,7 @@
         }
     </script>
     
-    <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL (SOURIS & TACTILE) -->
+    <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL -->
     <script>
         const gamesHubList = [
             "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
@@ -646,12 +633,12 @@
         }
 
         function initSwipe(e, x, y) {
-            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button') return;
+            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return;
             globalStartX = x; globalStartY = y;
         }
 
         function endSwipe(e, x, y) {
-            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button') return;
+            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return;
             globalEndX = x; globalEndY = y;
             handleGlobalSwipe();
         }
