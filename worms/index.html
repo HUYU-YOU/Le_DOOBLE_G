@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Slimes Artillery (Worms-like)</title>
+    <!-- Chargement de PeerJS pour le Multijoueur WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; user-select: none; }
@@ -32,7 +34,7 @@
 
         /* MENUS */
         .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(8px); }
-        .menu-overlay h1, .menu-overlay h2 { font-size: 3em; margin-bottom: 20px; text-transform: uppercase; color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 2px; }
+        .menu-overlay h1, .menu-overlay h2 { font-size: 3em; margin-bottom: 20px; text-transform: uppercase; color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 2px; text-align: center;}
         
         .btn { background: rgba(0, 240, 255, 0.1); color: var(--p1); border: 2px solid var(--p1); padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease-in-out; margin: 10px; min-width: 250px; text-align: center; font-family: inherit; }
         .btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 20px var(--p1); transform: translateY(-2px); }
@@ -44,6 +46,8 @@
         .loader { font-size: 1.2em; color: var(--p1); margin-bottom: 20px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .hidden { display: none !important; }
+        
+        #conn-status { margin-top: 15px; color: var(--sys); font-weight: bold; }
 
         @media (max-width: 800px) {
             #game-wrapper { height: 70vh; border-radius: 0; border: none; }
@@ -77,7 +81,7 @@
 
         <div id="main-menu" class="menu-overlay">
             <h1>Cyber Slimes</h1>
-            <div id="loading-text" class="loader">Chargement des assets réseau...</div>
+            <div id="loading-text" class="loader">Chargement des sprites...</div>
             <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column;">
                 <button class="btn" onclick="startGame('local')">🕹️ 1 vs 1 (Local)</button>
                 <button class="btn btn-pink" onclick="startGame('ai')">🤖 Contre l'IA</button>
@@ -85,17 +89,25 @@
             </div>
         </div>
 
+        <!-- MENU MULTIJOUEUR WEBRTC -->
         <div id="online-menu" class="menu-overlay hidden">
-            <h2>Lobby Cybernétique</h2>
-            <p>Code de partie : <b id="lobby-code-display" style="color: var(--p1); font-size:1.5em; letter-spacing:3px;">...</b></p>
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <button class="btn" style="min-width:150px; padding: 10px;" onclick="copyLobbyCode()">Copier le code</button>
-            </div>
-            <p>Ou rejoignez une partie existante :</p>
-            <input type="text" id="join-code-input" placeholder="Entrer un code..." style="padding: 12px; font-size: 1.2em; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--p1); background: rgba(0,0,0,0.5); color: #fff; outline:none; text-align:center;">
+            <h2>Lobby Multijoueur</h2>
             
-            <button class="btn" onclick="alert('En attente de connexion WebRTC (PeerJS)...')">Connecter</button>
-            <button class="btn btn-pink" onclick="hideOnlineMenu()">Retour</button>
+            <!-- SECTION HOTE -->
+            <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center;">
+                <button class="btn" onclick="hostGame()">1. Héberger une partie</button>
+                <p>Code de votre partie : <b id="lobby-code-display" style="color: var(--p1); font-size:1.5em; letter-spacing:3px;">---</b></p>
+            </div>
+
+            <!-- SECTION REJOINDRE -->
+            <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; border: 1px solid var(--p2); text-align: center;">
+                <input type="text" id="join-code-input" placeholder="Code de l'hôte..." style="padding: 10px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; margin-bottom: 10px; width: 200px;">
+                <br>
+                <button class="btn btn-pink" onclick="joinGame()">2. Rejoindre</button>
+            </div>
+
+            <div id="conn-status"></div>
+            <button class="btn" style="border-color:#555; color:#aaa; margin-top: 30px;" onclick="hideOnlineMenu()">Retour</button>
         </div>
 
         <div id="game-over" class="menu-overlay hidden">
@@ -106,21 +118,19 @@
 
     <script>
         // --- CONSTANTES MONDE GEANT ---
-        const WIDTH = 800; // Taille Ecran
+        const WIDTH = 800; 
         const HEIGHT = 600; 
-        const WORLD_WIDTH = 2000; // Taille réelle de la Map !
+        const WORLD_WIDTH = 2000; 
         const WORLD_HEIGHT = 600;
         const GRAVITY = 0.18; 
         
         let camera = { x: 0, y: 0 };
-        let mouseScreenX = WIDTH / 2; // Position de la souris à l'écran
-        let manualCameraControl = false; // Permet de savoir si l'humain bouge la caméra
+        let mouseScreenX = WIDTH / 2; 
+        let manualCameraControl = false; 
 
-        // --- INITIALISATION DES CANVAS ---
         const canvasTerrain = document.getElementById('canvas-terrain');
-        const ctxTerrain = canvasTerrain.getContext('2d'); // Affichage uniquement
+        const ctxTerrain = canvasTerrain.getContext('2d'); 
         
-        // OFFSCREEN CANVAS : Il contient la carte complète (2000px). On l'utilise pour piocher l'image et gérer les collisions (hautes perfs)
         const offscreenTerrain = document.createElement('canvas');
         offscreenTerrain.width = WORLD_WIDTH;
         offscreenTerrain.height = WORLD_HEIGHT;
@@ -129,41 +139,102 @@
         const canvasEnt = document.getElementById('canvas-entities');
         const ctxEnt = canvasEnt.getContext('2d');
 
-        let gameState = 'menu'; // menu, playing, flying, end
+        let gameState = 'menu'; 
         let gameMode = 'local';
         let currentPlayer = 1;
         let retreatFrames = 0; 
         let mapImage = new Image();
 
-        // --- GESTION DU MULTIJOUEUR (Lobby Code) ---
-        let currentLobbyCode = "";
-        function generateLobbyCode() {
-            return 'SLM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-        }
-        function showOnlineMenu() { 
-            currentLobbyCode = generateLobbyCode();
-            document.getElementById('lobby-code-display').innerText = currentLobbyCode;
-            document.getElementById('online-menu').classList.remove('hidden'); 
-        }
+        // --- GESTION MULTIJOUEUR (PEERJS) ---
+        let peer = null;
+        let conn = null;
+        let isHost = false;
+        let myPlayerId = 1; // 1 pour Hote, 2 pour Client
+
+        function showOnlineMenu() { document.getElementById('online-menu').classList.remove('hidden'); }
         function hideOnlineMenu() { document.getElementById('online-menu').classList.add('hidden'); }
-        
-        function copyLobbyCode() {
-            navigator.clipboard.writeText(currentLobbyCode).then(() => {
-                alert("Code " + currentLobbyCode + " copié dans le presse-papier !");
+
+        function hostGame() {
+            let status = document.getElementById('conn-status');
+            status.innerText = "Création du serveur local...";
+            let code = 'SLM' + Math.floor(Math.random() * 10000);
+            
+            peer = new Peer(code); // On force l'ID
+            
+            peer.on('open', (id) => {
+                document.getElementById('lobby-code-display').innerText = id;
+                status.innerText = "En attente d'un adversaire...";
+                isHost = true;
+                myPlayerId = 1;
             });
+
+            peer.on('connection', (connection) => {
+                conn = connection;
+                setupConnection();
+                status.innerText = "Adversaire connecté ! Lancement...";
+                setTimeout(() => startGame('online'), 1000);
+            });
+        }
+
+        function joinGame() {
+            let code = document.getElementById('join-code-input').value.trim();
+            if(!code) return alert("Veuillez entrer un code.");
+            
+            let status = document.getElementById('conn-status');
+            status.innerText = "Connexion à " + code + "...";
+            
+            peer = new Peer();
+            peer.on('open', () => {
+                conn = peer.connect(code);
+                conn.on('open', () => {
+                    setupConnection();
+                    isHost = false;
+                    myPlayerId = 2;
+                    status.innerText = "Connecté ! Lancement...";
+                    setTimeout(() => startGame('online'), 1000);
+                });
+            });
+        }
+
+        function setupConnection() {
+            conn.on('data', (data) => {
+                // Synchronisation des positions et actions de l'adversaire
+                if(data.type === 'sync' && gameState === 'playing') {
+                    let enemy = worms[myPlayerId === 1 ? 1 : 0];
+                    enemy.x = data.x;
+                    enemy.y = data.y;
+                    enemy.facing = data.facing;
+                    enemy.state = data.state;
+                    enemy.animFrame = data.animFrame;
+                }
+                if(data.type === 'fire') {
+                    projectile = new Projectile(data.px, data.py, data.vx, data.vy);
+                    gameState = 'flying';
+                    retreatFrames = 60;
+                }
+            });
+        }
+
+        function syncPlayerState() {
+            if (conn && conn.open && gameMode === 'online' && currentPlayer === myPlayerId) {
+                let me = worms[myPlayerId - 1];
+                conn.send({
+                    type: 'sync',
+                    x: me.x, y: me.y, facing: me.facing, 
+                    state: me.state, animFrame: me.animFrame
+                });
+            }
         }
 
         // --- ASSETS ---
         const sprites = {};
         const imagesToLoad = {
             map: 'img/map1.png',
-            
             s1_idle_r: 'img/slime1_right.png', s1_idle_l: 'img/slime1_left.png',
             s1_walk_r1: 'img/slime1_moveright1.png', s1_walk_r2: 'img/slime1_moveright2.png', s1_walk_r3: 'img/slime1_moveright3.png',
             s1_walk_l1: 'img/slime1_moveleft1.png', s1_walk_l2: 'img/slime1_moveleft2.png', s1_walk_l3: 'img/slime1_moveleft3.png',
             s1_jump_r1: 'img/slime1_jumpright1.png', s1_jump_r2: 'img/slime1_jumpright2.png', s1_jump_r3: 'img/slime1_jumpright3.png',
             s1_jump_l1: 'img/slime1_jumpleft1.png', s1_jump_l2: 'img/slime1_jumpleft2.png', s1_jump_l3: 'img/slime1_jumpleft3.png',
-            
             s2_idle_r: 'img/slime2_right.png', s2_idle_l: 'img/slime2_left.png',
             s2_walk_r1: 'img/slime2_moveright1.png', s2_walk_r2: 'img/slime2_moveright2.png', s2_walk_r3: 'img/slime2_moveright3.png',
             s2_walk_l1: 'img/slime2_moveleft1.png', s2_walk_l2: 'img/slime2_moveleft2.png', s2_walk_l3: 'img/slime2_moveleft3.png',
@@ -171,15 +242,11 @@
             s2_jump_l1: 'img/slime2_jumpleft1.png', s2_jump_l2: 'img/slime2_jumpleft2.png', s2_jump_l3: 'img/slime2_jumpleft3.png'
         };
 
-        let loadedCount = 0;
-        let totalImages = Object.keys(imagesToLoad).length;
-
+        let loadedCount = 0; let totalImages = Object.keys(imagesToLoad).length;
         for (let key in imagesToLoad) {
             let img = new Image();
             img.onerror = () => { console.error(`Asset introuvable : ${imagesToLoad[key]}`); onLoadComplete(); };
-            img.onload = onLoadComplete;
-            img.src = imagesToLoad[key];
-            sprites[key] = img;
+            img.onload = onLoadComplete; img.src = imagesToLoad[key]; sprites[key] = img;
         }
 
         function onLoadComplete() {
@@ -196,10 +263,7 @@
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
             if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
-            if (e.key === ' ' || e.code === 'Space') {
-                keys.space = true;
-                if (e.target === document.body || e.target.closest('#game-wrapper')) e.preventDefault();
-            }
+            if (e.key === ' ' || e.code === 'Space') { keys.space = true; if (e.target === document.body || e.target.closest('#game-wrapper')) e.preventDefault(); }
         });
         window.addEventListener('keyup', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = false;
@@ -207,21 +271,15 @@
             if (e.key === ' ' || e.code === 'Space') keys.space = false;
         });
 
-        // Suivi Souris Global pour la Caméra
         window.addEventListener('mousemove', (e) => {
             let rect = document.getElementById('game-wrapper').getBoundingClientRect();
             mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width);
         });
 
-        // --- PHYSIQUE SUR OFFSCREEN CANVAS ---
         function generateTerrain() {
             ctxOffTerrain.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-            if (mapImage.complete && mapImage.naturalWidth > 0) {
-                ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-            } else {
-                ctxOffTerrain.fillStyle = "#45a29e";
-                ctxOffTerrain.fillRect(0, WORLD_HEIGHT/2, WORLD_WIDTH, WORLD_HEIGHT/2);
-            }
+            if (mapImage.complete && mapImage.naturalWidth > 0) ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+            else { ctxOffTerrain.fillStyle = "#45a29e"; ctxOffTerrain.fillRect(0, WORLD_HEIGHT/2, WORLD_WIDTH, WORLD_HEIGHT/2); }
         }
 
         function isSolid(x, y) {
@@ -233,55 +291,57 @@
 
         function explodeTerrain(ex, ey, radius) {
             ctxOffTerrain.globalCompositeOperation = 'destination-out';
-            ctxOffTerrain.beginPath();
-            ctxOffTerrain.arc(ex, ey, radius, 0, Math.PI * 2);
-            ctxOffTerrain.fill();
+            ctxOffTerrain.beginPath(); ctxOffTerrain.arc(ex, ey, radius, 0, Math.PI * 2); ctxOffTerrain.fill();
             ctxOffTerrain.globalCompositeOperation = 'source-over';
         }
 
-        // --- ENTITÉS (SLIME & PROJECTILES) ---
+        // --- ENTITÉS & STATE MACHINE ANIMATION ---
         class Slime {
             constructor(x, y, id, type, color) {
-                this.x = x; this.y = y; // Coordonnées absolues du MONDE
-                this.id = id; this.type = type; this.color = color;
+                this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
                 this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 
                 this.facing = id === 1 ? 'r' : 'l';
-                this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.isOnGround = false;
+                this.state = 'idle'; // idle, walk, air, landed
+                this.animFrame = 1; 
+                this.animTimer = 0; 
+                this.landTimer = 0; // Temps pour afficher l'impact au sol
+                this.isOnGround = false;
             }
 
             update() {
                 if (this.isDead) return;
                 
-                let canMove = (currentPlayer === this.id) && 
-                              (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0)) && 
-                              !(gameMode === 'ai' && this.id === 2);
+                let isMyTurn = (currentPlayer === this.id);
+                // Bloque le controle si on est en ligne et que ce n'est pas NOTRE tour
+                if (gameMode === 'online' && currentPlayer !== myPlayerId) isMyTurn = false;
                 
+                let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0)) && !(gameMode === 'ai' && this.id === 2);
+                
+                // --- GESTION INPUTS ---
                 if (canMove && !isDragging) {
-                    if (keys.left) { this.vx = -1.5; this.facing = 'l'; if(this.isOnGround) this.state = 'walk'; }
-                    else if (keys.right) { this.vx = 1.5; this.facing = 'r'; if(this.isOnGround) this.state = 'walk'; }
-                    else { this.vx = 0; if(this.isOnGround) this.state = 'idle'; }
+                    if (keys.left) { this.vx = -1.5; this.facing = 'l'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
+                    else if (keys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
+                    else { this.vx = 0; if(this.state === 'walk') this.state = 'idle'; }
 
                     if (keys.space && this.isOnGround) {
-                        this.vy = -6; 
+                        this.vy = -6.5; 
                         this.isOnGround = false;
-                        this.state = 'jump';
-                        this.animFrame = 1;
-                        this.animTimer = 0;
+                        this.state = 'air'; // Décollage (Frame 2)
+                        this.animFrame = 2; 
                         keys.space = false;
                     }
                 } else if (!canMove && this.isOnGround) {
                     this.vx *= 0.5;
                     if(Math.abs(this.vx) < 0.1) this.vx = 0;
-                    this.state = 'idle';
+                    if (this.state === 'walk') this.state = 'idle';
                 }
 
+                // --- COLLISIONS X ---
                 if (this.vx !== 0) {
                     let nextX = this.x + this.vx;
-                    let step = 0;
-                    let maxStep = 6; 
+                    let step = 0; let maxStep = 6; 
                     while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) step++;
-
                     if (step > maxStep) this.vx = 0; 
                     else { this.x = nextX; this.y -= step; }
                 }
@@ -289,23 +349,38 @@
                 this.vy += GRAVITY;
                 this.y += this.vy;
 
+                // --- COLLISIONS Y & ATTERRISSAGE ---
                 this.isOnGround = false;
                 if (isSolid(this.x, this.y + this.radius)) {
-                    this.vy = 0; this.isOnGround = true;
-                    if (this.state === 'jump') this.state = 'idle'; 
+                    // Si on vient de toucher le sol après un saut/chute
+                    if (this.state === 'air') {
+                        this.state = 'landed'; // Atterrissage (Frame 3)
+                        this.landTimer = 15; // Reste écrasé ~250ms
+                    }
+                    this.vy = 0; 
+                    this.isOnGround = true;
                     while(isSolid(this.x, this.y + this.radius - 1)) this.y -= 1;
-                } else {
-                    if (this.vy > 0) this.state = 'jump'; 
+                } else if (this.vy !== 0) {
+                    this.state = 'air'; // Force l'état air si on tombe dans un trou
                 }
 
-                if (this.state === 'walk' || this.state === 'jump') {
+                // --- MOTEUR D'ANIMATION PRECIS ---
+                if (this.state === 'walk') {
                     this.animTimer++;
-                    let speed = this.state === 'jump' ? 6 : 8; 
-                    if (this.animTimer > speed) {
-                        this.animFrame = this.animFrame === 3 ? 1 : this.animFrame + 1;
+                    if (this.animTimer > 6) { // Vitesse marche
+                        this.animFrame++;
+                        if (this.animFrame > 3) this.animFrame = 1; // Boucle 1, 2, 3
                         this.animTimer = 0;
                     }
-                } else this.animFrame = 1;
+                } else if (this.state === 'air') {
+                    this.animFrame = 2; // Bloqué en l'air
+                } else if (this.state === 'landed') {
+                    this.animFrame = 3; // Bloqué écrasé
+                    this.landTimer--;
+                    if (this.landTimer <= 0) this.state = 'idle'; // Retour au calme
+                } else {
+                    this.animFrame = 1; // Idle = Frame 1
+                }
 
                 if (this.y > WORLD_HEIGHT + 50) { this.hp = 0; this.isDead = true; checkWin(); }
                 if(this.x < 10) this.x = 10;
@@ -316,11 +391,10 @@
                 if (this.isDead) return;
 
                 let spriteName = `s${this.type}_`;
-                if (this.state === 'jump') spriteName += `jump_${this.facing}${this.animFrame}`;
+                if (this.state === 'air' || this.state === 'landed') spriteName += `jump_${this.facing}${this.animFrame}`;
                 else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
                 else spriteName += `idle_${this.facing}`;
 
-                // DRAW OFFSET PAR RAPPORT A LA CAMERA
                 let renderX = this.x - camera.x;
                 let renderY = this.y - camera.y;
 
@@ -328,17 +402,13 @@
                 if (img && img.complete && img.naturalWidth > 0) {
                     ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
                 } else {
-                    ctxEnt.fillStyle = this.color;
-                    ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20);
+                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20);
                 }
                 
                 if (currentPlayer === this.id && gameState !== 'end') {
                     ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
                     ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = ctxEnt.fillStyle;
-                    ctxEnt.beginPath();
-                    ctxEnt.moveTo(renderX - 6, renderY - 32);
-                    ctxEnt.lineTo(renderX + 6, renderY - 32);
-                    ctxEnt.lineTo(renderX, renderY - 22);
+                    ctxEnt.beginPath(); ctxEnt.moveTo(renderX - 6, renderY - 32); ctxEnt.lineTo(renderX + 6, renderY - 32); ctxEnt.lineTo(renderX, renderY - 22);
                     ctxEnt.fill(); ctxEnt.shadowBlur = 0;
                 }
             }
@@ -346,8 +416,7 @@
 
         class Projectile {
             constructor(x, y, vx, vy) {
-                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
-                this.active = true; this.radius = 4;
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.active = true; this.radius = 4;
             }
             update() {
                 if (!this.active) return;
@@ -358,13 +427,10 @@
             explode() {
                 this.active = false; let expRadius = 45;
                 explodeTerrain(this.x, this.y, expRadius);
-                
                 for(let i=0; i<35; i++) {
-                    let angle = Math.random() * Math.PI * 2;
-                    let speed = Math.random() * 6 + 2;
+                    let angle = Math.random() * Math.PI * 2; let speed = Math.random() * 6 + 2;
                     particles.push(new Particle(this.x, this.y, Math.cos(angle)*speed, Math.sin(angle)*speed, "#ff5500", Math.random()*4+2, 40));
                 }
-
                 worms.forEach(w => {
                     let dist = Math.hypot(w.x - this.x, w.y - this.y);
                     if (dist < expRadius + 15 && !w.isDead) {
@@ -377,59 +443,41 @@
                         updateUI();
                     }
                 });
-                
                 setTimeout(() => { retreatFrames = 0; nextTurn(); }, 1500);
             }
             draw() {
                 if (!this.active) return;
-                ctxEnt.fillStyle = "#fff"; ctxEnt.beginPath();
-                ctxEnt.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2); ctxEnt.fill();
+                ctxEnt.fillStyle = "#fff"; ctxEnt.beginPath(); ctxEnt.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2); ctxEnt.fill();
             }
         }
 
         class Particle {
-            constructor(x, y, vx, vy, color, size, life) {
-                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
-                this.color = color; this.size = size; this.life = life; this.maxLife = life;
-            }
+            constructor(x, y, vx, vy, color, size, life) { this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = life; this.maxLife = life; }
             update() { this.x += this.vx; this.y += this.vy; this.life--; }
-            draw() {
-                ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife;
-                ctxEnt.fillRect(this.x - camera.x, this.y - camera.y, this.size, this.size);
-                ctxEnt.globalAlpha = 1;
-            }
+            draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife; ctxEnt.fillRect(this.x - camera.x, this.y - camera.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
         }
 
-        let worms = [];
-        let projectile = null;
-        let particles = [];
-        let isDragging = false;
+        let worms = []; let projectile = null; let particles = []; let isDragging = false;
         let dragStartX = 0, dragStartY = 0, dragCurrentX = 0, dragCurrentY = 0;
 
         function startGame(mode) {
             gameMode = mode;
+            document.getElementById('online-menu').classList.add('hidden');
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('ui-layer').classList.remove('hidden');
             
             generateTerrain();
-            
-            // Placement écarté dans le grand monde
-            worms = [
-                new Slime(200, 100, 1, 1, 'var(--p1)'),
-                new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)')
-            ];
+            worms = [new Slime(200, 100, 1, 1, 'var(--p1)'), new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)')];
             
             currentPlayer = 1; gameState = 'playing'; retreatFrames = 0;
-            camera.x = worms[0].x - WIDTH / 2; // Init camera sur J1
+            camera.x = worms[0].x - WIDTH / 2; 
             updateUI();
-            
             requestAnimationFrame(gameLoop);
         }
 
         function updateUI() {
             document.getElementById('hp-p1').style.width = worms[0].hp + '%';
             document.getElementById('hp-p2').style.width = worms[1].hp + '%';
-            
             let turnInd = document.getElementById('turn-indicator');
             turnInd.innerText = `Tour J${currentPlayer}`;
             turnInd.style.color = currentPlayer === 1 ? 'var(--p1)' : 'var(--p2)';
@@ -438,25 +486,18 @@
 
         function nextTurn() {
             checkWin(); if (gameState === 'end') return;
-            
             currentPlayer = currentPlayer === 1 ? 2 : 1;
             if (worms[currentPlayer-1].isDead) currentPlayer = currentPlayer === 1 ? 2 : 1; 
-            
             gameState = 'playing'; projectile = null; updateUI();
-
-            if (gameMode === 'ai' && currentPlayer === 2 && !worms[1].isDead) {
-                setTimeout(playAITurn, 1000);
-            }
+            if (gameMode === 'ai' && currentPlayer === 2 && !worms[1].isDead) setTimeout(playAITurn, 1000);
         }
 
         function playAITurn() {
             let ai = worms[1]; let target = worms[0];
             ai.facing = (target.x < ai.x) ? 'l' : 'r';
-            
             let dx = target.x - ai.x; let dy = (target.y - ai.y) - 60; 
             let angle = Math.atan2(dy, dx);
             let power = Math.min(Math.abs(dx) * 0.015 + 4, 18); 
-
             projectile = new Projectile(ai.x, ai.y - 10, Math.cos(angle) * power, Math.sin(angle) * power);
             gameState = 'flying'; retreatFrames = 0; 
         }
@@ -468,27 +509,24 @@
                 winnerText.style.color = worms[1].isDead ? 'var(--p1)' : 'var(--p2)';
                 winnerText.innerText = worms[1].isDead ? "JOUEUR 1 GAGNE" : "JOUEUR 2 GAGNE";
                 if(worms[0].isDead && worms[1].isDead) { winnerText.innerText = "ÉGALITÉ"; winnerText.style.color="#fff"; }
-                
                 setTimeout(() => { document.getElementById('game-over').classList.remove('hidden'); }, 1500);
             }
         }
 
-        // --- VISÉE ADAPTÉE AU MONDE ---
+        // --- VISÉE ---
         const gameWrapper = document.getElementById('game-wrapper');
 
         function startAim(e) {
             if (gameState !== 'playing' || (gameMode === 'ai' && currentPlayer === 2)) return;
-            e.stopPropagation();
+            if (gameMode === 'online' && currentPlayer !== myPlayerId) return; // Bloqué si ce n'est pas nous
             
+            e.stopPropagation();
             let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            let scaleX = canvasEnt.width / rect.width;
             
-            // On ajoute la position de la caméra pour avoir le point du MONDE
-            dragStartX = ((clientX - rect.left) * scaleX) + camera.x;
+            dragStartX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) + camera.x;
             dragStartY = ((clientY - rect.top) * (canvasEnt.height / rect.height)); 
-            
             isDragging = true;
             worms[currentPlayer - 1].state = 'idle'; 
         }
@@ -496,103 +534,117 @@
         function moveAim(e) {
             if (!isDragging) return;
             e.stopPropagation(); e.preventDefault();
-            
             let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            let scaleX = canvasEnt.width / rect.width;
             
-            dragCurrentX = ((clientX - rect.left) * scaleX) + camera.x;
+            dragCurrentX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) + camera.x;
             dragCurrentY = ((clientY - rect.top) * (canvasEnt.height / rect.height));
-
             worms[currentPlayer - 1].facing = (dragStartX - dragCurrentX > 0) ? 'r' : 'l';
         }
 
         function endAim(e) {
             if (!isDragging) return;
             isDragging = false; e.stopPropagation();
-            
             let activeWorm = worms[currentPlayer - 1];
-            let dx = dragStartX - dragCurrentX;
-            let dy = dragStartY - dragCurrentY;
+            let dx = dragStartX - dragCurrentX; let dy = dragStartY - dragCurrentY;
             let power = Math.min(Math.hypot(dx, dy) * 0.1, 18);
             let angle = Math.atan2(dy, dx);
             
             if (power > 2) {
-                projectile = new Projectile(activeWorm.x, activeWorm.y - 15, Math.cos(angle) * power, Math.sin(angle) * power);
+                let vx = Math.cos(angle) * power; let vy = Math.sin(angle) * power;
+                projectile = new Projectile(activeWorm.x, activeWorm.y - 15, vx, vy);
                 gameState = 'flying'; retreatFrames = 60; 
+                
+                // Envoi de l'action de tir à l'adversaire
+                if (conn && conn.open) {
+                    conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy });
+                }
             }
         }
 
         gameWrapper.addEventListener('mousedown', startAim); window.addEventListener('mousemove', moveAim); window.addEventListener('mouseup', endAim);
         gameWrapper.addEventListener('touchstart', startAim, {passive: false}); window.addEventListener('touchmove', moveAim, {passive: false}); window.addEventListener('touchend', endAim);
 
-        // --- GESTION CAMERA & BOUCLE JEU ---
+        // --- CAMERA ET RADAR ---
         function updateCamera() {
             let targetX = camera.x;
-            
-            // 1. Contrôle Souris (Zone sur les bords de l'écran)
             manualCameraControl = false;
             if (mouseScreenX < 50) { targetX = camera.x - 15; manualCameraControl = true; }
             if (mouseScreenX > WIDTH - 50) { targetX = camera.x + 15; manualCameraControl = true; }
 
-            // 2. Tracking auto (Seulement si l'humain ne force pas la vue avec la souris)
             if (!manualCameraControl) {
-                if (projectile && projectile.active) {
-                    targetX = projectile.x - WIDTH / 2; // Suit la roquette
-                } else if (!isDragging && worms[currentPlayer - 1]) {
-                    targetX = worms[currentPlayer - 1].x - WIDTH / 2; // Suit le joueur actif
-                }
+                if (projectile && projectile.active) targetX = projectile.x - WIDTH / 2;
+                else if (!isDragging && worms[currentPlayer - 1]) targetX = worms[currentPlayer - 1].x - WIDTH / 2; 
             }
-            
-            // Interpolation douce
             camera.x += (targetX - camera.x) * 0.1;
-            
-            // Bloque la caméra aux limites de la map
             camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH - WIDTH));
+        }
+
+        function drawRadar() {
+            // Cible = Le joueur qui ne joue PAS actuellement (ou l'ennemi en multi)
+            let enemy = worms[currentPlayer === 1 ? 1 : 0];
+            if (enemy.isDead) return;
+
+            let screenX = enemy.x - camera.x;
+            let screenY = enemy.y - camera.y;
+
+            // Si l'ennemi est hors écran (gauche, droite, haut, bas)
+            if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
+                // Point d'ancrage sur le bord de l'écran
+                let radarX = Math.max(20, Math.min(WIDTH - 20, screenX));
+                let radarY = Math.max(20, Math.min(HEIGHT - 20, screenY));
+
+                // On dessine le triangle
+                ctxEnt.save();
+                ctxEnt.translate(radarX, radarY);
+                // Angle vers l'ennemi
+                let angle = Math.atan2(screenY - HEIGHT/2, screenX - WIDTH/2);
+                ctxEnt.rotate(angle);
+
+                ctxEnt.fillStyle = enemy.color;
+                ctxEnt.shadowBlur = 15;
+                ctxEnt.shadowColor = enemy.color;
+                ctxEnt.beginPath();
+                ctxEnt.moveTo(15, 0); // Pointe avant
+                ctxEnt.lineTo(-10, 10);
+                ctxEnt.lineTo(-10, -10);
+                ctxEnt.fill();
+                ctxEnt.restore();
+            }
         }
 
         function gameLoop() {
             if (gameState === 'menu') return;
-            
             if (retreatFrames > 0) retreatFrames--;
 
+            syncPlayerState(); // Synchro réseau constante si c'est notre tour
             updateCamera();
 
-            // Rendu Terrain
             ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
-            // On découpe la partie de la carte visible par la caméra dans le OffscreenCanvas
             ctxTerrain.drawImage(offscreenTerrain, camera.x, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT);
-
-            // Rendu Entités
             ctxEnt.clearRect(0, 0, WIDTH, HEIGHT);
 
             worms.forEach(w => { w.update(); w.draw(); });
 
-            // Dessin de la Ligne de Visée
             if (gameState === 'playing' && isDragging) {
                 let activeWorm = worms[currentPlayer - 1];
-                let dx = dragStartX - dragCurrentX;
-                let dy = dragStartY - dragCurrentY;
+                let dx = dragStartX - dragCurrentX; let dy = dragStartY - dragCurrentY;
                 let power = Math.min(Math.hypot(dx, dy), 180);
                 let angle = Math.atan2(dy, dx);
-                
-                let startX = activeWorm.x - camera.x;
-                let startY = activeWorm.y - camera.y - 15;
-                
-                ctxEnt.beginPath();
-                ctxEnt.moveTo(startX, startY);
-                ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
+                let startX = activeWorm.x - camera.x; let startY = activeWorm.y - camera.y - 15;
+                ctxEnt.beginPath(); ctxEnt.moveTo(startX, startY); ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
                 ctxEnt.strokeStyle = currentPlayer === 1 ? "rgba(0, 240, 255, 0.7)" : "rgba(255, 0, 127, 0.7)";
                 ctxEnt.lineWidth = 3; ctxEnt.setLineDash([8, 8]); ctxEnt.stroke(); ctxEnt.setLineDash([]);
             }
 
             if (projectile) { projectile.update(); projectile.draw(); }
-
             for (let i = particles.length - 1; i >= 0; i--) {
                 particles[i].update(); particles[i].draw();
                 if (particles[i].life <= 0) particles.splice(i, 1);
             }
+
+            drawRadar(); // On dessine le radar en dernier pour qu'il soit au-dessus de tout
 
             requestAnimationFrame(gameLoop);
         }
@@ -607,45 +659,31 @@
             "../worms/index.html"
         ];
 
-        let globalStartX = 0, globalStartY = 0;
-        let globalEndX = 0, globalEndY = 0;
-        const swipeThreshold = 75;
+        let globalStartX = 0, globalStartY = 0; let globalEndX = 0, globalEndY = 0; const swipeThreshold = 75;
 
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
-            let currentIndex = gamesHubList.findIndex(game => {
-                let folderName = game.split('/')[1]; 
-                return currentPath.includes(folderName);
-            });
+            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
             if (currentIndex === -1) return;
-            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
-            window.location.href = gamesHubList[nextIndex];
+            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
         }
 
         function handleGlobalSwipe() {
-            let diffX = globalEndX - globalStartX;
-            let diffY = globalEndY - globalStartY;
-            
-            if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
-                if (diffX > 0) navigateGames(-1); 
-                else navigateGames(1); 
-            }
+            let diffX = globalEndX - globalStartX; let diffY = globalEndY - globalStartY;
+            if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) navigateGames(diffX > 0 ? -1 : 1); 
         }
 
         function initSwipe(e, x, y) {
             if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return;
             globalStartX = x; globalStartY = y;
         }
-
         function endSwipe(e, x, y) {
             if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return;
-            globalEndX = x; globalEndY = y;
-            handleGlobalSwipe();
+            globalEndX = x; globalEndY = y; handleGlobalSwipe();
         }
 
         document.addEventListener('touchstart', e => initSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
         document.addEventListener('touchend', e => endSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
-        
         document.addEventListener('mousedown', e => initSwipe(e, e.screenX, e.screenY));
         document.addEventListener('mouseup', e => endSwipe(e, e.screenX, e.screenY));
     </script>
