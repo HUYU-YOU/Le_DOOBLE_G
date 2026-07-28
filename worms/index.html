@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Slimes Artillery (Worms-like)</title>
-    <!-- Chargement de PeerJS pour le Multijoueur WebRTC -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
@@ -47,7 +46,7 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .hidden { display: none !important; }
         
-        #conn-status { margin-top: 15px; color: var(--sys); font-weight: bold; }
+        #conn-status { margin-top: 20px; font-weight: bold; font-size: 1.1em; transition: 0.3s; }
 
         @media (max-width: 800px) {
             #game-wrapper { height: 70vh; border-radius: 0; border: none; }
@@ -91,23 +90,22 @@
 
         <!-- MENU MULTIJOUEUR WEBRTC -->
         <div id="online-menu" class="menu-overlay hidden">
-            <h2>Lobby Multijoueur</h2>
+            <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR</h2>
             
-            <!-- SECTION HOTE -->
-            <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center;">
-                <button class="btn" onclick="hostGame()">1. Héberger une partie</button>
-                <p>Code de votre partie : <b id="lobby-code-display" style="color: var(--p1); font-size:1.5em; letter-spacing:3px;">---</b></p>
+            <!-- HOTE -->
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 300px;">
+                <button class="btn" style="min-width: 200px; padding: 10px;" onclick="hostGame()">1. Héberger</button>
+                <p style="margin-top: 15px;">Code de votre partie : <br><b id="lobby-code-display" style="color: var(--p1); font-size:2em; letter-spacing:4px;">...</b></p>
             </div>
 
-            <!-- SECTION REJOINDRE -->
-            <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; border: 1px solid var(--p2); text-align: center;">
-                <input type="text" id="join-code-input" placeholder="Code de l'hôte..." style="padding: 10px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; margin-bottom: 10px; width: 200px;">
-                <br>
-                <button class="btn btn-pink" onclick="joinGame()">2. Rejoindre</button>
+            <!-- REJOINDRE -->
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); text-align: center; width: 300px;">
+                <input type="text" id="join-code-input" placeholder="Code de l'hôte..." style="padding: 12px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase;">
+                <button class="btn btn-pink" style="min-width: 200px; padding: 10px; margin-top: 15px;" onclick="joinGame()">2. Rejoindre</button>
             </div>
 
             <div id="conn-status"></div>
-            <button class="btn" style="border-color:#555; color:#aaa; margin-top: 30px;" onclick="hideOnlineMenu()">Retour</button>
+            <button class="btn" style="border-color:#555; color:#aaa; margin-top: 30px; background: transparent;" onclick="hideOnlineMenu()">Retour</button>
         </div>
 
         <div id="game-over" class="menu-overlay hidden">
@@ -148,57 +146,90 @@
         // --- GESTION MULTIJOUEUR (PEERJS) ---
         let peer = null;
         let conn = null;
-        let isHost = false;
-        let myPlayerId = 1; // 1 pour Hote, 2 pour Client
+        let myPlayerId = 1;
 
         function showOnlineMenu() { document.getElementById('online-menu').classList.remove('hidden'); }
-        function hideOnlineMenu() { document.getElementById('online-menu').classList.add('hidden'); }
+        function hideOnlineMenu() { 
+            document.getElementById('online-menu').classList.add('hidden');
+            if (peer) { peer.destroy(); peer = null; }
+            document.getElementById('conn-status').innerText = "";
+            document.getElementById('lobby-code-display').innerText = "...";
+        }
 
         function hostGame() {
+            if (peer) peer.destroy();
             let status = document.getElementById('conn-status');
+            status.style.color = "var(--sys)";
             status.innerText = "Création du serveur local...";
-            let code = 'SLM' + Math.floor(Math.random() * 10000);
             
-            peer = new Peer(code); // On force l'ID
+            // Génération d'un code court à 4 chiffres facile à taper
+            let code = 'SLM' + Math.floor(1000 + Math.random() * 9000);
+            
+            peer = new Peer(code);
             
             peer.on('open', (id) => {
                 document.getElementById('lobby-code-display').innerText = id;
                 status.innerText = "En attente d'un adversaire...";
-                isHost = true;
                 myPlayerId = 1;
             });
 
             peer.on('connection', (connection) => {
                 conn = connection;
-                setupConnection();
-                status.innerText = "Adversaire connecté ! Lancement...";
-                setTimeout(() => startGame('online'), 1000);
+                // FIX CRUCIAL : Attendre l'ouverture réelle du canal de données
+                conn.on('open', () => {
+                    setupConnection();
+                    status.innerText = "Adversaire connecté ! Lancement...";
+                    setTimeout(() => startGame('online'), 1000);
+                });
+            });
+
+            peer.on('error', (err) => {
+                console.error(err);
+                status.style.color = "var(--p2)";
+                status.innerText = "Erreur réseau : " + err.type;
             });
         }
 
         function joinGame() {
-            let code = document.getElementById('join-code-input').value.trim();
+            let code = document.getElementById('join-code-input').value.trim().toUpperCase();
             if(!code) return alert("Veuillez entrer un code.");
+            if (peer) peer.destroy();
             
             let status = document.getElementById('conn-status');
+            status.style.color = "var(--p1)";
             status.innerText = "Connexion à " + code + "...";
             
             peer = new Peer();
+            
             peer.on('open', () => {
-                conn = peer.connect(code);
+                conn = peer.connect(code, { reliable: true });
+                
                 conn.on('open', () => {
                     setupConnection();
-                    isHost = false;
                     myPlayerId = 2;
+                    status.style.color = "var(--sys)";
                     status.innerText = "Connecté ! Lancement...";
                     setTimeout(() => startGame('online'), 1000);
                 });
+
+                conn.on('error', (err) => {
+                    status.style.color = "var(--p2)";
+                    status.innerText = "La connexion a échoué.";
+                });
+            });
+
+            peer.on('error', (err) => {
+                status.style.color = "var(--p2)";
+                if (err.type === 'peer-unavailable') {
+                    status.innerText = "La partie " + code + " n'existe pas.";
+                } else {
+                    status.innerText = "Erreur : " + err.type;
+                }
             });
         }
 
         function setupConnection() {
             conn.on('data', (data) => {
-                // Synchronisation des positions et actions de l'adversaire
                 if(data.type === 'sync' && gameState === 'playing') {
                     let enemy = worms[myPlayerId === 1 ? 1 : 0];
                     enemy.x = data.x;
@@ -226,7 +257,7 @@
             }
         }
 
-        // --- ASSETS ---
+        // --- ASSETS PRELOADER ---
         const sprites = {};
         const imagesToLoad = {
             map: 'img/map1.png',
@@ -245,7 +276,7 @@
         let loadedCount = 0; let totalImages = Object.keys(imagesToLoad).length;
         for (let key in imagesToLoad) {
             let img = new Image();
-            img.onerror = () => { console.error(`Asset introuvable : ${imagesToLoad[key]}`); onLoadComplete(); };
+            img.onerror = () => { console.error(`Asset manquant : ${imagesToLoad[key]}`); onLoadComplete(); };
             img.onload = onLoadComplete; img.src = imagesToLoad[key]; sprites[key] = img;
         }
 
@@ -258,7 +289,7 @@
             }
         }
 
-        // --- CONTRÔLES ---
+        // --- INPUTS ---
         const keys = { left: false, right: false, space: false };
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
@@ -276,6 +307,7 @@
             mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width);
         });
 
+        // --- TERRAIN ---
         function generateTerrain() {
             ctxOffTerrain.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
             if (mapImage.complete && mapImage.naturalWidth > 0) ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -295,7 +327,7 @@
             ctxOffTerrain.globalCompositeOperation = 'source-over';
         }
 
-        // --- ENTITÉS & STATE MACHINE ANIMATION ---
+        // --- MOTEUR PHYSIQUE & ANIMATION ---
         class Slime {
             constructor(x, y, id, type, color) {
                 this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
@@ -305,7 +337,7 @@
                 this.state = 'idle'; // idle, walk, air, landed
                 this.animFrame = 1; 
                 this.animTimer = 0; 
-                this.landTimer = 0; // Temps pour afficher l'impact au sol
+                this.landTimer = 0; 
                 this.isOnGround = false;
             }
 
@@ -313,12 +345,10 @@
                 if (this.isDead) return;
                 
                 let isMyTurn = (currentPlayer === this.id);
-                // Bloque le controle si on est en ligne et que ce n'est pas NOTRE tour
                 if (gameMode === 'online' && currentPlayer !== myPlayerId) isMyTurn = false;
-                
                 let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0)) && !(gameMode === 'ai' && this.id === 2);
                 
-                // --- GESTION INPUTS ---
+                // Contrôles
                 if (canMove && !isDragging) {
                     if (keys.left) { this.vx = -1.5; this.facing = 'l'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
                     else if (keys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
@@ -327,8 +357,8 @@
                     if (keys.space && this.isOnGround) {
                         this.vy = -6.5; 
                         this.isOnGround = false;
-                        this.state = 'air'; // Décollage (Frame 2)
-                        this.animFrame = 2; 
+                        this.state = 'air'; 
+                        this.animFrame = 2; // Frame décollage
                         keys.space = false;
                     }
                 } else if (!canMove && this.isOnGround) {
@@ -337,7 +367,7 @@
                     if (this.state === 'walk') this.state = 'idle';
                 }
 
-                // --- COLLISIONS X ---
+                // Collisions et Pentes
                 if (this.vx !== 0) {
                     let nextX = this.x + this.vx;
                     let step = 0; let maxStep = 6; 
@@ -349,37 +379,36 @@
                 this.vy += GRAVITY;
                 this.y += this.vy;
 
-                // --- COLLISIONS Y & ATTERRISSAGE ---
+                // Sol
                 this.isOnGround = false;
                 if (isSolid(this.x, this.y + this.radius)) {
-                    // Si on vient de toucher le sol après un saut/chute
                     if (this.state === 'air') {
-                        this.state = 'landed'; // Atterrissage (Frame 3)
-                        this.landTimer = 15; // Reste écrasé ~250ms
+                        this.state = 'landed'; // Frame Atterrissage
+                        this.landTimer = 15; // Maintien l'effet d'écrasement 1/4 sec
                     }
                     this.vy = 0; 
                     this.isOnGround = true;
                     while(isSolid(this.x, this.y + this.radius - 1)) this.y -= 1;
                 } else if (this.vy !== 0) {
-                    this.state = 'air'; // Force l'état air si on tombe dans un trou
+                    this.state = 'air';
                 }
 
-                // --- MOTEUR D'ANIMATION PRECIS ---
+                // Machine à état d'animation rigoureuse
                 if (this.state === 'walk') {
                     this.animTimer++;
-                    if (this.animTimer > 6) { // Vitesse marche
+                    if (this.animTimer > 6) {
                         this.animFrame++;
-                        if (this.animFrame > 3) this.animFrame = 1; // Boucle 1, 2, 3
+                        if (this.animFrame > 3) this.animFrame = 1;
                         this.animTimer = 0;
                     }
                 } else if (this.state === 'air') {
-                    this.animFrame = 2; // Bloqué en l'air
+                    this.animFrame = 2; 
                 } else if (this.state === 'landed') {
-                    this.animFrame = 3; // Bloqué écrasé
+                    this.animFrame = 3; 
                     this.landTimer--;
-                    if (this.landTimer <= 0) this.state = 'idle'; // Retour au calme
+                    if (this.landTimer <= 0) this.state = 'idle'; 
                 } else {
-                    this.animFrame = 1; // Idle = Frame 1
+                    this.animFrame = 1; // Idle
                 }
 
                 if (this.y > WORLD_HEIGHT + 50) { this.hp = 0; this.isDead = true; checkWin(); }
@@ -518,7 +547,7 @@
 
         function startAim(e) {
             if (gameState !== 'playing' || (gameMode === 'ai' && currentPlayer === 2)) return;
-            if (gameMode === 'online' && currentPlayer !== myPlayerId) return; // Bloqué si ce n'est pas nous
+            if (gameMode === 'online' && currentPlayer !== myPlayerId) return; 
             
             e.stopPropagation();
             let rect = canvasEnt.getBoundingClientRect();
@@ -556,7 +585,6 @@
                 projectile = new Projectile(activeWorm.x, activeWorm.y - 15, vx, vy);
                 gameState = 'flying'; retreatFrames = 60; 
                 
-                // Envoi de l'action de tir à l'adversaire
                 if (conn && conn.open) {
                     conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy });
                 }
@@ -582,34 +610,24 @@
         }
 
         function drawRadar() {
-            // Cible = Le joueur qui ne joue PAS actuellement (ou l'ennemi en multi)
             let enemy = worms[currentPlayer === 1 ? 1 : 0];
             if (enemy.isDead) return;
 
             let screenX = enemy.x - camera.x;
             let screenY = enemy.y - camera.y;
 
-            // Si l'ennemi est hors écran (gauche, droite, haut, bas)
             if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
-                // Point d'ancrage sur le bord de l'écran
                 let radarX = Math.max(20, Math.min(WIDTH - 20, screenX));
                 let radarY = Math.max(20, Math.min(HEIGHT - 20, screenY));
 
-                // On dessine le triangle
                 ctxEnt.save();
                 ctxEnt.translate(radarX, radarY);
-                // Angle vers l'ennemi
                 let angle = Math.atan2(screenY - HEIGHT/2, screenX - WIDTH/2);
                 ctxEnt.rotate(angle);
 
                 ctxEnt.fillStyle = enemy.color;
-                ctxEnt.shadowBlur = 15;
-                ctxEnt.shadowColor = enemy.color;
-                ctxEnt.beginPath();
-                ctxEnt.moveTo(15, 0); // Pointe avant
-                ctxEnt.lineTo(-10, 10);
-                ctxEnt.lineTo(-10, -10);
-                ctxEnt.fill();
+                ctxEnt.shadowBlur = 15; ctxEnt.shadowColor = enemy.color;
+                ctxEnt.beginPath(); ctxEnt.moveTo(15, 0); ctxEnt.lineTo(-10, 10); ctxEnt.lineTo(-10, -10); ctxEnt.fill();
                 ctxEnt.restore();
             }
         }
@@ -618,7 +636,7 @@
             if (gameState === 'menu') return;
             if (retreatFrames > 0) retreatFrames--;
 
-            syncPlayerState(); // Synchro réseau constante si c'est notre tour
+            syncPlayerState();
             updateCamera();
 
             ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
@@ -644,8 +662,7 @@
                 if (particles[i].life <= 0) particles.splice(i, 1);
             }
 
-            drawRadar(); // On dessine le radar en dernier pour qu'il soit au-dessus de tout
-
+            drawRadar();
             requestAnimationFrame(gameLoop);
         }
     </script>
