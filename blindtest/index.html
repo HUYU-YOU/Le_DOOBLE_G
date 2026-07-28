@@ -549,9 +549,7 @@
         }
     </script>
     
-    <!-- ========================================== -->
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
-    <!-- ========================================== -->
+
     <script>
         const gamesHubList = [
             "../cybertank/index.html",
@@ -562,16 +560,31 @@
             "../drawer/index.html",
             "../texas_poker/index.html",
             "../blindtest/index.html",
-            "../2048slime/index.html"
+            "../2048slime/index.html",
+            "../worms/index.html"
         ];
 
-        let touchstartX = 0;
-        let touchendX = 0;
+        let globalTouchStartX = 0;
+        let globalTouchStartY = 0;
+        let globalTouchEndX = 0;
+        let globalTouchEndY = 0;
         
         function handleSwipeGesture() {
             const swipeThreshold = 75; 
-            if (touchendX < touchstartX - swipeThreshold) navigateGames(1);
-            if (touchendX > touchstartX + swipeThreshold) navigateGames(-1);
+            
+            let diffX = globalTouchEndX - globalTouchStartX;
+            let diffY = globalTouchEndY - globalTouchStartY;
+
+            // On vérifie quel axe a eu le plus grand mouvement (pour ne pas déclencher en diagonale)
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                // Swipe Horizontal (Gauche / Droite)
+                if (diffX < -swipeThreshold) navigateGames(1);       // Swipe Gauche -> Suivant
+                else if (diffX > swipeThreshold) navigateGames(-1);  // Swipe Droite -> Précédent
+            } else {
+                // Swipe Vertical (Haut / Bas)
+                if (diffY < -swipeThreshold) navigateGames(1);       // Swipe Haut -> Suivant
+                else if (diffY > swipeThreshold) navigateGames(-1);  // Swipe Bas -> Précédent
+            }
         }
 
         function navigateGames(direction) {
@@ -580,19 +593,33 @@
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
             });
+            
             if (currentIndex === -1) return;
+            
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
             window.location.href = gamesHubList[nextIndex];
         }
 
+        // Fonction pour vérifier si on touche un élément avec lequel on interagit dans le jeu
+        function isExcludedElement(target) {
+            const tag = target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
+            if (target.closest('#game-container') || target.closest('#game-wrapper')) return true;
+            return false;
+        }
+
         document.addEventListener('touchstart', e => {
-            if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button') return;
-            touchstartX = e.changedTouches[0].screenX;
+            if (isExcludedElement(e.target)) return;
+            
+            globalTouchStartX = e.changedTouches[0].screenX;
+            globalTouchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
 
         document.addEventListener('touchend', e => {
-            if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button') return;
-            touchendX = e.changedTouches[0].screenX;
+            if (isExcludedElement(e.target)) return;
+            
+            globalTouchEndX = e.changedTouches[0].screenX;
+            globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
         }, { passive: true });
     </script>
