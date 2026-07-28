@@ -123,12 +123,6 @@
                 <canvas id="drawCanvas" width="800" height="450"></canvas>
                 <img id="gartic-image">
                 
-                <div class="overlay" id="action-overlay" style="display:none;">
-                    <h2 id="action-title" style="color:var(--cyan);">Action requise</h2>
-                    <input type="text" id="action-input" class="gartic-input" placeholder="...">
-                    <button class="btn" onclick="submitGarticAction()" style="padding:15px 40px; font-size:1.2em;">Validate</button>
-                </div>
-                
                 <div class="overlay" id="wait-overlay" style="display:none; background:rgba(0,0,0,0.95);">
                     <h2 style="color:#fff;">Veuillez patienter...</h2>
                     <p id="wait-desc">En attente des autres joueurs.</p>
@@ -140,6 +134,13 @@
                     <h2 id="winner-name" style="color:var(--cyan); font-size:3em; text-transform:uppercase;"></h2>
                     <p style="color:#fff; font-size:1.5em; margin-top:20px;">Return in lobby in 10 seconds...</p>
                 </div>
+            </div>
+
+            <!-- BUG FIX: LA ZONE D'ACTION EST MAINTENANT SOUS LE CANVAS -->
+            <div id="action-overlay" style="display:none; flex-direction:column; align-items:center; background:var(--panel); padding:20px; border-radius:10px; border:1px solid var(--cyan); margin-top:10px; width: 100%; box-sizing: border-box;">
+                <h2 id="action-title" style="color:var(--cyan); margin-top:0;">Action requise</h2>
+                <input type="text" id="action-input" class="gartic-input" placeholder="..." style="margin: 10px 0; width: 90%;">
+                <button class="btn" onclick="submitGarticAction()" style="padding:15px 40px; font-size:1.2em;">Validate</button>
             </div>
 
             <!-- NOUVELLE BARRE D'OUTILS AVEC LES FORMES ET OUTILS -->
@@ -410,7 +411,8 @@
             let pIndex = state.players.findIndex(x => x.id === peerId);
             if(pIndex === -1) return;
             
-            let chainIndex = (pIndex - state.round + state.players.length) % state.players.length;
+            // BUG FIX: On additionne (+) au lieu de soustraire pour toujours faire tourner vers l'avant !
+            let chainIndex = (pIndex + state.round) % state.players.length;
             let stepType = (state.round % 2 === 0) ? 'text' : 'img';
             
             state.chains[chainIndex].steps.push({ author: state.players[pIndex].name, type: stepType, content: content });
@@ -507,7 +509,8 @@
                     return;
                 }
                 
-                let chainIndex = (myIndex - state.round + state.players.length) % state.players.length;
+                // BUG FIX: Pareil ici, on additionne (+) pour suivre la bonne chaîne.
+                let chainIndex = (myIndex + state.round) % state.players.length;
                 let myChain = state.chains[chainIndex];
                 
                 if(state.round % 2 === 0) {
