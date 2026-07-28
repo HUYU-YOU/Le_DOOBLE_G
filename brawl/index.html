@@ -54,32 +54,25 @@
             <div class="player-hud" id="h4"><div style="font-weight:bold" id="n4">J4</div><div class="percent" id="p4-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p4-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p4-super"></div></div></div>
         </div>
 
-        <!-- MENU PRINCIPAL REVISITÉ -->
         <div class="overlay" id="main-menu">
             <div class="menu-title" style="font-size: 3em; margin-bottom: 20px; color: var(--p1);">CHOOSE YOUR BATTLE</div>
             <button class="btn-main" onclick="openMenu('local')" style="background:var(--p1); font-size: 1.2em; padding: 15px 30px;">🎮 Mode Local (1v1 ou IA)</button>
-            
             <hr style="width: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
             <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px; color: #aaa;">Arènes Multijoueurs</div>
-            
             <button class="btn-main" onclick="prepareNetwork('1v1')" style="background:var(--p2); font-size: 1.2em;">🌐 Réseau (1 VS 1)</button>
             <button class="btn-main" onclick="prepareNetwork('2v2')" style="background:var(--p3); color:#000; font-size: 1.2em;">🛡️ Réseau (2 VS 2 Équipes)</button>
             <button class="btn-main" onclick="prepareNetwork('ffa')" style="background:var(--p4); color:#000; font-size: 1.2em;">⚔️ Réseau (4 Chacun Pour Soi)</button>
         </div>
 
-        <!-- MENU LOCAL (1v1 STRICT) -->
         <div class="overlay" id="local-menu" style="display: none;">
             <div class="menu-title" id="instruction-title">Select player 1</div>
-            
             <button class="btn-main" id="bot-toggle-btn" onclick="toggleBot()" style="background:#555; color:#fff; font-size:1em; padding:8px 20px; margin-bottom:15px; border:2px solid #333;">👤 Contrôlé par : Humain</button>
-
             <div class="selection-grid" id="char-select">
                 <div class="card" onclick="chooseChar('ninja')"><img src="img/ninja_est.png" alt="Ninja"><b>Ninja</b></div>
                 <div class="card" onclick="chooseChar('tank')"><img src="img/sumo_est.png" alt="Brute"><b>Brute</b></div>
                 <div class="card" onclick="chooseChar('gunner')"><img src="img/gunner_est.png" alt="Gunner"><b>Gunner</b></div>
                 <div class="card" onclick="chooseChar('mage')"><img src="img/mage_est.png" alt="Mage"><b>Mage</b></div>
             </div>
-            
             <div id="map-select-container" style="display: none;">
                 <div class="menu-title" style="font-size: 1.2em; margin-top:10px;">Choix de l'Arène</div>
                 <div class="selection-grid">
@@ -89,19 +82,16 @@
                 </div>
             </div>
             <button class="btn-main" id="start-local-btn" style="display:none;" onclick="startLocalGame()">FIGHT !</button>
-            
             <div class="controls-info">
                 <b>Contrôles J1 :</b> A/D (Bouger) | W (Saut) | S (Bas)<br>
-                Q / Clic Gauche (Petit Coup) | E / Clic Droit (Gros Coup)<br>
+                Q / Clic Gauche (Petit Coup) | E / Clic Droit (Gros Coup / Mine / Charge)<br>
                 <b>MAJ (Shift)</b> : Bloquer | <b>R</b> : Attaque Ultime !
             </div>
             <button class="btn-main" style="font-size:0.8em; margin-top:20px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
         </div>
 
-        <!-- MENU RÉSEAU (DYNAMIQUE SELON LE MODE) -->
         <div class="overlay" id="network-menu" style="display: none;">
             <h2 id="net-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px;">Terminal Réseau</h2>
-            
             <div style="margin-bottom: 20px;">
                 <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Ninja</span></div>
                 <div class="selection-grid" id="net-char-grid">
@@ -111,21 +101,17 @@
                     <div class="card" onclick="selectNetChar('mage', this)"><img src="img/mage_est.png"><b>Mage</b></div>
                 </div>
             </div>
-
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
             <button class="btn-main" id="host-btn" onclick="hostGame()">Créer (Héberger)</button>
             <p style="margin: 10px 0;">OU</p>
             <input type="text" id="join-id" placeholder="Coller l'ID de l'Hôte">
             <button class="btn-main" id="join-btn" onclick="joinGame()" style="background:var(--p2);color:#fff;">Rejoindre</button>
             <p id="status-text" style="color: #aaa; margin-top: 10px; font-weight: bold;"></p>
-            
             <button class="btn-main" style="font-size:0.8em; margin-top:10px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
         </div>
 
-        <!-- ECRAN DE FIN AMELIORÉ -->
         <div class="overlay" id="game-over-overlay" style="display: none;">
             <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
-            <!-- Bonton REJOUER sans reload -->
             <button class="btn-main" id="btn-restart" onclick="handleRestart()">Rejouer</button>
             <button class="btn-main" style="background:#333; color:#fff; font-size:0.8em;" onclick="location.reload()">Menu Principal</button>
         </div>
@@ -171,16 +157,16 @@
         canvas.addEventListener('contextmenu', e => e.preventDefault());
 
         function getCtrl(pId) {
-            // Seul l'hôte (J1) utilise le clavier local sur son instance. Les autres envoient leurs touches.
             if (pId === 1) return { left: keys['a'] || keys['arrowleft'], right: keys['d'] || keys['arrowright'], up: keys['w'] || keys['arrowup'], down: keys['s'] || keys['arrowdown'], jump: keys['w'] || keys[' '] || keys['arrowup'], atkL: keys['q'] || keys['mouse_left'], atkH: keys['e'] || keys['mouse_right'], block: keys['shift'], ult: keys['r'] };
             return {left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false, block: false, ult: false};
         }
 
+        // EQUILIBRAGES APPLIQUES ICI
         const charData = {
-            ninja: { skinKey: 'ninja', color: '#00f0ff', w: 50, h: 80, speed: 8.5, jump: -13.5, weight: 0.9, dmg: 3.5, kb: 4.5, isRanged: false },
-            tank: { skinKey: 'sumo', color: '#ff007f', w: 80, h: 100, speed: 4.2, jump: -9.5, weight: 1.7, dmg: 8.0, kb: 8.0, isRanged: false },
-            gunner: { skinKey: 'gunner', color: '#ffbf00', w: 50, h: 80, speed: 6, jump: -12, weight: 0.8, dmg: 3.0, kb: 4.0, isRanged: true },
-            mage: { skinKey: 'mage', color: '#39ff14', w: 55, h: 85, speed: 6.5, jump: -12.5, weight: 1.0, dmg: 5.0, kb: 5.0, isRanged: true }
+            ninja: { skinKey: 'ninja', color: '#00f0ff', w: 50, h: 80, speed: 8.5, jump: -13.5, weight: 0.9, dmg: 3.5, kb: 4.5, isRanged: false, maxJumps: 3 },
+            tank: { skinKey: 'sumo', color: '#ff007f', w: 80, h: 100, speed: 4.2, jump: -9.5, weight: 1.7, dmg: 6.5, kb: 6.5, isRanged: false, maxJumps: 2 },
+            gunner: { skinKey: 'gunner', color: '#ffbf00', w: 50, h: 80, speed: 6, jump: -12, weight: 0.8, dmg: 3.0, kb: 4.0, isRanged: true, maxJumps: 2 },
+            mage: { skinKey: 'mage', color: '#39ff14', w: 55, h: 85, speed: 6.5, jump: -12.5, weight: 1.0, dmg: 5.0, kb: 5.0, isRanged: true, maxJumps: 2 }
         };
         
         const mapData = [
@@ -192,17 +178,16 @@
         let gameMode = null, gameActive = false, players = [], platforms = [], projectiles = [], particles = [], items = [];
         let screenShake = 0, itemSpawnTimer = 0, currentMapIdx = 0, gameLoopId = null;
         let netSelectedChar = 'ninja'; 
-        let netMode = '1v1'; // '1v1', '2v2', 'ffa'
+        let netMode = '1v1'; 
         let maxNetPlayers = 2;
         
-        // --- FONCTION UTILITAIRE : FRIENDLY FIRE ---
         function areEnemies(id1, id2) {
             if (gameMode === 'net_2v2') {
                 let t1 = (id1 === 1 || id1 === 3) ? 1 : 2;
                 let t2 = (id2 === 1 || id2 === 3) ? 1 : 2;
                 return t1 !== t2;
             }
-            return id1 !== id2; // FFA et 1v1
+            return id1 !== id2; 
         }
 
         class Particle {
@@ -226,16 +211,50 @@
         }
 
         class Projectile {
-            constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange) { this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.ownerId = ownerId; this.dmg = dmg; this.kb = kb; this.w = 16; this.h = 16; this.active = true; this.color = color; this.life = isShortRange ? 12 : 60; }
-            draw() { ctx.fillStyle = this.color; ctx.shadowBlur = 8; ctx.shadowColor = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; }
+            constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange, isMine = false) { 
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.ownerId = ownerId; this.dmg = dmg; this.kb = kb; 
+                this.w = 16; this.h = 16; this.active = true; this.color = color; 
+                this.isMine = isMine;
+                this.life = isMine ? 600 : (isShortRange ? 12 : 60); 
+            }
+            draw() { 
+                ctx.fillStyle = this.color; ctx.shadowBlur = 8; ctx.shadowColor = this.color; 
+                ctx.beginPath(); 
+                if (this.isMine) {
+                    // Animation pulsation de la mine
+                    ctx.arc(this.x, this.y, 8 + Math.sin(this.life * 0.2) * 2, 0, Math.PI*2); 
+                    ctx.fillStyle = (Math.floor(this.life / 10) % 2 === 0) ? '#ff0000' : '#ffa500';
+                } else {
+                    ctx.arc(this.x, this.y, 8, 0, Math.PI*2); 
+                }
+                ctx.fill(); ctx.shadowBlur = 0; 
+            }
             update() { 
-                this.x += this.vx; this.y += this.vy; this.life--; 
-                if (this.life <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.active = false; 
+                if (this.isMine) {
+                    this.vy += 0.3; // Gravité de la mine
+                    this.y += this.vy;
+                    this.x += this.vx;
+                    this.life--;
+                    platforms.forEach(p => { 
+                        if (this.y + 8 >= p.y && this.x + 8 > p.x && this.x - 8 < p.x + p.w && this.vy > 0) { 
+                            this.y = p.y - 8; this.vy = 0; this.vx *= 0.8; 
+                        } 
+                    });
+                } else {
+                    this.x += this.vx; this.y += this.vy; this.life--; 
+                }
+                
+                if (this.life <= 0 || this.x < -100 || this.x > canvas.width + 100 || this.y > canvas.height + 100) this.active = false; 
+                
                 players.forEach(pl => { 
-                    // Protection Friendly Fire en 2v2
-                    if (areEnemies(pl.id, this.ownerId) && !pl.isDead && this.active && this.x < pl.x + pl.w && this.x + 16 > pl.x && this.y < pl.y + pl.h && this.y + 16 > pl.y) { 
-                        pl.takeDamage(this.dmg, this.kb, this.vx > 0 ? 1 : -1); 
+                    if (areEnemies(pl.id, this.ownerId) && !pl.isDead && this.active && this.x + 8 > pl.x && this.x - 8 < pl.x + pl.w && this.y + 8 > pl.y && this.y - 8 < pl.y + pl.h) { 
+                        pl.takeDamage(this.dmg, this.kb, this.x > pl.x + pl.w/2 ? -1 : 1); 
                         this.active = false; 
+                        if (this.isMine) { // Grosse explosion mine
+                            for(let i=0; i<15; i++) particles.push(new Particle(this.x, this.y, '#ff0000'));
+                            screenShake = 15;
+                            playSound('shatter');
+                        }
                     } 
                 }); 
             }
@@ -246,18 +265,15 @@
                 this.id = id; this.x = x; this.y = 80; let c = charData[type]; this.w = c.w; this.h = c.h; this.skinKey = c.skinKey;
                 this.colors = ['#00f0ff', '#ff007f', '#39ff14', '#ffbf00']; this.color = this.colors[id - 1];
                 this.speed = c.speed; this.jumpForce = c.jump; this.weight = c.weight; this.baseDmg = c.dmg; this.baseKb = c.kb; this.isRanged = c.isRanged;
-                this.vx = 0; this.vy = 0; this.percent = 0; this.lives = 3; this.jumps = 2; this.grounded = false; this.facing = id % 2 !== 0 ? 1 : -1;
+                this.maxJumps = c.maxJumps || 2; 
+                this.vx = 0; this.vy = 0; this.percent = 0; this.lives = 3; this.jumps = this.maxJumps; this.grounded = false; this.facing = id % 2 !== 0 ? 1 : -1;
                 this.attackTimer = 0; this.invincibleTimer = 120; this.buffType = null; this.buffTimer = 0; this.walkCycle = 0; this.jumpPressed = false; this.atkDirY = 0; this.atkDirX = 0; this.atkIsRanged = false;
                 
-                this.hitstun = 0;
-                this.outOfBoundsTimer = 0;
-                this.isBot = false;
-                
-                this.superMeter = 0;
-                this.isBlocking = false;
-                this.shieldHealth = 100;
-                this.stunTimer = 0; 
-                this.isDead = false; 
+                this.isCharging = false; this.chargeTimer = 0; // Pour la mécanique de la Brute
+                this.customHitW = 0; this.customHitH = 0; this.customHitXOffset = 0; this.customHitYOffset = 0; // Hitbox dynamique
+
+                this.hitstun = 0; this.outOfBoundsTimer = 0; this.isBot = false;
+                this.superMeter = 0; this.isBlocking = false; this.shieldHealth = 100; this.stunTimer = 0; this.isDead = false; 
             }
             
             draw() {
@@ -283,23 +299,71 @@
 
                 if (Math.abs(this.vx) > 0.5 && this.grounded && this.stunTimer === 0) { this.walkCycle += 0.2; ctx.rotate(Math.sin(this.walkCycle) * 0.15); ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); }
                 if (this.attackTimer > 10) { ctx.scale(1.2, 1.2); ctx.rotate(this.facing * 0.2); }
+                
+                // Aura de Charge (Brute)
+                if (this.isCharging) {
+                    ctx.shadowBlur = 15; ctx.shadowColor = '#ff007f';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.w + (this.chargeTimer * 0.3), 0, Math.PI*2);
+                    ctx.strokeStyle = `rgba(255, 0, 127, ${this.chargeTimer/90})`;
+                    ctx.lineWidth = 4; ctx.stroke(); ctx.shadowBlur = 0;
+                }
+
                 if (img && img.complete && img.naturalWidth !== 0) { ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h); } else { ctx.fillStyle = this.color; ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h); }
                 
                 if (this.isBlocking) {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, this.w, 0, Math.PI*2);
-                    ctx.fillStyle = `rgba(0, 240, 255, ${this.shieldHealth/300})`; 
-                    ctx.fill();
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = `rgba(0, 240, 255, ${this.shieldHealth/100})`;
-                    ctx.stroke();
+                    ctx.beginPath(); ctx.arc(0, 0, this.w, 0, Math.PI*2); ctx.fillStyle = `rgba(0, 240, 255, ${this.shieldHealth/300})`; ctx.fill();
+                    ctx.lineWidth = 3; ctx.strokeStyle = `rgba(0, 240, 255, ${this.shieldHealth/100})`; ctx.stroke();
                 }
                 
                 ctx.restore();
 
-                if (this.attackTimer > 10 && !this.atkIsRanged) { ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; if (this.atkDirY === -1) ctx.fillRect(this.x, this.y - 60, this.w, 60); else if (this.atkDirY === 1) ctx.fillRect(this.x, this.y + this.h, this.w, 60); else ctx.fillRect(this.facing === 1 ? this.x + this.w : this.x - 60, this.y + 10, 60, 40); }
+                // Rendu des Hitbox (Normales & Dynamiques)
+                if (this.attackTimer > 10 && !this.atkIsRanged) { 
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; 
+                    if (this.customHitW || this.customHitH) {
+                        let rx = this.x + (this.customHitXOffset || 0); let ry = this.y + (this.customHitYOffset || 0);
+                        let rw = this.customHitW || this.w; let rh = this.customHitH || this.h;
+                        if (this.atkDirY === -1 || this.atkDirY === 1) rw = this.w;
+                        ctx.fillRect(rx, ry, rw, rh);
+                    } else {
+                        if (this.atkDirY === -1) ctx.fillRect(this.x, this.y - 60, this.w, 60); 
+                        else if (this.atkDirY === 1) ctx.fillRect(this.x, this.y + this.h, this.w, 60); 
+                        else ctx.fillRect(this.facing === 1 ? this.x + this.w : this.x - 60, this.y + 10, 60, 40); 
+                    }
+                }
             }
             
+            executeHeavySumo(charge, ctrl) {
+                this.attackTimer = 40; playSound('hit');
+                let mult = 1.5;
+                let rangeBonus = (charge / 90) * 120; // Bonus de portée jusqu'à +120px
+                let dmgBonus = (charge / 90) * 0.5; // Bonus de dégâts jusqu'à +50%
+                
+                let aimX = 0, aimY = 0;
+                if (ctrl.up) aimY = -1; else if (ctrl.down) aimY = 1; else aimX = this.facing;
+                this.atkDirX = aimX; this.atkDirY = aimY; this.atkIsRanged = false;
+                
+                let hitX = this.x, hitY = this.y, hitW = this.w, hitH = this.h;
+                
+                if (aimY === -1) { 
+                    hitY -= (60 + rangeBonus); hitH = 60 + rangeBonus; 
+                    this.customHitW = 0; this.customHitH = hitH; this.customHitYOffset = -(60 + rangeBonus); this.customHitXOffset = 0;
+                } else if (aimY === 1) { 
+                    hitY += this.h; hitH = 60 + rangeBonus; 
+                    this.customHitW = 0; this.customHitH = hitH; this.customHitYOffset = this.h; this.customHitXOffset = 0;
+                } else { 
+                    hitX += (aimX === 1 ? this.w : -(60 + rangeBonus)); hitW = 60 + rangeBonus; 
+                    this.customHitW = hitW; this.customHitH = 0; this.customHitXOffset = (aimX === 1 ? this.w : -(60 + rangeBonus)); this.customHitYOffset = 0;
+                }
+                
+                players.forEach(pl => { 
+                    if (areEnemies(pl.id, this.id) && !pl.isDead && hitX < pl.x + pl.w && hitX + hitW > pl.x && hitY < pl.y + pl.h && hitY + hitH > pl.y) { 
+                        pl.takeDamage(this.baseDmg * mult * (1 + dmgBonus), this.baseKb * mult * (1 + dmgBonus), aimX === 0 ? this.facing : aimX); 
+                    } 
+                });
+            }
+
             update(ctrl) {
                 if (this.isDead) return;
 
@@ -313,31 +377,57 @@
                 } else {
                     this.isBlocking = ctrl.block;
                     if (this.isBlocking) {
-                        this.vx *= 0.5; 
+                        this.vx *= 0.5; this.isCharging = false; this.chargeTimer = 0;
                     } else {
                         if (this.shieldHealth < 100) this.shieldHealth += 0.5; 
                         
-                        if (ctrl.left) { this.vx = -cSpd; this.facing = -1; } 
-                        else if (ctrl.right) { this.vx = cSpd; this.facing = 1; } 
-                        else { this.vx *= 0.8; }
+                        if (ctrl.left) { this.vx = -cSpd; this.facing = -1; } else if (ctrl.right) { this.vx = cSpd; this.facing = 1; } else { this.vx *= 0.8; }
                         
                         if (ctrl.jump) { if (this.jumps > 0 && !this.jumpPressed) { this.vy = cJmp; this.jumps--; this.grounded = false; this.jumpPressed = true; playSound('jump'); } } else { this.jumpPressed = false; }
                         
-                        if (ctrl.ult && this.superMeter >= 150) {
-                            this.superMeter = 0; updateHUD();
-                            this.fireUltimate();
+                        // CHARGE ATTAQUE LOURDE (BRUTE)
+                        if (this.skinKey === 'sumo' && ctrl.atkH && this.attackTimer === 0) {
+                            this.isCharging = true;
+                            this.chargeTimer++;
+                            if (this.chargeTimer >= 90) { // Auto release 1.5s
+                                this.executeHeavySumo(this.chargeTimer, ctrl);
+                                this.isCharging = false; this.chargeTimer = 0;
+                            }
+                            return; // Ignore la suite (mouvements OK mais bloque autres attaques)
+                        } else if (this.isCharging && !ctrl.atkH) {
+                            this.executeHeavySumo(this.chargeTimer, ctrl);
+                            this.isCharging = false; this.chargeTimer = 0;
                         }
-                        else if ((ctrl.atkL || ctrl.atkH) && this.attackTimer === 0) {
+
+                        if (ctrl.ult && this.superMeter >= 150) {
+                            this.superMeter = 0; updateHUD(); this.fireUltimate();
+                        }
+                        else if (!this.isCharging && ((ctrl.atkL || ctrl.atkH) && this.attackTimer === 0)) {
+                            
+                            // ANTI-SPAM (MAGE)
+                            if (this.skinKey === 'mage' && (ctrl.atkL || ctrl.atkH)) {
+                                let myProjs = projectiles.filter(p => p.ownerId === this.id).length;
+                                if (myProjs >= 3) return; // Limite atteinte
+                            }
+
                             let isHeavy = ctrl.atkH; this.attackTimer = isHeavy ? 35 : 20; let mult = (this.buffType === 'dmg' ? 1.8 : 1.0) * (isHeavy ? 1.5 : 1.0);
                             let doRanged = this.isRanged; if (isHeavy) doRanged = !this.isRanged;
                             let aimX = 0, aimY = 0; if (ctrl.up) aimY = -1; else if (ctrl.down) aimY = 1; else aimX = this.facing;
                             this.atkDirX = aimX; this.atkDirY = aimY; this.atkIsRanged = doRanged;
+                            this.customHitW = 0; this.customHitH = 0; // Reset
                             
                             if (doRanged) { 
                                 playSound('shoot'); let px = this.x + this.w / 2; let py = this.y + this.h / 2; let isShortRange = isHeavy && !this.isRanged; let pColor = this.color;
-                                if (isShortRange) { if (this.skinKey === 'ninja') pColor = '#ddd'; if (this.skinKey === 'sumo') pColor = '#ff69b4'; }
-                                let projVx = aimX * 15; let projVy = aimY * 15; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 15;
-                                projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, pColor, isShortRange)); 
+                                if (isShortRange && this.skinKey === 'ninja') pColor = '#ddd'; 
+                                
+                                // MINE (GUNNER)
+                                if (this.skinKey === 'gunner' && isHeavy) {
+                                    let mVx = aimX * 4; let mVy = aimY === 1 ? 2 : (aimY === -1 ? -6 : -4);
+                                    projectiles.push(new Projectile(px, py, mVx, mVy, this.id, this.baseDmg * 2.5, this.baseKb * 1.5, '#ff0000', false, true));
+                                } else {
+                                    let projVx = aimX * 15; let projVy = aimY * 15; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 15;
+                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, pColor, isShortRange)); 
+                                }
                             } else { 
                                 playSound('hit'); let hitX = this.x, hitY = this.y, hitW = this.w, hitH = this.h;
                                 if (aimY === -1) { hitY -= 60; hitH = 60; } else if (aimY === 1) { hitY += this.h; hitH = 60; } else { hitX += (aimX === 1 ? this.w : -60); hitW = 60; }
@@ -352,7 +442,7 @@
                 }
                 
                 if (this.attackTimer > 0) this.attackTimer--; this.vy += 0.55; this.x += this.vx; this.y += this.vy; this.grounded = false;
-                for (let p of platforms) { if (this.vy > 0 && this.x + this.w > p.x && this.x < p.x + p.w && this.y + this.h >= p.y && this.y + this.h <= p.y + this.vy + 2) { this.y = p.y - this.h; this.vy = 0; this.grounded = true; this.jumps = 2; } }
+                for (let p of platforms) { if (this.vy > 0 && this.x + this.w > p.x && this.x < p.x + p.w && this.y + this.h >= p.y && this.y + this.h <= p.y + this.vy + 2) { this.y = p.y - this.h; this.vy = 0; this.grounded = true; this.jumps = this.maxJumps; } }
                 
                 if (this.x < -150 || this.x > canvas.width + 150 || this.y < -300 || this.y > canvas.height + 50) {
                     this.outOfBoundsTimer++;
@@ -388,6 +478,7 @@
                 playSound('death'); 
                 screenShake = 15; 
                 this.lives--; this.percent = 0; this.superMeter = 0; this.buffType = null; this.buffTimer = 0; this.outOfBoundsTimer = 0; this.shieldHealth = 100; this.stunTimer = 0;
+                this.isCharging = false; this.chargeTimer = 0;
                 updateHUD();
                 for (let i = 0; i < 30; i++) particles.push(new Particle(this.x, this.y, this.color));
                 if (this.lives <= 0) { 
@@ -406,9 +497,7 @@
                     this.shieldHealth -= dmg * 6; 
                     if (this.shieldHealth <= 0) {
                         playSound('shatter'); 
-                        this.shieldHealth = 0;
-                        this.stunTimer = 120; 
-                        this.isBlocking = false;
+                        this.shieldHealth = 0; this.stunTimer = 120; this.isBlocking = false;
                         for (let i = 0; i < 20; i++) particles.push(new Particle(this.x + this.w/2, this.y + this.h/2, '#00f0ff'));
                     } else {
                         this.vx = dir * (baseKb * 0.2); 
@@ -427,6 +516,8 @@
                 this.hitstun = Math.min(60, Math.floor(kb * 2.5)); 
                 screenShake = Math.min(25, Math.floor(kb / 1.5));
                 for (let i = 0; i < 12; i++) particles.push(new Particle(this.x + this.w / 2, this.y + this.h / 2, '#fff'));
+                
+                this.isCharging = false; this.chargeTimer = 0; // Annule la charge si frappé
             }
             
             applyBuff(type) { playSound('powerup'); if (type === 'heal') this.percent = Math.max(0, this.percent - 25); else { this.buffType = type; this.buffTimer = 250; } updateHUD(); }
@@ -447,44 +538,26 @@
             
             if (!target) return ctrl;
             
-            let dx = target.x - bot.x;
-            let dy = target.y - bot.y;
-            
-            if (dx > 40) ctrl.right = true;
-            else if (dx < -40) ctrl.left = true;
-            
+            let dx = target.x - bot.x; let dy = target.y - bot.y;
+            if (dx > 40) ctrl.right = true; else if (dx < -40) ctrl.left = true;
             if (dy < -50 && Math.random() < 0.05) ctrl.jump = true;
             
             let platformBelow = platforms.some(p => bot.x > p.x - 20 && bot.x < p.x + p.w + 20 && p.y > bot.y);
-            if (!platformBelow || bot.y > 400) {
-                if (bot.vy > 0) ctrl.jump = true;
-                if (bot.x < 100) ctrl.right = true;
-                if (bot.x > 700) ctrl.left = true;
-            }
+            if (!platformBelow || bot.y > 400) { if (bot.vy > 0) ctrl.jump = true; if (bot.x < 100) ctrl.right = true; if (bot.x > 700) ctrl.left = true; }
             
-            if (minDist < 100 && target.attackTimer > 0 && bot.shieldHealth > 30 && Math.random() < 0.4) {
-                ctrl.block = true;
-                ctrl.right = false; ctrl.left = false;
-            }
-            
-            if (bot.superMeter >= 150 && minDist < 300) {
-                ctrl.ult = true;
-            }
+            if (minDist < 100 && target.attackTimer > 0 && bot.shieldHealth > 30 && Math.random() < 0.4) { ctrl.block = true; ctrl.right = false; ctrl.left = false; }
+            if (bot.superMeter >= 150 && minDist < 300) { ctrl.ult = true; }
             
             if (!ctrl.block && minDist < (bot.isRanged ? 300 : 70) && Math.random() < (bot.isRanged ? 0.05 : 0.15)) {
                 if (Math.random() < 0.3) ctrl.atkH = true; else ctrl.atkL = true;
             }
-            
             return ctrl;
         }
 
         // --- GESTION DES MENUS ---
         function openMenu(type) {
             document.getElementById('main-menu').style.display = 'none';
-            if (type === 'local') { 
-                document.getElementById('local-menu').style.display = 'flex'; 
-                gameMode = 'local'; 
-            } 
+            if (type === 'local') { document.getElementById('local-menu').style.display = 'flex'; gameMode = 'local'; } 
         }
 
         function prepareNetwork(mode) {
@@ -507,16 +580,11 @@
 
         function updateHUD() {
             players.forEach(pl => { 
-                let pctEl = document.getElementById(`p${pl.id}-pct`); 
-                let lEl = document.getElementById(`p${pl.id}-l`); 
-                let superEl = document.getElementById(`p${pl.id}-super`);
+                let pctEl = document.getElementById(`p${pl.id}-pct`); let lEl = document.getElementById(`p${pl.id}-l`); let superEl = document.getElementById(`p${pl.id}-super`);
                 if (pctEl && lEl && superEl) { 
-                    pctEl.innerText = Math.floor(pl.percent) + "%"; 
-                    lEl.innerText = pl.lives; 
+                    pctEl.innerText = Math.floor(pl.percent) + "%"; lEl.innerText = pl.lives; 
                     pctEl.style.color = pl.percent > 100 ? '#ef4444' : (pl.percent > 50 ? '#f59e0b' : pl.color); 
-                    
-                    let superPct = Math.min(100, (pl.superMeter / 150) * 100);
-                    superEl.style.width = superPct + "%";
+                    let superPct = Math.min(100, (pl.superMeter / 150) * 100); superEl.style.width = superPct + "%";
                     if(superPct >= 100) superEl.classList.add('full'); else superEl.classList.remove('full');
                 } 
             });
@@ -524,9 +592,7 @@
 
         function checkGameEnd() {
             let alive = players.filter(pl => pl.lives > 0);
-            let gameOver = false;
-            let txt = "";
-            let winColor = "#fff";
+            let gameOver = false; let txt = ""; let winColor = "#fff";
 
             if (gameMode === 'net_2v2') {
                 let team1Alive = players.some(p => (p.id === 1 || p.id === 3) && p.lives > 0);
@@ -554,51 +620,22 @@
             }
         }
 
-        // --- REJOUER SANS RECHARGER ---
         function restartGame() {
             document.getElementById('game-over-overlay').style.display = 'none';
             players.forEach((pl, i) => {
-                pl.isDead = false;
-                pl.lives = 3;
-                pl.percent = 0;
-                pl.superMeter = 0;
-                pl.shieldHealth = 100;
-                pl.outOfBoundsTimer = 0;
-                pl.stunTimer = 0;
-                pl.hitstun = 0;
-                
-                // Repartitions équitables des spawns
+                pl.isDead = false; pl.lives = 3; pl.percent = 0; pl.superMeter = 0; pl.shieldHealth = 100; pl.outOfBoundsTimer = 0; pl.stunTimer = 0; pl.hitstun = 0;
+                pl.isCharging = false; pl.chargeTimer = 0;
                 let spawnX = 150 + (i * 150);
                 if (i === 1 && players.length === 2) spawnX = 650;
-                if (i === 2) spawnX = 400;
-                if (i === 3) spawnX = 650;
-                
-                pl.x = spawnX;
-                pl.y = 80;
-                pl.vx = 0;
-                pl.vy = 0;
-                pl.invincibleTimer = 120;
+                if (i === 2) spawnX = 400; if (i === 3) spawnX = 650;
+                pl.x = spawnX; pl.y = 80; pl.vx = 0; pl.vy = 0; pl.invincibleTimer = 120;
             });
-            projectiles = [];
-            particles = [];
-            items = [];
-            gameActive = true;
-            updateHUD();
-            
-            // Le Host envoie la commande Restart à tous les clients
-            if (isHost && gameMode.startsWith('net')) {
-                connsNet.forEach(c => c.send({type: 'restart'}));
-            }
+            projectiles = []; particles = []; items = []; gameActive = true; updateHUD();
+            if (isHost && gameMode.startsWith('net')) { connsNet.forEach(c => c.send({type: 'restart'})); }
         }
 
         function handleRestart() {
-            if (gameMode === 'local') {
-                restartGame();
-            } else if (isHost) {
-                restartGame();
-            } else {
-                alert("Seul l'hôte de la partie peut lancer la revanche !");
-            }
+            if (gameMode === 'local') { restartGame(); } else if (isHost) { restartGame(); } else { alert("Seul l'hôte peut lancer la revanche !"); }
         }
 
         function drawMapBackground() {
@@ -609,39 +646,30 @@
         // --- GESTION MENU LOCAL 1V1 STRICT ---
         let currentIsBot = false;
         function toggleBot() {
-            currentIsBot = !currentIsBot;
-            let btn = document.getElementById('bot-toggle-btn');
+            currentIsBot = !currentIsBot; let btn = document.getElementById('bot-toggle-btn');
             if(currentIsBot) { btn.innerHTML = "🤖 IA (Bot)"; btn.style.background = "#ff007f"; btn.style.borderColor = "#ff007f"; } 
             else { btn.innerHTML = "👤 Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333"; }
         }
 
         let locSelections = [], locMapChoice = 0;
         function chooseChar(type) { 
-            locSelections.push({ char: type, bot: currentIsBot }); 
-            playSound('powerup'); 
-            
-            currentIsBot = false;
-            let btn = document.getElementById('bot-toggle-btn');
+            locSelections.push({ char: type, bot: currentIsBot }); playSound('powerup'); 
+            currentIsBot = false; let btn = document.getElementById('bot-toggle-btn');
             btn.innerHTML = "👤 Contrôlé par : Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333";
 
             if(locSelections.length >= 2) {
                 document.getElementById('instruction-title').innerText = "Choisissez la map";
-                document.getElementById('char-select').style.display = 'none';
-                document.getElementById('bot-toggle-btn').style.display = 'none';
+                document.getElementById('char-select').style.display = 'none'; document.getElementById('bot-toggle-btn').style.display = 'none';
                 document.getElementById('map-select-container').style.display = 'block';
-            } else {
-                document.getElementById('instruction-title').innerText = `Sélection Joueur ${locSelections.length + 1}`; 
-            }
+            } else { document.getElementById('instruction-title').innerText = `Sélection Joueur ${locSelections.length + 1}`; }
         }
         function chooseMap(idx) { locMapChoice = idx; currentMapIdx = idx; playSound('powerup'); if (locSelections.length > 0) document.getElementById('start-local-btn').style.display = 'block'; }
         
         function startLocalGame() {
             if(gameActive) return; document.getElementById('local-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; platforms = mapData[locMapChoice];
             players = locSelections.map((selection, i) => { 
-                document.getElementById(`h${i + 1}`).style.display = 'block'; 
-                let p = new Player(i + 1, i===0 ? 150 : 650, selection.char); 
-                p.isBot = selection.bot; 
-                return p;
+                document.getElementById(`h${i + 1}`).style.display = 'block'; let p = new Player(i + 1, i===0 ? 150 : 650, selection.char); 
+                p.isBot = selection.bot; return p;
             });
             gameActive = true; updateHUD(); if (audioCtx.state === 'suspended') audioCtx.resume();
             cancelAnimationFrame(gameLoopId); gameLoopLocal();
@@ -654,11 +682,7 @@
             ctx.fillStyle = 'rgba(0, 0, 0, 0)'; platforms.forEach(p => { ctx.fillRect(p.x, p.y, p.w, p.h); }); 
             items.forEach((it, i) => { it.draw(); it.y += 2; platforms.forEach(p => { if (it.y + it.h >= p.y && it.x + it.w > p.x && it.x < p.x + p.w) it.y = p.y - it.h; }); players.forEach(pl => { if (!pl.isDead && pl.x < it.x + it.w && pl.x + pl.w > it.x && pl.y < it.y + it.h && pl.y + pl.h > it.y) { pl.applyBuff(it.type); items.splice(i, 1); } }); });
             
-            players.forEach(pl => { 
-                let ctrl = pl.isBot ? getAICtrl(pl) : getCtrl(pl.id);
-                pl.update(ctrl); 
-                pl.draw(); 
-            });
+            players.forEach(pl => { let ctrl = pl.isBot ? getAICtrl(pl) : getCtrl(pl.id); pl.update(ctrl); pl.draw(); });
 
             for (let i = projectiles.length - 1; i >= 0; i--) { projectiles[i].update(); if (projectiles[i].active) projectiles[i].draw(); else projectiles.splice(i, 1); }
             for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
@@ -666,135 +690,65 @@
         }
 
         // --- GESTION RESEAU JUSQU'À 4 JOUEURS ---
-        let peerNet = null; 
-        let connsNet = []; 
-        let isHost = false; 
-        let myPlayerId = 1;
-        let netPlayersData = []; 
-        let netKeys = {2: {}, 3: {}, 4: {}}; 
+        let peerNet = null; let connsNet = []; let isHost = false; let myPlayerId = 1; let netPlayersData = []; let netKeys = {2: {}, 3: {}, 4: {}}; 
 
         function selectNetChar(charName, element) {
             netSelectedChar = charName; playSound('powerup');
-            const names = {ninja: 'Ninja', tank: 'Brute', gunner: 'Gunner', mage: 'Mage'};
-            document.getElementById('net-char-name').innerText = names[charName];
-            document.querySelectorAll('#net-char-grid .card').forEach(c => c.classList.remove('selected'));
-            element.classList.add('selected');
+            const names = {ninja: 'Ninja', tank: 'Brute', gunner: 'Gunner', mage: 'Mage'}; document.getElementById('net-char-name').innerText = names[charName];
+            document.querySelectorAll('#net-char-grid .card').forEach(c => c.classList.remove('selected')); element.classList.add('selected');
         }
 
         function hostGame() { 
             let id = document.getElementById('my-id').innerText;
             if(id === "Création...") return;
-            
-            navigator.clipboard.writeText(id).catch(e => console.log(e)); 
-            document.getElementById('status-text').innerText = `ID COPIÉ ! Attente joueurs (1/${maxNetPlayers})...`; 
-            isHost = true; 
-            connsNet = [];
+            navigator.clipboard.writeText(id).catch(e => console.log(e)); document.getElementById('status-text').innerText = `ID COPIÉ ! Attente (${connsNet.length + 1}/${maxNetPlayers})...`; 
+            isHost = true; connsNet = [];
             
             peerNet.on('connection', c => { 
-                if (connsNet.length >= maxNetPlayers - 1) return; // Lobby complet
-                
+                if (connsNet.length >= maxNetPlayers - 1) return;
                 c.on('data', data => {
                     if (data.type === 'join') {
-                        let newId = connsNet.length + 2;
-                        c.peerId = newId;
-                        netPlayersData.push({id: newId, char: data.char});
-                        connsNet.push(c);
-                        c.send({type: 'welcome', id: newId});
-                        
+                        let newId = connsNet.length + 2; c.peerId = newId; netPlayersData.push({id: newId, char: data.char}); connsNet.push(c); c.send({type: 'welcome', id: newId});
                         document.getElementById('status-text').innerText = `Joueurs connectés : ${connsNet.length + 1}/${maxNetPlayers}`;
-                        
-                        if (connsNet.length === maxNetPlayers - 1) {
-                            setTimeout(() => startNetworkGameHost(), 1000);
-                        }
+                        if (connsNet.length === maxNetPlayers - 1) setTimeout(() => startNetworkGameHost(), 1000);
                     }
-                    if (data.type === 'inputs') {
-                        netKeys[c.peerId] = data.keys;
-                    }
+                    if (data.type === 'inputs') { netKeys[c.peerId] = data.keys; }
                 });
             }); 
         }
         
         function joinGame() { 
-            let id = document.getElementById('join-id').value.trim().toUpperCase(); 
-            if (!id) return; 
-            document.getElementById('status-text').innerText = "Connexion..."; 
-            
-            if (peerNet) peerNet.destroy();
-            peerNet = new Peer();
-            
+            let id = document.getElementById('join-id').value.trim().toUpperCase(); if (!id) return; document.getElementById('status-text').innerText = "Connexion..."; 
+            if (peerNet) peerNet.destroy(); peerNet = new Peer();
             peerNet.on('open', () => {
                 let c = peerNet.connect(id, { reliable: true });
-                c.on('open', () => {
-                    c.send({type: 'join', char: netSelectedChar});
-                });
+                c.on('open', () => { c.send({type: 'join', char: netSelectedChar}); });
                 c.on('data', data => {
-                    if (data.type === 'welcome') {
-                        myPlayerId = data.id;
-                        document.getElementById('status-text').innerText = "Connecté! Attente du lancement...";
-                    }
-                    if (data.type === 'start') {
-                        document.getElementById('network-menu').style.display = 'none'; 
-                        document.getElementById('hud').style.display = 'grid';
-                        gameActive = true;
-                    }
+                    if (data.type === 'welcome') { myPlayerId = data.id; document.getElementById('status-text').innerText = "Connecté! Attente du lancement..."; }
+                    if (data.type === 'start') { document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; }
                     if (data.type === 'state') {
-                        platforms = data.state.platforms; 
-                        projectiles = data.state.projectiles; 
-                        items = data.state.items;
-                        
-                        // Instanciation côté client au premier tic
+                        platforms = data.state.platforms; projectiles = data.state.projectiles; items = data.state.items;
                         if (players.length !== data.state.players.length) {
                             let tMap = { 'sumo': 'tank', 'ninja': 'ninja', 'gunner': 'gunner', 'mage': 'mage' };
                             players = data.state.players.map(p => new Player(p.id, p.x, tMap[p.skinKey])); 
-                            players.forEach(p => {
-                                document.getElementById(`h${p.id}`).style.display = 'block';
-                                document.getElementById(`n${p.id}`).innerText = `J${p.id}`;
-                            });
+                            players.forEach(p => { document.getElementById(`h${p.id}`).style.display = 'block'; document.getElementById(`n${p.id}`).innerText = `J${p.id}`; });
                         }
-                        
-                        // Synchro des positions/stats envoyées par l'Hôte
-                        data.state.players.forEach((pState, idx) => {
-                            Object.assign(players[idx], pState);
-                        });
-                        
-                        drawClientGame(); 
-                        updateHUD();
-                        
-                        // Envoi des contrôles du client vers l'Hôte
+                        data.state.players.forEach((pState, idx) => { Object.assign(players[idx], pState); });
+                        drawClientGame(); updateHUD();
                         c.send({type: 'inputs', keys: getCtrl(myPlayerId)});
                     }
-                    if (data.type === 'restart') {
-                        document.getElementById('game-over-overlay').style.display = 'none';
-                        gameActive = true;
-                    }
+                    if (data.type === 'restart') { document.getElementById('game-over-overlay').style.display = 'none'; gameActive = true; }
                 });
             });
         }
 
         function startNetworkGameHost() {
-            document.getElementById('network-menu').style.display = 'none'; 
-            document.getElementById('hud').style.display = 'grid';
-            gameActive = true;
-            platforms = mapData[0]; currentMapIdx = 0;
-            
-            // Instancie P1 (Hôte) et ses Clients
+            document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; platforms = mapData[0]; currentMapIdx = 0;
             players = [new Player(1, 150, netSelectedChar)];
-            netPlayersData.forEach((np, i) => {
-                let spawnX = 150 + (np.id * 150);
-                if(maxNetPlayers === 2) spawnX = 650;
-                players.push(new Player(np.id, spawnX, np.char));
-            });
-            
-            players.forEach(p => {
-                document.getElementById(`h${p.id}`).style.display = 'block';
-                document.getElementById(`n${p.id}`).innerText = `J${p.id}`;
-            });
-
+            netPlayersData.forEach((np, i) => { let spawnX = 150 + (np.id * 150); if(maxNetPlayers === 2) spawnX = 650; players.push(new Player(np.id, spawnX, np.char)); });
+            players.forEach(p => { document.getElementById(`h${p.id}`).style.display = 'block'; document.getElementById(`n${p.id}`).innerText = `J${p.id}`; });
             connsNet.forEach(c => c.send({type: 'start'}));
-            
-            if (audioCtx.state === 'suspended') audioCtx.resume(); 
-            cancelAnimationFrame(gameLoopId); 
-            hostLoop(); 
+            if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); hostLoop(); 
         }
 
         function hostLoop() {
@@ -804,41 +758,29 @@
             ctx.fillStyle = 'rgba(0,0,0,0)'; platforms.forEach(p => { ctx.fillRect(p.x, p.y, p.w, p.h); }); 
             items.forEach((it, i) => { it.draw(); it.y += 2; platforms.forEach(p => { if (it.y + it.h >= p.y && it.x + it.w > p.x && it.x < p.x + p.w) it.y = p.y - it.h; }); players.forEach(pl => { if (!pl.isDead && pl.x < it.x + it.w && pl.x + pl.w > it.x && pl.y < it.y + it.h && pl.y + pl.h > it.y) { pl.applyBuff(it.type); items.splice(i, 1); } }); });
             
-            // L'Hôte calcule la physique pour TOUS les joueurs selon leurs inputs reçus
             players[0].update(getCtrl(1)); 
-            for(let i=1; i<players.length; i++) {
-                let inputs = netKeys[players[i].id] || {left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false, block: false, ult: false};
-                players[i].update(inputs);
-            }
-            
+            for(let i=1; i<players.length; i++) { let inputs = netKeys[players[i].id] || {left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false, block: false, ult: false}; players[i].update(inputs); }
             players.forEach(pl => pl.draw());
             
             for (let i = projectiles.length - 1; i >= 0; i--) { projectiles[i].update(); if (projectiles[i].active) projectiles[i].draw(); else projectiles.splice(i, 1); }
             for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
             
-            // Envoi de la snapshot de la partie à tous les clients
-            if (connsNet.length > 0) { 
-                connsNet.forEach(c => {
-                    if (c && c.open) c.send({type: 'state', state: { players: players, platforms: platforms, projectiles: projectiles, items: items }});
-                });
-            }
+            if (connsNet.length > 0) { connsNet.forEach(c => { if (c && c.open) c.send({type: 'state', state: { players: players, platforms: platforms, projectiles: projectiles, items: items }}); }); }
             ctx.restore(); gameLoopId = requestAnimationFrame(hostLoop);
         }
 
         function drawClientGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height); drawMapBackground();
-            items.forEach(it => { 
-                ctx.shadowBlur = 15; ctx.shadowColor = it.color; ctx.font = "24px Arial"; 
-                ctx.fillText(it.type==='dmg'?'💥':(it.type==='heal'?'❤️':'⚡'), it.x, it.y+22); ctx.shadowBlur = 0; 
-            });
+            items.forEach(it => { ctx.shadowBlur = 15; ctx.shadowColor = it.color; ctx.font = "24px Arial"; ctx.fillText(it.type==='dmg'?'💥':(it.type==='heal'?'❤️':'⚡'), it.x, it.y+22); ctx.shadowBlur = 0; });
             players.forEach(pl => {
-                if (pl.isDead) return;
-                if (pl.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
-                // Le client utilise la classe Player juste pour appeler "draw()" et rendre les skins
+                if (pl.isDead) return; if (pl.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
                 let pObj = new Player(pl.id, pl.x, pl.skinKey === 'sumo' ? 'tank' : (pl.skinKey === 'ninja' ? 'ninja' : (pl.skinKey === 'gunner' ? 'gunner' : 'mage')));
                 Object.assign(pObj, pl); pObj.draw();
             });
-            projectiles.forEach(pr => { ctx.fillStyle = pr.color; ctx.shadowBlur = 8; ctx.shadowColor = pr.color; ctx.beginPath(); ctx.arc(pr.x, pr.y, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; });
+            projectiles.forEach(pr => { 
+                let pObj = new Projectile(pr.x, pr.y, pr.vx, pr.vy, pr.ownerId, pr.dmg, pr.kb, pr.color, false, pr.isMine);
+                pObj.life = pr.life; pObj.draw(); 
+            });
         }
     </script>
     
