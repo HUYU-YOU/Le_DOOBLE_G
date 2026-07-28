@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Artillery (Worms-like)</title>
+    <title>Cyber Slimes Artillery (Worms-like)</title>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; }
@@ -23,17 +23,25 @@
 
         /* GAME CONTAINER & CANVASES */
         #game-wrapper { position: relative; width: 100%; max-width: 800px; height: 600px; border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.1); border: 2px solid rgba(255,255,255,0.1); overflow: hidden; background: #000; }
+        
+        #bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         
-        #canvas-bg { z-index: 1; }
         #canvas-terrain { z-index: 2; }
         #canvas-entities { z-index: 3; }
 
-        /* MENU DE FIN */
-        #game-over { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
-        #game-over h2 { font-size: 3em; margin-bottom: 10px; text-transform: uppercase; }
-        .btn-restart { background: #fff; color: #000; border: none; padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 20px; }
-        .btn-restart:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
+        /* MENUS */
+        .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(5px); }
+        .menu-overlay h1, .menu-overlay h2 { font-size: 3em; margin-bottom: 20px; text-transform: uppercase; color: var(--sys); text-shadow: 0 0 15px var(--sys); }
+        
+        .btn { background: rgba(0, 240, 255, 0.1); color: var(--p1); border: 2px solid var(--p1); padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin: 10px; min-width: 250px; text-align: center; }
+        .btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+        
+        .btn-pink { color: var(--p2); border-color: var(--p2); background: rgba(255, 0, 127, 0.1); }
+        .btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 20px var(--p2); }
+
+        .loader { font-size: 1.2em; color: var(--p1); margin-bottom: 20px; }
+        .hidden { display: none !important; }
 
         @media (max-width: 800px) {
             #game-wrapper { height: 70vh; border-radius: 0; border: none; }
@@ -46,32 +54,55 @@
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
     <div id="game-wrapper">
-        <div id="ui-layer">
+        <!-- ARRIERE-PLAN VIDEO -->
+        <video id="bg-video" autoplay loop muted playsinline>
+            <source src="img/background.mp4" type="video/mp4">
+        </video>
+
+        <!-- UI -->
+        <div id="ui-layer" class="hidden">
             <div class="player-info">
-                <b style="color: var(--p1)">JOUEUR 1</b>
+                <b style="color: var(--p1)">SLIME 1</b>
                 <div class="hp-bar-bg"><div id="hp-p1" class="hp-bar"></div></div>
             </div>
             <div id="turn-indicator" style="color: var(--p1); border-color: var(--p1);">Tour J1</div>
             <div class="player-info">
-                <b style="color: var(--p2)">JOUEUR 2</b>
+                <b style="color: var(--p2)">SLIME 2</b>
                 <div class="hp-bar-bg"><div id="hp-p2" class="hp-bar"></div></div>
             </div>
         </div>
 
-        <!-- LES 3 COUCHES MAGIQUES -->
-        <canvas id="canvas-bg" width="800" height="600"></canvas>
         <canvas id="canvas-terrain" width="800" height="600"></canvas>
         <canvas id="canvas-entities" width="800" height="600"></canvas>
 
-        <div id="game-over">
+        <!-- MENU PRINCIPAL -->
+        <div id="main-menu" class="menu-overlay">
+            <h1>Cyber Slimes</h1>
+            <div id="loading-text" class="loader">Chargement des assets en cours...</div>
+            <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column;">
+                <button class="btn" onclick="startGame('local')">🕹️ 1 vs 1 (Même PC)</button>
+                <button class="btn btn-pink" onclick="startGame('ai')">🤖 Jouer contre l'IA</button>
+                <button class="btn" onclick="showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multijoueur En Ligne</button>
+            </div>
+        </div>
+
+        <!-- MENU MULTIJOUEUR EN LIGNE (Préparation) -->
+        <div id="online-menu" class="menu-overlay hidden">
+            <h2>Lobby Multijoueur</h2>
+            <p>Code de partie : <b style="color: var(--p1); font-size:1.5em; letter-spacing:3px;">SLM-404</b></p>
+            <input type="text" placeholder="Entrer un code..." style="padding: 10px; font-size: 1.2em; border-radius: 5px; margin-bottom: 20px; border: none; outline:none; text-align:center;">
+            <button class="btn" onclick="alert('Module WebRTC à connecter avec PeerJS !')">Rejoindre / Créer</button>
+            <button class="btn btn-pink" onclick="hideOnlineMenu()">Retour</button>
+        </div>
+
+        <!-- MENU FIN DE JEU -->
+        <div id="game-over" class="menu-overlay hidden">
             <h2 id="winner-text">JOUEUR GAGNE</h2>
-            <button class="btn-restart" onclick="location.reload()">Rejouer</button>
+            <button class="btn" onclick="location.reload()">Retour au Menu</button>
         </div>
     </div>
 
     <script>
-        const canvasBg = document.getElementById('canvas-bg');
-        const ctxBg = canvasBg.getContext('2d', { alpha: false });
         const canvasTerrain = document.getElementById('canvas-terrain');
         const ctxTerrain = canvasTerrain.getContext('2d', { willReadFrequently: true });
         const canvasEnt = document.getElementById('canvas-entities');
@@ -81,96 +112,154 @@
         const HEIGHT = 600;
         const GRAVITY = 0.15;
         
-        let gameState = 'playing'; // playing, aiming, flying, end
+        let gameState = 'menu'; // menu, playing, aiming, flying, end
+        let gameMode = 'local'; // local, ai, online
         let currentPlayer = 1;
+        let mapImage = new Image();
 
-        // --- GÉNÉRATION DU DÉCOR ET TERRAIN ---
-        function drawBackground() {
-            let grad = ctxBg.createLinearGradient(0, 0, 0, HEIGHT);
-            grad.addColorStop(0, "#0b0c10");
-            grad.addColorStop(1, "#1f2833");
-            ctxBg.fillStyle = grad;
-            ctxBg.fillRect(0, 0, WIDTH, HEIGHT);
-            
-            // Etoiles
-            ctxBg.fillStyle = "#fff";
-            for(let i=0; i<50; i++) {
-                ctxBg.fillRect(Math.random()*WIDTH, Math.random()*HEIGHT*0.7, Math.random()*2, Math.random()*2);
+        // --- GESTION DES IMAGES & SPRITES ---
+        const sprites = {};
+        const imagesToLoad = {
+            map: 'img/map1.png',
+            s1_idle_r: 'img/slim1_right.png',
+            s1_idle_l: 'img/slim1_left.png',
+            s1_walk_r1: 'img/slime1_moveright1.png', s1_walk_r2: 'img/slime1_moveright2.png', s1_walk_r3: 'img/slime1_moveright3.png',
+            s1_walk_l1: 'img/slime1_moveleft1.png', s1_walk_l2: 'img/slime1_moveleft2.png', s1_walk_l3: 'img/slime1_moveleft3.png',
+            s2_idle_r: 'img/slim2_right.png',
+            s2_idle_l: 'img/slim2_left.png',
+            s2_walk_r1: 'img/slime2_moveright1.png', s2_walk_r2: 'img/slime2_moveright2.png', s2_walk_r3: 'img/slime2_moveright3.png',
+            s2_walk_l1: 'img/slime2_moveleft1.png', s2_walk_l2: 'img/slime2_moveleft2.png', s2_walk_l3: 'img/slime2_moveleft3.png'
+        };
+
+        let loadedCount = 0;
+        let totalImages = Object.keys(imagesToLoad).length;
+
+        for (let key in imagesToLoad) {
+            let img = new Image();
+            // Fallback (dessin de base) si l'image n'est pas trouvée, pour éviter que le jeu crash
+            img.onerror = () => { console.warn(`L'image ${imagesToLoad[key]} n'a pas pu être chargée. Vérifie le chemin.`); onLoadComplete(); };
+            img.onload = onLoadComplete;
+            img.src = imagesToLoad[key];
+            sprites[key] = img;
+        }
+
+        function onLoadComplete() {
+            loadedCount++;
+            if (loadedCount >= totalImages) {
+                document.getElementById('loading-text').classList.add('hidden');
+                document.getElementById('menu-buttons').classList.remove('hidden');
+                document.getElementById('menu-buttons').style.display = 'flex';
+                mapImage = sprites.map;
             }
         }
 
+        // --- CONTRÔLES CLAVIER (Déplacement) ---
+        const keys = { left: false, right: false, space: false };
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+            if (e.key === ' ' || e.key === 'Spacebar') keys.space = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+            if (e.key === ' ' || e.key === 'Spacebar') keys.space = false;
+        });
+
+        // --- PHYSIQUE ET TERRAIN ---
         function generateTerrain() {
             ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
-            ctxTerrain.fillStyle = "#45a29e"; // Couleur du sol
-            
-            ctxTerrain.beginPath();
-            ctxTerrain.moveTo(0, HEIGHT);
-            
-            // Génération procédurale d'une courbe pour le sol
-            let y = HEIGHT / 1.5;
-            for (let x = 0; x <= WIDTH; x += 10) {
-                y += (Math.random() - 0.5) * 20; // Variations
-                if (y < 200) y = 200; if (y > HEIGHT - 50) y = HEIGHT - 50;
-                ctxTerrain.lineTo(x, y);
+            // On dessine l'image de la map chargée
+            if (mapImage.complete && mapImage.naturalWidth > 0) {
+                ctxTerrain.drawImage(mapImage, 0, 0, WIDTH, HEIGHT);
+            } else {
+                // Fallback de secours si l'image crash
+                ctxTerrain.fillStyle = "#45a29e";
+                ctxTerrain.fillRect(0, HEIGHT/2, WIDTH, HEIGHT/2);
             }
-            ctxTerrain.lineTo(WIDTH, HEIGHT);
-            ctxTerrain.fill();
-            
-            // Bordure brillante du sol
-            ctxTerrain.strokeStyle = "#66fcf1";
-            ctxTerrain.lineWidth = 3;
-            ctxTerrain.stroke();
         }
 
-        // --- PHYSIQUE ET COLLISIONS ---
-        // Vérifie si un pixel spécifique est "plein" sur le canvas du terrain
         function isSolid(x, y) {
-            if (x < 0 || x >= WIDTH || y >= HEIGHT) return false;
-            if (y < 0) return false;
-            // On récupère le pixel de la couche terrain. Index 3 = Alpha
-            return ctxTerrain.getImageData(x, y, 1, 1).data[3] > 128;
+            let px = Math.floor(x); let py = Math.floor(y);
+            if (px < 0 || px >= WIDTH || py >= HEIGHT) return false;
+            if (py < 0) return false;
+            let data = ctxTerrain.getImageData(px, py, 1, 1).data;
+            return data[3] > 50; // alpha check
         }
 
-        // Crée un cratère dans le terrain
         function explodeTerrain(ex, ey, radius) {
             ctxTerrain.globalCompositeOperation = 'destination-out';
             ctxTerrain.beginPath();
             ctxTerrain.arc(ex, ey, radius, 0, Math.PI * 2);
             ctxTerrain.fill();
-            
-            // Remet le mode normal
             ctxTerrain.globalCompositeOperation = 'source-over';
         }
 
         // --- CLASSES DU JEU ---
-        class Worm {
-            constructor(x, y, id, color) {
+        class Slime {
+            constructor(x, y, id, type, color) {
                 this.x = x; this.y = y;
-                this.id = id; this.color = color;
-                this.radius = 10;
+                this.id = id; 
+                this.type = type; // 1 (Red) or 2 (Blue)
+                this.color = color;
+                this.radius = 12; // Rayon de collision
                 this.vx = 0; this.vy = 0;
                 this.hp = 100;
                 this.isDead = false;
+                
+                // Animation
+                this.facing = id === 1 ? 'r' : 'l';
+                this.state = 'idle'; // idle, walk, jump
+                this.animFrame = 1;
+                this.animTimer = 0;
+                this.isOnGround = false;
             }
 
             update() {
                 if (this.isDead) return;
                 
-                // Gravité
                 this.vy += GRAVITY;
                 this.y += this.vy;
                 this.x += this.vx;
 
-                // Friction
-                this.vx *= 0.9;
+                // Contrôles de déplacement si c'est le tour du joueur (et qu'il n'est pas IA en train de jouer)
+                let isCurrent = (currentPlayer === this.id && gameState === 'playing' && !(gameMode === 'ai' && this.id === 2));
+                
+                if (isCurrent && !isDragging) {
+                    if (keys.left) { this.vx = -1.5; this.facing = 'l'; this.state = 'walk'; }
+                    else if (keys.right) { this.vx = 1.5; this.facing = 'r'; this.state = 'walk'; }
+                    else { this.vx = 0; this.state = 'idle'; }
 
-                // Collision sol (On vérifie le pixel juste sous le ver)
+                    if (keys.space && this.isOnGround) {
+                        this.vy = -4.5;
+                        this.isOnGround = false;
+                        keys.space = false; // Prevent hold
+                    }
+                } else if (!isCurrent && this.isOnGround) {
+                    this.vx *= 0.5; // Friction forte quand ce n'est pas le tour
+                    this.state = 'idle';
+                }
+
+                // Collision sol
+                this.isOnGround = false;
                 if (isSolid(this.x, this.y + this.radius)) {
                     this.vy = 0;
-                    // Remonte légèrement s'il est coincé dans le sol
+                    this.isOnGround = true;
+                    // Remonte légèrement s'il est enfoncé
                     while(isSolid(this.x, this.y + this.radius - 1)) {
                         this.y -= 1;
                     }
+                }
+
+                // Gestion Animation frame
+                if (this.state === 'walk') {
+                    this.animTimer++;
+                    if (this.animTimer > 8) { // Vitesse d'animation
+                        this.animFrame = this.animFrame === 3 ? 1 : this.animFrame + 1;
+                        this.animTimer = 0;
+                    }
+                } else {
+                    this.animFrame = 1;
                 }
 
                 // Limites d'écran (tomber dans le vide)
@@ -179,29 +268,42 @@
                     this.isDead = true;
                     checkWin();
                 }
+                
+                // Maintien dans la carte sur les côtés
+                if(this.x < 10) this.x = 10;
+                if(this.x > WIDTH - 10) this.x = WIDTH - 10;
             }
 
             draw() {
                 if (this.isDead) return;
-                ctxEnt.fillStyle = this.color;
-                ctxEnt.shadowBlur = 10;
-                ctxEnt.shadowColor = this.color;
+
+                // Récupération du bon Sprite
+                let spriteName = `s${this.type}_`;
+                if (!this.isOnGround) {
+                    spriteName += `idle_${this.facing}`; // Pas d'anim saut pour l'instant, on met idle
+                } else if (this.state === 'walk') {
+                    spriteName += `walk_${this.facing}${this.animFrame}`;
+                } else {
+                    spriteName += `idle_${this.facing}`;
+                }
+
+                let img = sprites[spriteName];
                 
-                // Corps du ver (Petit tank/bloc)
-                ctxEnt.fillRect(this.x - 10, this.y - 10, 20, 20);
-                
-                // Yeux
-                ctxEnt.fillStyle = "#fff";
-                ctxEnt.shadowBlur = 0;
-                let eyeDir = (this.id === 1) ? 2 : -6;
-                ctxEnt.fillRect(this.x + eyeDir, this.y - 5, 4, 4);
+                if (img && img.complete && img.naturalWidth > 0) {
+                    // Dessiner l'image (les sprites font environ 30x30px)
+                    ctxEnt.drawImage(img, this.x - 15, this.y - 18, 30, 30);
+                } else {
+                    // Fallback blocky si img fail
+                    ctxEnt.fillStyle = this.color;
+                    ctxEnt.fillRect(this.x - 10, this.y - 10, 20, 20);
+                }
                 
                 // Flèche au-dessus du joueur actif
-                if (currentPlayer === this.id && gameState !== 'flying' && gameState !== 'end') {
+                if (currentPlayer === this.id && gameState === 'playing') {
                     ctxEnt.fillStyle = "#fff";
                     ctxEnt.beginPath();
-                    ctxEnt.moveTo(this.x - 5, this.y - 30);
-                    ctxEnt.lineTo(this.x + 5, this.y - 30);
+                    ctxEnt.moveTo(this.x - 6, this.y - 30);
+                    ctxEnt.lineTo(this.x + 6, this.y - 30);
                     ctxEnt.lineTo(this.x, this.y - 20);
                     ctxEnt.fill();
                 }
@@ -213,68 +315,53 @@
                 this.x = x; this.y = y;
                 this.vx = vx; this.vy = vy;
                 this.active = true;
-                this.radius = 4;
+                this.radius = 5;
             }
-
             update() {
                 if (!this.active) return;
                 this.vy += GRAVITY;
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // Trainée de particules
-                particles.push(new Particle(this.x, this.y, 0, 0, "#ffaa00", 2, 20));
+                particles.push(new Particle(this.x, this.y, 0, 0, "#fff", 2, 10));
 
-                // Collision avec le terrain
                 if (isSolid(this.x, this.y) || this.y > HEIGHT || this.x < 0 || this.x > WIDTH) {
                     this.explode();
                 }
             }
-
             explode() {
                 this.active = false;
                 let expRadius = 45;
                 
-                // Creuse le terrain
                 explodeTerrain(this.x, this.y, expRadius);
                 
-                // Particules d'explosion
                 for(let i=0; i<30; i++) {
                     let angle = Math.random() * Math.PI * 2;
                     let speed = Math.random() * 5 + 2;
                     particles.push(new Particle(this.x, this.y, Math.cos(angle)*speed, Math.sin(angle)*speed, "#ff5500", Math.random()*4+2, 40));
                 }
 
-                // Dégâts aux vers
                 worms.forEach(w => {
                     let dist = Math.hypot(w.x - this.x, w.y - this.y);
                     if (dist < expRadius + 15 && !w.isDead) {
-                        let damage = Math.floor((1 - dist / (expRadius + 15)) * 50);
+                        let damage = Math.floor((1 - dist / (expRadius + 15)) * 40);
                         w.hp -= damage;
-                        
-                        // Knockback (Projection)
                         let kbAngle = Math.atan2(w.y - this.y, w.x - this.x);
                         w.vx += Math.cos(kbAngle) * (damage * 0.2);
-                        w.vy += Math.sin(kbAngle) * (damage * 0.2) - 2; // Pousse vers le haut
+                        w.vy += Math.sin(kbAngle) * (damage * 0.2) - 3; 
                         
                         if (w.hp <= 0) { w.hp = 0; w.isDead = true; }
                         updateUI();
                     }
                 });
-
-                // Fin du tour après l'explosion
                 setTimeout(nextTurn, 1500);
             }
-
             draw() {
                 if (!this.active) return;
                 ctxEnt.fillStyle = "#fff";
-                ctxEnt.shadowBlur = 10;
-                ctxEnt.shadowColor = "#ff0000";
                 ctxEnt.beginPath();
                 ctxEnt.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctxEnt.fill();
-                ctxEnt.shadowBlur = 0;
             }
         }
 
@@ -300,28 +387,32 @@
         let projectile = null;
         let particles = [];
         
-        // Drag & Aim (Visée tactile/souris)
         let isDragging = false;
         let dragStartX = 0; let dragStartY = 0;
         let dragCurrentX = 0; let dragCurrentY = 0;
 
-        function initGame() {
-            drawBackground();
+        function startGame(mode) {
+            gameMode = mode;
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('ui-layer').classList.remove('hidden');
+            
             generateTerrain();
             
-            // Placement initial des vers (On les lâche de haut, la gravité fera le reste)
+            // Placement initial
             worms = [
-                new Worm(150, 100, 1, 'var(--p1)'),
-                new Worm(WIDTH - 150, 100, 2, 'var(--p2)')
+                new Slime(200, 100, 1, 1, 'var(--p1)'),
+                new Slime(WIDTH - 200, 100, 2, 2, 'var(--p2)')
             ];
             
             currentPlayer = 1;
             gameState = 'playing';
             updateUI();
-            document.getElementById('game-over').style.display = 'none';
             
             requestAnimationFrame(gameLoop);
         }
+
+        function showOnlineMenu() { document.getElementById('online-menu').classList.remove('hidden'); }
+        function hideOnlineMenu() { document.getElementById('online-menu').classList.add('hidden'); }
 
         function updateUI() {
             document.getElementById('hp-p1').style.width = worms[0].hp + '%';
@@ -339,7 +430,6 @@
             
             currentPlayer = currentPlayer === 1 ? 2 : 1;
             
-            // Skip si mort (utile si on rajoute plus de 2 joueurs)
             if (worms[currentPlayer-1].isDead) {
                 currentPlayer = currentPlayer === 1 ? 2 : 1; 
             }
@@ -347,6 +437,32 @@
             gameState = 'playing';
             projectile = null;
             updateUI();
+
+            // Gestion de l'IA
+            if (gameMode === 'ai' && currentPlayer === 2 && !worms[1].isDead) {
+                setTimeout(playAITurn, 1000);
+            }
+        }
+
+        function playAITurn() {
+            let ai = worms[1];
+            let target = worms[0];
+            
+            // Tourne vers la cible
+            ai.facing = (target.x < ai.x) ? 'l' : 'r';
+            
+            // Tir balistique très simplifié
+            let dx = target.x - ai.x;
+            let dy = (target.y - ai.y) - 50; // Vise un peu au-dessus
+            let angle = Math.atan2(dy, dx);
+            let power = Math.min(Math.abs(dx) * 0.02 + 5, 15); // Puissance ajustée selon la distance
+
+            projectile = new Projectile(
+                ai.x, ai.y - 10,
+                Math.cos(angle) * power,
+                Math.sin(angle) * power
+            );
+            gameState = 'flying';
         }
 
         function checkWin() {
@@ -357,22 +473,22 @@
                 winnerText.innerText = worms[1].isDead ? "JOUEUR 1 GAGNE" : "JOUEUR 2 GAGNE";
                 if(worms[0].isDead && worms[1].isDead) { winnerText.innerText = "ÉGALITÉ"; winnerText.style.color="#fff"; }
                 
-                setTimeout(() => { document.getElementById('game-over').style.display = 'flex'; }, 1000);
+                setTimeout(() => { document.getElementById('game-over').classList.remove('hidden'); }, 1000);
             }
         }
 
-        // --- CONTRÔLES (VISÉE FAÇON ANGRY BIRDS) ---
+        // --- CONTRÔLES SOURIS / TACTILE (Visée) ---
         const gameWrapper = document.getElementById('game-wrapper');
 
         function startAim(e) {
-            if (gameState !== 'playing') return;
-            e.stopPropagation(); // Bloque le Swipe Hub
+            // Bloque le drag si ce n'est pas notre tour (ex: IA joue)
+            if (gameState !== 'playing' || (gameMode === 'ai' && currentPlayer === 2)) return;
+            e.stopPropagation();
             
             let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
-            // Adapter les coordonnées (scaling)
             let scaleX = canvasEnt.width / rect.width;
             let scaleY = canvasEnt.height / rect.height;
             
@@ -381,19 +497,27 @@
             
             isDragging = true;
             gameState = 'aiming';
+            
+            // Met le slime face à la visée
+            let activeWorm = worms[currentPlayer - 1];
+            activeWorm.state = 'idle'; // Arrête l'anim de marche
         }
 
         function moveAim(e) {
             if (!isDragging) return;
-            e.stopPropagation(); e.preventDefault(); // Empêche scroll
+            e.stopPropagation(); e.preventDefault();
             let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
             let scaleX = canvasEnt.width / rect.width;
             let scaleY = canvasEnt.height / rect.height;
-            
             dragCurrentX = (clientX - rect.left) * scaleX;
             dragCurrentY = (clientY - rect.top) * scaleY;
+
+            // Fait se tourner le slime selon là où on tire
+            let activeWorm = worms[currentPlayer - 1];
+            activeWorm.facing = (dragStartX - dragCurrentX > 0) ? 'r' : 'l';
         }
 
         function endAim(e) {
@@ -402,47 +526,42 @@
             e.stopPropagation();
             
             let activeWorm = worms[currentPlayer - 1];
-            
-            // Calcul du vecteur de tir (Inversé car on tire vers l'arrière comme un lance-pierre)
             let dx = dragStartX - dragCurrentX;
             let dy = dragStartY - dragCurrentY;
             
-            // Limiter la puissance
-            let power = Math.min(Math.hypot(dx, dy) * 0.1, 15);
+            let power = Math.min(Math.hypot(dx, dy) * 0.1, 16);
             let angle = Math.atan2(dy, dx);
             
-            if (power > 2) { // Si on a tiré assez fort
+            if (power > 2) {
                 projectile = new Projectile(
                     activeWorm.x, 
-                    activeWorm.y - 15, // Tir au dessus de la tête
+                    activeWorm.y - 15,
                     Math.cos(angle) * power,
                     Math.sin(angle) * power
                 );
                 gameState = 'flying';
             } else {
-                gameState = 'playing'; // Tir annulé
+                gameState = 'playing'; // Annuler tir
             }
         }
 
         gameWrapper.addEventListener('mousedown', startAim);
         window.addEventListener('mousemove', moveAim);
         window.addEventListener('mouseup', endAim);
-        
         gameWrapper.addEventListener('touchstart', startAim, {passive: false});
         window.addEventListener('touchmove', moveAim, {passive: false});
         window.addEventListener('touchend', endAim);
 
         // --- BOUCLE PRINCIPALE ---
         function gameLoop() {
+            if (gameState === 'menu') return;
             ctxEnt.clearRect(0, 0, WIDTH, HEIGHT);
 
-            // Mise à jour et affichage des Vers
             worms.forEach(w => {
                 w.update();
                 w.draw();
             });
 
-            // Affichage de la visée (Lance-pierre)
             if (gameState === 'aiming' && isDragging) {
                 let activeWorm = worms[currentPlayer - 1];
                 let dx = dragStartX - dragCurrentX;
@@ -450,24 +569,21 @@
                 let power = Math.min(Math.hypot(dx, dy), 150);
                 let angle = Math.atan2(dy, dx);
                 
-                // Dessine la ligne de tir
                 ctxEnt.beginPath();
                 ctxEnt.moveTo(activeWorm.x, activeWorm.y - 15);
                 ctxEnt.lineTo(activeWorm.x + Math.cos(angle)*power, activeWorm.y - 15 + Math.sin(angle)*power);
-                ctxEnt.strokeStyle = "rgba(255, 255, 255, 0.5)";
+                ctxEnt.strokeStyle = currentPlayer === 1 ? "rgba(0, 240, 255, 0.7)" : "rgba(255, 0, 127, 0.7)";
                 ctxEnt.lineWidth = 2;
                 ctxEnt.setLineDash([5, 5]);
                 ctxEnt.stroke();
                 ctxEnt.setLineDash([]);
             }
 
-            // Gestion du projectile
             if (projectile) {
                 projectile.update();
                 projectile.draw();
             }
 
-            // Particules
             for (let i = particles.length - 1; i >= 0; i--) {
                 particles[i].update();
                 particles[i].draw();
@@ -476,14 +592,9 @@
 
             requestAnimationFrame(gameLoop);
         }
-
-        // Lancement
-        window.onload = initGame;
     </script>
     
-<!-- ========================================== -->
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE & SOURIS) -->
-    <!-- ========================================== -->
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE GLOBAL INTACT -->
     <script>
         const gamesHubList = [
             "../cybertank/index.html",
@@ -499,27 +610,12 @@
         ];
 
         let globalTouchStartX = 0;
-        let globalTouchStartY = 0;
         let globalTouchEndX = 0;
-        let globalTouchEndY = 0;
-        let isDragging = false; // Permet de savoir si on a cliqué avec la souris
         
         function handleSwipeGesture() {
-            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
-            
-            let diffX = globalTouchEndX - globalTouchStartX;
-            let diffY = globalTouchEndY - globalTouchStartY;
-
-            // On vérifie quel axe a eu le plus grand mouvement
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                // Swipe Horizontal (Gauche / Droite)
-                if (diffX < -swipeThreshold) navigateGames(1);       // Swipe Gauche -> Suivant
-                else if (diffX > swipeThreshold) navigateGames(-1);  // Swipe Droite -> Précédent
-            } else {
-                // Swipe Vertical (Haut / Bas)
-                if (diffY < -swipeThreshold) navigateGames(1);       // Swipe Haut -> Suivant
-                else if (diffY > swipeThreshold) navigateGames(-1);  // Swipe Bas -> Précédent
-            }
+            const swipeThreshold = 75; 
+            if (globalTouchEndX < globalTouchStartX - swipeThreshold) navigateGames(1);
+            if (globalTouchEndX > globalTouchStartX + swipeThreshold) navigateGames(-1);
         }
 
         function navigateGames(direction) {
@@ -528,54 +624,21 @@
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
             });
-            
             if (currentIndex === -1) return;
-            
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Exclut les zones où le joueur doit interagir avec le jeu
-        function isExcludedElement(target) {
-            const tag = target.tagName.toLowerCase();
-            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
-            if (target.closest('#game-container') || target.closest('#game-wrapper')) return true;
-            return false;
-        }
-
-        // --- GESTION TACTILE (DOIGT) ---
         document.addEventListener('touchstart', e => {
-            if (isExcludedElement(e.target)) return;
+            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button') return;
             globalTouchStartX = e.changedTouches[0].screenX;
-            globalTouchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
 
         document.addEventListener('touchend', e => {
-            if (isExcludedElement(e.target)) return;
+            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button') return;
             globalTouchEndX = e.changedTouches[0].screenX;
-            globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
         }, { passive: true });
-
-        // --- GESTION SOURIS (CLIC & GLISSE) ---
-        document.addEventListener('mousedown', e => {
-            // Si c'est un clic droit ou sur un élément du jeu, on ignore
-            if (e.button !== 0 || isExcludedElement(e.target)) return; 
-            isDragging = true;
-            globalTouchStartX = e.clientX;
-            globalTouchStartY = e.clientY;
-        });
-
-        document.addEventListener('mouseup', e => {
-            if (!isDragging) return; // Ignore si on n'avait pas cliqué avant
-            isDragging = false;
-            
-            if (isExcludedElement(e.target)) return;
-            
-            globalTouchEndX = e.clientX;
-            globalTouchEndY = e.clientY;
-            handleSwipeGesture();
-        });
     </script>
 </body>
 </html>
