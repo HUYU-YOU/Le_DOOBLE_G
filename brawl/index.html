@@ -14,7 +14,7 @@
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
         .menu-title { font-size: 1.8em; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
         
-        .selection-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        .selection-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; max-width: 700px; }
         .card { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; text-align: center; transition: 0.2s; width: 110px; }
         .card:hover, .card.selected { background: rgba(255,255,255,0.2); transform: translateY(-3px); border-color: var(--p1); }
         .card img { width: 60px; height: 60px; object-fit: contain; display: block; margin: 0 auto 5px auto; }
@@ -73,6 +73,7 @@
                 <div class="card" onclick="chooseChar('tank')"><img src="img/sumo_est.png" alt="Brute"><b>Brute</b></div>
                 <div class="card" onclick="chooseChar('gunner')"><img src="img/gunner_est.png" alt="Gunner"><b>Gunner</b></div>
                 <div class="card" onclick="chooseChar('mage')"><img src="img/mage_est.png" alt="Mage"><b>Mage</b></div>
+                <div class="card" onclick="chooseChar('pathkiller')"><img src="img/pathkiller_est.png" alt="Pathkiller" onerror="this.src='img/sumo_est.png'"><b>Pathkiller</b></div>
             </div>
             
             <div id="map-select-container" style="display: none;">
@@ -86,6 +87,7 @@
             
             <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="startLocalGame()">FIGHT !</button>
             
+            <!-- BOUTON TOUCHES -->
             <div>
                 <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1);" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
                 <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
@@ -101,6 +103,7 @@
                     <div class="card" onclick="selectNetChar('tank', this)"><img src="img/sumo_est.png"><b>Brute</b></div>
                     <div class="card" onclick="selectNetChar('gunner', this)"><img src="img/gunner_est.png"><b>Gunner</b></div>
                     <div class="card" onclick="selectNetChar('mage', this)"><img src="img/mage_est.png"><b>Mage</b></div>
+                    <div class="card" onclick="selectNetChar('pathkiller', this)"><img src="img/pathkiller_est.png" onerror="this.src='img/sumo_est.png'"><b>Pathkiller</b></div>
                 </div>
             </div>
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
@@ -126,16 +129,18 @@
                 <b style="color: var(--p1);">Bloquer :</b> MAJ (Shift)<br>
                 <b style="color: var(--p1);">Attaque Ultime :</b> R (Nécessite la jauge jaune pleine)<br>
                 <hr style="border-color: #333; margin: 10px 0;">
-                <b style="color: var(--p2);">Clic Gauche (Attaque Légère) :</b><br>
+                <b style="color: var(--p2);">Clic Gauche (Attaque Principale) :</b><br>
                 - <b>Ninja :</b> Coup d'épée (mêlée).<br>
                 - <b>Brute :</b> Coup de poing (mêlée).<br>
-                - <b>Gunner :</b> Tire une balle rapide.<br>
-                - <b>Mage :</b> Lance une boule de feu (5 tirs max avant recharge).<br><br>
+                - <b>Gunner :</b> Maintiens pour charger un tir perforant.<br>
+                - <b>Mage :</b> Lance une boule de feu (5 tirs max avant recharge).<br>
+                - <b>Pathkiller :</b> Lance un grappin pour attirer l'ennemi.<br><br>
                 <b style="color: var(--p2);">Clic Droit (Capacité Spéciale) :</b><br>
-                - <b>Ninja :</b> Lance un shuriken instantané.<br>
-                - <b>Brute :</b> Maintenez enfoncé pour charger et lancer un Boomerang "Clip".<br>
+                - <b>Ninja :</b> Maintiens pour charger un énorme Shuriken (retombe avec la gravité).<br>
+                - <b>Brute :</b> Maintiens pour charger et lancer un Boomerang "Clip" à courte portée.<br>
                 - <b>Gunner :</b> Dépose une mine au sol (3 mines actives maximum).<br>
                 - <b>Mage :</b> Frappe au corps-à-corps avec son livre magique.<br>
+                - <b>Pathkiller :</b> Frappe Lourde au corps-à-corps.<br>
             </div>
             <button class="btn-main" style="margin-top:20px; background: var(--p2); color: #fff;" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
         </div>
@@ -158,9 +163,15 @@
             'ninja_est': 'img/ninja_est.png', 'ninja_ouest': 'img/ninja_ouest.png',
             'gunner_est': 'img/gunner_est.png', 'gunner_ouest': 'img/gunner_ouest.png',
             'mage_est': 'img/mage_est.png', 'mage_ouest': 'img/mage_ouest.png',
+            'pathkiller_est': 'img/pathkiller_est.png', 'pathkiller_ouest': 'img/pathkiller_ouest.png',
             'map1': 'img/map1.png', 'map2': 'img/map2.png', 'map3': 'img/map3.png'
         };
-        Object.keys(imgFiles).forEach(key => { imgs[key] = new Image(); imgs[key].src = imgFiles[key]; });
+        Object.keys(imgFiles).forEach(key => { 
+            imgs[key] = new Image(); 
+            imgs[key].src = imgFiles[key]; 
+            // Fallback si l'image Pathkiller n'existe pas encore
+            imgs[key].onerror = function() { if(key.includes('pathkiller')) this.src = 'img/sumo_est.png'; };
+        });
 
         // --- AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -191,11 +202,13 @@
             return {left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false, block: false, ult: false};
         }
 
+        // EQUILIBRAGES & STATS
         const charData = {
             ninja: { skinKey: 'ninja', color: '#00f0ff', w: 50, h: 80, speed: 8.5, jump: -13.5, weight: 0.9, dmg: 3.5, kb: 4.5, isRanged: false, maxJumps: 3 },
             tank: { skinKey: 'sumo', color: '#ff007f', w: 80, h: 100, speed: 4.2, jump: -9.5, weight: 1.7, dmg: 6.5, kb: 6.5, isRanged: false, maxJumps: 2 },
             gunner: { skinKey: 'gunner', color: '#ffbf00', w: 50, h: 80, speed: 6, jump: -12, weight: 0.8, dmg: 3.0, kb: 4.0, isRanged: true, maxJumps: 2 },
-            mage: { skinKey: 'mage', color: '#39ff14', w: 55, h: 85, speed: 6.5, jump: -12.5, weight: 1.0, dmg: 5.0, kb: 5.0, isRanged: true, maxJumps: 2 }
+            mage: { skinKey: 'mage', color: '#39ff14', w: 55, h: 85, speed: 6.5, jump: -12.5, weight: 1.0, dmg: 5.0, kb: 5.0, isRanged: true, maxJumps: 2 },
+            pathkiller: { skinKey: 'pathkiller', color: '#9d00ff', w: 60, h: 90, speed: 5.5, jump: -11, weight: 1.5, dmg: 5.0, kb: 5.0, isRanged: false, maxJumps: 2 }
         };
         
         const mapData = [
@@ -209,6 +222,7 @@
         let netSelectedChar = 'ninja'; 
         let netMode = '1v1'; 
         let maxNetPlayers = 2;
+        const GRAVITY = 0.5;
         
         function areEnemies(id1, id2) {
             if (gameMode === 'net_2v2') {
@@ -238,12 +252,13 @@
         }
 
         class Projectile {
-            constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange, isMine = false, isShuriken = false, isBoomerang = false) { 
+            constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange, isMine = false, isShuriken = false, isBoomerang = false, isHook = false) { 
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.ownerId = ownerId; this.dmg = dmg; this.kb = kb; 
                 this.w = 16; this.h = 16; this.active = true; this.color = color; 
-                this.isMine = isMine; this.isShuriken = isShuriken; this.isBoomerang = isBoomerang; 
+                this.isMine = isMine; this.isShuriken = isShuriken; this.isBoomerang = isBoomerang; this.isHook = isHook;
                 this.angle = 0; this.boomerangTimer = 0;
                 this.life = isMine ? 600 : (isShortRange ? 12 : 60); 
+                if (isHook) this.life = 20; // Grab très court
             }
             draw() { 
                 ctx.fillStyle = this.color; ctx.shadowBlur = 8; ctx.shadowColor = this.color; 
@@ -253,8 +268,10 @@
                     ctx.restore();
                 } else if (this.isBoomerang) {
                     ctx.save(); ctx.translate(this.x, this.y); this.angle += 0.4; ctx.rotate(this.angle);
-                    ctx.fillRect(-12, -4, 24, 8); // Forme de "Clip" boomerang
+                    ctx.fillRect(-12, -4, 24, 8); 
                     ctx.restore();
+                } else if (this.isHook) {
+                    ctx.fillRect(this.x - 4, this.y - 4, 8, 8); // Simple carré pour le grab
                 } else {
                     ctx.beginPath(); 
                     if (this.isMine) {
@@ -269,7 +286,7 @@
             }
             update() { 
                 if (this.isMine) {
-                    this.vy += 0.3; this.y += this.vy; this.x += this.vx; this.life--;
+                    this.vy += GRAVITY; this.y += this.vy; this.x += this.vx; this.life--;
                     platforms.forEach(p => { 
                         if (this.y + 8 >= p.y && this.x + 8 > p.x && this.x - 8 < p.x + p.w && this.vy > 0) { 
                             this.y = p.y - 8; this.vy = 0; this.vx *= 0.8; 
@@ -277,17 +294,18 @@
                     });
                 } else if (this.isBoomerang) {
                     this.boomerangTimer++;
-                    if (this.boomerangTimer > 25) {
+                    if (this.boomerangTimer > 15) { // Portée TRÈS courte
                         let owner = players.find(p => p.id === this.ownerId);
                         if (owner && !owner.isDead) {
                             let dx = (owner.x + owner.w/2) - this.x; let dy = (owner.y + owner.h/2) - this.y;
                             let dist = Math.hypot(dx, dy);
-                            if (dist < 30) { this.active = false; } // Le propriétaire rattrape le boomerang
+                            if (dist < 30) { this.active = false; } 
                             else { this.vx = (dx/dist)*15; this.vy = (dy/dist)*15; }
                         } else { this.active = false; }
                     }
                     this.x += this.vx; this.y += this.vy;
                 } else {
+                    if (this.isShuriken) this.vy += GRAVITY * 0.4; // Shuriken retombe
                     this.x += this.vx; this.y += this.vy; this.life--; 
                 }
                 
@@ -295,11 +313,28 @@
                 
                 players.forEach(pl => { 
                     if (areEnemies(pl.id, this.ownerId) && !pl.isDead && this.active && this.x + 8 > pl.x && this.x - 8 < pl.x + pl.w && this.y + 8 > pl.y && this.y - 8 < pl.y + pl.h) { 
-                        pl.takeDamage(this.dmg, this.kb, this.x > pl.x + pl.w/2 ? -1 : 1); 
-                        if (!this.isBoomerang) this.active = false; // Le boomerang traverse
-                        if (this.isMine) { 
-                            for(let i=0; i<15; i++) particles.push(new Particle(this.x, this.y, '#ff0000'));
-                            screenShake = 15; playSound('shatter');
+                        
+                        if (this.isHook) {
+                            // Mécanique de GRAB (Pathkiller)
+                            let owner = players.find(p => p.id === this.ownerId);
+                            if (owner && !owner.isDead && !pl.isBlocking) {
+                                let dirX = Math.sign(owner.x - pl.x) || 1;
+                                pl.takeDamage(this.dmg, 2, dirX); // Petit dmg, trigger le hitstun
+                                pl.vx = dirX * 16; // Attire violemment
+                                pl.vy = -3;
+                                pl.hitstun = 35; // Etourdit
+                            } else if (pl.isBlocking) {
+                                pl.takeDamage(this.dmg, 2, 1); // Tape juste le bouclier
+                            }
+                            this.active = false;
+                        } else {
+                            // Dégâts normaux
+                            pl.takeDamage(this.dmg, this.kb, this.x > pl.x + pl.w/2 ? -1 : 1); 
+                            if (!this.isBoomerang) this.active = false; 
+                            if (this.isMine) { 
+                                for(let i=0; i<15; i++) particles.push(new Particle(this.x, this.y, '#ff0000'));
+                                screenShake = 15; playSound('shatter');
+                            }
                         }
                     } 
                 }); 
@@ -318,7 +353,7 @@
                 this.mageShots = 0; this.mageCooldown = 0;
                 this.activeMines = [];
                 
-                this.isCharging = false; this.chargeTimer = 0; 
+                this.chargingAtk = null; this.chargeTimer = 0; 
                 this.customHitW = 0; this.customHitH = 0; this.customHitXOffset = 0; this.customHitYOffset = 0; this.customHitColor = null;
 
                 this.hitstun = 0; this.outOfBoundsTimer = 0; this.isBot = false;
@@ -348,12 +383,20 @@
                 if (Math.abs(this.vx) > 0.5 && this.grounded && this.stunTimer === 0) { this.walkCycle += 0.2; ctx.rotate(Math.sin(this.walkCycle) * 0.15); ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); }
                 if (this.attackTimer > 10) { ctx.scale(1.2, 1.2); ctx.rotate(this.facing * 0.2); }
                 
-                // Animation de Charge Boomerang Brute
-                if (this.isCharging && this.skinKey === 'sumo') {
-                    ctx.shadowBlur = 15; ctx.shadowColor = '#ff007f'; ctx.beginPath();
-                    ctx.arc(0, 0, this.w + (this.chargeTimer * 0.3), 0, Math.PI*2);
-                    ctx.strokeStyle = `rgba(255, 0, 127, ${this.chargeTimer/90})`;
-                    ctx.lineWidth = 4; ctx.stroke(); ctx.shadowBlur = 0;
+                // Effets visuels de Charge
+                if (this.chargingAtk) {
+                    if (this.skinKey === 'ninja' && this.chargingAtk === 'H') {
+                        ctx.save(); ctx.rotate(this.chargeTimer * 0.3); ctx.fillStyle = `rgba(0, 240, 255, ${Math.min(1, this.chargeTimer/45)})`;
+                        ctx.fillRect(-20, -3, 40, 6); ctx.fillRect(-3, -20, 6, 40); ctx.restore();
+                    } else if (this.skinKey === 'sumo' && this.chargingAtk === 'H') {
+                        ctx.shadowBlur = 15; ctx.shadowColor = '#ff007f'; ctx.beginPath();
+                        ctx.arc(0, 0, this.w + (this.chargeTimer * 0.3), 0, Math.PI*2);
+                        ctx.strokeStyle = `rgba(255, 0, 127, ${this.chargeTimer/90})`;
+                        ctx.lineWidth = 4; ctx.stroke(); ctx.shadowBlur = 0;
+                    } else if (this.skinKey === 'gunner' && this.chargingAtk === 'L') {
+                        ctx.fillStyle = `rgba(255, 191, 0, ${Math.min(1, this.chargeTimer/45)})`;
+                        ctx.beginPath(); ctx.arc(this.facing * 20, 0, 5 + (this.chargeTimer * 0.1), 0, Math.PI*2); ctx.fill();
+                    }
                 }
 
                 if (img && img.complete && img.naturalWidth !== 0) { ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h); } else { ctx.fillStyle = this.color; ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h); }
@@ -364,7 +407,7 @@
                 }
                 ctx.restore();
 
-                // Hitbox Melee Custom (Livre / Poing / Epee)
+                // Hitbox Melee Custom
                 if (this.attackTimer > 10 && !this.atkIsRanged) { 
                     ctx.fillStyle = this.customHitColor || 'rgba(255, 255, 255, 0.5)'; 
                     let rx = this.x + (this.customHitXOffset || 0); let ry = this.y + (this.customHitYOffset || 0);
@@ -373,22 +416,36 @@
                 }
             }
             
-            executeBoomerang(charge, ctrl) {
-                this.attackTimer = 25; playSound('shoot');
+            releaseCharge(type, ctrl) {
+                let chargePct = Math.min(1, this.chargeTimer / 90);
                 let aimX = 0, aimY = 0; if (ctrl.up) aimY = -1; else if (ctrl.down) aimY = 1; else aimX = this.facing;
-                
-                let chargePct = Math.min(1, charge / 90);
-                let dmg = this.baseDmg * 1.5 * (1 + chargePct);
-                let kb = this.baseKb * 1.5 * (1 + chargePct);
-                let speed = 12 + (chargePct * 8);
-                
-                let px = this.x + this.w/2; let py = this.y + this.h/2;
-                let projVx = aimX * speed; let projVy = aimY * speed;
-                if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; }
-                if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
+                let px = this.x + this.w / 2; let py = this.y + this.h / 2;
 
-                // isBoomerang = true
-                projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, true));
+                if (this.skinKey === 'gunner' && type === 'L') {
+                    this.attackTimer = 25; playSound('shoot');
+                    let dmg = this.baseDmg * (1 + chargePct * 1.5);
+                    let kb = this.baseKb * (1 + chargePct * 1.0);
+                    let projVx = aimX * 18; let projVy = aimY * 18; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 18;
+                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, false, false)); 
+                } 
+                else if (this.skinKey === 'ninja' && type === 'H') {
+                    this.attackTimer = 45; playSound('shoot'); // Cadence plus lente
+                    let dmg = this.baseDmg * 1.5 * (1 + chargePct * 1.5);
+                    let kb = this.baseKb * 1.2 * (1 + chargePct * 1.0);
+                    let speed = 10 + (chargePct * 8);
+                    let projVx = aimX * speed; let projVy = aimY * speed; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
+                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, '#00f0ff', false, false, true, false, false)); 
+                } 
+                else if (this.skinKey === 'sumo' && type === 'H') {
+                    this.attackTimer = 35; playSound('shoot');
+                    let dmg = this.baseDmg * 1.2 * (1 + chargePct * 0.5);
+                    let kb = this.baseKb * 1.2 * (1 + chargePct * 0.5);
+                    let speed = 4 + (chargePct * 4); // Très courte portée
+                    let projVx = aimX * speed; let projVy = aimY * speed; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
+                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, true, false)); 
+                }
+
+                this.chargingAtk = null; this.chargeTimer = 0; this.atkDirX = aimX; this.atkDirY = aimY; this.atkIsRanged = true;
             }
 
             update(ctrl) {
@@ -407,70 +464,81 @@
                 } else {
                     this.isBlocking = ctrl.block;
                     if (this.isBlocking) {
-                        this.vx *= 0.5; this.isCharging = false; this.chargeTimer = 0;
+                        this.vx *= 0.5; this.chargingAtk = null; this.chargeTimer = 0;
                     } else {
                         if (this.shieldHealth < 100) this.shieldHealth += 0.5; 
                         
                         if (ctrl.left) { this.vx = -cSpd; this.facing = -1; } else if (ctrl.right) { this.vx = cSpd; this.facing = 1; } else { this.vx *= 0.8; }
                         if (ctrl.jump) { if (this.jumps > 0 && !this.jumpPressed) { this.vy = cJmp; this.jumps--; this.grounded = false; this.jumpPressed = true; playSound('jump'); } } else { this.jumpPressed = false; }
                         
-                        // CHARGE BOOMERANG BRUTE (Clic Droit)
-                        if (this.skinKey === 'sumo' && ctrl.atkH && this.attackTimer === 0) {
-                            this.isCharging = true; this.chargeTimer++;
-                            if (this.chargeTimer >= 90) { this.executeBoomerang(this.chargeTimer, ctrl); this.isCharging = false; this.chargeTimer = 0; }
-                            return; 
-                        } else if (this.isCharging && this.skinKey === 'sumo' && !ctrl.atkH) {
-                            this.executeBoomerang(this.chargeTimer, ctrl); this.isCharging = false; this.chargeTimer = 0;
+                        if (ctrl.ult && this.superMeter >= 150) {
+                            this.superMeter = 0; updateHUD(); this.fireUltimate(); return;
                         }
 
-                        if (ctrl.ult && this.superMeter >= 150) {
-                            this.superMeter = 0; updateHUD(); this.fireUltimate();
+                        // LOGIQUE DE CHARGE
+                        let isChargingInput = null;
+                        if (this.skinKey === 'gunner' && ctrl.atkL) isChargingInput = 'L';
+                        if (this.skinKey === 'ninja' && ctrl.atkH) isChargingInput = 'H';
+                        if (this.skinKey === 'sumo' && ctrl.atkH) isChargingInput = 'H';
+
+                        if (this.chargingAtk && !isChargingInput) {
+                            if ((this.chargingAtk === 'L' && !ctrl.atkL) || (this.chargingAtk === 'H' && !ctrl.atkH)) {
+                                this.releaseCharge(this.chargingAtk, ctrl);
+                            }
+                        } else if (isChargingInput && this.attackTimer === 0) {
+                            this.chargingAtk = isChargingInput; this.chargeTimer++;
+                            if (this.chargeTimer >= 90) this.releaseCharge(this.chargingAtk, ctrl);
+                            return; 
+                        } else if (this.chargingAtk) {
+                            this.chargeTimer++;
+                            return; 
                         }
-                        else if (!this.isCharging && ((ctrl.atkL || ctrl.atkH) && this.attackTimer === 0)) {
+
+                        // ATTAQUES INSTANTANÉES
+                        if (!this.chargingAtk && ((ctrl.atkL || ctrl.atkH) && this.attackTimer === 0)) {
                             
                             let isHeavy = ctrl.atkH; 
-                            let doRanged = false; let isMine = false; let isShuriken = false;
+                            let doRanged = false; let isMine = false; let isHook = false;
                             let aimX = 0, aimY = 0; if (ctrl.up) aimY = -1; else if (ctrl.down) aimY = 1; else aimX = this.facing;
                             let attackDuration = isHeavy ? 35 : 20;
                             
                             this.customHitW = 0; this.customHitH = 0; this.customHitXOffset = 0; this.customHitYOffset = 0; this.customHitColor = null;
 
-                            // LOGIQUE D'ATTAQUE PAR CLASSE
-                            if (this.skinKey === 'ninja') {
-                                if (isHeavy) {
-                                    doRanged = true; isShuriken = true;
-                                } else {
-                                    doRanged = false; // Epee
-                                    this.customHitColor = 'rgba(0, 240, 255, 0.6)';
-                                    if (aimY === -1) { this.customHitYOffset -= 70; this.customHitH = 70; this.customHitW = this.w; }
-                                    else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 70; this.customHitW = this.w; }
-                                    else { this.customHitXOffset = (aimX === 1 ? this.w : -70); this.customHitW = 70; this.customHitH = this.h; }
-                                }
+                            // LOGIQUE D'ATTAQUE INSTANTANÉE PAR CLASSE
+                            if (this.skinKey === 'ninja' && !isHeavy) { // Epee (Clic Gauche)
+                                doRanged = false; this.customHitColor = 'rgba(0, 240, 255, 0.6)';
+                                if (aimY === -1) { this.customHitYOffset -= 70; this.customHitH = 70; this.customHitW = this.w; }
+                                else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 70; this.customHitW = this.w; }
+                                else { this.customHitXOffset = (aimX === 1 ? this.w : -70); this.customHitW = 70; this.customHitH = this.h; }
                             } 
-                            else if (this.skinKey === 'sumo') {
-                                doRanged = false; // Poing gauche
+                            else if (this.skinKey === 'sumo' && !isHeavy) { // Poing (Clic Gauche)
+                                doRanged = false; 
                                 if (aimY === -1) { this.customHitYOffset -= 60; this.customHitH = 60; this.customHitW = this.w; }
                                 else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 60; this.customHitW = this.w; }
                                 else { this.customHitXOffset = (aimX === 1 ? this.w : -60); this.customHitW = 60; this.customHitH = 60; }
                             } 
-                            else if (this.skinKey === 'gunner') {
-                                if (isHeavy) { doRanged = true; isMine = true; } 
-                                else { doRanged = true; } // Balle classique
+                            else if (this.skinKey === 'gunner' && isHeavy) { // Mine (Clic Droit)
+                                doRanged = true; isMine = true; attackDuration = 25;
                             } 
                             else if (this.skinKey === 'mage') {
-                                if (isHeavy) {
-                                    doRanged = false; // LIVRE MAGIQUE
+                                if (isHeavy) { // Livre (Clic Droit)
+                                    doRanged = false; this.customHitColor = '#8b4513';
                                     if (aimY === -1) { this.customHitYOffset -= 50; this.customHitH = 50; this.customHitW = 40; this.customHitXOffset = 5; }
                                     else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 50; this.customHitW = 40; this.customHitXOffset = 5; }
                                     else { this.customHitXOffset = (aimX === 1 ? this.w : -40); this.customHitW = 40; this.customHitH = 50; this.customHitYOffset = 15; }
-                                    this.customHitColor = '#8b4513';
-                                } else {
-                                    if (this.mageCooldown > 0) {
-                                        particles.push(new Particle(this.x + this.w/2, this.y, '#888'));
-                                        return; 
-                                    }
-                                    doRanged = true; this.mageShots++;
-                                    if (this.mageShots >= 5) { this.mageCooldown = 120; this.mageShots = 0; }
+                                } else { // Boule de feu (Clic Gauche)
+                                    if (this.mageCooldown > 0) { particles.push(new Particle(this.x + this.w/2, this.y, '#888')); return; }
+                                    doRanged = true; this.mageShots++; if (this.mageShots >= 5) { this.mageCooldown = 120; this.mageShots = 0; }
+                                }
+                            }
+                            else if (this.skinKey === 'pathkiller') {
+                                if (isHeavy) { // Frappe Lourde (Clic Droit)
+                                    doRanged = false; this.customHitColor = '#9d00ff';
+                                    if (aimY === -1) { this.customHitYOffset -= 60; this.customHitH = 60; this.customHitW = this.w; }
+                                    else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 60; this.customHitW = this.w; }
+                                    else { this.customHitXOffset = (aimX === 1 ? this.w : -60); this.customHitW = 70; this.customHitH = 60; }
+                                } else { // Grab (Clic Gauche)
+                                    doRanged = true; isHook = true; attackDuration = 30;
                                 }
                             }
 
@@ -481,13 +549,15 @@
                                 playSound('shoot'); let px = this.x + this.w / 2; let py = this.y + this.h / 2; 
                                 if (isMine) {
                                     let targetX = this.x + this.w/2 + aimX * 40; let targetY = this.y + this.h - 8;
-                                    let mine = new Projectile(targetX, targetY, 0, 0, this.id, this.baseDmg * 2.5, this.baseKb * 1.5, '#ff0000', false, true, false, false);
+                                    let mine = new Projectile(targetX, targetY, 0, 0, this.id, this.baseDmg * 2.5, this.baseKb * 1.5, '#ff0000', false, true, false, false, false);
                                     projectiles.push(mine); this.activeMines.push(mine);
                                     if (this.activeMines.length > 3) { let old = this.activeMines.shift(); old.active = false; }
+                                } else if (isHook) {
+                                    let projVx = aimX * 18; let projVy = aimY * 18; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 18;
+                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, 2.0, 1.0, '#9d00ff', true, false, false, false, true));
                                 } else {
-                                    let speed = isShuriken ? 15 : 15;
-                                    let projVx = aimX * speed; let projVy = aimY * speed; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
-                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, this.color, false, false, isShuriken, false)); 
+                                    let projVx = aimX * 15; let projVy = aimY * 15; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 15;
+                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, this.color, false, false, false, false, false)); 
                                 }
                             } else { 
                                 playSound('hit'); 
@@ -527,7 +597,7 @@
             die() {
                 if (this.isDead) return; playSound('death'); screenShake = 15; 
                 this.lives--; this.percent = 0; this.superMeter = 0; this.buffType = null; this.buffTimer = 0; this.outOfBoundsTimer = 0; this.shieldHealth = 100; this.stunTimer = 0;
-                this.isCharging = false; this.chargeTimer = 0; this.mageShots = 0; this.mageCooldown = 0; this.activeMines = [];
+                this.chargingAtk = null; this.chargeTimer = 0; this.mageShots = 0; this.mageCooldown = 0; this.activeMines = [];
                 updateHUD();
                 for (let i = 0; i < 30; i++) particles.push(new Particle(this.x, this.y, this.color));
                 if (this.lives <= 0) { this.isDead = true; checkGameEnd(); } else { this.x = canvas.width / 2 + (Math.random() * 100 - 50); this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; }
@@ -547,7 +617,7 @@
                 let kb = (baseKb * (1 + (this.percent / 50))) / this.weight; this.vx = dir * kb; this.vy = -kb * 0.55; 
                 this.hitstun = Math.min(60, Math.floor(kb * 2.5)); screenShake = Math.min(25, Math.floor(kb / 1.5));
                 for (let i = 0; i < 12; i++) particles.push(new Particle(this.x + this.w / 2, this.y + this.h / 2, '#fff'));
-                this.isCharging = false; this.chargeTimer = 0; 
+                this.chargingAtk = null; this.chargeTimer = 0; 
             }
             
             applyBuff(type) { playSound('powerup'); if (type === 'heal') this.percent = Math.max(0, this.percent - 25); else { this.buffType = type; this.buffTimer = 250; } updateHUD(); }
@@ -679,7 +749,7 @@
 
         function selectNetChar(charName, element) {
             netSelectedChar = charName; playSound('powerup');
-            const names = {ninja: 'Ninja', tank: 'Brute', gunner: 'Gunner', mage: 'Mage'}; document.getElementById('net-char-name').innerText = names[charName];
+            const names = {ninja: 'Ninja', tank: 'Brute', gunner: 'Gunner', mage: 'Mage', pathkiller: 'Pathkiller'}; document.getElementById('net-char-name').innerText = names[charName];
             document.querySelectorAll('#net-char-grid .card').forEach(c => c.classList.remove('selected')); element.classList.add('selected');
         }
 
@@ -716,7 +786,7 @@
                     if (data.type === 'state') {
                         platforms = data.state.platforms; projectiles = data.state.projectiles; items = data.state.items;
                         if (players.length !== data.state.players.length) {
-                            let tMap = { 'sumo': 'tank', 'ninja': 'ninja', 'gunner': 'gunner', 'mage': 'mage' };
+                            let tMap = { 'sumo': 'tank', 'ninja': 'ninja', 'gunner': 'gunner', 'mage': 'mage', 'pathkiller': 'pathkiller' };
                             players = data.state.players.map(p => new Player(p.id, p.x, tMap[p.skinKey])); 
                             players.forEach(p => { document.getElementById(`h${p.id}`).style.display = 'block'; document.getElementById(`n${p.id}`).innerText = `J${p.id}`; });
                         }
@@ -763,11 +833,12 @@
             items.forEach(it => { ctx.shadowBlur = 15; ctx.shadowColor = it.color; ctx.font = "24px Arial"; ctx.fillText(it.type==='dmg'?'💥':(it.type==='heal'?'❤️':'⚡'), it.x, it.y+22); ctx.shadowBlur = 0; });
             players.forEach(pl => {
                 if (pl.isDead) return; if (pl.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
-                let pObj = new Player(pl.id, pl.x, pl.skinKey === 'sumo' ? 'tank' : (pl.skinKey === 'ninja' ? 'ninja' : (pl.skinKey === 'gunner' ? 'gunner' : 'mage')));
+                let cType = 'ninja'; if(pl.skinKey==='sumo') cType='tank'; else if(pl.skinKey==='gunner') cType='gunner'; else if(pl.skinKey==='mage') cType='mage'; else if(pl.skinKey==='pathkiller') cType='pathkiller';
+                let pObj = new Player(pl.id, pl.x, cType);
                 Object.assign(pObj, pl); pObj.draw();
             });
             projectiles.forEach(pr => { 
-                let pObj = new Projectile(pr.x, pr.y, pr.vx, pr.vy, pr.ownerId, pr.dmg, pr.kb, pr.color, false, pr.isMine, pr.isShuriken, pr.isBoomerang);
+                let pObj = new Projectile(pr.x, pr.y, pr.vx, pr.vy, pr.ownerId, pr.dmg, pr.kb, pr.color, false, pr.isMine, pr.isShuriken, pr.isBoomerang, pr.isHook);
                 pObj.life = pr.life; pObj.angle = pr.angle || 0; pObj.draw(); 
             });
         }
