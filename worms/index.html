@@ -121,7 +121,6 @@
         <div id="game-over" class="menu-overlay hidden">
             <h2 id="winner-text">VICTOIRE</h2>
             <button class="btn" onclick="location.reload()">Retour au menu</button>
-            <button class="btn" onclick="handleRestart()">Rejouer la Revanche</button>
         </div>
     </div>
 
@@ -242,6 +241,8 @@
                     enemy.facing = data.facing; 
                     enemy.state = data.state; 
                     enemy.animFrame = data.animFrame;
+                    enemy.isAiming = data.isAiming || false;
+                    enemy.aimDy = data.aimDy || 0;
                 }
                 if(data.type === 'fire') { 
                     projectile = new Projectile(data.px, data.py, data.vx, data.vy); 
@@ -254,10 +255,12 @@
         function syncPlayerState() {
             if (conn && conn.open && gameMode === 'online' && currentPlayer === myPlayerId) {
                 let me = worms[myPlayerId - 1];
+                let dy = isDragging ? (dragStartY - dragCurrentY) : 0;
                 conn.send({ 
                     type: 'sync', 
                     x: me.x, y: me.y, 
-                    facing: me.facing, state: me.state, animFrame: me.animFrame 
+                    facing: me.facing, state: me.state, animFrame: me.animFrame,
+                    isAiming: isDragging, aimDy: dy
                 });
             }
         }
@@ -274,12 +277,20 @@
             s1_jump_r1: 'img/slime1_jumpright1.png', s1_jump_r2: 'img/slime1_jumpright2.png', s1_jump_r3: 'img/slime1_jumpright3.png',
             s1_jump_l1: 'img/slime1_jumpleft1.png', s1_jump_l2: 'img/slime1_jumpleft2.png', s1_jump_l3: 'img/slime1_jumpleft3.png',
             
+            // ANIMATIONS BAZOOKA SLIME 1
+            s1_atqtop_r: 'img/slime1_rightatqtop.png', s1_atqbot_r: 'img/slime1_rightatqbot.png',
+            s1_atqtop_l: 'img/slime1_leftatqtop.png', s1_atqbot_l: 'img/slime1_leftatqbot.png',
+            
             s2_idle_r: 'img/slime2_right.png', 
             s2_idle_l: 'img/slime2_left.png',
             s2_walk_r1: 'img/slime2_moveright1.png', s2_walk_r2: 'img/slime2_moveright2.png', s2_walk_r3: 'img/slime2_moveright3.png',
             s2_walk_l1: 'img/slime2_moveleft1.png', s2_walk_l2: 'img/slime2_moveleft2.png', s2_walk_l3: 'img/slime2_moveleft3.png',
             s2_jump_r1: 'img/slime2_jumpright1.png', s2_jump_r2: 'img/slime2_jumpright2.png', s2_jump_r3: 'img/slime2_jumpright3.png',
-            s2_jump_l1: 'img/slime2_jumpleft1.png', s2_jump_l2: 'img/slime2_jumpleft2.png', s2_jump_l3: 'img/slime2_jumpleft3.png'
+            s2_jump_l1: 'img/slime2_jumpleft1.png', s2_jump_l2: 'img/slime2_jumpleft2.png', s2_jump_l3: 'img/slime2_jumpleft3.png',
+            
+            // ANIMATIONS BAZOOKA SLIME 2
+            s2_atqtop_r: 'img/slime2_rightatqtop.png', s2_atqbot_r: 'img/slime2_rightatqbot.png',
+            s2_atqtop_l: 'img/slime2_leftatqtop.png', s2_atqbot_l: 'img/slime2_leftatqbot.png'
         };
 
         let loadedCount = 0; 
@@ -362,6 +373,7 @@
                 this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
+                this.isAiming = false; this.aimDy = 0;
             }
 
             update() {
@@ -435,7 +447,14 @@
                 if (this.isDead) return;
                 
                 let spriteName = `s${this.type}_`;
-                if (this.state === 'air' || this.state === 'landed') spriteName += `jump_${this.facing}${this.animFrame}`;
+                let isMe = (currentPlayer === this.id);
+                let aiming = (isMe && isDragging) || (!isMe && this.isAiming);
+                let currentAimDy = isMe ? (dragStartY - dragCurrentY) : this.aimDy;
+
+                if (aiming && this.state !== 'air' && this.state !== 'walk') {
+                    spriteName += `atq${currentAimDy < 0 ? 'top' : 'bot'}_${this.facing}`;
+                }
+                else if (this.state === 'air' || this.state === 'landed') spriteName += `jump_${this.facing}${this.animFrame}`;
                 else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
                 else spriteName += `idle_${this.facing}`;
 
