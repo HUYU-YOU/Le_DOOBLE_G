@@ -234,7 +234,6 @@
         Object.keys(imgFiles).forEach(key => { 
             imgs[key] = new Image(); 
             imgs[key].src = imgFiles[key]; 
-            // Fallback transparent : le jeu ne crashe jamais et n'affiche plus un Sumo par défaut !
             imgs[key].onerror = function() { 
                 this.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; 
             };
@@ -326,11 +325,10 @@
                 this.angle = 0; 
                 this.life = isMine ? 600 : (isShortRange ? 12 : 60); 
                 if (isHook) this.life = 15; 
-                if (isRope) this.life = 10; // Durée de vie très courte (Corde de la Brute)
+                if (isRope) this.life = 10; 
             }
             
             draw() { 
-                // CORDE DE LA BRUTE
                 if (this.isRope) {
                     let owner = players.find(p => p.id === this.ownerId);
                     if (owner) {
@@ -373,7 +371,7 @@
                     ctx.restore();
                 } else {
                     if (this.isHook) {
-                        // Invisible (géré par l'allongement du bras de Pathkiller)
+                        // Invisible
                     } else if (this.isShuriken) {
                         ctx.save(); ctx.translate(this.x, this.y); this.angle += 0.3; ctx.rotate(this.angle);
                         ctx.fillRect(-10, -2, 20, 4); ctx.fillRect(-2, -10, 4, 20); ctx.restore();
@@ -412,19 +410,25 @@
                     if (areEnemies(pl.id, this.ownerId) && !pl.isDead && this.active && this.x + 8 > pl.x && this.x - 8 < pl.x + pl.w && this.y + 8 > pl.y && this.y - 8 < pl.y + pl.h) { 
                         
                         if (this.isHook) {
+                            // CORRECTIF GRAVITÉ GRAPPIN PATHKILLER
                             let owner = players.find(p => p.id === this.ownerId);
                             if (owner && !owner.isDead && !pl.isBlocking) {
-                                let dirX = Math.sign(owner.x - pl.x) || 1;
-                                pl.takeDamage(this.dmg, 2, dirX); 
-                                pl.vx = dirX * 16; // Attire violemment vers lui
-                                pl.vy = -3;
-                                pl.hitstun = 35; 
+                                let dirX = owner.x > pl.x ? 1 : -1;
+                                let dist = Math.abs(owner.x - pl.x);
+                                pl.takeDamage(this.dmg, 0, dirX); // kb à 0
+                                pl.vx = dirX * Math.min(14, dist * 0.15); // Force dynamique pour arrêter pile au Pathkiller
+                                pl.vy = -2;
+                                pl.hitstun = 30; // Immobilise l'ennemi pour l'enchainement
                             } else if (pl.isBlocking) {
                                 pl.takeDamage(this.dmg, 2, 1);
                             }
                             this.active = false;
                         } else {
-                            pl.takeDamage(this.dmg, this.kb, this.x > pl.x + pl.w/2 ? -1 : 1); 
+                            // CORRECTIF MAGE & GUNNER (KNOCKBACK DIRECTIONNEL)
+                            let hitDir = Math.sign(this.vx);
+                            if (hitDir === 0) hitDir = this.x > pl.x + pl.w/2 ? -1 : 1; 
+                            pl.takeDamage(this.dmg, this.kb, hitDir); // Utilise la direction de la balle !
+                            
                             if (this.isMine || this.isRope) { 
                                 this.active = false;
                                 if (this.isMine) {
@@ -469,7 +473,6 @@
 
                 ctx.fillStyle = this.color; ctx.font = "bold 14px Arial"; ctx.fillText(`J${this.id}: ${Math.floor(this.percent)}%`, this.x - 5, this.y - 12);
                 
-                // --- SELECTION DU SPRITE DYNAMIQUE (Directionnel) ---
                 let dirStr = this.facing === 1 ? 'right' : 'left';
                 let oldDirStr = this.facing === 1 ? 'est' : 'ouest';
                 let spriteKey = `${this.skinKey}_${oldDirStr}`; 
@@ -484,12 +487,13 @@
                     let pct = (this.maxAttackTimer - this.attackTimer) / this.maxAttackTimer;
                     
                     if (this.skinKey === 'ninja' && !this.atkIsRanged) {
+                        // CORRECTIF INVERSION HAUT/BAS NINJA
                         if (aimStr === 'top') {
                             let frame = Math.min(4, Math.floor(pct * 4) + 1);
-                            spriteKey = `atq${dirStr}_top${frame}`;
+                            spriteKey = `atq${dirStr}_bot${frame}`; // Inversé pour corriger
                         } else if (aimStr === 'bot') {
                             let frame = Math.min(4, Math.floor(pct * 4) + 1);
-                            spriteKey = `atq${dirStr}_bot${frame}`;
+                            spriteKey = `atq${dirStr}_top${frame}`; // Inversé pour corriger
                         } else {
                             let frame = Math.min(8, Math.floor(pct * 8) + 1);
                             spriteKey = `${dirStr}atqninja${frame}`;
@@ -540,7 +544,6 @@
                     }
                 }
                 
-                // Fallback de sécurité
                 let img = imgs[spriteKey] && imgs[spriteKey].complete && imgs[spriteKey].naturalWidth > 0 ? imgs[spriteKey] : imgs[`${this.skinKey}_${oldDirStr}`];
                 if (!img || !img.complete || img.naturalWidth === 0) img = imgs['pathkiller_right']; 
                 
@@ -552,7 +555,6 @@
 
                 if (Math.abs(this.vx) > 0.5 && this.grounded && this.stunTimer === 0) { this.walkCycle += 0.2; ctx.rotate(Math.sin(this.walkCycle) * 0.15); ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); }
                 
-                // Effets de Charge Visuels
                 if (this.chargingAtk) {
                     if (this.skinKey === 'ninja' && this.chargingAtk === 'H') {
                         ctx.save(); ctx.rotate(this.chargeTimer * 0.3); ctx.fillStyle = `rgba(0, 240, 255, ${Math.min(1, this.chargeTimer/45)})`;
@@ -568,27 +570,23 @@
                     }
                 }
 
-                // --- GESTION ABSOLUE DE L'ÉCHELLE ET DE L'ANCRAGE (Fix "Taille Géante" et "TP") ---
                 if (img && img.complete && img.naturalWidth !== 0) { 
                     
-                    let drawH = this.h; // Taille STRICTEMENT conservée
+                    let drawH = this.h; 
                     let ratio = img.naturalWidth / img.naturalHeight;
                     
-                    // Léger ajustement ciblé sans déformer
                     if (this.attackTimer > 0) {
                         if (this.skinKey === 'pathkiller') {
-                            if (this.atkIsRanged) drawH = this.h * 1.2; // Grappin
-                            else drawH = this.h * 1.1; // Poing Lourd
+                            if (this.atkIsRanged) drawH = this.h * 1.2; 
+                            else drawH = this.h * 1.1; 
                         } else if (aimStr === 'top' || aimStr === 'bot') {
-                            drawH = this.h * 1.2; // Donne de l'amplitude aux frappes Haut/Bas
+                            drawH = this.h * 1.2; 
                         }
                     }
 
                     let drawW = drawH * ratio; 
-                    
-                    // ANCRAGE PARFAIT (Pieds au sol, Dos aligné)
-                    let offsetY = (this.h / 2) - drawH; // Aligne systématiquement le bas de l'image sur les pieds
-                    let offsetX = this.facing === 1 ? (-this.w / 2) : ((this.w / 2) - drawW); // Étire l'attaque vers l'avant, le dos reste fixe
+                    let offsetY = (this.h / 2) - drawH; 
+                    let offsetX = this.facing === 1 ? (-this.w / 2) : ((this.w / 2) - drawW); 
                     
                     ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
                 } else { 
@@ -623,11 +621,10 @@
                     projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, '#00f0ff', false, false, true, false, this.skinKey, false)); 
                 } 
                 else if (this.skinKey === 'sumo' && type === 'H') {
-                    // Corde de la Brute !
                     this.attackTimer = 25; this.maxAttackTimer = 25; playSound('shoot');
                     let dmg = this.baseDmg * 1.2 * (1 + chargePct * 0.5);
                     let kb = this.baseKb * 1.2 * (1 + chargePct * 0.5);
-                    let speed = 25; // Extension rapide de la Corde
+                    let speed = 25; 
                     let projVx = aimX * speed; let projVy = aimY * speed; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
                     projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, false, this.skinKey, true)); 
                 }
@@ -662,7 +659,6 @@
                             this.superMeter = 0; updateHUD(); this.fireUltimate(); return;
                         }
 
-                        // LOGIQUE DE CHARGE
                         let isChargingInput = null;
                         if (this.skinKey === 'gunner' && ctrl.atkL) isChargingInput = 'L';
                         if (this.skinKey === 'ninja' && ctrl.atkH) isChargingInput = 'H';
@@ -681,7 +677,6 @@
                             return; 
                         }
 
-                        // ATTAQUES INSTANTANÉES
                         if (!this.chargingAtk && ((ctrl.atkL || ctrl.atkH) && this.attackTimer === 0)) {
                             let isHeavy = ctrl.atkH; 
                             let doRanged = false; let isMine = false; let isHook = false;
@@ -692,7 +687,8 @@
                                 doRanged = false; attackDuration = 20;
                             } 
                             else if (this.skinKey === 'sumo' && !isHeavy) { 
-                                doRanged = false; attackDuration = 35; 
+                                // CORRECTIF VITESSE ATTAQUE BRUTE (Avait 35, passé à 18)
+                                doRanged = false; attackDuration = 18; 
                             } 
                             else if (this.skinKey === 'gunner' && isHeavy) { 
                                 doRanged = true; isMine = true; attackDuration = 25;
@@ -710,7 +706,7 @@
                                 if (isHeavy) { 
                                     doRanged = false; attackDuration = 25; 
                                 } else { 
-                                    doRanged = true; isHook = true; attackDuration = 15; // Animation Rapide du Grab (15 frames)
+                                    doRanged = true; isHook = true; attackDuration = 15; 
                                 }
                             }
 
@@ -727,9 +723,8 @@
                                     if (this.activeMines.length > 3) { let old = this.activeMines.shift(); old.active = false; }
                                 } else if (isHook) {
                                     let projVx = aimX * 18; let projVy = aimY * 18; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 18;
-                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, 2.0, 1.0, '#9d00ff', true, false, true, this.skinKey, false));
+                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, 2.0, 1.0, '#9d00ff', true, false, false, true, this.skinKey, false));
                                 } else {
-                                    // Projectiles simples (Mage)
                                     let projVx = aimX * 15; let projVy = aimY * 15; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 15;
                                     projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, this.color, false, false, false, false, this.skinKey, false)); 
                                 }
