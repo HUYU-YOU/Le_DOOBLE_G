@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Slimes Artillery</title>
+    <title>Cyber Slimes Artillery (Worms-like)</title>
     <!-- Chargement de PeerJS pour le Multijoueur WebRTC -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -93,25 +93,25 @@
 
         <!-- MENU PRINCIPAL -->
         <div id="main-menu" class="menu-overlay">
-            <h1>Slimes artillerie</h1>
+            <h1>Cyber Slimes</h1>
             <div id="loading-text" class="loader">Chargement des sprites...</div>
             
             <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column; align-items: center;">
                 
-                <!-- SELECTEUR DE MAP -->
+                <!-- SELECTEUR DE MAP (LOCAL) -->
                 <h3 style="color: #aaa; margin-top: 0; margin-bottom: 10px; font-weight: normal; letter-spacing: 2px;">ARÈNE DE COMBAT</h3>
                 <div class="selection-grid" id="map-select">
                     <div class="map-card selected" onclick="selectSlimeMap(1, this)">
-                        <img src="img/map1.png" alt="Map 1"><b>The village</b>
+                        <img src="img/map1.png" alt="Map 1"><b>Arène Bleue</b>
                     </div>
                     <div class="map-card" onclick="selectSlimeMap(2, this)">
-                        <img src="img/map2.png" alt="Map 2"><b>The hell</b>
+                        <img src="img/map2.png" alt="Map 2"><b>Arène Rouge</b>
                     </div>
                 </div>
 
                 <button class="btn" onclick="startGame('local_1v1')">🕹️ 1 VS 1 (Local)</button>
-                <button class="btn btn-gold" onclick="startGame('local_2v2')">🛡️ 2 VS 2 </button>
-                <button class="btn btn-pink" onclick="startGame('local_ffa')">⚔️ 4 Player </button>
+                <button class="btn btn-gold" onclick="startGame('local_2v2')">🛡️ 2 VS 2 (Équipes)</button>
+                <button class="btn btn-pink" onclick="startGame('local_ffa')">⚔️ 4 Joueurs (Chacun pour soi)</button>
                 <hr style="width: 80%; border-color: rgba(255,255,255,0.2); margin: 10px 0;">
                 <button class="btn" onclick="startGame('ai')" style="border-color:#fff; color:#fff;">🤖 Contre l'IA</button>
                 <button class="btn" onclick="showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multijoueur (En Ligne)</button>
@@ -122,15 +122,27 @@
         <div id="online-menu" class="menu-overlay hidden">
             <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR</h2>
             
-            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 300px;">
-                <button class="btn" style="min-width: 200px; padding: 10px;" onclick="hostGame()">1. Héberger</button>
-                <p style="margin-top: 15px; font-size: 0.9em; color: #aaa;">La map choisie dans le menu sera utilisée pour la partie en ligne.</p>
-                <p style="margin-top: 10px;">Code Hôte : <br><b id="lobby-code-display" style="color: var(--p1); font-size:2em; letter-spacing:4px;">...</b></p>
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 340px;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em; text-transform: uppercase;">Créer une partie</h3>
+                
+                <h4 style="color: var(--p1); margin-bottom: 10px; font-size: 0.9em; letter-spacing: 1px;">CHOIX DE L'ARÈNE</h4>
+                <div class="selection-grid" style="margin-bottom: 15px; gap: 10px;">
+                    <div class="map-card selected" onclick="selectSlimeMap(1, this)" style="width: 120px; padding: 5px;">
+                        <img src="img/map1.png" style="width: 110px; height: 60px; margin-bottom: 5px;"><b>Arène Bleue</b>
+                    </div>
+                    <div class="map-card" onclick="selectSlimeMap(2, this)" style="width: 120px; padding: 5px;">
+                        <img src="img/map2.png" style="width: 110px; height: 60px; margin-bottom: 5px;"><b>Arène Rouge</b>
+                    </div>
+                </div>
+
+                <button class="btn" style="min-width: 200px; padding: 10px;" onclick="hostGame()">Héberger</button>
+                <p style="margin-top: 15px; margin-bottom: 0;">Code Hôte : <br><b id="lobby-code-display" style="color: var(--p1); font-size:2em; letter-spacing:4px;">...</b></p>
             </div>
             
-            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); text-align: center; width: 300px;">
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); text-align: center; width: 340px;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em; text-transform: uppercase;">Rejoindre une partie</h3>
                 <input type="text" id="join-code-input" placeholder="Code de l'hôte..." style="padding: 12px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase;">
-                <button class="btn btn-pink" style="min-width: 200px; padding: 10px; margin-top: 15px;" onclick="joinGame()">2. Rejoindre</button>
+                <button class="btn btn-pink" style="min-width: 200px; padding: 10px; margin-top: 15px;" onclick="joinGame()">Rejoindre</button>
             </div>
             
             <div id="conn-status"></div>
@@ -140,7 +152,7 @@
         <!-- MENU FIN -->
         <div id="game-over" class="menu-overlay hidden">
             <h2 id="winner-text">VICTOIRE</h2>
-            <button class="btn" onclick="location.reload()">Return to menu</button>
+            <button class="btn" onclick="location.reload()">Retour au menu</button>
         </div>
     </div>
 
@@ -148,7 +160,7 @@
         // --- CONSTANTES DU MONDE ---
         const WIDTH = 800; 
         const HEIGHT = 600; 
-        const WORLD_WIDTH = 2000; // Map très large
+        const WORLD_WIDTH = 2000; 
         const WORLD_HEIGHT = 600;
         const GRAVITY = 0.18; 
         
@@ -160,7 +172,6 @@
         const canvasTerrain = document.getElementById('canvas-terrain');
         const ctxTerrain = canvasTerrain.getContext('2d'); 
         
-        // Canvas invisible pour la gestion globale de la physique
         const offscreenTerrain = document.createElement('canvas');
         offscreenTerrain.width = WORLD_WIDTH; 
         offscreenTerrain.height = WORLD_HEIGHT;
@@ -170,7 +181,7 @@
         const ctxEnt = canvasEnt.getContext('2d');
 
         // Variables de jeu
-        let gameState = 'menu'; // menu, playing, flying, end
+        let gameState = 'menu'; 
         let gameMode = 'local_1v1';
         let currentPlayer = 1; 
         let retreatFrames = 0; 
@@ -183,7 +194,6 @@
             document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             
-            // Changement en direct de la vidéo de fond
             let videoElement = document.getElementById('bg-video');
             videoElement.style.opacity = 0;
             setTimeout(() => {
@@ -231,7 +241,7 @@
             peer.on('connection', (connection) => { 
                 conn = connection; 
                 conn.on('open', () => { 
-                    // L'hôte envoie la map sélectionnée au client
+                    // Synchronise la map pour le client
                     conn.send({ type: 'map_sync', mapId: selectedMapId });
                     
                     setupConnection(); 
@@ -278,11 +288,17 @@
 
         function setupConnection() {
             conn.on('data', (data) => {
-                // Synchronisation de la map envoyée par l'Hôte
+                // Application de la map par le client
                 if (data.type === 'map_sync') {
                     selectedMapId = data.mapId;
-                    document.getElementById('bg-video').src = selectedMapId === 1 ? 'img/background.mp4' : 'img/background2.mp4';
-                    mapImage = sprites['map' + selectedMapId];
+                    let videoElement = document.getElementById('bg-video');
+                    videoElement.style.opacity = 0;
+                    setTimeout(() => {
+                        videoElement.src = selectedMapId === 1 ? 'img/background.mp4' : 'img/background2.mp4';
+                        videoElement.play();
+                        videoElement.style.opacity = 0.6;
+                    }, 500);
+                    if (sprites['map' + selectedMapId]) mapImage = sprites['map' + selectedMapId];
                 }
                 
                 if(data.type === 'sync' && gameState === 'playing') {
@@ -316,7 +332,7 @@
             }
         }
 
-        // --- PRÉCHARGEMENT DES ASSETS (INCLUT LES NOUVELLES MAPS ET BAZOOKAS) ---
+        // --- PRÉCHARGEMENT DES ASSETS ---
         const sprites = {};
         const imagesToLoad = {
             map1: 'img/map1.png',
@@ -352,7 +368,7 @@
             let img = new Image(); 
             img.onload = onLoadComplete; 
             img.onerror = () => { 
-                console.warn(`🚨 Asset manquant (Worms) : ${imagesToLoad[key]}. Remplacement par sprite invisible.`);
+                console.warn(`🚨 Asset manquant : ${imagesToLoad[key]}.`);
                 img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
                 onLoadComplete();
             };
@@ -503,13 +519,9 @@
                 let isMe = (currentPlayer === this.id);
                 let aiming = (isMe && isDragging) || (!isMe && this.isAiming);
                 
-                // Calcul de la direction de la visée pour le sprite dynamique
-                // Si l'utilisateur tire la souris vers le bas, dragStartY (centre joueur) < dragCurrentY, donc aimDy est négatif.
-                // Cela signifie qu'il vise vers le HAUT de l'écran. 
                 let currentAimDy = isMe ? (dragStartY - dragCurrentY) : this.aimDy;
 
                 if (aiming && this.state !== 'air' && this.state !== 'walk') {
-                    // Si on vise très en haut (dy < -20) on utilise atqtop, sinon atqbot
                     spriteName += `atq${currentAimDy < -20 ? 'top' : 'bot'}_${this.facing}`;
                 }
                 else if (this.state === 'air' || this.state === 'landed') spriteName += `jump_${this.facing}${this.animFrame}`;
@@ -523,12 +535,10 @@
                 if (img && img.complete && img.naturalWidth > 0) {
                     ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
                 } else { 
-                    // Fallback couleur si bug d'image
                     ctxEnt.fillStyle = this.color; 
                     ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20); 
                 }
                 
-                // Nameplate
                 ctxEnt.fillStyle = this.color;
                 ctxEnt.font = "bold 12px 'Segoe UI'";
                 ctxEnt.textAlign = "center";
@@ -537,7 +547,6 @@
                 ctxEnt.fillText(this.name, renderX, renderY - 30);
                 ctxEnt.shadowBlur = 0;
 
-                // Tour Actif (Flèche au-dessus)
                 if (currentPlayer === this.id && gameState !== 'end') {
                     ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
                     ctxEnt.shadowBlur = 10; 
@@ -706,7 +715,6 @@
             checkWin(); 
             if (gameState === 'end') return;
             
-            // Chercher le prochain joueur vivant (Sécurité boucle infinie)
             let safeCounter = 0;
             do {
                 currentPlayer = (currentPlayer % worms.length) + 1;
@@ -853,9 +861,7 @@
             let me = worms[currentPlayer - 1];
             if (!me || me.isDead) return;
 
-            // Dessiner un pointeur pour chaque ennemi en vie hors écran
             worms.forEach(enemy => {
-                // Ignore soi-même, les morts, et ses coéquipiers (en 2v2)
                 if (enemy.id === me.id || enemy.isDead || enemy.team === me.team) return; 
 
                 let screenX = enemy.x - camera.x;
@@ -962,7 +968,6 @@
         }
         
         function initSwipe(e, x, y) { 
-            // Bloque le swipe sur le jeu, les boutons et les champs de texte
             if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; 
             globalStartX = x; 
             globalStartY = y; 
