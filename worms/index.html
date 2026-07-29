@@ -938,52 +938,5 @@
             requestAnimationFrame(gameLoop);
         }
     </script>
-    
-    <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL (Protéger hors zones de jeu) -->
-    <script>
-        const gamesHubList = [
-            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
-            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
-            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
-            "../worms/index.html"
-        ];
-        
-        let globalStartX = 0, globalStartY = 0; 
-        let globalEndX = 0, globalEndY = 0; 
-        const swipeThreshold = 75;
-        
-        function navigateGames(direction) {
-            const currentPath = window.location.pathname; 
-            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
-            if (currentIndex === -1) return; 
-            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
-        }
-        
-        function handleGlobalSwipe() {
-            let diffX = globalEndX - globalStartX; 
-            let diffY = globalEndY - globalStartY;
-            if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
-                navigateGames(diffX > 0 ? -1 : 1); 
-            }
-        }
-        
-        function initSwipe(e, x, y) { 
-            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; 
-            globalStartX = x; 
-            globalStartY = y; 
-        }
-        
-        function endSwipe(e, x, y) { 
-            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; 
-            globalEndX = x; 
-            globalEndY = y; 
-            handleGlobalSwipe(); 
-        }
-        
-        document.addEventListener('touchstart', e => initSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true }); 
-        document.addEventListener('touchend', e => endSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
-        document.addEventListener('mousedown', e => initSwipe(e, e.screenX, e.screenY)); 
-        document.addEventListener('mouseup', e => endSwipe(e, e.screenX, e.screenY));
-    </script>
 </body>
 </html>
