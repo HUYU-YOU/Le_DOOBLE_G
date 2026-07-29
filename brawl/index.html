@@ -5,7 +5,7 @@
     <title>Cyber Smash - Definitive Edition</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; }
+        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; }
         h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px #fff; }
         #game-container { position: relative; background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
@@ -84,9 +84,8 @@
                 </div>
             </div>
             
-            <button class="btn-main" id="start-local-btn" style="display:none;" onclick="startLocalGame()">FIGHT !</button>
+            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="startLocalGame()">FIGHT !</button>
             
-            <!-- BOUTON TOUCHES -->
             <div>
                 <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1);" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
                 <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
@@ -106,6 +105,7 @@
             </div>
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
             <button class="btn-main" id="host-btn" onclick="hostGame()">Créer (Héberger)</button>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="startNetworkGameHost()">Lancer le combat !</button>
             <p style="margin: 10px 0;">OU</p>
             <input type="text" id="join-id" placeholder="Coller l'ID de l'Hôte">
             <button class="btn-main" id="join-btn" onclick="joinGame()" style="background:var(--p2);color:#fff;">Rejoindre</button>
@@ -126,13 +126,16 @@
                 <b style="color: var(--p1);">Bloquer :</b> MAJ (Shift)<br>
                 <b style="color: var(--p1);">Attaque Ultime :</b> R (Nécessite la jauge jaune pleine)<br>
                 <hr style="border-color: #333; margin: 10px 0;">
-                <b style="color: var(--p2);">Clic Gauche (Attaque Légère) :</b> Frappe rapide.<br>
-                <b style="color: var(--p2);">Clic Droit (Attaque Lourde / Capacité) :</b><br>
-                - <b>Ninja :</b> Maintenez enfoncé pour charger un grand Shuriken.<br>
-                - <b>Brute :</b> Fouette avec son string devant lui.<br>
-                - <b>Gunner :</b> Dépose une mine de proximité au sol.<br>
+                <b style="color: var(--p2);">Clic Gauche (Attaque Légère) :</b><br>
+                - <b>Ninja :</b> Coup d'épée (mêlée).<br>
+                - <b>Brute :</b> Coup de poing (mêlée).<br>
+                - <b>Gunner :</b> Tire une balle rapide.<br>
+                - <b>Mage :</b> Lance une boule de feu (5 tirs max avant recharge).<br><br>
+                <b style="color: var(--p2);">Clic Droit (Capacité Spéciale) :</b><br>
+                - <b>Ninja :</b> Lance un shuriken instantané.<br>
+                - <b>Brute :</b> Maintenez enfoncé pour charger et lancer un Boomerang "Clip".<br>
+                - <b>Gunner :</b> Dépose une mine au sol (3 mines actives maximum).<br>
                 - <b>Mage :</b> Frappe au corps-à-corps avec son livre magique.<br>
-                <span style="font-size: 0.8em; color: #aaa;">Note : Le Mage ne peut tirer que 5 boules de feu avant d'avoir un délai de rechargement de 2s.</span>
             </div>
             <button class="btn-main" style="margin-top:20px; background: var(--p2); color: #fff;" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
         </div>
@@ -140,8 +143,7 @@
         <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over-overlay" style="display: none;">
             <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
-            <button class="btn-main" id="btn-restart" onclick="handleRestart()">Rejouer</button>
-            <button class="btn-main" style="background:#333; color:#fff; font-size:0.8em;" onclick="location.reload()">Menu Principal</button>
+            <button class="btn-main" id="btn-restart" onclick="handleRestart()">Retour au menu de sélection</button>
         </div>
     </div>
 
@@ -189,7 +191,6 @@
             return {left: false, right: false, up: false, down: false, jump: false, atkL: false, atkH: false, block: false, ult: false};
         }
 
-        // EQUILIBRAGES
         const charData = {
             ninja: { skinKey: 'ninja', color: '#00f0ff', w: 50, h: 80, speed: 8.5, jump: -13.5, weight: 0.9, dmg: 3.5, kb: 4.5, isRanged: false, maxJumps: 3 },
             tank: { skinKey: 'sumo', color: '#ff007f', w: 80, h: 100, speed: 4.2, jump: -9.5, weight: 1.7, dmg: 6.5, kb: 6.5, isRanged: false, maxJumps: 2 },
@@ -237,10 +238,11 @@
         }
 
         class Projectile {
-            constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange, isMine = false, isShuriken = false) { 
+            constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange, isMine = false, isShuriken = false, isBoomerang = false) { 
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.ownerId = ownerId; this.dmg = dmg; this.kb = kb; 
                 this.w = 16; this.h = 16; this.active = true; this.color = color; 
-                this.isMine = isMine; this.isShuriken = isShuriken; this.angle = 0;
+                this.isMine = isMine; this.isShuriken = isShuriken; this.isBoomerang = isBoomerang; 
+                this.angle = 0; this.boomerangTimer = 0;
                 this.life = isMine ? 600 : (isShortRange ? 12 : 60); 
             }
             draw() { 
@@ -248,6 +250,10 @@
                 if (this.isShuriken) {
                     ctx.save(); ctx.translate(this.x, this.y); this.angle += 0.3; ctx.rotate(this.angle);
                     ctx.fillRect(-10, -2, 20, 4); ctx.fillRect(-2, -10, 4, 20);
+                    ctx.restore();
+                } else if (this.isBoomerang) {
+                    ctx.save(); ctx.translate(this.x, this.y); this.angle += 0.4; ctx.rotate(this.angle);
+                    ctx.fillRect(-12, -4, 24, 8); // Forme de "Clip" boomerang
                     ctx.restore();
                 } else {
                     ctx.beginPath(); 
@@ -269,6 +275,18 @@
                             this.y = p.y - 8; this.vy = 0; this.vx *= 0.8; 
                         } 
                     });
+                } else if (this.isBoomerang) {
+                    this.boomerangTimer++;
+                    if (this.boomerangTimer > 25) {
+                        let owner = players.find(p => p.id === this.ownerId);
+                        if (owner && !owner.isDead) {
+                            let dx = (owner.x + owner.w/2) - this.x; let dy = (owner.y + owner.h/2) - this.y;
+                            let dist = Math.hypot(dx, dy);
+                            if (dist < 30) { this.active = false; } // Le propriétaire rattrape le boomerang
+                            else { this.vx = (dx/dist)*15; this.vy = (dy/dist)*15; }
+                        } else { this.active = false; }
+                    }
+                    this.x += this.vx; this.y += this.vy;
                 } else {
                     this.x += this.vx; this.y += this.vy; this.life--; 
                 }
@@ -278,7 +296,7 @@
                 players.forEach(pl => { 
                     if (areEnemies(pl.id, this.ownerId) && !pl.isDead && this.active && this.x + 8 > pl.x && this.x - 8 < pl.x + pl.w && this.y + 8 > pl.y && this.y - 8 < pl.y + pl.h) { 
                         pl.takeDamage(this.dmg, this.kb, this.x > pl.x + pl.w/2 ? -1 : 1); 
-                        this.active = false; 
+                        if (!this.isBoomerang) this.active = false; // Le boomerang traverse
                         if (this.isMine) { 
                             for(let i=0; i<15; i++) particles.push(new Particle(this.x, this.y, '#ff0000'));
                             screenShake = 15; playSound('shatter');
@@ -297,10 +315,9 @@
                 this.vx = 0; this.vy = 0; this.percent = 0; this.lives = 3; this.jumps = this.maxJumps; this.grounded = false; this.facing = id % 2 !== 0 ? 1 : -1;
                 this.attackTimer = 0; this.invincibleTimer = 120; this.buffType = null; this.buffTimer = 0; this.walkCycle = 0; this.jumpPressed = false; this.atkDirY = 0; this.atkDirX = 0; this.atkIsRanged = false;
                 
-                // MAGE ANTI-SPAM
                 this.mageShots = 0; this.mageCooldown = 0;
+                this.activeMines = [];
                 
-                // MELEE DYNAMIQUE & CHARGE
                 this.isCharging = false; this.chargeTimer = 0; 
                 this.customHitW = 0; this.customHitH = 0; this.customHitXOffset = 0; this.customHitYOffset = 0; this.customHitColor = null;
 
@@ -331,13 +348,12 @@
                 if (Math.abs(this.vx) > 0.5 && this.grounded && this.stunTimer === 0) { this.walkCycle += 0.2; ctx.rotate(Math.sin(this.walkCycle) * 0.15); ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); }
                 if (this.attackTimer > 10) { ctx.scale(1.2, 1.2); ctx.rotate(this.facing * 0.2); }
                 
-                // Animation de Charge Shuriken Ninja
-                if (this.isCharging && this.skinKey === 'ninja') {
-                    ctx.save();
-                    ctx.rotate(this.chargeTimer * 0.3);
-                    ctx.fillStyle = `rgba(0, 240, 255, ${Math.min(1, this.chargeTimer/45)})`;
-                    ctx.fillRect(-20, -3, 40, 6); ctx.fillRect(-3, -20, 6, 40);
-                    ctx.restore();
+                // Animation de Charge Boomerang Brute
+                if (this.isCharging && this.skinKey === 'sumo') {
+                    ctx.shadowBlur = 15; ctx.shadowColor = '#ff007f'; ctx.beginPath();
+                    ctx.arc(0, 0, this.w + (this.chargeTimer * 0.3), 0, Math.PI*2);
+                    ctx.strokeStyle = `rgba(255, 0, 127, ${this.chargeTimer/90})`;
+                    ctx.lineWidth = 4; ctx.stroke(); ctx.shadowBlur = 0;
                 }
 
                 if (img && img.complete && img.naturalWidth !== 0) { ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h); } else { ctx.fillStyle = this.color; ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h); }
@@ -348,7 +364,7 @@
                 }
                 ctx.restore();
 
-                // Hitbox Melee Custom (Livre / Fouet / Poing)
+                // Hitbox Melee Custom (Livre / Poing / Epee)
                 if (this.attackTimer > 10 && !this.atkIsRanged) { 
                     ctx.fillStyle = this.customHitColor || 'rgba(255, 255, 255, 0.5)'; 
                     let rx = this.x + (this.customHitXOffset || 0); let ry = this.y + (this.customHitYOffset || 0);
@@ -357,21 +373,22 @@
                 }
             }
             
-            executeNinjaShuriken(charge, ctrl) {
+            executeBoomerang(charge, ctrl) {
                 this.attackTimer = 25; playSound('shoot');
                 let aimX = 0, aimY = 0; if (ctrl.up) aimY = -1; else if (ctrl.down) aimY = 1; else aimX = this.facing;
                 
                 let chargePct = Math.min(1, charge / 90);
-                let dmg = this.baseDmg * (1 + chargePct * 1.5); // Jusqu'à +150% dégâts
-                let kb = this.baseKb * (1 + chargePct * 1.0);
-                let speed = 10 + (chargePct * 10);
+                let dmg = this.baseDmg * 1.5 * (1 + chargePct);
+                let kb = this.baseKb * 1.5 * (1 + chargePct);
+                let speed = 12 + (chargePct * 8);
                 
                 let px = this.x + this.w/2; let py = this.y + this.h/2;
                 let projVx = aimX * speed; let projVy = aimY * speed;
                 if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; }
                 if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
 
-                projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, '#00f0ff', false, false, true));
+                // isBoomerang = true
+                projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, true));
             }
 
             update(ctrl) {
@@ -379,7 +396,7 @@
 
                 if (this.invincibleTimer > 0) this.invincibleTimer--; 
                 if (this.buffTimer > 0) { this.buffTimer--; if (this.buffTimer === 0) this.buffType = null; }
-                if (this.mageCooldown > 0) this.mageCooldown--; // CD du mage
+                if (this.mageCooldown > 0) this.mageCooldown--;
 
                 let cSpd = this.speed * (this.buffType === 'spd' ? 1.4 : 1.0); let cJmp = this.jumpForce * (this.buffType === 'spd' ? 1.15 : 1.0);
                 
@@ -397,13 +414,13 @@
                         if (ctrl.left) { this.vx = -cSpd; this.facing = -1; } else if (ctrl.right) { this.vx = cSpd; this.facing = 1; } else { this.vx *= 0.8; }
                         if (ctrl.jump) { if (this.jumps > 0 && !this.jumpPressed) { this.vy = cJmp; this.jumps--; this.grounded = false; this.jumpPressed = true; playSound('jump'); } } else { this.jumpPressed = false; }
                         
-                        // CHARGE SHURIKEN NINJA (Clic Droit)
-                        if (this.skinKey === 'ninja' && ctrl.atkH && this.attackTimer === 0) {
+                        // CHARGE BOOMERANG BRUTE (Clic Droit)
+                        if (this.skinKey === 'sumo' && ctrl.atkH && this.attackTimer === 0) {
                             this.isCharging = true; this.chargeTimer++;
-                            if (this.chargeTimer >= 90) { this.executeNinjaShuriken(this.chargeTimer, ctrl); this.isCharging = false; this.chargeTimer = 0; }
+                            if (this.chargeTimer >= 90) { this.executeBoomerang(this.chargeTimer, ctrl); this.isCharging = false; this.chargeTimer = 0; }
                             return; 
-                        } else if (this.isCharging && this.skinKey === 'ninja' && !ctrl.atkH) {
-                            this.executeNinjaShuriken(this.chargeTimer, ctrl); this.isCharging = false; this.chargeTimer = 0;
+                        } else if (this.isCharging && this.skinKey === 'sumo' && !ctrl.atkH) {
+                            this.executeBoomerang(this.chargeTimer, ctrl); this.isCharging = false; this.chargeTimer = 0;
                         }
 
                         if (ctrl.ult && this.superMeter >= 150) {
@@ -412,7 +429,7 @@
                         else if (!this.isCharging && ((ctrl.atkL || ctrl.atkH) && this.attackTimer === 0)) {
                             
                             let isHeavy = ctrl.atkH; 
-                            let doRanged = false; let isMine = false;
+                            let doRanged = false; let isMine = false; let isShuriken = false;
                             let aimX = 0, aimY = 0; if (ctrl.up) aimY = -1; else if (ctrl.down) aimY = 1; else aimX = this.facing;
                             let attackDuration = isHeavy ? 35 : 20;
                             
@@ -420,26 +437,25 @@
 
                             // LOGIQUE D'ATTAQUE PAR CLASSE
                             if (this.skinKey === 'ninja') {
-                                doRanged = false; // Le clic droit est géré par la charge, ici c'est le corps-à-corps (clic gauche)
-                            } 
-                            else if (this.skinKey === 'sumo') {
-                                doRanged = false;
                                 if (isHeavy) {
-                                    // FOUET (STRING)
-                                    let range = 130; attackDuration = 30;
-                                    if (aimY === -1) { this.customHitYOffset -= range; this.customHitH = range; this.customHitW = 10; this.customHitXOffset = this.w/2 - 5; }
-                                    else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = range; this.customHitW = 10; this.customHitXOffset = this.w/2 - 5; }
-                                    else { this.customHitXOffset = (aimX === 1 ? this.w : -range); this.customHitW = range; this.customHitH = 10; this.customHitYOffset = 30; }
-                                    this.customHitColor = '#ffb6c1'; // Rose clair
+                                    doRanged = true; isShuriken = true;
                                 } else {
-                                    // Poing normal
-                                    if (aimY === -1) { this.customHitYOffset -= 60; this.customHitH = 60; this.customHitW = this.w; }
-                                    else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 60; this.customHitW = this.w; }
-                                    else { this.customHitXOffset = (aimX === 1 ? this.w : -60); this.customHitW = 60; this.customHitH = 60; }
+                                    doRanged = false; // Epee
+                                    this.customHitColor = 'rgba(0, 240, 255, 0.6)';
+                                    if (aimY === -1) { this.customHitYOffset -= 70; this.customHitH = 70; this.customHitW = this.w; }
+                                    else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 70; this.customHitW = this.w; }
+                                    else { this.customHitXOffset = (aimX === 1 ? this.w : -70); this.customHitW = 70; this.customHitH = this.h; }
                                 }
                             } 
+                            else if (this.skinKey === 'sumo') {
+                                doRanged = false; // Poing gauche
+                                if (aimY === -1) { this.customHitYOffset -= 60; this.customHitH = 60; this.customHitW = this.w; }
+                                else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 60; this.customHitW = this.w; }
+                                else { this.customHitXOffset = (aimX === 1 ? this.w : -60); this.customHitW = 60; this.customHitH = 60; }
+                            } 
                             else if (this.skinKey === 'gunner') {
-                                if (isHeavy) { doRanged = true; isMine = true; } else { doRanged = true; }
+                                if (isHeavy) { doRanged = true; isMine = true; } 
+                                else { doRanged = true; } // Balle classique
                             } 
                             else if (this.skinKey === 'mage') {
                                 if (isHeavy) {
@@ -447,15 +463,13 @@
                                     if (aimY === -1) { this.customHitYOffset -= 50; this.customHitH = 50; this.customHitW = 40; this.customHitXOffset = 5; }
                                     else if (aimY === 1) { this.customHitYOffset = this.h; this.customHitH = 50; this.customHitW = 40; this.customHitXOffset = 5; }
                                     else { this.customHitXOffset = (aimX === 1 ? this.w : -40); this.customHitW = 40; this.customHitH = 50; this.customHitYOffset = 15; }
-                                    this.customHitColor = '#8b4513'; // Marron
+                                    this.customHitColor = '#8b4513';
                                 } else {
                                     if (this.mageCooldown > 0) {
-                                        // Affiche une fumée d'épuisement
                                         particles.push(new Particle(this.x + this.w/2, this.y, '#888'));
                                         return; 
                                     }
-                                    doRanged = true;
-                                    this.mageShots++;
+                                    doRanged = true; this.mageShots++;
                                     if (this.mageShots >= 5) { this.mageCooldown = 120; this.mageShots = 0; }
                                 }
                             }
@@ -466,11 +480,14 @@
                             if (doRanged) { 
                                 playSound('shoot'); let px = this.x + this.w / 2; let py = this.y + this.h / 2; 
                                 if (isMine) {
-                                    let mVx = aimX * 4; let mVy = aimY === 1 ? 2 : (aimY === -1 ? -6 : -4);
-                                    projectiles.push(new Projectile(px, py, mVx, mVy, this.id, this.baseDmg * 2.5, this.baseKb * 1.5, '#ff0000', false, true, false));
+                                    let targetX = this.x + this.w/2 + aimX * 40; let targetY = this.y + this.h - 8;
+                                    let mine = new Projectile(targetX, targetY, 0, 0, this.id, this.baseDmg * 2.5, this.baseKb * 1.5, '#ff0000', false, true, false, false);
+                                    projectiles.push(mine); this.activeMines.push(mine);
+                                    if (this.activeMines.length > 3) { let old = this.activeMines.shift(); old.active = false; }
                                 } else {
-                                    let projVx = aimX * 15; let projVy = aimY * 15; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 15;
-                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, this.color, false, false, false)); 
+                                    let speed = isShuriken ? 15 : 15;
+                                    let projVx = aimX * speed; let projVy = aimY * speed; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
+                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, this.color, false, false, isShuriken, false)); 
                                 }
                             } else { 
                                 playSound('hit'); 
@@ -493,22 +510,13 @@
                 if (this.x < -150 || this.x > canvas.width + 150 || this.y < -300 || this.y > canvas.height + 50) {
                     this.outOfBoundsTimer++;
                     if (this.outOfBoundsTimer > 180) this.die(); 
-                } else {
-                    this.outOfBoundsTimer = 0;
-                }
+                } else { this.outOfBoundsTimer = 0; }
                 if (this.y > canvas.height + 200) this.die();
             }
             
             fireUltimate() {
-                playSound('powerup');
-                let target = null; let minDist = Infinity;
-                players.forEach(p => {
-                    if (areEnemies(p.id, this.id) && p.lives > 0 && !p.isDead) {
-                        let d = Math.hypot(p.x - this.x, p.y - this.y);
-                        if (d < minDist) { minDist = d; target = p; }
-                    }
-                });
-                
+                playSound('powerup'); let target = null; let minDist = Infinity;
+                players.forEach(p => { if (areEnemies(p.id, this.id) && p.lives > 0 && !p.isDead) { let d = Math.hypot(p.x - this.x, p.y - this.y); if (d < minDist) { minDist = d; target = p; } } });
                 if (target) {
                     this.x = target.x - (this.facing * 40); this.y = target.y;
                     target.isBlocking = false; target.takeDamage(80, 25, this.facing); screenShake = 35;
@@ -519,7 +527,7 @@
             die() {
                 if (this.isDead) return; playSound('death'); screenShake = 15; 
                 this.lives--; this.percent = 0; this.superMeter = 0; this.buffType = null; this.buffTimer = 0; this.outOfBoundsTimer = 0; this.shieldHealth = 100; this.stunTimer = 0;
-                this.isCharging = false; this.chargeTimer = 0; this.mageShots = 0; this.mageCooldown = 0;
+                this.isCharging = false; this.chargeTimer = 0; this.mageShots = 0; this.mageCooldown = 0; this.activeMines = [];
                 updateHUD();
                 for (let i = 0; i < 30; i++) particles.push(new Particle(this.x, this.y, this.color));
                 if (this.lives <= 0) { this.isDead = true; checkGameEnd(); } else { this.x = canvas.width / 2 + (Math.random() * 100 - 50); this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; }
@@ -535,7 +543,6 @@
                     } else { this.vx = dir * (baseKb * 0.2); }
                     return; 
                 }
-
                 playSound('hit'); this.percent += dmg; this.superMeter = Math.min(150, this.superMeter + (dmg * 1.5)); updateHUD();
                 let kb = (baseKb * (1 + (this.percent / 50))) / this.weight; this.vx = dir * kb; this.vy = -kb * 0.55; 
                 this.hitstun = Math.min(60, Math.floor(kb * 2.5)); screenShake = Math.min(25, Math.floor(kb / 1.5));
@@ -597,18 +604,30 @@
             if (gameOver) { gameActive = false; document.getElementById('game-over-overlay').style.display = 'flex'; document.getElementById('winner-text').innerText = txt; document.getElementById('winner-text').style.color = winColor; }
         }
 
-        function restartGame() {
-            document.getElementById('game-over-overlay').style.display = 'none';
-            players.forEach((pl, i) => {
-                pl.isDead = false; pl.lives = 3; pl.percent = 0; pl.superMeter = 0; pl.shieldHealth = 100; pl.outOfBoundsTimer = 0; pl.stunTimer = 0; pl.hitstun = 0; pl.isCharging = false; pl.chargeTimer = 0; pl.mageShots = 0; pl.mageCooldown = 0;
-                let spawnX = 150 + (i * 150); if (i === 1 && players.length === 2) spawnX = 650; if (i === 2) spawnX = 400; if (i === 3) spawnX = 650;
-                pl.x = spawnX; pl.y = 80; pl.vx = 0; pl.vy = 0; pl.invincibleTimer = 120;
-            });
-            projectiles = []; particles = []; items = []; gameActive = true; updateHUD();
-            if (isHost && gameMode.startsWith('net')) { connsNet.forEach(c => c.send({type: 'restart'})); }
+        // --- GESTION DU BOUTON REJOUER ---
+        function handleRestart() {
+            if (gameMode === 'local') {
+                document.getElementById('game-over-overlay').style.display = 'none';
+                document.getElementById('hud').style.display = 'none';
+                document.getElementById('local-menu').style.display = 'flex';
+                document.getElementById('char-select').style.display = 'flex';
+                document.getElementById('bot-toggle-btn').style.display = 'inline-block';
+                document.getElementById('map-select-container').style.display = 'none';
+                document.getElementById('start-local-btn').style.display = 'none';
+                document.getElementById('instruction-title').innerText = "Select player 1";
+                locSelections = []; gameActive = false;
+            } else if (isHost) {
+                document.getElementById('game-over-overlay').style.display = 'none';
+                document.getElementById('hud').style.display = 'none';
+                document.getElementById('network-menu').style.display = 'flex';
+                document.getElementById('start-net-btn').style.display = 'inline-block';
+                document.getElementById('host-btn').style.display = 'none';
+                gameActive = false;
+                if(connsNet.length > 0) connsNet.forEach(c => c.send({type: 'return_to_lobby'}));
+            } else {
+                alert("Seul l'Hôte de la partie peut décider de relancer !");
+            }
         }
-
-        function handleRestart() { if (gameMode === 'local') { restartGame(); } else if (isHost) { restartGame(); } else { alert("Seul l'hôte peut lancer la revanche !"); } }
 
         function drawMapBackground() {
             let mapImg = imgs[`map${currentMapIdx + 1}`];
@@ -639,7 +658,7 @@
         function startLocalGame() {
             if(gameActive) return; document.getElementById('local-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; platforms = mapData[locMapChoice];
             players = locSelections.map((selection, i) => { document.getElementById(`h${i + 1}`).style.display = 'block'; let p = new Player(i + 1, i===0 ? 150 : 650, selection.char); p.isBot = selection.bot; return p; });
-            gameActive = true; updateHUD(); if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); gameLoopLocal();
+            projectiles = []; particles = []; items = []; gameActive = true; updateHUD(); if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); gameLoopLocal();
         }
 
         function gameLoopLocal() {
@@ -671,9 +690,15 @@
             peerNet.on('connection', c => { 
                 if (connsNet.length >= maxNetPlayers - 1) return;
                 c.on('data', data => {
-                    if (data.type === 'join') { let newId = connsNet.length + 2; c.peerId = newId; netPlayersData.push({id: newId, char: data.char}); connsNet.push(c); c.send({type: 'welcome', id: newId});
+                    if (data.type === 'join') { 
+                        let newId = connsNet.length + 2; c.peerId = newId; netPlayersData.push({id: newId, char: data.char}); connsNet.push(c); c.send({type: 'welcome', id: newId});
                         document.getElementById('status-text').innerText = `Connectés : ${connsNet.length + 1}/${maxNetPlayers}`;
-                        if (connsNet.length === maxNetPlayers - 1) setTimeout(() => startNetworkGameHost(), 1000); }
+                        if (connsNet.length === maxNetPlayers - 1) {
+                            document.getElementById('status-text').innerText = "Tous les joueurs sont là !";
+                            document.getElementById('host-btn').style.display = 'none';
+                            document.getElementById('start-net-btn').style.display = 'inline-block';
+                        }
+                    }
                     if (data.type === 'inputs') { netKeys[c.peerId] = data.keys; }
                 });
             }); 
@@ -686,8 +711,8 @@
                 let c = peerNet.connect(id, { reliable: true });
                 c.on('open', () => { c.send({type: 'join', char: netSelectedChar}); });
                 c.on('data', data => {
-                    if (data.type === 'welcome') { myPlayerId = data.id; document.getElementById('status-text').innerText = "Connecté! Attente lancement..."; }
-                    if (data.type === 'start') { document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; }
+                    if (data.type === 'welcome') { myPlayerId = data.id; document.getElementById('status-text').innerText = "Connecté! L'Hôte va lancer la partie..."; }
+                    if (data.type === 'start') { document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; projectiles = []; particles = []; }
                     if (data.type === 'state') {
                         platforms = data.state.platforms; projectiles = data.state.projectiles; items = data.state.items;
                         if (players.length !== data.state.players.length) {
@@ -698,13 +723,17 @@
                         data.state.players.forEach((pState, idx) => { Object.assign(players[idx], pState); });
                         drawClientGame(); updateHUD(); c.send({type: 'inputs', keys: getCtrl(myPlayerId)});
                     }
-                    if (data.type === 'restart') { document.getElementById('game-over-overlay').style.display = 'none'; gameActive = true; }
+                    if (data.type === 'return_to_lobby') {
+                        document.getElementById('game-over-overlay').style.display = 'none'; document.getElementById('hud').style.display = 'none';
+                        document.getElementById('network-menu').style.display = 'flex'; gameActive = false;
+                        document.getElementById('status-text').innerText = "L'Hôte va relancer...";
+                    }
                 });
             });
         }
 
         function startNetworkGameHost() {
-            document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; platforms = mapData[0]; currentMapIdx = 0;
+            document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; platforms = mapData[0]; currentMapIdx = 0; projectiles = []; particles = [];
             players = [new Player(1, 150, netSelectedChar)];
             netPlayersData.forEach((np, i) => { let spawnX = 150 + (np.id * 150); if(maxNetPlayers === 2) spawnX = 650; players.push(new Player(np.id, spawnX, np.char)); });
             players.forEach(p => { document.getElementById(`h${p.id}`).style.display = 'block'; document.getElementById(`n${p.id}`).innerText = `J${p.id}`; });
@@ -738,7 +767,7 @@
                 Object.assign(pObj, pl); pObj.draw();
             });
             projectiles.forEach(pr => { 
-                let pObj = new Projectile(pr.x, pr.y, pr.vx, pr.vy, pr.ownerId, pr.dmg, pr.kb, pr.color, false, pr.isMine, pr.isShuriken);
+                let pObj = new Projectile(pr.x, pr.y, pr.vx, pr.vy, pr.ownerId, pr.dmg, pr.kb, pr.color, false, pr.isMine, pr.isShuriken, pr.isBoomerang);
                 pObj.life = pr.life; pObj.angle = pr.angle || 0; pObj.draw(); 
             });
         }
