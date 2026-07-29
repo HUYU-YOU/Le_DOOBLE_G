@@ -135,7 +135,7 @@
                 - <b>Pathkiller :</b> Envoie son Grappin pour attirer l'ennemi (étourdit).<br><br>
                 <b style="color: var(--p2);">Clic Droit (Capacité Spéciale) :</b><br>
                 - <b>Ninja :</b> Maintiens pour charger un Shuriken géant (soumis à la gravité).<br>
-                - <b>Brute :</b> Maintiens pour charger un Boomerang. Portée très courte !<br>
+                - <b>Brute :</b> Maintiens pour charger et lancer une Corde !<br>
                 - <b>Gunner :</b> Dépose une mine au sol (3 mines actives max).<br>
                 - <b>Mage :</b> Frappe au corps-à-corps avec son livre magique.<br>
                 - <b>Pathkiller :</b> Frappe Lourde au corps-à-corps.<br>
@@ -153,7 +153,7 @@
         const canvas = document.getElementById('gameCanvas'); 
         const ctx = canvas.getContext('2d');
         
-        // --- CHARGEMENT DES IMAGES ---
+        // --- CHARGEMENT DYNAMIQUE DE TOUS LES SPRITES ---
         const imgs = {};
         const imgFiles = {
             // Bases
@@ -162,46 +162,79 @@
             'gunner_est': 'img/gunner_est.png', 'gunner_ouest': 'img/gunner_ouest.png',
             'mage_est': 'img/mage_est.png', 'mage_ouest': 'img/mage_ouest.png',
             
-            // Pathkiller (Bases + Animations telles que listées dans le dossier)
+            // Pathkiller Bases & Frames Fixes
             'pathkiller_right': 'img/pathkiller_right.png', 
             'pathkiller_left': 'img/pathkiller_left.png',
             'pathkiller_rightclicleft': 'img/pathkiller_rightclicleft.png',
-            'pathkiller_rightclicleft1': 'img/pathkiller_rightclicleft1.png',
             'pathkiller_rightclicright': 'img/pathkiller_rightclicright.png',
-            'pathkiller_rightclicright1': 'img/pathkiller_rightclicright1.png',
-            'pathkiller_leftclicleft2': 'img/pathkiller_leftclicleft2.png',
-            'pathkiller_leftclicleft3': 'img/pathkiller_leftclicleft3.png',
-            'pathkiller_leftclicright2': 'img/pathkiller_leftclicright2.png',
-            'pathkiller_leftclicright3': 'img/pathkiller_leftclicright3.png',
-            
-            // Brute Attaques
-            'leftatqbrute1': 'img/leftatqbrute1.png', 'rightatqbrute1': 'img/rightatqbrute1.png',
-            'leftatqbrute2': 'img/leftatqbrute2.png', 'rightatqbrute2': 'img/rightatqbrute2.png',
-            'leftatqbrute3': 'img/leftatqbrute3.png', 'rightatqbrute3': 'img/rightatqbrute3.png',
-            
-            // Mage Attaques
-            'leftatqmage': 'img/leftatqmage.png', 'rightatqmage': 'img/rightatqmage.png',
             
             // Projectiles
             'projectileleft_brute': 'img/projectileleft_brute.png', 'projectileright_brute': 'img/projectileright_brute.png',
             'projectileleft_mage': 'img/projectileleft_mage.png', 'projectileright_mage': 'img/projectileright_mage.png',
             'projectileleft_gunner': 'img/projectileleft_gunner.png', 'projectileright_gunner': 'img/projectileright_gunner.png',
             'projectile_ninja': 'img/projectile_ninja.png',
+            'corde': 'img/corde.png',
             
             // Maps
             'map1': 'img/map1.png', 'map2': 'img/map2.png', 'map3': 'img/map3.png'
         };
 
-        // Remplissage automatique des 8 frames du Ninja
+        // --- GÉNÉRATION AUTOMATIQUE DES ANIMATIONS ---
+        // NINJA
         for (let i = 1; i <= 8; i++) {
-            imgFiles['leftatqninja' + i] = `img/leftatqninja${i}.png`;
-            imgFiles['rightatqninja' + i] = `img/rightatqninja${i}.png`;
+            imgFiles[`leftatqninja${i}`] = `img/leftatqninja${i}.png`;
+            imgFiles[`rightatqninja${i}`] = `img/rightatqninja${i}.png`;
+        }
+        for (let i = 1; i <= 4; i++) {
+            imgFiles[`atqleft_top${i}`] = `img/atqleft_top${i}.png`;
+            imgFiles[`atqright_top${i}`] = `img/atqright_top${i}.png`;
+            imgFiles[`atqleft_bot${i}`] = `img/atqleft_bot${i}.png`;
+            imgFiles[`atqright_bot${i}`] = `img/atqright_bot${i}.png`;
+        }
+        
+        // MAGE
+        for (let i = 1; i <= 4; i++) {
+            imgFiles[`mage_topleft${i}`] = `img/mage_topleft${i}.png`;
+            imgFiles[`mage_topright${i}`] = `img/mage_topright${i}.png`;
+            imgFiles[`mage_atqleft${i}`] = `img/mage_atqleft${i}.png`;
+            imgFiles[`mage_atqright${i}`] = `img/mage_atqright${i}.png`;
+        }
+        for (let i = 1; i <= 3; i++) {
+            imgFiles[`mage_botleft${i}`] = `img/mage_botleft${i}.png`;
+            imgFiles[`mage_botright${i}`] = `img/mage_botright${i}.png`;
         }
 
+        // BRUTE
+        for (let i = 1; i <= 3; i++) {
+            imgFiles[`leftatqbrute${i}`] = `img/leftatqbrute${i}.png`;
+            imgFiles[`rightatqbrute${i}`] = `img/rightatqbrute${i}.png`;
+        }
+        for (let i = 1; i <= 4; i++) {
+            imgFiles[`brute_lefttop${i}`] = `img/brute_lefttop${i}.png`;
+            imgFiles[`brute_righttop${i}`] = `img/brute_righttop${i}.png`;
+            imgFiles[`brute_leftbot${i}`] = `img/brute_leftbot${i}.png`;
+            imgFiles[`brute_rightbot${i}`] = `img/brute_rightbot${i}.png`;
+        }
+
+        // GUNNER
+        for (let i = 1; i <= 3; i++) {
+            imgFiles[`gunner_lefttop${i}`] = `img/gunner_lefttop${i}.png`;
+            imgFiles[`gunner_righttop${i}`] = `img/gunner_righttop${i}.png`;
+            imgFiles[`gunner_leftbot${i}`] = `img/gunner_leftbot${i}.png`;
+            imgFiles[`gunner_rightbot${i}`] = `img/gunner_rightbot${i}.png`;
+        }
+
+        // PATHKILLER
+        for (let i = 1; i <= 3; i++) {
+            imgFiles[`pathkiller_leftclicright${i}`] = `img/pathkiller_leftclicright${i}.png`;
+            imgFiles[`pathkiller_leftclicleft${i}`] = `img/pathkiller_leftclicleft${i}.png`;
+        }
+
+        // CHARGEMENT
         Object.keys(imgFiles).forEach(key => { 
             imgs[key] = new Image(); 
             imgs[key].src = imgFiles[key]; 
-            // Pixel transparent de sécurité au lieu de la Brute pour éviter les glitchs visuels
+            // Fallback transparent : le jeu ne crashe jamais et n'affiche plus un Sumo par défaut !
             imgs[key].onerror = function() { 
                 this.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; 
             };
@@ -285,31 +318,53 @@
         }
 
         class Projectile {
-            constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange, isMine = false, isShuriken = false, isBoomerang = false, isHook = false, ownerSkinKey = null) { 
+            constructor(x, y, vx, vy, ownerId, dmg, kb, color, isShortRange, isMine = false, isShuriken = false, isHook = false, ownerSkinKey = null, isRope = false) { 
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.ownerId = ownerId; this.dmg = dmg; this.kb = kb; 
                 this.w = 16; this.h = 16; this.active = true; this.color = color; 
-                this.isMine = isMine; this.isShuriken = isShuriken; this.isBoomerang = isBoomerang; this.isHook = isHook;
+                this.isMine = isMine; this.isShuriken = isShuriken; this.isHook = isHook; this.isRope = isRope;
                 this.ownerSkinKey = ownerSkinKey;
-                this.angle = 0; this.boomerangTimer = 0;
+                this.angle = 0; 
                 this.life = isMine ? 600 : (isShortRange ? 12 : 60); 
-                if (isHook) this.life = 20; 
+                if (isHook) this.life = 15; 
+                if (isRope) this.life = 10; // Durée de vie très courte (Corde de la Brute)
             }
             
             draw() { 
+                // CORDE DE LA BRUTE
+                if (this.isRope) {
+                    let owner = players.find(p => p.id === this.ownerId);
+                    if (owner) {
+                        let startX = owner.x + owner.w/2; let startY = owner.y + owner.h/2;
+                        let ropeImg = imgs['corde'];
+                        if (ropeImg && ropeImg.complete && ropeImg.naturalWidth > 0) {
+                            ctx.save(); ctx.translate(startX, startY);
+                            let angle = Math.atan2(this.y - startY, this.x - startX);
+                            ctx.rotate(angle);
+                            let dist = Math.hypot(this.x - startX, this.y - startY);
+                            ctx.drawImage(ropeImg, 0, -8, dist, 16); 
+                            ctx.restore();
+                        } else {
+                            ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(this.x, this.y);
+                            ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 4; ctx.stroke();
+                        }
+                    }
+                    return;
+                }
+
                 let dirStr = this.vx < 0 ? 'left' : 'right';
-                if (this.vx === 0) dirStr = (this.ownerId % 2 !== 0) ? 'right' : 'left'; // Fallback
+                if (this.vx === 0) dirStr = (this.ownerId % 2 !== 0) ? 'right' : 'left'; 
                 
                 let projImg = null;
                 if (this.isShuriken) projImg = imgs['projectile_ninja'];
-                else if (this.isBoomerang) projImg = imgs['projectile' + dirStr + '_brute'];
                 else if (this.ownerSkinKey === 'gunner' && !this.isMine) projImg = imgs['projectile' + dirStr + '_gunner'];
                 else if (this.ownerSkinKey === 'mage') projImg = imgs['projectile' + dirStr + '_mage'];
+                else if (this.ownerSkinKey === 'sumo' && !this.isRope) projImg = imgs['projectile' + dirStr + '_brute'];
 
                 ctx.fillStyle = this.color; ctx.shadowBlur = 8; ctx.shadowColor = this.color; 
                 
                 if (projImg && projImg.complete && projImg.naturalWidth !== 0) {
                     ctx.save(); ctx.translate(this.x, this.y);
-                    if (this.isShuriken || this.isBoomerang) { this.angle += 0.3; ctx.rotate(this.angle); }
+                    if (this.isShuriken) { this.angle += 0.3; ctx.rotate(this.angle); }
                     
                     let drawW = 45; let drawH = 45 * (projImg.naturalHeight / projImg.naturalWidth);
                     if (this.isShuriken) { drawW = 60; drawH = 60 * (projImg.naturalHeight / projImg.naturalWidth); }
@@ -318,10 +373,7 @@
                     ctx.restore();
                 } else {
                     if (this.isHook) {
-                        // Le hook est invisible, géré par le long sprite du bras de Pathkiller
-                    } else if (this.isBoomerang) {
-                        ctx.save(); ctx.translate(this.x, this.y); this.angle += 0.4; ctx.rotate(this.angle);
-                        ctx.fillRect(-12, -4, 24, 8); ctx.restore();
+                        // Invisible (géré par l'allongement du bras de Pathkiller)
                     } else if (this.isShuriken) {
                         ctx.save(); ctx.translate(this.x, this.y); this.angle += 0.3; ctx.rotate(this.angle);
                         ctx.fillRect(-10, -2, 20, 4); ctx.fillRect(-2, -10, 4, 20); ctx.restore();
@@ -347,18 +399,8 @@
                             this.y = p.y - 8; this.vy = 0; this.vx *= 0.8; 
                         } 
                     });
-                } else if (this.isBoomerang) {
-                    this.boomerangTimer++;
-                    if (this.boomerangTimer > 15) { 
-                        let owner = players.find(p => p.id === this.ownerId);
-                        if (owner && !owner.isDead) {
-                            let dx = (owner.x + owner.w/2) - this.x; let dy = (owner.y + owner.h/2) - this.y;
-                            let dist = Math.hypot(dx, dy);
-                            if (dist < 30) { this.active = false; } 
-                            else { this.vx = (dx/dist)*15; this.vy = (dy/dist)*15; }
-                        } else { this.active = false; }
-                    }
-                    this.x += this.vx; this.y += this.vy;
+                } else if (this.isRope) {
+                    this.x += this.vx; this.y += this.vy; this.life--;
                 } else {
                     if (this.isShuriken) this.vy += GRAVITY * 0.4; 
                     this.x += this.vx; this.y += this.vy; this.life--; 
@@ -374,7 +416,7 @@
                             if (owner && !owner.isDead && !pl.isBlocking) {
                                 let dirX = Math.sign(owner.x - pl.x) || 1;
                                 pl.takeDamage(this.dmg, 2, dirX); 
-                                pl.vx = dirX * 16; 
+                                pl.vx = dirX * 16; // Attire violemment vers lui
                                 pl.vy = -3;
                                 pl.hitstun = 35; 
                             } else if (pl.isBlocking) {
@@ -383,10 +425,12 @@
                             this.active = false;
                         } else {
                             pl.takeDamage(this.dmg, this.kb, this.x > pl.x + pl.w/2 ? -1 : 1); 
-                            if (!this.isBoomerang) this.active = false; 
-                            if (this.isMine) { 
-                                for(let i=0; i<15; i++) particles.push(new Particle(this.x, this.y, '#ff0000'));
-                                screenShake = 15; playSound('shatter');
+                            if (this.isMine || this.isRope) { 
+                                this.active = false;
+                                if (this.isMine) {
+                                    for(let i=0; i<15; i++) particles.push(new Particle(this.x, this.y, '#ff0000'));
+                                    screenShake = 15; playSound('shatter');
+                                }
                             }
                         }
                     } 
@@ -425,41 +469,80 @@
 
                 ctx.fillStyle = this.color; ctx.font = "bold 14px Arial"; ctx.fillText(`J${this.id}: ${Math.floor(this.percent)}%`, this.x - 5, this.y - 12);
                 
-                // --- SELECTION DU SPRITE (Standard & Animations dynamiques) ---
+                // --- SELECTION DU SPRITE DYNAMIQUE (Directionnel) ---
                 let dirStr = this.facing === 1 ? 'right' : 'left';
                 let oldDirStr = this.facing === 1 ? 'est' : 'ouest';
                 let spriteKey = `${this.skinKey}_${oldDirStr}`; 
                 
                 if (this.skinKey === 'pathkiller') spriteKey = `pathkiller_${dirStr}`;
                 
+                let aimStr = 'neutral';
+                if (this.atkDirY === -1) aimStr = 'top';
+                else if (this.atkDirY === 1) aimStr = 'bot';
+
                 if (this.attackTimer > 0) {
                     let pct = (this.maxAttackTimer - this.attackTimer) / this.maxAttackTimer;
                     
                     if (this.skinKey === 'ninja' && !this.atkIsRanged) {
-                        let frame = Math.min(8, Math.floor(pct * 8) + 1);
-                        spriteKey = `${dirStr}atqninja${frame}`;
+                        if (aimStr === 'top') {
+                            let frame = Math.min(4, Math.floor(pct * 4) + 1);
+                            spriteKey = `atq${dirStr}_top${frame}`;
+                        } else if (aimStr === 'bot') {
+                            let frame = Math.min(4, Math.floor(pct * 4) + 1);
+                            spriteKey = `atq${dirStr}_bot${frame}`;
+                        } else {
+                            let frame = Math.min(8, Math.floor(pct * 8) + 1);
+                            spriteKey = `${dirStr}atqninja${frame}`;
+                        }
                     }
                     else if (this.skinKey === 'sumo' && !this.atkIsRanged) {
-                        let frame = Math.min(3, Math.floor(pct * 3) + 1);
-                        spriteKey = `${dirStr}atqbrute${frame}`;
+                        if (aimStr === 'top') {
+                            let frame = Math.min(4, Math.floor(pct * 4) + 1);
+                            spriteKey = `brute_${dirStr}top${frame}`;
+                        } else if (aimStr === 'bot') {
+                            let frame = Math.min(4, Math.floor(pct * 4) + 1);
+                            spriteKey = `brute_${dirStr}bot${frame}`;
+                        } else {
+                            let frame = Math.min(3, Math.floor(pct * 3) + 1);
+                            spriteKey = `${dirStr}atqbrute${frame}`;
+                        }
                     }
                     else if (this.skinKey === 'mage') {
-                        spriteKey = `${dirStr}atqmage`; // Pour les deux attaques
+                        if (aimStr === 'top') {
+                            let frame = Math.min(4, Math.floor(pct * 4) + 1);
+                            spriteKey = `mage_top${dirStr}${frame}`;
+                        } else if (aimStr === 'bot') {
+                            let frame = Math.min(3, Math.floor(pct * 3) + 1);
+                            spriteKey = `mage_bot${dirStr}${frame}`;
+                        } else {
+                            let frame = Math.min(4, Math.floor(pct * 4) + 1);
+                            spriteKey = `mage_atq${dirStr}${frame}`;
+                        }
+                    }
+                    else if (this.skinKey === 'gunner') {
+                        if (aimStr === 'top') {
+                            let frame = Math.min(3, Math.floor(pct * 3) + 1);
+                            spriteKey = `gunner_${dirStr}top${frame}`;
+                        } else if (aimStr === 'bot') {
+                            let frame = Math.min(3, Math.floor(pct * 3) + 1);
+                            spriteKey = `gunner_${dirStr}bot${frame}`;
+                        }
                     }
                     else if (this.skinKey === 'pathkiller') {
-                        let typeStr = this.atkIsRanged ? 'left' : 'right';
+                        let typeStr = this.atkIsRanged ? 'leftclic' : 'rightclic'; 
                         let frame = Math.min(3, Math.floor(pct * 3) + 1);
                         
-                        let keyWithFrame = `pathkiller_${dirStr}clic${typeStr}${frame}`;
-                        let keyNoFrame = `pathkiller_${dirStr}clic${typeStr}`;
+                        let keyWithFrame = `pathkiller_${typeStr}${dirStr}${frame}`;
+                        let keyNoFrame = `pathkiller_${typeStr}${dirStr}`;
                         
                         if (imgFiles[keyWithFrame]) spriteKey = keyWithFrame;
                         else if (imgFiles[keyNoFrame]) spriteKey = keyNoFrame;
-                        else spriteKey = `pathkiller_${dirStr}`;
                     }
                 }
                 
-                let img = imgs[spriteKey];
+                // Fallback de sécurité
+                let img = imgs[spriteKey] && imgs[spriteKey].complete && imgs[spriteKey].naturalWidth > 0 ? imgs[spriteKey] : imgs[`${this.skinKey}_${oldDirStr}`];
+                if (!img || !img.complete || img.naturalWidth === 0) img = imgs['pathkiller_right']; 
                 
                 ctx.save(); ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
                 
@@ -469,7 +552,7 @@
 
                 if (Math.abs(this.vx) > 0.5 && this.grounded && this.stunTimer === 0) { this.walkCycle += 0.2; ctx.rotate(Math.sin(this.walkCycle) * 0.15); ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); }
                 
-                // Effets de Charge
+                // Effets de Charge Visuels
                 if (this.chargingAtk) {
                     if (this.skinKey === 'ninja' && this.chargingAtk === 'H') {
                         ctx.save(); ctx.rotate(this.chargeTimer * 0.3); ctx.fillStyle = `rgba(0, 240, 255, ${Math.min(1, this.chargeTimer/45)})`;
@@ -485,28 +568,29 @@
                     }
                 }
 
-                // --- RENDU EXACT DE LA TAILLE ET DE L'OFFSET ---
+                // --- GESTION ABSOLUE DE L'ÉCHELLE ET DE L'ANCRAGE (Fix "Taille Géante" et "TP") ---
                 if (img && img.complete && img.naturalWidth !== 0) { 
-                    if (this.attackTimer > 0 && (this.skinKey === 'pathkiller' || this.skinKey === 'ninja' || this.skinKey === 'sumo' || this.skinKey === 'mage')) {
-                        
-                        let ratio = img.naturalWidth / img.naturalHeight;
-                        let drawH = this.h; // STRICTEMENT la taille de base. Pas de multiplicateur délirant !
-                        let drawW = drawH * ratio; // La largeur s'adapte à l'image d'attaque
-                        
-                        let offsetX = -drawW / 2; 
-                        let offsetY = -this.h / 2; // Pieds toujours alignés au même endroit
-
-                        // Gestion de l'orientation pour aligner le sprite d'attaque avec le corps du personnage
-                        if (this.facing === -1) {
-                            offsetX = -drawW + (this.w / 2);
-                        } else {
-                            offsetX = -this.w / 2;
+                    
+                    let drawH = this.h; // Taille STRICTEMENT conservée
+                    let ratio = img.naturalWidth / img.naturalHeight;
+                    
+                    // Léger ajustement ciblé sans déformer
+                    if (this.attackTimer > 0) {
+                        if (this.skinKey === 'pathkiller') {
+                            if (this.atkIsRanged) drawH = this.h * 1.2; // Grappin
+                            else drawH = this.h * 1.1; // Poing Lourd
+                        } else if (aimStr === 'top' || aimStr === 'bot') {
+                            drawH = this.h * 1.2; // Donne de l'amplitude aux frappes Haut/Bas
                         }
-
-                        ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
-                    } else {
-                        ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h); 
                     }
+
+                    let drawW = drawH * ratio; 
+                    
+                    // ANCRAGE PARFAIT (Pieds au sol, Dos aligné)
+                    let offsetY = (this.h / 2) - drawH; // Aligne systématiquement le bas de l'image sur les pieds
+                    let offsetX = this.facing === 1 ? (-this.w / 2) : ((this.w / 2) - drawW); // Étire l'attaque vers l'avant, le dos reste fixe
+                    
+                    ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
                 } else { 
                     ctx.fillStyle = this.color; ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h); 
                 }
@@ -528,7 +612,7 @@
                     let dmg = this.baseDmg * (1 + chargePct * 1.5);
                     let kb = this.baseKb * (1 + chargePct * 1.0);
                     let projVx = aimX * 18; let projVy = aimY * 18; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 18;
-                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, false, false, this.skinKey)); 
+                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, false, this.skinKey, false)); 
                 } 
                 else if (this.skinKey === 'ninja' && type === 'H') {
                     this.attackTimer = 45; this.maxAttackTimer = 45; playSound('shoot'); 
@@ -536,15 +620,16 @@
                     let kb = this.baseKb * 1.2 * (1 + chargePct * 1.0);
                     let speed = 10 + (chargePct * 8);
                     let projVx = aimX * speed; let projVy = aimY * speed; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
-                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, '#00f0ff', false, false, true, false, false, this.skinKey)); 
+                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, '#00f0ff', false, false, true, false, this.skinKey, false)); 
                 } 
                 else if (this.skinKey === 'sumo' && type === 'H') {
-                    this.attackTimer = 35; this.maxAttackTimer = 35; playSound('shoot');
+                    // Corde de la Brute !
+                    this.attackTimer = 25; this.maxAttackTimer = 25; playSound('shoot');
                     let dmg = this.baseDmg * 1.2 * (1 + chargePct * 0.5);
                     let kb = this.baseKb * 1.2 * (1 + chargePct * 0.5);
-                    let speed = 4 + (chargePct * 4); 
+                    let speed = 25; // Extension rapide de la Corde
                     let projVx = aimX * speed; let projVy = aimY * speed; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
-                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, true, false, this.skinKey)); 
+                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, false, this.skinKey, true)); 
                 }
 
                 this.chargingAtk = null; this.chargeTimer = 0; this.atkDirX = aimX; this.atkDirY = aimY; this.atkIsRanged = true;
@@ -625,7 +710,7 @@
                                 if (isHeavy) { 
                                     doRanged = false; attackDuration = 25; 
                                 } else { 
-                                    doRanged = true; isHook = true; attackDuration = 30; // 30 frames pour faire les images du Hook
+                                    doRanged = true; isHook = true; attackDuration = 15; // Animation Rapide du Grab (15 frames)
                                 }
                             }
 
@@ -637,15 +722,16 @@
                                 playSound('shoot'); let px = this.x + this.w / 2; let py = this.y + this.h / 2; 
                                 if (isMine) {
                                     let targetX = this.x + this.w/2 + aimX * 40; let targetY = this.y + this.h - 8;
-                                    let mine = new Projectile(targetX, targetY, 0, 0, this.id, this.baseDmg * 2.5, this.baseKb * 1.5, '#ff0000', false, true, false, false, false, this.skinKey);
+                                    let mine = new Projectile(targetX, targetY, 0, 0, this.id, this.baseDmg * 2.5, this.baseKb * 1.5, '#ff0000', false, true, false, false, this.skinKey, false);
                                     projectiles.push(mine); this.activeMines.push(mine);
                                     if (this.activeMines.length > 3) { let old = this.activeMines.shift(); old.active = false; }
                                 } else if (isHook) {
                                     let projVx = aimX * 18; let projVy = aimY * 18; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 18;
-                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, 2.0, 1.0, '#9d00ff', true, false, false, false, true, this.skinKey));
+                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, 2.0, 1.0, '#9d00ff', true, false, true, this.skinKey, false));
                                 } else {
+                                    // Projectiles simples (Mage)
                                     let projVx = aimX * 15; let projVy = aimY * 15; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * 15;
-                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, this.color, false, false, false, false, false, this.skinKey)); 
+                                    projectiles.push(new Projectile(px, py, projVx, projVy, this.id, this.baseDmg * mult, this.baseKb * mult, this.color, false, false, false, false, this.skinKey, false)); 
                                 }
                             } else { 
                                 playSound('hit'); 
@@ -927,7 +1013,7 @@
                 Object.assign(pObj, pl); pObj.draw();
             });
             projectiles.forEach(pr => { 
-                let pObj = new Projectile(pr.x, pr.y, pr.vx, pr.vy, pr.ownerId, pr.dmg, pr.kb, pr.color, false, pr.isMine, pr.isShuriken, pr.isBoomerang, pr.isHook, pr.ownerSkinKey);
+                let pObj = new Projectile(pr.x, pr.y, pr.vx, pr.vy, pr.ownerId, pr.dmg, pr.kb, pr.color, false, pr.isMine, pr.isShuriken, pr.isHook, pr.ownerSkinKey, pr.isRope);
                 pObj.life = pr.life; pObj.angle = pr.angle || 0; pObj.draw(); 
             });
         }
