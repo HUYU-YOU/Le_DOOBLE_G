@@ -97,9 +97,10 @@
         <div id="ui-layer" class="hidden"></div>
         
         <div id="weapon-panel" class="hidden">
-            <button class="weapon-btn active" id="btn-wpn-bazooka" onclick="selectWeapon('bazooka')"><span class="w-icon">🚀</span>Bazooka</button>
-            <button class="weapon-btn" id="btn-wpn-grenade" onclick="selectWeapon('grenade')"><span class="w-icon">🍍</span>Grenade</button>
-            <button class="weapon-btn" id="btn-wpn-boxe" onclick="selectWeapon('boxe')"><span class="w-icon">🥊</span>Gant Boxe</button>
+            <!-- Ajout de event en paramètre pour bloquer la propagation du clic -->
+            <button class="weapon-btn active" id="btn-wpn-bazooka" onmousedown="selectWeapon('bazooka', event)" ontouchstart="selectWeapon('bazooka', event)"><span class="w-icon">🚀</span>Bazooka</button>
+            <button class="weapon-btn" id="btn-wpn-grenade" onmousedown="selectWeapon('grenade', event)" ontouchstart="selectWeapon('grenade', event)"><span class="w-icon">💣</span>Grenade</button>
+            <button class="weapon-btn" id="btn-wpn-boxe" onmousedown="selectWeapon('boxe', event)" ontouchstart="selectWeapon('boxe', event)"><span class="w-icon">🥊</span>Gant Boxe</button>
         </div>
 
         <canvas id="canvas-terrain" width="800" height="600"></canvas>
@@ -199,7 +200,13 @@
         let selectedMapId = 1;
 
         // --- GESTION DES ARMES ---
-        function selectWeapon(wType) {
+        function selectWeapon(wType, event) {
+            // Empêche la propagation du clic vers le canvas (pour ne pas déclencher un tir non voulu)
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+
             if (gameState !== 'playing') return;
             let activeWorm = worms[currentPlayer - 1];
             
@@ -514,8 +521,14 @@
                 let renderX = this.x - camera.x; let renderY = this.y - camera.y;
                 let img = sprites[spriteName];
                 
-                if (img && img.complete && img.naturalWidth > 0) ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
-                else { ctxEnt.fillStyle = this.color; ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20); }
+                // Rendu prioritaire des vrais sprites, ou carré de secours avec emoji 💣 si manquant
+                if (img && img.complete && img.naturalWidth > 0) {
+                    ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
+                } else { 
+                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20); 
+                    if (this.weapon === 'grenade') { ctxEnt.fillText("💣", renderX + 15, renderY - 5); }
+                    if (this.weapon === 'boxe') { ctxEnt.fillText("🥊", renderX + 15, renderY - 5); }
+                }
 
                 ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Segoe UI'"; ctxEnt.textAlign = "center";
                 ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 30); ctxEnt.shadowBlur = 0;
@@ -813,6 +826,11 @@
         const gameWrapper = document.getElementById('game-wrapper');
 
         function startAim(e) {
+            // --- FIX : On ignore purement et simplement les clics sur l'interface ---
+            if (e.target.closest('#weapon-panel') || e.target.closest('.btn') || e.target.closest('.hub-link')) {
+                return; 
+            }
+
             let activeWorm = worms[currentPlayer - 1];
             if (gameState !== 'playing' || activeWorm.isBot) return; 
             if (gameMode === 'online' && currentPlayer !== myPlayerId) return; 
