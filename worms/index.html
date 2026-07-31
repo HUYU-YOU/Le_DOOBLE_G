@@ -365,6 +365,16 @@
             s2_atqtop_l: 'img/slime2_leftatqtop.png', s2_atqbot_l: 'img/slime2_leftatqbot.png'
         };
 
+        // AJOUT DYNAMIQUE DES 24 NOUVELLES ANIMATIONS BOXE/GRENADE
+        for(let s = 1; s <= 2; s++) {
+            for(let i = 1; i <= 3; i++) {
+                imagesToLoad[`s${s}_greleft${i}`] = `img/slime${s}_greleft${i}.png`;
+                imagesToLoad[`s${s}_greright${i}`] = `img/slime${s}_greright${i}.png`;
+                imagesToLoad[`s${s}_boxleft${i}`] = `img/slime${s}_boxleft${i}.png`;
+                imagesToLoad[`s${s}_boxright${i}`] = `img/slime${s}_boxright${i}.png`;
+            }
+        }
+
         let loadedCount = 0; let totalImages = Object.keys(imagesToLoad).length;
         
         for (let key in imagesToLoad) {
@@ -486,7 +496,17 @@
                 let aiming = (isMe && isDragging) || (!isMe && this.isAiming) || (this.isAiming && this.isBot);
                 let currentAimDy = isMe && !this.isBot ? (dragStartY - dragCurrentY) : this.aimDy;
 
-                if (aiming && this.state !== 'air' && this.state !== 'walk') spriteName += `atq${currentAimDy < -20 ? 'top' : 'bot'}_${this.facing}`;
+                if (aiming && this.state !== 'air' && this.state !== 'walk') {
+                    if (this.weapon === 'bazooka') {
+                        spriteName += `atq${currentAimDy < -20 ? 'top' : 'bot'}_${this.facing}`;
+                    } else if (this.weapon === 'grenade') {
+                        let cycle = (Math.floor(Date.now() / 150) % 3) + 1; // Boucle de frame dynamique 1-3
+                        spriteName += `gre${this.facing === 'r' ? 'right' : 'left'}${cycle}`;
+                    } else if (this.weapon === 'boxe') {
+                        let cycle = (Math.floor(Date.now() / 150) % 3) + 1;
+                        spriteName += `box${this.facing === 'r' ? 'right' : 'left'}${cycle}`;
+                    }
+                }
                 else if (this.state === 'air' || this.state === 'landed') spriteName += `jump_${this.facing}${this.animFrame}`;
                 else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
                 else spriteName += `idle_${this.facing}`;
@@ -496,10 +516,6 @@
                 
                 if (img && img.complete && img.naturalWidth > 0) ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
                 else { ctxEnt.fillStyle = this.color; ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20); }
-                
-                // Dessin Arme Active au dessus du perso si pas le bazooka de base
-                if (this.weapon === 'grenade') { ctxEnt.fillText("🍍", renderX + 15, renderY - 5); }
-                if (this.weapon === 'boxe') { ctxEnt.fillText("🥊", renderX + 15, renderY - 5); }
 
                 ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Segoe UI'"; ctxEnt.textAlign = "center";
                 ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 30); ctxEnt.shadowBlur = 0;
@@ -598,7 +614,7 @@
         let worms = []; 
         let projectile = null; 
         let particles = []; 
-        let punchEffects = []; // Pour stocker visuellement les coups de poing
+        let punchEffects = []; 
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0, dragCurrentX = 0, dragCurrentY = 0;
 
@@ -668,7 +684,6 @@
                 turnInd.innerText = `TOUR ${activeWorm.name}`;
                 turnInd.style.color = activeWorm.color; turnInd.style.borderColor = activeWorm.color;
 
-                // Afficher UI d'armes si c'est le tour d'un humain local
                 if (!activeWorm.isBot && (gameMode !== 'online' || myPlayerId === currentPlayer)) {
                     document.getElementById('weapon-panel').classList.remove('hidden');
                     document.querySelectorAll('.weapon-btn').forEach(btn => btn.classList.remove('active'));
@@ -704,7 +719,6 @@
 
             if (!target) return nextTurn();
 
-            // Choix d'arme intelligent
             if (minDist < 45) ai.weapon = 'boxe';
             else if (Math.random() < 0.3) ai.weapon = 'grenade';
             else ai.weapon = 'bazooka';
@@ -727,7 +741,7 @@
                 let errorOffsetY = (Math.random() - 0.5) * (minDist * 0.15);
                 dx += errorOffsetX; dy += errorOffsetY;
 
-                let ballisticDy = ai.weapon === 'bazooka' ? dy - (Math.abs(dx) * 0.4) : dy - (Math.abs(dx) * 0.6); // Grenade cloche plus haute
+                let ballisticDy = ai.weapon === 'bazooka' ? dy - (Math.abs(dx) * 0.4) : dy - (Math.abs(dx) * 0.6); 
                 let angle = Math.atan2(ballisticDy, dx);
                 let power = Math.min(Math.hypot(dx, ballisticDy) * 0.025 + 5, 18);
 
@@ -751,18 +765,16 @@
 
         // --- GESTION DU COUP DE POING ---
         function executePunch(px, py, angle, color, isLocalAction) {
-            // Effet visuel
             punchEffects.push({ x: px + Math.cos(angle)*30, y: py + Math.sin(angle)*30, life: 15, maxLife: 15, color: '#ff0000', angle: angle });
             
-            // On calcule l'impact que pour l'hôte ou en local pour éviter les doubles dégâts en réseau
             if (isLocalAction || gameMode !== 'online' || myPlayerId === 1) {
                 worms.forEach(w => {
                     if (!w.isDead) {
                         let dist = Math.hypot(w.x - px, w.y - py);
                         if (dist < 65) {
-                            w.hp -= 30; // Dégâts corps à corps
-                            w.vx = Math.cos(angle) * 15; // Mega Knockback horizontal
-                            w.vy = Math.sin(angle) * 15 - 5; // Envol
+                            w.hp -= 30; 
+                            w.vx = Math.cos(angle) * 15; 
+                            w.vy = Math.sin(angle) * 15 - 5; 
                             if (w.hp <= 0) { w.hp = 0; w.isDead = true; }
                         }
                     }
@@ -835,7 +847,7 @@
             let angle = Math.atan2(dy, dx);
             
             if (power > 2) {
-                document.getElementById('weapon-panel').classList.add('hidden'); // Cache pdt le tir
+                document.getElementById('weapon-panel').classList.add('hidden'); 
                 
                 if (activeWorm.weapon === 'boxe') {
                     executePunch(activeWorm.x, activeWorm.y - 15, angle, activeWorm.color, true);
@@ -914,7 +926,6 @@
                 if (particles[i].life <= 0) particles.splice(i, 1);
             }
 
-            // Dessin des effets de poing
             for (let i = punchEffects.length - 1; i >= 0; i--) {
                 let p = punchEffects[i];
                 ctxEnt.save();
