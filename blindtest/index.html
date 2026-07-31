@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Cyber Blind Test - Multiplayer</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -16,7 +16,7 @@
         
         .btn-main { background: #fff; color: #000; border: none; padding: 15px 35px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin: 10px; }
         .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
-        input[type="text"] { padding: 12px; border-radius: 5px; border: 1px solid var(--p1); font-weight: bold; text-align: center; margin: 10px; background: #111; color: #fff; font-size: 1.1em; width: 250px; }
+        input[type="text"] { padding: 12px; border-radius: 5px; border: 1px solid var(--p1); font-weight: bold; text-align: center; margin: 10px; background: #111; color: #fff; font-size: 1.1em; width: 250px; text-transform: uppercase; }
 
         /* HEADER (SCORES MULTIJOUEURS & TEMPS) */
         #game-header { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 15px; }
@@ -33,7 +33,7 @@
         #chat-container { flex-grow: 1; background: #0b0c10; border-radius: 10px; border: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
         #chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         #chat-input-area { display: flex; background: #1f2833; padding: 10px; border-top: 1px solid #333; }
-        #guess-input { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; background: #111; color: #fff; font-size: 1.2em; outline: none; }
+        #guess-input { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; background: #111; color: #fff; font-size: 1.2em; outline: none; text-transform: none; }
         #guess-input:focus { box-shadow: inset 0 0 10px var(--p1); }
         #btn-send { background: var(--p1); color: #000; border: none; font-weight: bold; padding: 0 25px; margin-left: 10px; border-radius: 8px; cursor: pointer; font-size: 1.1em; transition: 0.2s; }
         #btn-send:hover { background: #fff; box-shadow: 0 0 15px var(--p1); }
@@ -85,13 +85,13 @@
         <!-- MENU RÉSEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
             <div class="menu-title" style="color: #ff007f;">Connexion Réseau</div>
-            <p>Votre ID : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
-            <button class="btn-main" onclick="hostGame()">Héberger une partie</button>
-            <p style="margin: 15px 0;">OU</p>
-            <input type="text" id="join-id" placeholder="ID de l'Hôte">
+            <p>Code de votre salon : <br><span id="my-id" style="color:#0ff;font-weight:bold;font-size:2.5em; letter-spacing: 3px;">Création...</span></p>
+            <button class="btn-main" id="btn-host" onclick="hostGame()">Héberger une partie</button>
+            <p style="margin: 25px 0;">OU REJOINDRE</p>
+            <input type="text" id="join-id" placeholder="Ex: BLD1234">
             <button class="btn-main" onclick="joinGame()" style="background:#ff007f;color:#fff;">Rejoindre</button>
-            <p id="status-text" style="color: #aaa; margin-top: 15px;"></p>
-            <button class="btn-main" style="font-size:0.8em; margin-top:20px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
+            <p id="status-text" style="color: #aaa; margin-top: 15px; font-weight: bold;"></p>
+            <button class="btn-main" style="font-size:0.8em; margin-top:30px; background:#333; color:#fff; border: 1px solid #555;" onclick="location.reload()">Retour</button>
         </div>
 
         <!-- MENU CATÉGORIE -->
@@ -121,7 +121,8 @@
         let gameMode = 'solo'; 
         let myPid = 1; 
         
-        // NOUVEAU: Tableau de connexions au lieu d'une seule !
+        // Initialisation à vide pour créer le serveur à la demande
+        let peer = null; 
         let conns = []; 
         let scores = { 1: 0 }; 
         let playerColors = ['#00f0ff', '#ff007f', '#f1c40f', '#39ff14', '#ff8800', '#b800ff', '#00ffaa', '#ff0000'];
@@ -135,7 +136,6 @@
         let roundInterval = null;
         let isRoundActive = false;
         
-        // Variables pour le fade sonore
         let fadeInterval = null;
         let isFading = false;
 
@@ -162,80 +162,115 @@
                 updateScoreUI(); 
             } else {
                 document.getElementById('network-menu').style.display = 'flex';
+                document.getElementById('my-id').innerText = "En attente...";
             }
         }
 
-        // --- RESEAU (PEERJS) ---
-        const peer = new Peer(); 
-        
-        peer.on('open', id => { document.getElementById('my-id').innerText = id; });
-
+        // --- RESEAU (PEERJS CORRIGÉ) ---
         function hostGame() { 
-            let id = document.getElementById('my-id').innerText;
-            if(id && id !== "Création...") { 
-                navigator.clipboard.writeText(id).catch(e => console.log()); 
-                document.getElementById('status-text').innerText = "ID COPIÉ ! Attendez vos amis puis choisissez une catégorie."; 
-            } 
-            gameMode = 'host'; myPid = 1;
+            let status = document.getElementById('status-text');
+            status.style.color = "var(--p1)";
+            status.innerText = "Création du serveur..."; 
             
-            document.getElementById('network-menu').style.display = 'none';
-            document.getElementById('category-menu').style.display = 'flex';
-            document.getElementById('lobby-count').style.display = 'block';
-            updateScoreUI();
-
-            // Gestion de N connexions
-            peer.on('connection', c => { 
-                let newPid = Object.keys(scores).length + 1; // Donne l'ID 2, puis 3, puis 4...
-                c.pid = newPid;
-                scores[newPid] = 0;
-                conns.push(c); 
+            // Code d'accès court au lieu d'un long UUID
+            let code = 'BLD' + Math.floor(1000 + Math.random() * 9000);
+            
+            if (peer) peer.destroy();
+            peer = new Peer(code);
+            
+            peer.on('open', id => {
+                document.getElementById('my-id').innerText = id;
+                navigator.clipboard.writeText(id).catch(e => console.log(e)); 
+                status.style.color = "var(--sys)";
+                status.innerText = "COPIÉ ! Attendez vos amis puis choisissez une catégorie."; 
+                document.getElementById('btn-host').style.display = 'none'; // Empêche le spam clic
                 
-                document.getElementById('lobby-count').innerText = Object.keys(scores).length + " joueur(s) dans le salon";
+                gameMode = 'host'; myPid = 1;
+                document.getElementById('network-menu').style.display = 'none';
+                document.getElementById('category-menu').style.display = 'flex';
+                document.getElementById('lobby-count').style.display = 'block';
+                updateScoreUI();
+            });
 
-                c.on('data', data => {
-                    if (data.type === 'chat') {
-                        displayChat(data.msg, c.pid);
-                        broadcast({ type: 'chat', msg: data.msg, pid: c.pid }, c.pid); // Relais aux autres
-                    }
-                    if (data.type === 'guess') processGuess(data.text, c.pid);
+            peer.on('connection', c => { 
+                // CORRECTION MAJEURE: On attend que le canal s'ouvre !
+                c.on('open', () => {
+                    let newPid = Object.keys(scores).length + 1; 
+                    c.pid = newPid;
+                    scores[newPid] = 0;
+                    conns.push(c); 
+                    
+                    document.getElementById('lobby-count').innerText = Object.keys(scores).length + " joueur(s) dans le salon";
+
+                    // Maintenant l'envoi est 100% sûr
+                    c.send({ type: 'init', pid: newPid });
+                    
+                    let msg = `Joueur ${newPid} a rejoint la partie !`;
+                    broadcast({ type: 'sys', msg: msg });
+                    displaySys(msg);
+                    updateScoreUI();
                 });
 
-                // Confirme la connexion au client
-                c.send({ type: 'init', pid: newPid });
-                broadcast({ type: 'sys', msg: `Joueur ${newPid} a rejoint la partie !` });
-                displaySys(`Joueur ${newPid} a rejoint la partie !`);
-                updateScoreUI();
+                c.on('data', data => {
+                    // Les clients envoient juste un 'guess'. L'hôte traite et redistribue via le 'chat'.
+                    if (data.type === 'guess') processGuess(data.text, c.pid);
+                });
             }); 
+            
+            peer.on('error', err => {
+                status.style.color = "var(--p2)";
+                status.innerText = "Erreur : " + err.type;
+            });
         }
         
         function joinGame() { 
-            let id = document.getElementById('join-id').value; if (!id) return; 
-            document.getElementById('status-text').innerText = "Connexion..."; 
+            let id = document.getElementById('join-id').value.trim().toUpperCase(); 
+            if (!id) return; 
             
-            let conn = peer.connect(id); 
-            gameMode = 'client'; 
+            let status = document.getElementById('status-text');
+            status.style.color = "var(--p1)";
+            status.innerText = "Connexion au serveur..."; 
             
-            conn.on('open', () => {
-                conns = [conn]; // Le client n'a qu'une seule connexion (vers l'hôte)
-                document.getElementById('network-menu').style.display = 'none';
-                document.getElementById('main-menu').style.display = 'flex';
-                document.getElementById('main-menu').innerHTML = '<div class="menu-title">Connecté ! En attente de l\'hôte...</div><div class="loader"></div>';
+            if (peer) peer.destroy();
+            peer = new Peer(); 
+            
+            peer.on('open', () => {
+                let conn = peer.connect(id, { reliable: true }); 
+                gameMode = 'client'; 
+                
+                conn.on('open', () => {
+                    conns = [conn]; // Le client pointe uniquement vers l'Hôte
+                    document.getElementById('network-menu').style.display = 'none';
+                    document.getElementById('main-menu').style.display = 'flex';
+                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys)">Connecté !</div><p>En attente du lancement de la partie par l\'hôte...</p><div class="loader"></div>';
+                });
+                
+                conn.on('data', data => {
+                    if (data.type === 'init') { myPid = data.pid; }
+                    if (data.type === 'chat') { displayChat(data.msg, data.pid); }
+                    if (data.type === 'sys') { displaySys(data.msg); }
+                    if (data.type === 'start_round') { clientStartRound(data.track); }
+                    if (data.type === 'update_state') { clientUpdateState(data.stateData); }
+                    if (data.type === 'end_round') { clientEndRound(data.track); }
+                    if (data.type === 'end_game') { showEndScreen(data.scores); }
+                });
+
+                conn.on('error', () => {
+                    status.style.color = "var(--p2)";
+                    status.innerText = "Échec de la connexion.";
+                });
             });
             
-            conn.on('data', data => {
-                if (data.type === 'init') { myPid = data.pid; }
-                if (data.type === 'chat') { displayChat(data.msg, data.pid); }
-                if (data.type === 'sys') { displaySys(data.msg); }
-                if (data.type === 'start_round') { clientStartRound(data.track); }
-                if (data.type === 'update_state') { clientUpdateState(data.stateData); }
-                if (data.type === 'end_round') { clientEndRound(data.track); }
-                if (data.type === 'end_game') { showEndScreen(data.scores); }
+            peer.on('error', err => {
+                status.style.color = "var(--p2)";
+                status.innerText = err.type === 'peer-unavailable' ? "Partie introuvable." : "Erreur réseau.";
             });
         }
 
-        function broadcast(data, excludePid = null) {
+        // Fonction de diffusion globale de l'hôte
+        function broadcast(data) {
             conns.forEach(c => {
-                if (c.pid !== excludePid) c.send(data);
+                if (c.open) c.send(data);
             });
         }
 
@@ -259,7 +294,7 @@
                 validTracks.sort(() => Math.random() - 0.5);
                 
                 playlist = validTracks.slice(0, 10); 
-                document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); // Ferme le menu !
+                document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
                 
                 if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a choisi la catégorie ${cat}` });
                 displaySys("🎵 DÉBUT DE LA PARTIE (10 Manches) 🎵");
@@ -354,7 +389,6 @@
         function clientStartRound(track) {
             currentTrack = track;
             
-            // BUG FIX MAJEUR: On cache TOUS les écrans de chargement !
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
             
             clearInterval(fadeInterval);
@@ -374,7 +408,7 @@
             
             if (state.timeLeft <= 3) startFadeOut();
             
-            updateScoreUI(stateData.scores); // Met à jour tous les scores !
+            updateScoreUI(stateData.scores); 
 
             if (stateData.artistFound && !boxArtist.classList.contains('found')) {
                 boxArtist.classList.add('found'); boxArtist.innerText = "🧑‍🎤 ARTISTE TROUVÉ !";
@@ -446,10 +480,11 @@
                 boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : "🎵 TITRE TROUVÉ !";
             }
 
+            // Si réponse classique, on l'affiche à l'expéditeur ET à tous les autres
             if (!correct || (!aMatch && tMatch) || (aMatch && !tMatch)) {
                 let safeText = correct ? "*****" : text; 
                 displayChat(safeText, pid);
-                if (gameMode === 'host') broadcast({ type: 'chat', msg: safeText, pid: pid }, pid);
+                if (gameMode === 'host') broadcast({ type: 'chat', msg: safeText, pid: pid }); // Diffuse à tout le monde
             }
 
             updateScoreUI();
@@ -473,7 +508,6 @@
             div.className = 'msg';
             let color = getPlayerColor(pid);
             
-            // Alignement pour différencier soi-même des autres
             if (pid === myPid) {
                 div.style.alignSelf = 'flex-end';
                 div.style.borderRight = `3px solid ${color}`;
@@ -507,7 +541,7 @@
                 let color = getPlayerColor(pid);
                 div.style.color = color;
                 div.style.borderColor = color;
-                div.style.boxShadow = `0 0 10px ${color}40`; // Petit halo lumineux
+                div.style.boxShadow = `0 0 10px ${color}40`; 
                 div.innerText = `J${pid} : ${scoresData[pid]}`;
                 container.appendChild(div);
             }
@@ -535,7 +569,6 @@
             if (gameMode === 'solo') {
                 t.innerHTML = `Score Final : <b style="color:var(--p1)">${finalScores[1]} / 20</b>`;
             } else {
-                // Tri pour trouver le gagnant
                 let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
                 let winnerPid = sortedPids[0];
                 let winnerColor = getPlayerColor(winnerPid);
@@ -549,7 +582,6 @@
         }
     </script>
     
-
     <script>
         const gamesHubList = [
             "../cybertank/index.html",
@@ -575,15 +607,12 @@
             let diffX = globalTouchEndX - globalTouchStartX;
             let diffY = globalTouchEndY - globalTouchStartY;
 
-            // On vérifie quel axe a eu le plus grand mouvement (pour ne pas déclencher en diagonale)
             if (Math.abs(diffX) > Math.abs(diffY)) {
-                // Swipe Horizontal (Gauche / Droite)
-                if (diffX < -swipeThreshold) navigateGames(1);       // Swipe Gauche -> Suivant
-                else if (diffX > swipeThreshold) navigateGames(-1);  // Swipe Droite -> Précédent
+                if (diffX < -swipeThreshold) navigateGames(1);       
+                else if (diffX > swipeThreshold) navigateGames(-1);  
             } else {
-                // Swipe Vertical (Haut / Bas)
-                if (diffY < -swipeThreshold) navigateGames(1);       // Swipe Haut -> Suivant
-                else if (diffY > swipeThreshold) navigateGames(-1);  // Swipe Bas -> Précédent
+                if (diffY < -swipeThreshold) navigateGames(1);       
+                else if (diffY > swipeThreshold) navigateGames(-1);  
             }
         }
 
@@ -600,7 +629,6 @@
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Fonction pour vérifier si on touche un élément avec lequel on interagit dans le jeu
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
             if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
