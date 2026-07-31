@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Anime Blind Test - Multiplayer</title>
+    <title>Cyber Blind Test - Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden;}
         h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px var(--p1); text-align: center; }
         
         #game-container { position: relative; background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: 650px; display: flex; flex-direction: column; overflow: hidden; }
@@ -24,11 +24,11 @@
         .score-box { font-size: 1.2em; font-weight: bold; padding: 5px 15px; border-radius: 8px; background: rgba(0,0,0,0.6); border: 1px solid; }
         #timer-box { font-size: 2.5em; color: #f1c40f; font-weight: 900; text-shadow: 0 0 15px #f1c40f; margin-left: 15px; min-width: 60px; text-align: center; }
 
-        /* TRACK INFO */
-        #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; align-items: center;}
-        .mystery-box { width: 90%; background: #1a1a2e; padding: 25px; border-radius: 10px; border: 2px solid #444; font-size: 1.8em; font-weight: bold; text-align: center; letter-spacing: 3px; text-transform: uppercase; transition: 0.3s; }
-        .mystery-box.found { background: rgba(57, 255, 20, 0.2); border-color: var(--sys); color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 2px; transform: scale(1.05);}
-
+        /* TRACK INFO HYBRIDE */
+        #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; align-items: center; width: 100%; }
+        .mystery-box { width: 90%; background: #1a1a2e; padding: 20px; border-radius: 10px; border: 2px solid #444; font-size: 1.5em; font-weight: bold; text-align: center; letter-spacing: 2px; text-transform: uppercase; transition: 0.3s; }
+        .mystery-box.found { background: rgba(57, 255, 20, 0.2); border-color: var(--sys); color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 1px; transform: scale(1.02);}
+        
         /* TCHAT */
         #chat-container { flex-grow: 1; background: #0b0c10; border-radius: 10px; border: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
         #chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
@@ -47,29 +47,37 @@
         /* BULLES DE TCHAT */
         .msg { padding: 8px 12px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.1em; }
         .msg-sys { background: rgba(57, 255, 20, 0.1); color: var(--sys); align-self: center; border: 1px solid var(--sys); font-weight: bold; text-align: center; width: 90%; margin-top: 10px; }
+        
+        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 500px;}
+        @media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <h1>Anime Blind Test</h1>
+    <h1>Cyber Blind Test</h1>
 
     <div id="game-container">
         <!-- HEADER (IN-GAME) -->
         <div id="game-header">
             <div id="scores-container"></div>
-            <div id="timer-box">15</div>
+            <div id="timer-box">20</div>
         </div>
 
-        <!-- TRACK INFO -->
+        <!-- TRACK INFO (HYBRIDE) -->
         <div id="track-info">
-            <div class="mystery-box" id="box-anime">📺 ANIME : ? ? ?</div>
+            <!-- Boîtes Musique Classique -->
+            <div class="mystery-box" id="box-artist" style="display: none;">🧑‍🎤 ARTISTE : ? ? ?</div>
+            <div class="mystery-box" id="box-title" style="display: none;">🎵 TITRE : ? ? ?</div>
+            
+            <!-- Boîte Anime -->
+            <div class="mystery-box" id="box-anime" style="display: none; padding: 30px; font-size: 1.8em;">📺 ANIME : ? ? ?</div>
         </div>
 
         <!-- CHAT -->
         <div id="chat-container">
             <div id="chat-messages"></div>
             <div id="chat-input-area">
-                <input type="text" id="guess-input" placeholder="Tapez le nom de l'anime ici (ex: SNK, Jojo...)" autocomplete="off">
+                <input type="text" id="guess-input" placeholder="Tapez votre réponse ici..." autocomplete="off">
                 <button id="btn-send" onclick="submitGuess()">ENVOYER</button>
             </div>
         </div>
@@ -104,16 +112,21 @@
             <button class="btn-main" style="font-size:0.9em; margin-top:20px; background: transparent; border: 1px solid #555; color:#aaa;" onclick="location.reload()">Retour au Menu</button>
         </div>
 
-        <!-- MENU DE LANCEMENT -->
+        <!-- MENU CATÉGORIE -->
         <div class="overlay" id="category-menu" style="display: none;">
-            <div class="menu-title" style="color:var(--sys)">PRÊT À COMBATTRE ?</div>
+            <div class="menu-title" style="color:var(--sys)">SÉLECTION DE LA PLAYLIST</div>
             <p id="lobby-count" style="color:#0ff; font-weight:bold; font-size:1.2em; display:none;">1 joueur(s) dans le salon</p>
             
-            <button class="btn-main" id="btn-launch-game" onclick="fetchAnimePlaylist()" style="background: var(--p1); font-size: 1.5em; padding: 20px 40px;">▶ LANCER LA PARTIE</button>
+            <div class="cat-grid" id="cat-buttons">
+                <button class="btn-main" onclick="launchGame('RAP')">🎤 RAP FRANÇAIS</button>
+                <button class="btn-main" onclick="launchGame('FR')">🥐 VARIÉTÉ FR (OLD)</button>
+                <button class="btn-main" onclick="launchGame('POP')">🌍 POP INTERNATIONALE</button>
+                <button class="btn-main" onclick="launchGame('ANIME')" style="border: 2px solid var(--sys);">📺 ANIME (OPENINGS)</button>
+            </div>
             
             <div id="loading-api" style="display: none;">
                 <div class="loader"></div>
-                <p style="font-weight:bold; color:var(--sys); font-size:1.2em;">Chargement depuis la base de données (100+ Animes)...</p>
+                <p style="font-weight:bold; color:var(--sys); font-size:1.2em;">Génération de la playlist en cours...</p>
             </div>
         </div>
 
@@ -127,121 +140,41 @@
 
     <script>
         // --- MASTER DATABASE: 100+ ANIMES CULTES ---
-        // Liste ultra complète avec les alias (pour faciliter la vie des joueurs) et les requêtes iTunes précises.
         const animeCatalog = [
-            // LES BIG SHONENS
-            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Silhouette Kana-Boon" },
-            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Blue Bird Ikimonogakari" },
-            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Go!!! FLOW" },
-            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Sign FLOW" },
-            { anime: "One Piece", aliases: ["onepiece"], search: "We Are Hiroshi Kitadani" },
-            { anime: "One Piece", aliases: ["onepiece"], search: "Hope Namie Amuro" },
-            { anime: "One Piece", aliases: ["onepiece"], search: "Binks no Sake" },
-            { anime: "Bleach", aliases: ["bleachanime"], search: "Asterisk Orange Range" },
-            { anime: "Bleach", aliases: ["bleachanime"], search: "Velonica Aqua Timez" },
-            { anime: "Bleach", aliases: ["bleachanime"], search: "Ranbu no Melody SID" },
-            { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball", "dragon ball"], search: "Cha La Head Cha La" },
-            { anime: "Dragon Ball GT", aliases: ["dbgt", "dragonball gt"], search: "Dan Dan Kokoro Hikareteku" },
-            { anime: "Dragon Ball Super", aliases: ["dbs", "dragonball super"], search: "Limit Break x Survivor" },
-            { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Departure Ono Masatoshi" },
-            { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Hunting for your dream" },
-            { anime: "Fairy Tail", aliases: ["fairytail"], search: "Snow Fairy FUNKIST" },
-            { anime: "Gintama", aliases: ["gin tama"], search: "Tougenkyou Alien" },
-            { anime: "Black Clover", aliases: ["blackclover"], search: "Black Catcher Vickeblanka" },
-
-            // NOUVELLE GÉNÉRATION & HYPE
-            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Guren no Yumiya Linked Horizon" },
-            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Shinzou wo Sasageyo Linked Horizon" },
-            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "The Rumbling SiM" },
-            { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Gurenge LiSA" },
-            { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Zankyou Sanka Aimer" },
-            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Kaikai Kitan Eve" },
-            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "SPECIALZ King Gnu" },
-            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Ao no Sumika Tatsuya Kitani" },
-            { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "Peace Sign Kenshi Yonezu" },
-            { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "The Day Porno Graffitti" },
-            { anime: "Chainsaw Man", aliases: ["csm"], search: "Kick Back Kenshi Yonezu" },
-            { anime: "Oshi no Ko", aliases: ["oshinoko"], search: "Idol Yoasobi" },
-            { anime: "Spy x Family", aliases: ["spyxfamily", "sxf"], search: "Mixed Nuts Official Hige Dandism" },
-            { anime: "Mashle", aliases: ["mashle magic and muscles"], search: "Bling-Bang-Bang-Born Creepy Nuts" },
-            { anime: "Solo Leveling", aliases: ["sololeveling"], search: "LEveL SawanoHiroyuki" },
-            { anime: "Frieren", aliases: ["sousou no frieren"], search: "Yuusha Yoasobi" },
-            { anime: "Kaiju No 8", aliases: ["kaiju no. 8", "kaiju 8"], search: "Abyss Yungblud" },
+            // BIG SHONENS
+            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Silhouette Kana-Boon" }, { anime: "Naruto", aliases: ["naruto shippuden"], search: "Blue Bird Ikimonogakari" },
+            { anime: "One Piece", aliases: ["onepiece"], search: "We Are Hiroshi Kitadani" }, { anime: "One Piece", aliases: ["onepiece"], search: "Hope Namie Amuro" },
+            { anime: "Bleach", aliases: ["bleachanime"], search: "Asterisk Orange Range" }, { anime: "Bleach", aliases: ["bleachanime"], search: "Ranbu no Melody SID" },
+            { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball", "dragon ball"], search: "Cha La Head Cha La" }, { anime: "Dragon Ball GT", aliases: ["dbgt", "dragonball gt"], search: "Dan Dan Kokoro Hikareteku" },
+            { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Departure Ono Masatoshi" }, { anime: "Fairy Tail", aliases: ["fairytail"], search: "Snow Fairy FUNKIST" },
+            { anime: "Gintama", aliases: ["gin tama"], search: "Tougenkyou Alien" }, { anime: "Black Clover", aliases: ["blackclover"], search: "Black Catcher Vickeblanka" },
+            // NEW GEN
+            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Guren no Yumiya Linked Horizon" }, { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "The Rumbling SiM" },
+            { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Gurenge LiSA" }, { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Zankyou Sanka Aimer" },
+            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Kaikai Kitan Eve" }, { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Ao no Sumika Tatsuya Kitani" },
+            { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "Peace Sign Kenshi Yonezu" }, { anime: "Chainsaw Man", aliases: ["csm"], search: "Kick Back Kenshi Yonezu" },
+            { anime: "Oshi no Ko", aliases: ["oshinoko"], search: "Idol Yoasobi" }, { anime: "Spy x Family", aliases: ["spyxfamily", "sxf"], search: "Mixed Nuts Official Hige Dandism" },
+            { anime: "Mashle", aliases: ["mashle magic and muscles"], search: "Bling-Bang-Bang-Born Creepy Nuts" }, { anime: "Solo Leveling", aliases: ["sololeveling"], search: "LEveL SawanoHiroyuki" },
             { anime: "Tokyo Revengers", aliases: ["tokyorevengers"], search: "Cry Baby Official Hige Dandism" },
-
-            // CLASSIQUES, MASTERPIECES & OLDIES
-            { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist", "fmab", "brotherhood"], search: "Again YUI" },
-            { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist"], search: "Melissa Porno Graffitti" },
-            { anime: "Death Note", aliases: ["deathnote"], search: "the WORLD Nightmare" },
-            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Bloody Stream Coda" },
-            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Sono Chi no Sadame" },
-            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Stand Proud" },
-            { anime: "Evangelion", aliases: ["neon genesis evangelion", "nge"], search: "A Cruel Angels Thesis" },
-            { anime: "Cowboy Bebop", aliases: ["cowboybebop"], search: "Tank Seatbelts" },
-            { anime: "Great Teacher Onizuka", aliases: ["gto"], search: "Drivers High L'Arc-en-Ciel" },
-            { anime: "Sailor Moon", aliases: ["sailormoon"], search: "Moonlight Densetsu" },
-            { anime: "Pokemon", aliases: ["pocket monsters"], search: "Gotta Catch Em All Theme" },
-            { anime: "Pokemon", aliases: ["pocket monsters"], search: "Mezase Pokemon Master" },
-            { anime: "Digimon", aliases: ["digimon adventure"], search: "Butter-Fly Wada Kouji" },
-            { anime: "Saint Seiya", aliases: ["les chevaliers du zodiaque"], search: "Pegasus Fantasy" },
-            { anime: "Hokuto no Ken", aliases: ["ken le survivant", "fist of the north star"], search: "Ai wo Torimodose" },
+            // CLASSICS & MASTERPIECES
+            { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist", "fmab", "brotherhood"], search: "Again YUI" }, { anime: "Death Note", aliases: ["deathnote"], search: "the WORLD Nightmare" },
+            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Bloody Stream Coda" }, { anime: "Evangelion", aliases: ["neon genesis evangelion", "nge"], search: "A Cruel Angels Thesis" },
+            { anime: "Cowboy Bebop", aliases: ["cowboybebop"], search: "Tank Seatbelts" }, { anime: "Great Teacher Onizuka", aliases: ["gto"], search: "Drivers High L'Arc-en-Ciel" },
+            { anime: "Pokemon", aliases: ["pocket monsters"], search: "Gotta Catch Em All Theme" }, { anime: "Digimon", aliases: ["digimon adventure"], search: "Butter-Fly Wada Kouji" },
             { anime: "City Hunter", aliases: ["nicky larson"], search: "Get Wild TM Network" },
-            { anime: "Slam Dunk", aliases: ["slamdunk"], search: "Kimi ga Suki da to Sakebitai" },
-
-            // ISEKAI & FANTASY
-            { anime: "Sword Art Online", aliases: ["sao"], search: "Crossing Field LiSA" },
-            { anime: "Sword Art Online", aliases: ["sao"], search: "Ignite Eir Aoi" },
-            { anime: "Re:Zero", aliases: ["rezero"], search: "Redo Konomi Suzuki" },
-            { anime: "No Game No Life", aliases: ["ngnl"], search: "This Game Konomi Suzuki" },
-            { anime: "Overlord", aliases: ["over lord"], search: "Clattanoia OxT" },
-            { anime: "Konosuba", aliases: ["kono suba"], search: "Fantastic Dreamer Machico" },
-            { anime: "Tensei Shitara Slime Datta Ken", aliases: ["slime", "tensura", "that time i got reincarnated as a slime"], search: "Nameless Story Takuma Terashima" },
-            { anime: "Mushoku Tensei", aliases: ["mushokutensei"], search: "Tabibito no Uta" },
-            { anime: "The Rising of the Shield Hero", aliases: ["shield hero", "tate no yuusha"], search: "Rise MADKID" },
-            { anime: "Goblin Slayer", aliases: ["goblinslayer"], search: "Rightfully Mili" },
-
-            // SPORTS
-            { anime: "Haikyuu", aliases: ["haikyu"], search: "Fly High Burnout Syndromes" },
-            { anime: "Haikyuu", aliases: ["haikyu"], search: "Imagination SPYAIR" },
-            { anime: "Kuroko no Basket", aliases: ["kuroko", "knb"], search: "Can Do Granrodeo" },
-            { anime: "Blue Lock", aliases: ["bluelock"], search: "Judgement Ash Da Hero" },
-            { anime: "Hajime no Ippo", aliases: ["ippo"], search: "Under Star Shocking Lemon" },
-            { anime: "Yuri on Ice", aliases: ["yuri on ice"], search: "History Maker Dean Fujioka" },
-            { anime: "Inazuma Eleven", aliases: ["inazuma"], search: "Tachiagari-yo" },
-
-            // ROMANCE, DRAMA & SLICE OF LIFE
-            { anime: "Your Name", aliases: ["kimi no na wa"], search: "Zenzenzense Radwimps" },
-            { anime: "Your Lie in April", aliases: ["shigatsu wa kimi no uso"], search: "Hikaru Nara Goose House" },
-            { anime: "Fruits Basket", aliases: ["fruitsbasket"], search: "Again Beverly" },
-            { anime: "Toradora", aliases: ["tora dora"], search: "Pre-Parade" },
-            { anime: "Kaguya-sama", aliases: ["kaguya sama", "love is war"], search: "Love Dramatic Masayuki Suzuki" },
-            { anime: "Clannad", aliases: ["clannad after story"], search: "Dango Daikazoku" },
-
-            // AUTRES BANGERZ (SEINEN / SCIFI / MECHA / ACTION)
-            { anime: "Tokyo Ghoul", aliases: ["tokyoghoul"], search: "Unravel TK" },
-            { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" },
-            { anime: "Steins Gate", aliases: ["steinsgate"], search: "Hacking to the Gate" },
-            { anime: "Code Geass", aliases: ["codegeass"], search: "Colors Flow" },
-            { anime: "Cyberpunk Edgerunners", aliases: ["cyberpunk", "edgerunners"], search: "This Fffire Franz Ferdinand" },
-            { anime: "Mob Psycho 100", aliases: ["mobpsycho"], search: "99 Mob Choir" },
-            { anime: "Fire Force", aliases: ["fireforce", "en en no shouboutai"], search: "Inferno Mrs Green Apple" },
-            { anime: "Noragami", aliases: ["noragami aragoto"], search: "Kyouran Hey Kids" },
-            { anime: "Psycho-Pass", aliases: ["psychopass"], search: "Abnormalize Ling Tosite Sigure" },
-            { anime: "Soul Eater", aliases: ["souleater"], search: "Resonance TM Revolution" },
-            { anime: "Assassination Classroom", aliases: ["assclass"], search: "Seishun Satsubatsuron" },
-            { anime: "Parasyte", aliases: ["kiseijuu"], search: "Let Me Hear Fear and Loathing in Las Vegas" },
-            { anime: "Gurren Lagann", aliases: ["tengen toppa gurren lagann"], search: "Sorairo Days" },
-            { anime: "Kill la Kill", aliases: ["killlakill"], search: "Sirius Eir Aoi" },
-            { anime: "Akame ga Kill", aliases: ["akamegakill"], search: "Skyreach Sora Amamiya" },
-            { anime: "Fate/Stay Night", aliases: ["fate", "fate stay night", "fate zero"], search: "Oath Sign LiSA" },
-            { anime: "The Seven Deadly Sins", aliases: ["sds", "nanatsu no taizai"], search: "Netsujou no Spectrum" },
-            { anime: "Dr. Stone", aliases: ["drstone"], search: "Good Morning World Burnout Syndromes" },
-            { anime: "Vinland Saga", aliases: ["vinlandsaga"], search: "Mukanjyo Survive Said The Prophet" },
-            { anime: "Hell's Paradise", aliases: ["jigokuraku"], search: "Work Millennium Parade" }
+            // ISEKAI & DIVERS
+            { anime: "Sword Art Online", aliases: ["sao"], search: "Crossing Field LiSA" }, { anime: "Re:Zero", aliases: ["rezero"], search: "Redo Konomi Suzuki" },
+            { anime: "No Game No Life", aliases: ["ngnl"], search: "This Game Konomi Suzuki" }, { anime: "Tensei Shitara Slime Datta Ken", aliases: ["slime", "tensura", "that time i got reincarnated as a slime"], search: "Nameless Story Takuma Terashima" },
+            { anime: "Haikyuu", aliases: ["haikyu"], search: "Fly High Burnout Syndromes" }, { anime: "Kuroko no Basket", aliases: ["kuroko", "knb"], search: "Can Do Granrodeo" },
+            { anime: "Your Name", aliases: ["kimi no na wa"], search: "Zenzenzense Radwimps" }, { anime: "Your Lie in April", aliases: ["shigatsu wa kimi no uso"], search: "Hikaru Nara Goose House" },
+            { anime: "Tokyo Ghoul", aliases: ["tokyoghoul"], search: "Unravel TK" }, { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" },
+            { anime: "Steins Gate", aliases: ["steinsgate"], search: "Hacking to the Gate" }, { anime: "Code Geass", aliases: ["codegeass"], search: "Colors Flow" },
+            { anime: "Cyberpunk Edgerunners", aliases: ["cyberpunk", "edgerunners"], search: "This Fffire Franz Ferdinand" }
         ];
 
         // --- VARIABLES GLOBALES ---
         let gameMode = 'solo'; 
+        let currentCategory = 'RAP'; // Mode par défaut
         let myPid = 1; 
         
         let peer = null; 
@@ -254,7 +187,8 @@
         let currentTrack = null;
         let audioPlayer = new Audio();
         
-        let state = { animeFound: false, timeLeft: 20 }; // 20 sec par manche
+        // État de la manche (dynamique selon mode)
+        let state = { artistFound: false, titleFound: false, animeFound: false, timeLeft: 20 };
         let roundInterval = null;
         let isRoundActive = false;
         
@@ -264,8 +198,10 @@
         // --- UI Elements ---
         const chatMsgs = document.getElementById('chat-messages');
         const guessInput = document.getElementById('guess-input');
-        const boxAnime = document.getElementById('box-anime');
         const timerBox = document.getElementById('timer-box');
+        const boxArtist = document.getElementById('box-artist');
+        const boxTitle = document.getElementById('box-title');
+        const boxAnime = document.getElementById('box-anime');
 
         guessInput.addEventListener("keypress", function(event) {
             if (event.key === "Enter") { event.preventDefault(); submitGuess(); }
@@ -288,6 +224,22 @@
             }
         }
 
+        // --- CONFIGURATION DYNAMIQUE DE L'UI ---
+        function setupUIForCategory(cat) {
+            currentCategory = cat;
+            if (cat === 'ANIME') {
+                boxArtist.style.display = 'none';
+                boxTitle.style.display = 'none';
+                boxAnime.style.display = 'block';
+                guessInput.placeholder = "Tapez le nom de l'anime (ex: SNK, Jojo...)";
+            } else {
+                boxAnime.style.display = 'none';
+                boxArtist.style.display = 'block';
+                boxTitle.style.display = 'block';
+                guessInput.placeholder = "Tapez l'artiste ou le titre ici...";
+            }
+        }
+
         // --- GESTION RÉSEAU (PEERJS) ---
         function hostGame() { 
             let status = document.getElementById('conn-status');
@@ -301,11 +253,7 @@
             
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = id;
-                try {
-                    if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(id).catch(e => console.warn(e));
-                    }
-                } catch(e) {}
+                try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e=>{}); } catch(e) {}
                 
                 status.style.color = "var(--sys)";
                 status.innerText = "Serveur prêt ! Donnez le code à vos amis."; 
@@ -320,9 +268,7 @@
             peer.on('connection', c => { 
                 c.on('open', () => {
                     let newPid = Object.keys(scores).length + 1; 
-                    c.pid = newPid;
-                    scores[newPid] = 0;
-                    conns.push(c); 
+                    c.pid = newPid; scores[newPid] = 0; conns.push(c); 
                     
                     status.style.color = "var(--sys)";
                     status.innerText = `${conns.length + 1} joueur(s) connectés !`;
@@ -332,19 +278,13 @@
                     
                     let msg = `Joueur ${newPid} a rejoint la partie !`;
                     broadcast({ type: 'sys', msg: msg });
-                    displaySys(msg);
-                    updateScoreUI();
+                    displaySys(msg); updateScoreUI();
                 });
 
-                c.on('data', data => {
-                    if (data.type === 'guess') processGuess(data.text, c.pid);
-                });
+                c.on('data', data => { if (data.type === 'guess') processGuess(data.text, c.pid); });
             }); 
             
-            peer.on('error', err => {
-                status.style.color = "var(--p2)";
-                status.innerText = "Erreur de création : " + err.type;
-            });
+            peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = "Erreur de création : " + err.type; });
         }
 
         function goToLobby() {
@@ -359,11 +299,9 @@
             if (!id) return; 
             
             let status = document.getElementById('conn-status');
-            status.style.color = "var(--p1)";
-            status.innerText = "Connexion au salon..."; 
+            status.style.color = "var(--p1)"; status.innerText = "Connexion au salon..."; 
             
-            if (peer) peer.destroy();
-            peer = new Peer(); 
+            if (peer) peer.destroy(); peer = new Peer(); 
             
             peer.on('open', () => {
                 let conn = peer.connect(id, { reliable: true }); 
@@ -380,140 +318,121 @@
                     if (data.type === 'init') { myPid = data.pid; }
                     if (data.type === 'chat') { displayChat(data.msg, data.pid); }
                     if (data.type === 'sys') { displaySys(data.msg); }
+                    if (data.type === 'start_game') { setupUIForCategory(data.category); } // Sync UI
                     if (data.type === 'start_round') { clientStartRound(data.track); }
                     if (data.type === 'update_state') { clientUpdateState(data.stateData); }
                     if (data.type === 'end_round') { clientEndRound(data.track); }
                     if (data.type === 'end_game') { showEndScreen(data.scores); }
                 });
-
-                conn.on('error', () => {
-                    status.style.color = "var(--p2)";
-                    status.innerText = "Échec de connexion.";
-                });
+                conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Échec de connexion."; });
             });
-            
-            peer.on('error', err => {
-                status.style.color = "var(--p2)";
-                status.innerText = err.type === 'peer-unavailable' ? "Le salon n'existe pas !" : "Erreur réseau.";
-            });
+            peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = err.type === 'peer-unavailable' ? "Le salon n'existe pas !" : "Erreur réseau."; });
         }
 
-        function broadcast(data) {
-            conns.forEach(c => { if (c.open) c.send(data); });
-        }
+        function broadcast(data) { conns.forEach(c => { if (c.open) c.send(data); }); }
 
-        // --- FETCH DYNAMIQUE DE LA PLAYLIST ANIME (10 au hasard) ---
-        async function fetchAnimePlaylist() {
-            document.getElementById('btn-launch-game').style.display = 'none';
+        // --- FETCH DYNAMIQUE DE LA PLAYLIST (API MULTIPLE) ---
+        async function launchGame(cat) {
+            setupUIForCategory(cat);
+            if (gameMode === 'host') broadcast({ type: 'start_game', category: cat });
+
+            document.getElementById('cat-buttons').style.display = 'none';
             document.getElementById('loading-api').style.display = 'block';
 
-            // Mélange la grande base de données
-            let shuffled = animeCatalog.sort(() => Math.random() - 0.5);
             let selectedTracks = [];
 
-            // Va chercher 10 morceaux valides
-            for (let i = 0; i < shuffled.length; i++) {
-                if (selectedTracks.length >= 10) break;
-                try {
-                    let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(shuffled[i].search)}&media=music&limit=1`);
-                    let data = await res.json();
-                    
-                    if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
-                        selectedTracks.push({
-                            animeName: shuffled[i].anime,
-                            aliases: shuffled[i].aliases,
-                            previewUrl: data.results[0].previewUrl
-                        });
-                    }
-                } catch (e) {
-                    console.warn("Échec du chargement pour : ", shuffled[i].anime);
+            if (cat === 'ANIME') {
+                let shuffled = animeCatalog.sort(() => Math.random() - 0.5);
+                for (let i = 0; i < shuffled.length; i++) {
+                    if (selectedTracks.length >= 10) break;
+                    try {
+                        let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(shuffled[i].search)}&media=music&limit=1`);
+                        let data = await res.json();
+                        if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+                            selectedTracks.push({
+                                animeName: shuffled[i].anime, aliases: shuffled[i].aliases,
+                                previewUrl: data.results[0].previewUrl
+                            });
+                        }
+                    } catch (e) { console.warn("Échec pour : ", shuffled[i].anime); }
                 }
+            } else {
+                // Requêtes iTunes classiques
+                let term = ''; let country = 'FR';
+                if (cat === 'RAP') { term = 'rap+francais'; }
+                if (cat === 'FR') { term = 'chanson+francaise'; }
+                if (cat === 'POP') { term = 'billboard+top+hits'; country = 'US'; }
+
+                try {
+                    const res = await fetch(`https://itunes.apple.com/search?term=${term}&country=${country}&media=music&entity=song&limit=100`);
+                    const data = await res.json();
+                    let validTracks = data.results.filter(t => t.previewUrl);
+                    validTracks.sort(() => Math.random() - 0.5);
+                    selectedTracks = validTracks.slice(0, 10).map(t => ({
+                        artistName: t.artistName, trackName: t.trackName, previewUrl: t.previewUrl
+                    }));
+                } catch (e) { console.error(e); }
             }
 
             if (selectedTracks.length === 0) {
                 alert("Erreur réseau : Impossible de contacter la base de données musicale.");
-                location.reload();
-                return;
+                location.reload(); return;
             }
 
             playlist = selectedTracks;
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
             
-            if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a lancé la partie !` });
-            displaySys("🎵 DÉBUT DE LA PARTIE (10 Manches) 🎵");
+            if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a lancé la catégorie ${cat} !` });
+            displaySys(`🎵 DÉBUT DE LA PARTIE (${playlist.length} Manches) 🎵`);
             
             setTimeout(startNextRound, 2000);
         }
 
-        // --- FONDU SONORE ---
         function startFadeOut() {
             if (isFading) return;
-            isFading = true;
-            let step = audioPlayer.volume / 30;
-            
+            isFading = true; let step = audioPlayer.volume / 30;
             fadeInterval = setInterval(() => {
-                if (audioPlayer.volume - step > 0) {
-                    audioPlayer.volume -= step;
-                } else {
-                    audioPlayer.volume = 0;
-                    clearInterval(fadeInterval);
-                }
+                if (audioPlayer.volume - step > 0) audioPlayer.volume -= step;
+                else { audioPlayer.volume = 0; clearInterval(fadeInterval); }
             }, 100);
         }
 
-        // --- GESTION DES ROUNDS (HOTE & SOLO) ---
+        // --- GESTION DES ROUNDS ---
         function startNextRound() {
             currentTrackIndex++;
-            if (currentTrackIndex >= playlist.length) {
-                endGame();
-                return;
-            }
+            if (currentTrackIndex >= playlist.length) { endGame(); return; }
 
             currentTrack = playlist[currentTrackIndex];
-            state = { animeFound: false, timeLeft: 20 };
+            state = { artistFound: false, titleFound: false, animeFound: false, timeLeft: 20 };
             
-            clearInterval(fadeInterval);
-            isFading = false;
-            audioPlayer.volume = 1;
+            clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
 
             resetRoundUI();
             audioPlayer.src = currentTrack.previewUrl;
             audioPlayer.play().catch(e => console.log("Autoplay bloqué"));
             
             isRoundActive = true;
-            
-            if (gameMode === 'host') {
-                broadcast({ type: 'start_round', track: { previewUrl: currentTrack.previewUrl } });
-            }
+            if (gameMode === 'host') broadcast({ type: 'start_round', track: { previewUrl: currentTrack.previewUrl } });
 
             displaySys(`▶️ Manche ${currentTrackIndex + 1} / 10`);
 
             clearInterval(roundInterval);
             roundInterval = setInterval(() => {
-                state.timeLeft--;
-                timerBox.innerText = state.timeLeft;
-                
+                state.timeLeft--; timerBox.innerText = state.timeLeft;
                 if (state.timeLeft === 3) startFadeOut();
-
-                if (gameMode === 'host') {
-                    broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
-                }
-                
+                if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
                 if (state.timeLeft <= 0) endRound();
             }, 1000);
         }
 
         function endRound() {
             isRoundActive = false;
-            clearInterval(roundInterval);
-            clearInterval(fadeInterval);
-            audioPlayer.pause();
+            clearInterval(roundInterval); clearInterval(fadeInterval); audioPlayer.pause();
             
-            revealAnswers(currentTrack.animeName);
+            revealAnswers(currentTrack);
             displaySys(`Fin de la manche. Préparation de la suivante...`);
             
             if (gameMode === 'host') broadcast({ type: 'end_round', track: currentTrack });
-
             setTimeout(startNextRound, 5000); 
         }
 
@@ -527,62 +446,69 @@
             currentTrack = track;
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
             
-            clearInterval(fadeInterval);
-            isFading = false;
-            audioPlayer.volume = 1;
-            
-            resetRoundUI();
-            audioPlayer.src = track.previewUrl;
-            audioPlayer.play().catch(e => console.log(e));
-            isRoundActive = true;
-            displaySys(`▶️ Manche ${currentTrackIndex + 1}`);
+            clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
+            resetRoundUI(); audioPlayer.src = track.previewUrl; audioPlayer.play().catch(e => console.log(e));
+            isRoundActive = true; displaySys(`▶️ Manche ${currentTrackIndex + 1}`);
         }
 
         function clientUpdateState(stateData) {
-            state.timeLeft = stateData.timeLeft;
-            timerBox.innerText = state.timeLeft;
-            
+            state.timeLeft = stateData.timeLeft; timerBox.innerText = state.timeLeft;
             if (state.timeLeft <= 3) startFadeOut();
             updateScoreUI(stateData.scores); 
 
-            if (stateData.animeFound && !boxAnime.classList.contains('found')) {
-                boxAnime.classList.add('found'); 
-                boxAnime.innerText = "📺 ANIME TROUVÉ !";
+            if (currentCategory === 'ANIME') {
+                if (stateData.animeFound && !boxAnime.classList.contains('found')) {
+                    boxAnime.classList.add('found'); boxAnime.innerText = "📺 ANIME TROUVÉ !";
+                }
+            } else {
+                if (stateData.artistFound && !boxArtist.classList.contains('found')) {
+                    boxArtist.classList.add('found'); boxArtist.innerText = "🧑‍🎤 ARTISTE TROUVÉ !";
+                }
+                if (stateData.titleFound && !boxTitle.classList.contains('found')) {
+                    boxTitle.classList.add('found'); boxTitle.innerText = "🎵 TITRE TROUVÉ !";
+                }
             }
         }
 
         function clientEndRound(track) {
-            isRoundActive = false;
-            clearInterval(fadeInterval);
-            audioPlayer.pause();
-            revealAnswers(track.animeName);
-            displaySys(`Fin de la manche. Préparation de la suivante...`);
+            isRoundActive = false; clearInterval(fadeInterval); audioPlayer.pause();
+            revealAnswers(track); displaySys(`Fin de la manche. Préparation de la suivante...`);
         }
 
-        // --- VERIFICATION ET RECHERCHE (FUZZY LOGIC AMÉLIORÉE) ---
+        // --- ALGORITHME DE CORRECTION ORTHOGRAPHIQUE (LEVENSHTEIN) ---
         function cleanText(str) {
             if (!str) return '';
-            let s = str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
-            s = s.toLowerCase().replace(/[^a-z0-9]/g, ''); 
-            return s.trim();
+            let s = str.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, ''); 
+            s = s.split(/feat\.|ft\./i)[0]; 
+            s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+            return s.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
         }
 
-        function checkMatch(guess, currentTrackObj) {
-            let g = cleanText(guess);
-            let t = cleanText(currentTrackObj.animeName);
-            
-            if (g.length < 2) return false;
-            
-            // Correspondance stricte ou quasi-complète sur le nom principal
-            if (g === t || (t.includes(g) && g.length >= t.length * 0.75) || (g.includes(t) && t.length >= g.length * 0.75)) return true;
-            
-            // Correspondance sur les alias (ex: SNK, FMA, JJK)
-            if (currentTrackObj.aliases) {
-                for (let alias of currentTrackObj.aliases) {
-                    let a = cleanText(alias);
-                    if (g === a || (a.includes(g) && g.length >= a.length * 0.8)) return true;
+        function levenshtein(a, b) {
+            if(a.length === 0) return b.length;
+            if(b.length === 0) return a.length;
+            let matrix = [];
+            for(let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for(let j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for(let i = 1; i <= b.length; i++) {
+                for(let j = 1; j <= a.length; j++) {
+                    if(b.charAt(i-1) == a.charAt(j-1)) matrix[i][j] = matrix[i-1][j-1];
+                    else matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, Math.min(matrix[i][j-1] + 1, matrix[i-1][j] + 1));
                 }
             }
+            return matrix[b.length][a.length];
+        }
+
+        function checkMatch(guess, target) {
+            let g = cleanText(guess); let t = cleanText(target);
+            if (g.length < 2) return false;
+            if (g === t || (t.includes(g) && g.length >= t.length * 0.75) || (g.includes(t) && t.length >= g.length * 0.75)) return true;
+            
+            // Tolérance aux fautes (ex: 'cowboy bepop' au lieu de 'cowboy bebop')
+            let distance = levenshtein(g, t);
+            if (t.length > 5 && distance <= 2) return true; // 2 erreurs max pour mots longs
+            if (t.length <= 5 && distance <= 1) return true; // 1 erreur max pour mots courts
+            
             return false;
         }
 
@@ -591,38 +517,54 @@
             if (!text || !isRoundActive) return;
             guessInput.value = '';
 
-            if (gameMode === 'client') {
-                conns[0].send({ type: 'guess', text: text });
-            } else {
-                processGuess(text, 1);
-            }
+            if (gameMode === 'client') conns[0].send({ type: 'guess', text: text });
+            else processGuess(text, 1);
         }
 
         function processGuess(text, pid) {
-            if (state.animeFound) return; // Si déjà trouvé, on ignore
+            let correct = false;
 
-            let correct = checkMatch(text, currentTrack);
-
-            if (correct) {
-                state.animeFound = true; 
-                scores[pid]++; 
+            if (currentCategory === 'ANIME') {
+                if (state.animeFound) return;
                 
-                let msg = `🔥 Joueur ${pid} a trouvé l'Anime !`;
-                displaySys(msg); 
-                if(gameMode === 'host') broadcast({type:'sys', msg:msg});
-                
-                boxAnime.classList.add('found');
-                boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : "📺 ANIME TROUVÉ !";
-                
-                // On accélère la fin de la manche (reste 3s)
-                if (state.timeLeft > 3) {
-                    state.timeLeft = 3;
-                    startFadeOut(); 
+                correct = checkMatch(text, currentTrack.animeName);
+                if (!correct && currentTrack.aliases) {
+                    for (let alias of currentTrack.aliases) { if (checkMatch(text, alias)) { correct = true; break; } }
                 }
-                
-                updateScoreUI();
-                if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
+
+                if (correct) {
+                    state.animeFound = true; scores[pid]++;
+                    let msg = `🔥 Joueur ${pid} a trouvé l'Anime !`;
+                    displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
+                    
+                    boxAnime.classList.add('found');
+                    boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : "📺 ANIME TROUVÉ !";
+                    if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
+                }
             } else {
+                let aMatch = !state.artistFound && checkMatch(text, currentTrack.artistName);
+                let tMatch = !state.titleFound && checkMatch(text, currentTrack.trackName);
+
+                if (aMatch) {
+                    state.artistFound = true; scores[pid]++; correct = true;
+                    let msg = `🔥 Joueur ${pid} a trouvé l'Artiste !`;
+                    displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
+                    boxArtist.classList.add('found'); boxArtist.innerText = gameMode === 'solo' ? `🧑‍🎤 ${currentTrack.artistName}` : "🧑‍🎤 ARTISTE TROUVÉ !";
+                }
+                if (tMatch) {
+                    state.titleFound = true; scores[pid]++; correct = true;
+                    let msg = `🔥 Joueur ${pid} a trouvé le Titre !`;
+                    displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
+                    boxTitle.classList.add('found'); boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : "🎵 TITRE TROUVÉ !";
+                }
+                if (state.artistFound && state.titleFound && state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
+            }
+
+            updateScoreUI();
+            if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
+
+            // Affichage dans le chat si ce n'est pas une réponse correcte (ou partiellement correcte)
+            if (!correct) {
                 displayChat(text, pid);
                 if (gameMode === 'host') broadcast({ type: 'chat', msg: text, pid: pid });
             }
@@ -630,108 +572,77 @@
 
         // --- INTERFACE UTILE ---
         function displayChat(msg, pid) {
-            let div = document.createElement('div');
-            div.className = 'msg';
-            let color = getPlayerColor(pid);
-            
-            if (pid === myPid) {
-                div.style.alignSelf = 'flex-end';
-                div.style.borderRight = `3px solid ${color}`;
-            } else {
-                div.style.alignSelf = 'flex-start';
-                div.style.borderLeft = `3px solid ${color}`;
-            }
-            
-            div.style.color = color;
-            div.style.background = 'rgba(255,255,255,0.05)';
-            div.innerText = msg;
-            
-            chatMsgs.appendChild(div);
-            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+            let div = document.createElement('div'); div.className = 'msg'; let color = getPlayerColor(pid);
+            div.style.alignSelf = pid === myPid ? 'flex-end' : 'flex-start';
+            div.style[pid === myPid ? 'borderRight' : 'borderLeft'] = `3px solid ${color}`;
+            div.style.color = color; div.style.background = 'rgba(255,255,255,0.05)'; div.innerText = msg;
+            chatMsgs.appendChild(div); chatMsgs.scrollTop = chatMsgs.scrollHeight;
         }
 
         function displaySys(msg) {
-            let div = document.createElement('div');
-            div.className = 'msg msg-sys';
-            div.innerText = msg;
-            chatMsgs.appendChild(div);
-            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+            let div = document.createElement('div'); div.className = 'msg msg-sys'; div.innerText = msg;
+            chatMsgs.appendChild(div); chatMsgs.scrollTop = chatMsgs.scrollHeight;
         }
 
         function updateScoreUI(scoresData = scores) {
-            const container = document.getElementById('scores-container');
-            container.innerHTML = '';
+            const container = document.getElementById('scores-container'); container.innerHTML = '';
             for(let pid in scoresData) {
-                let div = document.createElement('div');
-                div.className = 'score-box';
-                let color = getPlayerColor(pid);
-                div.style.color = color;
-                div.style.borderColor = color;
-                div.style.boxShadow = `0 0 10px ${color}40`; 
-                div.innerText = `J${pid} : ${scoresData[pid]}`;
-                container.appendChild(div);
+                let div = document.createElement('div'); div.className = 'score-box'; let color = getPlayerColor(pid);
+                div.style.color = color; div.style.borderColor = color; div.style.boxShadow = `0 0 10px ${color}40`; 
+                div.innerText = `J${pid} : ${scoresData[pid]}`; container.appendChild(div);
             }
         }
 
         function resetRoundUI() {
             timerBox.innerText = "20";
-            boxAnime.className = 'mystery-box'; 
-            boxAnime.innerText = "📺 ANIME : ? ? ?";
+            if (currentCategory === 'ANIME') {
+                boxAnime.className = 'mystery-box'; boxAnime.innerText = "📺 ANIME : ? ? ?";
+            } else {
+                boxArtist.className = 'mystery-box'; boxArtist.innerText = "🧑‍🎤 ARTISTE : ? ? ?";
+                boxTitle.className = 'mystery-box'; boxTitle.innerText = "🎵 TITRE : ? ? ?";
+            }
             guessInput.focus();
         }
 
-        function revealAnswers(animeName) {
-            boxAnime.classList.add('found');
-            boxAnime.innerText = `📺 ${animeName}`;
+        function revealAnswers(trackObj) {
+            if (currentCategory === 'ANIME') {
+                boxAnime.classList.add('found'); boxAnime.innerText = `📺 ${trackObj.animeName}`;
+            } else {
+                boxArtist.classList.add('found'); boxArtist.innerText = `🧑‍🎤 ${trackObj.artistName}`;
+                boxTitle.classList.add('found'); boxTitle.innerText = `🎵 ${trackObj.trackName.split('(')[0]}`;
+            }
         }
 
         function showEndScreen(finalScores = scores) {
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
             document.getElementById('end-screen').style.display = 'flex';
-            
             let t = document.getElementById('final-scores-text');
+            
             if (gameMode === 'solo') {
-                t.innerHTML = `Score Final : <b style="color:var(--sys)">${finalScores[1]} / 10</b>`;
+                let maxPts = currentCategory === 'ANIME' ? 10 : 20;
+                t.innerHTML = `Score Final : <b style="color:var(--sys)">${finalScores[1]} / ${maxPts}</b>`;
             } else {
                 let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
-                let winnerPid = sortedPids[0];
-                let winnerColor = getPlayerColor(winnerPid);
-                
+                let winnerPid = sortedPids[0]; let winnerColor = getPlayerColor(winnerPid);
                 t.innerHTML = `<span style="color:${winnerColor}; font-weight:bold;">JOUEUR ${winnerPid} GAGNE !</span><br><br>`;
-                
-                sortedPids.forEach(pid => {
-                    t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 5px; font-weight:bold;">Joueur ${pid} : ${finalScores[pid]} pts</div>`;
-                });
+                sortedPids.forEach(pid => { t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 5px; font-weight:bold;">Joueur ${pid} : ${finalScores[pid]} pts</div>`; });
             }
         }
     </script>
     
-    <!-- SCRIPT DE NAVIGATION SWIPE -->
+    <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL -->
     <script>
         const gamesHubList = [
-            "../cybertank/index.html",
-            "../tower_defense/index.html",
-            "../edgeofwar/index.html",
-            "../cyber_smash/index.html",
-            "../guessthemanga/index.html",
-            "../drawer/index.html",
-            "../texas_poker/index.html",
-            "../blindtest/index.html",
-            "../2048slime/index.html",
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
             "../worms/index.html"
         ];
-
-        let globalTouchStartX = 0;
-        let globalTouchStartY = 0;
-        let globalTouchEndX = 0;
-        let globalTouchEndY = 0;
+        let globalTouchStartX = 0, globalTouchStartY = 0; let globalTouchEndX = 0, globalTouchEndY = 0;
         
         function handleSwipeGesture() {
             const swipeThreshold = 75; 
-            
-            let diffX = globalTouchEndX - globalTouchStartX;
-            let diffY = globalTouchEndY - globalTouchStartY;
-
+            let diffX = globalTouchEndX - globalTouchStartX; let diffY = globalTouchEndY - globalTouchStartY;
             if (Math.abs(diffX) > Math.abs(diffY)) {
                 if (diffX < -swipeThreshold) navigateGames(1);       
                 else if (diffX > swipeThreshold) navigateGames(-1);  
@@ -740,20 +651,13 @@
                 else if (diffY > swipeThreshold) navigateGames(-1);  
             }
         }
-
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
-            let currentIndex = gamesHubList.findIndex(game => {
-                let folderName = game.split('/')[1]; 
-                return currentPath.includes(folderName);
-            });
-            
+            let currentIndex = gamesHubList.findIndex(game => { let folderName = game.split('/')[1]; return currentPath.includes(folderName); });
             if (currentIndex === -1) return;
-            
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
             window.location.href = gamesHubList[nextIndex];
         }
-
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
             if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
@@ -761,18 +665,28 @@
             return false;
         }
 
+        // Tactile
         document.addEventListener('touchstart', e => {
             if (isExcludedElement(e.target)) return;
-            globalTouchStartX = e.changedTouches[0].screenX;
-            globalTouchStartY = e.changedTouches[0].screenY;
+            globalTouchStartX = e.changedTouches[0].screenX; globalTouchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
-
         document.addEventListener('touchend', e => {
             if (isExcludedElement(e.target)) return;
-            globalTouchEndX = e.changedTouches[0].screenX;
-            globalTouchEndY = e.changedTouches[0].screenY;
+            globalTouchEndX = e.changedTouches[0].screenX; globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
         }, { passive: true });
+
+        // Souris
+        let isMouseDown = false;
+        document.addEventListener('mousedown', e => {
+            if (isExcludedElement(e.target)) return;
+            isMouseDown = true; globalTouchStartX = e.screenX; globalTouchStartY = e.screenY;
+        });
+        document.addEventListener('mouseup', e => {
+            if (isExcludedElement(e.target) || !isMouseDown) { isMouseDown = false; return; }
+            isMouseDown = false; globalTouchEndX = e.screenX; globalTouchEndY = e.screenY;
+            handleSwipeGesture();
+        });
     </script>
 </body>
 </html>
