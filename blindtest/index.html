@@ -5,7 +5,7 @@
     <title>Cyber Blind Test - Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --sys: #39ff14; }
+        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px #fff; text-align: center; }
         
@@ -16,8 +16,7 @@
         
         .btn-main { background: #fff; color: #000; border: none; padding: 15px 35px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin: 10px; }
         .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
-        input[type="text"] { padding: 12px; border-radius: 5px; border: 1px solid var(--p1); font-weight: bold; text-align: center; margin: 10px; background: #111; color: #fff; font-size: 1.1em; width: 250px; text-transform: uppercase; }
-
+        
         /* HEADER (SCORES MULTIJOUEURS & TEMPS) */
         #game-header { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 15px; }
         #scores-container { display: flex; gap: 15px; flex-wrap: wrap; flex: 1; justify-content: flex-start; }
@@ -33,7 +32,7 @@
         #chat-container { flex-grow: 1; background: #0b0c10; border-radius: 10px; border: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
         #chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         #chat-input-area { display: flex; background: #1f2833; padding: 10px; border-top: 1px solid #333; }
-        #guess-input { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; background: #111; color: #fff; font-size: 1.2em; outline: none; text-transform: none; }
+        #guess-input { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; background: #111; color: #fff; font-size: 1.2em; outline: none; }
         #guess-input:focus { box-shadow: inset 0 0 10px var(--p1); }
         #btn-send { background: var(--p1); color: #000; border: none; font-weight: bold; padding: 0 25px; margin-left: 10px; border-radius: 8px; cursor: pointer; font-size: 1.1em; transition: 0.2s; }
         #btn-send:hover { background: #fff; box-shadow: 0 0 15px var(--p1); }
@@ -79,19 +78,32 @@
         <div class="overlay" id="main-menu">
             <div class="menu-title" style="color: var(--p1);">Choisissez votre mode</div>
             <button class="btn-main" onclick="openMenu('solo')" style="background:var(--p1);">Entraînement (Solo)</button>
-            <button class="btn-main" onclick="openMenu('network')" style="background:#ff007f; color:#fff;">Multijoueur (Réseau)</button>
+            <button class="btn-main" onclick="openMenu('network')" style="background:var(--p2); color:#fff;">Multijoueur (Réseau)</button>
         </div>
 
-        <!-- MENU RÉSEAU -->
+        <!-- MENU RÉSEAU (TOTALEMENT REVU) -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <div class="menu-title" style="color: #ff007f;">Connexion Réseau</div>
-            <p>Code de votre salon : <br><span id="my-id" style="color:#0ff;font-weight:bold;font-size:2.5em; letter-spacing: 3px;">Création...</span></p>
-            <button class="btn-main" id="btn-host" onclick="hostGame()">Héberger une partie</button>
-            <p style="margin: 25px 0;">OU REJOINDRE</p>
-            <input type="text" id="join-id" placeholder="Ex: BLD1234">
-            <button class="btn-main" onclick="joinGame()" style="background:#ff007f;color:#fff;">Rejoindre</button>
-            <p id="status-text" style="color: #aaa; margin-top: 15px; font-weight: bold;"></p>
-            <button class="btn-main" style="font-size:0.8em; margin-top:30px; background:#333; color:#fff; border: 1px solid #555;" onclick="location.reload()">Retour</button>
+            <div class="menu-title" style="color: var(--p2);">Connexion Réseau</div>
+            
+            <!-- PANNEAU HÔTE -->
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); width: 340px; margin-bottom: 20px; text-align: center;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">CRÉER UN SALON</h3>
+                <p style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">Code de votre salon :</p>
+                <div id="my-id" style="color:var(--p1); font-weight:bold; font-size:2.5em; letter-spacing: 3px; margin: 10px 0; min-height: 40px; text-shadow: 0 0 10px var(--p1);">...</div>
+                
+                <button class="btn-main" id="btn-host" onclick="hostGame()" style="width: 100%; padding: 12px; font-size: 1em;">1. Générer le Code</button>
+                <button class="btn-main" id="btn-start-host" onclick="goToCategories()" style="width: 100%; padding: 12px; font-size: 1em; display: none; background: var(--sys); color: #000;">2. Choisir la Playlist ➔</button>
+            </div>
+
+            <!-- PANNEAU CLIENT -->
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); width: 340px; text-align: center;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">REJOINDRE UN SALON</h3>
+                <input type="text" id="join-id" placeholder="Code de l'hôte..." style="padding: 12px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase;">
+                <button class="btn-main" onclick="joinGame()" style="background:var(--p2); color:#fff; width: 100%; padding: 12px; font-size: 1em; margin-top: 15px;">Rejoindre</button>
+            </div>
+            
+            <div id="conn-status" style="margin-top: 20px; font-weight: bold; font-size: 1.1em; transition: 0.3s; text-align: center;"></div>
+            <button class="btn-main" style="font-size:0.9em; margin-top:20px; background: transparent; border: 1px solid #555; color:#aaa;" onclick="location.reload()">Retour au Menu</button>
         </div>
 
         <!-- MENU CATÉGORIE -->
@@ -117,11 +129,10 @@
     </div>
 
     <script>
-        // --- VARIABLES GLOBALES MULTIJOUEURS ---
+        // --- VARIABLES GLOBALES ---
         let gameMode = 'solo'; 
         let myPid = 1; 
         
-        // Initialisation à vide pour créer le serveur à la demande
         let peer = null; 
         let conns = []; 
         let scores = { 1: 0 }; 
@@ -139,7 +150,7 @@
         let fadeInterval = null;
         let isFading = false;
 
-        // UI Elements
+        // --- UI Elements ---
         const chatMsgs = document.getElementById('chat-messages');
         const guessInput = document.getElementById('guess-input');
         const boxArtist = document.getElementById('box-artist');
@@ -150,9 +161,7 @@
             if (event.key === "Enter") { event.preventDefault(); submitGuess(); }
         });
 
-        function getPlayerColor(pid) {
-            return playerColors[(pid - 1) % playerColors.length];
-        }
+        function getPlayerColor(pid) { return playerColors[(pid - 1) % playerColors.length]; }
 
         function openMenu(mode) {
             gameMode = mode;
@@ -162,17 +171,20 @@
                 updateScoreUI(); 
             } else {
                 document.getElementById('network-menu').style.display = 'flex';
-                document.getElementById('my-id').innerText = "En attente...";
+                document.getElementById('my-id').innerText = "...";
+                document.getElementById('btn-host').style.display = 'inline-block';
+                document.getElementById('btn-start-host').style.display = 'none';
+                document.getElementById('conn-status').innerText = "";
             }
         }
 
-        // --- RESEAU (PEERJS CORRIGÉ) ---
+        // --- GESTION RÉSEAU (PEERJS) ---
         function hostGame() { 
-            let status = document.getElementById('status-text');
+            let status = document.getElementById('conn-status');
             status.style.color = "var(--p1)";
             status.innerText = "Création du serveur..."; 
             
-            // Code d'accès court au lieu d'un long UUID
+            // Code d'accès court et simple !
             let code = 'BLD' + Math.floor(1000 + Math.random() * 9000);
             
             if (peer) peer.destroy();
@@ -180,29 +192,36 @@
             
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = id;
-                navigator.clipboard.writeText(id).catch(e => console.log(e)); 
+                
+                // Protection Anti-Crash du presse-papier
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(id).catch(e => console.warn(e));
+                    }
+                } catch(e) { console.warn("Presse-papier non disponible."); }
+                
                 status.style.color = "var(--sys)";
-                status.innerText = "COPIÉ ! Attendez vos amis puis choisissez une catégorie."; 
-                document.getElementById('btn-host').style.display = 'none'; // Empêche le spam clic
+                status.innerText = "Serveur prêt ! Donnez le code à vos amis."; 
+                
+                // UX : On masque le bouton de création, on affiche la suite
+                document.getElementById('btn-host').style.display = 'none';
+                document.getElementById('btn-start-host').style.display = 'inline-block';
                 
                 gameMode = 'host'; myPid = 1;
-                document.getElementById('network-menu').style.display = 'none';
-                document.getElementById('category-menu').style.display = 'flex';
-                document.getElementById('lobby-count').style.display = 'block';
-                updateScoreUI();
+                scores = { 1: 0 };
             });
 
             peer.on('connection', c => { 
-                // CORRECTION MAJEURE: On attend que le canal s'ouvre !
                 c.on('open', () => {
                     let newPid = Object.keys(scores).length + 1; 
                     c.pid = newPid;
                     scores[newPid] = 0;
                     conns.push(c); 
                     
+                    status.style.color = "var(--sys)";
+                    status.innerText = `${conns.length + 1} joueur(s) connectés !`;
                     document.getElementById('lobby-count').innerText = Object.keys(scores).length + " joueur(s) dans le salon";
 
-                    // Maintenant l'envoi est 100% sûr
                     c.send({ type: 'init', pid: newPid });
                     
                     let msg = `Joueur ${newPid} a rejoint la partie !`;
@@ -212,24 +231,31 @@
                 });
 
                 c.on('data', data => {
-                    // Les clients envoient juste un 'guess'. L'hôte traite et redistribue via le 'chat'.
                     if (data.type === 'guess') processGuess(data.text, c.pid);
                 });
             }); 
             
             peer.on('error', err => {
                 status.style.color = "var(--p2)";
-                status.innerText = "Erreur : " + err.type;
+                status.innerText = "Erreur de création : " + err.type;
             });
+        }
+
+        // Cette fonction s'active UNIQUEMENT quand l'hôte est prêt
+        function goToCategories() {
+            document.getElementById('network-menu').style.display = 'none';
+            document.getElementById('category-menu').style.display = 'flex';
+            document.getElementById('lobby-count').style.display = 'block';
+            updateScoreUI();
         }
         
         function joinGame() { 
             let id = document.getElementById('join-id').value.trim().toUpperCase(); 
             if (!id) return; 
             
-            let status = document.getElementById('status-text');
+            let status = document.getElementById('conn-status');
             status.style.color = "var(--p1)";
-            status.innerText = "Connexion au serveur..."; 
+            status.innerText = "Connexion au salon..."; 
             
             if (peer) peer.destroy();
             peer = new Peer(); 
@@ -239,10 +265,11 @@
                 gameMode = 'client'; 
                 
                 conn.on('open', () => {
-                    conns = [conn]; // Le client pointe uniquement vers l'Hôte
+                    conns = [conn]; 
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('main-menu').style.display = 'flex';
-                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys)">Connecté !</div><p>En attente du lancement de la partie par l\'hôte...</p><div class="loader"></div>';
+                    // Écran d'attente propre pour les clients
+                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2em; margin-bottom:20px;">Connecté !</div><p style="font-size:1.2em; color:#fff;">En attente du lancement par l\'hôte...</p><div class="loader"></div>';
                 });
                 
                 conn.on('data', data => {
@@ -257,21 +284,18 @@
 
                 conn.on('error', () => {
                     status.style.color = "var(--p2)";
-                    status.innerText = "Échec de la connexion.";
+                    status.innerText = "Échec de connexion.";
                 });
             });
             
             peer.on('error', err => {
                 status.style.color = "var(--p2)";
-                status.innerText = err.type === 'peer-unavailable' ? "Partie introuvable." : "Erreur réseau.";
+                status.innerText = err.type === 'peer-unavailable' ? "Le salon n'existe pas !" : "Erreur réseau.";
             });
         }
 
-        // Fonction de diffusion globale de l'hôte
         function broadcast(data) {
-            conns.forEach(c => {
-                if (c.open) c.send(data);
-            });
+            conns.forEach(c => { if (c.open) c.send(data); });
         }
 
         // --- FETCH API APPLE MUSIC ---
@@ -373,9 +397,7 @@
             revealAnswers(currentTrack.artistName, currentTrack.trackName);
             displaySys(`Fin de la manche. Préparation de la suivante...`);
             
-            if (gameMode === 'host') {
-                broadcast({ type: 'end_round', track: currentTrack });
-            }
+            if (gameMode === 'host') broadcast({ type: 'end_round', track: currentTrack });
 
             setTimeout(startNextRound, 5000); 
         }
@@ -388,7 +410,6 @@
         // --- LOGIQUE CLIENT ---
         function clientStartRound(track) {
             currentTrack = track;
-            
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
             
             clearInterval(fadeInterval);
@@ -407,7 +428,6 @@
             timerBox.innerText = state.timeLeft;
             
             if (state.timeLeft <= 3) startFadeOut();
-            
             updateScoreUI(stateData.scores); 
 
             if (stateData.artistFound && !boxArtist.classList.contains('found')) {
@@ -480,11 +500,11 @@
                 boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : "🎵 TITRE TROUVÉ !";
             }
 
-            // Si réponse classique, on l'affiche à l'expéditeur ET à tous les autres
+            // Affiche le message de chat standard s'il ne s'agit pas d'une bonne réponse (ou partiellement)
             if (!correct || (!aMatch && tMatch) || (aMatch && !tMatch)) {
                 let safeText = correct ? "*****" : text; 
                 displayChat(safeText, pid);
-                if (gameMode === 'host') broadcast({ type: 'chat', msg: safeText, pid: pid }); // Diffuse à tout le monde
+                if (gameMode === 'host') broadcast({ type: 'chat', msg: safeText, pid: pid });
             }
 
             updateScoreUI();
@@ -493,9 +513,7 @@
                 if (state.timeLeft > 3) {
                     state.timeLeft = 3;
                     startFadeOut(); 
-                    if (gameMode === 'host') {
-                        broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
-                    }
+                    if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
                 }
             } else if (gameMode === 'host') {
                 broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
@@ -583,6 +601,7 @@
     </script>
     
     <script>
+        // SCRIPT SWIPE
         const gamesHubList = [
             "../cybertank/index.html",
             "../tower_defense/index.html",
@@ -638,14 +657,12 @@
 
         document.addEventListener('touchstart', e => {
             if (isExcludedElement(e.target)) return;
-            
             globalTouchStartX = e.changedTouches[0].screenX;
             globalTouchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
 
         document.addEventListener('touchend', e => {
             if (isExcludedElement(e.target)) return;
-            
             globalTouchEndX = e.changedTouches[0].screenX;
             globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
