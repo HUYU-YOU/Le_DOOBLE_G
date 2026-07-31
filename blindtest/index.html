@@ -5,50 +5,173 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Blind Test - Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Police Futuriste pour le côté Cyberpunk -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden;}
-        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px var(--p1); text-align: center; }
+        :root { 
+            --bg: #050508; 
+            --panel: rgba(15, 18, 28, 0.75); 
+            --panel-border: rgba(0, 240, 255, 0.2);
+            --p1: #00f0ff; 
+            --p2: #ff007f; 
+            --sys: #39ff14;
+            --gold: #f1c40f;
+            --font-main: 'Rajdhani', sans-serif;
+        }
         
-        #game-container { position: relative; background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: 650px; display: flex; flex-direction: column; overflow: hidden; }
+        body { 
+            font-family: var(--font-main); 
+            background-color: var(--bg); 
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(255, 0, 127, 0.05), transparent 25%);
+            color: #fff; 
+            margin: 0; padding: 20px; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; overflow-x: hidden; 
+        }
+
+        h1 { 
+            color: #fff; text-transform: uppercase; letter-spacing: 8px; margin-top: 0; 
+            text-shadow: 0 0 15px var(--p1), 0 0 30px var(--p1); 
+            text-align: center; font-size: 2.5em; font-weight: 700;
+        }
         
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
-        .menu-title { font-size: 2em; margin-bottom: 20px; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+        #game-container { 
+            position: relative; background: var(--panel); border-radius: 20px; 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.05); 
+            padding: 25px; border: 1px solid var(--panel-border); 
+            width: 100%; max-width: 800px; height: 680px; 
+            display: flex; flex-direction: column; overflow: hidden; 
+            backdrop-filter: blur(12px);
+        }
         
-        .btn-main { background: #fff; color: #000; border: none; padding: 15px 35px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin: 10px; }
-        .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
+        .overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(5, 5, 8, 0.92); display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 10; text-align: center; 
+            padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px); 
+        }
+        
+        .menu-title { font-size: 2.5em; font-weight: 700; margin-bottom: 25px; color: #fff; text-transform: uppercase; letter-spacing: 3px; }
+        
+        /* BOUTONS CYBERPUNK */
+        .btn-main { 
+            background: rgba(255,255,255,0.05); color: #fff; border: 2px solid #555; 
+            padding: 15px 35px; font-size: 1.3em; font-weight: 700; font-family: var(--font-main);
+            border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); margin: 10px; 
+            position: relative; overflow: hidden;
+        }
+        .btn-main::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        .btn-main:hover::before { left: 100%; }
+        .btn-main:hover { transform: translateY(-3px); box-shadow: 0 5px 20px rgba(255,255,255,0.2); border-color: #fff; }
+        
+        .btn-cyan { border-color: var(--p1); color: var(--p1); background: rgba(0, 240, 255, 0.05); }
+        .btn-cyan:hover { background: var(--p1); color: #000; box-shadow: 0 0 20px var(--p1); border-color: var(--p1); }
+        
+        .btn-pink { border-color: var(--p2); color: var(--p2); background: rgba(255, 0, 127, 0.05); }
+        .btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 20px var(--p2); border-color: var(--p2); }
+
+        .btn-sys { border-color: var(--sys); color: var(--sys); background: rgba(57, 255, 20, 0.05); }
+        .btn-sys:hover { background: var(--sys); color: #000; box-shadow: 0 0 20px var(--sys); }
         
         /* HEADER (SCORES MULTIJOUEURS & TEMPS) */
-        #game-header { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 15px; }
+        #game-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
         #scores-container { display: flex; gap: 15px; flex-wrap: wrap; flex: 1; justify-content: flex-start; }
-        .score-box { font-size: 1.2em; font-weight: bold; padding: 5px 15px; border-radius: 8px; background: rgba(0,0,0,0.6); border: 1px solid; }
-        #timer-box { font-size: 2.5em; color: #f1c40f; font-weight: 900; text-shadow: 0 0 15px #f1c40f; margin-left: 15px; min-width: 60px; text-align: center; }
+        .score-box { 
+            font-size: 1.3em; font-weight: 700; padding: 6px 18px; border-radius: 8px; 
+            background: rgba(0,0,0,0.6); border: 1px solid; letter-spacing: 1px;
+            backdrop-filter: blur(4px);
+        }
+        #timer-box { 
+            font-size: 3em; color: var(--gold); font-weight: 700; 
+            text-shadow: 0 0 15px var(--gold); margin-left: 15px; min-width: 60px; text-align: center; 
+            line-height: 1;
+        }
 
-        /* TRACK INFO HYBRIDE */
+        /* TRACK INFO HYBRIDE - DESIGN HOLOGRAMME */
         #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; align-items: center; width: 100%; }
-        .mystery-box { width: 90%; background: #1a1a2e; padding: 20px; border-radius: 10px; border: 2px solid #444; font-size: 1.5em; font-weight: bold; text-align: center; letter-spacing: 2px; text-transform: uppercase; transition: 0.3s; }
-        .mystery-box.found { background: rgba(57, 255, 20, 0.2); border-color: var(--sys); color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 1px; transform: scale(1.02);}
         
-        /* TCHAT */
-        #chat-container { flex-grow: 1; background: #0b0c10; border-radius: 10px; border: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
-        #chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        #chat-input-area { display: flex; background: #1f2833; padding: 10px; border-top: 1px solid #333; }
-        #guess-input { flex-grow: 1; padding: 15px; border-radius: 8px; border: none; background: #111; color: #fff; font-size: 1.2em; outline: none; }
-        #guess-input:focus { box-shadow: inset 0 0 10px var(--p1); }
-        #btn-send { background: var(--p1); color: #000; border: none; font-weight: bold; padding: 0 25px; margin-left: 10px; border-radius: 8px; cursor: pointer; font-size: 1.1em; transition: 0.2s; }
-        #btn-send:hover { background: #fff; box-shadow: 0 0 15px var(--p1); }
+        .mystery-box { 
+            width: 90%; background: linear-gradient(135deg, rgba(20,25,40,0.8), rgba(10,12,20,0.9)); 
+            padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
+            font-size: 1.6em; font-weight: 600; text-align: center; letter-spacing: 3px; 
+            text-transform: uppercase; transition: all 0.4s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative; overflow: hidden;
+            color: #888;
+        }
+        /* Animation de recherche */
+        .mystery-box::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            animation: scan 3s infinite linear;
+        }
+        @keyframes scan { 0% { left: -100%; } 100% { left: 200%; } }
 
-        .loader { border: 5px solid #333; border-top: 5px solid var(--p1); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        .mystery-box.found { 
+            background: rgba(57, 255, 20, 0.1); border-color: var(--sys); color: var(--sys); 
+            text-shadow: 0 0 10px var(--sys); letter-spacing: 2px; transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.2), inset 0 0 15px rgba(57, 255, 20, 0.1);
+        }
+        .mystery-box.found::before { display: none; }
+        
+        /* TCHAT - TERMINAL STYLE */
+        #chat-container { 
+            flex-grow: 1; background: rgba(5,5,8,0.8); border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; 
+            overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        #chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        
+        #chat-input-area { 
+            display: flex; background: rgba(20,25,35,0.9); padding: 15px; 
+            border-top: 1px solid rgba(0, 240, 255, 0.2); 
+        }
+        #guess-input { 
+            flex-grow: 1; padding: 12px 20px; border-radius: 8px; border: 1px solid #333; 
+            background: rgba(0,0,0,0.6); color: #fff; font-size: 1.3em; font-family: var(--font-main);
+            outline: none; transition: 0.3s; letter-spacing: 1px;
+        }
+        #guess-input:focus { border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        
+        #btn-send { 
+            background: var(--p1); color: #000; border: none; font-weight: 700; font-family: var(--font-main);
+            padding: 0 30px; margin-left: 15px; border-radius: 8px; cursor: pointer; font-size: 1.3em; 
+            letter-spacing: 1px; transition: 0.2s; text-transform: uppercase;
+        }
+        #btn-send:hover { background: #fff; box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+        .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--p1); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 25px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; }
-        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); }
+        .hub-link { 
+            position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.6); 
+            text-decoration: none; font-weight: 600; font-size: 1.1em; z-index: 1000; 
+            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; backdrop-filter: blur(5px);
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
 
         /* BULLES DE TCHAT */
-        .msg { padding: 8px 12px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.1em; }
-        .msg-sys { background: rgba(57, 255, 20, 0.1); color: var(--sys); align-self: center; border: 1px solid var(--sys); font-weight: bold; text-align: center; width: 90%; margin-top: 10px; }
+        .msg { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.2em; font-weight: 500; backdrop-filter: blur(4px); }
+        .msg-sys { 
+            background: rgba(57, 255, 20, 0.05); color: var(--sys); align-self: center; 
+            border: 1px solid rgba(57, 255, 20, 0.3); font-weight: 700; text-align: center; 
+            width: 90%; margin-top: 5px; box-shadow: 0 0 10px rgba(57, 255, 20, 0.1);
+        }
         
-        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 80%; max-width: 500px;}
+        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 85%; max-width: 600px; margin-top: 20px;}
         @media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -70,71 +193,71 @@
             <div class="mystery-box" id="box-title" style="display: none;">🎵 TITRE : ? ? ?</div>
             
             <!-- Boîte Anime -->
-            <div class="mystery-box" id="box-anime" style="display: none; padding: 30px; font-size: 1.8em;">📺 ANIME : ? ? ?</div>
+            <div class="mystery-box" id="box-anime" style="display: none; padding: 25px; font-size: 2em;">📺 ANIME : ? ? ?</div>
         </div>
 
         <!-- CHAT -->
         <div id="chat-container">
             <div id="chat-messages"></div>
             <div id="chat-input-area">
-                <input type="text" id="guess-input" placeholder="Tapez votre réponse ici..." autocomplete="off">
+                <input type="text" id="guess-input" placeholder="Analyse en attente... Tapez ici." autocomplete="off">
                 <button id="btn-send" onclick="submitGuess()">ENVOYER</button>
             </div>
         </div>
 
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <div class="menu-title" style="color: var(--p1);">Choisissez votre mode</div>
-            <button class="btn-main" onclick="openMenu('solo')" style="background:var(--p1);">Entraînement (Solo)</button>
-            <button class="btn-main" onclick="openMenu('network')" style="background:var(--p2); color:#fff;">Multijoueur (Réseau)</button>
+            <div class="menu-title" style="color: #fff;">CHOISISSEZ VOTRE MODE</div>
+            <button class="btn-main btn-cyan" onclick="openMenu('solo')">Entraînement (Solo)</button>
+            <button class="btn-main btn-pink" onclick="openMenu('network')">Multijoueur (Réseau)</button>
         </div>
 
         <!-- MENU RÉSEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <div class="menu-title" style="color: var(--p2);">Connexion Réseau</div>
+            <div class="menu-title" style="color: var(--p2);">CONNEXION RÉSEAU</div>
             
-            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); width: 340px; margin-bottom: 20px; text-align: center;">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">CRÉER UN SALON</h3>
-                <p style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">Code de votre salon :</p>
-                <div id="my-id" style="color:var(--p1); font-weight:bold; font-size:2.5em; letter-spacing: 3px; margin: 10px 0; min-height: 40px; text-shadow: 0 0 10px var(--p1);">...</div>
+            <div style="background: rgba(0,0,0,0.7); padding: 30px; border-radius: 15px; border: 1px solid var(--p1); width: 340px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; font-weight: 700;">CRÉER UN SALON</h3>
+                <p style="color: #aaa; font-size: 1em; margin-bottom: 10px;">Code de votre salon :</p>
+                <div id="my-id" style="color:var(--p1); font-weight:700; font-size:3em; letter-spacing: 4px; margin: 15px 0; min-height: 40px; text-shadow: 0 0 15px var(--p1);">...</div>
                 
-                <button class="btn-main" id="btn-host" onclick="hostGame()" style="width: 100%; padding: 12px; font-size: 1em;">1. Générer le Code</button>
-                <button class="btn-main" id="btn-start-host" onclick="goToLobby()" style="width: 100%; padding: 12px; font-size: 1em; display: none; background: var(--sys); color: #000;">2. Configurer la partie ➔</button>
+                <button class="btn-main btn-cyan" id="btn-host" onclick="hostGame()" style="width: 100%; padding: 15px; font-size: 1.1em;">1. Générer le Code</button>
+                <button class="btn-main btn-sys" id="btn-start-host" onclick="goToLobby()" style="width: 100%; padding: 15px; font-size: 1.1em; display: none;">2. Configurer ➔</button>
             </div>
 
-            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); width: 340px; text-align: center;">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">REJOINDRE UN SALON</h3>
-                <input type="text" id="join-id" placeholder="Code de l'hôte..." style="padding: 12px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase;">
-                <button class="btn-main" onclick="joinGame()" style="background:var(--p2); color:#fff; width: 100%; padding: 12px; font-size: 1em; margin-top: 15px;">Rejoindre</button>
+            <div style="background: rgba(0,0,0,0.7); padding: 30px; border-radius: 15px; border: 1px solid var(--p2); width: 340px; text-align: center; box-shadow: 0 0 20px rgba(255, 0, 127, 0.1);">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; font-weight: 700;">REJOINDRE UN SALON</h3>
+                <input type="text" id="join-id" placeholder="Code de l'hôte..." style="padding: 15px; font-size: 1.4em; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase; font-family: var(--font-main); font-weight: 700;">
+                <button class="btn-main btn-pink" onclick="joinGame()" style="width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px;">Rejoindre</button>
             </div>
             
-            <div id="conn-status" style="margin-top: 20px; font-weight: bold; font-size: 1.1em; transition: 0.3s; text-align: center;"></div>
-            <button class="btn-main" style="font-size:0.9em; margin-top:20px; background: transparent; border: 1px solid #555; color:#aaa;" onclick="location.reload()">Retour au Menu</button>
+            <div id="conn-status" style="margin-top: 25px; font-weight: 700; font-size: 1.2em; transition: 0.3s; text-align: center;"></div>
+            <button class="btn-main" style="font-size:1em; margin-top:30px; border-color: #444; color:#888;" onclick="location.reload()">Retour au Menu</button>
         </div>
 
         <!-- MENU CATÉGORIE -->
         <div class="overlay" id="category-menu" style="display: none;">
-            <div class="menu-title" style="color:var(--sys)">SÉLECTION DE LA PLAYLIST</div>
-            <p id="lobby-count" style="color:#0ff; font-weight:bold; font-size:1.2em; display:none;">1 joueur(s) dans le salon</p>
+            <div class="menu-title" style="color:var(--sys); text-shadow: 0 0 15px var(--sys);">SÉLECTION DE LA PLAYLIST</div>
+            <p id="lobby-count" style="color:#0ff; font-weight:700; font-size:1.3em; display:none; margin-bottom: 5px;">1 joueur(s) dans le salon</p>
             
             <div class="cat-grid" id="cat-buttons">
-                <button class="btn-main" onclick="launchGame('RAP')">🎤 RAP FRANÇAIS</button>
-                <button class="btn-main" onclick="launchGame('FR')">🥐 VARIÉTÉ FR (OLD)</button>
-                <button class="btn-main" onclick="launchGame('POP')">🌍 POP INTERNATIONALE</button>
-                <button class="btn-main" onclick="launchGame('ANIME')" style="border: 2px solid var(--sys);">📺 ANIME (OPENINGS)</button>
+                <button class="btn-main" onclick="launchGame('RAP')" style="border-color: #ff5500; color: #ffaa00;">🎤 RAP FRANÇAIS</button>
+                <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 VARIÉTÉ FR</button>
+                <button class="btn-main" onclick="launchGame('POP')" style="border-color: #ff00aa; color: #ff88cc;">🌍 POP INTERNATIONALE</button>
+                <button class="btn-main btn-sys" onclick="launchGame('ANIME')">📺 ANIME (OPENINGS)</button>
             </div>
             
-            <div id="loading-api" style="display: none;">
+            <div id="loading-api" style="display: none; flex-direction: column; align-items: center;">
                 <div class="loader"></div>
-                <p style="font-weight:bold; color:var(--sys); font-size:1.2em;">Génération de la playlist en cours...</p>
+                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px;">Génération de la playlist en cours...</p>
             </div>
         </div>
 
         <!-- ECRAN DE FIN -->
         <div class="overlay" id="end-screen" style="display: none;">
-            <div class="menu-title" id="winner-text" style="font-size: 3em;">FIN DU JEU</div>
-            <p id="final-scores-text" style="font-size: 1.5em; margin-bottom: 30px;"></p>
-            <button class="btn-main" onclick="location.reload()">Rejouer</button>
+            <div class="menu-title" id="winner-text" style="font-size: 4em; font-weight: 700; text-shadow: 0 0 20px #fff;">FIN DU JEU</div>
+            <p id="final-scores-text" style="font-size: 1.8em; margin-bottom: 40px; line-height: 1.5; font-weight: 600;"></p>
+            <button class="btn-main btn-cyan" onclick="location.reload()">Rejouer une partie</button>
         </div>
     </div>
 
@@ -174,7 +297,7 @@
 
         // --- VARIABLES GLOBALES ---
         let gameMode = 'solo'; 
-        let currentCategory = 'RAP'; // Mode par défaut
+        let currentCategory = 'RAP'; 
         let myPid = 1; 
         
         let peer = null; 
@@ -187,7 +310,7 @@
         let currentTrack = null;
         let audioPlayer = new Audio();
         
-        // État de la manche (dynamique selon mode)
+        // État de la manche
         let state = { artistFound: false, titleFound: false, animeFound: false, timeLeft: 20 };
         let roundInterval = null;
         let isRoundActive = false;
@@ -311,14 +434,14 @@
                     conns = [conn]; 
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('main-menu').style.display = 'flex';
-                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2em; margin-bottom:20px;">Connecté !</div><p style="font-size:1.2em; color:#fff;">En attente du lancement par l\'hôte...</p><div class="loader"></div>';
+                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2.5em; margin-bottom:20px;">CONNEXION ÉTABLIE</div><p style="font-size:1.5em; color:#fff; font-weight:600;">En attente de l\'hôte...</p><div class="loader"></div>';
                 });
                 
                 conn.on('data', data => {
                     if (data.type === 'init') { myPid = data.pid; }
                     if (data.type === 'chat') { displayChat(data.msg, data.pid); }
                     if (data.type === 'sys') { displaySys(data.msg); }
-                    if (data.type === 'start_game') { setupUIForCategory(data.category); } // Sync UI
+                    if (data.type === 'start_game') { setupUIForCategory(data.category); } 
                     if (data.type === 'start_round') { clientStartRound(data.track); }
                     if (data.type === 'update_state') { clientUpdateState(data.stateData); }
                     if (data.type === 'end_round') { clientEndRound(data.track); }
@@ -331,13 +454,13 @@
 
         function broadcast(data) { conns.forEach(c => { if (c.open) c.send(data); }); }
 
-        // --- FETCH DYNAMIQUE DE LA PLAYLIST (API MULTIPLE) ---
+        // --- FETCH DYNAMIQUE DE LA PLAYLIST ---
         async function launchGame(cat) {
             setupUIForCategory(cat);
             if (gameMode === 'host') broadcast({ type: 'start_game', category: cat });
 
             document.getElementById('cat-buttons').style.display = 'none';
-            document.getElementById('loading-api').style.display = 'block';
+            document.getElementById('loading-api').style.display = 'flex';
 
             let selectedTracks = [];
 
@@ -354,10 +477,9 @@
                                 previewUrl: data.results[0].previewUrl
                             });
                         }
-                    } catch (e) { console.warn("Échec pour : ", shuffled[i].anime); }
+                    } catch (e) {}
                 }
             } else {
-                // Requêtes iTunes classiques
                 let term = ''; let country = 'FR';
                 if (cat === 'RAP') { term = 'rap+francais'; }
                 if (cat === 'FR') { term = 'chanson+francaise'; }
@@ -414,11 +536,12 @@
             isRoundActive = true;
             if (gameMode === 'host') broadcast({ type: 'start_round', track: { previewUrl: currentTrack.previewUrl } });
 
-            displaySys(`▶️ Manche ${currentTrackIndex + 1} / 10`);
+            displaySys(`▶️ MANCHE ${currentTrackIndex + 1} / 10`);
 
             clearInterval(roundInterval);
             roundInterval = setInterval(() => {
                 state.timeLeft--; timerBox.innerText = state.timeLeft;
+                if (state.timeLeft <= 3) timerBox.style.color = '#ff0000'; else timerBox.style.color = 'var(--gold)';
                 if (state.timeLeft === 3) startFadeOut();
                 if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
                 if (state.timeLeft <= 0) endRound();
@@ -448,12 +571,14 @@
             
             clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
             resetRoundUI(); audioPlayer.src = track.previewUrl; audioPlayer.play().catch(e => console.log(e));
-            isRoundActive = true; displaySys(`▶️ Manche ${currentTrackIndex + 1}`);
+            isRoundActive = true; displaySys(`▶️ MANCHE ${currentTrackIndex + 1}`);
         }
 
         function clientUpdateState(stateData) {
             state.timeLeft = stateData.timeLeft; timerBox.innerText = state.timeLeft;
-            if (state.timeLeft <= 3) startFadeOut();
+            if (state.timeLeft <= 3) timerBox.style.color = '#ff0000'; else timerBox.style.color = 'var(--gold)';
+            if (state.timeLeft <= 3 && !isFading) startFadeOut();
+            
             updateScoreUI(stateData.scores); 
 
             if (currentCategory === 'ANIME') {
@@ -504,7 +629,7 @@
             if (g.length < 2) return false;
             if (g === t || (t.includes(g) && g.length >= t.length * 0.75) || (g.includes(t) && t.length >= g.length * 0.75)) return true;
             
-            // Tolérance aux fautes (ex: 'cowboy bepop' au lieu de 'cowboy bebop')
+            // Tolérance aux fautes de frappe
             let distance = levenshtein(g, t);
             if (t.length > 5 && distance <= 2) return true; // 2 erreurs max pour mots longs
             if (t.length <= 5 && distance <= 1) return true; // 1 erreur max pour mots courts
@@ -563,7 +688,6 @@
             updateScoreUI();
             if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
 
-            // Affichage dans le chat si ce n'est pas une réponse correcte (ou partiellement correcte)
             if (!correct) {
                 displayChat(text, pid);
                 if (gameMode === 'host') broadcast({ type: 'chat', msg: text, pid: pid });
@@ -574,9 +698,23 @@
         function displayChat(msg, pid) {
             let div = document.createElement('div'); div.className = 'msg'; let color = getPlayerColor(pid);
             div.style.alignSelf = pid === myPid ? 'flex-end' : 'flex-start';
-            div.style[pid === myPid ? 'borderRight' : 'borderLeft'] = `3px solid ${color}`;
-            div.style.color = color; div.style.background = 'rgba(255,255,255,0.05)'; div.innerText = msg;
+            
+            // Design des bulles façon cyberpunk glassmorphism
+            if (pid === myPid) {
+                div.style.borderRight = `4px solid ${color}`;
+                div.style.background = `linear-gradient(90deg, rgba(255,255,255,0.02), rgba(${hexToRgb(color)}, 0.15))`;
+            } else {
+                div.style.borderLeft = `4px solid ${color}`;
+                div.style.background = `linear-gradient(90deg, rgba(${hexToRgb(color)}, 0.15), rgba(255,255,255,0.02))`;
+            }
+            
+            div.style.color = '#fff'; div.innerText = msg;
             chatMsgs.appendChild(div); chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        }
+
+        function hexToRgb(hex) {
+            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
         }
 
         function displaySys(msg) {
@@ -588,13 +726,14 @@
             const container = document.getElementById('scores-container'); container.innerHTML = '';
             for(let pid in scoresData) {
                 let div = document.createElement('div'); div.className = 'score-box'; let color = getPlayerColor(pid);
-                div.style.color = color; div.style.borderColor = color; div.style.boxShadow = `0 0 10px ${color}40`; 
+                div.style.color = color; div.style.borderColor = color; 
+                div.style.boxShadow = `0 0 15px rgba(${hexToRgb(color)}, 0.3)`; 
                 div.innerText = `J${pid} : ${scoresData[pid]}`; container.appendChild(div);
             }
         }
 
         function resetRoundUI() {
-            timerBox.innerText = "20";
+            timerBox.innerText = "20"; timerBox.style.color = 'var(--gold)';
             if (currentCategory === 'ANIME') {
                 boxAnime.className = 'mystery-box'; boxAnime.innerText = "📺 ANIME : ? ? ?";
             } else {
@@ -620,12 +759,14 @@
             
             if (gameMode === 'solo') {
                 let maxPts = currentCategory === 'ANIME' ? 10 : 20;
-                t.innerHTML = `Score Final : <b style="color:var(--sys)">${finalScores[1]} / ${maxPts}</b>`;
+                t.innerHTML = `Score Final : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>`;
             } else {
                 let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
                 let winnerPid = sortedPids[0]; let winnerColor = getPlayerColor(winnerPid);
-                t.innerHTML = `<span style="color:${winnerColor}; font-weight:bold;">JOUEUR ${winnerPid} GAGNE !</span><br><br>`;
-                sortedPids.forEach(pid => { t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 5px; font-weight:bold;">Joueur ${pid} : ${finalScores[pid]} pts</div>`; });
+                t.innerHTML = `<span style="color:${winnerColor}; font-weight:700; text-shadow: 0 0 15px ${winnerColor};">JOUEUR ${winnerPid} REMPORTE LA PARTIE !</span><br><br>`;
+                sortedPids.forEach(pid => { 
+                    t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 8px; font-weight:600; font-size: 1.2em;">Joueur ${pid} : ${finalScores[pid]} pts</div>`; 
+                });
             }
         }
     </script>
@@ -665,7 +806,6 @@
             return false;
         }
 
-        // Tactile
         document.addEventListener('touchstart', e => {
             if (isExcludedElement(e.target)) return;
             globalTouchStartX = e.changedTouches[0].screenX; globalTouchStartY = e.changedTouches[0].screenY;
@@ -676,7 +816,6 @@
             handleSwipeGesture();
         }, { passive: true });
 
-        // Souris
         let isMouseDown = false;
         document.addEventListener('mousedown', e => {
             if (isExcludedElement(e.target)) return;
