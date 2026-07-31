@@ -450,7 +450,7 @@
             // Déclenche l'animation de tir fluide
             triggerAttackAnimation(weaponUsed) {
                 this.isAttacking = true;
-                this.attackFrame = 2; // On commence directement à la frame de frappe
+                this.attackFrame = 2; // On commence à la frame d'impact
                 this.attackTimer = 0;
                 this.lastWeaponUsed = weaponUsed;
             }
@@ -458,10 +458,10 @@
             update() {
                 if (this.isDead) return;
 
-                // Gestion de l'animation d'attaque prioritaire
+                // 1. Gestion de l'animation d'attaque prioritaire
                 if (this.isAttacking) {
                     this.attackTimer++;
-                    if (this.attackTimer > 6) { // Durée de chaque frame (environ 100ms)
+                    if (this.attackTimer > 6) { // Durée de chaque frame
                         this.attackFrame++;
                         this.attackTimer = 0;
                         if (this.attackFrame > 3) {
@@ -471,37 +471,66 @@
                     }
                 }
 
+                // 2. Gestion Physique et Mouvements
                 let isMyTurn = (currentPlayer === this.id);
                 if (gameMode === 'online' && currentPlayer !== myPlayerId) isMyTurn = false;
                 let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0));
                 
+                let wasOnGround = this.isOnGround;
+                this.isOnGround = false;
+
                 if (canMove && !isDragging) {
                     let activeKeys = this.isBot ? this.aiInput : keys;
                     if (activeKeys.left) { this.vx = -1.5; this.facing = 'l'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
                     else if (activeKeys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
                     else { this.vx = 0; if(this.state === 'walk') this.state = 'idle'; }
 
-                    if (activeKeys.space && this.isOnGround) { 
-                        this.vy = -6.5; this.isOnGround = false; this.state = 'air'; this.animFrame = 2; activeKeys.space = false; 
+                    if (activeKeys.space && wasOnGround) { 
+                        this.vy = -6.5; this.state = 'air'; this.animFrame = 2; activeKeys.space = false; 
                     }
-                } else if (!canMove && this.isOnGround) {
+                } else if (!canMove && wasOnGround) {
                     this.vx *= 0.5; if(Math.abs(this.vx) < 0.1) this.vx = 0;
                     if (this.state === 'walk') this.state = 'idle';
                 }
 
+                // --- CORRECTION DU MICRO-BOUNCING (GROUND STICKING) ---
                 if (this.vx !== 0) {
                     let nextX = this.x + this.vx; let step = 0; let maxStep = 6; 
+                    // Montée
                     while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) step++;
-                    if (step > maxStep) this.vx = 0; else { this.x = nextX; this.y -= step; }
+                    
+                    if (step > maxStep) {
+                        this.vx = 0; 
+                    } else { 
+                        this.x = nextX; 
+                        this.y -= step; 
+                        
+                        // Descente : Colle au sol si on marchait
+                        if (wasOnGround && this.vy >= 0) {
+                            let drop = 0; let maxDrop = 6;
+                            while (drop <= maxDrop && !isSolid(this.x, this.y + this.radius + drop)) drop++;
+                            if (drop <= maxDrop) this.y += drop; 
+                        }
+                    }
                 }
 
-                this.vy += GRAVITY; this.y += this.vy; this.isOnGround = false;
+                this.vy += GRAVITY; 
+                this.y += this.vy;
                 
                 if (isSolid(this.x, this.y + this.radius)) {
-                    if (this.state === 'air') { this.state = 'landed'; this.landTimer = 15; }
-                    this.vy = 0; this.isOnGround = true;
+                    if (this.state === 'air' && this.vy > 2) { 
+                        this.state = 'landed'; this.landTimer = 15; 
+                    } else if (this.state === 'air') {
+                        this.state = 'idle';
+                    }
+                    this.vy = 0; 
+                    this.isOnGround = true;
                     while(isSolid(this.x, this.y + this.radius - 1)) this.y -= 1;
-                } else if (this.vy !== 0) { this.state = 'air'; }
+                } else if (Math.abs(this.vy) > 1.5) { 
+                    // TOLERANCE : On ne met le skin de saut que si la chute est significative
+                    this.state = 'air'; 
+                }
+                // --------------------------------------------------------
 
                 if (this.state === 'walk') {
                     this.animTimer++;
@@ -517,10 +546,26 @@
             draw() {
                 if (this.isDead) return;
                 
-                let spriteName = `s${this.type}_`;
                 let isMe = (currentPlayer === this.id);
                 let aiming = (isMe && isDragging) || (!isMe && this.isAiming) || (this.isAiming && this.isBot);
                 let currentAimDy = isMe && !this.isBot ? (dragStartY - dragCurrentY) : this.aimDy;
+
+                // --- INVERSION COULEUR GANT DE BOXE ---
+                let visualType = this.type;
+                let isDrawingBoxe = false;
+
+                if (this.isAttacking && this.lastWeaponUsed === 'boxe') {
+                    isDrawingBoxe = true;
+                } else if (aiming && this.state !== 'air' && this.state !== 'walk' && this.weapon === 'boxe') {
+                    isDrawingBoxe = true;
+                }
+
+                if (isDrawingBoxe) {
+                    visualType = this.type === 1 ? 2 : 1; // Inversion magique de l'ID d'image !
+                }
+
+                let spriteName = `s${visualType}_`;
+                // --------------------------------------
 
                 // 1. Priorité absolue à l'animation de tir en cours
                 if (this.isAttacking) {
@@ -532,15 +577,15 @@
                         spriteName += `box${this.facing === 'r' ? 'right' : 'left'}${this.attackFrame}`;
                     }
                 } 
-                // 2. Si on est en train de viser (Maintien du clic/tactile) => Pose de préparation (Frame 1)
+                // 2. Si on est en train de viser (Maintien du clic/tactile) => Pose 1
                 else if (aiming && this.state !== 'air' && this.state !== 'walk') {
                     if (this.weapon === 'bazooka') {
-                        this.lastAimTop = currentAimDy < -20; // On sauvegarde pour l'anim de tir
+                        this.lastAimTop = currentAimDy < -20; 
                         spriteName += `atq${this.lastAimTop ? 'top' : 'bot'}_${this.facing}`;
                     } else if (this.weapon === 'grenade') {
-                        spriteName += `gre${this.facing === 'r' ? 'right' : 'left'}1`; // Préparation Grenade
+                        spriteName += `gre${this.facing === 'r' ? 'right' : 'left'}1`;
                     } else if (this.weapon === 'boxe') {
-                        spriteName += `box${this.facing === 'r' ? 'right' : 'left'}1`; // Préparation Boxe
+                        spriteName += `box${this.facing === 'r' ? 'right' : 'left'}1`;
                     }
                 }
                 // 3. Déplacements classiques
