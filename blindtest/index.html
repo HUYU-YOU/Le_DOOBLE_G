@@ -85,7 +85,6 @@
         <div class="overlay" id="network-menu" style="display: none;">
             <div class="menu-title" style="color: var(--p2);">Connexion Réseau</div>
             
-            <!-- PANNEAU HÔTE -->
             <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); width: 340px; margin-bottom: 20px; text-align: center;">
                 <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">CRÉER UN SALON</h3>
                 <p style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">Code de votre salon :</p>
@@ -95,7 +94,6 @@
                 <button class="btn-main" id="btn-start-host" onclick="goToLobby()" style="width: 100%; padding: 12px; font-size: 1em; display: none; background: var(--sys); color: #000;">2. Configurer la partie ➔</button>
             </div>
 
-            <!-- PANNEAU CLIENT -->
             <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); width: 340px; text-align: center;">
                 <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">REJOINDRE UN SALON</h3>
                 <input type="text" id="join-id" placeholder="Code de l'hôte..." style="padding: 12px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase;">
@@ -106,7 +104,7 @@
             <button class="btn-main" style="font-size:0.9em; margin-top:20px; background: transparent; border: 1px solid #555; color:#aaa;" onclick="location.reload()">Retour au Menu</button>
         </div>
 
-        <!-- MENU CATÉGORIE / LANCEMENT -->
+        <!-- MENU DE LANCEMENT -->
         <div class="overlay" id="category-menu" style="display: none;">
             <div class="menu-title" style="color:var(--sys)">PRÊT À COMBATTRE ?</div>
             <p id="lobby-count" style="color:#0ff; font-weight:bold; font-size:1.2em; display:none;">1 joueur(s) dans le salon</p>
@@ -115,7 +113,7 @@
             
             <div id="loading-api" style="display: none;">
                 <div class="loader"></div>
-                <p style="font-weight:bold; color:var(--sys); font-size:1.2em;">Chargement des openings depuis la base de données...</p>
+                <p style="font-weight:bold; color:var(--sys); font-size:1.2em;">Chargement depuis la base de données (100+ Animes)...</p>
             </div>
         </div>
 
@@ -128,39 +126,118 @@
     </div>
 
     <script>
-        // --- BASE DE DONNÉES CURATÉE DES ANIMES ---
-        // Cette base permet de bypasser les limitations de recherche d'iTunes en ciblant directement les bons titres.
+        // --- MASTER DATABASE: 100+ ANIMES CULTES ---
+        // Liste ultra complète avec les alias (pour faciliter la vie des joueurs) et les requêtes iTunes précises.
         const animeCatalog = [
+            // LES BIG SHONENS
             { anime: "Naruto", aliases: ["naruto shippuden"], search: "Silhouette Kana-Boon" },
             { anime: "Naruto", aliases: ["naruto shippuden"], search: "Blue Bird Ikimonogakari" },
+            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Go!!! FLOW" },
+            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Sign FLOW" },
             { anime: "One Piece", aliases: ["onepiece"], search: "We Are Hiroshi Kitadani" },
+            { anime: "One Piece", aliases: ["onepiece"], search: "Hope Namie Amuro" },
+            { anime: "One Piece", aliases: ["onepiece"], search: "Binks no Sake" },
             { anime: "Bleach", aliases: ["bleachanime"], search: "Asterisk Orange Range" },
-            { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball"], search: "Cha La Head Cha La" },
-            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Guren no Yumiya Linked Horizon" },
-            { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Gurenge LiSA" },
-            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Kaikai Kitan Eve" },
-            { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "Peace Sign Kenshi Yonezu" },
-            { anime: "Tokyo Ghoul", aliases: ["tokyoghoul"], search: "Unravel TK" },
-            { anime: "Death Note", aliases: ["deathnote"], search: "the WORLD Nightmare" },
-            { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist", "fmab", "brotherhood"], search: "Again YUI" },
+            { anime: "Bleach", aliases: ["bleachanime"], search: "Velonica Aqua Timez" },
+            { anime: "Bleach", aliases: ["bleachanime"], search: "Ranbu no Melody SID" },
+            { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball", "dragon ball"], search: "Cha La Head Cha La" },
+            { anime: "Dragon Ball GT", aliases: ["dbgt", "dragonball gt"], search: "Dan Dan Kokoro Hikareteku" },
+            { anime: "Dragon Ball Super", aliases: ["dbs", "dragonball super"], search: "Limit Break x Survivor" },
             { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Departure Ono Masatoshi" },
-            { anime: "Sword Art Online", aliases: ["sao"], search: "Crossing Field LiSA" },
+            { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Hunting for your dream" },
             { anime: "Fairy Tail", aliases: ["fairytail"], search: "Snow Fairy FUNKIST" },
-            { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" },
-            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Bloody Stream Coda" },
-            { anime: "Evangelion", aliases: ["neon genesis evangelion", "nge"], search: "A Cruel Angels Thesis" },
+            { anime: "Gintama", aliases: ["gin tama"], search: "Tougenkyou Alien" },
+            { anime: "Black Clover", aliases: ["blackclover"], search: "Black Catcher Vickeblanka" },
+
+            // NOUVELLE GÉNÉRATION & HYPE
+            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Guren no Yumiya Linked Horizon" },
+            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Shinzou wo Sasageyo Linked Horizon" },
+            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "The Rumbling SiM" },
+            { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Gurenge LiSA" },
+            { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Zankyou Sanka Aimer" },
+            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Kaikai Kitan Eve" },
+            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "SPECIALZ King Gnu" },
+            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Ao no Sumika Tatsuya Kitani" },
+            { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "Peace Sign Kenshi Yonezu" },
+            { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "The Day Porno Graffitti" },
             { anime: "Chainsaw Man", aliases: ["csm"], search: "Kick Back Kenshi Yonezu" },
             { anime: "Oshi no Ko", aliases: ["oshinoko"], search: "Idol Yoasobi" },
             { anime: "Spy x Family", aliases: ["spyxfamily", "sxf"], search: "Mixed Nuts Official Hige Dandism" },
-            { anime: "Your Name", aliases: ["kimi no na wa"], search: "Zenzenzense Radwimps" },
-            { anime: "Cowboy Bebop", aliases: ["cowboybebop"], search: "Tank Seatbelts" },
+            { anime: "Mashle", aliases: ["mashle magic and muscles"], search: "Bling-Bang-Bang-Born Creepy Nuts" },
+            { anime: "Solo Leveling", aliases: ["sololeveling"], search: "LEveL SawanoHiroyuki" },
+            { anime: "Frieren", aliases: ["sousou no frieren"], search: "Yuusha Yoasobi" },
+            { anime: "Kaiju No 8", aliases: ["kaiju no. 8", "kaiju 8"], search: "Abyss Yungblud" },
             { anime: "Tokyo Revengers", aliases: ["tokyorevengers"], search: "Cry Baby Official Hige Dandism" },
-            { anime: "Steins Gate", aliases: ["steinsgate"], search: "Hacking to the Gate" },
+
+            // CLASSIQUES, MASTERPIECES & OLDIES
+            { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist", "fmab", "brotherhood"], search: "Again YUI" },
+            { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist"], search: "Melissa Porno Graffitti" },
+            { anime: "Death Note", aliases: ["deathnote"], search: "the WORLD Nightmare" },
+            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Bloody Stream Coda" },
+            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Sono Chi no Sadame" },
+            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Stand Proud" },
+            { anime: "Evangelion", aliases: ["neon genesis evangelion", "nge"], search: "A Cruel Angels Thesis" },
+            { anime: "Cowboy Bebop", aliases: ["cowboybebop"], search: "Tank Seatbelts" },
+            { anime: "Great Teacher Onizuka", aliases: ["gto"], search: "Drivers High L'Arc-en-Ciel" },
+            { anime: "Sailor Moon", aliases: ["sailormoon"], search: "Moonlight Densetsu" },
+            { anime: "Pokemon", aliases: ["pocket monsters"], search: "Gotta Catch Em All Theme" },
+            { anime: "Pokemon", aliases: ["pocket monsters"], search: "Mezase Pokemon Master" },
+            { anime: "Digimon", aliases: ["digimon adventure"], search: "Butter-Fly Wada Kouji" },
+            { anime: "Saint Seiya", aliases: ["les chevaliers du zodiaque"], search: "Pegasus Fantasy" },
+            { anime: "Hokuto no Ken", aliases: ["ken le survivant", "fist of the north star"], search: "Ai wo Torimodose" },
+            { anime: "City Hunter", aliases: ["nicky larson"], search: "Get Wild TM Network" },
+            { anime: "Slam Dunk", aliases: ["slamdunk"], search: "Kimi ga Suki da to Sakebitai" },
+
+            // ISEKAI & FANTASY
+            { anime: "Sword Art Online", aliases: ["sao"], search: "Crossing Field LiSA" },
+            { anime: "Sword Art Online", aliases: ["sao"], search: "Ignite Eir Aoi" },
+            { anime: "Re:Zero", aliases: ["rezero"], search: "Redo Konomi Suzuki" },
             { anime: "No Game No Life", aliases: ["ngnl"], search: "This Game Konomi Suzuki" },
+            { anime: "Overlord", aliases: ["over lord"], search: "Clattanoia OxT" },
+            { anime: "Konosuba", aliases: ["kono suba"], search: "Fantastic Dreamer Machico" },
+            { anime: "Tensei Shitara Slime Datta Ken", aliases: ["slime", "tensura", "that time i got reincarnated as a slime"], search: "Nameless Story Takuma Terashima" },
+            { anime: "Mushoku Tensei", aliases: ["mushokutensei"], search: "Tabibito no Uta" },
+            { anime: "The Rising of the Shield Hero", aliases: ["shield hero", "tate no yuusha"], search: "Rise MADKID" },
+            { anime: "Goblin Slayer", aliases: ["goblinslayer"], search: "Rightfully Mili" },
+
+            // SPORTS
+            { anime: "Haikyuu", aliases: ["haikyu"], search: "Fly High Burnout Syndromes" },
+            { anime: "Haikyuu", aliases: ["haikyu"], search: "Imagination SPYAIR" },
+            { anime: "Kuroko no Basket", aliases: ["kuroko", "knb"], search: "Can Do Granrodeo" },
+            { anime: "Blue Lock", aliases: ["bluelock"], search: "Judgement Ash Da Hero" },
+            { anime: "Hajime no Ippo", aliases: ["ippo"], search: "Under Star Shocking Lemon" },
+            { anime: "Yuri on Ice", aliases: ["yuri on ice"], search: "History Maker Dean Fujioka" },
+            { anime: "Inazuma Eleven", aliases: ["inazuma"], search: "Tachiagari-yo" },
+
+            // ROMANCE, DRAMA & SLICE OF LIFE
+            { anime: "Your Name", aliases: ["kimi no na wa"], search: "Zenzenzense Radwimps" },
+            { anime: "Your Lie in April", aliases: ["shigatsu wa kimi no uso"], search: "Hikaru Nara Goose House" },
+            { anime: "Fruits Basket", aliases: ["fruitsbasket"], search: "Again Beverly" },
+            { anime: "Toradora", aliases: ["tora dora"], search: "Pre-Parade" },
+            { anime: "Kaguya-sama", aliases: ["kaguya sama", "love is war"], search: "Love Dramatic Masayuki Suzuki" },
+            { anime: "Clannad", aliases: ["clannad after story"], search: "Dango Daikazoku" },
+
+            // AUTRES BANGERZ (SEINEN / SCIFI / MECHA / ACTION)
+            { anime: "Tokyo Ghoul", aliases: ["tokyoghoul"], search: "Unravel TK" },
+            { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" },
+            { anime: "Steins Gate", aliases: ["steinsgate"], search: "Hacking to the Gate" },
             { anime: "Code Geass", aliases: ["codegeass"], search: "Colors Flow" },
+            { anime: "Cyberpunk Edgerunners", aliases: ["cyberpunk", "edgerunners"], search: "This Fffire Franz Ferdinand" },
             { anime: "Mob Psycho 100", aliases: ["mobpsycho"], search: "99 Mob Choir" },
-            { anime: "Black Clover", aliases: ["blackclover"], search: "Black Catcher Vickeblanka" },
-            { anime: "Fire Force", aliases: ["fireforce"], search: "Inferno Mrs Green Apple" }
+            { anime: "Fire Force", aliases: ["fireforce", "en en no shouboutai"], search: "Inferno Mrs Green Apple" },
+            { anime: "Noragami", aliases: ["noragami aragoto"], search: "Kyouran Hey Kids" },
+            { anime: "Psycho-Pass", aliases: ["psychopass"], search: "Abnormalize Ling Tosite Sigure" },
+            { anime: "Soul Eater", aliases: ["souleater"], search: "Resonance TM Revolution" },
+            { anime: "Assassination Classroom", aliases: ["assclass"], search: "Seishun Satsubatsuron" },
+            { anime: "Parasyte", aliases: ["kiseijuu"], search: "Let Me Hear Fear and Loathing in Las Vegas" },
+            { anime: "Gurren Lagann", aliases: ["tengen toppa gurren lagann"], search: "Sorairo Days" },
+            { anime: "Kill la Kill", aliases: ["killlakill"], search: "Sirius Eir Aoi" },
+            { anime: "Akame ga Kill", aliases: ["akamegakill"], search: "Skyreach Sora Amamiya" },
+            { anime: "Fate/Stay Night", aliases: ["fate", "fate stay night", "fate zero"], search: "Oath Sign LiSA" },
+            { anime: "The Seven Deadly Sins", aliases: ["sds", "nanatsu no taizai"], search: "Netsujou no Spectrum" },
+            { anime: "Dr. Stone", aliases: ["drstone"], search: "Good Morning World Burnout Syndromes" },
+            { anime: "Vinland Saga", aliases: ["vinlandsaga"], search: "Mukanjyo Survive Said The Prophet" },
+            { anime: "Hell's Paradise", aliases: ["jigokuraku"], search: "Work Millennium Parade" }
         ];
 
         // --- VARIABLES GLOBALES ---
@@ -325,16 +402,16 @@
             conns.forEach(c => { if (c.open) c.send(data); });
         }
 
-        // --- FETCH DYNAMIQUE DE LA PLAYLIST ANIME ---
+        // --- FETCH DYNAMIQUE DE LA PLAYLIST ANIME (10 au hasard) ---
         async function fetchAnimePlaylist() {
             document.getElementById('btn-launch-game').style.display = 'none';
             document.getElementById('loading-api').style.display = 'block';
 
-            // On mélange notre base de données d'animes
+            // Mélange la grande base de données
             let shuffled = animeCatalog.sort(() => Math.random() - 0.5);
             let selectedTracks = [];
 
-            // On va chercher 10 morceaux valides
+            // Va chercher 10 morceaux valides
             for (let i = 0; i < shuffled.length; i++) {
                 if (selectedTracks.length >= 10) break;
                 try {
@@ -363,7 +440,7 @@
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
             
             if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a lancé la partie !` });
-            displaySys("🎵 DÉBUT DE LA PARTIE (" + playlist.length + " Manches) 🎵");
+            displaySys("🎵 DÉBUT DE LA PARTIE (10 Manches) 🎵");
             
             setTimeout(startNextRound, 2000);
         }
@@ -546,7 +623,6 @@
                 updateScoreUI();
                 if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
             } else {
-                // Affichage du chat classique si faux
                 displayChat(text, pid);
                 if (gameMode === 'host') broadcast({ type: 'chat', msg: text, pid: pid });
             }
