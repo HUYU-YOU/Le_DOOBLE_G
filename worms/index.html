@@ -241,9 +241,7 @@
             peer.on('connection', (connection) => { 
                 conn = connection; 
                 conn.on('open', () => { 
-                    // Synchronise la map pour le client
                     conn.send({ type: 'map_sync', mapId: selectedMapId });
-                    
                     setupConnection(); 
                     status.innerText = "Adversaire connecté ! Lancement..."; 
                     setTimeout(() => startGame('online'), 1000); 
@@ -288,7 +286,6 @@
 
         function setupConnection() {
             conn.on('data', (data) => {
-                // Application de la map par le client
                 if (data.type === 'map_sync') {
                     selectedMapId = data.mapId;
                     let videoElement = document.getElementById('bg-video');
@@ -345,7 +342,6 @@
             s1_jump_r1: 'img/slime1_jumpright1.png', s1_jump_r2: 'img/slime1_jumpright2.png', s1_jump_r3: 'img/slime1_jumpright3.png',
             s1_jump_l1: 'img/slime1_jumpleft1.png', s1_jump_l2: 'img/slime1_jumpleft2.png', s1_jump_l3: 'img/slime1_jumpleft3.png',
             
-            // ANIMATIONS BAZOOKA SLIME 1
             s1_atqtop_r: 'img/slime1_rightatqtop.png', s1_atqbot_r: 'img/slime1_rightatqbot.png',
             s1_atqtop_l: 'img/slime1_leftatqtop.png', s1_atqbot_l: 'img/slime1_leftatqbot.png',
             
@@ -356,7 +352,6 @@
             s2_jump_r1: 'img/slime2_jumpright1.png', s2_jump_r2: 'img/slime2_jumpright2.png', s2_jump_r3: 'img/slime2_jumpright3.png',
             s2_jump_l1: 'img/slime2_jumpleft1.png', s2_jump_l2: 'img/slime2_jumpleft2.png', s2_jump_l3: 'img/slime2_jumpleft3.png',
             
-            // ANIMATIONS BAZOOKA SLIME 2
             s2_atqtop_r: 'img/slime2_rightatqtop.png', s2_atqbot_r: 'img/slime2_rightatqbot.png',
             s2_atqtop_l: 'img/slime2_leftatqtop.png', s2_atqbot_l: 'img/slime2_leftatqbot.png'
         };
@@ -385,7 +380,7 @@
             }
         }
 
-        // --- CONTRÔLES ---
+        // --- CONTRÔLES (Humain & IA) ---
         const keys = { left: false, right: false, space: false };
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
@@ -435,14 +430,17 @@
 
         // --- CLASSES DU JEU ---
         class Slime {
-            constructor(x, y, id, type, color, team, name) {
+            constructor(x, y, id, type, color, team, name, isBot = false) {
                 this.x = x; this.y = y; 
                 this.id = id; this.type = type; this.color = color;
-                this.team = team; this.name = name;
+                this.team = team; this.name = name; this.isBot = isBot;
                 this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
                 this.isAiming = false; this.aimDy = 0;
+                
+                // Intrants virtuels pour l'IA
+                this.aiInput = { left: false, right: false, space: false };
             }
 
             update() {
@@ -451,19 +449,22 @@
                 let isMyTurn = (currentPlayer === this.id);
                 if (gameMode === 'online' && currentPlayer !== myPlayerId) isMyTurn = false;
                 
-                let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0)) && !(gameMode === 'ai' && this.id === 2);
+                let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0));
                 
                 if (canMove && !isDragging) {
-                    if (keys.left) { this.vx = -1.5; this.facing = 'l'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
-                    else if (keys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
+                    // L'IA lit ses propres inputs, l'humain lit le clavier
+                    let activeKeys = this.isBot ? this.aiInput : keys;
+
+                    if (activeKeys.left) { this.vx = -1.5; this.facing = 'l'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
+                    else if (activeKeys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
                     else { this.vx = 0; if(this.state === 'walk') this.state = 'idle'; }
 
-                    if (keys.space && this.isOnGround) { 
+                    if (activeKeys.space && this.isOnGround) { 
                         this.vy = -6.5; 
                         this.isOnGround = false; 
                         this.state = 'air'; 
                         this.animFrame = 2; 
-                        keys.space = false; 
+                        activeKeys.space = false; // Reset immédiat du saut
                     }
                 } else if (!canMove && this.isOnGround) {
                     this.vx *= 0.5; 
@@ -471,12 +472,14 @@
                     if (this.state === 'walk') this.state = 'idle';
                 }
 
+                // Application de la physique X
                 if (this.vx !== 0) {
                     let nextX = this.x + this.vx; let step = 0; let maxStep = 6; 
                     while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) step++;
                     if (step > maxStep) this.vx = 0; else { this.x = nextX; this.y -= step; }
                 }
 
+                // Application de la gravité
                 this.vy += GRAVITY; 
                 this.y += this.vy;
                 this.isOnGround = false;
@@ -490,6 +493,7 @@
                     this.state = 'air';
                 }
 
+                // Animations
                 if (this.state === 'walk') {
                     this.animTimer++;
                     if (this.animTimer > 6) { 
@@ -517,9 +521,9 @@
                 
                 let spriteName = `s${this.type}_`;
                 let isMe = (currentPlayer === this.id);
-                let aiming = (isMe && isDragging) || (!isMe && this.isAiming);
+                let aiming = (isMe && isDragging) || (!isMe && this.isAiming) || (this.isAiming && this.isBot);
                 
-                let currentAimDy = isMe ? (dragStartY - dragCurrentY) : this.aimDy;
+                let currentAimDy = isMe && !this.isBot ? (dragStartY - dragCurrentY) : this.aimDy;
 
                 if (aiming && this.state !== 'air' && this.state !== 'walk') {
                     spriteName += `atq${currentAimDy < -20 ? 'top' : 'bot'}_${this.facing}`;
@@ -664,25 +668,30 @@
             
             generateTerrain();
             
-            // SPAWN LOGIC POUR LES DIFFÉRENTS MODES
-            if (mode === 'local_1v1' || mode === 'ai' || mode === 'online') {
+            // SPAWN LOGIC (Ajout du flag isBot pour le mode IA)
+            if (mode === 'ai') {
                 worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'JOUEUR 1'),
-                    new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)', 'B', 'JOUEUR 2')
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'JOUEUR 1', false),
+                    new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)', 'B', 'ARTILLERY BOT', true)
+                ];
+            } else if (mode === 'local_1v1' || mode === 'online') {
+                worms = [
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'JOUEUR 1', false),
+                    new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)', 'B', 'JOUEUR 2', false)
                 ];
             } else if (mode === 'local_2v2') {
                 worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)'),
-                    new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)'),
-                    new Slime(1400, 100, 3, 1, 'var(--p1)', 'A', 'J3 (Cyan)'),
-                    new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p2)', 'B', 'J4 (Rose)')
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false),
+                    new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
+                    new Slime(1400, 100, 3, 1, 'var(--p1)', 'A', 'J3 (Cyan)', false),
+                    new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p2)', 'B', 'J4 (Rose)', false)
                 ];
             } else if (mode === 'local_ffa') {
                 worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)'),
-                    new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)'),
-                    new Slime(1400, 100, 3, 1, 'var(--p3)', 'C', 'J3 (Or)'),
-                    new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p4)', 'D', 'J4 (Vert)')
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false),
+                    new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
+                    new Slime(1400, 100, 3, 1, 'var(--p3)', 'C', 'J3 (Or)', false),
+                    new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p4)', 'D', 'J4 (Vert)', false)
                 ];
             }
             
@@ -725,24 +734,100 @@
             projectile = null; 
             updateUI();
             
-            if (gameMode === 'ai' && currentPlayer === 2 && !worms[1].isDead) {
-                setTimeout(playAITurn, 1000);
+            // Démarrage de la séquence IA si c'est le tour d'un bot
+            if (worms[currentPlayer - 1].isBot) {
+                setTimeout(playAITurn, 500); // Petite pause avant que l'IA commence
             }
         }
 
+        // --- NOUVEAU CERVEAU IA (BALISTIQUE & MOUVEMENT) ---
         function playAITurn() {
-            let ai = worms[1]; 
-            let target = worms[0]; 
-            ai.facing = (target.x < ai.x) ? 'l' : 'r';
+            let ai = worms[currentPlayer - 1];
+            if (!ai || !ai.isBot || ai.isDead) return nextTurn();
+
+            // 1. RECHERCHE DE LA CIBLE (L'ennemi le plus proche)
+            let target = null;
+            let minDist = Infinity;
+            worms.forEach(w => {
+                if (!w.isDead && w.team !== ai.team) {
+                    let dist = Math.hypot(w.x - ai.x, w.y - ai.y);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        target = w;
+                    }
+                }
+            });
+
+            if (!target) return nextTurn();
+
+            // 2. DÉCISION DE DÉPLACEMENT
+            let moveTime = Math.floor(Math.random() * 1500) + 500; // Marche de 0.5s à 2.0s
+            let moveDir = (target.x < ai.x) ? 'left' : 'right';
             
-            let dx = target.x - ai.x; 
-            let dy = (target.y - ai.y) - 60; 
-            let angle = Math.atan2(dy, dx); 
-            let power = Math.min(Math.abs(dx) * 0.015 + 4, 18); 
-            
-            projectile = new Projectile(ai.x, ai.y - 10, Math.cos(angle) * power, Math.sin(angle) * power);
-            gameState = 'flying'; 
-            retreatFrames = 0; 
+            // Si la cible est déjà à bonne distance, on a 30% de chance de ne pas bouger
+            if (Math.random() > 0.3 && minDist > 200) {
+                ai.aiInput[moveDir] = true;
+            }
+
+            // Routine de saut (si l'IA bloque contre un mur)
+            let jumpInterval = setInterval(() => {
+                if (ai.aiInput[moveDir] && Math.abs(ai.vx) < 0.5 && ai.isOnGround) {
+                    ai.aiInput.space = true;
+                }
+            }, 250);
+
+            // 3. ARRÊT & VISÉE
+            setTimeout(() => {
+                // Stoppe le mouvement
+                ai.aiInput.left = false;
+                ai.aiInput.right = false;
+                ai.aiInput.space = false;
+                clearInterval(jumpInterval);
+
+                if (ai.isDead || target.isDead || gameState !== 'playing') return;
+
+                ai.facing = (target.x < ai.x) ? 'l' : 'r';
+                ai.isAiming = true;
+
+                // Calcul Balistique Physique
+                let dx = target.x - ai.x;
+                let dy = (target.y - ai.y) - 15; // Vise le corps, pas les pieds
+                
+                // Marge d'Erreur "Humaine" (dépend de la distance, +/- 10% d'erreur)
+                let errorOffsetX = (Math.random() - 0.5) * (minDist * 0.20); 
+                let errorOffsetY = (Math.random() - 0.5) * (minDist * 0.20);
+                dx += errorOffsetX;
+                dy += errorOffsetY;
+
+                // Fausse Parabole Balistique : On compense la gravité en visant artificiellement plus haut
+                // Plus la cible est loin horizontalement, plus le bot pointe son bazooka vers le ciel
+                let ballisticDy = dy - (Math.abs(dx) * 0.4); 
+
+                let angle = Math.atan2(ballisticDy, dx);
+                // La puissance s'adapte à la distance, max 18
+                let power = Math.min(Math.hypot(dx, ballisticDy) * 0.025 + 5, 18);
+
+                // Simulation Visuelle de la visée (Levée de l'arme)
+                let aimFrames = 0;
+                let aimInterval = setInterval(() => {
+                    aimFrames++;
+                    // Modifie visuellement l'angle du sprite (atqtop ou atqbot)
+                    ai.aimDy = - (aimFrames * 3); 
+
+                    if (aimFrames > 30) {
+                        clearInterval(aimInterval);
+                        ai.isAiming = false;
+                        
+                        if (ai.isDead || target.isDead || gameState !== 'playing') return;
+
+                        // 4. TIR
+                        projectile = new Projectile(ai.x, ai.y - 15, Math.cos(angle) * power, Math.sin(angle) * power);
+                        gameState = 'flying';
+                        retreatFrames = 60; // L'IA peut s'enfuir juste après avoir tiré (évolution possible)
+                    }
+                }, 30); // L'IA met environ 1 seconde à viser
+
+            }, moveTime);
         }
 
         function checkWin() {
@@ -778,11 +863,12 @@
             }
         }
 
-        // --- VISÉE ---
+        // --- VISÉE (Joueur Humain) ---
         const gameWrapper = document.getElementById('game-wrapper');
 
         function startAim(e) {
-            if (gameState !== 'playing' || (gameMode === 'ai' && currentPlayer === 2)) return;
+            let activeWorm = worms[currentPlayer - 1];
+            if (gameState !== 'playing' || activeWorm.isBot) return; // Bloque la visée souris si c'est une IA
             if (gameMode === 'online' && currentPlayer !== myPlayerId) return; 
             
             e.stopPropagation();
@@ -794,7 +880,7 @@
             dragStartY = ((clientY - rect.top) * (canvasEnt.height / rect.height)); 
             
             isDragging = true; 
-            worms[currentPlayer - 1].state = 'idle'; 
+            activeWorm.state = 'idle'; 
         }
 
         function moveAim(e) {
@@ -937,6 +1023,53 @@
             
             requestAnimationFrame(gameLoop);
         }
+    </script>
+    
+    <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+            "../worms/index.html"
+        ];
+        
+        let globalStartX = 0, globalStartY = 0; 
+        let globalEndX = 0, globalEndY = 0; 
+        const swipeThreshold = 75;
+        
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname; 
+            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
+            if (currentIndex === -1) return; 
+            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
+        }
+        
+        function handleGlobalSwipe() {
+            let diffX = globalEndX - globalStartX; 
+            let diffY = globalEndY - globalStartY;
+            if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
+                navigateGames(diffX > 0 ? -1 : 1); 
+            }
+        }
+        
+        function initSwipe(e, x, y) { 
+            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; 
+            globalStartX = x; 
+            globalStartY = y; 
+        }
+        
+        function endSwipe(e, x, y) { 
+            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; 
+            globalEndX = x; 
+            globalEndY = y; 
+            handleGlobalSwipe(); 
+        }
+        
+        document.addEventListener('touchstart', e => initSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true }); 
+        document.addEventListener('touchend', e => endSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
+        document.addEventListener('mousedown', e => initSwipe(e, e.screenX, e.screenY)); 
+        document.addEventListener('mouseup', e => endSwipe(e, e.screenX, e.screenY));
     </script>
 </body>
 </html>
