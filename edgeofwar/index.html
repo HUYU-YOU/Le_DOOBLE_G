@@ -2,23 +2,25 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Edge of War - Tactical Multiplayer</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #0a0e17; --panel: rgba(18, 25, 43, 0.9); --primary: #0088ff; --enemy: #ff2a2a; --gold: #ffd700; --xp: #b82aff; --spell: #00ffcc;}
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none;}
-        h1 { margin-top: 20px; color: #fff; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px var(--primary); }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; touch-action: manipulation;}
+        h1 { margin-top: 40px; color: #fff; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px var(--primary); text-align: center;}
         
         .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
         .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); border-color: #fff; transform: scale(1.05); }
 
-        #game-container { position: relative; background: var(--panel); padding: 25px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 900px; border: 1px solid rgba(0, 136, 255, 0.2); backdrop-filter: blur(10px); overflow: hidden; margin-top: 10px; }
+        #game-container { position: relative; background: var(--panel); padding: 25px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 900px; border: 1px solid rgba(0, 136, 255, 0.2); backdrop-filter: blur(10px); overflow: hidden; margin-top: 10px; box-sizing: border-box;}
         
         /* Overlays Menus */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 14, 23, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .btn-main { background: var(--primary); color: white; border: none; padding: 15px 35px; font-size: 1.2em; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 136, 255, 0.4); margin: 10px; transition: 0.2s; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 14, 23, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(5px); }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 15px 35px; font-size: 1.2em; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 136, 255, 0.4); margin: 10px; transition: 0.2s; width: 80%; max-width: 300px;}
         .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 136, 255, 0.6); }
-        input.net-input { padding: 12px; border-radius: 5px; border: 1px solid var(--primary); font-weight: bold; text-align: center; margin: 10px; background: #111; color: #fff; font-size: 1.1em; }
+        input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--primary); font-weight: bold; text-align: center; margin: 10px; background: #111; color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; box-sizing: border-box;}
+        input.net-input:focus { box-shadow: inset 0 0 10px var(--primary); }
 
         .hud { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .base-stats { display: flex; flex-direction: column; width: 32%; }
@@ -54,11 +56,17 @@
         
         .unit-cost { color: var(--gold); font-size: 1.1em; text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
         .unit-locked { position: absolute; font-size: 1.2em; color: var(--enemy); transform: rotate(-20deg); opacity: 0.9; top: 25%; font-weight: 900; background: rgba(0,0,0,0.8); padding: 2px 10px; border-radius: 5px; border: 1px solid var(--enemy); text-shadow: 0 0 5px var(--enemy); }
+
+        @media (max-width: 800px) {
+            .controls { grid-template-columns: repeat(2, 1fr); }
+            .team-controls h3 span { display: none; } /* Cache les touches claviers sur mobile */
+            .gold { font-size: 1.5em; }
+        }
     </style>
 </head>
 <body>
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <h1>Tactical Command</h1>
+    <h1>Edge of War</h1>
     
     <div id="game-container">
         
@@ -67,32 +75,41 @@
             <h1 style="font-size: 3em; margin-bottom: 40px; color: var(--primary);">SELECT MODE</h1>
             <button class="btn-main" onclick="startSolo('solo')">Mode Solo </button>
             <button class="btn-main" onclick="startSolo('hardcore')" style="background:var(--enemy);">Mode Hardcore </button>
-            <button class="btn-main" onclick="startLocal()" style="background:var(--xp);">Mode Local</button>
+            <button class="btn-main" onclick="startLocal()" style="background:var(--xp);">Mode Local (2 Joueurs)</button>
             <button class="btn-main" onclick="showNetworkMenu()" style="background:#555;">Mode Réseau PVP </button>
         </div>
 
-        <!-- MENU RÉSEAU -->
+        <!-- MENU RÉSEAU (FIABILISÉ) -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <h2 style="color: var(--primary); font-size: 2.5em;">Lobby Réseau</h2>
-            <p style="font-size: 1.2em;">Votre ID : <span id="my-id" style="color:var(--primary);font-weight:bold;">Création...</span></p>
-            <button class="btn-main" onclick="hostGame()">Create (Hôte - Base West)</button>
-            <p style="margin: 20px 0;">OU</p>
-            <input type="text" id="join-id" class="net-input" placeholder="Coller l'ID de l'hôte">
-            <button class="btn-main" onclick="joinGame()" style="background:var(--enemy);">Join (Client - Base East)</button>
-            <p id="status-text" style="color: #aaa; margin-top: 20px; font-weight:bold;"></p>
-            <button class="btn-main" style="background:#333; font-size: 0.9em; margin-top: 30px;" onclick="location.reload()">Return</button>
+            <h2 style="color: var(--primary); font-size: 2.5em; margin-bottom: 10px;">Lobby Réseau</h2>
+            
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--primary); width: 80%; max-width: 350px; text-align: center; margin-bottom: 20px;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">CRÉER UNE PARTIE</h3>
+                <button class="btn-main" onclick="hostGame()" style="width: 100%; margin: 10px 0;">Héberger (Base Ouest)</button>
+                <p style="font-size: 1em; color: #aaa; margin-bottom: 5px;">Code de votre salon :</p>
+                <div id="my-id" style="color:var(--primary); font-weight:bold; font-size:2.5em; letter-spacing: 3px; min-height: 40px; text-shadow: 0 0 10px var(--primary);">...</div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--enemy); width: 80%; max-width: 350px; text-align: center;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">REJOINDRE UNE PARTIE</h3>
+                <input type="text" id="join-id" class="net-input" placeholder="Ex: EOW1234" style="width: 100%; margin: 10px 0;">
+                <button class="btn-main" onclick="joinGame()" style="background:var(--enemy); width: 100%; margin: 10px 0;">Rejoindre (Base Est)</button>
+            </div>
+            
+            <p id="status-text" style="color: #aaa; margin-top: 20px; font-weight:bold; font-size: 1.2em;"></p>
+            <button class="btn-main" style="background:transparent; border: 1px solid #555; color: #aaa; font-size: 0.9em; margin-top: 10px;" onclick="location.reload()">Retour au menu</button>
         </div>
 
         <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over" style="display: none;">
             <h2 id="end-message" style="font-size: 3.5em; margin-bottom: 15px; text-transform: uppercase; text-align: center;"></h2>
-            <button class="btn-main" onclick="location.reload()">New battle</button><br>
+            <button class="btn-main" onclick="location.reload()">Nouvelle Bataille</button><br>
         </div>
 
         <!-- HUD EN JEU -->
         <div class="hud" id="game-hud" style="visibility: hidden;">
             <div class="base-stats">
-                <div class="base-name player-name">Base Wuest (Tech <span id="p1-age">1</span>)</div>
+                <div class="base-name player-name">Base Ouest (Tech <span id="p1-age">1</span>)</div>
                 <div class="health-bar-container"><div class="health-bar" id="p1-hp-bar"></div></div>
                 <div style="font-size: 0.75em; margin-top: 6px; color: #a9a9b3;">XP : <span id="p1-xp-text">0/100</span></div>
                 <div class="xp-container"><div id="p1-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
@@ -111,7 +128,7 @@
             </div>
             
             <div class="base-stats" style="text-align: right;">
-                <div class="base-name enemy-name">Base East (Tech <span id="p2-age">1</span>)</div>
+                <div class="base-name enemy-name">Base Est (Tech <span id="p2-age">1</span>)</div>
                 <div class="health-bar-container"><div class="health-bar" id="p2-hp-bar"></div></div>
                 <div id="p2-xp-info" style="font-size: 0.75em; margin-top: 6px; color: #a9a9b3; display:none;">XP : <span id="p2-xp-text">0/100</span></div>
                 <div class="xp-container" id="p2-xp-container" style="display:none;"><div id="p2-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
@@ -127,7 +144,8 @@
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('gameCanvas'); 
+        const ctx = canvas.getContext('2d');
         
         // --- CHARGEMENT IMAGES ---
         const imgs = {};
@@ -138,10 +156,17 @@
             'blindé_est': 'img/blindé_est.png', 'blindé_ouest': 'img/blindé_ouest.png',
             'sniper_est': 'img/sniper_est.png', 'sniper_ouest': 'img/sniper_ouest.png'
         };
-        Object.keys(imgFiles).forEach(k => { imgs[k] = new Image(); imgs[k].src = imgFiles[k]; });
+        Object.keys(imgFiles).forEach(k => { 
+            imgs[k] = new Image(); 
+            imgs[k].src = imgFiles[k]; 
+            // Fallback pour ne pas faire crasher le canvas si une image manque
+            imgs[k].onerror = function() { 
+                this.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; 
+            };
+        });
 
         // --- RESEAU & ETAT ---
-        const peer = new Peer();
+        let peer = null;
         let conn = null, gameMode = null, myTeam = 1, gameActive = false, timeElapsed = 0;
         
         let gameState = {
@@ -185,8 +210,6 @@
         }
 
         // --- GESTION MENUS & PEERJS ---
-        peer.on('open', id => { document.getElementById('my-id').innerText = id; });
-
         function startSolo(mode) {
             gameMode = mode; myTeam = 1; 
             startGame();
@@ -203,22 +226,71 @@
         }
 
         function hostGame() {
-            document.getElementById('status-text').innerText = "En attente d'un joueur...";
-            gameMode = 'host'; myTeam = 1;
-            peer.on('connection', connection => { conn = connection; setupConnection(); });
+            let status = document.getElementById('status-text');
+            status.style.color = "var(--primary)";
+            status.innerText = "Création du serveur...";
+            
+            let code = 'EOW' + Math.floor(1000 + Math.random() * 9000);
+            
+            if (peer) peer.destroy();
+            peer = new Peer(code);
+            
+            peer.on('open', id => {
+                document.getElementById('my-id').innerText = id;
+                try {
+                    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e => console.warn(e));
+                } catch(e) {}
+                
+                status.style.color = "var(--spell)";
+                status.innerText = "Code copié ! En attente d'un adversaire...";
+                gameMode = 'host'; myTeam = 1;
+            });
+
+            peer.on('connection', connection => {
+                conn = connection;
+                conn.on('open', () => {
+                    status.innerText = "Adversaire connecté ! Déploiement en cours...";
+                    setTimeout(startGame, 1000);
+                });
+                setupConnection();
+            });
+            
+            peer.on('error', err => {
+                status.style.color = "var(--enemy)";
+                status.innerText = "Erreur de création : " + err.type;
+            });
         }
 
         function joinGame() {
-            const hostId = document.getElementById('join-id').value;
+            const hostId = document.getElementById('join-id').value.trim().toUpperCase();
             if(!hostId) return;
-            document.getElementById('status-text').innerText = "Connexion...";
-            gameMode = 'client'; myTeam = 2;
-            conn = peer.connect(hostId);
-            setupConnection();
+            
+            let status = document.getElementById('status-text');
+            status.style.color = "var(--primary)";
+            status.innerText = "Connexion à la base adverse...";
+            
+            if (peer) peer.destroy();
+            peer = new Peer();
+            
+            peer.on('open', () => {
+                conn = peer.connect(hostId, { reliable: true });
+                gameMode = 'client'; myTeam = 2;
+                
+                conn.on('open', () => {
+                    status.style.color = "var(--spell)";
+                    status.innerText = "Connecté ! Déploiement en cours...";
+                    setTimeout(startGame, 1000);
+                });
+                setupConnection();
+            });
+            
+            peer.on('error', err => {
+                status.style.color = "var(--enemy)";
+                status.innerText = err.type === 'peer-unavailable' ? "Le salon n'existe pas !" : "Erreur réseau.";
+            });
         }
 
         function setupConnection() {
-            conn.on('open', () => { startGame(); });
             conn.on('data', data => {
                 if (gameMode === 'host' && data.type === 'action') processAction(2, data.action, data.val);
                 if (gameMode === 'client' && data.type === 'state') {
@@ -233,7 +305,7 @@
             if(!gameActive) return;
             let key = e.key.toLowerCase();
             
-            // Touches J1 (Ouest)
+            // Touches J1 (Ouest) - Utilisable par le Solo, le Local(J1), et le Host(J1)
             if (myTeam === 1 || gameMode === 'local') {
                 if(key === 'a') sendAction(1, 'spawn', 'fantassin');
                 if(key === 'z') sendAction(1, 'spawn', 'tireur');
@@ -244,7 +316,7 @@
                 if(key === 'd') sendAction(1, 'evolve', null);
             }
 
-            // Touches J2 pour Client Réseau (Joue avec les touches de base sur son PC)
+            // Touches J2 pour Client Réseau (Joue avec les mêmes touches sur son propre PC)
             if (myTeam === 2 && gameMode === 'client') {
                 if(key === 'a') sendAction(2, 'spawn', 'fantassin');
                 if(key === 'z') sendAction(2, 'spawn', 'tireur');
@@ -255,7 +327,7 @@
                 if(key === 'd') sendAction(2, 'evolve', null);
             }
 
-            // Touches J2 pour Mode Local (Même PC, pavé numérique)
+            // Touches J2 exclusives pour Mode Local (Même PC, pavé numérique)
             if (gameMode === 'local') {
                 if(e.key === '1') sendAction(2, 'spawn', 'fantassin');
                 if(e.key === '2') sendAction(2, 'spawn', 'tireur');
@@ -330,29 +402,36 @@
             
             // INTELLIGENCE ARTIFICIELLE
             if(gameMode === 'solo' || gameMode === 'hardcore') {
-                if(timeElapsed === 60) { gameState.p2.age = 2; document.getElementById('p2-age').innerText = "MAX"; }
-                
+                let ai = gameState.p2;
                 let r = Math.random();
                 let isHard = (gameMode === 'hardcore');
 
+                // Hardcore Cheat : Gain d'or exponentiel progressif
                 if (isHard) {
-                    gameState.p2.gold += Math.floor(timeElapsed / 10); // Génération exponentielle !
+                    ai.gold += Math.floor(timeElapsed / 15) + 2; 
                 }
 
-                if(gameState.p2.age === 1) {
-                    if(gameState.p2.gold >= 35 && r > 0.6) processAction(2, 'spawn', 'tireur');
-                    else if(gameState.p2.gold >= 15 && r > 0.2) processAction(2, 'spawn', 'fantassin');
+                // Evolution Intelligente : L'IA cliquera sur "Upgrade Tech" d'elle-même
+                if (ai.age === 1 && ai.xp >= xpToEvolve) {
+                    processAction(2, 'evolve', null);
+                }
+
+                if(ai.age === 1) {
+                    if(ai.gold >= 35 && r > 0.6) processAction(2, 'spawn', 'tireur');
+                    else if(ai.gold >= 15 && r > 0.2) processAction(2, 'spawn', 'fantassin');
                 } else {
-                    if(isHard && gameState.p2.gold >= 500 && r > 0.7) processAction(2, 'spawn', 'boss');
-                    else if(gameState.p2.gold >= 100 && r > 0.6) processAction(2, 'spawn', 'blindé');
-                    else if(gameState.p2.gold >= 75 && r > 0.4) processAction(2, 'spawn', 'sniper');
-                    else if(gameState.p2.gold >= 35 && r > 0.2) processAction(2, 'spawn', 'tireur');
-                    else if(gameState.p2.gold >= 15) processAction(2, 'spawn', 'fantassin');
+                    // IA Tech 2 : Déploie des unités lourdes et peut invoquer le boss !
+                    if(isHard && ai.gold >= 500 && r > 0.8) processAction(2, 'spawn', 'boss');
+                    else if(ai.gold >= 100 && r > 0.6) processAction(2, 'spawn', 'blindé');
+                    else if(ai.gold >= 75 && r > 0.4) processAction(2, 'spawn', 'sniper');
+                    else if(ai.gold >= 35 && r > 0.2) processAction(2, 'spawn', 'tireur');
+                    else if(ai.gold >= 15) processAction(2, 'spawn', 'fantassin');
                 }
 
+                // Utilisation des sorts en Hardcore
                 if (isHard) {
-                    if (gameState.p2.spells[1] === 0 && Math.random() < 0.03) processAction(2, 'spell', 1);
-                    if (gameState.p2.hp < 700 && gameState.p2.spells[2] === 0 && Math.random() < 0.05) processAction(2, 'spell', 2);
+                    if (ai.spells[1] === 0 && Math.random() < 0.03) processAction(2, 'spell', 1);
+                    if (ai.hp < 700 && ai.spells[2] === 0 && Math.random() < 0.05) processAction(2, 'spell', 2);
                 }
             }
         }
@@ -613,12 +692,11 @@
             requestAnimationFrame(gameLoop);
         }
     </script>
-     <!-- ========================================== -->
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
+    
+    <!-- ========================================== -->
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL   -->
     <!-- ========================================== -->
     <script>
-        // 1. Liste de tes jeux dans l'ordre souhaité. 
-        // /!\ Vérifie que les noms des dossiers correspondent bien aux tiens.
         const gamesHubList = [
             "../cybertank/index.html",
             "../tower_defense/index.html",
@@ -626,57 +704,85 @@
             "../cyber_smash/index.html",
             "../guessthemanga/index.html",
             "../drawer/index.html",
-            "../texas_poker/index.html"
+            "../texas_poker/index.html",
+            "../blindtest/index.html",
+            "../2048slime/index.html",
+            "../worms/index.html"
         ];
 
-        let touchstartX = 0;
-        let touchendX = 0;
+        let globalTouchStartX = 0;
+        let globalTouchStartY = 0;
+        let globalTouchEndX = 0;
+        let globalTouchEndY = 0;
         
         function handleSwipeGesture() {
-            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
+            const swipeThreshold = 75; 
             
-            if (touchendX < touchstartX - swipeThreshold) {
-                // Swipe vers la gauche (Jeu suivant)
-                navigateGames(1);
-            }
-            if (touchendX > touchstartX + swipeThreshold) {
-                // Swipe vers la droite (Jeu précédent)
-                navigateGames(-1);
+            let diffX = globalTouchEndX - globalTouchStartX;
+            let diffY = globalTouchEndY - globalTouchStartY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX < -swipeThreshold) navigateGames(1);       
+                else if (diffX > swipeThreshold) navigateGames(-1);  
+            } else {
+                if (diffY < -swipeThreshold) navigateGames(1);       
+                else if (diffY > swipeThreshold) navigateGames(-1);  
             }
         }
 
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
-            
-            // Trouve l'index du jeu actuel en regardant l'URL
             let currentIndex = gamesHubList.findIndex(game => {
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
             });
             
-            // Si on ne trouve pas (erreur de nom de dossier), on annule
             if (currentIndex === -1) return;
-
-            // Calcul du prochain jeu avec une boucle (le dernier ramène au premier)
-            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
             
-            // Redirection
+            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Écoute du début du touché
+        function isExcludedElement(target) {
+            const tag = target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
+            if (target.closest('#game-container') || target.closest('.hud') || target.closest('.controls-container')) return true;
+            return false;
+        }
+
+        // TACTILE
         document.addEventListener('touchstart', e => {
-            // On ignore le swipe si on touche le canvas pour ne pas gâcher le gameplay
-            if (e.target.tagName.toLowerCase() === 'canvas') return;
-            touchstartX = e.changedTouches[0].screenX;
+            if (isExcludedElement(e.target)) return;
+            globalTouchStartX = e.changedTouches[0].screenX;
+            globalTouchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
 
-        // Écoute de la fin du touché
         document.addEventListener('touchend', e => {
-            if (e.target.tagName.toLowerCase() === 'canvas') return;
-            touchendX = e.changedTouches[0].screenX;
+            if (isExcludedElement(e.target)) return;
+            globalTouchEndX = e.changedTouches[0].screenX;
+            globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
         }, { passive: true });
+
+        // SOURIS (PC)
+        let isMouseDown = false;
+        document.addEventListener('mousedown', e => {
+            if (isExcludedElement(e.target)) return;
+            isMouseDown = true;
+            globalTouchStartX = e.screenX;
+            globalTouchStartY = e.screenY;
+        });
+
+        document.addEventListener('mouseup', e => {
+            if (isExcludedElement(e.target) || !isMouseDown) {
+                isMouseDown = false;
+                return;
+            }
+            isMouseDown = false;
+            globalTouchEndX = e.screenX;
+            globalTouchEndY = e.screenY;
+            handleSwipeGesture();
+        });
     </script>
 </body>
 </html>
