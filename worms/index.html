@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Slimes Artillery (Worms-like)</title>
-    <!-- Chargement de PeerJS pour le Multijoueur WebRTC -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { 
@@ -14,6 +13,7 @@
             --p3: #ffea00; /* Or */
             --p4: #39ff14; /* Vert */
             --sys: #39ff14; 
+            --weapon-bg: rgba(20, 25, 40, 0.85);
         }
         body { 
             font-family: 'Segoe UI', system-ui, sans-serif; 
@@ -25,7 +25,7 @@
             touch-action: none; user-select: none; 
         }
         
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; }
+        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px);}
         .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); }
 
         /* HEADER UI DYNAMIQUE */
@@ -36,6 +36,13 @@
         .hp-bar { height: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
         #turn-indicator { font-size: 1.3em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; border: 2px solid #fff; transition: 0.3s; text-align: center; backdrop-filter: blur(4px); }
+
+        /* PANNEAU D'ARMES */
+        #weapon-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: var(--weapon-bg); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--p1); z-index: 100; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); backdrop-filter: blur(8px); transition: 0.3s; }
+        .weapon-btn { background: rgba(0,0,0,0.5); border: 2px solid #444; color: #fff; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto;}
+        .weapon-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff;}
+        .weapon-btn.active { background: rgba(0, 240, 255, 0.2); border-color: var(--p1); color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);}
+        .w-icon { font-size: 1.5em; margin-bottom: 5px; }
 
         /* GAME CONTAINER */
         #game-wrapper { position: relative; width: 100%; max-width: 800px; height: 600px; border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.15); border: 2px solid rgba(255,255,255,0.1); overflow: hidden; background: #000; cursor: crosshair; }
@@ -48,7 +55,6 @@
         .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(8px); }
         .menu-overlay h1, .menu-overlay h2 { font-size: 3em; margin-bottom: 20px; text-transform: uppercase; color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 2px; text-align: center;}
         
-        /* SELECTION DE MAP */
         .selection-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
         .map-card { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; text-align: center; transition: 0.2s; width: 140px; }
         .map-card:hover, .map-card.selected { background: rgba(255,255,255,0.2); transform: translateY(-3px); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
@@ -74,6 +80,8 @@
             .hp-bar-bg { width: 90px; }
             #turn-indicator { font-size: 1em; padding: 6px 12px; }
             .btn { min-width: 200px; font-size: 1em; padding: 10px 15px;}
+            #weapon-panel { transform: translateX(-50%) scale(0.85); bottom: 5px; }
+            .weapon-btn { padding: 5px 10px; }
         }
     </style>
 </head>
@@ -85,8 +93,14 @@
             <source src="img/background.mp4" type="video/mp4">
         </video>
 
-        <!-- UI GÉNÉRÉE DYNAMIQUEMENT -->
+        <!-- UI & ARMES -->
         <div id="ui-layer" class="hidden"></div>
+        
+        <div id="weapon-panel" class="hidden">
+            <button class="weapon-btn active" id="btn-wpn-bazooka" onclick="selectWeapon('bazooka')"><span class="w-icon">🚀</span>Bazooka</button>
+            <button class="weapon-btn" id="btn-wpn-grenade" onclick="selectWeapon('grenade')"><span class="w-icon">🍍</span>Grenade</button>
+            <button class="weapon-btn" id="btn-wpn-boxe" onclick="selectWeapon('boxe')"><span class="w-icon">🥊</span>Gant Boxe</button>
+        </div>
 
         <canvas id="canvas-terrain" width="800" height="600"></canvas>
         <canvas id="canvas-entities" width="800" height="600"></canvas>
@@ -97,8 +111,6 @@
             <div id="loading-text" class="loader">Chargement des sprites...</div>
             
             <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column; align-items: center;">
-                
-                <!-- SELECTEUR DE MAP (LOCAL) -->
                 <h3 style="color: #aaa; margin-top: 0; margin-bottom: 10px; font-weight: normal; letter-spacing: 2px;">ARÈNE DE COMBAT</h3>
                 <div class="selection-grid" id="map-select">
                     <div class="map-card selected" onclick="selectSlimeMap(1, this)">
@@ -118,13 +130,12 @@
             </div>
         </div>
 
-        <!-- MENU MULTIJOUEUR WEBRTC -->
+        <!-- MENU MULTIJOUEUR -->
         <div id="online-menu" class="menu-overlay hidden">
             <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR</h2>
             
             <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 340px;">
                 <h3 style="color: #fff; margin-top: 0; font-size: 1.2em; text-transform: uppercase;">Créer une partie</h3>
-                
                 <h4 style="color: var(--p1); margin-bottom: 10px; font-size: 0.9em; letter-spacing: 1px;">CHOIX DE L'ARÈNE</h4>
                 <div class="selection-grid" style="margin-bottom: 15px; gap: 10px;">
                     <div class="map-card selected" onclick="selectSlimeMap(1, this)" style="width: 120px; padding: 5px;">
@@ -134,7 +145,6 @@
                         <img src="img/map2.png" style="width: 110px; height: 60px; margin-bottom: 5px;"><b>Arène Rouge</b>
                     </div>
                 </div>
-
                 <button class="btn" style="min-width: 200px; padding: 10px;" onclick="hostGame()">Héberger</button>
                 <p style="margin-top: 15px; margin-bottom: 0;">Code Hôte : <br><b id="lobby-code-display" style="color: var(--p1); font-size:2em; letter-spacing:4px;">...</b></p>
             </div>
@@ -188,6 +198,27 @@
         let mapImage = new Image();
         let selectedMapId = 1;
 
+        // --- GESTION DES ARMES ---
+        function selectWeapon(wType) {
+            if (gameState !== 'playing') return;
+            let activeWorm = worms[currentPlayer - 1];
+            
+            // Sécurité Multijoueur
+            if (gameMode === 'online' && currentPlayer !== myPlayerId) return;
+            if (activeWorm && !activeWorm.isBot) {
+                activeWorm.weapon = wType;
+                
+                // Maj UI
+                document.querySelectorAll('.weapon-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`btn-wpn-${wType}`).classList.add('active');
+
+                // Sync Network
+                if (conn && conn.open) {
+                    conn.send({ type: 'weapon_sync', wType: wType, pid: activeWorm.id });
+                }
+            }
+        }
+
         // --- SELECTION DYNAMIQUE DE LA MAP ---
         function selectSlimeMap(id, el) {
             selectedMapId = id;
@@ -202,9 +233,7 @@
                 videoElement.style.opacity = 0.6;
             }, 500);
             
-            if (sprites['map' + id]) {
-                mapImage = sprites['map' + id];
-            }
+            if (sprites['map' + id]) mapImage = sprites['map' + id];
         }
 
         // --- GESTION WEBRTC (PeerJS) ---
@@ -212,10 +241,7 @@
         let conn = null; 
         let myPlayerId = 1;
 
-        function showOnlineMenu() { 
-            document.getElementById('online-menu').classList.remove('hidden'); 
-        }
-        
+        function showOnlineMenu() { document.getElementById('online-menu').classList.remove('hidden'); }
         function hideOnlineMenu() { 
             document.getElementById('online-menu').classList.add('hidden');
             if (peer) { peer.destroy(); peer = null; }
@@ -226,8 +252,7 @@
         function hostGame() {
             if (peer) peer.destroy();
             let status = document.getElementById('conn-status'); 
-            status.style.color = "var(--sys)"; 
-            status.innerText = "Création du serveur local...";
+            status.style.color = "var(--sys)"; status.innerText = "Création du serveur local...";
             
             let code = 'SLM' + Math.floor(1000 + Math.random() * 9000);
             peer = new Peer(code);
@@ -247,11 +272,7 @@
                     setTimeout(() => startGame('online'), 1000); 
                 }); 
             });
-            
-            peer.on('error', (err) => { 
-                status.style.color = "var(--p2)"; 
-                status.innerText = "Erreur : " + err.type; 
-            });
+            peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = "Erreur : " + err.type; });
         }
 
         function joinGame() {
@@ -260,8 +281,7 @@
             if (peer) peer.destroy();
             
             let status = document.getElementById('conn-status'); 
-            status.style.color = "var(--p1)"; 
-            status.innerText = "Connexion...";
+            status.style.color = "var(--p1)"; status.innerText = "Connexion...";
             
             peer = new Peer();
             peer.on('open', () => {
@@ -269,19 +289,12 @@
                 conn.on('open', () => { 
                     setupConnection(); 
                     myPlayerId = 2; 
-                    status.style.color = "var(--sys)"; 
-                    status.innerText = "Connecté !"; 
+                    status.style.color = "var(--sys)"; status.innerText = "Connecté !"; 
                     setTimeout(() => startGame('online'), 1000); 
                 });
-                conn.on('error', () => { 
-                    status.style.color = "var(--p2)"; 
-                    status.innerText = "Échec de connexion."; 
-                });
+                conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Échec de connexion."; });
             });
-            peer.on('error', (err) => { 
-                status.style.color = "var(--p2)"; 
-                status.innerText = err.type === 'peer-unavailable' ? "Partie introuvable." : "Erreur : " + err.type; 
-            });
+            peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = err.type === 'peer-unavailable' ? "Partie introuvable." : "Erreur : " + err.type; });
         }
 
         function setupConnection() {
@@ -292,26 +305,30 @@
                     videoElement.style.opacity = 0;
                     setTimeout(() => {
                         videoElement.src = selectedMapId === 1 ? 'img/background.mp4' : 'img/background2.mp4';
-                        videoElement.play();
-                        videoElement.style.opacity = 0.6;
+                        videoElement.play(); videoElement.style.opacity = 0.6;
                     }, 500);
                     if (sprites['map' + selectedMapId]) mapImage = sprites['map' + selectedMapId];
                 }
                 
-                if(data.type === 'sync' && gameState === 'playing') {
-                    let enemy = worms[myPlayerId === 1 ? 1 : 0];
-                    enemy.x = data.x; 
-                    enemy.y = data.y; 
-                    enemy.facing = data.facing; 
-                    enemy.state = data.state; 
-                    enemy.animFrame = data.animFrame;
-                    enemy.isAiming = data.isAiming || false;
-                    enemy.aimDy = data.aimDy || 0;
+                if (data.type === 'weapon_sync') {
+                    let w = worms.find(worm => worm.id === data.pid);
+                    if (w) w.weapon = data.wType;
                 }
-                if(data.type === 'fire') { 
-                    projectile = new Projectile(data.px, data.py, data.vx, data.vy); 
-                    gameState = 'flying'; 
-                    retreatFrames = 60; 
+
+                if (data.type === 'sync' && gameState === 'playing') {
+                    let enemy = worms[myPlayerId === 1 ? 1 : 0];
+                    enemy.x = data.x; enemy.y = data.y; enemy.facing = data.facing; 
+                    enemy.state = data.state; enemy.animFrame = data.animFrame;
+                    enemy.isAiming = data.isAiming || false; enemy.aimDy = data.aimDy || 0;
+                }
+
+                if (data.type === 'fire') { 
+                    projectile = new Projectile(data.px, data.py, data.vx, data.vy, data.wType); 
+                    gameState = 'flying'; retreatFrames = 60; 
+                }
+
+                if (data.type === 'punch') {
+                    executePunch(data.px, data.py, data.angle, data.color, false);
                 }
             });
         }
@@ -322,8 +339,7 @@
                 let dy = isDragging ? (dragStartY - dragCurrentY) : 0;
                 conn.send({ 
                     type: 'sync', 
-                    x: me.x, y: me.y, 
-                    facing: me.facing, state: me.state, animFrame: me.animFrame,
+                    x: me.x, y: me.y, facing: me.facing, state: me.state, animFrame: me.animFrame,
                     isAiming: isDragging, aimDy: dy
                 });
             }
@@ -332,43 +348,29 @@
         // --- PRÉCHARGEMENT DES ASSETS ---
         const sprites = {};
         const imagesToLoad = {
-            map1: 'img/map1.png',
-            map2: 'img/map2.png',
-            
-            s1_idle_r: 'img/slime1_right.png', 
-            s1_idle_l: 'img/slime1_left.png',
+            map1: 'img/map1.png', map2: 'img/map2.png',
+            s1_idle_r: 'img/slime1_right.png', s1_idle_l: 'img/slime1_left.png',
             s1_walk_r1: 'img/slime1_moveright1.png', s1_walk_r2: 'img/slime1_moveright2.png', s1_walk_r3: 'img/slime1_moveright3.png',
             s1_walk_l1: 'img/slime1_moveleft1.png', s1_walk_l2: 'img/slime1_moveleft2.png', s1_walk_l3: 'img/slime1_moveleft3.png',
             s1_jump_r1: 'img/slime1_jumpright1.png', s1_jump_r2: 'img/slime1_jumpright2.png', s1_jump_r3: 'img/slime1_jumpright3.png',
             s1_jump_l1: 'img/slime1_jumpleft1.png', s1_jump_l2: 'img/slime1_jumpleft2.png', s1_jump_l3: 'img/slime1_jumpleft3.png',
-            
             s1_atqtop_r: 'img/slime1_rightatqtop.png', s1_atqbot_r: 'img/slime1_rightatqbot.png',
             s1_atqtop_l: 'img/slime1_leftatqtop.png', s1_atqbot_l: 'img/slime1_leftatqbot.png',
-            
-            s2_idle_r: 'img/slime2_right.png', 
-            s2_idle_l: 'img/slime2_left.png',
+            s2_idle_r: 'img/slime2_right.png', s2_idle_l: 'img/slime2_left.png',
             s2_walk_r1: 'img/slime2_moveright1.png', s2_walk_r2: 'img/slime2_moveright2.png', s2_walk_r3: 'img/slime2_moveright3.png',
             s2_walk_l1: 'img/slime2_moveleft1.png', s2_walk_l2: 'img/slime2_moveleft2.png', s2_walk_l3: 'img/slime2_moveleft3.png',
             s2_jump_r1: 'img/slime2_jumpright1.png', s2_jump_r2: 'img/slime2_jumpright2.png', s2_jump_r3: 'img/slime2_jumpright3.png',
             s2_jump_l1: 'img/slime2_jumpleft1.png', s2_jump_l2: 'img/slime2_jumpleft2.png', s2_jump_l3: 'img/slime2_jumpleft3.png',
-            
             s2_atqtop_r: 'img/slime2_rightatqtop.png', s2_atqbot_r: 'img/slime2_rightatqbot.png',
             s2_atqtop_l: 'img/slime2_leftatqtop.png', s2_atqbot_l: 'img/slime2_leftatqbot.png'
         };
 
-        let loadedCount = 0; 
-        let totalImages = Object.keys(imagesToLoad).length;
+        let loadedCount = 0; let totalImages = Object.keys(imagesToLoad).length;
         
         for (let key in imagesToLoad) {
-            let img = new Image(); 
-            img.onload = onLoadComplete; 
-            img.onerror = () => { 
-                console.warn(`🚨 Asset manquant : ${imagesToLoad[key]}.`);
-                img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
-                onLoadComplete();
-            };
-            img.src = imagesToLoad[key]; 
-            sprites[key] = img;
+            let img = new Image(); img.onload = onLoadComplete; 
+            img.onerror = () => { img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; onLoadComplete(); };
+            img.src = imagesToLoad[key]; sprites[key] = img;
         }
 
         function onLoadComplete() {
@@ -380,23 +382,18 @@
             }
         }
 
-        // --- CONTRÔLES (Humain & IA) ---
+        // --- CONTRÔLES ---
         const keys = { left: false, right: false, space: false };
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
             if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
-            if (e.key === ' ' || e.code === 'Space') { 
-                keys.space = true; 
-                if (e.target === document.body || e.target.closest('#game-wrapper')) e.preventDefault(); 
-            }
+            if (e.key === ' ' || e.code === 'Space') { keys.space = true; if (e.target === document.body || e.target.closest('#game-wrapper')) e.preventDefault(); }
         });
-        
         window.addEventListener('keyup', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = false;
             if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
             if (e.key === ' ' || e.code === 'Space') keys.space = false;
         });
-        
         window.addEventListener('mousemove', (e) => { 
             let rect = document.getElementById('game-wrapper').getBoundingClientRect(); 
             mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width); 
@@ -405,12 +402,8 @@
         // --- TERRAIN ---
         function generateTerrain() {
             ctxOffTerrain.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-            if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) {
-                ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-            } else { 
-                ctxOffTerrain.fillStyle = "#45a29e"; 
-                ctxOffTerrain.fillRect(0, WORLD_HEIGHT/2, WORLD_WIDTH, WORLD_HEIGHT/2); 
-            }
+            if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+            else { ctxOffTerrain.fillStyle = "#45a29e"; ctxOffTerrain.fillRect(0, WORLD_HEIGHT/2, WORLD_WIDTH, WORLD_HEIGHT/2); }
         }
 
         function isSolid(x, y) {
@@ -422,98 +415,67 @@
 
         function explodeTerrain(ex, ey, radius) {
             ctxOffTerrain.globalCompositeOperation = 'destination-out';
-            ctxOffTerrain.beginPath(); 
-            ctxOffTerrain.arc(ex, ey, radius, 0, Math.PI * 2); 
-            ctxOffTerrain.fill();
+            ctxOffTerrain.beginPath(); ctxOffTerrain.arc(ex, ey, radius, 0, Math.PI * 2); ctxOffTerrain.fill();
             ctxOffTerrain.globalCompositeOperation = 'source-over';
         }
 
         // --- CLASSES DU JEU ---
         class Slime {
             constructor(x, y, id, type, color, team, name, isBot = false) {
-                this.x = x; this.y = y; 
-                this.id = id; this.type = type; this.color = color;
+                this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
                 this.team = team; this.name = name; this.isBot = isBot;
                 this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
                 this.isAiming = false; this.aimDy = 0;
                 
-                // Intrants virtuels pour l'IA
+                this.weapon = 'bazooka'; // bazooka, grenade, boxe
                 this.aiInput = { left: false, right: false, space: false };
             }
 
             update() {
                 if (this.isDead) return;
-                
                 let isMyTurn = (currentPlayer === this.id);
                 if (gameMode === 'online' && currentPlayer !== myPlayerId) isMyTurn = false;
-                
                 let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0));
                 
                 if (canMove && !isDragging) {
-                    // L'IA lit ses propres inputs, l'humain lit le clavier
                     let activeKeys = this.isBot ? this.aiInput : keys;
-
                     if (activeKeys.left) { this.vx = -1.5; this.facing = 'l'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
                     else if (activeKeys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
                     else { this.vx = 0; if(this.state === 'walk') this.state = 'idle'; }
 
                     if (activeKeys.space && this.isOnGround) { 
-                        this.vy = -6.5; 
-                        this.isOnGround = false; 
-                        this.state = 'air'; 
-                        this.animFrame = 2; 
-                        activeKeys.space = false; // Reset immédiat du saut
+                        this.vy = -6.5; this.isOnGround = false; this.state = 'air'; this.animFrame = 2; activeKeys.space = false; 
                     }
                 } else if (!canMove && this.isOnGround) {
-                    this.vx *= 0.5; 
-                    if(Math.abs(this.vx) < 0.1) this.vx = 0;
+                    this.vx *= 0.5; if(Math.abs(this.vx) < 0.1) this.vx = 0;
                     if (this.state === 'walk') this.state = 'idle';
                 }
 
-                // Application de la physique X
                 if (this.vx !== 0) {
                     let nextX = this.x + this.vx; let step = 0; let maxStep = 6; 
                     while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) step++;
                     if (step > maxStep) this.vx = 0; else { this.x = nextX; this.y -= step; }
                 }
 
-                // Application de la gravité
-                this.vy += GRAVITY; 
-                this.y += this.vy;
-                this.isOnGround = false;
+                this.vy += GRAVITY; this.y += this.vy; this.isOnGround = false;
                 
                 if (isSolid(this.x, this.y + this.radius)) {
                     if (this.state === 'air') { this.state = 'landed'; this.landTimer = 15; }
-                    this.vy = 0; 
-                    this.isOnGround = true;
+                    this.vy = 0; this.isOnGround = true;
                     while(isSolid(this.x, this.y + this.radius - 1)) this.y -= 1;
-                } else if (this.vy !== 0) {
-                    this.state = 'air';
-                }
+                } else if (this.vy !== 0) { this.state = 'air'; }
 
-                // Animations
                 if (this.state === 'walk') {
                     this.animTimer++;
-                    if (this.animTimer > 6) { 
-                        this.animFrame++; 
-                        if (this.animFrame > 3) this.animFrame = 1; 
-                        this.animTimer = 0; 
-                    }
-                } else if (this.state === 'air') {
-                    this.animFrame = 2; 
-                } else if (this.state === 'landed') { 
-                    this.animFrame = 3; 
-                    this.landTimer--; 
-                    if (this.landTimer <= 0) this.state = 'idle'; 
-                } else {
-                    this.animFrame = 1;
-                }
+                    if (this.animTimer > 6) { this.animFrame++; if (this.animFrame > 3) this.animFrame = 1; this.animTimer = 0; }
+                } else if (this.state === 'air') { this.animFrame = 2; } 
+                else if (this.state === 'landed') { this.animFrame = 3; this.landTimer--; if (this.landTimer <= 0) this.state = 'idle'; } 
+                else { this.animFrame = 1; }
 
                 if (this.y > WORLD_HEIGHT + 50) { this.hp = 0; this.isDead = true; checkWin(); }
-                if(this.x < 10) this.x = 10; 
-                if(this.x > WORLD_WIDTH - 10) this.x = WORLD_WIDTH - 10;
+                if(this.x < 10) this.x = 10; if(this.x > WORLD_WIDTH - 10) this.x = WORLD_WIDTH - 10;
             }
 
             draw() {
@@ -522,82 +484,86 @@
                 let spriteName = `s${this.type}_`;
                 let isMe = (currentPlayer === this.id);
                 let aiming = (isMe && isDragging) || (!isMe && this.isAiming) || (this.isAiming && this.isBot);
-                
                 let currentAimDy = isMe && !this.isBot ? (dragStartY - dragCurrentY) : this.aimDy;
 
-                if (aiming && this.state !== 'air' && this.state !== 'walk') {
-                    spriteName += `atq${currentAimDy < -20 ? 'top' : 'bot'}_${this.facing}`;
-                }
+                if (aiming && this.state !== 'air' && this.state !== 'walk') spriteName += `atq${currentAimDy < -20 ? 'top' : 'bot'}_${this.facing}`;
                 else if (this.state === 'air' || this.state === 'landed') spriteName += `jump_${this.facing}${this.animFrame}`;
                 else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
                 else spriteName += `idle_${this.facing}`;
 
-                let renderX = this.x - camera.x; 
-                let renderY = this.y - camera.y;
+                let renderX = this.x - camera.x; let renderY = this.y - camera.y;
                 let img = sprites[spriteName];
                 
-                if (img && img.complete && img.naturalWidth > 0) {
-                    ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
-                } else { 
-                    ctxEnt.fillStyle = this.color; 
-                    ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20); 
-                }
+                if (img && img.complete && img.naturalWidth > 0) ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
+                else { ctxEnt.fillStyle = this.color; ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20); }
                 
-                ctxEnt.fillStyle = this.color;
-                ctxEnt.font = "bold 12px 'Segoe UI'";
-                ctxEnt.textAlign = "center";
-                ctxEnt.shadowBlur = 4; 
-                ctxEnt.shadowColor = "#000";
-                ctxEnt.fillText(this.name, renderX, renderY - 30);
-                ctxEnt.shadowBlur = 0;
+                // Dessin Arme Active au dessus du perso si pas le bazooka de base
+                if (this.weapon === 'grenade') { ctxEnt.fillText("🍍", renderX + 15, renderY - 5); }
+                if (this.weapon === 'boxe') { ctxEnt.fillText("🥊", renderX + 15, renderY - 5); }
+
+                ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Segoe UI'"; ctxEnt.textAlign = "center";
+                ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 30); ctxEnt.shadowBlur = 0;
 
                 if (currentPlayer === this.id && gameState !== 'end') {
                     ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
-                    ctxEnt.shadowBlur = 10; 
-                    ctxEnt.shadowColor = ctxEnt.fillStyle;
-                    ctxEnt.beginPath(); 
-                    ctxEnt.moveTo(renderX - 6, renderY - 45); 
-                    ctxEnt.lineTo(renderX + 6, renderY - 45); 
-                    ctxEnt.lineTo(renderX, renderY - 35); 
-                    ctxEnt.fill(); 
+                    ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = ctxEnt.fillStyle;
+                    ctxEnt.beginPath(); ctxEnt.moveTo(renderX - 6, renderY - 45); ctxEnt.lineTo(renderX + 6, renderY - 45); ctxEnt.lineTo(renderX, renderY - 35); ctxEnt.fill(); 
                     ctxEnt.shadowBlur = 0;
                 }
             }
         }
 
         class Projectile {
-            constructor(x, y, vx, vy) { 
+            constructor(x, y, vx, vy, type = 'bazooka') { 
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy; 
-                this.active = true; this.radius = 4; 
+                this.type = type; // bazooka, grenade
+                this.active = true; this.radius = this.type === 'grenade' ? 5 : 4; 
+                this.timer = 180; // 3 secondes pour la grenade
             }
             update() {
                 if (!this.active) return;
-                this.vy += GRAVITY; this.x += this.vx; this.y += this.vy;
-                particles.push(new Particle(this.x, this.y, 0, 0, "#fff", 2, 10));
+                this.vy += GRAVITY; 
                 
-                if (isSolid(this.x, this.y) || this.y > WORLD_HEIGHT || this.x < 0 || this.x > WORLD_WIDTH) {
-                    this.explode();
+                // Sub-stepping pour la physique de la grenade (meilleur rebond)
+                let steps = this.type === 'grenade' ? 3 : 1;
+                for(let i=0; i<steps; i++) {
+                    let dx = this.vx / steps; let dy = this.vy / steps;
+                    
+                    if (this.type === 'grenade') {
+                        if (isSolid(this.x + dx, this.y)) { this.vx *= -0.5; dx = this.vx/steps; }
+                        if (isSolid(this.x, this.y + dy)) { this.vy *= -0.5; this.vx *= 0.8; dy = this.vy/steps; }
+                    } else {
+                        if (isSolid(this.x + dx, this.y + dy)) { this.explode(); return; }
+                    }
+                    this.x += dx; this.y += dy;
+                }
+                
+                if (this.type === 'bazooka') {
+                    particles.push(new Particle(this.x, this.y, 0, 0, "#fff", 2, 10));
+                    if (this.y > WORLD_HEIGHT || this.x < 0 || this.x > WORLD_WIDTH) this.explode();
+                } else if (this.type === 'grenade') {
+                    this.timer--;
+                    if (this.timer <= 0 || this.y > WORLD_HEIGHT) this.explode();
                 }
             }
             explode() {
                 this.active = false; 
-                let expRadius = 45; 
+                let expRadius = this.type === 'grenade' ? 55 : 45; 
                 explodeTerrain(this.x, this.y, expRadius);
                 
-                for(let i=0; i<35; i++) {
-                    let angle = Math.random() * Math.PI * 2; 
-                    let speed = Math.random() * 6 + 2;
-                    particles.push(new Particle(this.x, this.y, Math.cos(angle)*speed, Math.sin(angle)*speed, "#ff5500", Math.random()*4+2, 40));
+                let pColor = this.type === 'grenade' ? "#ffaa00" : "#ff5500";
+                for(let i=0; i<45; i++) {
+                    let angle = Math.random() * Math.PI * 2; let speed = Math.random() * 6 + 2;
+                    particles.push(new Particle(this.x, this.y, Math.cos(angle)*speed, Math.sin(angle)*speed, pColor, Math.random()*4+2, 40));
                 }
                 
                 worms.forEach(w => {
                     let dist = Math.hypot(w.x - this.x, w.y - this.y);
                     if (dist < expRadius + 15 && !w.isDead) {
-                        let damage = Math.floor((1 - dist / (expRadius + 15)) * 45);
+                        let damage = Math.floor((1 - dist / (expRadius + 15)) * (this.type === 'grenade' ? 55 : 45));
                         w.hp -= damage;
                         let kbAngle = Math.atan2(w.y - this.y, w.x - this.x);
-                        w.vx += Math.cos(kbAngle) * (damage * 0.25); 
-                        w.vy += Math.sin(kbAngle) * (damage * 0.25) - 4; 
+                        w.vx += Math.cos(kbAngle) * (damage * 0.25); w.vy += Math.sin(kbAngle) * (damage * 0.25) - 4; 
                         if (w.hp <= 0) { w.hp = 0; w.isDead = true; }
                         updateUI();
                     }
@@ -607,33 +573,32 @@
             }
             draw() {
                 if (!this.active) return;
-                ctxEnt.fillStyle = "#fff"; 
                 ctxEnt.beginPath(); 
                 ctxEnt.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2); 
-                ctxEnt.fill();
+                
+                if (this.type === 'grenade') {
+                    ctxEnt.fillStyle = (Math.floor(this.timer / 10) % 2 === 0) ? '#ff0000' : '#228b22'; // Clignotement
+                    ctxEnt.fill();
+                    ctxEnt.lineWidth = 1; ctxEnt.strokeStyle = '#fff'; ctxEnt.stroke();
+                } else {
+                    ctxEnt.fillStyle = "#fff"; ctxEnt.fill();
+                }
             }
         }
 
         class Particle {
             constructor(x, y, vx, vy, color, size, life) { 
-                this.x = x; this.y = y; this.vx = vx; this.vy = vy; 
-                this.color = color; this.size = size; this.life = life; this.maxLife = life; 
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = life; this.maxLife = life; 
             }
-            update() { 
-                this.x += this.vx; this.y += this.vy; this.life--; 
-            }
-            draw() { 
-                ctxEnt.fillStyle = this.color; 
-                ctxEnt.globalAlpha = this.life / this.maxLife; 
-                ctxEnt.fillRect(this.x - camera.x, this.y - camera.y, this.size, this.size); 
-                ctxEnt.globalAlpha = 1; 
-            }
+            update() { this.x += this.vx; this.y += this.vy; this.life--; }
+            draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife; ctxEnt.fillRect(this.x - camera.x, this.y - camera.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
         }
 
         // --- GESTION DES JOUEURS & UI ---
         let worms = []; 
         let projectile = null; 
         let particles = []; 
+        let punchEffects = []; // Pour stocker visuellement les coups de poing
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0, dragCurrentX = 0, dragCurrentY = 0;
 
@@ -644,18 +609,11 @@
                 <div id="turn-indicator" style="color: var(--p1); border-color: var(--p1);">Tour J1</div>
                 <div id="ui-right" class="team-container"></div>
             `;
-            
-            let left = document.getElementById('ui-left');
-            let right = document.getElementById('ui-right');
-
+            let left = document.getElementById('ui-left'); let right = document.getElementById('ui-right');
             worms.forEach((w, index) => {
                 let container = (index % 2 === 0) ? left : right;
-                let card = document.createElement('div');
-                card.className = 'player-info';
-                card.innerHTML = `
-                    <b style="color: ${w.color}">${w.name}</b>
-                    <div class="hp-bar-bg"><div id="hp-p${w.id}" class="hp-bar" style="background: ${w.color}; width: 100%; box-shadow: 0 0 10px ${w.color};"></div></div>
-                `;
+                let card = document.createElement('div'); card.className = 'player-info';
+                card.innerHTML = `<b style="color: ${w.color}">${w.name}</b><div class="hp-bar-bg"><div id="hp-p${w.id}" class="hp-bar" style="background: ${w.color}; width: 100%; box-shadow: 0 0 10px ${w.color};"></div></div>`;
                 container.appendChild(card);
             });
         }
@@ -668,7 +626,6 @@
             
             generateTerrain();
             
-            // SPAWN LOGIC (Ajout du flag isBot pour le mode IA)
             if (mode === 'ai') {
                 worms = [
                     new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'JOUEUR 1', false),
@@ -681,24 +638,18 @@
                 ];
             } else if (mode === 'local_2v2') {
                 worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false),
-                    new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
-                    new Slime(1400, 100, 3, 1, 'var(--p1)', 'A', 'J3 (Cyan)', false),
-                    new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p2)', 'B', 'J4 (Rose)', false)
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false), new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
+                    new Slime(1400, 100, 3, 1, 'var(--p1)', 'A', 'J3 (Cyan)', false), new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p2)', 'B', 'J4 (Rose)', false)
                 ];
             } else if (mode === 'local_ffa') {
                 worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false),
-                    new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
-                    new Slime(1400, 100, 3, 1, 'var(--p3)', 'C', 'J3 (Or)', false),
-                    new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p4)', 'D', 'J4 (Vert)', false)
+                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false), new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
+                    new Slime(1400, 100, 3, 1, 'var(--p3)', 'C', 'J3 (Or)', false), new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p4)', 'D', 'J4 (Vert)', false)
                 ];
             }
             
             buildUI();
-            currentPlayer = 1; 
-            gameState = 'playing'; 
-            retreatFrames = 0;
+            currentPlayer = 1; gameState = 'playing'; retreatFrames = 0;
             camera.x = worms[0].x - WIDTH / 2; 
             updateUI();
             
@@ -715,150 +666,133 @@
             if (activeWorm && gameState !== 'end') {
                 let turnInd = document.getElementById('turn-indicator');
                 turnInd.innerText = `TOUR ${activeWorm.name}`;
-                turnInd.style.color = activeWorm.color;
-                turnInd.style.borderColor = activeWorm.color;
+                turnInd.style.color = activeWorm.color; turnInd.style.borderColor = activeWorm.color;
+
+                // Afficher UI d'armes si c'est le tour d'un humain local
+                if (!activeWorm.isBot && (gameMode !== 'online' || myPlayerId === currentPlayer)) {
+                    document.getElementById('weapon-panel').classList.remove('hidden');
+                    document.querySelectorAll('.weapon-btn').forEach(btn => btn.classList.remove('active'));
+                    document.getElementById(`btn-wpn-${activeWorm.weapon}`).classList.add('active');
+                } else {
+                    document.getElementById('weapon-panel').classList.add('hidden');
+                }
             }
         }
 
         function nextTurn() {
-            checkWin(); 
-            if (gameState === 'end') return;
+            checkWin(); if (gameState === 'end') return;
             
             let safeCounter = 0;
-            do {
-                currentPlayer = (currentPlayer % worms.length) + 1;
-                safeCounter++;
-            } while (worms[currentPlayer-1].isDead && safeCounter < 10);
+            do { currentPlayer = (currentPlayer % worms.length) + 1; safeCounter++; } while (worms[currentPlayer-1].isDead && safeCounter < 10);
             
-            gameState = 'playing'; 
-            projectile = null; 
-            updateUI();
-            
-            // Démarrage de la séquence IA si c'est le tour d'un bot
-            if (worms[currentPlayer - 1].isBot) {
-                setTimeout(playAITurn, 500); // Petite pause avant que l'IA commence
-            }
+            gameState = 'playing'; projectile = null; updateUI();
+            if (worms[currentPlayer - 1].isBot) setTimeout(playAITurn, 500); 
         }
 
-        // --- NOUVEAU CERVEAU IA (BALISTIQUE & MOUVEMENT) ---
+        // --- INTELLIGENCE ARTIFICIELLE ---
         function playAITurn() {
             let ai = worms[currentPlayer - 1];
             if (!ai || !ai.isBot || ai.isDead) return nextTurn();
 
-            // 1. RECHERCHE DE LA CIBLE (L'ennemi le plus proche)
-            let target = null;
-            let minDist = Infinity;
+            let target = null; let minDist = Infinity;
             worms.forEach(w => {
                 if (!w.isDead && w.team !== ai.team) {
                     let dist = Math.hypot(w.x - ai.x, w.y - ai.y);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        target = w;
-                    }
+                    if (dist < minDist) { minDist = dist; target = w; }
                 }
             });
 
             if (!target) return nextTurn();
 
-            // 2. DÉCISION DE DÉPLACEMENT
-            let moveTime = Math.floor(Math.random() * 1500) + 500; // Marche de 0.5s à 2.0s
+            // Choix d'arme intelligent
+            if (minDist < 45) ai.weapon = 'boxe';
+            else if (Math.random() < 0.3) ai.weapon = 'grenade';
+            else ai.weapon = 'bazooka';
+
+            let moveTime = Math.floor(Math.random() * 1500) + 500; 
             let moveDir = (target.x < ai.x) ? 'left' : 'right';
             
-            // Si la cible est déjà à bonne distance, on a 30% de chance de ne pas bouger
-            if (Math.random() > 0.3 && minDist > 200) {
-                ai.aiInput[moveDir] = true;
-            }
+            if (Math.random() > 0.3 && minDist > 150) ai.aiInput[moveDir] = true;
 
-            // Routine de saut (si l'IA bloque contre un mur)
-            let jumpInterval = setInterval(() => {
-                if (ai.aiInput[moveDir] && Math.abs(ai.vx) < 0.5 && ai.isOnGround) {
-                    ai.aiInput.space = true;
-                }
-            }, 250);
+            let jumpInterval = setInterval(() => { if (ai.aiInput[moveDir] && Math.abs(ai.vx) < 0.5 && ai.isOnGround) ai.aiInput.space = true; }, 250);
 
-            // 3. ARRÊT & VISÉE
             setTimeout(() => {
-                // Stoppe le mouvement
-                ai.aiInput.left = false;
-                ai.aiInput.right = false;
-                ai.aiInput.space = false;
-                clearInterval(jumpInterval);
-
+                ai.aiInput.left = false; ai.aiInput.right = false; ai.aiInput.space = false; clearInterval(jumpInterval);
                 if (ai.isDead || target.isDead || gameState !== 'playing') return;
 
-                ai.facing = (target.x < ai.x) ? 'l' : 'r';
-                ai.isAiming = true;
-
-                // Calcul Balistique Physique
-                let dx = target.x - ai.x;
-                let dy = (target.y - ai.y) - 15; // Vise le corps, pas les pieds
+                ai.facing = (target.x < ai.x) ? 'l' : 'r'; ai.isAiming = true;
+                let dx = target.x - ai.x; let dy = (target.y - ai.y) - 15; 
                 
-                // Marge d'Erreur "Humaine" (dépend de la distance, +/- 10% d'erreur)
-                let errorOffsetX = (Math.random() - 0.5) * (minDist * 0.20); 
-                let errorOffsetY = (Math.random() - 0.5) * (minDist * 0.20);
-                dx += errorOffsetX;
-                dy += errorOffsetY;
+                let errorOffsetX = (Math.random() - 0.5) * (minDist * 0.15); 
+                let errorOffsetY = (Math.random() - 0.5) * (minDist * 0.15);
+                dx += errorOffsetX; dy += errorOffsetY;
 
-                // Fausse Parabole Balistique : On compense la gravité en visant artificiellement plus haut
-                // Plus la cible est loin horizontalement, plus le bot pointe son bazooka vers le ciel
-                let ballisticDy = dy - (Math.abs(dx) * 0.4); 
-
+                let ballisticDy = ai.weapon === 'bazooka' ? dy - (Math.abs(dx) * 0.4) : dy - (Math.abs(dx) * 0.6); // Grenade cloche plus haute
                 let angle = Math.atan2(ballisticDy, dx);
-                // La puissance s'adapte à la distance, max 18
                 let power = Math.min(Math.hypot(dx, ballisticDy) * 0.025 + 5, 18);
 
-                // Simulation Visuelle de la visée (Levée de l'arme)
                 let aimFrames = 0;
                 let aimInterval = setInterval(() => {
-                    aimFrames++;
-                    // Modifie visuellement l'angle du sprite (atqtop ou atqbot)
-                    ai.aimDy = - (aimFrames * 3); 
-
+                    aimFrames++; ai.aimDy = - (aimFrames * 3); 
                     if (aimFrames > 30) {
-                        clearInterval(aimInterval);
-                        ai.isAiming = false;
-                        
+                        clearInterval(aimInterval); ai.isAiming = false;
                         if (ai.isDead || target.isDead || gameState !== 'playing') return;
 
-                        // 4. TIR
-                        projectile = new Projectile(ai.x, ai.y - 15, Math.cos(angle) * power, Math.sin(angle) * power);
-                        gameState = 'flying';
-                        retreatFrames = 60; // L'IA peut s'enfuir juste après avoir tiré (évolution possible)
+                        if (ai.weapon === 'boxe') {
+                            executePunch(ai.x, ai.y - 15, angle, ai.color, true);
+                        } else {
+                            projectile = new Projectile(ai.x, ai.y - 15, Math.cos(angle) * power, Math.sin(angle) * power, ai.weapon);
+                            gameState = 'flying'; retreatFrames = 60; 
+                        }
                     }
-                }, 30); // L'IA met environ 1 seconde à viser
-
+                }, 30); 
             }, moveTime);
         }
 
-        function checkWin() {
-            let aliveTeams = new Set();
-            let aliveCount = 0;
-            let lastAlivePlayer = null;
+        // --- GESTION DU COUP DE POING ---
+        function executePunch(px, py, angle, color, isLocalAction) {
+            // Effet visuel
+            punchEffects.push({ x: px + Math.cos(angle)*30, y: py + Math.sin(angle)*30, life: 15, maxLife: 15, color: '#ff0000', angle: angle });
+            
+            // On calcule l'impact que pour l'hôte ou en local pour éviter les doubles dégâts en réseau
+            if (isLocalAction || gameMode !== 'online' || myPlayerId === 1) {
+                worms.forEach(w => {
+                    if (!w.isDead) {
+                        let dist = Math.hypot(w.x - px, w.y - py);
+                        if (dist < 65) {
+                            w.hp -= 30; // Dégâts corps à corps
+                            w.vx = Math.cos(angle) * 15; // Mega Knockback horizontal
+                            w.vy = Math.sin(angle) * 15 - 5; // Envol
+                            if (w.hp <= 0) { w.hp = 0; w.isDead = true; }
+                        }
+                    }
+                });
+                updateUI();
+            }
 
-            worms.forEach(w => {
-                if (!w.isDead) { 
-                    aliveTeams.add(w.team); 
-                    aliveCount++; 
-                    lastAlivePlayer = w; 
-                }
-            });
+            gameState = 'flying'; retreatFrames = 40; 
+            if (isLocalAction && conn && conn.open) {
+                conn.send({ type: 'punch', px: px, py: py, angle: angle, color: color });
+            }
+            setTimeout(() => { retreatFrames = 0; nextTurn(); }, 1500);
+        }
+
+        function checkWin() {
+            let aliveTeams = new Set(); let aliveCount = 0; let lastAlivePlayer = null;
+            worms.forEach(w => { if (!w.isDead) { aliveTeams.add(w.team); aliveCount++; lastAlivePlayer = w; } });
 
             if (aliveTeams.size <= 1) {
                 gameState = 'end';
+                document.getElementById('weapon-panel').classList.add('hidden');
                 let winnerText = document.getElementById('winner-text');
-                
-                if (aliveCount === 0) {
-                    winnerText.innerText = "ÉGALITÉ (MORT SUBITE)"; 
-                    winnerText.style.color = "#fff";
-                } else if (gameMode === 'local_2v2') {
+                if (aliveCount === 0) { winnerText.innerText = "ÉGALITÉ (MORT SUBITE)"; winnerText.style.color = "#fff"; } 
+                else if (gameMode === 'local_2v2') {
                     let winningTeam = Array.from(aliveTeams)[0];
                     winnerText.innerText = winningTeam === 'A' ? "ÉQUIPE CYAN GAGNE" : "ÉQUIPE ROSE GAGNE";
                     winnerText.style.color = winningTeam === 'A' ? 'var(--p1)' : 'var(--p2)';
                 } else {
-                    winnerText.innerText = lastAlivePlayer.name + " GAGNE";
-                    winnerText.style.color = lastAlivePlayer.color;
+                    winnerText.innerText = lastAlivePlayer.name + " GAGNE"; winnerText.style.color = lastAlivePlayer.color;
                 }
-                
                 setTimeout(() => { document.getElementById('game-over').classList.remove('hidden'); }, 1500);
             }
         }
@@ -868,68 +802,58 @@
 
         function startAim(e) {
             let activeWorm = worms[currentPlayer - 1];
-            if (gameState !== 'playing' || activeWorm.isBot) return; // Bloque la visée souris si c'est une IA
+            if (gameState !== 'playing' || activeWorm.isBot) return; 
             if (gameMode === 'online' && currentPlayer !== myPlayerId) return; 
             
-            e.stopPropagation();
-            let rect = canvasEnt.getBoundingClientRect();
-            let clientX = e.touches ? e.touches[0].clientX : e.clientX; 
-            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            e.stopPropagation(); let rect = canvasEnt.getBoundingClientRect();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX; let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
             dragStartX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) + camera.x;
             dragStartY = ((clientY - rect.top) * (canvasEnt.height / rect.height)); 
             
-            isDragging = true; 
-            activeWorm.state = 'idle'; 
+            isDragging = true; activeWorm.state = 'idle'; 
         }
 
         function moveAim(e) {
             if (!isDragging) return;
             e.stopPropagation(); e.preventDefault();
-            
             let rect = canvasEnt.getBoundingClientRect();
-            let clientX = e.touches ? e.touches[0].clientX : e.clientX; 
-            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX; let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
             dragCurrentX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) + camera.x;
             dragCurrentY = ((clientY - rect.top) * (canvasEnt.height / rect.height));
-            
             worms[currentPlayer - 1].facing = (dragStartX - dragCurrentX > 0) ? 'r' : 'l';
         }
 
         function endAim(e) {
             if (!isDragging) return;
-            isDragging = false; 
-            e.stopPropagation();
+            isDragging = false; e.stopPropagation();
             
             let activeWorm = worms[currentPlayer - 1];
-            let dx = dragStartX - dragCurrentX; 
-            let dy = dragStartY - dragCurrentY;
+            let dx = dragStartX - dragCurrentX; let dy = dragStartY - dragCurrentY;
             let power = Math.min(Math.hypot(dx, dy) * 0.1, 18);
             let angle = Math.atan2(dy, dx);
             
             if (power > 2) {
-                let vx = Math.cos(angle) * power; 
-                let vy = Math.sin(angle) * power;
-                projectile = new Projectile(activeWorm.x, activeWorm.y - 15, vx, vy);
-                gameState = 'flying'; 
-                retreatFrames = 60; 
+                document.getElementById('weapon-panel').classList.add('hidden'); // Cache pdt le tir
                 
-                if (conn && conn.open) conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy });
+                if (activeWorm.weapon === 'boxe') {
+                    executePunch(activeWorm.x, activeWorm.y - 15, angle, activeWorm.color, true);
+                } else {
+                    let vx = Math.cos(angle) * power; let vy = Math.sin(angle) * power;
+                    projectile = new Projectile(activeWorm.x, activeWorm.y - 15, vx, vy, activeWorm.weapon);
+                    gameState = 'flying'; retreatFrames = 60; 
+                    if (conn && conn.open) conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy, wType: activeWorm.weapon });
+                }
             }
         }
 
-        gameWrapper.addEventListener('mousedown', startAim); 
-        window.addEventListener('mousemove', moveAim); 
-        window.addEventListener('mouseup', endAim);
-        gameWrapper.addEventListener('touchstart', startAim, {passive: false}); 
-        window.addEventListener('touchmove', moveAim, {passive: false}); 
-        window.addEventListener('touchend', endAim);
+        gameWrapper.addEventListener('mousedown', startAim); window.addEventListener('mousemove', moveAim); window.addEventListener('mouseup', endAim);
+        gameWrapper.addEventListener('touchstart', startAim, {passive: false}); window.addEventListener('touchmove', moveAim, {passive: false}); window.addEventListener('touchend', endAim);
 
-        // --- CAMERA ET RADAR MULTI-CIBLES ---
+        // --- CAMERA ET RADAR ---
         function updateCamera() {
-            let targetX = camera.x; 
-            manualCameraControl = false;
+            let targetX = camera.x; manualCameraControl = false;
             
             if (mouseScreenX < 50) { targetX = camera.x - 15; manualCameraControl = true; }
             if (mouseScreenX > WIDTH - 50) { targetX = camera.x + 15; manualCameraControl = true; }
@@ -938,40 +862,21 @@
                 if (projectile && projectile.active) targetX = projectile.x - WIDTH / 2;
                 else if (!isDragging && worms[currentPlayer - 1]) targetX = worms[currentPlayer - 1].x - WIDTH / 2; 
             }
-            
-            camera.x += (targetX - camera.x) * 0.1;
-            camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH - WIDTH));
+            camera.x += (targetX - camera.x) * 0.1; camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH - WIDTH));
         }
 
         function drawRadar() {
             let me = worms[currentPlayer - 1];
             if (!me || me.isDead) return;
-
             worms.forEach(enemy => {
                 if (enemy.id === me.id || enemy.isDead || enemy.team === me.team) return; 
-
-                let screenX = enemy.x - camera.x;
-                let screenY = enemy.y - camera.y;
-
+                let screenX = enemy.x - camera.x; let screenY = enemy.y - camera.y;
                 if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
-                    let radarX = Math.max(20, Math.min(WIDTH - 20, screenX));
-                    let radarY = Math.max(20, Math.min(HEIGHT - 20, screenY));
-
-                    ctxEnt.save();
-                    ctxEnt.translate(radarX, radarY);
-                    let angle = Math.atan2(screenY - HEIGHT/2, screenX - WIDTH/2);
-                    ctxEnt.rotate(angle);
-
-                    ctxEnt.fillStyle = enemy.color;
-                    ctxEnt.shadowBlur = 10; 
-                    ctxEnt.shadowColor = enemy.color;
-                    
-                    ctxEnt.beginPath(); 
-                    ctxEnt.moveTo(15, 0); 
-                    ctxEnt.lineTo(-10, 10); 
-                    ctxEnt.lineTo(-10, -10); 
-                    ctxEnt.fill();
-                    
+                    let radarX = Math.max(20, Math.min(WIDTH - 20, screenX)); let radarY = Math.max(20, Math.min(HEIGHT - 20, screenY));
+                    ctxEnt.save(); ctxEnt.translate(radarX, radarY);
+                    let angle = Math.atan2(screenY - HEIGHT/2, screenX - WIDTH/2); ctxEnt.rotate(angle);
+                    ctxEnt.fillStyle = enemy.color; ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = enemy.color;
+                    ctxEnt.beginPath(); ctxEnt.moveTo(15, 0); ctxEnt.lineTo(-10, 10); ctxEnt.lineTo(-10, -10); ctxEnt.fill();
                     ctxEnt.restore();
                 }
             });
@@ -982,8 +887,7 @@
             if (gameState === 'menu') return;
             if (retreatFrames > 0) retreatFrames--;
 
-            syncPlayerState(); 
-            updateCamera();
+            syncPlayerState(); updateCamera();
 
             ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
             ctxTerrain.drawImage(offscreenTerrain, camera.x, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT);
@@ -993,34 +897,39 @@
 
             if (gameState === 'playing' && isDragging) {
                 let activeWorm = worms[currentPlayer - 1];
-                let dx = dragStartX - dragCurrentX; 
-                let dy = dragStartY - dragCurrentY;
-                let power = Math.min(Math.hypot(dx, dy), 180); 
+                let dx = dragStartX - dragCurrentX; let dy = dragStartY - dragCurrentY;
+                let power = Math.min(Math.hypot(dx, dy), activeWorm.weapon === 'boxe' ? 50 : 180); 
                 let angle = Math.atan2(dy, dx);
+                let startX = activeWorm.x - camera.x; let startY = activeWorm.y - camera.y - 15;
                 
-                let startX = activeWorm.x - camera.x; 
-                let startY = activeWorm.y - camera.y - 15;
-                
-                ctxEnt.beginPath(); 
-                ctxEnt.moveTo(startX, startY); 
-                ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
-                ctxEnt.strokeStyle = activeWorm.color;
-                ctxEnt.lineWidth = 3; 
-                ctxEnt.setLineDash([8, 8]); 
-                ctxEnt.stroke(); 
-                ctxEnt.setLineDash([]);
+                ctxEnt.beginPath(); ctxEnt.moveTo(startX, startY); ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
+                ctxEnt.strokeStyle = activeWorm.weapon === 'boxe' ? '#ff0000' : activeWorm.color;
+                ctxEnt.lineWidth = activeWorm.weapon === 'boxe' ? 5 : 3; ctxEnt.setLineDash([8, 8]); ctxEnt.stroke(); ctxEnt.setLineDash([]);
             }
 
             if (projectile) { projectile.update(); projectile.draw(); }
             
             for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update(); 
-                particles[i].draw();
+                particles[i].update(); particles[i].draw();
                 if (particles[i].life <= 0) particles.splice(i, 1);
             }
 
+            // Dessin des effets de poing
+            for (let i = punchEffects.length - 1; i >= 0; i--) {
+                let p = punchEffects[i];
+                ctxEnt.save();
+                ctxEnt.translate(p.x - camera.x, p.y - camera.y);
+                ctxEnt.rotate(p.angle);
+                ctxEnt.fillStyle = `rgba(255, 0, 0, ${p.life/p.maxLife})`;
+                ctxEnt.shadowBlur = 15; ctxEnt.shadowColor = '#ff0000';
+                ctxEnt.beginPath(); ctxEnt.roundRect(-20, -15, 40, 30, 10); ctxEnt.fill();
+                ctxEnt.restore();
+                
+                p.life--;
+                if (p.life <= 0) punchEffects.splice(i, 1);
+            }
+
             drawRadar();
-            
             requestAnimationFrame(gameLoop);
         }
     </script>
@@ -1034,42 +943,58 @@
             "../worms/index.html"
         ];
         
-        let globalStartX = 0, globalStartY = 0; 
-        let globalEndX = 0, globalEndY = 0; 
-        const swipeThreshold = 75;
+        let globalTouchStartX = 0, globalTouchStartY = 0; let globalTouchEndX = 0, globalTouchEndY = 0;
         
-        function navigateGames(direction) {
-            const currentPath = window.location.pathname; 
-            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
-            if (currentIndex === -1) return; 
-            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
-        }
-        
-        function handleGlobalSwipe() {
-            let diffX = globalEndX - globalStartX; 
-            let diffY = globalEndY - globalStartY;
-            if (Math.abs(diffX) > swipeThreshold && Math.abs(diffX) > Math.abs(diffY)) {
-                navigateGames(diffX > 0 ? -1 : 1); 
+        function handleSwipeGesture() {
+            const swipeThreshold = 75; 
+            let diffX = globalTouchEndX - globalTouchStartX; let diffY = globalTouchEndY - globalTouchStartY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX < -swipeThreshold) navigateGames(1);       
+                else if (diffX > swipeThreshold) navigateGames(-1);  
+            } else {
+                if (diffY < -swipeThreshold) navigateGames(1);       
+                else if (diffY > swipeThreshold) navigateGames(-1);  
             }
         }
-        
-        function initSwipe(e, x, y) { 
-            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; 
-            globalStartX = x; 
-            globalStartY = y; 
+
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => { let folderName = game.split('/')[1]; return currentPath.includes(folderName); });
+            if (currentIndex === -1) return;
+            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
+            window.location.href = gamesHubList[nextIndex];
         }
-        
-        function endSwipe(e, x, y) { 
-            if (e.target.closest('#game-wrapper') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input') return; 
-            globalEndX = x; 
-            globalEndY = y; 
-            handleGlobalSwipe(); 
+
+        function isExcludedElement(target) {
+            const tag = target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
+            if (target.closest('#game-wrapper') || target.closest('#weapon-panel')) return true;
+            return false;
         }
-        
-        document.addEventListener('touchstart', e => initSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true }); 
-        document.addEventListener('touchend', e => endSwipe(e, e.changedTouches[0].screenX, e.changedTouches[0].screenY), { passive: true });
-        document.addEventListener('mousedown', e => initSwipe(e, e.screenX, e.screenY)); 
-        document.addEventListener('mouseup', e => endSwipe(e, e.screenX, e.screenY));
+
+        document.addEventListener('touchstart', e => {
+            if (isExcludedElement(e.target)) return;
+            globalTouchStartX = e.changedTouches[0].screenX; globalTouchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            if (isExcludedElement(e.target)) return;
+            globalTouchEndX = e.changedTouches[0].screenX; globalTouchEndY = e.changedTouches[0].screenY;
+            handleSwipeGesture();
+        }, { passive: true });
+
+        let isMouseDown = false;
+        document.addEventListener('mousedown', e => {
+            if (isExcludedElement(e.target)) return;
+            isMouseDown = true; globalTouchStartX = e.screenX; globalTouchStartY = e.screenY;
+        });
+
+        document.addEventListener('mouseup', e => {
+            if (isExcludedElement(e.target) || !isMouseDown) { isMouseDown = false; return; }
+            isMouseDown = false; globalTouchEndX = e.screenX; globalTouchEndY = e.screenY;
+            handleSwipeGesture();
+        });
     </script>
 </body>
 </html>
