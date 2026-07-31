@@ -97,7 +97,6 @@
         <div id="ui-layer" class="hidden"></div>
         
         <div id="weapon-panel" class="hidden">
-            <!-- Ajout de event en paramètre pour bloquer la propagation du clic -->
             <button class="weapon-btn active" id="btn-wpn-bazooka" onmousedown="selectWeapon('bazooka', event)" ontouchstart="selectWeapon('bazooka', event)"><span class="w-icon">🚀</span>Bazooka</button>
             <button class="weapon-btn" id="btn-wpn-grenade" onmousedown="selectWeapon('grenade', event)" ontouchstart="selectWeapon('grenade', event)"><span class="w-icon">💣</span>Grenade</button>
             <button class="weapon-btn" id="btn-wpn-boxe" onmousedown="selectWeapon('boxe', event)" ontouchstart="selectWeapon('boxe', event)"><span class="w-icon">🥊</span>Gant Boxe</button>
@@ -201,28 +200,17 @@
 
         // --- GESTION DES ARMES ---
         function selectWeapon(wType, event) {
-            // Empêche la propagation du clic vers le canvas (pour ne pas déclencher un tir non voulu)
-            if (event) {
-                event.stopPropagation();
-                event.preventDefault();
-            }
-
+            if (event) { event.stopPropagation(); event.preventDefault(); }
             if (gameState !== 'playing') return;
             let activeWorm = worms[currentPlayer - 1];
             
-            // Sécurité Multijoueur
             if (gameMode === 'online' && currentPlayer !== myPlayerId) return;
             if (activeWorm && !activeWorm.isBot) {
                 activeWorm.weapon = wType;
-                
-                // Maj UI
                 document.querySelectorAll('.weapon-btn').forEach(btn => btn.classList.remove('active'));
                 document.getElementById(`btn-wpn-${wType}`).classList.add('active');
 
-                // Sync Network
-                if (conn && conn.open) {
-                    conn.send({ type: 'weapon_sync', wType: wType, pid: activeWorm.id });
-                }
+                if (conn && conn.open) conn.send({ type: 'weapon_sync', wType: wType, pid: activeWorm.id });
             }
         }
 
@@ -239,7 +227,6 @@
                 videoElement.play();
                 videoElement.style.opacity = 0.6;
             }, 500);
-            
             if (sprites['map' + id]) mapImage = sprites['map' + id];
         }
 
@@ -266,8 +253,7 @@
             
             peer.on('open', (id) => { 
                 document.getElementById('lobby-code-display').innerText = id; 
-                status.innerText = "En attente d'un adversaire..."; 
-                myPlayerId = 1; 
+                status.innerText = "En attente d'un adversaire..."; myPlayerId = 1; 
             });
             
             peer.on('connection', (connection) => { 
@@ -294,8 +280,7 @@
             peer.on('open', () => {
                 conn = peer.connect(code, { reliable: true });
                 conn.on('open', () => { 
-                    setupConnection(); 
-                    myPlayerId = 2; 
+                    setupConnection(); myPlayerId = 2; 
                     status.style.color = "var(--sys)"; status.innerText = "Connecté !"; 
                     setTimeout(() => startGame('online'), 1000); 
                 });
@@ -330,12 +315,16 @@
                 }
 
                 if (data.type === 'fire') { 
+                    let w = worms.find(worm => worm.id === data.pid);
+                    if (w) w.triggerAttackAnimation(data.wType);
                     projectile = new Projectile(data.px, data.py, data.vx, data.vy, data.wType); 
                     gameState = 'flying'; retreatFrames = 60; 
                 }
 
                 if (data.type === 'punch') {
-                    executePunch(data.px, data.py, data.angle, data.color, false);
+                    let w = worms.find(worm => worm.id === data.pid);
+                    if (w) w.triggerAttackAnimation('boxe');
+                    executePunch(w, data.px, data.py, data.angle, data.color, false);
                 }
             });
         }
@@ -444,14 +433,44 @@
                 this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
-                this.isAiming = false; this.aimDy = 0;
                 
-                this.weapon = 'bazooka'; // bazooka, grenade, boxe
+                this.weapon = 'bazooka';
                 this.aiInput = { left: false, right: false, space: false };
+
+                // Variables de gestion d'animation d'attaque
+                this.isAiming = false; 
+                this.aimDy = 0;
+                this.isAttacking = false;
+                this.attackFrame = 1;
+                this.attackTimer = 0;
+                this.lastWeaponUsed = 'bazooka';
+                this.lastAimTop = false;
+            }
+
+            // Déclenche l'animation de tir fluide
+            triggerAttackAnimation(weaponUsed) {
+                this.isAttacking = true;
+                this.attackFrame = 2; // On commence directement à la frame de frappe
+                this.attackTimer = 0;
+                this.lastWeaponUsed = weaponUsed;
             }
 
             update() {
                 if (this.isDead) return;
+
+                // Gestion de l'animation d'attaque prioritaire
+                if (this.isAttacking) {
+                    this.attackTimer++;
+                    if (this.attackTimer > 6) { // Durée de chaque frame (environ 100ms)
+                        this.attackFrame++;
+                        this.attackTimer = 0;
+                        if (this.attackFrame > 3) {
+                            this.isAttacking = false; // Fin de l'animation
+                            this.attackFrame = 1;
+                        }
+                    }
+                }
+
                 let isMyTurn = (currentPlayer === this.id);
                 if (gameMode === 'online' && currentPlayer !== myPlayerId) isMyTurn = false;
                 let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0));
@@ -503,17 +522,28 @@
                 let aiming = (isMe && isDragging) || (!isMe && this.isAiming) || (this.isAiming && this.isBot);
                 let currentAimDy = isMe && !this.isBot ? (dragStartY - dragCurrentY) : this.aimDy;
 
-                if (aiming && this.state !== 'air' && this.state !== 'walk') {
+                // 1. Priorité absolue à l'animation de tir en cours
+                if (this.isAttacking) {
+                    if (this.lastWeaponUsed === 'bazooka') {
+                        spriteName += `atq${this.lastAimTop ? 'top' : 'bot'}_${this.facing}`;
+                    } else if (this.lastWeaponUsed === 'grenade') {
+                        spriteName += `gre${this.facing === 'r' ? 'right' : 'left'}${this.attackFrame}`;
+                    } else if (this.lastWeaponUsed === 'boxe') {
+                        spriteName += `box${this.facing === 'r' ? 'right' : 'left'}${this.attackFrame}`;
+                    }
+                } 
+                // 2. Si on est en train de viser (Maintien du clic/tactile) => Pose de préparation (Frame 1)
+                else if (aiming && this.state !== 'air' && this.state !== 'walk') {
                     if (this.weapon === 'bazooka') {
-                        spriteName += `atq${currentAimDy < -20 ? 'top' : 'bot'}_${this.facing}`;
+                        this.lastAimTop = currentAimDy < -20; // On sauvegarde pour l'anim de tir
+                        spriteName += `atq${this.lastAimTop ? 'top' : 'bot'}_${this.facing}`;
                     } else if (this.weapon === 'grenade') {
-                        let cycle = (Math.floor(Date.now() / 150) % 3) + 1; // Boucle de frame dynamique 1-3
-                        spriteName += `gre${this.facing === 'r' ? 'right' : 'left'}${cycle}`;
+                        spriteName += `gre${this.facing === 'r' ? 'right' : 'left'}1`; // Préparation Grenade
                     } else if (this.weapon === 'boxe') {
-                        let cycle = (Math.floor(Date.now() / 150) % 3) + 1;
-                        spriteName += `box${this.facing === 'r' ? 'right' : 'left'}${cycle}`;
+                        spriteName += `box${this.facing === 'r' ? 'right' : 'left'}1`; // Préparation Boxe
                     }
                 }
+                // 3. Déplacements classiques
                 else if (this.state === 'air' || this.state === 'landed') spriteName += `jump_${this.facing}${this.animFrame}`;
                 else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
                 else spriteName += `idle_${this.facing}`;
@@ -521,7 +551,7 @@
                 let renderX = this.x - camera.x; let renderY = this.y - camera.y;
                 let img = sprites[spriteName];
                 
-                // Rendu prioritaire des vrais sprites, ou carré de secours avec emoji 💣 si manquant
+                // Rendu
                 if (img && img.complete && img.naturalWidth > 0) {
                     ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
                 } else { 
@@ -553,7 +583,6 @@
                 if (!this.active) return;
                 this.vy += GRAVITY; 
                 
-                // Sub-stepping pour la physique de la grenade (meilleur rebond)
                 let steps = this.type === 'grenade' ? 3 : 1;
                 for(let i=0; i<steps; i++) {
                     let dx = this.vx / steps; let dy = this.vy / steps;
@@ -597,7 +626,6 @@
                         updateUI();
                     }
                 });
-                
                 setTimeout(() => { retreatFrames = 0; nextTurn(); }, 1500);
             }
             draw() {
@@ -765,8 +793,11 @@
                         clearInterval(aimInterval); ai.isAiming = false;
                         if (ai.isDead || target.isDead || gameState !== 'playing') return;
 
+                        // Lance l'animation rapide d'attaque
+                        ai.triggerAttackAnimation(ai.weapon);
+
                         if (ai.weapon === 'boxe') {
-                            executePunch(ai.x, ai.y - 15, angle, ai.color, true);
+                            executePunch(ai, ai.x, ai.y - 15, angle, ai.color, true);
                         } else {
                             projectile = new Projectile(ai.x, ai.y - 15, Math.cos(angle) * power, Math.sin(angle) * power, ai.weapon);
                             gameState = 'flying'; retreatFrames = 60; 
@@ -777,7 +808,7 @@
         }
 
         // --- GESTION DU COUP DE POING ---
-        function executePunch(px, py, angle, color, isLocalAction) {
+        function executePunch(worm, px, py, angle, color, isLocalAction) {
             punchEffects.push({ x: px + Math.cos(angle)*30, y: py + Math.sin(angle)*30, life: 15, maxLife: 15, color: '#ff0000', angle: angle });
             
             if (isLocalAction || gameMode !== 'online' || myPlayerId === 1) {
@@ -797,7 +828,7 @@
 
             gameState = 'flying'; retreatFrames = 40; 
             if (isLocalAction && conn && conn.open) {
-                conn.send({ type: 'punch', px: px, py: py, angle: angle, color: color });
+                conn.send({ type: 'punch', px: px, py: py, angle: angle, color: color, pid: worm.id });
             }
             setTimeout(() => { retreatFrames = 0; nextTurn(); }, 1500);
         }
@@ -826,10 +857,8 @@
         const gameWrapper = document.getElementById('game-wrapper');
 
         function startAim(e) {
-            // --- FIX : On ignore purement et simplement les clics sur l'interface ---
-            if (e.target.closest('#weapon-panel') || e.target.closest('.btn') || e.target.closest('.hub-link')) {
-                return; 
-            }
+            // Empêche de cibler si on clique sur l'UI (le panneau d'arme par ex)
+            if (e.target.closest('#weapon-panel') || e.target.closest('.btn') || e.target.closest('.hub-link')) return; 
 
             let activeWorm = worms[currentPlayer - 1];
             if (gameState !== 'playing' || activeWorm.isBot) return; 
@@ -867,13 +896,16 @@
             if (power > 2) {
                 document.getElementById('weapon-panel').classList.add('hidden'); 
                 
+                // Déclenche l'animation de tir 
+                activeWorm.triggerAttackAnimation(activeWorm.weapon);
+
                 if (activeWorm.weapon === 'boxe') {
-                    executePunch(activeWorm.x, activeWorm.y - 15, angle, activeWorm.color, true);
+                    executePunch(activeWorm, activeWorm.x, activeWorm.y - 15, angle, activeWorm.color, true);
                 } else {
                     let vx = Math.cos(angle) * power; let vy = Math.sin(angle) * power;
                     projectile = new Projectile(activeWorm.x, activeWorm.y - 15, vx, vy, activeWorm.weapon);
                     gameState = 'flying'; retreatFrames = 60; 
-                    if (conn && conn.open) conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy, wType: activeWorm.weapon });
+                    if (conn && conn.open) conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy, wType: activeWorm.weapon, pid: activeWorm.id });
                 }
             }
         }
@@ -925,6 +957,7 @@
 
             worms.forEach(w => { w.update(); w.draw(); });
 
+            // Trait de visée
             if (gameState === 'playing' && isDragging) {
                 let activeWorm = worms[currentPlayer - 1];
                 let dx = dragStartX - dragCurrentX; let dy = dragStartY - dragCurrentY;
