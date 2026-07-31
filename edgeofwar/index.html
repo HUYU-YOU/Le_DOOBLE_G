@@ -5,62 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Edge of War - Tactical Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0e17; --panel: rgba(18, 25, 43, 0.9); --primary: #0088ff; --enemy: #ff2a2a; --gold: #ffd700; --xp: #b82aff; --spell: #00ffcc;}
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; touch-action: manipulation;}
-        h1 { margin-top: 40px; color: #fff; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px var(--primary); text-align: center;}
+        :root { --bg: #050811; --panel: rgba(10, 15, 28, 0.85); --primary: #00f0ff; --enemy: #ff0055; --gold: #ffd700; --xp: #b82aff; --spell: #00ffcc;}
+        body { font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; touch-action: manipulation; overflow-x: hidden;}
+        h1 { margin-top: 30px; color: #fff; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 15px var(--primary); font-size: 2.5em; text-align: center;}
         
         .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
-        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); border-color: #fff; transform: scale(1.05); }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--primary); box-shadow: 0 0 15px var(--primary); }
 
-        #game-container { position: relative; background: var(--panel); padding: 25px; border-radius: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 900px; border: 1px solid rgba(0, 136, 255, 0.2); backdrop-filter: blur(10px); overflow: hidden; margin-top: 10px; box-sizing: border-box;}
+        #game-container { position: relative; background: var(--panel); padding: 20px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); width: 100%; max-width: 950px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;}
         
         /* Overlays Menus */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 14, 23, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(5px); }
-        .btn-main { background: var(--primary); color: white; border: none; padding: 15px 35px; font-size: 1.2em; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 136, 255, 0.4); margin: 10px; transition: 0.2s; width: 80%; max-width: 300px;}
-        .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 136, 255, 0.6); }
-        input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--primary); font-weight: bold; text-align: center; margin: 10px; background: #111; color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; box-sizing: border-box;}
-        input.net-input:focus { box-shadow: inset 0 0 10px var(--primary); }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 17, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(8px); border-radius: 15px; }
+        .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--primary); padding: 15px 35px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 320px; position: relative; overflow: hidden;}
+        .btn-main:hover { background: var(--primary); color: #000; box-shadow: 0 0 25px var(--primary); transform: translateY(-3px); }
+        .btn-main.red { border-color: var(--enemy); box-shadow: 0 0 15px rgba(255, 0, 85, 0.2); }
+        .btn-main.red:hover { background: var(--enemy); box-shadow: 0 0 25px var(--enemy); }
+        .btn-main.purple { border-color: var(--xp); box-shadow: 0 0 15px rgba(184, 42, 255, 0.2); }
+        .btn-main.purple:hover { background: var(--xp); box-shadow: 0 0 25px var(--xp); }
+        
+        input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--primary); text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; font-family: 'Rajdhani';}
+        input.net-input:focus { box-shadow: 0 0 15px var(--primary); border-color: #fff;}
 
-        .hud { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
-        .base-stats { display: flex; flex-direction: column; width: 32%; }
-        .base-name { font-weight: bold; font-size: 1.1em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;}
-        .player-name { color: var(--primary); text-shadow: 0 0 10px rgba(0, 136, 255, 0.5); }
-        .enemy-name { color: var(--enemy); text-align: right; text-shadow: 0 0 10px rgba(255, 42, 42, 0.5); }
-        .health-bar-container { width: 100%; height: 12px; background: rgba(0,0,0,0.6); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-        .health-bar { height: 100%; transition: width 0.3s ease; }
-        #p1-hp-bar { background: linear-gradient(90deg, #0055ff, var(--primary)); width: 100%; box-shadow: 0 0 10px var(--primary); }
-        #p2-hp-bar { background: linear-gradient(90deg, #aa0000, var(--enemy)); width: 100%; float: right; box-shadow: 0 0 10px var(--enemy); }
-        .economy { display: flex; justify-content: space-evenly; width: 35%; align-items: center;}
-        .gold { font-size: 2em; color: var(--gold); font-weight: bold; text-shadow: 0 0 15px rgba(255, 215, 0, 0.5); margin-bottom: 5px;}
-        .xp-container { margin-top: 8px; background: rgba(0,0,0,0.6); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);}
-        .btn-evolve { display: none; width: 100%; background: var(--xp); color: white; border: none; padding: 10px; margin-top: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 15px var(--xp); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 15px var(--xp); } 50% { transform: scale(1.03); box-shadow: 0 0 25px var(--xp); } 100% { transform: scale(1); box-shadow: 0 0 15px var(--xp); } }
-        canvas { border-radius: 8px; width: 100%; box-shadow: inset 0 0 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); background: #111; margin-bottom: 15px; }
+        /* HUD */
+        .hud { display: flex; justify-content: space-between; align-items: flex-end; background: rgba(0,0,0,0.5); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
+        .base-stats { display: flex; flex-direction: column; width: 30%; position: relative;}
+        .base-name { font-weight: bold; font-size: 1.3em; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
+        .player-name { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+        .enemy-name { color: var(--enemy); text-align: right; text-shadow: 0 0 10px var(--enemy); }
         
+        .health-bar-container { width: 100%; height: 15px; background: rgba(0,0,0,0.8); border-radius: 4px; overflow: hidden; border: 1px solid #333; }
+        .health-bar { height: 100%; transition: width 0.2s ease; }
+        #p1-hp-bar { background: linear-gradient(90deg, #0055ff, var(--primary)); width: 100%; box-shadow: 0 0 15px var(--primary); }
+        #p2-hp-bar { background: linear-gradient(90deg, #880000, var(--enemy)); width: 100%; float: right; box-shadow: 0 0 15px var(--enemy); }
+        
+        .xp-container { margin-top: 6px; background: rgba(0,0,0,0.8); height: 8px; border-radius: 2px; overflow: hidden; border: 1px solid #333;}
+        .btn-evolve { position: absolute; top: -15px; right: 0; display: none; background: var(--xp); color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 15px var(--xp); animation: pulse 1s infinite; z-index: 5;}
+        #btn-evolve-p2 { left: 0; right: auto; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        .economy { display: flex; justify-content: center; gap: 30px; width: 40%; align-items: center;}
+        .eco-box { text-align: center; background: rgba(20, 20, 30, 0.8); padding: 5px 20px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); }
+        .gold { font-size: 2.2em; color: var(--gold); font-weight: bold; text-shadow: 0 0 15px rgba(255, 215, 0, 0.6); line-height: 1;}
+        .income { font-size: 0.9em; color: #aaa; margin-top: 2px;}
+
+        canvas { border-radius: 10px; width: 100%; box-shadow: 0 0 20px #000, inset 0 0 30px rgba(0, 240, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); background: #03050a; }
+        
+        /* CONTROLS (UNITES, SORTS, ECO) */
         .controls-container { display: flex; gap: 15px; width: 100%; justify-content: center; }
-        .team-controls { flex: 1; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        .team-controls h3 { text-align: center; margin-top: 0; font-size: 0.9em; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;}
-        .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .spells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px;}
+        .team-controls { flex: 1; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 10px;}
+        .ctrl-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
+        .ctrl-header h3 { margin: 0; font-size: 1.1em; color: #ccc; text-transform: uppercase; letter-spacing: 1px;}
         
-        .unit-btn { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; backdrop-filter: blur(5px); font-size: 0.9em;}
-        .unit-btn img { height: 35px; object-fit: contain; margin-bottom: 5px; }
-        .unit-btn:hover:not(:disabled) { background: rgba(0, 136, 255, 0.15); border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 136, 255, 0.2); }
-        .unit-btn:disabled { opacity: 0.4; cursor: not-allowed; background: rgba(0,0,0,0.3); filter: grayscale(100%); }
+        .btn-upgrade-eco { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s;}
+        .btn-upgrade-eco:hover:not(:disabled) { background: var(--gold); color: #000; box-shadow: 0 0 15px var(--gold); }
+        .btn-upgrade-eco:disabled { border-color: #555; color: #555; cursor: not-allowed; }
+
+        .spells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .controls { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
         
-        .spell-btn { background: rgba(0, 255, 204, 0.1); border: 1px solid var(--spell); color: white; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: bold; position: relative; overflow: hidden; font-size: 0.9em;}
-        .spell-btn:hover:not(:disabled) { background: rgba(0, 255, 204, 0.3); box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);}
-        .spell-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #555;}
-        .cooldown-overlay { position: absolute; bottom: 0; left: 0; height: 100%; width: 0%; background: rgba(0,0,0,0.6); transition: width 0.1s linear; pointer-events: none;}
-        
-        .unit-cost { color: var(--gold); font-size: 1.1em; text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
-        .unit-locked { position: absolute; font-size: 1.2em; color: var(--enemy); transform: rotate(-20deg); opacity: 0.9; top: 25%; font-weight: 900; background: rgba(0,0,0,0.8); padding: 2px 10px; border-radius: 5px; border: 1px solid var(--enemy); text-shadow: 0 0 5px var(--enemy); }
+        .unit-btn { background: linear-gradient(180deg, rgba(30,40,60,0.8), rgba(10,15,25,0.9)); color: #fff; border: 1px solid #444; padding: 8px 5px; border-radius: 8px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; font-size: 0.9em;}
+        .unit-btn:hover:not(:disabled) { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 240, 255, 0.3); background: rgba(0, 240, 255, 0.1);}
+        .unit-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%); }
+        .unit-icon { font-size: 1.8em; margin-bottom: 2px; }
+        .unit-cost { color: var(--gold); font-size: 1.2em; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+        .unit-locked { position: absolute; font-size: 1.1em; color: var(--enemy); transform: rotate(-25deg); top: 30%; font-weight: bold; background: rgba(0,0,0,0.9); padding: 2px 8px; border: 1px solid var(--enemy); box-shadow: 0 0 10px var(--enemy); pointer-events: none;}
+
+        .spell-btn { background: rgba(0, 255, 204, 0.05); border: 1px solid var(--spell); color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: 'Rajdhani'; position: relative; overflow: hidden; font-size: 1em; text-transform: uppercase;}
+        .spell-btn:hover:not(:disabled) { background: rgba(0, 255, 204, 0.2); box-shadow: 0 0 15px var(--spell);}
+        .spell-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #444; color: #888;}
+        .cooldown-overlay { position: absolute; bottom: 0; left: 0; height: 100%; width: 0%; background: rgba(0, 240, 255, 0.3); transition: width 0.1s linear; pointer-events: none;}
 
         @media (max-width: 800px) {
-            .controls { grid-template-columns: repeat(2, 1fr); }
-            .team-controls h3 span { display: none; } /* Cache les touches claviers sur mobile */
-            .gold { font-size: 1.5em; }
+            .controls { grid-template-columns: repeat(3, 1fr); }
+            .economy { width: 100%; position: absolute; top: 10px; left: 0; gap: 10px;}
+            .hud { padding-top: 50px; }
         }
     </style>
 </head>
@@ -69,128 +89,106 @@
     <h1>Edge of War</h1>
     
     <div id="game-container">
-        
-        <!-- MENU PRINCIPAL -->
+        <!-- MENUS -->
         <div class="overlay" id="main-menu">
-            <h1 style="font-size: 3em; margin-bottom: 40px; color: var(--primary);">SELECT MODE</h1>
-            <button class="btn-main" onclick="startSolo('solo')">Mode Solo </button>
-            <button class="btn-main" onclick="startSolo('hardcore')" style="background:var(--enemy);">Mode Hardcore </button>
-            <button class="btn-main" onclick="startLocal()" style="background:var(--xp);">Mode Local (2 Joueurs)</button>
-            <button class="btn-main" onclick="showNetworkMenu()" style="background:#555;">Mode Réseau PVP </button>
+            <h1 style="font-size: 3.5em; margin-bottom: 40px; text-shadow: 0 0 20px var(--primary);">SYSTEM OPÉRATIONNEL</h1>
+            <button class="btn-main" onclick="startSolo('solo')">Campagne Solo (IA)</button>
+            <button class="btn-main red" onclick="startSolo('hardcore')">Survie Extrême</button>
+            <button class="btn-main purple" onclick="startLocal()">Versus Local (Même PC)</button>
+            <button class="btn-main" onclick="showNetworkMenu()" style="border-color:#aaa; color:#ccc;">Guerre Réseau (PVP)</button>
         </div>
 
-        <!-- MENU RÉSEAU (FIABILISÉ) -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <h2 style="color: var(--primary); font-size: 2.5em; margin-bottom: 10px;">Lobby Réseau</h2>
+            <h2 style="color: var(--primary); font-size: 2.5em; margin-bottom: 20px;">LIAISON SATELLITE</h2>
             
-            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--primary); width: 80%; max-width: 350px; text-align: center; margin-bottom: 20px;">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">CRÉER UNE PARTIE</h3>
-                <button class="btn-main" onclick="hostGame()" style="width: 100%; margin: 10px 0;">Héberger (Base Ouest)</button>
-                <p style="font-size: 1em; color: #aaa; margin-bottom: 5px;">Code de votre salon :</p>
-                <div id="my-id" style="color:var(--primary); font-weight:bold; font-size:2.5em; letter-spacing: 3px; min-height: 40px; text-shadow: 0 0 10px var(--primary);">...</div>
+            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--primary); width: 85%; max-width: 380px; text-align: center; margin-bottom: 20px;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.3em;">HÉBERGER UNE PARTIE (OUEST)</h3>
+                <button class="btn-main" onclick="hostGame()" style="width: 100%; margin: 10px 0; padding: 12px;">Générer Code Accès</button>
+                <div id="my-id" style="color:var(--primary); font-weight:bold; font-size:2.8em; letter-spacing: 4px; min-height: 40px; text-shadow: 0 0 15px var(--primary); margin-top: 10px;">...</div>
             </div>
 
-            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--enemy); width: 80%; max-width: 350px; text-align: center;">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">REJOINDRE UNE PARTIE</h3>
-                <input type="text" id="join-id" class="net-input" placeholder="Ex: EOW1234" style="width: 100%; margin: 10px 0;">
-                <button class="btn-main" onclick="joinGame()" style="background:var(--enemy); width: 100%; margin: 10px 0;">Rejoindre (Base Est)</button>
+            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--enemy); width: 85%; max-width: 380px; text-align: center;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.3em;">REJOINDRE LE FRONT (EST)</h3>
+                <input type="text" id="join-id" class="net-input" placeholder="CODE TRANSMISSION">
+                <button class="btn-main red" onclick="joinGame()" style="width: 100%; margin: 10px 0; padding: 12px;">Infiltration</button>
             </div>
             
-            <p id="status-text" style="color: #aaa; margin-top: 20px; font-weight:bold; font-size: 1.2em;"></p>
-            <button class="btn-main" style="background:transparent; border: 1px solid #555; color: #aaa; font-size: 0.9em; margin-top: 10px;" onclick="location.reload()">Retour au menu</button>
+            <p id="status-text" style="color: #ccc; margin-top: 20px; font-weight:bold; font-size: 1.3em;"></p>
+            <button class="btn-main" style="border: none; box-shadow:none; color: #888; background:transparent;" onclick="location.reload()">Annuler</button>
         </div>
 
-        <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over" style="display: none;">
-            <h2 id="end-message" style="font-size: 3.5em; margin-bottom: 15px; text-transform: uppercase; text-align: center;"></h2>
-            <button class="btn-main" onclick="location.reload()">Nouvelle Bataille</button><br>
+            <h2 id="end-message" style="font-size: 4em; margin-bottom: 10px; text-transform: uppercase; text-align: center;"></h2>
+            <p id="end-stats" style="font-size: 1.5em; color: #aaa; margin-bottom: 30px;"></p>
+            <button class="btn-main" onclick="location.reload()">Nouvelle Bataille</button>
         </div>
 
-        <!-- HUD EN JEU -->
+        <!-- HUD -->
         <div class="hud" id="game-hud" style="visibility: hidden;">
             <div class="base-stats">
-                <div class="base-name player-name">Base Ouest (Tech <span id="p1-age">1</span>)</div>
+                <button id="btn-evolve-p1" class="btn-evolve" onclick="sendAction(1, 'evolve', null)">UPGRADE TECH !</button>
+                <div class="base-name player-name">BASE OUEST (T<span id="p1-age">1</span>)</div>
                 <div class="health-bar-container"><div class="health-bar" id="p1-hp-bar"></div></div>
-                <div style="font-size: 0.75em; margin-top: 6px; color: #a9a9b3;">XP : <span id="p1-xp-text">0/100</span></div>
-                <div class="xp-container"><div id="p1-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
-                <button id="btn-evolve-p1" class="btn-evolve" onclick="sendAction(1, 'evolve', null)">Upgrade Tech !</button>
+                <div class="xp-container"><div id="p1-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
             </div>
             
             <div class="economy">
-                <div style="text-align:center;" id="p1-gold-container">
-                    <div style="font-size: 0.9em; color: #aaa; text-transform:uppercase;" id="p1-gold-label">Vos Ressources</div>
+                <div class="eco-box" id="p1-gold-container">
                     <div class="gold"><span id="p1-gold">50</span> 💰</div>
+                    <div class="income" id="p1-income-txt">+3/s (J1)</div>
                 </div>
-                <div style="text-align:center; display:none;" id="p2-gold-container">
-                    <div style="font-size: 0.9em; color: #aaa; text-transform:uppercase;">Or J2</div>
-                    <div class="gold"><span id="p2-gold">50</span> 💰</div>
+                <div class="eco-box" id="p2-gold-container" style="display:none; border-color: rgba(255,0,85,0.3);">
+                    <div class="gold" style="color:#ff88aa; text-shadow: 0 0 10px #ff0055;"><span id="p2-gold">50</span> 💰</div>
+                    <div class="income" id="p2-income-txt">+3/s (J2)</div>
                 </div>
             </div>
             
             <div class="base-stats" style="text-align: right;">
-                <div class="base-name enemy-name">Base Est (Tech <span id="p2-age">1</span>)</div>
+                <button id="btn-evolve-p2" class="btn-evolve" onclick="sendAction(2, 'evolve', null)">UPGRADE TECH !</button>
+                <div class="base-name enemy-name">BASE EST (T<span id="p2-age">1</span>)</div>
                 <div class="health-bar-container"><div class="health-bar" id="p2-hp-bar"></div></div>
-                <div id="p2-xp-info" style="font-size: 0.75em; margin-top: 6px; color: #a9a9b3; display:none;">XP : <span id="p2-xp-text">0/100</span></div>
-                <div class="xp-container" id="p2-xp-container" style="display:none;"><div id="p2-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
-                <button id="btn-evolve-p2" class="btn-evolve" onclick="sendAction(2, 'evolve', null)">Upgrade Tech !</button>
+                <div class="xp-container" id="p2-xp-container"><div id="p2-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
             </div>
         </div>
 
-        <canvas id="gameCanvas" width="800" height="250"></canvas>
+        <canvas id="gameCanvas" width="900" height="300"></canvas>
         
-        <div class="controls-container" id="deployment-controls">
-            <!-- Rempli dynamiquement par JS -->
-        </div>
+        <div class="controls-container" id="deployment-controls"></div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas'); 
         const ctx = canvas.getContext('2d');
         
-        // --- CHARGEMENT IMAGES ---
-        const imgs = {};
-        const imgFiles = {
-            'map1': 'img/map1.png', 'map2': 'img/map2.png',
-            'fantassin_est': 'img/fantassin_est.png', 'fantassin_ouest': 'img/fantassin_ouest.png',
-            'tirreur_est': 'img/tirreur_est.png', 'tirreur_ouest': 'img/tirreur_ouest.png',
-            'blindé_est': 'img/blindé_est.png', 'blindé_ouest': 'img/blindé_ouest.png',
-            'sniper_est': 'img/sniper_est.png', 'sniper_ouest': 'img/sniper_ouest.png'
-        };
-        Object.keys(imgFiles).forEach(k => { 
-            imgs[k] = new Image(); 
-            imgs[k].src = imgFiles[k]; 
-            // Fallback pour ne pas faire crasher le canvas si une image manque
-            imgs[k].onerror = function() { 
-                this.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; 
-            };
-        });
-
         // --- RESEAU & ETAT ---
-        let peer = null;
-        let conn = null, gameMode = null, myTeam = 1, gameActive = false, timeElapsed = 0;
+        let peer = null, conn = null, gameMode = null, myTeam = 1, gameActive = false, timeElapsed = 0;
+        let screenShake = 0;
+        let globalOffset = 0; // Pour animer la grille
         
+        // Modèle de données enrichi
         let gameState = {
-            p1: { gold: 50, xp: 0, age: 1, hp: 500, maxHp: 500, spells: { 1: 0, 2: 0 } },
-            p2: { gold: 50, xp: 0, age: 1, hp: 500, maxHp: 500, spells: { 1: 0, 2: 0 } }, 
+            p1: { gold: 75, xp: 0, age: 1, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 },
+            p2: { gold: 75, xp: 0, age: 1, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 }, 
             units: [],
-            effects: [] 
+            effects: [] // gère les lasers, explosions, floating texts
         };
 
-        const xpToEvolve = 100;
+        const xpToEvolve = [100, 250, 9999]; // XP requise pour T2, T3
         const bases = { 
-            1: { x: -20, w: 90, h: 120, spawnX: 70, dir: 1 }, 
-            2: { x: 730, w: 90, h: 120, spawnX: 730, dir: -1 } 
+            1: { x: -30, w: 100, h: 160, spawnX: 70, dir: 1, color: '#00f0ff' }, 
+            2: { x: 830, w: 100, h: 160, spawnX: 830, dir: -1, color: '#ff0055' } 
         };
+        const floorY = 250;
         
-        // STATS UNIFIEES + AJOUT DU BOSS
+        // STATS UNITES REEQUILIBREES
         const unitStats = {
-            fantassin: { cost: 15, hp: 45, dmg: 6, spd: 0.6, rng: 15, cd: 50, skin: 'fantassin', w: 25, h: 40, type: 'melee', rew: 10, xp: 10 }, 
-            tireur: { cost: 35, hp: 30, dmg: 12, spd: 0.75, rng: 90, cd: 60, skin: 'tirreur', w: 20, h: 35, type: 'ranged', rew: 15, xp: 15 },
-            blindé: { cost: 100, hp: 180, dmg: 25, spd: 0.4, rng: 20, cd: 40, skin: 'blindé', w: 35, h: 50, type: 'melee', rew: 25, xp: 25 }, 
-            sniper: { cost: 75, hp: 50, dmg: 20, spd: 0.65, rng: 160, cd: 45, skin: 'sniper', w: 25, h: 45, type: 'ranged', rew: 20, xp: 20 },
-            boss: { cost: 500, hp: 1800, dmg: 50, spd: 0.3, rng: 30, cd: 50, skin: 'blindé', w: 70, h: 100, type: 'melee', rew: 200, xp: 100 }
+            drone:   { cost: 15, hp: 40, dmg: 5, spd: 1.2, rng: 20, cd: 40, w: 20, h: 25, type: 'melee', rew: 8, xp: 10, icon: '🛸' }, 
+            blaster: { cost: 30, hp: 35, dmg: 10, spd: 0.8, rng: 120, cd: 55, w: 20, h: 35, type: 'ranged', rew: 15, xp: 15, icon: '🔫' },
+            mech:    { cost: 100, hp: 250, dmg: 30, spd: 0.5, rng: 30, cd: 60, w: 40, h: 55, type: 'melee', rew: 30, xp: 30, icon: '🤖' }, 
+            sniper:  { cost: 80, hp: 45, dmg: 40, spd: 0.7, rng: 250, cd: 90, w: 25, h: 45, type: 'ranged', rew: 25, xp: 25, icon: '🔭' },
+            titan:   { cost: 400, hp: 1200, dmg: 80, spd: 0.4, rng: 45, cd: 70, w: 80, h: 110, type: 'melee', rew: 150, xp: 100, icon: '💀' }
         };
-        const spellStats = { 1: { cost: 40, cdMax: 300 }, 2: { cost: 60, cdMax: 400 } };
+        const spellStats = { 1: { cost: 50, cdMax: 300 }, 2: { cost: 80, cdMax: 400 } };
 
         class Unit {
             constructor(team, type) {
@@ -199,27 +197,18 @@
                 this.team = team; this.type = type;
                 this.w = s.w; this.h = s.h; 
                 this.x = team === 1 ? bases[1].spawnX : bases[2].spawnX - this.w; 
-                this.y = 215 - this.h; 
-                
+                this.y = floorY - this.h; 
                 this.speed = s.spd * bases[team].dir; 
                 this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; 
                 this.cdMax = s.cd; this.cd = 0; 
-                this.skin = s.skin; this.rew = s.rew; this.xp = s.xp;
+                this.rew = s.rew; this.xp = s.xp;
                 this.action = 'walk'; this.animCycle = 0;
             }
         }
 
         // --- GESTION MENUS & PEERJS ---
-        function startSolo(mode) {
-            gameMode = mode; myTeam = 1; 
-            startGame();
-        }
-
-        function startLocal() {
-            gameMode = 'local'; myTeam = 1; 
-            startGame();
-        }
-
+        function startSolo(mode) { gameMode = mode; myTeam = 1; startGame(); }
+        function startLocal() { gameMode = 'local'; myTeam = 1; startGame(); }
         function showNetworkMenu() {
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('network-menu').style.display = 'flex';
@@ -227,163 +216,90 @@
 
         function hostGame() {
             let status = document.getElementById('status-text');
-            status.style.color = "var(--primary)";
-            status.innerText = "Création du serveur...";
-            
+            status.style.color = "var(--primary)"; status.innerText = "Génération du canal sécurisé..."; 
             let code = 'EOW' + Math.floor(1000 + Math.random() * 9000);
-            
-            if (peer) peer.destroy();
-            peer = new Peer(code);
-            
+            if (peer) peer.destroy(); peer = new Peer(code);
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = id;
-                try {
-                    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e => console.warn(e));
-                } catch(e) {}
-                
-                status.style.color = "var(--spell)";
-                status.innerText = "Code copié ! En attente d'un adversaire...";
+                try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e=>{}); } catch(e) {}
+                status.style.color = "var(--spell)"; status.innerText = "Code copié ! En attente d'un adversaire...";
                 gameMode = 'host'; myTeam = 1;
             });
-
             peer.on('connection', connection => {
                 conn = connection;
-                conn.on('open', () => {
-                    status.innerText = "Adversaire connecté ! Déploiement en cours...";
-                    setTimeout(startGame, 1000);
-                });
+                conn.on('open', () => { status.innerText = "Adversaire détecté ! Lancement..."; setTimeout(startGame, 1000); });
                 setupConnection();
             });
-            
-            peer.on('error', err => {
-                status.style.color = "var(--enemy)";
-                status.innerText = "Erreur de création : " + err.type;
-            });
+            peer.on('error', err => { status.style.color = "var(--enemy)"; status.innerText = "Erreur : " + err.type; });
         }
 
         function joinGame() {
             const hostId = document.getElementById('join-id').value.trim().toUpperCase();
             if(!hostId) return;
-            
             let status = document.getElementById('status-text');
-            status.style.color = "var(--primary)";
-            status.innerText = "Connexion à la base adverse...";
-            
-            if (peer) peer.destroy();
-            peer = new Peer();
-            
+            status.style.color = "var(--enemy)"; status.innerText = "Connexion à la base ennemie...";
+            if (peer) peer.destroy(); peer = new Peer();
             peer.on('open', () => {
-                conn = peer.connect(hostId, { reliable: true });
-                gameMode = 'client'; myTeam = 2;
-                
-                conn.on('open', () => {
-                    status.style.color = "var(--spell)";
-                    status.innerText = "Connecté ! Déploiement en cours...";
-                    setTimeout(startGame, 1000);
-                });
+                conn = peer.connect(hostId, { reliable: true }); gameMode = 'client'; myTeam = 2;
+                conn.on('open', () => { status.style.color = "var(--spell)"; status.innerText = "Connecté ! Déploiement..."; setTimeout(startGame, 1000); });
                 setupConnection();
             });
-            
-            peer.on('error', err => {
-                status.style.color = "var(--enemy)";
-                status.innerText = err.type === 'peer-unavailable' ? "Le salon n'existe pas !" : "Erreur réseau.";
-            });
+            peer.on('error', err => { status.style.color = "var(--enemy)"; status.innerText = err.type === 'peer-unavailable' ? "Le salon n'existe pas !" : "Erreur réseau."; });
         }
 
         function setupConnection() {
             conn.on('data', data => {
                 if (gameMode === 'host' && data.type === 'action') processAction(2, data.action, data.val);
                 if (gameMode === 'client' && data.type === 'state') {
-                    gameState = data.state;
-                    updateHUD();
+                    gameState = data.state; updateHUD();
+                    // Générer effets sonores/vibrations locaux basé sur les triggers (optionnel)
                 }
             });
         }
 
-        // --- SHORTCUTS CLAVIER ---
-        window.addEventListener('keydown', e => {
-            if(!gameActive) return;
-            let key = e.key.toLowerCase();
-            
-            // Touches J1 (Ouest) - Utilisable par le Solo, le Local(J1), et le Host(J1)
-            if (myTeam === 1 || gameMode === 'local') {
-                if(key === 'a') sendAction(1, 'spawn', 'fantassin');
-                if(key === 'z') sendAction(1, 'spawn', 'tireur');
-                if(key === 'e') sendAction(1, 'spawn', 'blindé');
-                if(key === 'r') sendAction(1, 'spawn', 'sniper');
-                if(key === 'q') sendAction(1, 'spell', 1);
-                if(key === 's') sendAction(1, 'spell', 2);
-                if(key === 'd') sendAction(1, 'evolve', null);
-            }
-
-            // Touches J2 pour Client Réseau (Joue avec les mêmes touches sur son propre PC)
-            if (myTeam === 2 && gameMode === 'client') {
-                if(key === 'a') sendAction(2, 'spawn', 'fantassin');
-                if(key === 'z') sendAction(2, 'spawn', 'tireur');
-                if(key === 'e') sendAction(2, 'spawn', 'blindé');
-                if(key === 'r') sendAction(2, 'spawn', 'sniper');
-                if(key === 'q') sendAction(2, 'spell', 1);
-                if(key === 's') sendAction(2, 'spell', 2);
-                if(key === 'd') sendAction(2, 'evolve', null);
-            }
-
-            // Touches J2 exclusives pour Mode Local (Même PC, pavé numérique)
-            if (gameMode === 'local') {
-                if(e.key === '1') sendAction(2, 'spawn', 'fantassin');
-                if(e.key === '2') sendAction(2, 'spawn', 'tireur');
-                if(e.key === '3') sendAction(2, 'spawn', 'blindé');
-                if(e.key === '4') sendAction(2, 'spawn', 'sniper');
-                if(e.key === '7') sendAction(2, 'spell', 1);
-                if(e.key === '8') sendAction(2, 'spell', 2);
-                if(e.key === '9') sendAction(2, 'evolve', null);
-            }
-        });
-
         // --- INTERFACE DEPLOIEMENT DYNAMIQUE ---
         function buildControls(team) {
-            let dir = team === 1 ? 'est' : 'ouest';
-            let prefix = team === 1 ? 'p1' : 'p2';
-            let teamName = team === 1 ? 'OUEST' : 'EST';
-            let keys = team === 1 ? "(A, Z, E, R | Sorts: Q, S | Tech: D)" : "(Num 1, 2, 3, 4 | Sorts: 7, 8 | Tech: 9)";
-            
-            if (gameMode === 'client' || gameMode === 'solo' || gameMode === 'hardcore') {
-                keys = "(A, Z, E, R | Sorts: Q, S | Tech: D)";
-            }
+            let pre = team === 1 ? 'p1' : 'p2';
+            let tName = team === 1 ? 'OUEST' : 'EST';
+            let color = team === 1 ? 'var(--primary)' : 'var(--enemy)';
+            let keys = team === 1 ? "(A,Z,E,R,T)" : "(Num 1,2,3,4,5)";
+            if (gameMode !== 'local') keys = "(A,Z,E,R,T)";
             
             return `
-                <div class="team-controls">
-                    <h3>BASE ${teamName} <br><span style="font-size:0.8em; color:var(--primary); font-weight:normal;">${keys}</span></h3>
-                    <div class="spells">
-                        <button class="spell-btn" id="btn-${prefix}-spell1" onclick="sendAction(${team}, 'spell', 1)">
-                            Plasma (40 💰) <div class="cooldown-overlay" id="cd-${prefix}-spell1"></div>
-                        </button>
-                        <button class="spell-btn" id="btn-${prefix}-spell2" onclick="sendAction(${team}, 'spell', 2)">
-                            Soins (60 💰) <div class="cooldown-overlay" id="cd-${prefix}-spell2"></div>
+                <div class="team-controls" style="border-top: 3px solid ${color};">
+                    <div class="ctrl-header">
+                        <h3 style="color:${color}">${tName} <span style="font-size:0.7em; color:#888;">${keys}</span></h3>
+                        <button class="btn-upgrade-eco" id="btn-${pre}-eco" onclick="sendAction(${team}, 'upgradeEco', null)">
+                            + ÉCO (${gameState[pre].incomeCost}💰)
                         </button>
                     </div>
+                    
+                    <div class="spells">
+                        <button class="spell-btn" id="btn-${pre}-spell1" onclick="sendAction(${team}, 'spell', 1)">☄️ Frappe Orbitale (50 💰)<div class="cooldown-overlay" id="cd-${pre}-spell1"></div></button>
+                        <button class="spell-btn" id="btn-${pre}-spell2" onclick="sendAction(${team}, 'spell', 2)">🔧 Réparation Nano (80 💰)<div class="cooldown-overlay" id="cd-${pre}-spell2"></div></button>
+                    </div>
                     <div class="controls">
-                        <button class="unit-btn" id="btn-${prefix}-u1" onclick="sendAction(${team}, 'spawn', 'fantassin')"><img src="img/fantassin_${dir}.png">Fantassin <br><span class="unit-cost">15 💰</span></button>
-                        <button class="unit-btn" id="btn-${prefix}-u2" onclick="sendAction(${team}, 'spawn', 'tireur')"><img src="img/tirreur_${dir}.png">Tireur <br><span class="unit-cost">35 💰</span></button>
-                        <button class="unit-btn" id="btn-${prefix}-u3" onclick="sendAction(${team}, 'spawn', 'blindé')" disabled><img src="img/blindé_${dir}.png">Blindé <br><span class="unit-cost">100 💰</span><span class="unit-locked" id="lock-${prefix}-3">TECH 2</span></button>
-                        <button class="unit-btn" id="btn-${prefix}-u4" onclick="sendAction(${team}, 'spawn', 'sniper')" disabled><img src="img/sniper_${dir}.png">Sniper <br><span class="unit-cost">75 💰</span><span class="unit-locked" id="lock-${prefix}-4">TECH 2</span></button>
+                        <button class="unit-btn" id="btn-${pre}-u1" onclick="sendAction(${team}, 'spawn', 'drone')"><div class="unit-icon">🛸</div>Drone <span class="unit-cost">15 💰</span></button>
+                        <button class="unit-btn" id="btn-${pre}-u2" onclick="sendAction(${team}, 'spawn', 'blaster')"><div class="unit-icon">🔫</div>Blaster <span class="unit-cost">30 💰</span></button>
+                        <button class="unit-btn" id="btn-${pre}-u3" onclick="sendAction(${team}, 'spawn', 'mech')" disabled><div class="unit-icon">🤖</div>Mech <span class="unit-cost">100 💰</span><span class="unit-locked" id="lock-${pre}-3">TECH 2</span></button>
+                        <button class="unit-btn" id="btn-${pre}-u4" onclick="sendAction(${team}, 'spawn', 'sniper')" disabled><div class="unit-icon">🔭</div>Sniper <span class="unit-cost">80 💰</span><span class="unit-locked" id="lock-${pre}-4">TECH 2</span></button>
+                        <button class="unit-btn" id="btn-${pre}-u5" onclick="sendAction(${team}, 'spawn', 'titan')" style="border-color:var(--xp);" disabled><div class="unit-icon">💀</div>Titan <span class="unit-cost">400 💰</span><span class="unit-locked" id="lock-${pre}-5" style="border-color:var(--xp); color:var(--xp);">TECH 3</span></button>
                     </div>
                 </div>
             `;
         }
 
         function startGame() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('network-menu').style.display = 'none';
+            document.querySelectorAll('.overlay').forEach(e => e.style.display = 'none');
             document.getElementById('game-hud').style.visibility = 'visible';
             
             if (gameMode === 'local') {
                 document.getElementById('deployment-controls').innerHTML = buildControls(1) + buildControls(2);
                 document.getElementById('p2-gold-container').style.display = 'block';
-                document.getElementById('p1-gold-label').innerText = 'OR J1';
-                document.getElementById('p2-xp-info').style.display = 'block';
-                document.getElementById('p2-xp-container').style.display = 'block';
+                document.getElementById('p1-income-txt').innerText = `+${gameState.p1.incomeRate}/s (J1)`;
             } else {
                 document.getElementById('deployment-controls').innerHTML = buildControls(myTeam);
+                document.getElementById('p1-income-txt').innerText = `+${gameState.p1.incomeRate}/s`;
             }
 
             gameActive = true;
@@ -393,12 +309,12 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- MOTEUR DE JEU (Géré par Hôte, Solo, Hardcore ou Local) ---
+        // --- MOTEUR & PHYSIQUE (Hôte / Solo / Local) ---
         function economyTick() {
             if(!gameActive) return;
             timeElapsed++;
-            gameState.p1.gold += 3 + gameState.p1.age;
-            gameState.p2.gold += 3 + gameState.p2.age;
+            gameState.p1.gold += gameState.p1.incomeRate;
+            gameState.p2.gold += gameState.p2.incomeRate;
             
             // INTELLIGENCE ARTIFICIELLE
             if(gameMode === 'solo' || gameMode === 'hardcore') {
@@ -406,44 +322,40 @@
                 let r = Math.random();
                 let isHard = (gameMode === 'hardcore');
 
-                // Hardcore Cheat : Gain d'or exponentiel progressif
-                if (isHard) {
-                    ai.gold += Math.floor(timeElapsed / 15) + 2; 
-                }
+                if (isHard) ai.gold += Math.floor(timeElapsed / 10) + 2; 
 
-                // Evolution Intelligente : L'IA cliquera sur "Upgrade Tech" d'elle-même
-                if (ai.age === 1 && ai.xp >= xpToEvolve) {
-                    processAction(2, 'evolve', null);
-                }
+                // Upgrade Eco
+                if (ai.gold > ai.incomeCost * 1.5 && r > 0.5) processAction(2, 'upgradeEco', null);
 
+                // Evolve
+                if (ai.xp >= xpToEvolve[ai.age - 1]) processAction(2, 'evolve', null);
+
+                // Spawn Logic
                 if(ai.age === 1) {
-                    if(ai.gold >= 35 && r > 0.6) processAction(2, 'spawn', 'tireur');
-                    else if(ai.gold >= 15 && r > 0.2) processAction(2, 'spawn', 'fantassin');
+                    if(ai.gold >= 30 && r > 0.6) processAction(2, 'spawn', 'blaster');
+                    else if(ai.gold >= 15 && r > 0.2) processAction(2, 'spawn', 'drone');
+                } else if (ai.age === 2) {
+                    if(ai.gold >= 100 && r > 0.7) processAction(2, 'spawn', 'mech');
+                    else if(ai.gold >= 80 && r > 0.5) processAction(2, 'spawn', 'sniper');
+                    else if(ai.gold >= 30 && r > 0.3) processAction(2, 'spawn', 'blaster');
+                    else if(ai.gold >= 15) processAction(2, 'spawn', 'drone');
                 } else {
-                    // IA Tech 2 : Déploie des unités lourdes et peut invoquer le boss !
-                    if(isHard && ai.gold >= 500 && r > 0.8) processAction(2, 'spawn', 'boss');
-                    else if(ai.gold >= 100 && r > 0.6) processAction(2, 'spawn', 'blindé');
-                    else if(ai.gold >= 75 && r > 0.4) processAction(2, 'spawn', 'sniper');
-                    else if(ai.gold >= 35 && r > 0.2) processAction(2, 'spawn', 'tireur');
-                    else if(ai.gold >= 15) processAction(2, 'spawn', 'fantassin');
+                    if(ai.gold >= 400 && r > 0.8) processAction(2, 'spawn', 'titan');
+                    else if(ai.gold >= 100 && r > 0.5) processAction(2, 'spawn', 'mech');
+                    else if(ai.gold >= 80 && r > 0.3) processAction(2, 'spawn', 'sniper');
                 }
 
-                // Utilisation des sorts en Hardcore
                 if (isHard) {
-                    if (ai.spells[1] === 0 && Math.random() < 0.03) processAction(2, 'spell', 1);
-                    if (ai.hp < 700 && ai.spells[2] === 0 && Math.random() < 0.05) processAction(2, 'spell', 2);
+                    if (ai.spells[1] === 0 && Math.random() < 0.05) processAction(2, 'spell', 1);
+                    if (ai.hp < 600 && ai.spells[2] === 0 && Math.random() < 0.05) processAction(2, 'spell', 2);
                 }
             }
         }
 
         function sendAction(team, action, val) {
-            if(gameMode === 'client' && team === 2) {
-                conn.send({type: 'action', action: action, val: val});
-            } else if (gameMode === 'host' && team === 1) {
-                processAction(1, action, val);
-            } else if (gameMode === 'local' || gameMode === 'solo' || gameMode === 'hardcore') {
-                processAction(team, action, val);
-            }
+            if(gameMode === 'client' && team === 2) conn.send({type: 'action', action: action, val: val});
+            else if (gameMode === 'host' && team === 1) processAction(1, action, val);
+            else if (gameMode !== 'client') processAction(team, action, val);
         }
 
         function processAction(team, action, val) {
@@ -452,31 +364,58 @@
                 p.gold -= unitStats[val].cost;
                 gameState.units.push(new Unit(team, val));
             }
+            else if (action === 'upgradeEco' && p.gold >= p.incomeCost) {
+                p.gold -= p.incomeCost;
+                p.incomeRate += 2;
+                p.incomeCost = Math.floor(p.incomeCost * 1.5);
+                addEffect('text', bases[team].spawnX, 100, team, '+ECO');
+            }
             else if(action === 'spell' && p.gold >= spellStats[val].cost && p.spells[val] === 0) {
                 p.gold -= spellStats[val].cost;
                 p.spells[val] = spellStats[val].cdMax;
-                if(val === 1) {
-                    gameState.effects.push({ type: 'plasma', team: team, life: 30 });
-                    gameState.units.filter(u => u.team !== team).forEach(u => u.hp -= 40);
-                } else if(val === 2) {
-                    gameState.effects.push({ type: 'nano', team: team, life: 30 });
-                    gameState.units.filter(u => u.team === team).forEach(u => u.hp = Math.min(u.maxHp, u.hp + 50));
-                    p.hp = Math.min(p.maxHp, p.hp + 100);
+                if(val === 1) { // Frappe
+                    addEffect('orbital', 0, 0, team); screenShake = 15;
+                    gameState.units.filter(u => u.team !== team).forEach(u => u.hp -= 60);
+                } else if(val === 2) { // Soin
+                    addEffect('heal', 0, 0, team);
+                    gameState.units.filter(u => u.team === team).forEach(u => u.hp = Math.min(u.maxHp, u.hp + 100));
+                    p.hp = Math.min(p.maxHp, p.hp + 200);
                 }
             }
-            else if(action === 'evolve' && p.xp >= xpToEvolve && p.age === 1) {
-                p.age = 2; p.xp = 0; p.maxHp = 1000; p.hp = 1000;
+            else if(action === 'evolve' && p.age < 3 && p.xp >= xpToEvolve[p.age - 1]) {
+                p.xp -= xpToEvolve[p.age - 1];
+                p.age++; 
+                p.maxHp += 1000; p.hp += 1000; // Bonus HP en passant d'age
+                addEffect('text', bases[team].spawnX, 80, team, 'TECH UP!');
+                screenShake = 10;
             }
         }
 
+        function addEffect(type, x, y, team, text='') {
+            gameState.effects.push({ type, x, y, team, text, life: 30, maxLife: 30 });
+        }
+
         function updatePhysics() {
-            // Refroidissement des sorts
-            [gameState.p1, gameState.p2].forEach(p => {
-                if(p.spells[1] > 0) p.spells[1]--;
-                if(p.spells[2] > 0) p.spells[2]--;
+            // Tourelles de bases
+            [1, 2].forEach(t => {
+                let p = t === 1 ? gameState.p1 : gameState.p2;
+                if (p.turretCd > 0) p.turretCd--;
+                else {
+                    let target = null; let bx = bases[t].spawnX;
+                    for (let i=0; i<gameState.units.length; i++) {
+                        let u = gameState.units[i];
+                        if (u.team !== t && Math.abs(u.x - bx) < 300) { target = u; break; }
+                    }
+                    if (target) {
+                        target.hp -= 15; p.turretCd = 60; // Tir tourelle toutes les 1s
+                        addEffect('laser', bx, 100, t, target.x + target.w/2);
+                        addEffect('hit', target.x + target.w/2, target.y + target.h/2, t);
+                    }
+                }
             });
-            
-            // Effets
+
+            // Sorts CD & Effets
+            [gameState.p1, gameState.p2].forEach(p => { if(p.spells[1] > 0) p.spells[1]--; if(p.spells[2] > 0) p.spells[2]--; });
             for(let i = gameState.effects.length-1; i >= 0; i--) {
                 gameState.effects[i].life--;
                 if(gameState.effects[i].life <= 0) gameState.effects.splice(i, 1);
@@ -486,12 +425,12 @@
             for (let i = gameState.units.length - 1; i >= 0; i--) {
                 let u = gameState.units[i]; let target = null; u.action = 'walk';
                 
-                // Recherche de cible
+                // Ciblage
                 for (let j = 0; j < gameState.units.length; j++) { 
                     let other = gameState.units[j]; 
                     if (u.team !== other.team) { 
                         let dist = u.team === 1 ? (other.x - (u.x + u.w)) : (u.x - (other.x + other.w)); 
-                        if (dist <= u.rng && dist >= -10) { target = other; break; } 
+                        if (dist <= u.rng && dist >= -20) { target = other; break; } 
                     } 
                 }
                 if (!target) { 
@@ -499,14 +438,24 @@
                     if (distToBase <= u.rng) target = u.team === 1 ? gameState.p2 : gameState.p1; 
                 }
                 
+                // Attaque
                 if (target) { 
                     u.action = 'attack'; 
                     if (u.cd <= 0) { 
                         target.hp -= u.dmg; u.cd = u.cdMax; 
+                        let ty = (target === gameState.p1 || target === gameState.p2) ? 180 : target.y + target.h/2;
+                        let tx = (target === gameState.p1 || target === gameState.p2) ? (u.team===1? bases[2].x : bases[1].x+bases[1].w) : target.x + target.w/2;
+                        
+                        if (unitStats[u.type].type === 'ranged') {
+                            addEffect('laser', u.x + (u.team===1?u.w:0), u.y + 10, u.team, tx);
+                        } else if (u.type === 'titan') {
+                            screenShake = 5;
+                        }
+                        addEffect('hit', tx, ty, u.team);
                     } 
                 } else {
-                    // Anti-Stacking
-                    let canMove = true; let hitboxSpacing = u.w + 10;
+                    // Mouvement & Anti-Stacking
+                    let canMove = true; let hitboxSpacing = u.w + 5;
                     for (let j = 0; j < gameState.units.length; j++) {
                         let other = gameState.units[j];
                         if (u.team === other.team && u.id !== other.id) {
@@ -521,206 +470,257 @@
                 if (u.hp <= 0) { 
                     let killer = u.team === 1 ? gameState.p2 : gameState.p1;
                     killer.gold += u.rew; 
-                    if (killer.age === 1) killer.xp += u.xp; 
+                    if (killer.age < 3) killer.xp += u.xp; 
+                    addEffect('text', u.x, u.y, u.team === 1 ? 2 : 1, `+${u.rew}💰`);
+                    addEffect('explosion', u.x + u.w/2, u.y + u.h/2, u.team);
                     gameState.units.splice(i, 1); 
                 }
             }
 
-            // Conditions de Victoire
+            // Victoire
             if (gameState.p1.hp <= 0 || gameState.p2.hp <= 0) {
                 gameActive = false; document.getElementById('game-over').style.display = 'flex'; 
                 const msg = document.getElementById('end-message');
+                document.getElementById('end-stats').innerText = `TEMPS ÉCOULÉ : ${timeElapsed}s`;
                 if (gameMode === 'hardcore') {
-                    if(gameState.p2.hp <= 0) { msg.innerText = "IMPOSSIBLE... VOUS AVEZ BATTU LE MODE SURVIE !"; msg.style.color = '#fff'; }
-                    else { msg.innerText = "VOUS AVEZ SURVÉCU " + timeElapsed + " SECONDES."; msg.style.color = 'var(--enemy)'; }
+                    msg.innerText = gameState.p2.hp <= 0 ? "LEGENDE : VOUS AVEZ BATTU L'IA EXTRÊME" : "LA RÉSISTANCE EST TOMBÉE";
+                    msg.style.color = gameState.p2.hp <= 0 ? 'var(--gold)' : 'var(--enemy)';
                 } else {
-                    if (gameState.p1.hp <= 0 && myTeam === 1 || gameState.p2.hp <= 0 && myTeam === 2) { 
-                        msg.innerText = "DÉFAITE TACTIQUE"; msg.style.color = 'var(--enemy)'; msg.style.textShadow = '0 0 20px var(--enemy)'; 
-                    } else { 
-                        msg.innerText = "VICTOIRE ABSOLUE"; msg.style.color = 'var(--gold)'; msg.style.textShadow = '0 0 20px var(--gold)'; 
+                    let p1Won = gameState.p2.hp <= 0;
+                    if ((p1Won && myTeam === 1) || (!p1Won && myTeam === 2) || (gameMode === 'local' && p1Won)) {
+                        msg.innerText = "VICTOIRE TOTALE"; msg.style.color = 'var(--primary)'; msg.style.textShadow = '0 0 20px var(--primary)';
+                    } else {
+                        msg.innerText = "DÉFAITE TACTIQUE"; msg.style.color = 'var(--enemy)'; msg.style.textShadow = '0 0 20px var(--enemy)';
                     }
                 }
             }
         }
 
-        // --- AFFICHAGE & RENDU ---
+        // --- CLAVIER ---
+        window.addEventListener('keydown', e => {
+            if(!gameActive) return; let k = e.key.toLowerCase();
+            let act = (k, team) => {
+                if(k==='a' || k==='1') sendAction(team, 'spawn', 'drone');
+                if(k==='z' || k==='2') sendAction(team, 'spawn', 'blaster');
+                if(k==='e' || k==='3') sendAction(team, 'spawn', 'mech');
+                if(k==='r' || k==='4') sendAction(team, 'spawn', 'sniper');
+                if(k==='t' || k==='5') sendAction(team, 'spawn', 'titan');
+                if(k==='q' || k==='7') sendAction(team, 'spell', 1);
+                if(k==='s' || k==='8') sendAction(team, 'spell', 2);
+                if(k==='d' || k==='9') sendAction(team, 'evolve', null);
+            };
+            if (myTeam === 1 || gameMode === 'local') act(k, 1);
+            if (myTeam === 2 && gameMode === 'client') act(k, 2);
+            if (gameMode === 'local' && ['1','2','3','4','5','7','8','9'].includes(e.key)) act(e.key, 2);
+        });
+
+        // --- RENDU CYBERPUNK (CANVAS) ---
         function drawBackground() {
-            if (imgs['map1'].complete && imgs['map1'].naturalWidth !== 0) ctx.drawImage(imgs['map1'], 0, 0, canvas.width / 2, canvas.height);
-            if (imgs['map2'].complete && imgs['map2'].naturalWidth !== 0) ctx.drawImage(imgs['map2'], canvas.width / 2, 0, canvas.width / 2, canvas.height);
+            // Ciel
+            let grad = ctx.createLinearGradient(0, 0, 0, floorY);
+            grad.addColorStop(0, '#020205'); grad.addColorStop(1, '#0a1025');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Ligne d'horizon neon
+            ctx.shadowBlur = 15; ctx.shadowColor = '#00f0ff'; ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+            ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(canvas.width, floorY); ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Grille sol (Perspective fake 3D)
+            globalOffset = (globalOffset + 1) % 40;
+            ctx.strokeStyle = 'rgba(255, 0, 127, 0.2)'; ctx.lineWidth = 1;
+            for(let i = floorY; i < canvas.height; i += (i - floorY + 10) * 0.2) {
+                let y = i + (globalOffset/40) * ((i - floorY + 10) * 0.2);
+                if(y < canvas.height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+            }
+            let vanishX = canvas.width / 2;
+            for(let i = -10; i < 10; i++) {
+                ctx.beginPath(); ctx.moveTo(vanishX, floorY); ctx.lineTo(vanishX + i * 150, canvas.height); ctx.stroke();
+            }
         }
 
-        function updateHUD() {
-            // Affichage de l'or
-            if (gameMode === 'local') {
-                document.getElementById('p1-gold').innerText = Math.floor(gameState.p1.gold);
-                document.getElementById('p2-gold').innerText = Math.floor(gameState.p2.gold);
-            } else {
-                document.getElementById('p1-gold').innerText = Math.floor(myTeam === 1 ? gameState.p1.gold : gameState.p2.gold);
-            }
-            
-            document.getElementById('p1-hp-bar').style.width = (gameState.p1.hp / gameState.p1.maxHp * 100) + '%'; 
-            document.getElementById('p2-hp-bar').style.width = (gameState.p2.hp / gameState.p2.maxHp * 100) + '%';
-            
-            // HUD XP & Age J1
-            if (gameState.p1.age === 1) { 
-                document.getElementById('p1-xp-text').innerText = `${gameState.p1.xp}/${xpToEvolve}`; 
-                document.getElementById('p1-xp-bar').style.width = Math.min(100, (gameState.p1.xp / xpToEvolve * 100)) + '%'; 
-                if (gameState.p1.xp >= xpToEvolve && (myTeam === 1 || gameMode === 'local')) document.getElementById('btn-evolve-p1').style.display = 'block'; else document.getElementById('btn-evolve-p1').style.display = 'none';
-            } else { 
-                document.getElementById('p1-xp-text').innerText = "MAX"; document.getElementById('p1-xp-bar').style.width = '100%'; document.getElementById('btn-evolve-p1').style.display = 'none';
-                if(document.getElementById('lock-p1-3')) { document.getElementById('lock-p1-3').style.display = 'none'; document.getElementById('lock-p1-4').style.display = 'none'; }
-            }
-            document.getElementById('p1-age').innerText = gameState.p1.age === 1 ? "1" : "MAX";
-
-            // HUD XP & Age J2 (Seulement en Local ou si on est J2 en réseau)
-            if (gameMode === 'local' || gameMode === 'client') {
-                if (gameState.p2.age === 1) { 
-                    document.getElementById('p2-xp-text').innerText = `${gameState.p2.xp}/${xpToEvolve}`; 
-                    document.getElementById('p2-xp-bar').style.width = Math.min(100, (gameState.p2.xp / xpToEvolve * 100)) + '%'; 
-                    if (gameState.p2.xp >= xpToEvolve && (myTeam === 2 || gameMode === 'local')) document.getElementById('btn-evolve-p2').style.display = 'block'; else document.getElementById('btn-evolve-p2').style.display = 'none';
-                } else { 
-                    document.getElementById('p2-xp-text').innerText = "MAX"; document.getElementById('p2-xp-bar').style.width = '100%'; document.getElementById('btn-evolve-p2').style.display = 'none';
-                    if(document.getElementById('lock-p2-3')) { document.getElementById('lock-p2-3').style.display = 'none'; document.getElementById('lock-p2-4').style.display = 'none'; }
-                }
-            }
-            document.getElementById('p2-age').innerText = gameState.p2.age === 1 ? "1" : "MAX";
-
-            // Mise à jour de l'opacité et de la disponibilité des boutons
-            let teamsToUpdate = gameMode === 'local' ? [1, 2] : [myTeam];
-            teamsToUpdate.forEach(t => {
-                let p = t === 1 ? gameState.p1 : gameState.p2;
-                let pre = t === 1 ? 'p1' : 'p2';
-                ['fantassin', 'tireur'].forEach((type, i) => { let b = document.getElementById(`btn-${pre}-u${i+1}`); if(b) b.disabled = p.gold < unitStats[type].cost; });
-                ['blindé', 'sniper'].forEach((type, i) => { let b = document.getElementById(`btn-${pre}-u${i+3}`); if(b) b.disabled = p.gold < unitStats[type].cost || p.age < 2; });
-                
-                [1, 2].forEach(i => {
-                    let btn = document.getElementById(`btn-${pre}-spell${i}`);
-                    if(btn) {
-                        btn.disabled = (p.gold < spellStats[i].cost) || (p.spells[i] > 0);
-                        document.getElementById(`cd-${pre}-spell${i}`).style.width = (p.spells[i] / spellStats[i].cdMax * 100) + '%';
-                    }
-                });
-            });
+        function drawShape(type, x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.shadowBlur = 10; ctx.shadowColor = color;
+            ctx.beginPath();
+            if (type === 'drone') { ctx.moveTo(x, y+h/2); ctx.lineTo(x+w/2, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w/2, y+h); }
+            else if (type === 'blaster') { ctx.moveTo(x+w/2, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w/2, y+h); ctx.lineTo(x, y+h/2); }
+            else if (type === 'mech') { ctx.moveTo(x+w*0.2, y); ctx.lineTo(x+w*0.8, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w*0.8, y+h); ctx.lineTo(x+w*0.2, y+h); ctx.lineTo(x, y+h/2); }
+            else if (type === 'sniper') { ctx.fillRect(x, y, w*0.4, h); ctx.fillRect(x, y+h*0.3, w, h*0.2); }
+            else if (type === 'titan') { ctx.moveTo(x+w/2, y); ctx.lineTo(x+w, y+h*0.3); ctx.lineTo(x+w*0.8, y+h); ctx.lineTo(x+w*0.2, y+h); ctx.lineTo(x, y+h*0.3); }
+            ctx.fill(); ctx.shadowBlur = 0;
+            // Highlight
+            ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
         }
 
         function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            if (screenShake > 0) {
+                ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+                screenShake *= 0.9; if(screenShake < 0.5) screenShake = 0;
+            }
+
             drawBackground();
 
-            // BASES
-            ctx.fillStyle = 'rgba(0,0,0,0)'; 
-            ctx.fillRect(bases[1].x, 130, bases[1].w, bases[1].h); 
-            ctx.fillRect(bases[2].x, 130, bases[2].w, bases[2].h);
-
-            // ANIMATION DES SORTS
-            gameState.effects.forEach(eff => {
-                if(eff.type === 'plasma') {
-                    ctx.fillStyle = eff.team === 1 ? 'rgba(0, 136, 255, 0.6)' : 'rgba(255, 42, 42, 0.6)';
-                    for(let i=0; i<15; i++) {
-                        let lx = Math.random() * canvas.width;
-                        ctx.fillRect(lx, 0, 3, canvas.height); 
-                    }
-                } else if (eff.type === 'nano') {
-                    ctx.fillStyle = '#39ff14';
-                    gameState.units.filter(u => u.team === eff.team).forEach(u => {
-                        ctx.fillText('+', u.x + u.w/2 - 5, u.y - eff.life); 
-                    });
-                }
+            // BASES (Pyramides Neon)
+            [1, 2].forEach(t => {
+                let b = bases[t]; let color = t === 1 ? '#00f0ff' : '#ff0055';
+                let p = t === 1 ? gameState.p1 : gameState.p2;
+                ctx.shadowBlur = 20; ctx.shadowColor = color;
+                
+                // Structure
+                ctx.fillStyle = `rgba(10,15,30,0.9)`;
+                ctx.beginPath(); ctx.moveTo(b.x + b.w/2, 100); ctx.lineTo(b.x + b.w, floorY); ctx.lineTo(b.x, floorY); ctx.fill();
+                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+                
+                // Tourelle & Age details
+                ctx.fillStyle = color;
+                ctx.fillRect(b.x + b.w/2 - 10, 80, 20, 20); // Core
+                if (p.age >= 2) ctx.fillRect(b.x + b.w/2 - 20, 150, 40, 10);
+                if (p.age >= 3) { ctx.beginPath(); ctx.arc(b.x + b.w/2, 50, 15, 0, Math.PI*2); ctx.fill(); }
+                
+                ctx.shadowBlur = 0;
             });
 
             // UNITES
             gameState.units.forEach(u => {
-                // Barre de vie
-                ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(u.x, u.y - 10, u.w, 4); 
-                ctx.fillStyle = '#2ecc71'; ctx.fillRect(u.x, u.y - 10, u.w * (u.hp / u.maxHp), 4);
+                let color = u.team === 1 ? '#00f0ff' : '#ff0055';
                 
-                let direction = (u.team === 1) ? 'est' : 'ouest';
-                if (u.type === 'fantassin') {
-                    direction = (u.team === 1) ? 'ouest' : 'est'; 
-                }
-                
-                let imgKey = `${u.skin}_${direction}`;
-                let img = imgs[imgKey];
-
                 ctx.save();
                 ctx.translate(u.x + u.w/2, u.y + u.h/2);
-
+                
                 if (u.action === 'walk') {
-                    u.animCycle = (u.animCycle || 0) + 0.15;
-                    let bob = Math.abs(Math.sin(u.animCycle)) * 3;
-                    let rot = Math.sin(u.animCycle) * 0.05;
-                    if(u.type === 'melee' && u.hp > 100) { bob *= 0.5; rot = 0; } 
-                    ctx.translate(0, -bob);
-                    ctx.rotate(rot);
+                    u.animCycle += 0.15 * u.speed;
+                    ctx.translate(0, -Math.abs(Math.sin(u.animCycle)) * 4);
                 } else if (u.action === 'attack') {
-                    let progress = (u.cdMax - u.cd) / u.cdMax;
-                    if(unitStats[u.type].type === 'melee') { 
-                        let thrust = (progress < 0.2) ? progress * 60 : 0;
-                        ctx.translate(u.team === 1 ? thrust : -thrust, 0);
-                    } else { 
-                        let recoil = (progress < 0.2) ? -3 : 0;
-                        ctx.translate(u.team === 1 ? recoil : -recoil, 0);
-                        if(u.cd === u.cdMax - 1) {
-                            ctx.fillStyle = '#ff0';
-                            ctx.beginPath(); ctx.arc(u.team === 1 ? u.w : -u.w, 0, 8, 0, Math.PI*2); ctx.fill();
-                        }
-                    }
+                    let p = (u.cdMax - u.cd) / u.cdMax;
+                    if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (p<0.3?10:0) : (p<0.3?-10:0), 0);
                 }
 
-                if (img && img.complete && img.naturalWidth !== 0) {
-                    ctx.drawImage(img, -u.w/2, -u.h/2, u.w, u.h);
-                } else {
-                    ctx.fillStyle = u.team === 1 ? '#0088ff' : '#ff2a2a';
-                    ctx.fillRect(-u.w/2, -u.h/2, u.w, u.h);
-                }
+                drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color);
                 ctx.restore();
+
+                // HP Bar
+                ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(u.x, u.y - 12, u.w, 4); 
+                ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x, u.y - 12, u.w * (u.hp / u.maxHp), 4);
+            });
+
+            // EFFETS (Lasers, Explosions, Textes)
+            gameState.effects.forEach(eff => {
+                let prog = eff.life / eff.maxLife;
+                let color = eff.team === 1 ? '#00f0ff' : '#ff0055';
+
+                if (eff.type === 'laser') {
+                    ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.strokeStyle = color; ctx.lineWidth = prog * 4;
+                    ctx.beginPath(); ctx.moveTo(eff.x, eff.y); ctx.lineTo(eff.text /* targetX */, eff.y); ctx.stroke();
+                } else if (eff.type === 'hit' || eff.type === 'explosion') {
+                    ctx.fillStyle = color; ctx.globalAlpha = prog;
+                    ctx.beginPath(); ctx.arc(eff.x, eff.y, (1-prog)* (eff.type==='explosion'?30:15), 0, Math.PI*2); ctx.fill();
+                } else if (eff.type === 'orbital') {
+                    ctx.fillStyle = color; ctx.globalAlpha = prog * 0.5;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.globalAlpha = 1; ctx.shadowBlur = 20; ctx.shadowColor = color;
+                    for(let i=0; i<10; i++) { ctx.fillRect(Math.random()*canvas.width, 0, 5, canvas.height); }
+                } else if (eff.type === 'heal') {
+                    ctx.fillStyle = '#39ff14'; ctx.globalAlpha = prog;
+                    gameState.units.filter(u => u.team === eff.team).forEach(u => {
+                        ctx.font = "bold 20px Rajdhani"; ctx.fillText('+', u.x+u.w/2-5, u.y - (30-eff.life)); 
+                    });
+                } else if (eff.type === 'text') {
+                    ctx.fillStyle = eff.text.includes('💰') ? '#ffd700' : '#fff';
+                    ctx.font = "bold 20px Rajdhani"; ctx.shadowBlur = 5; ctx.shadowColor = '#000';
+                    ctx.globalAlpha = prog;
+                    ctx.fillText(eff.text, eff.x, eff.y - (30-eff.life));
+                }
+                ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+            });
+
+            ctx.restore();
+        }
+
+        function updateHUD() {
+            // Eco
+            document.getElementById('p1-gold').innerText = Math.floor(myTeam === 1 ? gameState.p1.gold : gameState.p2.gold);
+            if(gameMode === 'local') {
+                document.getElementById('p1-gold').innerText = Math.floor(gameState.p1.gold);
+                document.getElementById('p2-gold').innerText = Math.floor(gameState.p2.gold);
+                document.getElementById('p1-income-txt').innerText = `+${gameState.p1.incomeRate}/s`;
+                document.getElementById('p2-income-txt').innerText = `+${gameState.p2.incomeRate}/s`;
+                
+                let b1 = document.getElementById('btn-p1-eco'); if(b1) { b1.innerText = `+ ÉCO (${gameState.p1.incomeCost}💰)`; b1.disabled = gameState.p1.gold < gameState.p1.incomeCost; }
+                let b2 = document.getElementById('btn-p2-eco'); if(b2) { b2.innerText = `+ ÉCO (${gameState.p2.incomeCost}💰)`; b2.disabled = gameState.p2.gold < gameState.p2.incomeCost; }
+            } else {
+                let p = myTeam === 1 ? gameState.p1 : gameState.p2;
+                document.getElementById('p1-income-txt').innerText = `+${p.incomeRate}/s`;
+                let b = document.getElementById(`btn-p${myTeam}-eco`); if(b) { b.innerText = `+ ÉCO (${p.incomeCost}💰)`; b.disabled = p.gold < p.incomeCost; }
+            }
+
+            // HP
+            document.getElementById('p1-hp-bar').style.width = (gameState.p1.hp / gameState.p1.maxHp * 100) + '%'; 
+            document.getElementById('p2-hp-bar').style.width = (gameState.p2.hp / gameState.p2.maxHp * 100) + '%';
+
+            // XP / Age
+            [1, 2].forEach(t => {
+                let p = t === 1 ? gameState.p1 : gameState.p2;
+                let pre = t === 1 ? 'p1' : 'p2';
+                
+                document.getElementById(`${pre}-age`).innerText = p.age;
+                let xpBar = document.getElementById(`${pre}-xp-bar`);
+                let btnEvolve = document.getElementById(`btn-evolve-${pre}`);
+                
+                if (p.age < 3) {
+                    let req = xpToEvolve[p.age - 1];
+                    if(xpBar) xpBar.style.width = Math.min(100, (p.xp / req * 100)) + '%'; 
+                    if(btnEvolve && p.xp >= req && (myTeam === t || gameMode === 'local')) btnEvolve.style.display = 'block'; else if(btnEvolve) btnEvolve.style.display = 'none';
+                } else {
+                    if(xpBar) xpBar.style.width = '100%'; 
+                    if(btnEvolve) btnEvolve.style.display = 'none';
+                }
+
+                // Unlock Boutons HUD (Local = met à jour les 2, Reseau = met à jour le mien)
+                if (gameMode === 'local' || myTeam === t) {
+                    let locks = [null, null, null, document.getElementById(`lock-${pre}-3`), document.getElementById(`lock-${pre}-4`), document.getElementById(`lock-${pre}-5`)];
+                    ['drone', 'blaster', 'mech', 'sniper', 'titan'].forEach((type, i) => { 
+                        let b = document.getElementById(`btn-${pre}-u${i+1}`); 
+                        let reqAge = i < 2 ? 1 : (i < 4 ? 2 : 3);
+                        if(b) b.disabled = p.gold < unitStats[type].cost || p.age < reqAge; 
+                        if(locks[i+1] && p.age >= reqAge) locks[i+1].style.display = 'none';
+                    });
+                    
+                    [1, 2].forEach(i => {
+                        let btn = document.getElementById(`btn-${pre}-spell${i}`);
+                        if(btn) {
+                            btn.disabled = (p.gold < spellStats[i].cost) || (p.spells[i] > 0);
+                            document.getElementById(`cd-${pre}-spell${i}`).style.width = (p.spells[i] / spellStats[i].cdMax * 100) + '%';
+                        }
+                    });
+                }
             });
         }
 
         function gameLoop() {
             if(!gameActive) return;
-            
             if(gameMode === 'host' || gameMode === 'solo' || gameMode === 'hardcore' || gameMode === 'local') {
                 updatePhysics();
-                if(gameMode === 'host' && conn && conn.open) {
-                    conn.send({type: 'state', state: gameState});
-                }
+                if(gameMode === 'host' && conn && conn.open) conn.send({type: 'state', state: gameState});
             }
-            
             updateHUD();
             drawGame();
             requestAnimationFrame(gameLoop);
         }
-    </script>
-    
-    <!-- ========================================== -->
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL   -->
-    <!-- ========================================== -->
-    <script>
+
+        // --- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL ---
         const gamesHubList = [
-            "../cybertank/index.html",
-            "../tower_defense/index.html",
-            "../edgeofwar/index.html",
-            "../cyber_smash/index.html",
-            "../guessthemanga/index.html",
-            "../drawer/index.html",
-            "../texas_poker/index.html",
-            "../blindtest/index.html",
-            "../2048slime/index.html",
-            "../worms/index.html"
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html", "../worms/index.html"
         ];
 
-        let globalTouchStartX = 0;
-        let globalTouchStartY = 0;
-        let globalTouchEndX = 0;
-        let globalTouchEndY = 0;
+        let globalTouchStartX = 0, globalTouchStartY = 0, globalTouchEndX = 0, globalTouchEndY = 0;
         
         function handleSwipeGesture() {
             const swipeThreshold = 75; 
-            
-            let diffX = globalTouchEndX - globalTouchStartX;
-            let diffY = globalTouchEndY - globalTouchStartY;
-
+            let diffX = globalTouchEndX - globalTouchStartX; let diffY = globalTouchEndY - globalTouchStartY;
             if (Math.abs(diffX) > Math.abs(diffY)) {
                 if (diffX < -swipeThreshold) navigateGames(1);       
                 else if (diffX > swipeThreshold) navigateGames(-1);  
@@ -732,13 +732,8 @@
 
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
-            let currentIndex = gamesHubList.findIndex(game => {
-                let folderName = game.split('/')[1]; 
-                return currentPath.includes(folderName);
-            });
-            
+            let currentIndex = gamesHubList.findIndex(game => { let folderName = game.split('/')[1]; return currentPath.includes(folderName); });
             if (currentIndex === -1) return;
-            
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
             window.location.href = gamesHubList[nextIndex];
         }
@@ -750,37 +745,24 @@
             return false;
         }
 
-        // TACTILE
         document.addEventListener('touchstart', e => {
             if (isExcludedElement(e.target)) return;
-            globalTouchStartX = e.changedTouches[0].screenX;
-            globalTouchStartY = e.changedTouches[0].screenY;
+            globalTouchStartX = e.changedTouches[0].screenX; globalTouchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
-
         document.addEventListener('touchend', e => {
             if (isExcludedElement(e.target)) return;
-            globalTouchEndX = e.changedTouches[0].screenX;
-            globalTouchEndY = e.changedTouches[0].screenY;
+            globalTouchEndX = e.changedTouches[0].screenX; globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
         }, { passive: true });
 
-        // SOURIS (PC)
         let isMouseDown = false;
         document.addEventListener('mousedown', e => {
             if (isExcludedElement(e.target)) return;
-            isMouseDown = true;
-            globalTouchStartX = e.screenX;
-            globalTouchStartY = e.screenY;
+            isMouseDown = true; globalTouchStartX = e.screenX; globalTouchStartY = e.screenY;
         });
-
         document.addEventListener('mouseup', e => {
-            if (isExcludedElement(e.target) || !isMouseDown) {
-                isMouseDown = false;
-                return;
-            }
-            isMouseDown = false;
-            globalTouchEndX = e.screenX;
-            globalTouchEndY = e.screenY;
+            if (isExcludedElement(e.target) || !isMouseDown) { isMouseDown = false; return; }
+            isMouseDown = false; globalTouchEndX = e.screenX; globalTouchEndY = e.screenY;
             handleSwipeGesture();
         });
     </script>
