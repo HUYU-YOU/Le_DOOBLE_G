@@ -2,12 +2,13 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Cyber Blind Test - Multiplayer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Anime Blind Test - Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px #fff; text-align: center; }
+        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px var(--p1); text-align: center; }
         
         #game-container { position: relative; background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: 650px; display: flex; flex-direction: column; overflow: hidden; }
         
@@ -24,9 +25,9 @@
         #timer-box { font-size: 2.5em; color: #f1c40f; font-weight: 900; text-shadow: 0 0 15px #f1c40f; margin-left: 15px; min-width: 60px; text-align: center; }
 
         /* TRACK INFO */
-        #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
-        .mystery-box { background: #1a1a2e; padding: 20px; border-radius: 10px; border: 2px solid #444; font-size: 1.5em; text-align: center; letter-spacing: 3px; text-transform: uppercase; transition: 0.3s; }
-        .mystery-box.found { background: rgba(57, 255, 20, 0.2); border-color: var(--sys); color: var(--sys); text-shadow: 0 0 10px var(--sys); letter-spacing: 1px; }
+        #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; align-items: center;}
+        .mystery-box { width: 90%; background: #1a1a2e; padding: 25px; border-radius: 10px; border: 2px solid #444; font-size: 1.8em; font-weight: bold; text-align: center; letter-spacing: 3px; text-transform: uppercase; transition: 0.3s; }
+        .mystery-box.found { background: rgba(57, 255, 20, 0.2); border-color: var(--sys); color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 2px; transform: scale(1.05);}
 
         /* TCHAT */
         #chat-container { flex-grow: 1; background: #0b0c10; border-radius: 10px; border: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
@@ -50,7 +51,7 @@
 </head>
 <body>
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <h1>Cyber Blind Test</h1>
+    <h1>Anime Blind Test</h1>
 
     <div id="game-container">
         <!-- HEADER (IN-GAME) -->
@@ -61,15 +62,14 @@
 
         <!-- TRACK INFO -->
         <div id="track-info">
-            <div class="mystery-box" id="box-artist">🧑‍🎤 ARTISTE : ? ? ?</div>
-            <div class="mystery-box" id="box-title">🎵 TITRE : ? ? ?</div>
+            <div class="mystery-box" id="box-anime">📺 ANIME : ? ? ?</div>
         </div>
 
         <!-- CHAT -->
         <div id="chat-container">
             <div id="chat-messages"></div>
             <div id="chat-input-area">
-                <input type="text" id="guess-input" placeholder="Tapez l'artiste ou le titre ici..." autocomplete="off">
+                <input type="text" id="guess-input" placeholder="Tapez le nom de l'anime ici (ex: SNK, Jojo...)" autocomplete="off">
                 <button id="btn-send" onclick="submitGuess()">ENVOYER</button>
             </div>
         </div>
@@ -81,7 +81,7 @@
             <button class="btn-main" onclick="openMenu('network')" style="background:var(--p2); color:#fff;">Multijoueur (Réseau)</button>
         </div>
 
-        <!-- MENU RÉSEAU (TOTALEMENT REVU) -->
+        <!-- MENU RÉSEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
             <div class="menu-title" style="color: var(--p2);">Connexion Réseau</div>
             
@@ -92,7 +92,7 @@
                 <div id="my-id" style="color:var(--p1); font-weight:bold; font-size:2.5em; letter-spacing: 3px; margin: 10px 0; min-height: 40px; text-shadow: 0 0 10px var(--p1);">...</div>
                 
                 <button class="btn-main" id="btn-host" onclick="hostGame()" style="width: 100%; padding: 12px; font-size: 1em;">1. Générer le Code</button>
-                <button class="btn-main" id="btn-start-host" onclick="goToCategories()" style="width: 100%; padding: 12px; font-size: 1em; display: none; background: var(--sys); color: #000;">2. Choisir la Playlist ➔</button>
+                <button class="btn-main" id="btn-start-host" onclick="goToLobby()" style="width: 100%; padding: 12px; font-size: 1em; display: none; background: var(--sys); color: #000;">2. Configurer la partie ➔</button>
             </div>
 
             <!-- PANNEAU CLIENT -->
@@ -106,17 +106,16 @@
             <button class="btn-main" style="font-size:0.9em; margin-top:20px; background: transparent; border: 1px solid #555; color:#aaa;" onclick="location.reload()">Retour au Menu</button>
         </div>
 
-        <!-- MENU CATÉGORIE -->
+        <!-- MENU CATÉGORIE / LANCEMENT -->
         <div class="overlay" id="category-menu" style="display: none;">
-            <div class="menu-title">Sélectionnez la Playlist</div>
+            <div class="menu-title" style="color:var(--sys)">PRÊT À COMBATTRE ?</div>
             <p id="lobby-count" style="color:#0ff; font-weight:bold; font-size:1.2em; display:none;">1 joueur(s) dans le salon</p>
-            <button class="btn-main" onclick="selectCategory('RAP')">🎤 RAP FRANÇAIS</button>
-            <button class="btn-main" onclick="selectCategory('FR')">🥐 VARIÉTÉ FR</button>
-            <button class="btn-main" onclick="selectCategory('MANGA')">⚔️ ANIME OPENINGS</button>
-            <button class="btn-main" onclick="selectCategory('POP')">🌍 POP INTERNATIONALE</button>
+            
+            <button class="btn-main" id="btn-launch-game" onclick="fetchAnimePlaylist()" style="background: var(--p1); font-size: 1.5em; padding: 20px 40px;">▶ LANCER LA PARTIE</button>
+            
             <div id="loading-api" style="display: none;">
                 <div class="loader"></div>
-                <p>Piratage de la base de données iTunes en cours...</p>
+                <p style="font-weight:bold; color:var(--sys); font-size:1.2em;">Chargement des openings depuis la base de données...</p>
             </div>
         </div>
 
@@ -129,6 +128,41 @@
     </div>
 
     <script>
+        // --- BASE DE DONNÉES CURATÉE DES ANIMES ---
+        // Cette base permet de bypasser les limitations de recherche d'iTunes en ciblant directement les bons titres.
+        const animeCatalog = [
+            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Silhouette Kana-Boon" },
+            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Blue Bird Ikimonogakari" },
+            { anime: "One Piece", aliases: ["onepiece"], search: "We Are Hiroshi Kitadani" },
+            { anime: "Bleach", aliases: ["bleachanime"], search: "Asterisk Orange Range" },
+            { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball"], search: "Cha La Head Cha La" },
+            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Guren no Yumiya Linked Horizon" },
+            { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Gurenge LiSA" },
+            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Kaikai Kitan Eve" },
+            { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "Peace Sign Kenshi Yonezu" },
+            { anime: "Tokyo Ghoul", aliases: ["tokyoghoul"], search: "Unravel TK" },
+            { anime: "Death Note", aliases: ["deathnote"], search: "the WORLD Nightmare" },
+            { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist", "fmab", "brotherhood"], search: "Again YUI" },
+            { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Departure Ono Masatoshi" },
+            { anime: "Sword Art Online", aliases: ["sao"], search: "Crossing Field LiSA" },
+            { anime: "Fairy Tail", aliases: ["fairytail"], search: "Snow Fairy FUNKIST" },
+            { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" },
+            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Bloody Stream Coda" },
+            { anime: "Evangelion", aliases: ["neon genesis evangelion", "nge"], search: "A Cruel Angels Thesis" },
+            { anime: "Chainsaw Man", aliases: ["csm"], search: "Kick Back Kenshi Yonezu" },
+            { anime: "Oshi no Ko", aliases: ["oshinoko"], search: "Idol Yoasobi" },
+            { anime: "Spy x Family", aliases: ["spyxfamily", "sxf"], search: "Mixed Nuts Official Hige Dandism" },
+            { anime: "Your Name", aliases: ["kimi no na wa"], search: "Zenzenzense Radwimps" },
+            { anime: "Cowboy Bebop", aliases: ["cowboybebop"], search: "Tank Seatbelts" },
+            { anime: "Tokyo Revengers", aliases: ["tokyorevengers"], search: "Cry Baby Official Hige Dandism" },
+            { anime: "Steins Gate", aliases: ["steinsgate"], search: "Hacking to the Gate" },
+            { anime: "No Game No Life", aliases: ["ngnl"], search: "This Game Konomi Suzuki" },
+            { anime: "Code Geass", aliases: ["codegeass"], search: "Colors Flow" },
+            { anime: "Mob Psycho 100", aliases: ["mobpsycho"], search: "99 Mob Choir" },
+            { anime: "Black Clover", aliases: ["blackclover"], search: "Black Catcher Vickeblanka" },
+            { anime: "Fire Force", aliases: ["fireforce"], search: "Inferno Mrs Green Apple" }
+        ];
+
         // --- VARIABLES GLOBALES ---
         let gameMode = 'solo'; 
         let myPid = 1; 
@@ -143,7 +177,7 @@
         let currentTrack = null;
         let audioPlayer = new Audio();
         
-        let state = { artistFound: false, titleFound: false, timeLeft: 15 };
+        let state = { animeFound: false, timeLeft: 20 }; // 20 sec par manche
         let roundInterval = null;
         let isRoundActive = false;
         
@@ -153,8 +187,7 @@
         // --- UI Elements ---
         const chatMsgs = document.getElementById('chat-messages');
         const guessInput = document.getElementById('guess-input');
-        const boxArtist = document.getElementById('box-artist');
-        const boxTitle = document.getElementById('box-title');
+        const boxAnime = document.getElementById('box-anime');
         const timerBox = document.getElementById('timer-box');
 
         guessInput.addEventListener("keypress", function(event) {
@@ -184,7 +217,6 @@
             status.style.color = "var(--p1)";
             status.innerText = "Création du serveur..."; 
             
-            // Code d'accès court et simple !
             let code = 'BLD' + Math.floor(1000 + Math.random() * 9000);
             
             if (peer) peer.destroy();
@@ -192,18 +224,15 @@
             
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = id;
-                
-                // Protection Anti-Crash du presse-papier
                 try {
                     if (navigator.clipboard && window.isSecureContext) {
                         navigator.clipboard.writeText(id).catch(e => console.warn(e));
                     }
-                } catch(e) { console.warn("Presse-papier non disponible."); }
+                } catch(e) {}
                 
                 status.style.color = "var(--sys)";
                 status.innerText = "Serveur prêt ! Donnez le code à vos amis."; 
                 
-                // UX : On masque le bouton de création, on affiche la suite
                 document.getElementById('btn-host').style.display = 'none';
                 document.getElementById('btn-start-host').style.display = 'inline-block';
                 
@@ -241,8 +270,7 @@
             });
         }
 
-        // Cette fonction s'active UNIQUEMENT quand l'hôte est prêt
-        function goToCategories() {
+        function goToLobby() {
             document.getElementById('network-menu').style.display = 'none';
             document.getElementById('category-menu').style.display = 'flex';
             document.getElementById('lobby-count').style.display = 'block';
@@ -268,7 +296,6 @@
                     conns = [conn]; 
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('main-menu').style.display = 'flex';
-                    // Écran d'attente propre pour les clients
                     document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2em; margin-bottom:20px;">Connecté !</div><p style="font-size:1.2em; color:#fff;">En attente du lancement par l\'hôte...</p><div class="loader"></div>';
                 });
                 
@@ -298,36 +325,47 @@
             conns.forEach(c => { if (c.open) c.send(data); });
         }
 
-        // --- FETCH API APPLE MUSIC ---
-        async function selectCategory(cat) {
-            document.querySelectorAll('#category-menu button').forEach(b => b.style.display = 'none');
-            document.getElementById('lobby-count').style.display = 'none';
+        // --- FETCH DYNAMIQUE DE LA PLAYLIST ANIME ---
+        async function fetchAnimePlaylist() {
+            document.getElementById('btn-launch-game').style.display = 'none';
             document.getElementById('loading-api').style.display = 'block';
-            
-            let term = ''; let country = 'FR';
-            if (cat === 'RAP') { term = 'rap+francais'; }
-            if (cat === 'FR') { term = 'chanson+francaise'; }
-            if (cat === 'MANGA') { term = 'anime+opening'; country = 'JP'; }
-            if (cat === 'POP') { term = 'billboard+top'; country = 'US'; }
 
-            try {
-                const res = await fetch(`https://itunes.apple.com/search?term=${term}&country=${country}&media=music&entity=song&limit=150`);
-                const data = await res.json();
-                
-                let validTracks = data.results.filter(t => t.previewUrl);
-                validTracks.sort(() => Math.random() - 0.5);
-                
-                playlist = validTracks.slice(0, 10); 
-                document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
-                
-                if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a choisi la catégorie ${cat}` });
-                displaySys("🎵 DÉBUT DE LA PARTIE (10 Manches) 🎵");
-                
-                setTimeout(startNextRound, 2000);
-            } catch (err) {
-                alert("Erreur API. Vérifiez votre connexion.");
-                location.reload();
+            // On mélange notre base de données d'animes
+            let shuffled = animeCatalog.sort(() => Math.random() - 0.5);
+            let selectedTracks = [];
+
+            // On va chercher 10 morceaux valides
+            for (let i = 0; i < shuffled.length; i++) {
+                if (selectedTracks.length >= 10) break;
+                try {
+                    let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(shuffled[i].search)}&media=music&limit=1`);
+                    let data = await res.json();
+                    
+                    if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+                        selectedTracks.push({
+                            animeName: shuffled[i].anime,
+                            aliases: shuffled[i].aliases,
+                            previewUrl: data.results[0].previewUrl
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Échec du chargement pour : ", shuffled[i].anime);
+                }
             }
+
+            if (selectedTracks.length === 0) {
+                alert("Erreur réseau : Impossible de contacter la base de données musicale.");
+                location.reload();
+                return;
+            }
+
+            playlist = selectedTracks;
+            document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
+            
+            if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a lancé la partie !` });
+            displaySys("🎵 DÉBUT DE LA PARTIE (" + playlist.length + " Manches) 🎵");
+            
+            setTimeout(startNextRound, 2000);
         }
 
         // --- FONDU SONORE ---
@@ -355,7 +393,7 @@
             }
 
             currentTrack = playlist[currentTrackIndex];
-            state = { artistFound: false, titleFound: false, timeLeft: 15 };
+            state = { animeFound: false, timeLeft: 20 };
             
             clearInterval(fadeInterval);
             isFading = false;
@@ -394,7 +432,7 @@
             clearInterval(fadeInterval);
             audioPlayer.pause();
             
-            revealAnswers(currentTrack.artistName, currentTrack.trackName);
+            revealAnswers(currentTrack.animeName);
             displaySys(`Fin de la manche. Préparation de la suivante...`);
             
             if (gameMode === 'host') broadcast({ type: 'end_round', track: currentTrack });
@@ -430,11 +468,9 @@
             if (state.timeLeft <= 3) startFadeOut();
             updateScoreUI(stateData.scores); 
 
-            if (stateData.artistFound && !boxArtist.classList.contains('found')) {
-                boxArtist.classList.add('found'); boxArtist.innerText = "🧑‍🎤 ARTISTE TROUVÉ !";
-            }
-            if (stateData.titleFound && !boxTitle.classList.contains('found')) {
-                boxTitle.classList.add('found'); boxTitle.innerText = "🎵 TITRE TROUVÉ !";
+            if (stateData.animeFound && !boxAnime.classList.contains('found')) {
+                boxAnime.classList.add('found'); 
+                boxAnime.innerText = "📺 ANIME TROUVÉ !";
             }
         }
 
@@ -442,27 +478,34 @@
             isRoundActive = false;
             clearInterval(fadeInterval);
             audioPlayer.pause();
-            revealAnswers(track.artistName, track.trackName);
+            revealAnswers(track.animeName);
             displaySys(`Fin de la manche. Préparation de la suivante...`);
         }
 
-        // --- VERIFICATION ET RECHERCHE ---
+        // --- VERIFICATION ET RECHERCHE (FUZZY LOGIC AMÉLIORÉE) ---
         function cleanText(str) {
             if (!str) return '';
-            let s = str.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, ''); 
-            s = s.split(/feat\.|ft\./i)[0]; 
-            s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+            let s = str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
             s = s.toLowerCase().replace(/[^a-z0-9]/g, ''); 
             return s.trim();
         }
 
-        function checkMatch(guess, target) {
+        function checkMatch(guess, currentTrackObj) {
             let g = cleanText(guess);
-            let t = cleanText(target);
+            let t = cleanText(currentTrackObj.animeName);
+            
             if (g.length < 2) return false;
-            if (g === t) return true;
-            if (t.includes(g) && g.length >= t.length * 0.75) return true;
-            if (g.includes(t) && t.length >= g.length * 0.75) return true;
+            
+            // Correspondance stricte ou quasi-complète sur le nom principal
+            if (g === t || (t.includes(g) && g.length >= t.length * 0.75) || (g.includes(t) && t.length >= g.length * 0.75)) return true;
+            
+            // Correspondance sur les alias (ex: SNK, FMA, JJK)
+            if (currentTrackObj.aliases) {
+                for (let alias of currentTrackObj.aliases) {
+                    let a = cleanText(alias);
+                    if (g === a || (a.includes(g) && g.length >= a.length * 0.8)) return true;
+                }
+            }
             return false;
         }
 
@@ -479,44 +522,33 @@
         }
 
         function processGuess(text, pid) {
-            let correct = false;
-            let aMatch = !state.artistFound && checkMatch(text, currentTrack.artistName);
-            let tMatch = !state.titleFound && checkMatch(text, currentTrack.trackName);
+            if (state.animeFound) return; // Si déjà trouvé, on ignore
 
-            if (aMatch) {
-                state.artistFound = true; scores[pid]++; correct = true;
-                let msg = `🔥 Joueur ${pid} a trouvé l'Artiste !`;
-                displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
+            let correct = checkMatch(text, currentTrack);
+
+            if (correct) {
+                state.animeFound = true; 
+                scores[pid]++; 
                 
-                boxArtist.classList.add('found');
-                boxArtist.innerText = gameMode === 'solo' ? `🧑‍🎤 ${currentTrack.artistName}` : "🧑‍🎤 ARTISTE TROUVÉ !";
-            }
-            if (tMatch) {
-                state.titleFound = true; scores[pid]++; correct = true;
-                let msg = `🔥 Joueur ${pid} a trouvé le Titre !`;
-                displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
+                let msg = `🔥 Joueur ${pid} a trouvé l'Anime !`;
+                displaySys(msg); 
+                if(gameMode === 'host') broadcast({type:'sys', msg:msg});
                 
-                boxTitle.classList.add('found');
-                boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : "🎵 TITRE TROUVÉ !";
-            }
-
-            // Affiche le message de chat standard s'il ne s'agit pas d'une bonne réponse (ou partiellement)
-            if (!correct || (!aMatch && tMatch) || (aMatch && !tMatch)) {
-                let safeText = correct ? "*****" : text; 
-                displayChat(safeText, pid);
-                if (gameMode === 'host') broadcast({ type: 'chat', msg: safeText, pid: pid });
-            }
-
-            updateScoreUI();
-
-            if (state.artistFound && state.titleFound) {
+                boxAnime.classList.add('found');
+                boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : "📺 ANIME TROUVÉ !";
+                
+                // On accélère la fin de la manche (reste 3s)
                 if (state.timeLeft > 3) {
                     state.timeLeft = 3;
                     startFadeOut(); 
-                    if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
                 }
-            } else if (gameMode === 'host') {
-                broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
+                
+                updateScoreUI();
+                if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
+            } else {
+                // Affichage du chat classique si faux
+                displayChat(text, pid);
+                if (gameMode === 'host') broadcast({ type: 'chat', msg: text, pid: pid });
             }
         }
 
@@ -566,17 +598,15 @@
         }
 
         function resetRoundUI() {
-            timerBox.innerText = "15";
-            boxArtist.className = 'mystery-box'; boxArtist.innerText = "🧑‍🎤 ARTISTE : ? ? ?";
-            boxTitle.className = 'mystery-box'; boxTitle.innerText = "🎵 TITRE : ? ? ?";
+            timerBox.innerText = "20";
+            boxAnime.className = 'mystery-box'; 
+            boxAnime.innerText = "📺 ANIME : ? ? ?";
             guessInput.focus();
         }
 
-        function revealAnswers(artist, title) {
-            boxArtist.classList.add('found');
-            boxArtist.innerText = `🧑‍🎤 ${artist}`;
-            boxTitle.classList.add('found');
-            boxTitle.innerText = `🎵 ${title.split('(')[0]}`;
+        function revealAnswers(animeName) {
+            boxAnime.classList.add('found');
+            boxAnime.innerText = `📺 ${animeName}`;
         }
 
         function showEndScreen(finalScores = scores) {
@@ -585,7 +615,7 @@
             
             let t = document.getElementById('final-scores-text');
             if (gameMode === 'solo') {
-                t.innerHTML = `Score Final : <b style="color:var(--p1)">${finalScores[1]} / 20</b>`;
+                t.innerHTML = `Score Final : <b style="color:var(--sys)">${finalScores[1]} / 10</b>`;
             } else {
                 let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
                 let winnerPid = sortedPids[0];
@@ -594,14 +624,14 @@
                 t.innerHTML = `<span style="color:${winnerColor}; font-weight:bold;">JOUEUR ${winnerPid} GAGNE !</span><br><br>`;
                 
                 sortedPids.forEach(pid => {
-                    t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 5px;">Joueur ${pid} : ${finalScores[pid]} pts</div>`;
+                    t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 5px; font-weight:bold;">Joueur ${pid} : ${finalScores[pid]} pts</div>`;
                 });
             }
         }
     </script>
     
+    <!-- SCRIPT DE NAVIGATION SWIPE -->
     <script>
-        // SCRIPT SWIPE
         const gamesHubList = [
             "../cybertank/index.html",
             "../tower_defense/index.html",
@@ -651,7 +681,7 @@
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
             if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
-            if (target.closest('#game-container') || target.closest('#game-wrapper')) return true;
+            if (target.closest('#game-container') || target.closest('#chat-messages')) return true;
             return false;
         }
 
