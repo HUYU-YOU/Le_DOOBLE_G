@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Blind Test - Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- Police Futuriste pour le côté Cyberpunk -->
+    <!-- Police Futuriste -->
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -111,7 +111,6 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative; overflow: hidden;
             color: #888;
         }
-        /* Animation de recherche */
         .mystery-box::before {
             content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
@@ -188,11 +187,8 @@
 
         <!-- TRACK INFO (HYBRIDE) -->
         <div id="track-info">
-            <!-- Boîtes Musique Classique -->
             <div class="mystery-box" id="box-artist" style="display: none;">🧑‍🎤 ARTISTE : ? ? ?</div>
             <div class="mystery-box" id="box-title" style="display: none;">🎵 TITRE : ? ? ?</div>
-            
-            <!-- Boîte Anime -->
             <div class="mystery-box" id="box-anime" style="display: none; padding: 25px; font-size: 2em;">📺 ANIME : ? ? ?</div>
         </div>
 
@@ -241,15 +237,15 @@
             <p id="lobby-count" style="color:#0ff; font-weight:700; font-size:1.3em; display:none; margin-bottom: 5px;">1 joueur(s) dans le salon</p>
             
             <div class="cat-grid" id="cat-buttons">
-                <button class="btn-main" onclick="launchGame('RAP')" style="border-color: #ff5500; color: #ffaa00;">🎤 RAP FRANÇAIS</button>
-                <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 VARIÉTÉ FR</button>
+                <button class="btn-main" onclick="launchGame('RAP')" style="border-color: #ff5500; color: #ffaa00;">🎤 RAP (TRAP/KICK)</button>
+                <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 VARIÉTÉ (OLD & NOSTALGIE)</button>
                 <button class="btn-main" onclick="launchGame('POP')" style="border-color: #ff00aa; color: #ff88cc;">🌍 POP INTERNATIONALE</button>
                 <button class="btn-main btn-sys" onclick="launchGame('ANIME')">📺 ANIME (OPENINGS)</button>
             </div>
             
             <div id="loading-api" style="display: none; flex-direction: column; align-items: center;">
                 <div class="loader"></div>
-                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px;">Génération de la playlist en cours...</p>
+                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px;">Génération des pistes en cours...</p>
             </div>
         </div>
 
@@ -262,38 +258,60 @@
     </div>
 
     <script>
-        // --- MASTER DATABASE: 100+ ANIMES CULTES ---
-        const animeCatalog = [
-            // BIG SHONENS
-            { anime: "Naruto", aliases: ["naruto shippuden"], search: "Silhouette Kana-Boon" }, { anime: "Naruto", aliases: ["naruto shippuden"], search: "Blue Bird Ikimonogakari" },
-            { anime: "One Piece", aliases: ["onepiece"], search: "We Are Hiroshi Kitadani" }, { anime: "One Piece", aliases: ["onepiece"], search: "Hope Namie Amuro" },
-            { anime: "Bleach", aliases: ["bleachanime"], search: "Asterisk Orange Range" }, { anime: "Bleach", aliases: ["bleachanime"], search: "Ranbu no Melody SID" },
-            { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball", "dragon ball"], search: "Cha La Head Cha La" }, { anime: "Dragon Ball GT", aliases: ["dbgt", "dragonball gt"], search: "Dan Dan Kokoro Hikareteku" },
-            { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Departure Ono Masatoshi" }, { anime: "Fairy Tail", aliases: ["fairytail"], search: "Snow Fairy FUNKIST" },
-            { anime: "Gintama", aliases: ["gin tama"], search: "Tougenkyou Alien" }, { anime: "Black Clover", aliases: ["blackclover"], search: "Black Catcher Vickeblanka" },
-            // NEW GEN
-            { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Guren no Yumiya Linked Horizon" }, { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "The Rumbling SiM" },
-            { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Gurenge LiSA" }, { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Zankyou Sanka Aimer" },
-            { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Kaikai Kitan Eve" }, { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Ao no Sumika Tatsuya Kitani" },
-            { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "Peace Sign Kenshi Yonezu" }, { anime: "Chainsaw Man", aliases: ["csm"], search: "Kick Back Kenshi Yonezu" },
-            { anime: "Oshi no Ko", aliases: ["oshinoko"], search: "Idol Yoasobi" }, { anime: "Spy x Family", aliases: ["spyxfamily", "sxf"], search: "Mixed Nuts Official Hige Dandism" },
-            { anime: "Mashle", aliases: ["mashle magic and muscles"], search: "Bling-Bang-Bang-Born Creepy Nuts" }, { anime: "Solo Leveling", aliases: ["sololeveling"], search: "LEveL SawanoHiroyuki" },
-            { anime: "Tokyo Revengers", aliases: ["tokyorevengers"], search: "Cry Baby Official Hige Dandism" },
-            // CLASSICS & MASTERPIECES
-            { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist", "fmab", "brotherhood"], search: "Again YUI" }, { anime: "Death Note", aliases: ["deathnote"], search: "the WORLD Nightmare" },
-            { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Bloody Stream Coda" }, { anime: "Evangelion", aliases: ["neon genesis evangelion", "nge"], search: "A Cruel Angels Thesis" },
-            { anime: "Cowboy Bebop", aliases: ["cowboybebop"], search: "Tank Seatbelts" }, { anime: "Great Teacher Onizuka", aliases: ["gto"], search: "Drivers High L'Arc-en-Ciel" },
-            { anime: "Pokemon", aliases: ["pocket monsters"], search: "Gotta Catch Em All Theme" }, { anime: "Digimon", aliases: ["digimon adventure"], search: "Butter-Fly Wada Kouji" },
-            { anime: "City Hunter", aliases: ["nicky larson"], search: "Get Wild TM Network" },
-            // ISEKAI & DIVERS
-            { anime: "Sword Art Online", aliases: ["sao"], search: "Crossing Field LiSA" }, { anime: "Re:Zero", aliases: ["rezero"], search: "Redo Konomi Suzuki" },
-            { anime: "No Game No Life", aliases: ["ngnl"], search: "This Game Konomi Suzuki" }, { anime: "Tensei Shitara Slime Datta Ken", aliases: ["slime", "tensura", "that time i got reincarnated as a slime"], search: "Nameless Story Takuma Terashima" },
-            { anime: "Haikyuu", aliases: ["haikyu"], search: "Fly High Burnout Syndromes" }, { anime: "Kuroko no Basket", aliases: ["kuroko", "knb"], search: "Can Do Granrodeo" },
-            { anime: "Your Name", aliases: ["kimi no na wa"], search: "Zenzenzense Radwimps" }, { anime: "Your Lie in April", aliases: ["shigatsu wa kimi no uso"], search: "Hikaru Nara Goose House" },
-            { anime: "Tokyo Ghoul", aliases: ["tokyoghoul"], search: "Unravel TK" }, { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" },
-            { anime: "Steins Gate", aliases: ["steinsgate"], search: "Hacking to the Gate" }, { anime: "Code Geass", aliases: ["codegeass"], search: "Colors Flow" },
-            { anime: "Cyberpunk Edgerunners", aliases: ["cyberpunk", "edgerunners"], search: "This Fffire Franz Ferdinand" }
-        ];
+        // --- MASTER DATABASES (ULTIMATE EDITION) ---
+        const catalogs = {
+            ANIME: [
+                { anime: "Naruto", aliases: ["naruto shippuden"], search: "Silhouette Kana-Boon" }, { anime: "Naruto", aliases: ["naruto shippuden"], search: "Blue Bird Ikimonogakari" },
+                { anime: "One Piece", aliases: ["onepiece"], search: "We Are Hiroshi Kitadani" }, { anime: "One Piece", aliases: ["onepiece"], search: "Hope Namie Amuro" },
+                { anime: "Bleach", aliases: ["bleachanime"], search: "Asterisk Orange Range" }, { anime: "Bleach", aliases: ["bleachanime"], search: "Ranbu no Melody SID" },
+                { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball", "dragon ball"], search: "Cha La Head Cha La" }, { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Departure Ono Masatoshi" },
+                { anime: "Fairy Tail", aliases: ["fairytail"], search: "Snow Fairy FUNKIST" }, { anime: "Gintama", aliases: ["gin tama"], search: "Tougenkyou Alien" },
+                { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Guren no Yumiya Linked Horizon" }, { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "The Rumbling SiM" },
+                { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Gurenge LiSA" }, { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Kaikai Kitan Eve" },
+                { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "Peace Sign Kenshi Yonezu" }, { anime: "Chainsaw Man", aliases: ["csm"], search: "Kick Back Kenshi Yonezu" },
+                { anime: "Oshi no Ko", aliases: ["oshinoko"], search: "Idol Yoasobi" }, { anime: "Spy x Family", aliases: ["spyxfamily", "sxf"], search: "Mixed Nuts Official Hige Dandism" },
+                { anime: "Mashle", aliases: ["mashle magic and muscles"], search: "Bling-Bang-Bang-Born Creepy Nuts" }, { anime: "Solo Leveling", aliases: ["sololeveling"], search: "LEveL SawanoHiroyuki" },
+                { anime: "Tokyo Revengers", aliases: ["tokyorevengers"], search: "Cry Baby Official Hige Dandism" }, { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist", "fmab", "brotherhood"], search: "Again YUI" },
+                { anime: "Death Note", aliases: ["deathnote"], search: "the WORLD Nightmare" }, { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Bloody Stream Coda" },
+                { anime: "Evangelion", aliases: ["neon genesis evangelion", "nge"], search: "A Cruel Angels Thesis" }, { anime: "Cowboy Bebop", aliases: ["cowboybebop"], search: "Tank Seatbelts" },
+                { anime: "Great Teacher Onizuka", aliases: ["gto"], search: "Drivers High L'Arc-en-Ciel" }, { anime: "Pokemon", aliases: ["pocket monsters"], search: "Gotta Catch Em All Theme" },
+                { anime: "Sword Art Online", aliases: ["sao"], search: "Crossing Field LiSA" }, { anime: "Tokyo Ghoul", aliases: ["tokyoghoul"], search: "Unravel TK" },
+                { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" }, { anime: "Cyberpunk Edgerunners", aliases: ["cyberpunk", "edgerunners"], search: "This Fffire Franz Ferdinand" },
+                { anime: "Saint Seiya", aliases: ["les chevaliers du zodiaque"], search: "Pegasus Fantasy Make-Up" }, { anime: "Sailor Moon", aliases: ["sailormoon"], search: "Moonlight Densetsu" },
+                { anime: "Goldorak", aliases: ["ufo robot grendizer"], search: "Goldorak Noam" }, { anime: "Captain Tsubasa", aliases: ["olive et tom"], search: "Moete Hero" }
+            ],
+            RAP: [
+                "Orelsan", "Booba", "PNL", "Damso", "Nekfeu", "Alpha Wann", "Freeze Corleone", "Kaaris", 
+                "SCH", "IAM", "Suprême NTM", "Vald", "Hugo TSR", "Lino", "Despo Rutti", "Ninho", 
+                "Gazo", "Koba LaD", "Josman", "Dinos", "Disiz", "1995", "Fonky Family", "Rohff", 
+                "La Fouine", "Kalash Criminel", "Niska", "Gradur", "Mac Tyer", "Kery James", 
+                "Sniper", "113", "Mafia K'1 Fry", "Lunatic", "Sexion d'Assaut", "PLK", "Ziak", 
+                "Seth Gueko", "Youssoupha", "Medine", "Sinik", "Diam's", "Salif", "Guizmo", 
+                "Naps", "Jul", "Werenoi", "Tiakola", "SDM", "Maes", "Alkpote", "Bosh", "Niro"
+            ],
+            FR: [
+                "Georges Brassens", "Barbara", "Charles Aznavour", "Gregory Lemarchal", "Lorie", 
+                "Jenifer", "Tragedie", "Anne Sylvestre", "Jacques Brel", "Edith Piaf", "Renaud", 
+                "Francis Cabrel", "Jean-Jacques Goldman", "Celine Dion", "Claude Francois", 
+                "Daniel Balavoine", "K-Maro", "Diam's", "Larusso", "Alizee", "Michel Sardou", 
+                "Johnny Hallyday", "Joe Dassin", "Mylene Farmer", "France Gall", "Michel Berger", 
+                "Kyo", "Tribal King", "Serge Gainsbourg", "Leo Ferre", "Georges Moustaki", "Dalida", 
+                "Christophe", "Michel Polnareff", "Laurent Voulzy", "Alain Souchon", "Julien Clerc", 
+                "Maxime Le Forestier", "Nino Ferrer", "Sheila", "Sylvie Vartan", "Priscilla", 
+                "Amel Bent", "Nadiya", "L5", "Garou", "Willy Denzey", "Leslie", "Magic System", "Yannick"
+            ],
+            POP: [
+                "Michael Jackson", "Queen", "The Weeknd", "Dua Lipa", "Daft Punk", "Bruno Mars", 
+                "Lady Gaga", "Ed Sheeran", "Coldplay", "Rihanna", "Eminem", "Gorillaz", "Beyonce", 
+                "Katy Perry", "Maroon 5", "Adele", "Taylor Swift", "Justin Timberlake", "Britney Spears", 
+                "Shakira", "Madonna", "Elton John", "David Bowie", "Prince", "Sia", "ABBA", 
+                "The Beatles", "The Rolling Stones", "AC/DC", "U2", "Oasis", "Nirvana", 
+                "Red Hot Chili Peppers", "Linkin Park", "The Black Eyed Peas", "Justin Bieber", 
+                "Ariana Grande", "Billie Eilish", "Harry Styles", "Miley Cyrus", "Kylie Minogue", 
+                "Spice Girls", "Backstreet Boys", "NSYNC", "Destiny's Child", "Avril Lavigne", 
+                "Pink", "Gwen Stefani", "Alicia Keys", "Usher", "50 Cent"
+            ]
+        };
 
         // --- VARIABLES GLOBALES ---
         let gameMode = 'solo'; 
@@ -347,7 +365,6 @@
             }
         }
 
-        // --- CONFIGURATION DYNAMIQUE DE L'UI ---
         function setupUIForCategory(cat) {
             currentCategory = cat;
             if (cat === 'ANIME') {
@@ -454,7 +471,7 @@
 
         function broadcast(data) { conns.forEach(c => { if (c.open) c.send(data); }); }
 
-        // --- FETCH DYNAMIQUE DE LA PLAYLIST ---
+        // --- FETCH DYNAMIQUE DE LA PLAYLIST (API BASÉE SUR LES CATALOGUES) ---
         async function launchGame(cat) {
             setupUIForCategory(cat);
             if (gameMode === 'host') broadcast({ type: 'start_game', category: cat });
@@ -463,37 +480,34 @@
             document.getElementById('loading-api').style.display = 'flex';
 
             let selectedTracks = [];
+            // Mélange le tableau complet de plus de 50 artistes
+            let shuffled = catalogs[cat].sort(() => Math.random() - 0.5);
 
-            if (cat === 'ANIME') {
-                let shuffled = animeCatalog.sort(() => Math.random() - 0.5);
-                for (let i = 0; i < shuffled.length; i++) {
-                    if (selectedTracks.length >= 10) break;
-                    try {
-                        let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(shuffled[i].search)}&media=music&limit=1`);
-                        let data = await res.json();
-                        if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+            for (let i = 0; i < shuffled.length; i++) {
+                if (selectedTracks.length >= 10) break; // S'arrête quand on a nos 10 pistes pour la manche
+                try {
+                    let searchItem = shuffled[i];
+                    let searchTerm = cat === 'ANIME' ? searchItem.search : searchItem;
+                    
+                    let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&media=music&entity=song&limit=10`);
+                    let data = await res.json();
+                    
+                    let validTracks = data.results.filter(t => t.previewUrl);
+                    if (validTracks.length > 0) {
+                        let rTrack = validTracks[Math.floor(Math.random() * Math.min(validTracks.length, 5))];
+                        
+                        if (cat === 'ANIME') {
                             selectedTracks.push({
-                                animeName: shuffled[i].anime, aliases: shuffled[i].aliases,
-                                previewUrl: data.results[0].previewUrl
+                                animeName: searchItem.anime, aliases: searchItem.aliases,
+                                previewUrl: rTrack.previewUrl
+                            });
+                        } else {
+                            selectedTracks.push({
+                                artistName: rTrack.artistName, trackName: rTrack.trackName, previewUrl: rTrack.previewUrl
                             });
                         }
-                    } catch (e) {}
-                }
-            } else {
-                let term = ''; let country = 'FR';
-                if (cat === 'RAP') { term = 'rap+francais'; }
-                if (cat === 'FR') { term = 'chanson+francaise'; }
-                if (cat === 'POP') { term = 'billboard+top+hits'; country = 'US'; }
-
-                try {
-                    const res = await fetch(`https://itunes.apple.com/search?term=${term}&country=${country}&media=music&entity=song&limit=100`);
-                    const data = await res.json();
-                    let validTracks = data.results.filter(t => t.previewUrl);
-                    validTracks.sort(() => Math.random() - 0.5);
-                    selectedTracks = validTracks.slice(0, 10).map(t => ({
-                        artistName: t.artistName, trackName: t.trackName, previewUrl: t.previewUrl
-                    }));
-                } catch (e) { console.error(e); }
+                    }
+                } catch (e) { console.warn("Échec pour : ", shuffled[i]); }
             }
 
             if (selectedTracks.length === 0) {
@@ -699,7 +713,6 @@
             let div = document.createElement('div'); div.className = 'msg'; let color = getPlayerColor(pid);
             div.style.alignSelf = pid === myPid ? 'flex-end' : 'flex-start';
             
-            // Design des bulles façon cyberpunk glassmorphism
             if (pid === myPid) {
                 div.style.borderRight = `4px solid ${color}`;
                 div.style.background = `linear-gradient(90deg, rgba(255,255,255,0.02), rgba(${hexToRgb(color)}, 0.15))`;
