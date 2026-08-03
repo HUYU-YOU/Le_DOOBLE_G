@@ -12,6 +12,7 @@
             --panel: rgba(10, 15, 25, 0.85); 
             --p1: #00f0ff; 
             --p2: #ff007f; 
+            --bot: #b82aff;
             --sys: #39ff14; 
         }
         
@@ -36,6 +37,8 @@
         .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
         .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
         .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); }
+        .btn-main.purple { border-color: var(--bot); box-shadow: 0 0 15px rgba(184, 42, 255, 0.2); }
+        .btn-main.purple:hover { background: var(--bot); box-shadow: 0 0 25px var(--bot); }
 
         input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--p1); text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; font-family: 'Rajdhani';}
         input.net-input:focus { box-shadow: 0 0 15px var(--p1); border-color: #fff;}
@@ -48,7 +51,7 @@
         /* Canvas */
         canvas { background: #030408; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: auto; aspect-ratio: 4/3; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); cursor: crosshair; }
 
-        /* Controles Mobiles (Joysticks Virtuels) */
+        /* Controles Mobiles */
         #mobile-controls { display: none; width: 100%; justify-content: space-between; padding: 20px 40px; box-sizing: border-box; position: absolute; bottom: 10px; pointer-events: none;}
         .joystick-zone { width: 120px; height: 120px; background: rgba(0, 240, 255, 0.1); border: 2px solid rgba(0, 240, 255, 0.3); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none;}
         .joystick-zone.right { border-color: rgba(255, 0, 127, 0.3); background: rgba(255, 0, 127, 0.1); }
@@ -70,8 +73,9 @@
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
             <h1 style="font-size: 3.5em; margin-bottom: 30px; text-shadow: 0 0 20px var(--p1);">ARENA OS</h1>
-            <button class="btn-main" onclick="startMode('solo')">Survie (Solo)</button>
-            <button class="btn-main red" onclick="showNetworkMenu()">Duel (Réseau 1v1)</button>
+            <button class="btn-main" onclick="startMode('solo_survival')">Survie (Vagues)</button>
+            <button class="btn-main purple" onclick="startMode('solo_1v1')">Duel Bot (1v1)</button>
+            <button class="btn-main red" onclick="showNetworkMenu()">Duel PVP (Réseau)</button>
         </div>
 
         <!-- MENU RÉSEAU -->
@@ -98,7 +102,10 @@
         <div class="overlay" id="game-over" style="display: none;">
             <h2 id="end-message" style="font-size: 4em; margin-bottom: 10px; text-transform: uppercase;"></h2>
             <p id="end-stats" style="font-size: 1.5em; color: #aaa; margin-bottom: 30px;"></p>
-            <button class="btn-main" onclick="location.reload()">Retour Menu</button>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn-main" onclick="requestRestart()">Rejouer</button>
+                <button class="btn-main" onclick="location.reload()" style="background:transparent; border-color:#555; color:#aaa; box-shadow:none;">Quitter</button>
+            </div>
         </div>
 
         <!-- HUD & CANVAS -->
@@ -110,12 +117,8 @@
 
         <!-- JOYSTICKS (Mobiles) -->
         <div id="mobile-controls">
-            <div class="joystick-zone" id="joy-move">
-                <div class="joystick-knob" id="knob-move"></div>
-            </div>
-            <div class="joystick-zone right" id="joy-aim">
-                <div class="joystick-knob" id="knob-aim"></div>
-            </div>
+            <div class="joystick-zone" id="joy-move"><div class="joystick-knob" id="knob-move"></div></div>
+            <div class="joystick-zone right" id="joy-aim"><div class="joystick-knob" id="knob-aim"></div></div>
         </div>
 
     </div>
@@ -125,8 +128,9 @@
         const ctx = canvas.getContext('2d');
         
         // --- ETAT DU JEU ---
-        let gameMode = 'solo'; // 'solo', 'host', 'client'
+        let gameMode = 'solo_survival'; // 'solo_survival', 'solo_1v1', 'host', 'client'
         let gameActive = false;
+        let loopRunning = false;
         let myTeam = 1; 
         let peer = null, conn = null;
 
@@ -136,15 +140,14 @@
         let particles = [];
         let walls = [];
         
-        // Progression
+        // Progression globale
         let wave = 1;
-        let score = 0;
         let p1Wins = 0, p2Wins = 0;
 
         // Contrôles
         let keys = { w:false, a:false, s:false, d:false, arrowup:false, arrowleft:false, arrowdown:false, arrowright:false };
         let mouse = { x: 400, y: 300, down: false };
-        let jMove = { x: 0, y: 0 }; // -1 à 1
+        let jMove = { x: 0, y: 0 }; 
         let jAim = { x: 0, y: 0, firing: false };
 
         // --- CLASSES ---
@@ -159,69 +162,57 @@
                 this.vx = 0; this.vy = 0;
                 this.speed = 3.5;
                 
-                this.angle = 0; // Angle du corps
-                this.turretAngle = 0; // Angle du canon
+                this.angle = 0; 
+                this.turretAngle = 0; 
                 
                 this.hp = 3;
                 this.maxHp = 3;
-                this.cd = 0; // Cooldown tir
+                this.cd = 0; 
                 this.isAI = false;
             }
 
             update() {
                 if (this.cd > 0) this.cd--;
 
-                // Physique simple & Collisions Murs
-                let nextX = this.x + this.vx;
-                let nextY = this.y + this.vy;
-                
+                let nextX = this.x + this.vx; let nextY = this.y + this.vy;
                 let collideX = false, collideY = false;
                 
                 for(let w of walls) {
-                    if (nextX + this.w/2 > w.x && nextX - this.w/2 < w.x + w.w &&
-                        this.y + this.h/2 > w.y && this.y - this.h/2 < w.y + w.h) { collideX = true; }
-                    
-                    if (this.x + this.w/2 > w.x && this.x - this.w/2 < w.x + w.w &&
-                        nextY + this.h/2 > w.y && nextY - this.h/2 < w.y + w.h) { collideY = true; }
+                    if (nextX + this.w/2 > w.x && nextX - this.w/2 < w.x + w.w && this.y + this.h/2 > w.y && this.y - this.h/2 < w.y + w.h) collideX = true;
+                    if (this.x + this.w/2 > w.x && this.x - this.w/2 < w.x + w.w && nextY + this.h/2 > w.y && nextY - this.h/2 < w.y + w.h) collideY = true;
                 }
 
-                // Limites Canvas
                 if(nextX - this.w/2 < 0 || nextX + this.w/2 > canvas.width) collideX = true;
                 if(nextY - this.h/2 < 0 || nextY + this.h/2 > canvas.height) collideY = true;
 
                 if (!collideX) this.x = nextX;
                 if (!collideY) this.y = nextY;
 
-                // Rotation fluide du corps si mouvement
-                if (this.vx !== 0 || this.vy !== 0) {
-                    let targetAngle = Math.atan2(this.vy, this.vx);
-                    // Interpolation d'angle (simplifiée)
-                    this.angle = targetAngle; 
-                }
+                if (this.vx !== 0 || this.vy !== 0) this.angle = Math.atan2(this.vy, this.vx);
 
-                // --- IA SIMPLE (Solo) ---
+                // --- IA ---
                 if (this.isAI && gameMode !== 'client') {
                     let p1 = tanks.find(t => t.team === 1);
                     if(p1 && p1.hp > 0) {
                         let dx = p1.x - this.x; let dy = p1.y - this.y;
                         let dist = Math.hypot(dx, dy);
-                        this.turretAngle = Math.atan2(dy, dx);
+                        // Ajout d'une mini-dispersion pour pas que les IA se superposent en visant exactement le même point
+                        this.turretAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.1;
                         
-                        // Mouvement basique
-                        if (dist > 200) {
+                        if (dist > 250) {
                             this.vx = Math.cos(this.turretAngle) * (this.speed * 0.6);
                             this.vy = Math.sin(this.turretAngle) * (this.speed * 0.6);
-                        } else if (dist < 100) {
+                        } else if (dist < 120) {
                             this.vx = -Math.cos(this.turretAngle) * (this.speed * 0.6);
                             this.vy = -Math.sin(this.turretAngle) * (this.speed * 0.6);
                         } else {
-                            this.vx = 0; this.vy = 0; // S'arrête pour tirer
+                            this.vx = 0; this.vy = 0; 
                         }
+                        
+                        // IA esquive (rudimentaire)
+                        if(Math.random() < 0.05) { this.vx += (Math.random()-0.5)*2; this.vy += (Math.random()-0.5)*2; }
 
-                        // Tir
-                        if (this.cd === 0 && Math.random() < 0.02) {
-                            shoot(this);
-                        }
+                        if (this.cd === 0 && Math.random() < 0.03) shoot(this);
                     }
                 }
             }
@@ -231,8 +222,6 @@
                 
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                
-                // Glow
                 ctx.shadowBlur = 15; ctx.shadowColor = this.color;
                 
                 // Corps du Tank
@@ -246,18 +235,16 @@
                 ctx.fillRect(-this.w/2 - 4, -this.h/2 - 2, this.w + 8, 6);
                 ctx.fillRect(-this.w/2 - 4, this.h/2 - 4, this.w + 8, 6);
                 
-                ctx.rotate(-this.angle); // Reset rotation pour la tourelle
-                
                 // Tourelle
+                ctx.rotate(-this.angle); 
                 ctx.rotate(this.turretAngle);
                 ctx.fillStyle = this.color;
                 ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
                 ctx.lineWidth = 4;
                 ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(25, 0); ctx.stroke();
-                
                 ctx.restore();
 
-                // Barre HP
+                // Barre HP (Adaptative 1 HP vs 3 HP)
                 ctx.fillStyle = 'rgba(255,255,255,0.2)';
                 ctx.fillRect(this.x - 15, this.y - 30, 30, 4);
                 ctx.fillStyle = this.color;
@@ -272,59 +259,45 @@
                 this.vy = Math.sin(angle) * 8;
                 this.color = color;
                 this.team = team;
-                this.bounces = 1; // 1 rebond max
+                this.bounces = 1; 
                 this.life = 300;
-                this.history = []; // Pour la traînée neon
+                this.history = []; 
             }
 
             update() {
                 this.history.push({x: this.x, y: this.y});
                 if(this.history.length > 5) this.history.shift();
 
-                let nextX = this.x + this.vx;
-                let nextY = this.y + this.vy;
+                let nextX = this.x + this.vx; let nextY = this.y + this.vy;
                 let bounced = false;
 
-                // Collision Murs (AABB vs Point)
+                // Collisions Murs
                 for(let w of walls) {
                     if (nextX > w.x && nextX < w.x + w.w && nextY > w.y && nextY < w.y + w.h) {
                         if (this.bounces > 0) {
-                            // Déterminer le côté du rebond
-                            let overlapLeft = nextX - w.x;
-                            let overlapRight = (w.x + w.w) - nextX;
-                            let overlapTop = nextY - w.y;
-                            let overlapBottom = (w.y + w.h) - nextY;
-                            
-                            let min = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
-                            if (min === overlapLeft || min === overlapRight) this.vx *= -1;
+                            let min = Math.min(nextX - w.x, (w.x + w.w) - nextX, nextY - w.y, (w.y + w.h) - nextY);
+                            if (min === nextX - w.x || min === (w.x + w.w) - nextX) this.vx *= -1;
                             else this.vy *= -1;
-                            
                             this.bounces--; bounced = true;
                             createParticles(this.x, this.y, this.color, 5);
-                        } else {
-                            this.life = 0; // Détruit
-                        }
+                        } else this.life = 0; 
                     }
                 }
 
-                // Limites d'écran
                 if(!bounced) {
                     if (nextX < 0 || nextX > canvas.width) { if(this.bounces > 0){ this.vx *= -1; this.bounces--; } else this.life = 0; }
                     if (nextY < 0 || nextY > canvas.height) { if(this.bounces > 0){ this.vy *= -1; this.bounces--; } else this.life = 0; }
                 }
 
-                this.x += this.vx;
-                this.y += this.vy;
+                this.x += this.vx; this.y += this.vy;
                 this.life--;
 
                 // Collision Tanks
                 for(let t of tanks) {
-                    // On ne peut pas se tirer dessus immédiatement, mais le rebond oui, ou tirs alliés impossibles
                     if (t.hp > 0 && t.team !== this.team) {
                         let dist = Math.hypot(this.x - t.x, this.y - t.y);
-                        if (dist < 20) { // Hitbox circulaire simplifiée
-                            t.hp--;
-                            this.life = 0;
+                        if (dist < 20) { 
+                            t.hp--; this.life = 0;
                             createParticles(this.x, this.y, this.color, 15);
                             if(t.hp <= 0) handleKill(this.team, t.team);
                         }
@@ -334,19 +307,10 @@
 
             draw(ctx) {
                 ctx.shadowBlur = 10; ctx.shadowColor = this.color;
-                
-                // Traînée
                 ctx.beginPath();
-                if(this.history.length > 0) {
-                    ctx.moveTo(this.history[0].x, this.history[0].y);
-                    for(let p of this.history) ctx.lineTo(p.x, p.y);
-                }
-                ctx.lineTo(this.x, this.y);
-                ctx.strokeStyle = this.color; ctx.lineWidth = 3; ctx.stroke();
-
-                // Projectile
-                ctx.fillStyle = '#fff';
-                ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI*2); ctx.fill();
+                if(this.history.length > 0) { ctx.moveTo(this.history[0].x, this.history[0].y); for(let p of this.history) ctx.lineTo(p.x, p.y); }
+                ctx.lineTo(this.x, this.y); ctx.strokeStyle = this.color; ctx.lineWidth = 3; ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI*2); ctx.fill();
                 ctx.shadowBlur = 0;
             }
         }
@@ -354,59 +318,41 @@
         class Particle {
             constructor(x, y, color) {
                 this.x = x; this.y = y;
-                let angle = Math.random() * Math.PI * 2;
-                let speed = Math.random() * 4 + 1;
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                this.color = color;
-                this.life = 1.0;
-                this.decay = Math.random() * 0.05 + 0.02;
+                let angle = Math.random() * Math.PI * 2; let speed = Math.random() * 4 + 1;
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.color = color; this.life = 1.0; this.decay = Math.random() * 0.05 + 0.02;
             }
-            update() {
-                this.x += this.vx; this.y += this.vy;
-                this.life -= this.decay;
-            }
+            update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
             draw(ctx) {
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.shadowBlur = 10; ctx.shadowColor = this.color;
-                ctx.fillRect(this.x, this.y, 4, 4);
-                ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
+                ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.shadowBlur = 10; ctx.shadowColor = this.color;
+                ctx.fillRect(this.x, this.y, 4, 4); ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
             }
         }
 
-        // --- MAPS ---
+        // --- MAP & CORE ---
         function generateMap() {
-            walls = [];
-            // Map Symétrique type arène
-            walls.push({x: 350, y: 250, w: 100, h: 100}); // Centre
-            walls.push({x: 150, y: 100, w: 50, h: 150}); // Top L
-            walls.push({x: 600, y: 350, w: 50, h: 150}); // Bot R
-            walls.push({x: 150, y: 450, w: 150, h: 50}); // Bot L
-            walls.push({x: 500, y: 100, w: 150, h: 50}); // Top R
+            walls = [
+                {x: 350, y: 250, w: 100, h: 100}, {x: 150, y: 100, w: 50, h: 150},
+                {x: 600, y: 350, w: 50, h: 150}, {x: 150, y: 450, w: 150, h: 50}, {x: 500, y: 100, w: 150, h: 50}
+            ];
         }
 
-        // --- CORE FUNCTIONS ---
-        function createParticles(x, y, color, count) {
-            for(let i=0; i<count; i++) particles.push(new Particle(x, y, color));
-        }
+        function createParticles(x, y, color, count) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
 
         function shoot(tank) {
             if (tank.cd <= 0 && tank.hp > 0) {
-                let bx = tank.x + Math.cos(tank.turretAngle) * 20;
-                let by = tank.y + Math.sin(tank.turretAngle) * 20;
-                bullets.push(new Bullet(bx, by, tank.turretAngle, tank.color, tank.team));
-                tank.cd = 40; // Cadence de tir
+                bullets.push(new Bullet(tank.x + Math.cos(tank.turretAngle)*20, tank.y + Math.sin(tank.turretAngle)*20, tank.turretAngle, tank.color, tank.team));
+                tank.cd = 40; 
             }
         }
 
         function handleKill(killerTeam, deadTeam) {
-            if (gameMode === 'solo') {
+            if (!gameActive) return; // Anti-doublons
+
+            if (gameMode === 'solo_survival') {
                 if (deadTeam === 2) {
-                    score++;
-                    // Spawn nouveau après délai si plus d'ennemis
                     setTimeout(() => {
-                        if(tanks.filter(t => t.team === 2).length === 0) {
+                        if(tanks.filter(t => t.team === 2).length === 0 && gameActive) {
                             wave++; document.getElementById('hud-p1').innerText = "VAGUE : " + wave;
                             spawnWave(wave);
                         }
@@ -414,18 +360,26 @@
                 } else if (deadTeam === 1) {
                     endGame("DÉTRUIT", `Vagues Survéçues : ${wave}`);
                 }
+            } else if (gameMode === 'solo_1v1') {
+                if (deadTeam === 1) endGame("DÉFAITE", "Le Bot a été plus fort...");
+                else endGame("VICTOIRE", "Cible neutralisée avec succès !");
             } else if (gameMode === 'host' || gameMode === 'client') {
-                if (deadTeam === 1) p2Wins++; else p1Wins++;
-                endGame(killerTeam === myTeam ? "VICTOIRE" : "ÉLIMINÉ", `Score: P1(${p1Wins}) - P2(${p2Wins})`);
+                if (gameMode === 'host') {
+                    if (deadTeam === 1) p2Wins++; else p1Wins++;
+                    let msg = (deadTeam === 1 && myTeam === 1) ? "ÉLIMINÉ" : "VICTOIRE";
+                    let stats = `Score global : P1(${p1Wins}) - P2(${p2Wins})`;
+                    endGame(msg, stats);
+                    if(conn && conn.open) conn.send({ type: 'game_over', msg: deadTeam===2 ? "ÉLIMINÉ" : "VICTOIRE", stats: stats, p1Wins: p1Wins, p2Wins: p2Wins });
+                }
             }
         }
 
         function spawnWave(w) {
-            let count = Math.min(1 + Math.floor(w / 2), 4);
+            let count = Math.min(w, 5); // 5 max simultanés pour pas surcharger
             for(let i=0; i<count; i++) {
-                let t = new Tank('ai_'+i, 700 - i*50, 100 + i*100, 'var(--p2)', 2);
-                t.isAI = true; t.hp = 1 + Math.floor(w/3); t.maxHp = t.hp;
-                tanks.push(t);
+                let rx = 550 + Math.random() * 200; let ry = 100 + Math.random() * 400;
+                let t = new Tank('ai_'+i, rx, ry, 'var(--p2)', 2);
+                t.isAI = true; t.hp = 1; t.maxHp = 1; tanks.push(t);
             }
         }
 
@@ -434,25 +388,52 @@
             tanks = []; bullets = []; particles = [];
             generateMap();
 
-            if (mode === 'solo') {
-                tanks.push(new Tank('p1', 100, 300, 'var(--p1)', 1));
-                wave = 1; document.getElementById('hud-p1').innerText = "VAGUE : 1";
+            let hudP1 = document.getElementById('hud-p1');
+            let hudP2 = document.getElementById('hud-p2');
+
+            if (mode === 'solo_survival') {
+                wave = 1;
+                let p = new Tank('p1', 100, 300, 'var(--p1)', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
+                hudP1.innerText = "VAGUE : 1"; hudP2.innerText = "";
                 spawnWave(wave);
-            } else {
-                tanks.push(new Tank('p1', 100, 300, 'var(--p1)', 1));
-                tanks.push(new Tank('p2', 700, 300, 'var(--p2)', 2));
-                document.getElementById('hud-p1').innerText = "P1: " + p1Wins;
-                document.getElementById('hud-p2').innerText = "P2: " + p2Wins;
+            } else if (mode === 'solo_1v1') {
+                let p = new Tank('p1', 100, 300, 'var(--p1)', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
+                let b = new Tank('bot', 700, 300, 'var(--bot)', 2); b.isAI = true; b.hp = 3; b.maxHp = 3; tanks.push(b);
+                hudP1.innerText = "JOUEUR"; hudP2.innerText = "BOT IA"; hudP2.style.color = "var(--bot)"; hudP2.style.textShadow = "0 0 10px var(--bot)";
+            } else if (mode === 'host') {
+                let p1 = new Tank('p1', 100, 300, 'var(--p1)', 1); p1.hp = 3; p1.maxHp = 3; tanks.push(p1);
+                let p2 = new Tank('p2', 700, 300, 'var(--p2)', 2); p2.hp = 3; p2.maxHp = 3; tanks.push(p2);
+                hudP1.innerText = "P1: " + p1Wins; hudP2.innerText = "P2: " + p2Wins; hudP2.style.color = "var(--p2)"; hudP2.style.textShadow = "0 0 10px var(--p2)";
             }
 
             document.querySelectorAll('.overlay').forEach(e => e.style.display = 'none');
             document.getElementById('hud').style.display = 'flex';
             gameActive = true;
-            requestAnimationFrame(gameLoop);
+            
+            if (!loopRunning) { loopRunning = true; requestAnimationFrame(gameLoop); }
         }
 
-        function startMode(mode) {
-            if(mode === 'solo') { myTeam = 1; initGame('solo'); }
+        function startMode(mode) { myTeam = 1; initGame(mode); }
+
+        // --- RESTART SANS DECONNEXION ---
+        function requestRestart() {
+            if (gameMode === 'host' || gameMode === 'client') {
+                if (conn && conn.open) conn.send({type: 'restart'});
+            }
+            restartRound();
+        }
+
+        function restartRound() {
+            document.getElementById('game-over').style.display = 'none';
+            if (gameMode === 'solo_survival' || gameMode === 'solo_1v1') {
+                initGame(gameMode);
+            } else if (gameMode === 'host') {
+                initGame('host'); // Le host regénère tout et envoie le state naturellement
+            } else if (gameMode === 'client') {
+                tanks = []; bullets = []; particles = []; gameActive = true; // Le client attend le state du Host
+                document.getElementById('hud-p1').innerText = "P1: " + p1Wins;
+                document.getElementById('hud-p2').innerText = "P2: " + p2Wins;
+            }
         }
 
         // --- NETWORK (PEERJS) ---
@@ -470,7 +451,7 @@
                 document.getElementById('my-id').innerText = id;
                 try { navigator.clipboard.writeText(id).catch(e=>{}); } catch(e){}
                 status.innerText = "Code copié ! En attente du Joueur 2...";
-                gameMode = 'host'; myTeam = 1;
+                gameMode = 'host'; myTeam = 1; p1Wins = 0; p2Wins = 0;
             });
             peer.on('connection', connection => {
                 conn = connection;
@@ -486,7 +467,7 @@
             status.style.color = "var(--p2)"; status.innerText = "Connexion à l'hôte...";
             if (peer) peer.destroy(); peer = new Peer();
             peer.on('open', () => {
-                conn = peer.connect(hostId, { reliable: true }); gameMode = 'client'; myTeam = 2;
+                conn = peer.connect(hostId, { reliable: true }); gameMode = 'client'; myTeam = 2; p1Wins = 0; p2Wins = 0;
                 conn.on('open', () => { status.innerText = "Connecté ! Synchronisation..."; setTimeout(() => initGame('client'), 1000); });
                 setupConnection();
             });
@@ -495,19 +476,15 @@
         function setupConnection() {
             conn.on('data', data => {
                 if (gameMode === 'host' && data.type === 'input') {
-                    // Update P2 input
                     let p2 = tanks.find(t => t.team === 2);
-                    if(p2) {
-                        p2.vx = data.vx; p2.vy = data.vy; p2.turretAngle = data.turretAngle;
-                        if(data.shoot) shoot(p2);
-                    }
+                    if(p2) { p2.vx = data.vx; p2.vy = data.vy; p2.turretAngle = data.turretAngle; if(data.shoot) shoot(p2); }
                 }
-                if (gameMode === 'client' && data.type === 'state') {
-                    // Sync from host
-                    tanks = data.tanks; bullets = data.bullets; 
-                    if(data.particles) particles.push(...data.particles); // Simplified sync
-                    if(data.event === 'kill') handleKill(data.killer, data.dead);
+                if (gameMode === 'client') {
+                    if(data.type === 'state') { tanks = data.tanks; bullets = data.bullets; if(data.particles) particles.push(...data.particles); }
+                    if(data.type === 'game_over') { p1Wins = data.p1Wins; p2Wins = data.p2Wins; endGame(data.msg, data.stats); }
+                    if(data.type === 'restart') { restartRound(); }
                 }
+                if (gameMode === 'host' && data.type === 'restart') { restartRound(); }
             });
         }
 
@@ -515,7 +492,7 @@
             gameActive = false;
             document.getElementById('game-over').style.display = 'flex';
             document.getElementById('end-message').innerText = title;
-            document.getElementById('end-message').style.color = title === 'VICTOIRE' ? 'var(--p1)' : 'var(--p2)';
+            document.getElementById('end-message').style.color = title === 'VICTOIRE' ? 'var(--p1)' : (title==='DÉFAITE' ? 'var(--p2)' : '#fff');
             document.getElementById('end-stats').innerText = stats;
         }
 
@@ -531,51 +508,27 @@
         canvas.addEventListener('mousedown', () => mouse.down = true);
         canvas.addEventListener('mouseup', () => mouse.down = false);
 
-        // Mobile Virtual Joysticks Setup
-        const joyMove = document.getElementById('joy-move');
-        const knobMove = document.getElementById('knob-move');
-        const joyAim = document.getElementById('joy-aim');
-        const knobAim = document.getElementById('knob-aim');
+        // Joysticks Mobile
+        const joyMove = document.getElementById('joy-move'); const knobMove = document.getElementById('knob-move');
+        const joyAim = document.getElementById('joy-aim'); const knobAim = document.getElementById('knob-aim');
 
         function handleJoystick(e, isMove) {
             e.preventDefault();
-            let touch = e.targetTouches[0];
-            let zone = isMove ? joyMove : joyAim;
-            let knob = isMove ? knobMove : knobAim;
+            let touch = e.targetTouches[0]; let zone = isMove ? joyMove : joyAim; let knob = isMove ? knobMove : knobAim;
             
-            if(!touch) { // Touchend
-                knob.style.transform = `translate(-50%, -50%)`;
-                if(isMove) { jMove.x = 0; jMove.y = 0; }
-                else { jAim.firing = false; }
-                return;
-            }
-
-            let rect = zone.getBoundingClientRect();
-            let cx = rect.left + rect.width/2;
-            let cy = rect.top + rect.height/2;
-            
-            let dx = touch.clientX - cx;
-            let dy = touch.clientY - cy;
-            let dist = Math.hypot(dx, dy);
-            let maxDist = rect.width/2 - 20;
+            if(!touch) { knob.style.transform = `translate(-50%, -50%)`; if(isMove) { jMove.x = 0; jMove.y = 0; } else { jAim.firing = false; } return; }
+            let rect = zone.getBoundingClientRect(); let cx = rect.left + rect.width/2; let cy = rect.top + rect.height/2;
+            let dx = touch.clientX - cx; let dy = touch.clientY - cy; let dist = Math.hypot(dx, dy); let maxDist = rect.width/2 - 20;
 
             if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
-            
             knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
             
-            // Normalize -1 to 1
             let nx = dx / maxDist; let ny = dy / maxDist;
-            if(isMove) { jMove.x = nx; jMove.y = ny; }
-            else { jAim.x = nx; jAim.y = ny; jAim.firing = true; }
+            if(isMove) { jMove.x = nx; jMove.y = ny; } else { jAim.x = nx; jAim.y = ny; jAim.firing = true; }
         }
 
-        joyMove.addEventListener('touchstart', e => handleJoystick(e, true));
-        joyMove.addEventListener('touchmove', e => handleJoystick(e, true));
-        joyMove.addEventListener('touchend', e => handleJoystick(e, true));
-        
-        joyAim.addEventListener('touchstart', e => handleJoystick(e, false));
-        joyAim.addEventListener('touchmove', e => handleJoystick(e, false));
-        joyAim.addEventListener('touchend', e => handleJoystick(e, false));
+        joyMove.addEventListener('touchstart', e => handleJoystick(e, true)); joyMove.addEventListener('touchmove', e => handleJoystick(e, true)); joyMove.addEventListener('touchend', e => handleJoystick(e, true));
+        joyAim.addEventListener('touchstart', e => handleJoystick(e, false)); joyAim.addEventListener('touchmove', e => handleJoystick(e, false)); joyAim.addEventListener('touchend', e => handleJoystick(e, false));
 
         // --- GAME LOOP ---
         function update() {
@@ -583,98 +536,70 @@
 
             let myTank = tanks.find(t => t.team === myTeam);
 
-            // Appliquer Inputs locaux (PC ou Mobile)
             if (myTank && myTank.hp > 0) {
-                // Mouvement (Clavier ou Joystick Mobile)
                 myTank.vx = 0; myTank.vy = 0;
                 if (keys.w || keys.arrowup) myTank.vy = -myTank.speed;
                 if (keys.s || keys.arrowdown) myTank.vy = myTank.speed;
                 if (keys.a || keys.arrowleft) myTank.vx = -myTank.speed;
                 if (keys.d || keys.arrowright) myTank.vx = myTank.speed;
-                
-                if (jMove.x !== 0 || jMove.y !== 0) {
-                    myTank.vx = jMove.x * myTank.speed;
-                    myTank.vy = jMove.y * myTank.speed;
-                }
-
-                // Normaliser diagonales
+                if (jMove.x !== 0 || jMove.y !== 0) { myTank.vx = jMove.x * myTank.speed; myTank.vy = jMove.y * myTank.speed; }
                 if(myTank.vx !== 0 && myTank.vy !== 0 && jMove.x === 0) { myTank.vx *= 0.707; myTank.vy *= 0.707; }
 
-                // Visée & Tir
                 let isShooting = false;
-                if (jAim.firing) { // Mobile
-                    myTank.turretAngle = Math.atan2(jAim.y, jAim.x);
-                    isShooting = true;
-                } else { // PC
-                    myTank.turretAngle = Math.atan2(mouse.y - myTank.y, mouse.x - myTank.x);
-                    if (mouse.down) isShooting = true;
-                }
+                if (jAim.firing) { myTank.turretAngle = Math.atan2(jAim.y, jAim.x); isShooting = true; } 
+                else { myTank.turretAngle = Math.atan2(mouse.y - myTank.y, mouse.x - myTank.x); if (mouse.down) isShooting = true; }
 
                 if(isShooting && gameMode !== 'client') shoot(myTank);
-
-                // Envoi réseau des inputs si client
-                if (gameMode === 'client' && conn && conn.open) {
-                    conn.send({type: 'input', vx: myTank.vx, vy: myTank.vy, turretAngle: myTank.turretAngle, shoot: isShooting });
-                }
+                if (gameMode === 'client' && conn && conn.open) conn.send({type: 'input', vx: myTank.vx, vy: myTank.vy, turretAngle: myTank.turretAngle, shoot: isShooting });
             }
 
-            // Host / Solo gère la physique globale
-            if (gameMode === 'host' || gameMode === 'solo') {
-                tanks.forEach(t => t.update());
-                for(let i=bullets.length-1; i>=0; i--) {
-                    bullets[i].update();
-                    if(bullets[i].life <= 0) bullets.splice(i, 1);
-                }
-
-                // Sync Network
-                if(gameMode === 'host' && conn && conn.open) {
-                    conn.send({type: 'state', tanks: tanks, bullets: bullets});
-                }
-            } else if (gameMode === 'client') {
-                // Le client ne fait que l'interpolation locale visuelle (ou attend le state du host)
-                // Pour simplifier, on a écrasé l'état dans setupConnection
+            if (gameMode !== 'client') {
+                tanks.forEach(t => { 
+                    // Set prototype methods for reconstructed objects (if needed, but usually host handles updates)
+                    if(t.update) t.update(); 
+                });
+                for(let i=bullets.length-1; i>=0; i--) { bullets[i].update(); if(bullets[i].life <= 0) bullets.splice(i, 1); }
+                if(gameMode === 'host' && conn && conn.open) conn.send({type: 'state', tanks: tanks, bullets: bullets});
             }
 
-            particles.forEach(p => p.update());
-            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => p.update()); particles = particles.filter(p => p.life > 0);
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Murs Neon
             ctx.shadowBlur = 15; ctx.shadowColor = '#0055ff'; ctx.fillStyle = 'rgba(0, 40, 100, 0.4)'; ctx.strokeStyle = '#0088ff'; ctx.lineWidth = 2;
             for(let w of walls) {
                 ctx.beginPath(); ctx.rect(w.x, w.y, w.w, w.h); ctx.fill(); ctx.stroke();
-                // Inner lines for sci-fi look
                 ctx.beginPath(); ctx.moveTo(w.x+5, w.y+5); ctx.lineTo(w.x+w.w-5, w.y+w.h-5); ctx.stroke();
             }
             ctx.shadowBlur = 0;
 
-            tanks.forEach(t => t.draw(ctx));
-            bullets.forEach(b => b.draw(ctx));
+            tanks.forEach(t => {
+                // Recreate prototype draw if stripped by network JSON
+                if(t.draw) t.draw(ctx);
+                else Object.assign(new Tank(), t).draw(ctx);
+            });
+            bullets.forEach(b => {
+                if(b.draw) b.draw(ctx);
+                else Object.assign(new Bullet(), b).draw(ctx);
+            });
             particles.forEach(p => p.draw(ctx));
         }
 
         function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
+            update(); draw(); requestAnimationFrame(gameLoop);
         }
     </script>
     
-    <!-- ========================================== -->
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL   -->
-    <!-- ========================================== -->
+    <!-- SCRIPT SWIPE UNIVERSEL -->
     <script>
         const gamesHubList = [
             "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
             "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
             "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html", "../worms/index.html"
         ];
-
         let globalTouchStartX = 0, globalTouchStartY = 0, globalTouchEndX = 0, globalTouchEndY = 0;
-        
         function handleSwipeGesture() {
             const swipeThreshold = 75; 
             let diffX = globalTouchEndX - globalTouchStartX; let diffY = globalTouchEndY - globalTouchStartY;
@@ -686,7 +611,6 @@
                 else if (diffY > swipeThreshold) navigateGames(-1);  
             }
         }
-
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
             let currentIndex = gamesHubList.findIndex(game => { let folderName = game.split('/')[1]; return currentPath.includes(folderName); });
@@ -694,15 +618,12 @@
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
             window.location.href = gamesHubList[nextIndex];
         }
-
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
             if (tag === 'input' || tag === 'button') return true;
-            // On exclut le canvas ET les zones de joystick virtuels pour ne pas swipe en jouant
             if (target.closest('#gameCanvas') || target.closest('.joystick-zone')) return true;
             return false;
         }
-
         document.addEventListener('touchstart', e => {
             if (isExcludedElement(e.target)) return;
             globalTouchStartX = e.changedTouches[0].screenX; globalTouchStartY = e.changedTouches[0].screenY;
@@ -712,7 +633,6 @@
             globalTouchEndX = e.changedTouches[0].screenX; globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
         }, { passive: true });
-
         let isMouseDown = false;
         document.addEventListener('mousedown', e => {
             if (isExcludedElement(e.target)) return;
