@@ -90,6 +90,43 @@
     </div>
 
     <script>
+        // --- GESTION AUDIO ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playFeedbackSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'correct') {
+                osc.type = 'sine'; // Son pur et doux
+                osc.frequency.setValueAtTime(523.25, now); // Note Do (C5)
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // Note Mi (E5) rapide
+                
+                // Volume TRÈS FAIBLE (0.03 sur 1)
+                gain.gain.setValueAtTime(0.03, now);
+                gain.gain.linearRampToValueAtTime(0.03, now + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'triangle'; // Son légèrement étouffé
+                osc.frequency.setValueAtTime(250, now); // Son grave
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                
+                // Volume TRÈS FAIBLE (0.04 sur 1)
+                gain.gain.setValueAtTime(0.04, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
         const baseMangaList = [
             { title: "Naruto", img: "img/img1.png" }, { title: "One Piece", img: "img/img2.png" }, { title: "Bleach", img: "img/img3.png" },
             { title: "Dragon Ball", img: "img/img4.png" }, { title: "Death Note", img: "img/img5.png" }, { title: "Attack on Titan", img: "img/img6.png" },
@@ -126,6 +163,8 @@
         });
 
         function startGame() { 
+            if (audioCtx.state === 'suspended') audioCtx.resume(); // Débloque l'audio navigateur
+            
             screens.start.style.display = 'none'; 
             screens.game.style.display = 'block'; 
             
@@ -190,11 +229,13 @@
             buttons.forEach(b => b.disabled = true); buttons[q.correct].classList.add('correct');
 
             if (selectedIndex === q.correct) {
+                playFeedbackSound('correct'); // Bruit de victoire doux
                 score += Math.floor(100 + (timeLeft * 2)) * combo; combo++;
                 const cEl = document.getElementById('combo-display'); cEl.classList.add('combo-active');
                 setTimeout(() => cEl.classList.remove('combo-active'), 300);
                 setTimeout(nextQuestion, 1500);
             } else {
+                playFeedbackSound('wrong'); // Bruit d'erreur doux
                 if (buttonClicked) buttonClicked.classList.add('wrong');
                 lives--; combo = 1;
                 ui.container.classList.add('shake'); setTimeout(() => ui.container.classList.remove('shake'), 400);
