@@ -133,6 +133,7 @@
         // --- CHARGEMENT DES ASSETS ---
         const imgs = {};
         const imgFiles = {
+            'map': 'img/maptankslime.png', // <-- AJOUT DE LA MAP ICI
             'obs1': 'img/_obs1.png', 'obs2': 'img/_obs2.png', 'obs3': 'img/_obs3.png', 'obs4': 'img/_obs4.png', 'obs5': 'img/_obs5.png',
             'slime_bleu': 'img/_slimebleu.png', 'slime_rouge': 'img/_slimerouge.png', 'slime_noir': 'img/_slimenoir.png'
         };
@@ -169,8 +170,8 @@
                 this.id = id;
                 this.x = x; this.y = y;
                 this.w = 32; this.h = 32;
-                this.skin = skin; // 'slime_bleu', 'slime_rouge', 'slime_noir'
-                this.color = color; // Utilisé pour le glow et les tirs
+                this.skin = skin; 
+                this.color = color; 
                 this.team = team;
                 
                 this.vx = 0; this.vy = 0;
@@ -204,7 +205,6 @@
                 if (!collideY) this.y = nextY;
 
                 if (this.vx !== 0 || this.vy !== 0) {
-                    // Les slimes s'écrasent un peu en bougeant (effet visuel handled dans draw)
                     this.angle = Math.atan2(this.vy, this.vx);
                 }
 
@@ -216,7 +216,7 @@
                         let dist = Math.hypot(dx, dy);
                         this.turretAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.1;
                         
-                        let safeDist = this.isBoss ? 150 : 250; // Le boss s'approche plus
+                        let safeDist = this.isBoss ? 150 : 250;
                         if (dist > safeDist) {
                             this.vx = Math.cos(this.turretAngle) * (this.speed * 0.6);
                             this.vy = Math.sin(this.turretAngle) * (this.speed * 0.6);
@@ -245,7 +245,6 @@
                 
                 let img = imgs[this.skin];
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    // Si le slime bouge, on l'écrase un peu (Squash & Stretch basique)
                     let scaleX = 1; let scaleY = 1;
                     if (this.vx !== 0 || this.vy !== 0) {
                         scaleX = 1.05; scaleY = 0.95;
@@ -253,13 +252,11 @@
                     ctx.scale(scaleX, scaleY);
                     ctx.drawImage(img, -this.w/2, -this.h/2, this.w, this.h);
                 } else {
-                    // Fallback Neon si l'image ne charge pas
                     ctx.strokeStyle = this.color; ctx.lineWidth = 3;
                     ctx.fillStyle = 'rgba(0,0,0,0.8)';
                     ctx.beginPath(); ctx.rect(-this.w/2, -this.h/2, this.w, this.h); ctx.fill(); ctx.stroke();
                 }
                 
-                // Indicateur de Visée (Pour savoir où le slime va cracher)
                 ctx.rotate(this.turretAngle);
                 ctx.strokeStyle = this.color; ctx.lineWidth = 2;
                 ctx.globalAlpha = 0.6;
@@ -317,7 +314,6 @@
 
                 for(let t of tanks) {
                     if (t.hp > 0 && t.team !== this.team) {
-                        // Tolérance de hitbox un peu plus grande pour les boss
                         let hitDist = t.isBoss ? (t.w/2 + 5) : 18;
                         let dist = Math.hypot(this.x - t.x, this.y - t.y);
                         
@@ -356,13 +352,12 @@
 
         // --- MAP & CORE ---
         function generateMap() {
-            // Disposition basée sur tes images d'obstacles
             walls = [
-                {x: 350, y: 250, w: 100, h: 100, img: 'obs5'}, // Carré central
-                {x: 150, y: 100, w: 50, h: 150, img: 'obs1'},  // Rect 1
-                {x: 600, y: 350, w: 50, h: 150, img: 'obs2'},  // Rect 2
-                {x: 150, y: 450, w: 150, h: 50, img: 'obs3'},  // Rect 3
-                {x: 500, y: 100, w: 150, h: 50, img: 'obs4'}   // Rect 4
+                {x: 350, y: 250, w: 100, h: 100, img: 'obs5'}, 
+                {x: 150, y: 100, w: 50, h: 150, img: 'obs1'},  
+                {x: 600, y: 350, w: 50, h: 150, img: 'obs2'},  
+                {x: 150, y: 450, w: 150, h: 50, img: 'obs3'},  
+                {x: 500, y: 100, w: 150, h: 50, img: 'obs4'}   
             ];
         }
 
@@ -370,7 +365,6 @@
 
         function shoot(tank) {
             if (tank.cd <= 0 && tank.hp > 0) {
-                // Le tir part du bord du slime
                 let bx = tank.x + Math.cos(tank.turretAngle) * (tank.w/2 + 5);
                 let by = tank.y + Math.sin(tank.turretAngle) * (tank.h/2 + 5);
                 bullets.push(new Bullet(bx, by, tank.turretAngle, tank.color, tank.team));
@@ -412,7 +406,6 @@
         function spawnWave(w) {
             let hudP1 = document.getElementById('hud-p1');
             
-            // MECANIQUE DE BOSS : Toutes les 3 vagues
             if (w % 3 === 0) {
                 hudP1.innerText = `⚠️ VAGUE ${w} : BOSS ! ⚠️`;
                 hudP1.classList.add('boss');
@@ -420,9 +413,9 @@
                 let rx = 600 + Math.random() * 100; let ry = 100 + Math.random() * 400;
                 let b = new Tank('boss_'+w, rx, ry, 'slime_noir', 'var(--boss)', 2);
                 b.isAI = true; b.isBoss = true;
-                b.w = 56; b.h = 56; // 1.5x plus gros
-                b.speed = 2.5; // Un peu plus lent
-                b.hp = 2 + (w / 3); // Vague 3 = 3HP, Vague 6 = 4HP, etc.
+                b.w = 56; b.h = 56; 
+                b.speed = 2.5; 
+                b.hp = 2 + (w / 3); 
                 b.maxHp = b.hp;
                 tanks.push(b);
             } else {
@@ -616,7 +609,6 @@
                 
                 for(let i=bullets.length-1; i>=0; i--) { bullets[i].update(); if(bullets[i].life <= 0) bullets.splice(i, 1); }
                 
-                // GARBAGE COLLECTOR
                 tanks = tanks.filter(t => t.hp > 0);
                 
                 if(gameMode === 'host' && conn && conn.open) conn.send({type: 'state', tanks: tanks, bullets: bullets});
@@ -628,7 +620,13 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // MURS (Images ou Neon Fallback)
+            // DESSIN DE LA MAP DE FOND
+            let mapImg = imgs['map'];
+            if (mapImg && mapImg.complete && mapImg.naturalWidth !== 0) {
+                ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height);
+            }
+
+            // DESSIN DES OBSTACLES MURS
             for(let w of walls) {
                 let img = imgs[w.img];
                 if (img && img.complete && img.naturalWidth !== 0) {
