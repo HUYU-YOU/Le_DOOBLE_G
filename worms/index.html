@@ -188,14 +188,23 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const bgmPlayer = new Audio();
         bgmPlayer.loop = true;
-        bgmPlayer.volume = 0.3;
+        bgmPlayer.volume = 0.25;
+
+        // --- DEVERROUILLAGE GLOBAL DU SON ---
+        function forceAudioUnlock() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            document.removeEventListener('click', forceAudioUnlock);
+            document.removeEventListener('keydown', forceAudioUnlock);
+        }
+        document.addEventListener('click', forceAudioUnlock);
+        document.addEventListener('keydown', forceAudioUnlock);
 
         function playBGM(mapId) {
             bgmPlayer.pause();
             if (mapId === 1) {
-                bgmPlayer.src = Math.random() < 0.5 ? 'paradise1.mp3' : 'paradise2.mp3';
+                bgmPlayer.src = Math.random() < 0.5 ? 'img/paradise1.mp3' : 'img/paradise2.mp3';
             } else {
-                bgmPlayer.src = Math.random() < 0.5 ? 'hell1.mp3' : 'hell2.mp3';
+                bgmPlayer.src = Math.random() < 0.5 ? 'img/hell1.mp3' : 'img/hell2.mp3';
             }
             let playPromise = bgmPlayer.play();
             if (playPromise !== undefined) {
@@ -207,7 +216,7 @@
         }
 
         function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (audioCtx.state === 'suspended') return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
@@ -218,42 +227,42 @@
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(150, now);
                 osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.setValueAtTime(0.025, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'grenade_throw') {
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(600, now);
                 osc.frequency.linearRampToValueAtTime(800, now + 0.1);
-                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.setValueAtTime(0.015, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
             } else if (type === 'punch') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(100, now);
                 osc.frequency.exponentialRampToValueAtTime(20, now + 0.15);
-                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.setValueAtTime(0.025, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 osc.start(now); osc.stop(now + 0.15);
             } else if (type === 'explosion') {
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(100, now);
                 osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
-                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.setValueAtTime(0.05, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
                 osc.start(now); osc.stop(now + 0.5);
             } else if (type === 'squish') {
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(300, now);
                 osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
-                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.setValueAtTime(0.015, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 osc.start(now); osc.stop(now + 0.15);
             } else if (type === 'hit') {
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(800, now);
                 osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
-                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.setValueAtTime(0.015, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
             }
