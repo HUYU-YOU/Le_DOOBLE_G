@@ -263,14 +263,22 @@
         // --- AUDIO & MUSIC DE FOND ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const bgmPlayer = new Audio();
-        bgmPlayer.volume = 0.4;
+        bgmPlayer.volume = 0.25; // 25% de volume
         bgmPlayer.loop = true;
+
+        // Déverrouillage global du son
+        function forceAudioUnlock() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            document.removeEventListener('click', forceAudioUnlock);
+            document.removeEventListener('keydown', forceAudioUnlock);
+        }
+        document.addEventListener('click', forceAudioUnlock);
+        document.addEventListener('keydown', forceAudioUnlock);
 
         function playBGM(type, mapIdx = 0) {
             bgmPlayer.pause();
             bgmPlayer.currentTime = 0;
             
-            // CORRECTION ICI : Ajout du dossier 'img/' devant les musiques
             if (type === 'select') {
                 bgmPlayer.src = 'img/musicselect.mp3';
             } else if (type === 'battle') {
@@ -281,8 +289,6 @@
                 return;
             }
             
-            // Cette promesse permet de jouer la musique si le navigateur l'autorise.
-            // S'il bloque (Autoplay policy), on attendra le prochain clic du joueur !
             let playPromise = bgmPlayer.play();
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
@@ -293,41 +299,37 @@
         }
 
         function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (audioCtx.state === 'suspended') return;
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
             
             // --- NOUVEAUX SONS D'ATTAQUES ---
             if (type === 'slash') { 
-                // Ninja : son sec, rapide et aigu
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); 
-                gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
+                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
             } 
             else if (type === 'punch') { 
-                // Brute & Pathkiller melee : Son grave et lourd
                 osc.type = 'square'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.15); 
-                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); 
+                gain.gain.setValueAtTime(0.025, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); 
             } 
             else if (type === 'magic') { 
-                // Mage : Tintement magique qui monte
                 osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.2); 
-                gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); 
+                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); 
             }
             else if (type === 'grapple') { 
-                // Pathkiller Grappin : Bruit mécanique zippant
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1); 
-                gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
+                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
             }
             // --- ANCIENS SONS ---
-            else if (type === 'jump') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
-            else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
-            else if (type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); } 
-            else if (type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); } 
-            else if (type === 'death') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); }
-            else if (type === 'shatter') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); } 
-            else if (type === 'squish') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.2); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25); }
+            else if (type === 'jump') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.025, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
+            else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.1); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
+            else if (type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gain.gain.setValueAtTime(0.025, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); } 
+            else if (type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); } 
+            else if (type === 'death') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4); gain.gain.setValueAtTime(0.075, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); }
+            else if (type === 'shatter') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); } 
+            else if (type === 'squish') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.2); gain.gain.setValueAtTime(0.075, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25); }
             
-            osc.start(now); osc.stop(now + 0.3);
+            osc.start(now); osc.stop(now + 0.4);
         }
 
         // --- GESTION DES ENTREES ---
@@ -423,7 +425,6 @@
                             ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 4; ctx.stroke();
                         }
                     }
-                    // Retrait de l'ancien 'return;' qui empêchait la lance d'apparaître !
                 }
 
                 let dirStr = this.vx < 0 ? 'left' : 'right';
@@ -433,7 +434,6 @@
                 if (this.isShuriken) projImg = imgs['projectile_ninja'];
                 else if (this.ownerSkinKey === 'gunner' && !this.isMine) projImg = imgs['projectile' + dirStr + '_gunner'];
                 else if (this.ownerSkinKey === 'mage') projImg = imgs['projectile' + dirStr + '_mage'];
-                // La Brute a bien son projectile sans condition bloquante
                 else if (this.ownerSkinKey === 'sumo') projImg = imgs['projectile' + dirStr + '_brute'];
 
                 ctx.fillStyle = this.color; ctx.shadowBlur = 8; ctx.shadowColor = this.color; 
@@ -443,7 +443,6 @@
                     if (this.isShuriken) { 
                         this.angle += 0.3; ctx.rotate(this.angle); 
                     } else if (this.isRope && this.vy !== 0) {
-                        // Rotation de la lance si elle est lancée en diagonale !
                         let angle = Math.atan2(this.vy, this.vx);
                         if (dirStr === 'left') ctx.rotate(angle - Math.PI);
                         else ctx.rotate(angle);
@@ -451,13 +450,12 @@
                     
                     let drawW = 45; let drawH = 45 * (projImg.naturalHeight / projImg.naturalWidth);
                     if (this.isShuriken) { drawW = 60; drawH = 60 * (projImg.naturalHeight / projImg.naturalWidth); }
-                    else if (this.ownerSkinKey === 'sumo') { drawW = 80; drawH = 80 * (projImg.naturalHeight / projImg.naturalWidth); } // Lance plus grosse
+                    else if (this.ownerSkinKey === 'sumo') { drawW = 80; drawH = 80 * (projImg.naturalHeight / projImg.naturalWidth); } 
                     
                     ctx.drawImage(projImg, -drawW/2, -drawH/2, drawW, drawH);
                     ctx.restore();
                 } else {
                     if (this.isHook) {
-                        // Invisible
                     } else if (this.isShuriken) {
                         ctx.save(); ctx.translate(this.x, this.y); this.angle += 0.3; ctx.rotate(this.angle);
                         ctx.fillRect(-10, -2, 20, 4); ctx.fillRect(-2, -10, 4, 20); ctx.restore();
@@ -500,7 +498,7 @@
                             if (owner && !owner.isDead && !pl.isBlocking) {
                                 let dirX = owner.x > pl.x ? 1 : -1;
                                 let dist = Math.abs(owner.x - pl.x);
-                                pl.takeDamage(this.dmg, 0, dirX); // kb à 0
+                                pl.takeDamage(this.dmg, 0, dirX);
                                 pl.vx = dirX * Math.min(14, dist * 0.15);
                                 pl.vy = -2;
                                 pl.hitstun = 30;
@@ -537,7 +535,7 @@
                 
                 this.mageShots = 0; this.mageCooldown = 0;
                 this.activeMines = [];
-                this.hitEnemies = []; // Slime sustained hits
+                this.hitEnemies = [];
                 
                 this.chargingAtk = null; this.chargeTimer = 0; 
                 this.atkIsHeavy = false;
@@ -586,7 +584,6 @@
                             spriteKey = `${dirStr}atqninja${frame}`;
                         }
                     }
-                    // La Brute a bien son animation d'attaque sans condition restrictive !
                     else if (this.skinKey === 'sumo') {
                         if (aimStr === 'top') {
                             let frame = Math.min(4, Math.floor(pct * 4) + 1);
