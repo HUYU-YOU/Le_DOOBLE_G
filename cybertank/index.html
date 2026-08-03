@@ -3,212 +3,459 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Edge of War - Tactical Multiplayer</title>
+    <title>Cyber Tank - Neon Arena</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050811; --panel: rgba(10, 15, 28, 0.85); --primary: #00f0ff; --enemy: #ff0055; --gold: #ffd700; --xp: #b82aff; --spell: #00ffcc;}
-        body { font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; touch-action: manipulation; overflow-x: hidden;}
-        h1 { margin-top: 30px; color: #fff; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 15px var(--primary); font-size: 2.5em; text-align: center;}
+        :root { 
+            --bg: #050508; 
+            --panel: rgba(10, 15, 25, 0.85); 
+            --p1: #00f0ff; 
+            --p2: #ff007f; 
+            --sys: #39ff14; 
+        }
+        
+        body { 
+            font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; 
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh; 
+            user-select: none; touch-action: none; overflow: hidden; 
+            background-image: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05), transparent 60%);
+        }
+
+        h1 { margin-top: 20px; color: #fff; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 15px var(--p1); font-size: 2.5em; text-align: center;}
         
         .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
-        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--primary); box-shadow: 0 0 15px var(--primary); }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--p1); box-shadow: 0 0 15px var(--p1); }
 
-        #game-container { position: relative; background: var(--panel); padding: 20px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); width: 100%; max-width: 950px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;}
+        #game-container { position: relative; background: var(--panel); padding: 15px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); width: 100%; max-width: 900px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center;}
         
         /* Overlays Menus */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 17, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(8px); border-radius: 15px; }
-        .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--primary); padding: 15px 35px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 320px; position: relative; overflow: hidden;}
-        .btn-main:hover { background: var(--primary); color: #000; box-shadow: 0 0 25px var(--primary); transform: translateY(-3px); }
-        .btn-main.red { border-color: var(--enemy); box-shadow: 0 0 15px rgba(255, 0, 85, 0.2); }
-        .btn-main.red:hover { background: var(--enemy); box-shadow: 0 0 25px var(--enemy); }
-        .btn-main.purple { border-color: var(--xp); box-shadow: 0 0 15px rgba(184, 42, 255, 0.2); }
-        .btn-main.purple:hover { background: var(--xp); box-shadow: 0 0 25px var(--xp); }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 5, 8, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(8px); border-radius: 15px; }
         
-        input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--primary); text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; font-family: 'Rajdhani';}
-        input.net-input:focus { box-shadow: 0 0 15px var(--primary); border-color: #fff;}
+        .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 320px; position: relative; overflow: hidden;}
+        .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
+        .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
+        .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); }
+
+        input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--p1); text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; font-family: 'Rajdhani';}
+        input.net-input:focus { box-shadow: 0 0 15px var(--p1); border-color: #fff;}
 
         /* HUD */
-        .hud { display: flex; justify-content: space-between; align-items: flex-end; background: rgba(0,0,0,0.5); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
-        .base-stats { display: flex; flex-direction: column; width: 30%; position: relative;}
-        .base-name { font-weight: bold; font-size: 1.3em; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
-        .player-name { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
-        .enemy-name { color: var(--enemy); text-align: right; text-shadow: 0 0 10px var(--enemy); }
-        
-        .health-bar-container { width: 100%; height: 15px; background: rgba(0,0,0,0.8); border-radius: 4px; overflow: hidden; border: 1px solid #333; }
-        .health-bar { height: 100%; transition: width 0.2s ease; }
-        #p1-hp-bar { background: linear-gradient(90deg, #0055ff, var(--primary)); width: 100%; box-shadow: 0 0 15px var(--primary); }
-        #p2-hp-bar { background: linear-gradient(90deg, #880000, var(--enemy)); width: 100%; float: right; box-shadow: 0 0 15px var(--enemy); }
-        
-        .xp-container { margin-top: 6px; background: rgba(0,0,0,0.8); height: 8px; border-radius: 2px; overflow: hidden; border: 1px solid #333;}
-        .btn-evolve { position: absolute; top: -15px; right: 0; display: none; background: var(--xp); color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 15px var(--xp); animation: pulse 1s infinite; z-index: 5;}
-        #btn-evolve-p2 { left: 0; right: auto; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        
-        .economy { display: flex; justify-content: center; gap: 30px; width: 40%; align-items: center;}
-        .eco-box { text-align: center; background: rgba(20, 20, 30, 0.8); padding: 5px 20px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3); }
-        .gold { font-size: 2.2em; color: var(--gold); font-weight: bold; text-shadow: 0 0 15px rgba(255, 215, 0, 0.6); line-height: 1;}
-        .income { font-size: 0.9em; color: #aaa; margin-top: 2px;}
+        #hud { display: none; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px; box-sizing: border-box;}
+        .score-box { font-size: 1.5em; font-weight: bold; text-transform: uppercase; color: var(--p1); text-shadow: 0 0 10px var(--p1); }
+        .score-box.enemy { color: var(--p2); text-shadow: 0 0 10px var(--p2); }
 
-        canvas { border-radius: 10px; width: 100%; box-shadow: 0 0 20px #000, inset 0 0 30px rgba(0, 240, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); background: #03050a; }
-        
-        /* CONTROLS (UNITES, SORTS, ECO) */
-        .controls-container { display: flex; gap: 15px; width: 100%; justify-content: center; }
-        .team-controls { flex: 1; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 10px;}
-        .ctrl-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
-        .ctrl-header h3 { margin: 0; font-size: 1.1em; color: #ccc; text-transform: uppercase; letter-spacing: 1px;}
-        
-        .btn-upgrade-eco { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); color: var(--gold); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s;}
-        .btn-upgrade-eco:hover:not(:disabled) { background: var(--gold); color: #000; box-shadow: 0 0 15px var(--gold); }
-        .btn-upgrade-eco:disabled { border-color: #555; color: #555; cursor: not-allowed; }
+        /* Canvas */
+        canvas { background: #030408; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: auto; aspect-ratio: 4/3; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); cursor: crosshair; }
 
-        .spells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .controls { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-        
-        .unit-btn { background: linear-gradient(180deg, rgba(30,40,60,0.8), rgba(10,15,25,0.9)); color: #fff; border: 1px solid #444; padding: 8px 5px; border-radius: 8px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; font-size: 0.9em;}
-        .unit-btn:hover:not(:disabled) { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 240, 255, 0.3); background: rgba(0, 240, 255, 0.1);}
-        .unit-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%); }
-        .unit-icon { font-size: 1.8em; margin-bottom: 2px; }
-        .unit-cost { color: var(--gold); font-size: 1.2em; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
-        .unit-locked { position: absolute; font-size: 1.1em; color: var(--enemy); transform: rotate(-25deg); top: 30%; font-weight: bold; background: rgba(0,0,0,0.9); padding: 2px 8px; border: 1px solid var(--enemy); box-shadow: 0 0 10px var(--enemy); pointer-events: none;}
-
-        .spell-btn { background: rgba(0, 255, 204, 0.05); border: 1px solid var(--spell); color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: 'Rajdhani'; position: relative; overflow: hidden; font-size: 1em; text-transform: uppercase;}
-        .spell-btn:hover:not(:disabled) { background: rgba(0, 255, 204, 0.2); box-shadow: 0 0 15px var(--spell);}
-        .spell-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #444; color: #888;}
-        .cooldown-overlay { position: absolute; bottom: 0; left: 0; height: 100%; width: 0%; background: rgba(0, 240, 255, 0.3); transition: width 0.1s linear; pointer-events: none;}
+        /* Controles Mobiles (Joysticks Virtuels) */
+        #mobile-controls { display: none; width: 100%; justify-content: space-between; padding: 20px 40px; box-sizing: border-box; position: absolute; bottom: 10px; pointer-events: none;}
+        .joystick-zone { width: 120px; height: 120px; background: rgba(0, 240, 255, 0.1); border: 2px solid rgba(0, 240, 255, 0.3); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none;}
+        .joystick-zone.right { border-color: rgba(255, 0, 127, 0.3); background: rgba(255, 0, 127, 0.1); }
+        .joystick-knob { width: 50px; height: 50px; background: var(--p1); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 15px var(--p1);}
+        .joystick-zone.right .joystick-knob { background: var(--p2); box-shadow: 0 0 15px var(--p2); }
 
         @media (max-width: 800px) {
-            .controls { grid-template-columns: repeat(3, 1fr); }
-            .economy { width: 100%; position: absolute; top: 10px; left: 0; gap: 10px;}
-            .hud { padding-top: 50px; }
+            h1 { font-size: 1.8em; margin-top: 40px; }
+            #mobile-controls { display: flex; }
         }
     </style>
 </head>
 <body>
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <h1>Edge of War</h1>
+    <h1>Cyber Tank</h1>
     
     <div id="game-container">
-        <!-- MENUS -->
+        
+        <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <h1 style="font-size: 3.5em; margin-bottom: 40px; text-shadow: 0 0 20px var(--primary);">SYSTEM OPÉRATIONNEL</h1>
-            <button class="btn-main" onclick="startSolo('solo')">Campagne Solo (IA)</button>
-            <button class="btn-main red" onclick="startSolo('hardcore')">Survie Extrême</button>
-            <button class="btn-main purple" onclick="startLocal()">Versus Local (Même PC)</button>
-            <button class="btn-main" onclick="showNetworkMenu()" style="border-color:#aaa; color:#ccc;">Guerre Réseau (PVP)</button>
+            <h1 style="font-size: 3.5em; margin-bottom: 30px; text-shadow: 0 0 20px var(--p1);">ARENA OS</h1>
+            <button class="btn-main" onclick="startMode('solo')">Survie (Solo)</button>
+            <button class="btn-main red" onclick="showNetworkMenu()">Duel (Réseau 1v1)</button>
         </div>
 
+        <!-- MENU RÉSEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <h2 style="color: var(--primary); font-size: 2.5em; margin-bottom: 20px;">LIAISON SATELLITE</h2>
+            <h2 style="color: var(--p1); font-size: 2.5em; margin-bottom: 20px;">LIAISON PVP</h2>
             
-            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--primary); width: 85%; max-width: 380px; text-align: center; margin-bottom: 20px;">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.3em;">HÉBERGER UNE PARTIE (OUEST)</h3>
-                <button class="btn-main" onclick="hostGame()" style="width: 100%; margin: 10px 0; padding: 12px;">Générer Code Accès</button>
-                <div id="my-id" style="color:var(--primary); font-weight:bold; font-size:2.8em; letter-spacing: 4px; min-height: 40px; text-shadow: 0 0 15px var(--primary); margin-top: 10px;">...</div>
+            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--p1); width: 85%; max-width: 380px; text-align: center; margin-bottom: 20px;">
+                <h3 style="color: #fff; margin-top: 0;">CRÉER UNE ARÈNE</h3>
+                <button class="btn-main" onclick="hostGame()" style="width: 100%; padding: 12px; margin:0;">Générer Code</button>
+                <div id="my-id" style="color:var(--p1); font-weight:bold; font-size:2.5em; letter-spacing: 4px; min-height: 40px; text-shadow: 0 0 15px var(--p1); margin-top: 10px;">...</div>
             </div>
 
-            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--enemy); width: 85%; max-width: 380px; text-align: center;">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.3em;">REJOINDRE LE FRONT (EST)</h3>
-                <input type="text" id="join-id" class="net-input" placeholder="CODE TRANSMISSION">
-                <button class="btn-main red" onclick="joinGame()" style="width: 100%; margin: 10px 0; padding: 12px;">Infiltration</button>
+            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--p2); width: 85%; max-width: 380px; text-align: center;">
+                <h3 style="color: #fff; margin-top: 0;">REJOINDRE</h3>
+                <input type="text" id="join-id" class="net-input" placeholder="Code Arène">
+                <button class="btn-main red" onclick="joinGame()" style="width: 100%; padding: 12px; margin:0;">Infiltration</button>
             </div>
             
-            <p id="status-text" style="color: #ccc; margin-top: 20px; font-weight:bold; font-size: 1.3em;"></p>
+            <p id="status-text" style="color: #ccc; margin-top: 20px; font-weight:bold; font-size: 1.2em;"></p>
             <button class="btn-main" style="border: none; box-shadow:none; color: #888; background:transparent;" onclick="location.reload()">Annuler</button>
         </div>
 
+        <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over" style="display: none;">
-            <h2 id="end-message" style="font-size: 4em; margin-bottom: 10px; text-transform: uppercase; text-align: center;"></h2>
+            <h2 id="end-message" style="font-size: 4em; margin-bottom: 10px; text-transform: uppercase;"></h2>
             <p id="end-stats" style="font-size: 1.5em; color: #aaa; margin-bottom: 30px;"></p>
-            <button class="btn-main" onclick="location.reload()">Nouvelle Bataille</button>
+            <button class="btn-main" onclick="location.reload()">Retour Menu</button>
         </div>
 
-        <!-- HUD -->
-        <div class="hud" id="game-hud" style="visibility: hidden;">
-            <div class="base-stats">
-                <button id="btn-evolve-p1" class="btn-evolve" onclick="sendAction(1, 'evolve', null)">UPGRADE TECH !</button>
-                <div class="base-name player-name">BASE OUEST (T<span id="p1-age">1</span>)</div>
-                <div class="health-bar-container"><div class="health-bar" id="p1-hp-bar"></div></div>
-                <div class="xp-container"><div id="p1-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
+        <!-- HUD & CANVAS -->
+        <div id="hud">
+            <div class="score-box" id="hud-p1">VAGUE : 1</div>
+            <div class="score-box enemy" id="hud-p2"></div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <!-- JOYSTICKS (Mobiles) -->
+        <div id="mobile-controls">
+            <div class="joystick-zone" id="joy-move">
+                <div class="joystick-knob" id="knob-move"></div>
             </div>
-            
-            <div class="economy">
-                <div class="eco-box" id="p1-gold-container">
-                    <div class="gold"><span id="p1-gold">50</span> 💰</div>
-                    <div class="income" id="p1-income-txt">+3/s (J1)</div>
-                </div>
-                <div class="eco-box" id="p2-gold-container" style="display:none; border-color: rgba(255,0,85,0.3);">
-                    <div class="gold" style="color:#ff88aa; text-shadow: 0 0 10px #ff0055;"><span id="p2-gold">50</span> 💰</div>
-                    <div class="income" id="p2-income-txt">+3/s (J2)</div>
-                </div>
-            </div>
-            
-            <div class="base-stats" style="text-align: right;">
-                <button id="btn-evolve-p2" class="btn-evolve" onclick="sendAction(2, 'evolve', null)">UPGRADE TECH !</button>
-                <div class="base-name enemy-name">BASE EST (T<span id="p2-age">1</span>)</div>
-                <div class="health-bar-container"><div class="health-bar" id="p2-hp-bar"></div></div>
-                <div class="xp-container" id="p2-xp-container"><div id="p2-xp-bar" style="height: 100%; background: linear-gradient(90deg, #7a00cc, var(--xp)); width: 0%; transition: 0.3s; box-shadow: 0 0 10px var(--xp);"></div></div>
+            <div class="joystick-zone right" id="joy-aim">
+                <div class="joystick-knob" id="knob-aim"></div>
             </div>
         </div>
 
-        <canvas id="gameCanvas" width="900" height="300"></canvas>
-        
-        <div class="controls-container" id="deployment-controls"></div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas'); 
+        const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // --- RESEAU & ETAT ---
-        let peer = null, conn = null, gameMode = null, myTeam = 1, gameActive = false, timeElapsed = 0;
-        let screenShake = 0;
-        let globalOffset = 0; // Pour animer la grille
-        
-        // Modèle de données enrichi
-        let gameState = {
-            p1: { gold: 75, xp: 0, age: 1, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 },
-            p2: { gold: 75, xp: 0, age: 1, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 }, 
-            units: [],
-            effects: [] // gère les lasers, explosions, floating texts
-        };
+        // --- ETAT DU JEU ---
+        let gameMode = 'solo'; // 'solo', 'host', 'client'
+        let gameActive = false;
+        let myTeam = 1; 
+        let peer = null, conn = null;
 
-        const xpToEvolve = [100, 250, 9999]; // XP requise pour T2, T3
-        const bases = { 
-            1: { x: -30, w: 100, h: 160, spawnX: 70, dir: 1, color: '#00f0ff' }, 
-            2: { x: 830, w: 100, h: 160, spawnX: 830, dir: -1, color: '#ff0055' } 
-        };
-        const floorY = 250;
+        // Entités
+        let tanks = [];
+        let bullets = [];
+        let particles = [];
+        let walls = [];
         
-        // STATS UNITES REEQUILIBREES
-        const unitStats = {
-            drone:   { cost: 15, hp: 40, dmg: 5, spd: 1.2, rng: 20, cd: 40, w: 20, h: 25, type: 'melee', rew: 8, xp: 10, icon: '🛸' }, 
-            blaster: { cost: 30, hp: 35, dmg: 10, spd: 0.8, rng: 120, cd: 55, w: 20, h: 35, type: 'ranged', rew: 15, xp: 15, icon: '🔫' },
-            mech:    { cost: 100, hp: 250, dmg: 30, spd: 0.5, rng: 30, cd: 60, w: 40, h: 55, type: 'melee', rew: 30, xp: 30, icon: '🤖' }, 
-            sniper:  { cost: 80, hp: 45, dmg: 40, spd: 0.7, rng: 250, cd: 90, w: 25, h: 45, type: 'ranged', rew: 25, xp: 25, icon: '🔭' },
-            titan:   { cost: 400, hp: 1200, dmg: 80, spd: 0.4, rng: 45, cd: 70, w: 80, h: 110, type: 'melee', rew: 150, xp: 100, icon: '💀' }
-        };
-        const spellStats = { 1: { cost: 50, cdMax: 300 }, 2: { cost: 80, cdMax: 400 } };
+        // Progression
+        let wave = 1;
+        let score = 0;
+        let p1Wins = 0, p2Wins = 0;
 
-        class Unit {
-            constructor(team, type) {
-                const s = unitStats[type]; 
-                this.id = Math.random().toString(36).substr(2, 9);
-                this.team = team; this.type = type;
-                this.w = s.w; this.h = s.h; 
-                this.x = team === 1 ? bases[1].spawnX : bases[2].spawnX - this.w; 
-                this.y = floorY - this.h; 
-                this.speed = s.spd * bases[team].dir; 
-                this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; 
-                this.cdMax = s.cd; this.cd = 0; 
-                this.rew = s.rew; this.xp = s.xp;
-                this.action = 'walk'; this.animCycle = 0;
+        // Contrôles
+        let keys = { w:false, a:false, s:false, d:false, arrowup:false, arrowleft:false, arrowdown:false, arrowright:false };
+        let mouse = { x: 400, y: 300, down: false };
+        let jMove = { x: 0, y: 0 }; // -1 à 1
+        let jAim = { x: 0, y: 0, firing: false };
+
+        // --- CLASSES ---
+        class Tank {
+            constructor(id, x, y, color, team) {
+                this.id = id;
+                this.x = x; this.y = y;
+                this.w = 32; this.h = 32;
+                this.color = color;
+                this.team = team;
+                
+                this.vx = 0; this.vy = 0;
+                this.speed = 3.5;
+                
+                this.angle = 0; // Angle du corps
+                this.turretAngle = 0; // Angle du canon
+                
+                this.hp = 3;
+                this.maxHp = 3;
+                this.cd = 0; // Cooldown tir
+                this.isAI = false;
+            }
+
+            update() {
+                if (this.cd > 0) this.cd--;
+
+                // Physique simple & Collisions Murs
+                let nextX = this.x + this.vx;
+                let nextY = this.y + this.vy;
+                
+                let collideX = false, collideY = false;
+                
+                for(let w of walls) {
+                    if (nextX + this.w/2 > w.x && nextX - this.w/2 < w.x + w.w &&
+                        this.y + this.h/2 > w.y && this.y - this.h/2 < w.y + w.h) { collideX = true; }
+                    
+                    if (this.x + this.w/2 > w.x && this.x - this.w/2 < w.x + w.w &&
+                        nextY + this.h/2 > w.y && nextY - this.h/2 < w.y + w.h) { collideY = true; }
+                }
+
+                // Limites Canvas
+                if(nextX - this.w/2 < 0 || nextX + this.w/2 > canvas.width) collideX = true;
+                if(nextY - this.h/2 < 0 || nextY + this.h/2 > canvas.height) collideY = true;
+
+                if (!collideX) this.x = nextX;
+                if (!collideY) this.y = nextY;
+
+                // Rotation fluide du corps si mouvement
+                if (this.vx !== 0 || this.vy !== 0) {
+                    let targetAngle = Math.atan2(this.vy, this.vx);
+                    // Interpolation d'angle (simplifiée)
+                    this.angle = targetAngle; 
+                }
+
+                // --- IA SIMPLE (Solo) ---
+                if (this.isAI && gameMode !== 'client') {
+                    let p1 = tanks.find(t => t.team === 1);
+                    if(p1 && p1.hp > 0) {
+                        let dx = p1.x - this.x; let dy = p1.y - this.y;
+                        let dist = Math.hypot(dx, dy);
+                        this.turretAngle = Math.atan2(dy, dx);
+                        
+                        // Mouvement basique
+                        if (dist > 200) {
+                            this.vx = Math.cos(this.turretAngle) * (this.speed * 0.6);
+                            this.vy = Math.sin(this.turretAngle) * (this.speed * 0.6);
+                        } else if (dist < 100) {
+                            this.vx = -Math.cos(this.turretAngle) * (this.speed * 0.6);
+                            this.vy = -Math.sin(this.turretAngle) * (this.speed * 0.6);
+                        } else {
+                            this.vx = 0; this.vy = 0; // S'arrête pour tirer
+                        }
+
+                        // Tir
+                        if (this.cd === 0 && Math.random() < 0.02) {
+                            shoot(this);
+                        }
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if(this.hp <= 0) return;
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // Glow
+                ctx.shadowBlur = 15; ctx.shadowColor = this.color;
+                
+                // Corps du Tank
+                ctx.rotate(this.angle);
+                ctx.strokeStyle = this.color; ctx.lineWidth = 3;
+                ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                ctx.beginPath(); ctx.rect(-this.w/2, -this.h/2, this.w, this.h); ctx.fill(); ctx.stroke();
+                
+                // Chenilles
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.w/2 - 4, -this.h/2 - 2, this.w + 8, 6);
+                ctx.fillRect(-this.w/2 - 4, this.h/2 - 4, this.w + 8, 6);
+                
+                ctx.rotate(-this.angle); // Reset rotation pour la tourelle
+                
+                // Tourelle
+                ctx.rotate(this.turretAngle);
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(25, 0); ctx.stroke();
+                
+                ctx.restore();
+
+                // Barre HP
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.fillRect(this.x - 15, this.y - 30, 30, 4);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - 15, this.y - 30, 30 * (this.hp/this.maxHp), 4);
             }
         }
 
-        // --- GESTION MENUS & PEERJS ---
-        function startSolo(mode) { gameMode = mode; myTeam = 1; startGame(); }
-        function startLocal() { gameMode = 'local'; myTeam = 1; startGame(); }
+        class Bullet {
+            constructor(x, y, angle, color, team) {
+                this.x = x; this.y = y;
+                this.vx = Math.cos(angle) * 8;
+                this.vy = Math.sin(angle) * 8;
+                this.color = color;
+                this.team = team;
+                this.bounces = 1; // 1 rebond max
+                this.life = 300;
+                this.history = []; // Pour la traînée neon
+            }
+
+            update() {
+                this.history.push({x: this.x, y: this.y});
+                if(this.history.length > 5) this.history.shift();
+
+                let nextX = this.x + this.vx;
+                let nextY = this.y + this.vy;
+                let bounced = false;
+
+                // Collision Murs (AABB vs Point)
+                for(let w of walls) {
+                    if (nextX > w.x && nextX < w.x + w.w && nextY > w.y && nextY < w.y + w.h) {
+                        if (this.bounces > 0) {
+                            // Déterminer le côté du rebond
+                            let overlapLeft = nextX - w.x;
+                            let overlapRight = (w.x + w.w) - nextX;
+                            let overlapTop = nextY - w.y;
+                            let overlapBottom = (w.y + w.h) - nextY;
+                            
+                            let min = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+                            if (min === overlapLeft || min === overlapRight) this.vx *= -1;
+                            else this.vy *= -1;
+                            
+                            this.bounces--; bounced = true;
+                            createParticles(this.x, this.y, this.color, 5);
+                        } else {
+                            this.life = 0; // Détruit
+                        }
+                    }
+                }
+
+                // Limites d'écran
+                if(!bounced) {
+                    if (nextX < 0 || nextX > canvas.width) { if(this.bounces > 0){ this.vx *= -1; this.bounces--; } else this.life = 0; }
+                    if (nextY < 0 || nextY > canvas.height) { if(this.bounces > 0){ this.vy *= -1; this.bounces--; } else this.life = 0; }
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+
+                // Collision Tanks
+                for(let t of tanks) {
+                    // On ne peut pas se tirer dessus immédiatement, mais le rebond oui, ou tirs alliés impossibles
+                    if (t.hp > 0 && t.team !== this.team) {
+                        let dist = Math.hypot(this.x - t.x, this.y - t.y);
+                        if (dist < 20) { // Hitbox circulaire simplifiée
+                            t.hp--;
+                            this.life = 0;
+                            createParticles(this.x, this.y, this.color, 15);
+                            if(t.hp <= 0) handleKill(this.team, t.team);
+                        }
+                    }
+                }
+            }
+
+            draw(ctx) {
+                ctx.shadowBlur = 10; ctx.shadowColor = this.color;
+                
+                // Traînée
+                ctx.beginPath();
+                if(this.history.length > 0) {
+                    ctx.moveTo(this.history[0].x, this.history[0].y);
+                    for(let p of this.history) ctx.lineTo(p.x, p.y);
+                }
+                ctx.lineTo(this.x, this.y);
+                ctx.strokeStyle = this.color; ctx.lineWidth = 3; ctx.stroke();
+
+                // Projectile
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 4 + 1;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.color = color;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.05 + 0.02;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw(ctx) {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10; ctx.shadowColor = this.color;
+                ctx.fillRect(this.x, this.y, 4, 4);
+                ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
+            }
+        }
+
+        // --- MAPS ---
+        function generateMap() {
+            walls = [];
+            // Map Symétrique type arène
+            walls.push({x: 350, y: 250, w: 100, h: 100}); // Centre
+            walls.push({x: 150, y: 100, w: 50, h: 150}); // Top L
+            walls.push({x: 600, y: 350, w: 50, h: 150}); // Bot R
+            walls.push({x: 150, y: 450, w: 150, h: 50}); // Bot L
+            walls.push({x: 500, y: 100, w: 150, h: 50}); // Top R
+        }
+
+        // --- CORE FUNCTIONS ---
+        function createParticles(x, y, color, count) {
+            for(let i=0; i<count; i++) particles.push(new Particle(x, y, color));
+        }
+
+        function shoot(tank) {
+            if (tank.cd <= 0 && tank.hp > 0) {
+                let bx = tank.x + Math.cos(tank.turretAngle) * 20;
+                let by = tank.y + Math.sin(tank.turretAngle) * 20;
+                bullets.push(new Bullet(bx, by, tank.turretAngle, tank.color, tank.team));
+                tank.cd = 40; // Cadence de tir
+            }
+        }
+
+        function handleKill(killerTeam, deadTeam) {
+            if (gameMode === 'solo') {
+                if (deadTeam === 2) {
+                    score++;
+                    // Spawn nouveau après délai si plus d'ennemis
+                    setTimeout(() => {
+                        if(tanks.filter(t => t.team === 2).length === 0) {
+                            wave++; document.getElementById('hud-p1').innerText = "VAGUE : " + wave;
+                            spawnWave(wave);
+                        }
+                    }, 1000);
+                } else if (deadTeam === 1) {
+                    endGame("DÉTRUIT", `Vagues Survéçues : ${wave}`);
+                }
+            } else if (gameMode === 'host' || gameMode === 'client') {
+                if (deadTeam === 1) p2Wins++; else p1Wins++;
+                endGame(killerTeam === myTeam ? "VICTOIRE" : "ÉLIMINÉ", `Score: P1(${p1Wins}) - P2(${p2Wins})`);
+            }
+        }
+
+        function spawnWave(w) {
+            let count = Math.min(1 + Math.floor(w / 2), 4);
+            for(let i=0; i<count; i++) {
+                let t = new Tank('ai_'+i, 700 - i*50, 100 + i*100, 'var(--p2)', 2);
+                t.isAI = true; t.hp = 1 + Math.floor(w/3); t.maxHp = t.hp;
+                tanks.push(t);
+            }
+        }
+
+        function initGame(mode) {
+            gameMode = mode;
+            tanks = []; bullets = []; particles = [];
+            generateMap();
+
+            if (mode === 'solo') {
+                tanks.push(new Tank('p1', 100, 300, 'var(--p1)', 1));
+                wave = 1; document.getElementById('hud-p1').innerText = "VAGUE : 1";
+                spawnWave(wave);
+            } else {
+                tanks.push(new Tank('p1', 100, 300, 'var(--p1)', 1));
+                tanks.push(new Tank('p2', 700, 300, 'var(--p2)', 2));
+                document.getElementById('hud-p1').innerText = "P1: " + p1Wins;
+                document.getElementById('hud-p2').innerText = "P2: " + p2Wins;
+            }
+
+            document.querySelectorAll('.overlay').forEach(e => e.style.display = 'none');
+            document.getElementById('hud').style.display = 'flex';
+            gameActive = true;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startMode(mode) {
+            if(mode === 'solo') { myTeam = 1; initGame('solo'); }
+        }
+
+        // --- NETWORK (PEERJS) ---
         function showNetworkMenu() {
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('network-menu').style.display = 'flex';
@@ -216,500 +463,210 @@
 
         function hostGame() {
             let status = document.getElementById('status-text');
-            status.style.color = "var(--primary)"; status.innerText = "Génération du canal sécurisé..."; 
-            let code = 'EOW' + Math.floor(1000 + Math.random() * 9000);
+            status.style.color = "var(--p1)"; status.innerText = "Génération du canal..."; 
+            let code = 'TNK' + Math.floor(1000 + Math.random() * 9000);
             if (peer) peer.destroy(); peer = new Peer(code);
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = id;
-                try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e=>{}); } catch(e) {}
-                status.style.color = "var(--spell)"; status.innerText = "Code copié ! En attente d'un adversaire...";
+                try { navigator.clipboard.writeText(id).catch(e=>{}); } catch(e){}
+                status.innerText = "Code copié ! En attente du Joueur 2...";
                 gameMode = 'host'; myTeam = 1;
             });
             peer.on('connection', connection => {
                 conn = connection;
-                conn.on('open', () => { status.innerText = "Adversaire détecté ! Lancement..."; setTimeout(startGame, 1000); });
+                conn.on('open', () => { status.innerText = "Adversaire connecté ! Lancement..."; setTimeout(() => initGame('host'), 1000); });
                 setupConnection();
             });
-            peer.on('error', err => { status.style.color = "var(--enemy)"; status.innerText = "Erreur : " + err.type; });
         }
 
         function joinGame() {
             const hostId = document.getElementById('join-id').value.trim().toUpperCase();
             if(!hostId) return;
             let status = document.getElementById('status-text');
-            status.style.color = "var(--enemy)"; status.innerText = "Connexion à la base ennemie...";
+            status.style.color = "var(--p2)"; status.innerText = "Connexion à l'hôte...";
             if (peer) peer.destroy(); peer = new Peer();
             peer.on('open', () => {
                 conn = peer.connect(hostId, { reliable: true }); gameMode = 'client'; myTeam = 2;
-                conn.on('open', () => { status.style.color = "var(--spell)"; status.innerText = "Connecté ! Déploiement..."; setTimeout(startGame, 1000); });
+                conn.on('open', () => { status.innerText = "Connecté ! Synchronisation..."; setTimeout(() => initGame('client'), 1000); });
                 setupConnection();
             });
-            peer.on('error', err => { status.style.color = "var(--enemy)"; status.innerText = err.type === 'peer-unavailable' ? "Le salon n'existe pas !" : "Erreur réseau."; });
         }
 
         function setupConnection() {
             conn.on('data', data => {
-                if (gameMode === 'host' && data.type === 'action') processAction(2, data.action, data.val);
+                if (gameMode === 'host' && data.type === 'input') {
+                    // Update P2 input
+                    let p2 = tanks.find(t => t.team === 2);
+                    if(p2) {
+                        p2.vx = data.vx; p2.vy = data.vy; p2.turretAngle = data.turretAngle;
+                        if(data.shoot) shoot(p2);
+                    }
+                }
                 if (gameMode === 'client' && data.type === 'state') {
-                    gameState = data.state; updateHUD();
-                    // Générer effets sonores/vibrations locaux basé sur les triggers (optionnel)
+                    // Sync from host
+                    tanks = data.tanks; bullets = data.bullets; 
+                    if(data.particles) particles.push(...data.particles); // Simplified sync
+                    if(data.event === 'kill') handleKill(data.killer, data.dead);
                 }
             });
         }
 
-        // --- INTERFACE DEPLOIEMENT DYNAMIQUE ---
-        function buildControls(team) {
-            let pre = team === 1 ? 'p1' : 'p2';
-            let tName = team === 1 ? 'OUEST' : 'EST';
-            let color = team === 1 ? 'var(--primary)' : 'var(--enemy)';
-            let keys = team === 1 ? "(A,Z,E,R,T)" : "(Num 1,2,3,4,5)";
-            if (gameMode !== 'local') keys = "(A,Z,E,R,T)";
-            
-            return `
-                <div class="team-controls" style="border-top: 3px solid ${color};">
-                    <div class="ctrl-header">
-                        <h3 style="color:${color}">${tName} <span style="font-size:0.7em; color:#888;">${keys}</span></h3>
-                        <button class="btn-upgrade-eco" id="btn-${pre}-eco" onclick="sendAction(${team}, 'upgradeEco', null)">
-                            + ÉCO (${gameState[pre].incomeCost}💰)
-                        </button>
-                    </div>
-                    
-                    <div class="spells">
-                        <button class="spell-btn" id="btn-${pre}-spell1" onclick="sendAction(${team}, 'spell', 1)">☄️ Frappe Orbitale (50 💰)<div class="cooldown-overlay" id="cd-${pre}-spell1"></div></button>
-                        <button class="spell-btn" id="btn-${pre}-spell2" onclick="sendAction(${team}, 'spell', 2)">🔧 Réparation Nano (80 💰)<div class="cooldown-overlay" id="cd-${pre}-spell2"></div></button>
-                    </div>
-                    <div class="controls">
-                        <button class="unit-btn" id="btn-${pre}-u1" onclick="sendAction(${team}, 'spawn', 'drone')"><div class="unit-icon">🛸</div>Drone <span class="unit-cost">15 💰</span></button>
-                        <button class="unit-btn" id="btn-${pre}-u2" onclick="sendAction(${team}, 'spawn', 'blaster')"><div class="unit-icon">🔫</div>Blaster <span class="unit-cost">30 💰</span></button>
-                        <button class="unit-btn" id="btn-${pre}-u3" onclick="sendAction(${team}, 'spawn', 'mech')" disabled><div class="unit-icon">🤖</div>Mech <span class="unit-cost">100 💰</span><span class="unit-locked" id="lock-${pre}-3">TECH 2</span></button>
-                        <button class="unit-btn" id="btn-${pre}-u4" onclick="sendAction(${team}, 'spawn', 'sniper')" disabled><div class="unit-icon">🔭</div>Sniper <span class="unit-cost">80 💰</span><span class="unit-locked" id="lock-${pre}-4">TECH 2</span></button>
-                        <button class="unit-btn" id="btn-${pre}-u5" onclick="sendAction(${team}, 'spawn', 'titan')" style="border-color:var(--xp);" disabled><div class="unit-icon">💀</div>Titan <span class="unit-cost">400 💰</span><span class="unit-locked" id="lock-${pre}-5" style="border-color:var(--xp); color:var(--xp);">TECH 3</span></button>
-                    </div>
-                </div>
-            `;
+        function endGame(title, stats) {
+            gameActive = false;
+            document.getElementById('game-over').style.display = 'flex';
+            document.getElementById('end-message').innerText = title;
+            document.getElementById('end-message').style.color = title === 'VICTOIRE' ? 'var(--p1)' : 'var(--p2)';
+            document.getElementById('end-stats').innerText = stats;
         }
 
-        function startGame() {
-            document.querySelectorAll('.overlay').forEach(e => e.style.display = 'none');
-            document.getElementById('game-hud').style.visibility = 'visible';
-            
-            if (gameMode === 'local') {
-                document.getElementById('deployment-controls').innerHTML = buildControls(1) + buildControls(2);
-                document.getElementById('p2-gold-container').style.display = 'block';
-                document.getElementById('p1-income-txt').innerText = `+${gameState.p1.incomeRate}/s (J1)`;
-            } else {
-                document.getElementById('deployment-controls').innerHTML = buildControls(myTeam);
-                document.getElementById('p1-income-txt').innerText = `+${gameState.p1.incomeRate}/s`;
-            }
-
-            gameActive = true;
-            if(gameMode === 'host' || gameMode === 'solo' || gameMode === 'hardcore' || gameMode === 'local') {
-                setInterval(economyTick, 1000);
-            }
-            requestAnimationFrame(gameLoop);
-        }
-
-        // --- MOTEUR & PHYSIQUE (Hôte / Solo / Local) ---
-        function economyTick() {
-            if(!gameActive) return;
-            timeElapsed++;
-            gameState.p1.gold += gameState.p1.incomeRate;
-            gameState.p2.gold += gameState.p2.incomeRate;
-            
-            // INTELLIGENCE ARTIFICIELLE
-            if(gameMode === 'solo' || gameMode === 'hardcore') {
-                let ai = gameState.p2;
-                let r = Math.random();
-                let isHard = (gameMode === 'hardcore');
-
-                if (isHard) ai.gold += Math.floor(timeElapsed / 10) + 2; 
-
-                // Upgrade Eco
-                if (ai.gold > ai.incomeCost * 1.5 && r > 0.5) processAction(2, 'upgradeEco', null);
-
-                // Evolve
-                if (ai.xp >= xpToEvolve[ai.age - 1]) processAction(2, 'evolve', null);
-
-                // Spawn Logic
-                if(ai.age === 1) {
-                    if(ai.gold >= 30 && r > 0.6) processAction(2, 'spawn', 'blaster');
-                    else if(ai.gold >= 15 && r > 0.2) processAction(2, 'spawn', 'drone');
-                } else if (ai.age === 2) {
-                    if(ai.gold >= 100 && r > 0.7) processAction(2, 'spawn', 'mech');
-                    else if(ai.gold >= 80 && r > 0.5) processAction(2, 'spawn', 'sniper');
-                    else if(ai.gold >= 30 && r > 0.3) processAction(2, 'spawn', 'blaster');
-                    else if(ai.gold >= 15) processAction(2, 'spawn', 'drone');
-                } else {
-                    if(ai.gold >= 400 && r > 0.8) processAction(2, 'spawn', 'titan');
-                    else if(ai.gold >= 100 && r > 0.5) processAction(2, 'spawn', 'mech');
-                    else if(ai.gold >= 80 && r > 0.3) processAction(2, 'spawn', 'sniper');
-                }
-
-                if (isHard) {
-                    if (ai.spells[1] === 0 && Math.random() < 0.05) processAction(2, 'spell', 1);
-                    if (ai.hp < 600 && ai.spells[2] === 0 && Math.random() < 0.05) processAction(2, 'spell', 2);
-                }
-            }
-        }
-
-        function sendAction(team, action, val) {
-            if(gameMode === 'client' && team === 2) conn.send({type: 'action', action: action, val: val});
-            else if (gameMode === 'host' && team === 1) processAction(1, action, val);
-            else if (gameMode !== 'client') processAction(team, action, val);
-        }
-
-        function processAction(team, action, val) {
-            let p = team === 1 ? gameState.p1 : gameState.p2;
-            if(action === 'spawn' && p.gold >= unitStats[val].cost) {
-                p.gold -= unitStats[val].cost;
-                gameState.units.push(new Unit(team, val));
-            }
-            else if (action === 'upgradeEco' && p.gold >= p.incomeCost) {
-                p.gold -= p.incomeCost;
-                p.incomeRate += 2;
-                p.incomeCost = Math.floor(p.incomeCost * 1.5);
-                addEffect('text', bases[team].spawnX, 100, team, '+ECO');
-            }
-            else if(action === 'spell' && p.gold >= spellStats[val].cost && p.spells[val] === 0) {
-                p.gold -= spellStats[val].cost;
-                p.spells[val] = spellStats[val].cdMax;
-                if(val === 1) { // Frappe
-                    addEffect('orbital', 0, 0, team); screenShake = 15;
-                    gameState.units.filter(u => u.team !== team).forEach(u => u.hp -= 60);
-                } else if(val === 2) { // Soin
-                    addEffect('heal', 0, 0, team);
-                    gameState.units.filter(u => u.team === team).forEach(u => u.hp = Math.min(u.maxHp, u.hp + 100));
-                    p.hp = Math.min(p.maxHp, p.hp + 200);
-                }
-            }
-            else if(action === 'evolve' && p.age < 3 && p.xp >= xpToEvolve[p.age - 1]) {
-                p.xp -= xpToEvolve[p.age - 1];
-                p.age++; 
-                p.maxHp += 1000; p.hp += 1000; // Bonus HP en passant d'age
-                addEffect('text', bases[team].spawnX, 80, team, 'TECH UP!');
-                screenShake = 10;
-            }
-        }
-
-        function addEffect(type, x, y, team, text='') {
-            gameState.effects.push({ type, x, y, team, text, life: 30, maxLife: 30 });
-        }
-
-        function updatePhysics() {
-            // Tourelles de bases
-            [1, 2].forEach(t => {
-                let p = t === 1 ? gameState.p1 : gameState.p2;
-                if (p.turretCd > 0) p.turretCd--;
-                else {
-                    let target = null; let bx = bases[t].spawnX;
-                    for (let i=0; i<gameState.units.length; i++) {
-                        let u = gameState.units[i];
-                        if (u.team !== t && Math.abs(u.x - bx) < 300) { target = u; break; }
-                    }
-                    if (target) {
-                        target.hp -= 15; p.turretCd = 60; // Tir tourelle toutes les 1s
-                        addEffect('laser', bx, 100, t, target.x + target.w/2);
-                        addEffect('hit', target.x + target.w/2, target.y + target.h/2, t);
-                    }
-                }
-            });
-
-            // Sorts CD & Effets
-            [gameState.p1, gameState.p2].forEach(p => { if(p.spells[1] > 0) p.spells[1]--; if(p.spells[2] > 0) p.spells[2]--; });
-            for(let i = gameState.effects.length-1; i >= 0; i--) {
-                gameState.effects[i].life--;
-                if(gameState.effects[i].life <= 0) gameState.effects.splice(i, 1);
-            }
-
-            // Unités
-            for (let i = gameState.units.length - 1; i >= 0; i--) {
-                let u = gameState.units[i]; let target = null; u.action = 'walk';
-                
-                // Ciblage
-                for (let j = 0; j < gameState.units.length; j++) { 
-                    let other = gameState.units[j]; 
-                    if (u.team !== other.team) { 
-                        let dist = u.team === 1 ? (other.x - (u.x + u.w)) : (u.x - (other.x + other.w)); 
-                        if (dist <= u.rng && dist >= -20) { target = other; break; } 
-                    } 
-                }
-                if (!target) { 
-                    let distToBase = u.team === 1 ? (bases[2].x - (u.x + u.w)) : (u.x - (bases[1].x + bases[1].w)); 
-                    if (distToBase <= u.rng) target = u.team === 1 ? gameState.p2 : gameState.p1; 
-                }
-                
-                // Attaque
-                if (target) { 
-                    u.action = 'attack'; 
-                    if (u.cd <= 0) { 
-                        target.hp -= u.dmg; u.cd = u.cdMax; 
-                        let ty = (target === gameState.p1 || target === gameState.p2) ? 180 : target.y + target.h/2;
-                        let tx = (target === gameState.p1 || target === gameState.p2) ? (u.team===1? bases[2].x : bases[1].x+bases[1].w) : target.x + target.w/2;
-                        
-                        if (unitStats[u.type].type === 'ranged') {
-                            addEffect('laser', u.x + (u.team===1?u.w:0), u.y + 10, u.team, tx);
-                        } else if (u.type === 'titan') {
-                            screenShake = 5;
-                        }
-                        addEffect('hit', tx, ty, u.team);
-                    } 
-                } else {
-                    // Mouvement & Anti-Stacking
-                    let canMove = true; let hitboxSpacing = u.w + 5;
-                    for (let j = 0; j < gameState.units.length; j++) {
-                        let other = gameState.units[j];
-                        if (u.team === other.team && u.id !== other.id) {
-                            if (u.team === 1 && other.x > u.x && (other.x - u.x) < hitboxSpacing) canMove = false;
-                            if (u.team === 2 && u.x > other.x && (u.x - other.x) < hitboxSpacing) canMove = false;
-                        }
-                    }
-                    if(canMove) u.x += u.speed;
-                }
-                
-                if (u.cd > 0) u.cd--;
-                if (u.hp <= 0) { 
-                    let killer = u.team === 1 ? gameState.p2 : gameState.p1;
-                    killer.gold += u.rew; 
-                    if (killer.age < 3) killer.xp += u.xp; 
-                    addEffect('text', u.x, u.y, u.team === 1 ? 2 : 1, `+${u.rew}💰`);
-                    addEffect('explosion', u.x + u.w/2, u.y + u.h/2, u.team);
-                    gameState.units.splice(i, 1); 
-                }
-            }
-
-            // Victoire
-            if (gameState.p1.hp <= 0 || gameState.p2.hp <= 0) {
-                gameActive = false; document.getElementById('game-over').style.display = 'flex'; 
-                const msg = document.getElementById('end-message');
-                document.getElementById('end-stats').innerText = `TEMPS ÉCOULÉ : ${timeElapsed}s`;
-                if (gameMode === 'hardcore') {
-                    msg.innerText = gameState.p2.hp <= 0 ? "LEGENDE : VOUS AVEZ BATTU L'IA EXTRÊME" : "LA RÉSISTANCE EST TOMBÉE";
-                    msg.style.color = gameState.p2.hp <= 0 ? 'var(--gold)' : 'var(--enemy)';
-                } else {
-                    let p1Won = gameState.p2.hp <= 0;
-                    if ((p1Won && myTeam === 1) || (!p1Won && myTeam === 2) || (gameMode === 'local' && p1Won)) {
-                        msg.innerText = "VICTOIRE TOTALE"; msg.style.color = 'var(--primary)'; msg.style.textShadow = '0 0 20px var(--primary)';
-                    } else {
-                        msg.innerText = "DÉFAITE TACTIQUE"; msg.style.color = 'var(--enemy)'; msg.style.textShadow = '0 0 20px var(--enemy)';
-                    }
-                }
-            }
-        }
-
-        // --- CLAVIER ---
-        window.addEventListener('keydown', e => {
-            if(!gameActive) return; let k = e.key.toLowerCase();
-            let act = (k, team) => {
-                if(k==='a' || k==='1') sendAction(team, 'spawn', 'drone');
-                if(k==='z' || k==='2') sendAction(team, 'spawn', 'blaster');
-                if(k==='e' || k==='3') sendAction(team, 'spawn', 'mech');
-                if(k==='r' || k==='4') sendAction(team, 'spawn', 'sniper');
-                if(k==='t' || k==='5') sendAction(team, 'spawn', 'titan');
-                if(k==='q' || k==='7') sendAction(team, 'spell', 1);
-                if(k==='s' || k==='8') sendAction(team, 'spell', 2);
-                if(k==='d' || k==='9') sendAction(team, 'evolve', null);
-            };
-            if (myTeam === 1 || gameMode === 'local') act(k, 1);
-            if (myTeam === 2 && gameMode === 'client') act(k, 2);
-            if (gameMode === 'local' && ['1','2','3','4','5','7','8','9'].includes(e.key)) act(e.key, 2);
+        // --- INPUTS ---
+        window.addEventListener('keydown', e => { let k=e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true; });
+        window.addEventListener('keyup', e => { let k=e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false; });
+        
+        canvas.addEventListener('mousemove', e => {
+            let rect = canvas.getBoundingClientRect();
+            mouse.x = (e.clientX - rect.left) / (rect.width / canvas.width);
+            mouse.y = (e.clientY - rect.top) / (rect.height / canvas.height);
         });
+        canvas.addEventListener('mousedown', () => mouse.down = true);
+        canvas.addEventListener('mouseup', () => mouse.down = false);
 
-        // --- RENDU CYBERPUNK (CANVAS) ---
-        function drawBackground() {
-            // Ciel
-            let grad = ctx.createLinearGradient(0, 0, 0, floorY);
-            grad.addColorStop(0, '#020205'); grad.addColorStop(1, '#0a1025');
-            ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Mobile Virtual Joysticks Setup
+        const joyMove = document.getElementById('joy-move');
+        const knobMove = document.getElementById('knob-move');
+        const joyAim = document.getElementById('joy-aim');
+        const knobAim = document.getElementById('knob-aim');
+
+        function handleJoystick(e, isMove) {
+            e.preventDefault();
+            let touch = e.targetTouches[0];
+            let zone = isMove ? joyMove : joyAim;
+            let knob = isMove ? knobMove : knobAim;
             
-            // Ligne d'horizon neon
-            ctx.shadowBlur = 15; ctx.shadowColor = '#00f0ff'; ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
-            ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(canvas.width, floorY); ctx.stroke();
+            if(!touch) { // Touchend
+                knob.style.transform = `translate(-50%, -50%)`;
+                if(isMove) { jMove.x = 0; jMove.y = 0; }
+                else { jAim.firing = false; }
+                return;
+            }
+
+            let rect = zone.getBoundingClientRect();
+            let cx = rect.left + rect.width/2;
+            let cy = rect.top + rect.height/2;
+            
+            let dx = touch.clientX - cx;
+            let dy = touch.clientY - cy;
+            let dist = Math.hypot(dx, dy);
+            let maxDist = rect.width/2 - 20;
+
+            if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
+            
+            knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            
+            // Normalize -1 to 1
+            let nx = dx / maxDist; let ny = dy / maxDist;
+            if(isMove) { jMove.x = nx; jMove.y = ny; }
+            else { jAim.x = nx; jAim.y = ny; jAim.firing = true; }
+        }
+
+        joyMove.addEventListener('touchstart', e => handleJoystick(e, true));
+        joyMove.addEventListener('touchmove', e => handleJoystick(e, true));
+        joyMove.addEventListener('touchend', e => handleJoystick(e, true));
+        
+        joyAim.addEventListener('touchstart', e => handleJoystick(e, false));
+        joyAim.addEventListener('touchmove', e => handleJoystick(e, false));
+        joyAim.addEventListener('touchend', e => handleJoystick(e, false));
+
+        // --- GAME LOOP ---
+        function update() {
+            if(!gameActive) return;
+
+            let myTank = tanks.find(t => t.team === myTeam);
+
+            // Appliquer Inputs locaux (PC ou Mobile)
+            if (myTank && myTank.hp > 0) {
+                // Mouvement (Clavier ou Joystick Mobile)
+                myTank.vx = 0; myTank.vy = 0;
+                if (keys.w || keys.arrowup) myTank.vy = -myTank.speed;
+                if (keys.s || keys.arrowdown) myTank.vy = myTank.speed;
+                if (keys.a || keys.arrowleft) myTank.vx = -myTank.speed;
+                if (keys.d || keys.arrowright) myTank.vx = myTank.speed;
+                
+                if (jMove.x !== 0 || jMove.y !== 0) {
+                    myTank.vx = jMove.x * myTank.speed;
+                    myTank.vy = jMove.y * myTank.speed;
+                }
+
+                // Normaliser diagonales
+                if(myTank.vx !== 0 && myTank.vy !== 0 && jMove.x === 0) { myTank.vx *= 0.707; myTank.vy *= 0.707; }
+
+                // Visée & Tir
+                let isShooting = false;
+                if (jAim.firing) { // Mobile
+                    myTank.turretAngle = Math.atan2(jAim.y, jAim.x);
+                    isShooting = true;
+                } else { // PC
+                    myTank.turretAngle = Math.atan2(mouse.y - myTank.y, mouse.x - myTank.x);
+                    if (mouse.down) isShooting = true;
+                }
+
+                if(isShooting && gameMode !== 'client') shoot(myTank);
+
+                // Envoi réseau des inputs si client
+                if (gameMode === 'client' && conn && conn.open) {
+                    conn.send({type: 'input', vx: myTank.vx, vy: myTank.vy, turretAngle: myTank.turretAngle, shoot: isShooting });
+                }
+            }
+
+            // Host / Solo gère la physique globale
+            if (gameMode === 'host' || gameMode === 'solo') {
+                tanks.forEach(t => t.update());
+                for(let i=bullets.length-1; i>=0; i--) {
+                    bullets[i].update();
+                    if(bullets[i].life <= 0) bullets.splice(i, 1);
+                }
+
+                // Sync Network
+                if(gameMode === 'host' && conn && conn.open) {
+                    conn.send({type: 'state', tanks: tanks, bullets: bullets});
+                }
+            } else if (gameMode === 'client') {
+                // Le client ne fait que l'interpolation locale visuelle (ou attend le state du host)
+                // Pour simplifier, on a écrasé l'état dans setupConnection
+            }
+
+            particles.forEach(p => p.update());
+            particles = particles.filter(p => p.life > 0);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Murs Neon
+            ctx.shadowBlur = 15; ctx.shadowColor = '#0055ff'; ctx.fillStyle = 'rgba(0, 40, 100, 0.4)'; ctx.strokeStyle = '#0088ff'; ctx.lineWidth = 2;
+            for(let w of walls) {
+                ctx.beginPath(); ctx.rect(w.x, w.y, w.w, w.h); ctx.fill(); ctx.stroke();
+                // Inner lines for sci-fi look
+                ctx.beginPath(); ctx.moveTo(w.x+5, w.y+5); ctx.lineTo(w.x+w.w-5, w.y+w.h-5); ctx.stroke();
+            }
             ctx.shadowBlur = 0;
 
-            // Grille sol (Perspective fake 3D)
-            globalOffset = (globalOffset + 1) % 40;
-            ctx.strokeStyle = 'rgba(255, 0, 127, 0.2)'; ctx.lineWidth = 1;
-            for(let i = floorY; i < canvas.height; i += (i - floorY + 10) * 0.2) {
-                let y = i + (globalOffset/40) * ((i - floorY + 10) * 0.2);
-                if(y < canvas.height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
-            }
-            let vanishX = canvas.width / 2;
-            for(let i = -10; i < 10; i++) {
-                ctx.beginPath(); ctx.moveTo(vanishX, floorY); ctx.lineTo(vanishX + i * 150, canvas.height); ctx.stroke();
-            }
-        }
-
-        function drawShape(type, x, y, w, h, color) {
-            ctx.fillStyle = color;
-            ctx.shadowBlur = 10; ctx.shadowColor = color;
-            ctx.beginPath();
-            if (type === 'drone') { ctx.moveTo(x, y+h/2); ctx.lineTo(x+w/2, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w/2, y+h); }
-            else if (type === 'blaster') { ctx.moveTo(x+w/2, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w/2, y+h); ctx.lineTo(x, y+h/2); }
-            else if (type === 'mech') { ctx.moveTo(x+w*0.2, y); ctx.lineTo(x+w*0.8, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w*0.8, y+h); ctx.lineTo(x+w*0.2, y+h); ctx.lineTo(x, y+h/2); }
-            else if (type === 'sniper') { ctx.fillRect(x, y, w*0.4, h); ctx.fillRect(x, y+h*0.3, w, h*0.2); }
-            else if (type === 'titan') { ctx.moveTo(x+w/2, y); ctx.lineTo(x+w, y+h*0.3); ctx.lineTo(x+w*0.8, y+h); ctx.lineTo(x+w*0.2, y+h); ctx.lineTo(x, y+h*0.3); }
-            ctx.fill(); ctx.shadowBlur = 0;
-            // Highlight
-            ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
-        }
-
-        function drawGame() {
-            ctx.save();
-            if (screenShake > 0) {
-                ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
-                screenShake *= 0.9; if(screenShake < 0.5) screenShake = 0;
-            }
-
-            drawBackground();
-
-            // BASES (Pyramides Neon)
-            [1, 2].forEach(t => {
-                let b = bases[t]; let color = t === 1 ? '#00f0ff' : '#ff0055';
-                let p = t === 1 ? gameState.p1 : gameState.p2;
-                ctx.shadowBlur = 20; ctx.shadowColor = color;
-                
-                // Structure
-                ctx.fillStyle = `rgba(10,15,30,0.9)`;
-                ctx.beginPath(); ctx.moveTo(b.x + b.w/2, 100); ctx.lineTo(b.x + b.w, floorY); ctx.lineTo(b.x, floorY); ctx.fill();
-                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
-                
-                // Tourelle & Age details
-                ctx.fillStyle = color;
-                ctx.fillRect(b.x + b.w/2 - 10, 80, 20, 20); // Core
-                if (p.age >= 2) ctx.fillRect(b.x + b.w/2 - 20, 150, 40, 10);
-                if (p.age >= 3) { ctx.beginPath(); ctx.arc(b.x + b.w/2, 50, 15, 0, Math.PI*2); ctx.fill(); }
-                
-                ctx.shadowBlur = 0;
-            });
-
-            // UNITES
-            gameState.units.forEach(u => {
-                let color = u.team === 1 ? '#00f0ff' : '#ff0055';
-                
-                ctx.save();
-                ctx.translate(u.x + u.w/2, u.y + u.h/2);
-                
-                if (u.action === 'walk') {
-                    u.animCycle += 0.15 * u.speed;
-                    ctx.translate(0, -Math.abs(Math.sin(u.animCycle)) * 4);
-                } else if (u.action === 'attack') {
-                    let p = (u.cdMax - u.cd) / u.cdMax;
-                    if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (p<0.3?10:0) : (p<0.3?-10:0), 0);
-                }
-
-                drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color);
-                ctx.restore();
-
-                // HP Bar
-                ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(u.x, u.y - 12, u.w, 4); 
-                ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x, u.y - 12, u.w * (u.hp / u.maxHp), 4);
-            });
-
-            // EFFETS (Lasers, Explosions, Textes)
-            gameState.effects.forEach(eff => {
-                let prog = eff.life / eff.maxLife;
-                let color = eff.team === 1 ? '#00f0ff' : '#ff0055';
-
-                if (eff.type === 'laser') {
-                    ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.strokeStyle = color; ctx.lineWidth = prog * 4;
-                    ctx.beginPath(); ctx.moveTo(eff.x, eff.y); ctx.lineTo(eff.text /* targetX */, eff.y); ctx.stroke();
-                } else if (eff.type === 'hit' || eff.type === 'explosion') {
-                    ctx.fillStyle = color; ctx.globalAlpha = prog;
-                    ctx.beginPath(); ctx.arc(eff.x, eff.y, (1-prog)* (eff.type==='explosion'?30:15), 0, Math.PI*2); ctx.fill();
-                } else if (eff.type === 'orbital') {
-                    ctx.fillStyle = color; ctx.globalAlpha = prog * 0.5;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.globalAlpha = 1; ctx.shadowBlur = 20; ctx.shadowColor = color;
-                    for(let i=0; i<10; i++) { ctx.fillRect(Math.random()*canvas.width, 0, 5, canvas.height); }
-                } else if (eff.type === 'heal') {
-                    ctx.fillStyle = '#39ff14'; ctx.globalAlpha = prog;
-                    gameState.units.filter(u => u.team === eff.team).forEach(u => {
-                        ctx.font = "bold 20px Rajdhani"; ctx.fillText('+', u.x+u.w/2-5, u.y - (30-eff.life)); 
-                    });
-                } else if (eff.type === 'text') {
-                    ctx.fillStyle = eff.text.includes('💰') ? '#ffd700' : '#fff';
-                    ctx.font = "bold 20px Rajdhani"; ctx.shadowBlur = 5; ctx.shadowColor = '#000';
-                    ctx.globalAlpha = prog;
-                    ctx.fillText(eff.text, eff.x, eff.y - (30-eff.life));
-                }
-                ctx.globalAlpha = 1; ctx.shadowBlur = 0;
-            });
-
-            ctx.restore();
-        }
-
-        function updateHUD() {
-            // Eco
-            document.getElementById('p1-gold').innerText = Math.floor(myTeam === 1 ? gameState.p1.gold : gameState.p2.gold);
-            if(gameMode === 'local') {
-                document.getElementById('p1-gold').innerText = Math.floor(gameState.p1.gold);
-                document.getElementById('p2-gold').innerText = Math.floor(gameState.p2.gold);
-                document.getElementById('p1-income-txt').innerText = `+${gameState.p1.incomeRate}/s`;
-                document.getElementById('p2-income-txt').innerText = `+${gameState.p2.incomeRate}/s`;
-                
-                let b1 = document.getElementById('btn-p1-eco'); if(b1) { b1.innerText = `+ ÉCO (${gameState.p1.incomeCost}💰)`; b1.disabled = gameState.p1.gold < gameState.p1.incomeCost; }
-                let b2 = document.getElementById('btn-p2-eco'); if(b2) { b2.innerText = `+ ÉCO (${gameState.p2.incomeCost}💰)`; b2.disabled = gameState.p2.gold < gameState.p2.incomeCost; }
-            } else {
-                let p = myTeam === 1 ? gameState.p1 : gameState.p2;
-                document.getElementById('p1-income-txt').innerText = `+${p.incomeRate}/s`;
-                let b = document.getElementById(`btn-p${myTeam}-eco`); if(b) { b.innerText = `+ ÉCO (${p.incomeCost}💰)`; b.disabled = p.gold < p.incomeCost; }
-            }
-
-            // HP
-            document.getElementById('p1-hp-bar').style.width = (gameState.p1.hp / gameState.p1.maxHp * 100) + '%'; 
-            document.getElementById('p2-hp-bar').style.width = (gameState.p2.hp / gameState.p2.maxHp * 100) + '%';
-
-            // XP / Age
-            [1, 2].forEach(t => {
-                let p = t === 1 ? gameState.p1 : gameState.p2;
-                let pre = t === 1 ? 'p1' : 'p2';
-                
-                document.getElementById(`${pre}-age`).innerText = p.age;
-                let xpBar = document.getElementById(`${pre}-xp-bar`);
-                let btnEvolve = document.getElementById(`btn-evolve-${pre}`);
-                
-                if (p.age < 3) {
-                    let req = xpToEvolve[p.age - 1];
-                    if(xpBar) xpBar.style.width = Math.min(100, (p.xp / req * 100)) + '%'; 
-                    if(btnEvolve && p.xp >= req && (myTeam === t || gameMode === 'local')) btnEvolve.style.display = 'block'; else if(btnEvolve) btnEvolve.style.display = 'none';
-                } else {
-                    if(xpBar) xpBar.style.width = '100%'; 
-                    if(btnEvolve) btnEvolve.style.display = 'none';
-                }
-
-                // Unlock Boutons HUD (Local = met à jour les 2, Reseau = met à jour le mien)
-                if (gameMode === 'local' || myTeam === t) {
-                    let locks = [null, null, null, document.getElementById(`lock-${pre}-3`), document.getElementById(`lock-${pre}-4`), document.getElementById(`lock-${pre}-5`)];
-                    ['drone', 'blaster', 'mech', 'sniper', 'titan'].forEach((type, i) => { 
-                        let b = document.getElementById(`btn-${pre}-u${i+1}`); 
-                        let reqAge = i < 2 ? 1 : (i < 4 ? 2 : 3);
-                        if(b) b.disabled = p.gold < unitStats[type].cost || p.age < reqAge; 
-                        if(locks[i+1] && p.age >= reqAge) locks[i+1].style.display = 'none';
-                    });
-                    
-                    [1, 2].forEach(i => {
-                        let btn = document.getElementById(`btn-${pre}-spell${i}`);
-                        if(btn) {
-                            btn.disabled = (p.gold < spellStats[i].cost) || (p.spells[i] > 0);
-                            document.getElementById(`cd-${pre}-spell${i}`).style.width = (p.spells[i] / spellStats[i].cdMax * 100) + '%';
-                        }
-                    });
-                }
-            });
+            tanks.forEach(t => t.draw(ctx));
+            bullets.forEach(b => b.draw(ctx));
+            particles.forEach(p => p.draw(ctx));
         }
 
         function gameLoop() {
-            if(!gameActive) return;
-            if(gameMode === 'host' || gameMode === 'solo' || gameMode === 'hardcore' || gameMode === 'local') {
-                updatePhysics();
-                if(gameMode === 'host' && conn && conn.open) conn.send({type: 'state', state: gameState});
-            }
-            updateHUD();
-            drawGame();
+            update();
+            draw();
             requestAnimationFrame(gameLoop);
         }
-
-        // --- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL ---
+    </script>
+    
+    <!-- ========================================== -->
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL   -->
+    <!-- ========================================== -->
+    <script>
         const gamesHubList = [
             "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
             "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
@@ -740,8 +697,9 @@
 
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
-            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
-            if (target.closest('#game-container') || target.closest('.hud') || target.closest('.controls-container')) return true;
+            if (tag === 'input' || tag === 'button') return true;
+            // On exclut le canvas ET les zones de joystick virtuels pour ne pas swipe en jouant
+            if (target.closest('#gameCanvas') || target.closest('.joystick-zone')) return true;
             return false;
         }
 
