@@ -171,7 +171,6 @@
             constructor(id, x, y, skin, color, team) {
                 this.id = id;
                 this.x = x; this.y = y;
-                // 🔥 TAILLE AUGMENTÉE
                 this.w = 48; this.h = 48;
                 this.skin = skin; 
                 this.color = color; 
@@ -193,7 +192,7 @@
             update() {
                 if (this.cd > 0) this.cd--;
 
-                // Physique et Collisions avec les murs (Glissement naturel)
+                // Physique et Collisions avec les murs
                 let nextX = this.x + this.vx; let nextY = this.y + this.vy;
                 let collideX = false, collideY = false;
                 
@@ -209,17 +208,23 @@
                 if (!collideY) this.y = nextY;
                 if (this.vx !== 0 || this.vy !== 0) this.angle = Math.atan2(this.vy, this.vx);
 
-                // --- 🤖 NOUVELLE IA : PATHFINDING FLUIDE (ANTI-BLOCAGE) ---
+                // --- 🤖 INTELLIGENCE ARTIFICIELLE ÉVOLUTIVE ---
                 if (this.isAI && gameMode !== 'client') {
                     let p1 = tanks.find(t => t.team === 1);
                     if(p1 && p1.hp > 0) {
+                        // Facteur d'intelligence (max à la vague 15)
+                        let iq = Math.min(wave / 15, 1); 
+
                         let dx = p1.x - this.x; let dy = p1.y - this.y;
                         let dist = Math.hypot(dx, dy);
-                        this.turretAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.1; // Visée avec légère imprécision
+                        
+                        // Précision de tir qui s'améliore avec la vague (moins de tremblement)
+                        let aimJitter = 0.15 - (iq * 0.1); 
+                        this.turretAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * aimJitter;
                         
                         let safeDist = this.isBoss ? 150 : 250;
                         
-                        // 1. Vecteur d'approche vers le joueur
+                        // 1. DÉPLACEMENT VERS CIBLE
                         if (dist > safeDist) {
                             this.vx = Math.cos(this.turretAngle) * this.speed * 0.6;
                             this.vy = Math.sin(this.turretAngle) * this.speed * 0.6;
@@ -230,25 +235,36 @@
                             this.vx = 0; this.vy = 0; 
                         }
                         
-                        // 2. ÉVITEMENT DES MURS (Closest Point on AABB)
+                        // 2. ANTI-CHEVAUCHEMENT (Séparation des IA)
+                        for(let other of tanks) {
+                            if (other !== this && other.hp > 0 && other.team === this.team) {
+                                let odx = this.x - other.x;
+                                let ody = this.y - other.y;
+                                let odist = Math.hypot(odx, ody);
+                                let minSpace = (this.w/2 + other.w/2) + 15; // Rayon + marge
+                                if (odist < minSpace && odist > 0) {
+                                    let pushForce = (minSpace - odist) / minSpace;
+                                    this.vx += (odx / odist) * pushForce * 2;
+                                    this.vy += (ody / odist) * pushForce * 2;
+                                }
+                            }
+                        }
+
+                        // 3. ÉVITEMENT DES MURS (Closest Point on AABB)
                         let avoidVx = 0; let avoidVy = 0;
-                        let margin = 20; // Marge de détection autour de l'IA
+                        let margin = 20; 
                         
                         for(let w of walls) {
-                            // On vérifie si l'IA est proche d'un mur étendu
                             if (this.x + this.w/2 + margin > w.x && this.x - this.w/2 - margin < w.x + w.w &&
                                 this.y + this.h/2 + margin > w.y && this.y - this.h/2 - margin < w.y + w.h) {
                                 
-                                // On cherche le point du rectangle (mur) le plus proche du tank
                                 let testX = this.x; let testY = this.y;
                                 if (this.x < w.x) testX = w.x; else if (this.x > w.x + w.w) testX = w.x + w.w;
                                 if (this.y < w.y) testY = w.y; else if (this.y > w.y + w.h) testY = w.y + w.h;
                                 
-                                let distX = this.x - testX;
-                                let distY = this.y - testY;
+                                let distX = this.x - testX; let distY = this.y - testY;
                                 let distance = Math.hypot(distX, distY);
                                 
-                                // Si on est très près, on ajoute une force de répulsion pour glisser le long du mur
                                 if (distance < margin + this.w/2) {
                                     if(distance === 0) { avoidVx += (Math.random()-0.5)*5; avoidVy += (Math.random()-0.5)*5; } 
                                     else {
@@ -259,12 +275,26 @@
                                 }
                             }
                         }
+                        this.vx += avoidVx; this.vy += avoidVy;
+
+                        // 4. ESQUIVE DES TIRS (Dodge - S'améliore avec la vague)
+                        let dodgeChance = 0.02 + (iq * 0.1); // Plus on monte, plus ils sont réactifs
+                        let dodgeRadius = 120 + (iq * 80); 
+                        if (Math.random() < dodgeChance) {
+                            for(let b of bullets) {
+                                if (b.team !== this.team) {
+                                    let bDist = Math.hypot(b.x - this.x, b.y - this.y);
+                                    if (bDist < dodgeRadius) {
+                                        // Déplacement perpendiculaire au tir
+                                        this.vx += -Math.sign(b.vy) * this.speed * 1.5;
+                                        this.vy += Math.sign(b.vx) * this.speed * 1.5;
+                                        break; // Esquive un seul tir à la fois
+                                    }
+                                }
+                            }
+                        }
                         
-                        // Application de la répulsion
-                        this.vx += avoidVx;
-                        this.vy += avoidVy;
-                        
-                        // Normalisation de la vitesse pour que l'IA ne parte pas à 300km/h
+                        // Normalisation de la vitesse globale
                         let currentSpeed = Math.hypot(this.vx, this.vy);
                         let maxSpeed = this.isBoss ? this.speed * 0.7 : this.speed * 0.9;
                         if (currentSpeed > maxSpeed) {
@@ -272,10 +302,11 @@
                             this.vy = (this.vy / currentSpeed) * maxSpeed;
                         }
 
-                        // Esquive aléatoire
+                        // Esquive aléatoire basique
                         if(Math.random() < 0.05) { this.vx += (Math.random()-0.5)*2; this.vy += (Math.random()-0.5)*2; }
 
-                        let fireRate = this.isBoss ? 0.04 : 0.02;
+                        // Cadence de tir évolutive
+                        let fireRate = (this.isBoss ? 0.03 : 0.015) + (iq * 0.02);
                         if (this.cd === 0 && Math.random() < fireRate) shoot(this);
                     }
                 }
@@ -289,14 +320,11 @@
                 ctx.shadowBlur = this.isBoss ? 25 : 15; 
                 ctx.shadowColor = this.color;
                 
-                // 🔄 CORRECTION DE LA ROTATION DU PNG
-                // Ton image regarde nativement vers le BAS (+90°). 
-                // On compense donc en tournant de -90° (Math.PI/2) pour aligner l'image sur l'angle de visée.
+                // Rotation compensée (-90°) car le sprite regarde vers le bas
                 ctx.rotate(this.turretAngle - Math.PI / 2);
                 
                 let img = imgs[this.skin];
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    // On ne squash pas le sprite pour préserver la qualité du dessin
                     ctx.drawImage(img, -this.w/2, -this.h/2, this.w, this.h);
                 } else {
                     ctx.strokeStyle = this.color; 
@@ -306,13 +334,12 @@
                 }
                 ctx.restore();
 
-                // Laser de visée (dessiné séparément pour ne pas subir la compensation de -90°)
+                // Laser de visée (dessiné séparément)
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.turretAngle);
                 ctx.strokeStyle = this.color; ctx.lineWidth = 2;
                 ctx.globalAlpha = 0.6;
-                // La ligne du laser sort bien du canon
                 ctx.beginPath(); ctx.moveTo(this.w/2, 0); ctx.lineTo(this.w/2 + 25, 0); ctx.stroke();
                 ctx.restore();
 
@@ -360,7 +387,6 @@
 
                 for(let t of tanks) {
                     if (t.hp > 0 && t.team !== this.team) {
-                        // Rayon de collision élargi pour correspondre aux nouveaux gros tanks
                         let hitDist = t.w/2 - 2; 
                         let dist = Math.hypot(this.x - t.x, this.y - t.y);
                         if (dist < hitDist) { 
@@ -410,7 +436,6 @@
 
         function shoot(tank) {
             if (tank.cd <= 0 && tank.hp > 0) {
-                // Le tir part exactement du bout du canon
                 let bx = tank.x + Math.cos(tank.turretAngle) * (tank.w/2 + 8);
                 let by = tank.y + Math.sin(tank.turretAngle) * (tank.h/2 + 8);
                 bullets.push(new Bullet(bx, by, tank.turretAngle, tank.color, tank.team));
@@ -444,7 +469,6 @@
             }
         }
 
-        // Système de Spawn sécurisé pour éviter que l'IA apparaisse dans un mur
         function getSafeSpawn() {
             let x, y, safe;
             do {
@@ -470,7 +494,7 @@
                 let spawn = getSafeSpawn();
                 let b = new Tank('boss_'+w, spawn.x, spawn.y, 'slime_noir', '#b82aff', 2);
                 b.isAI = true; b.isBoss = true; 
-                b.w = 80; b.h = 80; // Boss ÉNORME
+                b.w = 80; b.h = 80; 
                 b.speed = 2.0; 
                 b.hp = 2 + (w / 3); b.maxHp = b.hp;
                 tanks.push(b);
