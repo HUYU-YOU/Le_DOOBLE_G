@@ -128,6 +128,95 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
+        // --- 🎵 SYSTÈME AUDIO WEB API 🎵 ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'shoot') {
+                // Laser Pew
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } 
+            else if (type === 'hit') {
+                // Impact étouffé
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } 
+            else if (type === 'explosion') {
+                // Gros BOOM grave
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            } 
+            else if (type === 'bounce') {
+                // Rebond métallique
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+                gain.gain.setValueAtTime(0.02, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            }
+            else if (type === 'boss_spawn') {
+                // Sirène d'alerte
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(50, now);
+                osc.frequency.linearRampToValueAtTime(150, now + 1.0);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0.001, now + 1.5);
+                osc.start(now); osc.stop(now + 1.5);
+            }
+        }
+
+        // Gestion du grondement du moteur de tank
+        let engineOsc = null;
+        let engineGain = null;
+        let isEngineRunning = false;
+
+        function updateEngineSound(isMoving) {
+            if (audioCtx.state === 'suspended') return; 
+            
+            if (!engineOsc) {
+                engineOsc = audioCtx.createOscillator();
+                engineGain = audioCtx.createGain();
+                engineOsc.type = 'triangle'; // Grondement très grave
+                engineOsc.frequency.value = 35; // Fréquence de ralenti
+                engineGain.gain.value = 0;
+                engineOsc.connect(engineGain);
+                engineGain.connect(audioCtx.destination);
+                engineOsc.start();
+            }
+
+            const now = audioCtx.currentTime;
+            if (isMoving && !isEngineRunning) {
+                isEngineRunning = true;
+                engineOsc.frequency.setTargetAtTime(70, now, 0.2); // Le moteur monte dans les tours
+                engineGain.gain.setTargetAtTime(0.08, now, 0.2); // Le volume augmente
+            } else if (!isMoving && isEngineRunning) {
+                isEngineRunning = false;
+                engineOsc.frequency.setTargetAtTime(35, now, 0.3); // Ralenti
+                engineGain.gain.setTargetAtTime(0.01, now, 0.3); // Baisse le volume presque à 0
+            }
+        }
+
         // --- CHARGEMENT DES ASSETS ---
         const imgs = {};
         const imgFiles = {
@@ -371,15 +460,21 @@
                             let min = Math.min(Math.abs(nextX - w.x), Math.abs((w.x + w.w) - nextX), Math.abs(nextY - w.y), Math.abs((w.y + w.h) - nextY));
                             if (min === Math.abs(nextX - w.x) || min === Math.abs((w.x + w.w) - nextX)) this.vx *= -1;
                             else this.vy *= -1;
+                            
                             this.bounces--; bounced = true;
                             createParticles(this.x, this.y, this.color, 5);
+                            playSound('bounce'); // Son du rebond contre un mur
                         } else this.life = 0; 
                     }
                 }
 
                 if(!bounced) {
-                    if (nextX < 0 || nextX > canvas.width) { if(this.bounces > 0){ this.vx *= -1; this.bounces--; } else this.life = 0; }
-                    if (nextY < 0 || nextY > canvas.height) { if(this.bounces > 0){ this.vy *= -1; this.bounces--; } else this.life = 0; }
+                    if (nextX < 0 || nextX > canvas.width) { 
+                        if(this.bounces > 0){ this.vx *= -1; this.bounces--; playSound('bounce'); } else this.life = 0; 
+                    }
+                    if (nextY < 0 || nextY > canvas.height) { 
+                        if(this.bounces > 0){ this.vy *= -1; this.bounces--; playSound('bounce'); } else this.life = 0; 
+                    }
                 }
 
                 this.x += this.vx; this.y += this.vy;
@@ -392,7 +487,12 @@
                         if (dist < hitDist) { 
                             t.hp--; this.life = 0;
                             createParticles(this.x, this.y, this.color, 15);
-                            if(t.hp <= 0) handleKill(this.team, t.team);
+                            if(t.hp <= 0) {
+                                playSound('explosion'); // BOOM quand le tank meurt
+                                handleKill(this.team, t.team);
+                            } else {
+                                playSound('hit'); // Bruit d'impact si le tank survit
+                            }
                         }
                     }
                 }
@@ -436,6 +536,7 @@
 
         function shoot(tank) {
             if (tank.cd <= 0 && tank.hp > 0) {
+                playSound('shoot'); // Son du tir
                 let bx = tank.x + Math.cos(tank.turretAngle) * (tank.w/2 + 8);
                 let by = tank.y + Math.sin(tank.turretAngle) * (tank.h/2 + 8);
                 bullets.push(new Bullet(bx, by, tank.turretAngle, tank.color, tank.team));
@@ -488,6 +589,7 @@
             let hudP1 = document.getElementById('hud-p1');
             
             if (w % 3 === 0) {
+                playSound('boss_spawn'); // Alarme sonore pour le Boss
                 hudP1.innerText = `⚠️ VAGUE ${w} : BOSS ! ⚠️`;
                 hudP1.classList.add('boss');
                 
@@ -512,6 +614,8 @@
         }
 
         function initGame(mode) {
+            if (audioCtx.state === 'suspended') audioCtx.resume(); // Autorise le son si premier clic
+            
             gameMode = mode;
             tanks = []; bullets = []; particles = [];
             generateMap();
@@ -581,6 +685,7 @@
         }
 
         function joinGame() {
+            if (audioCtx.state === 'suspended') audioCtx.resume(); // Autorise le son si c'est la première interraction
             const hostId = document.getElementById('join-id').value.trim().toUpperCase();
             if(!hostId) return;
             let status = document.getElementById('status-text');
@@ -600,7 +705,13 @@
                     if(p2) { p2.vx = data.vx; p2.vy = data.vy; p2.turretAngle = data.turretAngle; if(data.shoot) shoot(p2); }
                 }
                 if (gameMode === 'client') {
-                    if(data.type === 'state') { tanks = data.tanks; bullets = data.bullets; if(data.particles) particles.push(...data.particles); }
+                    if(data.type === 'state') { 
+                        // Synchroniser les sons d'explosions/rebonds chez le client (basé sur la disparition des bullets/tanks)
+                        if (bullets.length > data.bullets.length && data.bullets.length > 0) playSound('bounce');
+                        if (tanks.length > data.tanks.length) playSound('explosion');
+                        
+                        tanks = data.tanks; bullets = data.bullets; if(data.particles) particles.push(...data.particles); 
+                    }
                     if(data.type === 'game_over') { p1Wins = data.p1Wins; p2Wins = data.p2Wins; endGame(data.msg, data.stats); }
                     if(data.type === 'restart') { restartRound(); }
                 }
@@ -610,6 +721,7 @@
 
         function endGame(title, stats) {
             gameActive = false;
+            updateEngineSound(false); // Coupe le moteur du tank
             document.getElementById('game-over').style.display = 'flex';
             document.getElementById('end-message').innerText = title;
             document.getElementById('end-message').style.color = title === 'VICTOIRE' ? 'var(--p1)' : (title==='DÉFAITE' ? 'var(--p2)' : '#fff');
@@ -641,9 +753,14 @@
 
         // --- GAME LOOP ---
         function update() {
-            if(!gameActive) return;
+            if(!gameActive) {
+                updateEngineSound(false);
+                return;
+            }
 
             let myTank = tanks.find(t => t.team === myTeam);
+            let isMoving = false;
+
             if (myTank && myTank.hp > 0) {
                 myTank.vx = 0; myTank.vy = 0;
                 if (keys.w || keys.arrowup) myTank.vy = -myTank.speed;
@@ -651,7 +768,9 @@
                 if (keys.a || keys.arrowleft) myTank.vx = -myTank.speed;
                 if (keys.d || keys.arrowright) myTank.vx = myTank.speed;
                 if (jMove.x !== 0 || jMove.y !== 0) { myTank.vx = jMove.x * myTank.speed; myTank.vy = jMove.y * myTank.speed; }
-                if(myTank.vx !== 0 && myTank.vy !== 0 && jMove.x === 0) { myTank.vx *= 0.707; myTank.vy *= 0.707; }
+                if (myTank.vx !== 0 && myTank.vy !== 0 && jMove.x === 0) { myTank.vx *= 0.707; myTank.vy *= 0.707; }
+
+                if (myTank.vx !== 0 || myTank.vy !== 0) isMoving = true;
 
                 let isShooting = false;
                 if (jAim.firing) { myTank.turretAngle = Math.atan2(jAim.y, jAim.x); isShooting = true; } 
@@ -660,6 +779,9 @@
                 if(isShooting && gameMode !== 'client') shoot(myTank);
                 if (gameMode === 'client' && conn && conn.open) conn.send({type: 'input', vx: myTank.vx, vy: myTank.vy, turretAngle: myTank.turretAngle, shoot: isShooting });
             }
+
+            // Gère le son de grondement du moteur !
+            updateEngineSound(isMoving);
 
             if (gameMode !== 'client') {
                 tanks.forEach(t => { if(t.update) t.update(); });
