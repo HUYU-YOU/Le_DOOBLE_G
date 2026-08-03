@@ -270,12 +270,13 @@
             bgmPlayer.pause();
             bgmPlayer.currentTime = 0;
             
+            // CORRECTION ICI : Ajout du dossier 'img/' devant les musiques
             if (type === 'select') {
-                bgmPlayer.src = 'musicselect.mp3';
+                bgmPlayer.src = 'img/musicselect.mp3';
             } else if (type === 'battle') {
-                if (mapIdx === 0) bgmPlayer.src = Math.random() < 0.5 ? 'music2.1.mp3' : 'music2.2.mp3';
-                else if (mapIdx === 1) bgmPlayer.src = 'music2.mp3';
-                else if (mapIdx === 2) bgmPlayer.src = 'music3.mp3';
+                if (mapIdx === 0) bgmPlayer.src = Math.random() < 0.5 ? 'img/music2.1.mp3' : 'img/music2.2.mp3';
+                else if (mapIdx === 1) bgmPlayer.src = 'img/music2.mp3';
+                else if (mapIdx === 2) bgmPlayer.src = 'img/music3.mp3';
             } else if (type === 'stop') {
                 return;
             }
