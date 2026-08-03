@@ -69,12 +69,12 @@
             <button class="btn-main" id="bot-toggle-btn" onclick="toggleBot()" style="background:#555; color:#fff; font-size:1em; padding:8px 20px; margin-bottom:15px; border:2px solid #333;">👤 Contrôlé par : Humain</button>
             
             <div class="selection-grid" id="char-select">
+                <div class="card" onclick="chooseChar('slime')"><img src="img/slime_est.png" alt="Slime" onerror="this.src='img/sumo_est.png'"><b>Slime</b></div>
                 <div class="card" onclick="chooseChar('ninja')"><img src="img/ninja_est.png" alt="Ninja"><b>Ninja</b></div>
                 <div class="card" onclick="chooseChar('tank')"><img src="img/sumo_est.png" alt="Brute"><b>Brute</b></div>
                 <div class="card" onclick="chooseChar('gunner')"><img src="img/gunner_est.png" alt="Gunner"><b>Gunner</b></div>
                 <div class="card" onclick="chooseChar('mage')"><img src="img/mage_est.png" alt="Mage"><b>Mage</b></div>
                 <div class="card" onclick="chooseChar('pathkiller')"><img src="img/pathkiller_right.png" alt="Pathkiller" onerror="this.src='img/sumo_est.png'"><b>Pathkiller</b></div>
-                <div class="card" onclick="chooseChar('slime')"><img src="img/slime_est.png" alt="Slime" onerror="this.src='img/sumo_est.png'"><b>Slime</b></div>
             </div>
             
             <div id="map-select-container" style="display: none;">
@@ -97,14 +97,14 @@
         <div class="overlay" id="network-menu" style="display: none;">
             <h2 id="net-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px;">Terminal Réseau</h2>
             <div style="margin-bottom: 20px;">
-                <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Ninja</span></div>
+                <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Slime</span></div>
                 <div class="selection-grid" id="net-char-grid">
-                    <div class="card selected" onclick="selectNetChar('ninja', this)"><img src="img/ninja_est.png"><b>Ninja</b></div>
+                    <div class="card selected" onclick="selectNetChar('slime', this)"><img src="img/slime_est.png" onerror="this.src='img/sumo_est.png'"><b>Slime</b></div>
+                    <div class="card" onclick="selectNetChar('ninja', this)"><img src="img/ninja_est.png"><b>Ninja</b></div>
                     <div class="card" onclick="selectNetChar('tank', this)"><img src="img/sumo_est.png"><b>Brute</b></div>
                     <div class="card" onclick="selectNetChar('gunner', this)"><img src="img/gunner_est.png"><b>Gunner</b></div>
                     <div class="card" onclick="selectNetChar('mage', this)"><img src="img/mage_est.png"><b>Mage</b></div>
                     <div class="card" onclick="selectNetChar('pathkiller', this)"><img src="img/pathkiller_right.png" onerror="this.src='img/sumo_est.png'"><b>Pathkiller</b></div>
-                    <div class="card" onclick="selectNetChar('slime', this)"><img src="img/slime_est.png" onerror="this.src='img/sumo_est.png'"><b>Slime</b></div>
                 </div>
             </div>
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
@@ -130,19 +130,19 @@
                 <b style="color: var(--p1);">Attaque Ultime :</b> R (Nécessite la jauge jaune pleine)<br>
                 <hr style="border-color: #333; margin: 10px 0;">
                 <b style="color: var(--p2);">Clic Gauche (Attaque Principale) :</b><br>
+                - <b>Slime :</b> Roulade de destruction (fonce en avant).<br>
                 - <b>Ninja :</b> Coup d'épée (mêlée instantanée).<br>
                 - <b>Brute :</b> Coup de poing (mêlée).<br>
                 - <b>Gunner :</b> Maintiens enfoncé pour charger un tir perforant.<br>
                 - <b>Mage :</b> Lance une boule de feu (5 tirs max avant recharge).<br>
-                - <b>Pathkiller :</b> Envoie son Grappin pour attirer l'ennemi.<br>
-                - <b>Slime :</b> Roulade de destruction (fonce en avant).<br><br>
+                - <b>Pathkiller :</b> Envoie son Grappin pour attirer l'ennemi.<br><br>
                 <b style="color: var(--p2);">Clic Droit (Capacité Spéciale) :</b><br>
+                - <b>Slime :</b> Attaque basique & Attaque Plongeante (viser en bas).<br>
                 - <b>Ninja :</b> Maintiens pour charger un Shuriken géant.<br>
                 - <b>Brute :</b> Maintiens pour charger et lancer une Corde !<br>
                 - <b>Gunner :</b> Dépose une mine au sol (3 mines actives max).<br>
                 - <b>Mage :</b> Frappe au corps-à-corps avec son livre magique.<br>
                 - <b>Pathkiller :</b> Frappe Lourde au corps-à-corps.<br>
-                - <b>Slime :</b> Attaque basique & Attaque Plongeante (viser en bas).<br>
             </div>
             <button class="btn-main" style="margin-top:20px; background: var(--p2); color: #fff;" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
         </div>
@@ -191,6 +191,8 @@
             'roulade_est3': 'img/roulade_est3.png', 'roulade_est4': 'img/roulade_est4.png', 'roulade_est5': 'img/roulade_est5.png',
             'slimeatqbas1': 'img/slimeatqbas1.png', 'slimeatqbas2': 'img/slimeatqbas2.png',
             'slimeatqhaut': 'img/slimeatqhaut.png',
+            'slimeatqdroit1': 'img/slimeatqdroit1.png', 'slimeatqdroit2': 'img/slimeatqdroit2.png',
+            'slimeatqdroit3': 'img/slimeatqdroit3.png', 'slimeatqdroit4': 'img/slimeatqdroit4.png', 'slimeatqdroit5': 'img/slimeatqdroit5.png',
             'slimejump1': 'img/slimejump1.png', 'slimejump2': 'img/slimejump2.png'
         };
 
@@ -289,7 +291,7 @@
             gunner: { skinKey: 'gunner', color: '#ffbf00', w: 50, h: 80, speed: 6, jump: -12, weight: 0.8, dmg: 3.0, kb: 4.0, isRanged: true, maxJumps: 2 },
             mage: { skinKey: 'mage', color: '#39ff14', w: 55, h: 85, speed: 6.5, jump: -12.5, weight: 1.0, dmg: 5.0, kb: 5.0, isRanged: true, maxJumps: 2 },
             pathkiller: { skinKey: 'pathkiller', color: '#9d00ff', w: 55, h: 80, speed: 5.5, jump: -11, weight: 1.5, dmg: 5.0, kb: 5.0, isRanged: false, maxJumps: 2 },
-            slime: { skinKey: 'slime', color: '#00ffcc', w: 60, h: 60, speed: 6.0, jump: -9.0, weight: 1.1, dmg: 4.0, kb: 4.0, isRanged: false, maxJumps: 5 }
+            slime: { skinKey: 'slime', color: '#00ffcc', w: 60, h: 60, speed: 3.5, jump: -9.0, weight: 1.1, dmg: 4.0, kb: 4.0, isRanged: false, maxJumps: 5 }
         };
         
         const mapData = [
@@ -300,7 +302,7 @@
 
         let gameMode = null, gameActive = false, players = [], platforms = [], projectiles = [], particles = [], items = [];
         let screenShake = 0, itemSpawnTimer = 0, currentMapIdx = 0, gameLoopId = null;
-        let netSelectedChar = 'ninja'; 
+        let netSelectedChar = 'slime'; 
         let netMode = '1v1'; 
         let maxNetPlayers = 2;
         const GRAVITY = 0.5;
@@ -560,7 +562,8 @@
                     else if (this.skinKey === 'slime') {
                         if (this.facing === -1) isSlimeFlipped = true; // Slime utilise que les sprites 'est' pour ses attaques
                         if (aimStr === 'top') {
-                            spriteKey = 'slimeatqhaut';
+                            let frame = Math.min(5, Math.floor(pct * 5) + 1);
+                            spriteKey = `slimeatqdroit${frame}`;
                         } else if (aimStr === 'bot') {
                             spriteKey = this.grounded ? 'slimeatqbas2' : 'slimeatqbas1';
                         } else if (!this.atkIsHeavy) {
@@ -595,7 +598,12 @@
                     ctx.filter = "grayscale(100%) brightness(50%)"; ctx.fillStyle = "yellow"; ctx.fillText("STUN", -15, -this.h/2 - 10);
                 }
 
-                if (Math.abs(this.vx) > 0.5 && this.grounded && this.stunTimer === 0) { this.walkCycle += 0.2; ctx.rotate(Math.sin(this.walkCycle) * 0.15); ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); }
+                // Annule le sautillement rotatif uniquement pour le slime
+                if (this.skinKey !== 'slime' && Math.abs(this.vx) > 0.5 && this.grounded && this.stunTimer === 0) { 
+                    this.walkCycle += 0.2; 
+                    ctx.rotate(Math.sin(this.walkCycle) * 0.15); 
+                    ctx.translate(0, -Math.abs(Math.cos(this.walkCycle)) * 4); 
+                }
                 
                 if (this.chargingAtk) {
                     if (this.skinKey === 'ninja' && this.chargingAtk === 'H') {
@@ -626,13 +634,27 @@
                         }
                     }
 
+                    // On double la taille pour ces actions spécifiques du Slime
+                    if (this.skinKey === 'slime' && (spriteKey.startsWith('slimeatqdroit') || ['slimeatqhaut', 'slimeatqbas1', 'slimeatqbas2', 'slimejump1', 'slimejump2'].includes(spriteKey))) {
+                        drawH = this.h * 2;
+                    }
+
                     let drawW = drawH * ratio; 
                     let offsetY = (this.h / 2) - drawH; 
                     let offsetX = this.facing === 1 ? (-this.w / 2) : ((this.w / 2) - drawW); 
                     
+                    // On centre les images agrandies du slime par rapport à sa hitbox
+                    if (this.skinKey === 'slime' && (spriteKey.startsWith('slimeatqdroit') || ['slimeatqhaut', 'slimeatqbas1', 'slimeatqbas2', 'slimejump1', 'slimejump2'].includes(spriteKey))) {
+                        offsetX = -drawW / 2;
+                    }
+
                     if (isSlimeFlipped) {
                         ctx.scale(-1, 1);
-                        offsetX = -this.w / 2; // Le canvas étant inversé, l'affichage se comporte comme s'il faisait face à 1
+                        if (this.skinKey === 'slime' && (spriteKey.startsWith('slimeatqdroit') || ['slimeatqhaut', 'slimeatqbas1', 'slimeatqbas2', 'slimejump1', 'slimejump2'].includes(spriteKey))) {
+                            offsetX = -drawW / 2;
+                        } else {
+                            offsetX = -this.w / 2; // Le canvas étant inversé, l'affichage se comporte comme s'il faisait face à 1
+                        }
                     }
                     
                     ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
