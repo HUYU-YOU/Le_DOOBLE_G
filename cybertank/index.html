@@ -128,6 +128,20 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
+        // --- FONCTIONS MATHEMATIQUES POUR L'IA (RAYCASTING) ---
+        function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+            let uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+            let uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+            return (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1);
+        }
+        function lineIntersectsRect(x1, y1, x2, y2, rx, ry, rw, rh) {
+            let left = lineIntersectsLine(x1,y1,x2,y2, rx,ry,rx,ry+rh);
+            let right = lineIntersectsLine(x1,y1,x2,y2, rx+rw,ry,rx+rw,ry+rh);
+            let top = lineIntersectsLine(x1,y1,x2,y2, rx,ry,rx+rw,ry);
+            let bottom = lineIntersectsLine(x1,y1,x2,y2, rx,ry+rh,rx+rw,ry+rh);
+            return left || right || top || bottom || (x1 > rx && x1 < rx+rw && y1 > ry && y1 < ry+rh);
+        }
+
         // --- 🎵 SYSTÈME AUDIO WEB API 🎵 ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
@@ -140,7 +154,6 @@
             const now = audioCtx.currentTime;
 
             if (type === 'shoot') {
-                // Laser Pew
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(800, now);
                 osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
@@ -149,7 +162,6 @@
                 osc.start(now); osc.stop(now + 0.15);
             } 
             else if (type === 'hit') {
-                // Impact étouffé
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(150, now);
                 osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
@@ -158,7 +170,6 @@
                 osc.start(now); osc.stop(now + 0.1);
             } 
             else if (type === 'explosion') {
-                // Gros BOOM grave
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(100, now);
                 osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
@@ -167,7 +178,6 @@
                 osc.start(now); osc.stop(now + 0.5);
             } 
             else if (type === 'bounce') {
-                // Rebond métallique
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(400, now);
                 osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
@@ -176,7 +186,6 @@
                 osc.start(now); osc.stop(now + 0.1);
             }
             else if (type === 'boss_spawn') {
-                // Sirène d'alerte
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(50, now);
                 osc.frequency.linearRampToValueAtTime(150, now + 1.0);
@@ -197,8 +206,8 @@
             if (!engineOsc) {
                 engineOsc = audioCtx.createOscillator();
                 engineGain = audioCtx.createGain();
-                engineOsc.type = 'triangle'; // Grondement très grave
-                engineOsc.frequency.value = 35; // Fréquence de ralenti
+                engineOsc.type = 'triangle'; 
+                engineOsc.frequency.value = 35; 
                 engineGain.gain.value = 0;
                 engineOsc.connect(engineGain);
                 engineGain.connect(audioCtx.destination);
@@ -208,12 +217,12 @@
             const now = audioCtx.currentTime;
             if (isMoving && !isEngineRunning) {
                 isEngineRunning = true;
-                engineOsc.frequency.setTargetAtTime(70, now, 0.2); // Le moteur monte dans les tours
-                engineGain.gain.setTargetAtTime(0.08, now, 0.2); // Le volume augmente
+                engineOsc.frequency.setTargetAtTime(70, now, 0.2); 
+                engineGain.gain.setTargetAtTime(0.08, now, 0.2); 
             } else if (!isMoving && isEngineRunning) {
                 isEngineRunning = false;
-                engineOsc.frequency.setTargetAtTime(35, now, 0.3); // Ralenti
-                engineGain.gain.setTargetAtTime(0.01, now, 0.3); // Baisse le volume presque à 0
+                engineOsc.frequency.setTargetAtTime(35, now, 0.3); 
+                engineGain.gain.setTargetAtTime(0.01, now, 0.3); 
             }
         }
 
@@ -299,38 +308,109 @@
 
                 // --- 🤖 INTELLIGENCE ARTIFICIELLE ÉVOLUTIVE ---
                 if (this.isAI && gameMode !== 'client') {
-                    let p1 = tanks.find(t => t.team === 1);
-                    if(p1 && p1.hp > 0) {
-                        // Facteur d'intelligence (max à la vague 15)
-                        let iq = Math.min(wave / 15, 1); 
+                    let p1 = tanks.find(t => t.team !== this.team && t.hp > 0); // Trouver l'ennemi
+                    if(p1) {
+                        // Configuration Duel 1v1 : QI Maximum et Agressivité Totale
+                        let isDuel = (gameMode === 'solo_1v1');
+                        let iq = isDuel ? 2.0 : Math.min(wave / 15, 1); 
 
                         let dx = p1.x - this.x; let dy = p1.y - this.y;
                         let dist = Math.hypot(dx, dy);
+                        let baseAngle = Math.atan2(dy, dx);
                         
-                        // Précision de tir qui s'améliore avec la vague (moins de tremblement)
-                        let aimJitter = 0.15 - (iq * 0.1); 
-                        this.turretAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * aimJitter;
-                        
-                        let safeDist = this.isBoss ? 150 : 250;
-                        
-                        // 1. DÉPLACEMENT VERS CIBLE
-                        if (dist > safeDist) {
-                            this.vx = Math.cos(this.turretAngle) * this.speed * 0.6;
-                            this.vy = Math.sin(this.turretAngle) * this.speed * 0.6;
-                        } else if (dist < safeDist / 2) {
-                            this.vx = -Math.cos(this.turretAngle) * this.speed * 0.6;
-                            this.vy = -Math.sin(this.turretAngle) * this.speed * 0.6;
+                        // --- 1. RAYCASTING : LIGNE DE VUE (LOS) ---
+                        let hasLOS = true;
+                        for(let w of walls) {
+                            if (lineIntersectsRect(this.x, this.y, p1.x, p1.y, w.x, w.y, w.w, w.h)) {
+                                hasLOS = false; break;
+                            }
+                        }
+
+                        // --- 2. GESTION DE LA VISÉE (AIMING) ---
+                        let aimJitter = isDuel ? 0 : 0.15 - (iq * 0.1); 
+                        if (hasLOS) {
+                            this.turretAngle = baseAngle + (Math.random() - 0.5) * aimJitter;
+                        } else if (isDuel) {
+                            // IA AVANCÉE : Sans vue, il calcule un angle pour créer un tir à Ricochet
+                            // Il décale son tir de 40 degrés par rapport au joueur pour taper un mur
+                            this.turretAngle = baseAngle + (Math.random() > 0.5 ? 0.7 : -0.7);
                         } else {
-                            this.vx = 0; this.vy = 0; 
+                            this.turretAngle = baseAngle + (Math.random() - 0.5) * aimJitter;
+                        }
+
+                        // --- 3. ESQUIVE DES BALLES (MATRIX DODGE) ---
+                        let dodgeVx = 0; let dodgeVy = 0;
+                        let dodging = false;
+                        let dodgeRadius = 150 + (iq * 100); // Réagit de plus en plus loin
+                        
+                        for(let b of bullets) {
+                            if (b.team !== this.team) {
+                                let bx = b.x; let by = b.y;
+                                let bDist = Math.hypot(bx - this.x, by - this.y);
+                                
+                                if (bDist < dodgeRadius) {
+                                    // Prédiction de la trajectoire
+                                    let bLen = Math.hypot(b.vx, b.vy);
+                                    let bdx = b.vx / bLen; let bdy = b.vy / bLen;
+                                    let tx = this.x - bx; let ty = this.y - by;
+                                    
+                                    // Vérifie si la balle avance vers lui
+                                    let dot = (tx * bdx + ty * bdy);
+                                    if (dot > 0 && dot < dodgeRadius) {
+                                        let projX = bx + bdx * dot; let projY = by + bdy * dot;
+                                        let distToLine = Math.hypot(this.x - projX, this.y - projY);
+                                        
+                                        // Si le bot est sur la trajectoire (Danger !)
+                                        if (distToLine < this.w * 1.5) {
+                                            // Il trouve le meilleur côté pour esquiver
+                                            let cross = (tx * bdy - ty * bdx);
+                                            let dodgeDir = Math.sign(cross) || 1;
+                                            
+                                            dodgeVx += -bdy * dodgeDir * this.speed * 2.5;
+                                            dodgeVy += bdx * dodgeDir * this.speed * 2.5;
+                                            dodging = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // --- 4. GESTION DES MOUVEMENTS (CHASING & STRAFING) ---
+                        let safeDist = this.isBoss ? 150 : 250;
+                        if (isDuel) safeDist = 180; // Beaucoup plus agressif en duel
+
+                        if (dodging) {
+                            // Écrase les ordres pour sauver sa peau
+                            this.vx = dodgeVx;
+                            this.vy = dodgeVy;
+                        } else {
+                            if (!hasLOS && isDuel) {
+                                // S'il ne voit pas le joueur, il le rush !
+                                this.vx = Math.cos(baseAngle) * this.speed * 0.9;
+                                this.vy = Math.sin(baseAngle) * this.speed * 0.9;
+                            } else if (dist > safeDist) {
+                                this.vx = Math.cos(baseAngle) * this.speed * 0.6;
+                                this.vy = Math.sin(baseAngle) * this.speed * 0.6;
+                            } else if (dist < safeDist / 2) {
+                                this.vx = -Math.cos(baseAngle) * this.speed * 0.6;
+                                this.vy = -Math.sin(baseAngle) * this.speed * 0.6;
+                            } else {
+                                // Strafing : Tourne autour du joueur en mode 1v1
+                                if (isDuel) {
+                                    this.vx = -Math.sin(baseAngle) * this.speed * 0.8;
+                                    this.vy = Math.cos(baseAngle) * this.speed * 0.8;
+                                } else {
+                                    this.vx = 0; this.vy = 0; 
+                                }
+                            }
                         }
                         
-                        // 2. ANTI-CHEVAUCHEMENT (Séparation des IA)
+                        // ANTI-CHEVAUCHEMENT DES ALLIÉS (Utile pour les vagues)
                         for(let other of tanks) {
                             if (other !== this && other.hp > 0 && other.team === this.team) {
-                                let odx = this.x - other.x;
-                                let ody = this.y - other.y;
+                                let odx = this.x - other.x; let ody = this.y - other.y;
                                 let odist = Math.hypot(odx, ody);
-                                let minSpace = (this.w/2 + other.w/2) + 15; // Rayon + marge
+                                let minSpace = (this.w/2 + other.w/2) + 15; 
                                 if (odist < minSpace && odist > 0) {
                                     let pushForce = (minSpace - odist) / minSpace;
                                     this.vx += (odx / odist) * pushForce * 2;
@@ -339,9 +419,9 @@
                             }
                         }
 
-                        // 3. ÉVITEMENT DES MURS (Closest Point on AABB)
+                        // --- 5. ÉVITEMENT INTELLIGENT DES MURS (GLISSADE) ---
                         let avoidVx = 0; let avoidVy = 0;
-                        let margin = 20; 
+                        let margin = 25; 
                         
                         for(let w of walls) {
                             if (this.x + this.w/2 + margin > w.x && this.x - this.w/2 - margin < w.x + w.w &&
@@ -357,45 +437,28 @@
                                 if (distance < margin + this.w/2) {
                                     if(distance === 0) { avoidVx += (Math.random()-0.5)*5; avoidVy += (Math.random()-0.5)*5; } 
                                     else {
+                                        // Glisse le long du mur en ajoutant de la force inverse
                                         let push = (margin + this.w/2 - distance) / (margin + this.w/2);
-                                        avoidVx += (distX / distance) * this.speed * push * 2.5;
-                                        avoidVy += (distY / distance) * this.speed * push * 2.5;
+                                        avoidVx += (distX / distance) * this.speed * push * 3.5;
+                                        avoidVy += (distY / distance) * this.speed * push * 3.5;
                                     }
                                 }
                             }
                         }
                         this.vx += avoidVx; this.vy += avoidVy;
 
-                        // 4. ESQUIVE DES TIRS (Dodge - S'améliore avec la vague)
-                        let dodgeChance = 0.02 + (iq * 0.1); // Plus on monte, plus ils sont réactifs
-                        let dodgeRadius = 120 + (iq * 80); 
-                        if (Math.random() < dodgeChance) {
-                            for(let b of bullets) {
-                                if (b.team !== this.team) {
-                                    let bDist = Math.hypot(b.x - this.x, b.y - this.y);
-                                    if (bDist < dodgeRadius) {
-                                        // Déplacement perpendiculaire au tir
-                                        this.vx += -Math.sign(b.vy) * this.speed * 1.5;
-                                        this.vy += Math.sign(b.vx) * this.speed * 1.5;
-                                        break; // Esquive un seul tir à la fois
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Normalisation de la vitesse globale
+                        // Normalisation globale de la vitesse (pour ne pas aller trop vite en combinant les forces)
                         let currentSpeed = Math.hypot(this.vx, this.vy);
-                        let maxSpeed = this.isBoss ? this.speed * 0.7 : this.speed * 0.9;
+                        let maxSpeed = this.isBoss ? this.speed * 0.7 : this.speed * (isDuel ? 1.05 : 0.9);
                         if (currentSpeed > maxSpeed) {
                             this.vx = (this.vx / currentSpeed) * maxSpeed;
                             this.vy = (this.vy / currentSpeed) * maxSpeed;
                         }
 
-                        // Esquive aléatoire basique
-                        if(Math.random() < 0.05) { this.vx += (Math.random()-0.5)*2; this.vy += (Math.random()-0.5)*2; }
-
-                        // Cadence de tir évolutive
+                        // --- 6. GESTION DES TIRS ---
                         let fireRate = (this.isBoss ? 0.03 : 0.015) + (iq * 0.02);
+                        if (isDuel) fireRate = 0.08; // Bot en 1v1 tire BEAUCOUP plus souvent
+                        
                         if (this.cd === 0 && Math.random() < fireRate) shoot(this);
                     }
                 }
@@ -463,7 +526,7 @@
                             
                             this.bounces--; bounced = true;
                             createParticles(this.x, this.y, this.color, 5);
-                            playSound('bounce'); // Son du rebond contre un mur
+                            playSound('bounce'); 
                         } else this.life = 0; 
                     }
                 }
@@ -488,10 +551,10 @@
                             t.hp--; this.life = 0;
                             createParticles(this.x, this.y, this.color, 15);
                             if(t.hp <= 0) {
-                                playSound('explosion'); // BOOM quand le tank meurt
+                                playSound('explosion'); 
                                 handleKill(this.team, t.team);
                             } else {
-                                playSound('hit'); // Bruit d'impact si le tank survit
+                                playSound('hit'); 
                             }
                         }
                     }
@@ -536,7 +599,7 @@
 
         function shoot(tank) {
             if (tank.cd <= 0 && tank.hp > 0) {
-                playSound('shoot'); // Son du tir
+                playSound('shoot'); 
                 let bx = tank.x + Math.cos(tank.turretAngle) * (tank.w/2 + 8);
                 let by = tank.y + Math.sin(tank.turretAngle) * (tank.h/2 + 8);
                 bullets.push(new Bullet(bx, by, tank.turretAngle, tank.color, tank.team));
@@ -589,7 +652,7 @@
             let hudP1 = document.getElementById('hud-p1');
             
             if (w % 3 === 0) {
-                playSound('boss_spawn'); // Alarme sonore pour le Boss
+                playSound('boss_spawn'); 
                 hudP1.innerText = `⚠️ VAGUE ${w} : BOSS ! ⚠️`;
                 hudP1.classList.add('boss');
                 
@@ -614,7 +677,7 @@
         }
 
         function initGame(mode) {
-            if (audioCtx.state === 'suspended') audioCtx.resume(); // Autorise le son si premier clic
+            if (audioCtx.state === 'suspended') audioCtx.resume(); 
             
             gameMode = mode;
             tanks = []; bullets = []; particles = [];
@@ -685,7 +748,7 @@
         }
 
         function joinGame() {
-            if (audioCtx.state === 'suspended') audioCtx.resume(); // Autorise le son si c'est la première interraction
+            if (audioCtx.state === 'suspended') audioCtx.resume(); 
             const hostId = document.getElementById('join-id').value.trim().toUpperCase();
             if(!hostId) return;
             let status = document.getElementById('status-text');
@@ -706,7 +769,6 @@
                 }
                 if (gameMode === 'client') {
                     if(data.type === 'state') { 
-                        // Synchroniser les sons d'explosions/rebonds chez le client (basé sur la disparition des bullets/tanks)
                         if (bullets.length > data.bullets.length && data.bullets.length > 0) playSound('bounce');
                         if (tanks.length > data.tanks.length) playSound('explosion');
                         
@@ -721,7 +783,7 @@
 
         function endGame(title, stats) {
             gameActive = false;
-            updateEngineSound(false); // Coupe le moteur du tank
+            updateEngineSound(false); 
             document.getElementById('game-over').style.display = 'flex';
             document.getElementById('end-message').innerText = title;
             document.getElementById('end-message').style.color = title === 'VICTOIRE' ? 'var(--p1)' : (title==='DÉFAITE' ? 'var(--p2)' : '#fff');
@@ -780,7 +842,6 @@
                 if (gameMode === 'client' && conn && conn.open) conn.send({type: 'input', vx: myTank.vx, vy: myTank.vy, turretAngle: myTank.turretAngle, shoot: isShooting });
             }
 
-            // Gère le son de grondement du moteur !
             updateEngineSound(isMoving);
 
             if (gameMode !== 'client') {
