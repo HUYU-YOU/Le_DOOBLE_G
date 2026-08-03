@@ -87,8 +87,56 @@
     </div>
 
     <script>
+        // --- AUDIO : BRUITAGES PIKMIN / PLAYTEST ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'merge') {
+                // Le fameux couinement / pop (Pikmin)
+                osc.type = 'sine'; // Son doux et arrondi
+                let baseFreq = 700 + (Math.random() * 400); // Variété de la voix de la créature
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.1); // Le pitch monte
+                
+                gain.gain.setValueAtTime(0.0, now);
+                gain.gain.linearRampToValueAtTime(0.15, now + 0.02); // Attaque douce
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); // Disparition rapide
+                
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'move') {
+                // Petit bruit de glissement mou
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                
+                gain.gain.setValueAtTime(0.03, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'gameover') {
+                // Soupir triste / dégonflement
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+                
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        }
+
         // --- CONFIGURATION DES IMAGES DE SLIME ---
-        // Le code charge img/slime1.png pour la tuile 2, slime2.png pour 4, etc.
         const slimeImages = {
             2: 'img/slime1.png',
             4: 'img/slime2.png',
@@ -111,7 +159,7 @@
         let board = [];
         let score = 0;
         let tileIdCounter = 0;
-        let tiles = {}; // Dictionnaire pour garder la trace des divs (pour l'animation)
+        let tiles = {};
 
         // Générer les 16 cases de fond
         for (let i = 0; i < 16; i++) {
@@ -152,7 +200,6 @@
             createTileElement(tileObj, true);
         }
 
-        // Calcule la position en % pour le positionnement absolu
         function getPosition(index) {
             return `calc(${index * 25}% + ${index * 10 / 3}px)`; 
         }
@@ -161,14 +208,13 @@
             let div = document.createElement('div');
             div.className = `tile tile-${tile.value}`;
             div.id = `tile-${tile.id}`;
-            div.innerText = tile.value; // Le texte reste en sécurité si l'image crash
+            div.innerText = tile.value; 
             
-            // Appliquer l'image de fond si elle existe
             if(slimeImages[tile.value]) {
                 div.style.backgroundImage = `url('${slimeImages[tile.value]}')`;
-                div.style.color = 'transparent'; // Cache le texte si on a une image
-                div.style.backgroundColor = 'transparent'; // BUG FIX : Retire le fond de couleur !
-                div.style.boxShadow = 'none'; // BUG FIX : Retire l'ombre sous l'image
+                div.style.color = 'transparent'; 
+                div.style.backgroundColor = 'transparent'; 
+                div.style.boxShadow = 'none'; 
             }
 
             div.style.top = getPosition(tile.r);
@@ -190,18 +236,17 @@
             }
         }
 
-        // BUG FIX TELEPORTATION : Mise à jour de la fonction
         function removeTileElement(id, targetR, targetC) {
             let div = document.getElementById(`tile-${id}`);
             if (div) {
-                div.style.zIndex = "1"; // Le met en arrière plan
+                div.style.zIndex = "1"; 
                 if (targetR !== undefined && targetC !== undefined) {
-                    div.style.top = getPosition(targetR); // Force le slide visuel
+                    div.style.top = getPosition(targetR); 
                     div.style.left = getPosition(targetC);
                 }
-                setTimeout(() => { div.remove(); }, 150); // Attend la fin de la transition CSS
+                setTimeout(() => { div.remove(); }, 150); 
             }
-            delete tiles[id]; // Efface la donnée instantanément pour ne pas bloquer le prochain swipe
+            delete tiles[id]; 
         }
 
         function updateScore() { scoreElement.innerText = score; }
@@ -209,6 +254,7 @@
         // Moteur de déplacement
         function move(direction) {
             let moved = false;
+            let moveMerged = false; // Pour savoir si un bruit de fusion a été joué
             let merged = [[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false]];
 
             const moveTile = (r, c, dr, dc) => {
@@ -222,7 +268,6 @@
                     let nextTile = board[nextR][nextC];
                     
                     if (!nextTile) {
-                        // Glisse dans le vide
                         board[nextR][nextC] = tile;
                         board[currR][currC] = null;
                         tile.r = nextR; tile.c = nextC;
@@ -234,11 +279,9 @@
                         let newValue = tile.value * 2;
                         score += newValue;
                         
-                        // Envoi les coordonnées finales à la fonction de suppression pour forcer l'animation
                         removeTileElement(tile.id, nextR, nextC);
                         removeTileElement(nextTile.id, nextR, nextC);
                         
-                        // Création du nouveau slime évolué
                         let newId = tileIdCounter++;
                         let newTile = { id: newId, value: newValue, r: nextR, c: nextC };
                         board[nextR][nextC] = newTile;
@@ -247,10 +290,12 @@
                         
                         merged[nextR][nextC] = true;
                         
-                        // BUG FIX TELEPORTATION : Création INSTANTANÉE dans le DOM 
                         createTileElement(newTile);
                         document.getElementById(`tile-${newId}`).classList.add('tile-merged');
                         
+                        // Joue le bruit de fusion (Chaque fusion fait un petit couinement)
+                        playSound('merge');
+                        moveMerged = true;
                         moved = true;
                         break;
                     } else {
@@ -266,19 +311,20 @@
             if (direction === 'right') { for(let r=0; r<4; r++) for(let c=2; c>=0; c--) moveTile(r,c,0,1); }
 
             if (moved) {
+                // Si ça a bougé sans fusion, on joue le petit glissement
+                if (!moveMerged) playSound('move');
+                
                 updateTileElements();
                 updateScore();
                 setTimeout(() => {
                     addRandomTile();
                     checkGameOver();
-                }, 150); // Attend la fin de l'animation pour spawn
+                }, 150); 
             }
         }
 
         function checkGameOver() {
-            // Reste-t-il des vides ?
             for(let r=0; r<4; r++) for(let c=0; c<4; c++) if(!board[r][c]) return;
-            // Reste-t-il des fusions possibles ?
             for(let r=0; r<4; r++) {
                 for(let c=0; c<4; c++) {
                     let val = board[r][c].value;
@@ -286,6 +332,7 @@
                     if(r < 3 && val === board[r+1][c].value) return;
                 }
             }
+            playSound('gameover');
             gameOverScreen.style.display = 'flex';
         }
 
@@ -300,14 +347,15 @@
             if (e.key === 'ArrowRight') move('right');
         });
 
-        // --- CONTRÔLES TACTILES (Swipe IN-GAME) ---
+        // --- CONTRÔLES TACTILES ---
         const gameContainer = document.getElementById('game-container');
         let gameTouchX = 0, gameTouchY = 0;
 
         gameContainer.addEventListener('touchstart', e => {
+            if (audioCtx.state === 'suspended') audioCtx.resume(); // Débloque l'audio sur mobile
             gameTouchX = e.touches[0].clientX;
             gameTouchY = e.touches[0].clientY;
-            e.stopPropagation(); // Bloque le swipe global du hub
+            e.stopPropagation();
         }, {passive: false});
 
         gameContainer.addEventListener('touchend', e => {
@@ -323,19 +371,17 @@
                 else if (diffY < -50) move('up');
             }
             gameTouchX = 0; gameTouchY = 0;
-            e.stopPropagation(); // Bloque le swipe global du hub
+            e.stopPropagation(); 
         }, {passive: false});
 
-        // Empêcher le scroll en jouant sur mobile
         gameContainer.addEventListener('touchmove', e => { e.preventDefault(); }, {passive: false});
 
-        // Lancement !
         initBoard();
     </script>
     
 <!-- ========================================== -->
     <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE & SOURIS) -->
-    <!-- ========================================== -->
+<!-- ========================================== -->
     <script>
         const gamesHubList = [
             "../cybertank/index.html",
@@ -354,23 +400,20 @@
         let globalTouchStartY = 0;
         let globalTouchEndX = 0;
         let globalTouchEndY = 0;
-        let isDragging = false; // Permet de savoir si on a cliqué avec la souris
+        let isDragging = false; 
         
         function handleSwipeGesture() {
-            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
+            const swipeThreshold = 75; 
             
             let diffX = globalTouchEndX - globalTouchStartX;
             let diffY = globalTouchEndY - globalTouchStartY;
 
-            // On vérifie quel axe a eu le plus grand mouvement
             if (Math.abs(diffX) > Math.abs(diffY)) {
-                // Swipe Horizontal (Gauche / Droite)
-                if (diffX < -swipeThreshold) navigateGames(1);       // Swipe Gauche -> Suivant
-                else if (diffX > swipeThreshold) navigateGames(-1);  // Swipe Droite -> Précédent
+                if (diffX < -swipeThreshold) navigateGames(1);       
+                else if (diffX > swipeThreshold) navigateGames(-1);  
             } else {
-                // Swipe Vertical (Haut / Bas)
-                if (diffY < -swipeThreshold) navigateGames(1);       // Swipe Haut -> Suivant
-                else if (diffY > swipeThreshold) navigateGames(-1);  // Swipe Bas -> Précédent
+                if (diffY < -swipeThreshold) navigateGames(1);       
+                else if (diffY > swipeThreshold) navigateGames(-1);  
             }
         }
 
@@ -387,7 +430,6 @@
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Exclut les zones où le joueur doit interagir avec le jeu
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
             if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
@@ -395,7 +437,6 @@
             return false;
         }
 
-        // --- GESTION TACTILE (DOIGT) ---
         document.addEventListener('touchstart', e => {
             if (isExcludedElement(e.target)) return;
             globalTouchStartX = e.changedTouches[0].screenX;
@@ -409,9 +450,7 @@
             handleSwipeGesture();
         }, { passive: true });
 
-        // --- GESTION SOURIS (CLIC & GLISSE) ---
         document.addEventListener('mousedown', e => {
-            // Si c'est un clic droit ou sur un élément du jeu, on ignore
             if (e.button !== 0 || isExcludedElement(e.target)) return; 
             isDragging = true;
             globalTouchStartX = e.clientX;
@@ -419,7 +458,7 @@
         });
 
         document.addEventListener('mouseup', e => {
-            if (!isDragging) return; // Ignore si on n'avait pas cliqué avant
+            if (!isDragging) return; 
             isDragging = false;
             
             if (isExcludedElement(e.target)) return;
