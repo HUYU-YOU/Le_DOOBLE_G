@@ -256,20 +256,70 @@
             };
         });
 
-        // --- AUDIO ---
+        // --- AUDIO & MUSIC DE FOND ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Lecteur BGM (Background Music)
+        const bgmPlayer = new Audio();
+        bgmPlayer.volume = 0.4;
+        bgmPlayer.loop = true;
+
+        function playBGM(type, mapIdx = 0) {
+            bgmPlayer.pause();
+            bgmPlayer.currentTime = 0;
+            
+            if (type === 'select') {
+                bgmPlayer.src = 'musicselect.mp3';
+            } else if (type === 'battle') {
+                if (mapIdx === 0) {
+                    bgmPlayer.src = Math.random() < 0.5 ? 'music2.1.mp3' : 'music2.2.mp3';
+                } else if (mapIdx === 1) {
+                    bgmPlayer.src = 'music2.mp3';
+                } else if (mapIdx === 2) {
+                    bgmPlayer.src = 'music3.mp3';
+                }
+            } else if (type === 'stop') {
+                return;
+            }
+            
+            bgmPlayer.play().catch(e => console.log("BGM autoplay bloqué par le navigateur", e));
+        }
+
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
             
-            if (type === 'jump') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
+            // --- NOUVEAUX SONS D'ATTAQUES ---
+            if (type === 'slash') { 
+                // Ninja : son sec, rapide et aigu
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); 
+                gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
+            } 
+            else if (type === 'punch') { 
+                // Brute & Pathkiller melee : Son grave et lourd
+                osc.type = 'square'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.15); 
+                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); 
+            } 
+            else if (type === 'magic') { 
+                // Mage : Tintement magique qui monte
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.2); 
+                gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); 
+            }
+            else if (type === 'grapple') { 
+                // Pathkiller Grappin : Bruit mécanique zippant
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1); 
+                gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
+            }
+            // --- ANCIENS SONS ---
+            else if (type === 'jump') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
             else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
             else if (type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); } 
             else if (type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); } 
             else if (type === 'death') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); }
             else if (type === 'shatter') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); } 
             else if (type === 'squish') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.2); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25); }
+            
             osc.start(now); osc.stop(now + 0.3);
         }
 
@@ -683,7 +733,7 @@
                     projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, false, this.skinKey, false)); 
                 } 
                 else if (this.skinKey === 'ninja' && type === 'H') {
-                    this.attackTimer = 45; this.maxAttackTimer = 45; playSound('shoot'); 
+                    this.attackTimer = 45; this.maxAttackTimer = 45; playSound('slash'); 
                     let dmg = this.baseDmg * 1.5 * (1 + chargePct * 1.5); 
                     let kb = this.baseKb * 1.2 * (1 + chargePct * 1.0);
                     let speed = 10 + (chargePct * 8);
@@ -691,7 +741,7 @@
                     projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, '#00f0ff', false, false, true, false, this.skinKey, false)); 
                 } 
                 else if (this.skinKey === 'sumo' && type === 'H') {
-                    this.attackTimer = 25; this.maxAttackTimer = 25; playSound('shoot');
+                    this.attackTimer = 25; this.maxAttackTimer = 25; playSound('punch');
                     let dmg = this.baseDmg * 1.2 * (1 + chargePct * 0.5);
                     let kb = this.baseKb * 1.2 * (1 + chargePct * 0.5);
                     let speed = 25; 
@@ -781,7 +831,6 @@
                                 }
                             }
                             else if (this.skinKey === 'slime') {
-                                playSound('squish');
                                 doRanged = false;
                                 if (aimY === 1) { // Attaque Plongeante
                                     attackDuration = 30; this.vy = 12; this.vx = 0;
@@ -798,8 +847,17 @@
                             this.atkDirX = aimX; this.atkDirY = aimY; this.atkIsRanged = doRanged;
                             let mult = (this.buffType === 'dmg' ? 1.8 : 1.0) * (isHeavy ? 1.5 : 1.0);
                             
+                            // ---- CHOIX DU SON D'ATTAQUE ----
+                            let atkSound = 'shoot';
+                            if (this.skinKey === 'ninja') atkSound = 'slash';
+                            else if (this.skinKey === 'sumo') atkSound = 'punch';
+                            else if (this.skinKey === 'mage') atkSound = 'magic';
+                            else if (this.skinKey === 'pathkiller') atkSound = isHook ? 'grapple' : 'punch';
+                            else if (this.skinKey === 'gunner') atkSound = 'shoot';
+
                             if (doRanged) { 
-                                playSound('shoot'); let px = this.x + this.w / 2; let py = this.y + this.h / 2; 
+                                playSound(atkSound); 
+                                let px = this.x + this.w / 2; let py = this.y + this.h / 2; 
                                 if (isMine) {
                                     let targetX = this.x + this.w/2 + aimX * 40; let targetY = this.y + this.h - 8;
                                     let mine = new Projectile(targetX, targetY, 0, 0, this.id, this.baseDmg * 2.5, this.baseKb * 1.5, '#ff0000', false, true, false, false, this.skinKey, false);
@@ -815,7 +873,8 @@
                             } else { 
                                 let skipInitialMelee = (this.skinKey === 'slime' && (!this.atkIsHeavy || this.atkDirY === 1));
                                 if (!skipInitialMelee) {
-                                    if (this.skinKey !== 'slime') playSound('hit'); 
+                                    playSound(this.skinKey === 'slime' ? 'squish' : atkSound); 
+                                    
                                     let hitW = this.w * 1.5; let hitH = this.h;
                                     let hitX = aimX === 1 ? this.x + this.w : this.x - (hitW - this.w);
                                     let hitY = this.y;
@@ -891,7 +950,11 @@
                     } else { this.vx = dir * (baseKb * 0.2); }
                     return; 
                 }
-                playSound(this.skinKey === 'slime' ? 'squish' : 'hit'); this.percent += dmg; this.superMeter = Math.min(150, this.superMeter + (dmg * 1.5)); updateHUD();
+                
+                // Différencie le bruit quand le perso encaisse un coup
+                playSound(this.skinKey === 'slime' ? 'squish' : 'hit'); 
+                
+                this.percent += dmg; this.superMeter = Math.min(150, this.superMeter + (dmg * 1.5)); updateHUD();
                 let kb = (baseKb * (1 + (this.percent / 50))) / this.weight; this.vx = dir * kb; this.vy = -kb * 0.55; 
                 this.hitstun = Math.min(60, Math.floor(kb * 2.5)); screenShake = Math.min(25, Math.floor(kb / 1.5));
                 for (let i = 0; i < 12; i++) particles.push(new Particle(this.x + this.w / 2, this.y + this.h / 2, '#fff'));
@@ -920,7 +983,14 @@
             return ctrl;
         }
 
-        function openMenu(type) { document.getElementById('main-menu').style.display = 'none'; if (type === 'local') { document.getElementById('local-menu').style.display = 'flex'; gameMode = 'local'; } }
+        function openMenu(type) { 
+            document.getElementById('main-menu').style.display = 'none'; 
+            if (type === 'local') { 
+                document.getElementById('local-menu').style.display = 'flex'; 
+                gameMode = 'local'; 
+                playBGM('select');
+            } 
+        }
 
         function prepareNetwork(mode) {
             netMode = mode; maxNetPlayers = mode === '1v1' ? 2 : 4; gameMode = 'net_' + mode;
@@ -929,6 +999,7 @@
             document.getElementById('net-title').innerText = `Réseau : ${modeTitle}`; document.getElementById('my-id').innerText = "Création...";
             let code = 'BRAWL' + Math.floor(1000 + Math.random() * 9000); if(peerNet) peerNet.destroy();
             peerNet = new Peer(code); peerNet.on('open', id => { document.getElementById('my-id').innerText = id; });
+            playBGM('select');
         }
 
         function updateHUD() {
@@ -963,6 +1034,7 @@
                 document.getElementById('start-local-btn').style.display = 'none';
                 document.getElementById('instruction-title').innerText = "Select player 1";
                 locSelections = []; gameActive = false;
+                playBGM('select');
             } else if (isHost) {
                 document.getElementById('game-over-overlay').style.display = 'none';
                 document.getElementById('hud').style.display = 'none';
@@ -970,6 +1042,7 @@
                 document.getElementById('start-net-btn').style.display = 'inline-block';
                 document.getElementById('host-btn').style.display = 'none';
                 gameActive = false;
+                playBGM('select');
                 if(connsNet.length > 0) connsNet.forEach(c => c.send({type: 'return_to_lobby'}));
             } else {
                 alert("Seul l'Hôte de la partie peut décider de relancer !");
@@ -1005,7 +1078,9 @@
         function startLocalGame() {
             if(gameActive) return; document.getElementById('local-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; platforms = mapData[locMapChoice];
             players = locSelections.map((selection, i) => { document.getElementById(`h${i + 1}`).style.display = 'block'; let p = new Player(i + 1, i===0 ? 150 : 650, selection.char); p.isBot = selection.bot; return p; });
-            projectiles = []; particles = []; items = []; gameActive = true; updateHUD(); if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); gameLoopLocal();
+            projectiles = []; particles = []; items = []; gameActive = true; updateHUD(); 
+            playBGM('battle', locMapChoice);
+            if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); gameLoopLocal();
         }
 
         function gameLoopLocal() {
@@ -1059,7 +1134,12 @@
                 c.on('open', () => { c.send({type: 'join', char: netSelectedChar}); });
                 c.on('data', data => {
                     if (data.type === 'welcome') { myPlayerId = data.id; document.getElementById('status-text').innerText = "Connecté! L'Hôte va lancer la partie..."; }
-                    if (data.type === 'start') { document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; projectiles = []; particles = []; }
+                    if (data.type === 'start') { 
+                        document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; 
+                        gameActive = true; projectiles = []; particles = []; 
+                        currentMapIdx = data.mapIdx || 0;
+                        playBGM('battle', currentMapIdx);
+                    }
                     if (data.type === 'state') {
                         platforms = data.state.platforms; projectiles = data.state.projectiles; items = data.state.items;
                         if (players.length !== data.state.players.length) {
@@ -1074,6 +1154,7 @@
                         document.getElementById('game-over-overlay').style.display = 'none'; document.getElementById('hud').style.display = 'none';
                         document.getElementById('network-menu').style.display = 'flex'; gameActive = false;
                         document.getElementById('status-text').innerText = "L'Hôte va relancer...";
+                        playBGM('select');
                     }
                 });
             });
@@ -1084,7 +1165,9 @@
             players = [new Player(1, 150, netSelectedChar)];
             netPlayersData.forEach((np, i) => { let spawnX = 150 + (np.id * 150); if(maxNetPlayers === 2) spawnX = 650; players.push(new Player(np.id, spawnX, np.char)); });
             players.forEach(p => { document.getElementById(`h${p.id}`).style.display = 'block'; document.getElementById(`n${p.id}`).innerText = `J${p.id}`; });
-            connsNet.forEach(c => c.send({type: 'start'})); if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); hostLoop(); 
+            playBGM('battle', currentMapIdx);
+            connsNet.forEach(c => c.send({type: 'start', mapIdx: currentMapIdx})); 
+            if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); hostLoop(); 
         }
 
         function hostLoop() {
