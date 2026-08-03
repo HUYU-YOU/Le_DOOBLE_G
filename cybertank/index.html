@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Tank - Neon Arena</title>
+    <title>Cyber Slime - Neon Arena</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
@@ -12,7 +12,7 @@
             --panel: rgba(10, 15, 25, 0.85); 
             --p1: #00f0ff; 
             --p2: #ff007f; 
-            --bot: #b82aff;
+            --boss: #b82aff;
             --sys: #39ff14; 
         }
         
@@ -37,8 +37,8 @@
         .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
         .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
         .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); }
-        .btn-main.purple { border-color: var(--bot); box-shadow: 0 0 15px rgba(184, 42, 255, 0.2); }
-        .btn-main.purple:hover { background: var(--bot); box-shadow: 0 0 25px var(--bot); }
+        .btn-main.purple { border-color: var(--boss); box-shadow: 0 0 15px rgba(184, 42, 255, 0.2); }
+        .btn-main.purple:hover { background: var(--boss); box-shadow: 0 0 25px var(--boss); }
 
         input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--p1); text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; font-family: 'Rajdhani';}
         input.net-input:focus { box-shadow: 0 0 15px var(--p1); border-color: #fff;}
@@ -47,6 +47,9 @@
         #hud { display: none; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px; box-sizing: border-box;}
         .score-box { font-size: 1.5em; font-weight: bold; text-transform: uppercase; color: var(--p1); text-shadow: 0 0 10px var(--p1); }
         .score-box.enemy { color: var(--p2); text-shadow: 0 0 10px var(--p2); }
+        .score-box.boss { color: var(--boss); text-shadow: 0 0 15px var(--boss); animation: pulse 1s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         /* Canvas */
         canvas { background: #030408; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: auto; aspect-ratio: 4/3; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); cursor: crosshair; }
@@ -66,14 +69,14 @@
 </head>
 <body>
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <h1>Cyber Tank</h1>
+    <h1>Cyber Slime Arena</h1>
     
     <div id="game-container">
         
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
             <h1 style="font-size: 3.5em; margin-bottom: 30px; text-shadow: 0 0 20px var(--p1);">ARENA OS</h1>
-            <button class="btn-main" onclick="startMode('solo_survival')">Survie (Vagues)</button>
+            <button class="btn-main" onclick="startMode('solo_survival')">Survie (Vagues & Boss)</button>
             <button class="btn-main purple" onclick="startMode('solo_1v1')">Duel Bot (1v1)</button>
             <button class="btn-main red" onclick="showNetworkMenu()">Duel PVP (Réseau)</button>
         </div>
@@ -127,8 +130,18 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
+        // --- CHARGEMENT DES ASSETS ---
+        const imgs = {};
+        const imgFiles = {
+            'obs1': 'img/_obs1.png', 'obs2': 'img/_obs2.png', 'obs3': 'img/_obs3.png', 'obs4': 'img/_obs4.png', 'obs5': 'img/_obs5.png',
+            'slime_bleu': 'img/_slimebleu.png', 'slime_rouge': 'img/_slimerouge.png', 'slime_noir': 'img/_slimenoir.png'
+        };
+        Object.keys(imgFiles).forEach(k => { 
+            imgs[k] = new Image(); imgs[k].src = imgFiles[k]; 
+        });
+
         // --- ETAT DU JEU ---
-        let gameMode = 'solo_survival'; // 'solo_survival', 'solo_1v1', 'host', 'client'
+        let gameMode = 'solo_survival'; 
         let gameActive = false;
         let loopRunning = false;
         let myTeam = 1; 
@@ -152,11 +165,12 @@
 
         // --- CLASSES ---
         class Tank {
-            constructor(id, x, y, color, team) {
+            constructor(id, x, y, skin, color, team) {
                 this.id = id;
                 this.x = x; this.y = y;
                 this.w = 32; this.h = 32;
-                this.color = color;
+                this.skin = skin; // 'slime_bleu', 'slime_rouge', 'slime_noir'
+                this.color = color; // Utilisé pour le glow et les tirs
                 this.team = team;
                 
                 this.vx = 0; this.vy = 0;
@@ -169,6 +183,7 @@
                 this.maxHp = 3;
                 this.cd = 0; 
                 this.isAI = false;
+                this.isBoss = false;
             }
 
             update() {
@@ -188,7 +203,10 @@
                 if (!collideX) this.x = nextX;
                 if (!collideY) this.y = nextY;
 
-                if (this.vx !== 0 || this.vy !== 0) this.angle = Math.atan2(this.vy, this.vx);
+                if (this.vx !== 0 || this.vy !== 0) {
+                    // Les slimes s'écrasent un peu en bougeant (effet visuel handled dans draw)
+                    this.angle = Math.atan2(this.vy, this.vx);
+                }
 
                 // --- IA ---
                 if (this.isAI && gameMode !== 'client') {
@@ -196,23 +214,23 @@
                     if(p1 && p1.hp > 0) {
                         let dx = p1.x - this.x; let dy = p1.y - this.y;
                         let dist = Math.hypot(dx, dy);
-                        // Ajout d'une mini-dispersion pour pas que les IA se superposent en visant exactement le même point
                         this.turretAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.1;
                         
-                        if (dist > 250) {
+                        let safeDist = this.isBoss ? 150 : 250; // Le boss s'approche plus
+                        if (dist > safeDist) {
                             this.vx = Math.cos(this.turretAngle) * (this.speed * 0.6);
                             this.vy = Math.sin(this.turretAngle) * (this.speed * 0.6);
-                        } else if (dist < 120) {
+                        } else if (dist < safeDist / 2) {
                             this.vx = -Math.cos(this.turretAngle) * (this.speed * 0.6);
                             this.vy = -Math.sin(this.turretAngle) * (this.speed * 0.6);
                         } else {
                             this.vx = 0; this.vy = 0; 
                         }
                         
-                        // IA esquive (rudimentaire)
                         if(Math.random() < 0.05) { this.vx += (Math.random()-0.5)*2; this.vy += (Math.random()-0.5)*2; }
 
-                        if (this.cd === 0 && Math.random() < 0.03) shoot(this);
+                        let fireRate = this.isBoss ? 0.05 : 0.02;
+                        if (this.cd === 0 && Math.random() < fireRate) shoot(this);
                     }
                 }
             }
@@ -222,33 +240,39 @@
                 
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                ctx.shadowBlur = 15; ctx.shadowColor = this.color;
+                ctx.shadowBlur = this.isBoss ? 25 : 15; 
+                ctx.shadowColor = this.color;
                 
-                // Corps du Tank
-                ctx.rotate(this.angle);
-                ctx.strokeStyle = this.color; ctx.lineWidth = 3;
-                ctx.fillStyle = 'rgba(0,0,0,0.8)';
-                ctx.beginPath(); ctx.rect(-this.w/2, -this.h/2, this.w, this.h); ctx.fill(); ctx.stroke();
+                let img = imgs[this.skin];
+                if (img && img.complete && img.naturalWidth !== 0) {
+                    // Si le slime bouge, on l'écrase un peu (Squash & Stretch basique)
+                    let scaleX = 1; let scaleY = 1;
+                    if (this.vx !== 0 || this.vy !== 0) {
+                        scaleX = 1.05; scaleY = 0.95;
+                    }
+                    ctx.scale(scaleX, scaleY);
+                    ctx.drawImage(img, -this.w/2, -this.h/2, this.w, this.h);
+                } else {
+                    // Fallback Neon si l'image ne charge pas
+                    ctx.strokeStyle = this.color; ctx.lineWidth = 3;
+                    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                    ctx.beginPath(); ctx.rect(-this.w/2, -this.h/2, this.w, this.h); ctx.fill(); ctx.stroke();
+                }
                 
-                // Chenilles
-                ctx.fillStyle = this.color;
-                ctx.fillRect(-this.w/2 - 4, -this.h/2 - 2, this.w + 8, 6);
-                ctx.fillRect(-this.w/2 - 4, this.h/2 - 4, this.w + 8, 6);
-                
-                // Tourelle
-                ctx.rotate(-this.angle); 
+                // Indicateur de Visée (Pour savoir où le slime va cracher)
                 ctx.rotate(this.turretAngle);
-                ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
-                ctx.lineWidth = 4;
-                ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(25, 0); ctx.stroke();
+                ctx.strokeStyle = this.color; ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath(); ctx.moveTo(this.w/2, 0); ctx.lineTo(this.w/2 + 15, 0); ctx.stroke();
+                ctx.globalAlpha = 1.0;
+                
                 ctx.restore();
 
-                // Barre HP (Adaptative 1 HP vs 3 HP)
+                // Barre HP
                 ctx.fillStyle = 'rgba(255,255,255,0.2)';
-                ctx.fillRect(this.x - 15, this.y - 30, 30, 4);
+                ctx.fillRect(this.x - this.w/2, this.y - this.h/2 - 10, this.w, 4);
                 ctx.fillStyle = this.color;
-                ctx.fillRect(this.x - 15, this.y - 30, 30 * (this.hp/this.maxHp), 4);
+                ctx.fillRect(this.x - this.w/2, this.y - this.h/2 - 10, this.w * (this.hp/this.maxHp), 4);
             }
         }
 
@@ -271,12 +295,11 @@
                 let nextX = this.x + this.vx; let nextY = this.y + this.vy;
                 let bounced = false;
 
-                // Collisions Murs
                 for(let w of walls) {
                     if (nextX > w.x && nextX < w.x + w.w && nextY > w.y && nextY < w.y + w.h) {
                         if (this.bounces > 0) {
-                            let min = Math.min(nextX - w.x, (w.x + w.w) - nextX, nextY - w.y, (w.y + w.h) - nextY);
-                            if (min === nextX - w.x || min === (w.x + w.w) - nextX) this.vx *= -1;
+                            let min = Math.min(Math.abs(nextX - w.x), Math.abs((w.x + w.w) - nextX), Math.abs(nextY - w.y), Math.abs((w.y + w.h) - nextY));
+                            if (min === Math.abs(nextX - w.x) || min === Math.abs((w.x + w.w) - nextX)) this.vx *= -1;
                             else this.vy *= -1;
                             this.bounces--; bounced = true;
                             createParticles(this.x, this.y, this.color, 5);
@@ -292,11 +315,13 @@
                 this.x += this.vx; this.y += this.vy;
                 this.life--;
 
-                // Collision Tanks
                 for(let t of tanks) {
                     if (t.hp > 0 && t.team !== this.team) {
+                        // Tolérance de hitbox un peu plus grande pour les boss
+                        let hitDist = t.isBoss ? (t.w/2 + 5) : 18;
                         let dist = Math.hypot(this.x - t.x, this.y - t.y);
-                        if (dist < 20) { 
+                        
+                        if (dist < hitDist) { 
                             t.hp--; this.life = 0;
                             createParticles(this.x, this.y, this.color, 15);
                             if(t.hp <= 0) handleKill(this.team, t.team);
@@ -331,9 +356,13 @@
 
         // --- MAP & CORE ---
         function generateMap() {
+            // Disposition basée sur tes images d'obstacles
             walls = [
-                {x: 350, y: 250, w: 100, h: 100}, {x: 150, y: 100, w: 50, h: 150},
-                {x: 600, y: 350, w: 50, h: 150}, {x: 150, y: 450, w: 150, h: 50}, {x: 500, y: 100, w: 150, h: 50}
+                {x: 350, y: 250, w: 100, h: 100, img: 'obs5'}, // Carré central
+                {x: 150, y: 100, w: 50, h: 150, img: 'obs1'},  // Rect 1
+                {x: 600, y: 350, w: 50, h: 150, img: 'obs2'},  // Rect 2
+                {x: 150, y: 450, w: 150, h: 50, img: 'obs3'},  // Rect 3
+                {x: 500, y: 100, w: 150, h: 50, img: 'obs4'}   // Rect 4
             ];
         }
 
@@ -341,22 +370,28 @@
 
         function shoot(tank) {
             if (tank.cd <= 0 && tank.hp > 0) {
-                bullets.push(new Bullet(tank.x + Math.cos(tank.turretAngle)*20, tank.y + Math.sin(tank.turretAngle)*20, tank.turretAngle, tank.color, tank.team));
-                tank.cd = 40; 
+                // Le tir part du bord du slime
+                let bx = tank.x + Math.cos(tank.turretAngle) * (tank.w/2 + 5);
+                let by = tank.y + Math.sin(tank.turretAngle) * (tank.h/2 + 5);
+                bullets.push(new Bullet(bx, by, tank.turretAngle, tank.color, tank.team));
+                tank.cd = tank.isBoss ? 30 : 40; 
             }
         }
 
         function handleKill(killerTeam, deadTeam) {
-            if (!gameActive) return; // Anti-doublons
+            if (!gameActive) return; 
 
             if (gameMode === 'solo_survival') {
                 if (deadTeam === 2) {
-                    setTimeout(() => {
-                        if(tanks.filter(t => t.team === 2).length === 0 && gameActive) {
-                            wave++; document.getElementById('hud-p1').innerText = "VAGUE : " + wave;
-                            spawnWave(wave);
-                        }
-                    }, 1000);
+                    let aliveEnemies = tanks.filter(t => t.team === 2 && t.hp > 0).length;
+                    if (aliveEnemies === 0) {
+                        setTimeout(() => {
+                            if(gameActive) {
+                                wave++; 
+                                spawnWave(wave);
+                            }
+                        }, 1000);
+                    }
                 } else if (deadTeam === 1) {
                     endGame("DÉTRUIT", `Vagues Survéçues : ${wave}`);
                 }
@@ -375,11 +410,31 @@
         }
 
         function spawnWave(w) {
-            let count = Math.min(w, 5); // 5 max simultanés pour pas surcharger
-            for(let i=0; i<count; i++) {
-                let rx = 550 + Math.random() * 200; let ry = 100 + Math.random() * 400;
-                let t = new Tank('ai_'+i, rx, ry, 'var(--p2)', 2);
-                t.isAI = true; t.hp = 1; t.maxHp = 1; tanks.push(t);
+            let hudP1 = document.getElementById('hud-p1');
+            
+            // MECANIQUE DE BOSS : Toutes les 3 vagues
+            if (w % 3 === 0) {
+                hudP1.innerText = `⚠️ VAGUE ${w} : BOSS ! ⚠️`;
+                hudP1.classList.add('boss');
+                
+                let rx = 600 + Math.random() * 100; let ry = 100 + Math.random() * 400;
+                let b = new Tank('boss_'+w, rx, ry, 'slime_noir', 'var(--boss)', 2);
+                b.isAI = true; b.isBoss = true;
+                b.w = 56; b.h = 56; // 1.5x plus gros
+                b.speed = 2.5; // Un peu plus lent
+                b.hp = 2 + (w / 3); // Vague 3 = 3HP, Vague 6 = 4HP, etc.
+                b.maxHp = b.hp;
+                tanks.push(b);
+            } else {
+                hudP1.innerText = "VAGUE : " + w;
+                hudP1.classList.remove('boss');
+                
+                let count = Math.min(w, 5); 
+                for(let i=0; i<count; i++) {
+                    let rx = 650 + Math.random() * 100; let ry = 50 + Math.random() * 500;
+                    let t = new Tank('ai_'+i, rx, ry, 'slime_rouge', 'var(--p2)', 2);
+                    t.isAI = true; t.hp = 1; t.maxHp = 1; tanks.push(t);
+                }
             }
         }
 
@@ -390,19 +445,20 @@
 
             let hudP1 = document.getElementById('hud-p1');
             let hudP2 = document.getElementById('hud-p2');
+            hudP1.classList.remove('boss');
 
             if (mode === 'solo_survival') {
                 wave = 1;
-                let p = new Tank('p1', 100, 300, 'var(--p1)', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
-                hudP1.innerText = "VAGUE : 1"; hudP2.innerText = "";
+                let p = new Tank('p1', 100, 300, 'slime_bleu', 'var(--p1)', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
+                hudP2.innerText = "";
                 spawnWave(wave);
             } else if (mode === 'solo_1v1') {
-                let p = new Tank('p1', 100, 300, 'var(--p1)', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
-                let b = new Tank('bot', 700, 300, 'var(--bot)', 2); b.isAI = true; b.hp = 3; b.maxHp = 3; tanks.push(b);
-                hudP1.innerText = "JOUEUR"; hudP2.innerText = "BOT IA"; hudP2.style.color = "var(--bot)"; hudP2.style.textShadow = "0 0 10px var(--bot)";
+                let p = new Tank('p1', 100, 300, 'slime_bleu', 'var(--p1)', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
+                let b = new Tank('bot', 700, 300, 'slime_rouge', 'var(--p2)', 2); b.isAI = true; b.hp = 3; b.maxHp = 3; tanks.push(b);
+                hudP1.innerText = "JOUEUR"; hudP2.innerText = "BOT IA"; hudP2.style.color = "var(--p2)"; hudP2.style.textShadow = "0 0 10px var(--p2)";
             } else if (mode === 'host') {
-                let p1 = new Tank('p1', 100, 300, 'var(--p1)', 1); p1.hp = 3; p1.maxHp = 3; tanks.push(p1);
-                let p2 = new Tank('p2', 700, 300, 'var(--p2)', 2); p2.hp = 3; p2.maxHp = 3; tanks.push(p2);
+                let p1 = new Tank('p1', 100, 300, 'slime_bleu', 'var(--p1)', 1); p1.hp = 3; p1.maxHp = 3; tanks.push(p1);
+                let p2 = new Tank('p2', 700, 300, 'slime_rouge', 'var(--p2)', 2); p2.hp = 3; p2.maxHp = 3; tanks.push(p2);
                 hudP1.innerText = "P1: " + p1Wins; hudP2.innerText = "P2: " + p2Wins; hudP2.style.color = "var(--p2)"; hudP2.style.textShadow = "0 0 10px var(--p2)";
             }
 
@@ -428,9 +484,9 @@
             if (gameMode === 'solo_survival' || gameMode === 'solo_1v1') {
                 initGame(gameMode);
             } else if (gameMode === 'host') {
-                initGame('host'); // Le host regénère tout et envoie le state naturellement
+                initGame('host'); 
             } else if (gameMode === 'client') {
-                tanks = []; bullets = []; particles = []; gameActive = true; // Le client attend le state du Host
+                tanks = []; bullets = []; particles = []; gameActive = true; 
                 document.getElementById('hud-p1').innerText = "P1: " + p1Wins;
                 document.getElementById('hud-p2').innerText = "P2: " + p2Wins;
             }
@@ -555,10 +611,14 @@
 
             if (gameMode !== 'client') {
                 tanks.forEach(t => { 
-                    // Set prototype methods for reconstructed objects (if needed, but usually host handles updates)
                     if(t.update) t.update(); 
                 });
+                
                 for(let i=bullets.length-1; i>=0; i--) { bullets[i].update(); if(bullets[i].life <= 0) bullets.splice(i, 1); }
+                
+                // GARBAGE COLLECTOR
+                tanks = tanks.filter(t => t.hp > 0);
+                
                 if(gameMode === 'host' && conn && conn.open) conn.send({type: 'state', tanks: tanks, bullets: bullets});
             }
 
@@ -568,15 +628,20 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.shadowBlur = 15; ctx.shadowColor = '#0055ff'; ctx.fillStyle = 'rgba(0, 40, 100, 0.4)'; ctx.strokeStyle = '#0088ff'; ctx.lineWidth = 2;
+            // MURS (Images ou Neon Fallback)
             for(let w of walls) {
-                ctx.beginPath(); ctx.rect(w.x, w.y, w.w, w.h); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(w.x+5, w.y+5); ctx.lineTo(w.x+w.w-5, w.y+w.h-5); ctx.stroke();
+                let img = imgs[w.img];
+                if (img && img.complete && img.naturalWidth !== 0) {
+                    ctx.drawImage(img, w.x, w.y, w.w, w.h);
+                } else {
+                    ctx.shadowBlur = 15; ctx.shadowColor = '#0055ff'; ctx.fillStyle = 'rgba(0, 40, 100, 0.4)'; ctx.strokeStyle = '#0088ff'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.rect(w.x, w.y, w.w, w.h); ctx.fill(); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(w.x+5, w.y+5); ctx.lineTo(w.x+w.w-5, w.y+w.h-5); ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
             }
-            ctx.shadowBlur = 0;
 
             tanks.forEach(t => {
-                // Recreate prototype draw if stripped by network JSON
                 if(t.draw) t.draw(ctx);
                 else Object.assign(new Tank(), t).draw(ctx);
             });
