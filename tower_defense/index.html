@@ -33,10 +33,14 @@
         #btn-wave { background: var(--danger); color: white; padding: 15px; font-size: 1.1em;}
         #btn-wave:hover:not(:disabled) { background: #dc2626; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
         #game-over { display: none; text-align: center; margin-top: 20px;}
-        .hub-link { color: #6b7280; text-decoration: none; margin-top: 15px; display: inline-block; font-size: 0.9em; text-transform: uppercase;}
+        
+        .hub-link-top { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
+        .hub-link-top:hover { color: #fff; background: rgba(16, 185, 129, 0.3); border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
     </style>
 </head>
 <body>
+    <a href="../index.html" class="hub-link-top">⬅ Retour au Hub</a>
+    
     <h1>Protocol Defense: Endless</h1>
     <div id="game-container">
         <canvas id="gameCanvas" width="600" height="450"></canvas>
@@ -92,8 +96,7 @@
     <div id="game-over">
         <h2 id="end-message" style="font-size: 2em; margin-bottom: 10px;">SERVEUR CORROMPU</h2>
         <p id="survive-message" style="color:#aaa;"></p>
-        <button class="action-btn" onclick="location.reload()" style="padding: 15px 30px;">Rebooter le Serveur</button><br>
-        <a href="../index.html" class="hub-link">⬅ Retour Menu</a>
+        <button class="action-btn" onclick="location.reload()" style="padding: 15px 30px;">Rebooter le Serveur</button>
     </div>
 
     <script>
@@ -106,6 +109,71 @@
         let autoWave = false; let gameSpeed = 1; let timeAccumulator = 0; 
         let skeletonsUnlocked = false; // Se débloque après le Boss 1
         
+        // --- SYSTEME AUDIO WEB API ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'shoot_normal') { // Fantassin
+                osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.015, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'shoot_ricochet') { // Tireur
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.015, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'shoot_armor') { // Blindé
+                osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+                gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'shoot_sniper') { // Sniper
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, now); osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+                gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'shoot_aoe') { // Bombardier
+                osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+                gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'shoot_poison') { // Alchimiste
+                osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(200, now + 0.15);
+                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'hit') { // Dégâts pris par un ennemi
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.05);
+                gain.gain.setValueAtTime(0.008, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
+            } else if (type === 'kill') { // Ennemi tué
+                osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'base_damage') { // Base touchée
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+                gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'game_over') { // Défaite
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 1.5);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+                osc.start(now); osc.stop(now + 1.5);
+            } else if (type === 'ui_buy') { // Achat d'une tour
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(600, now + 0.1);
+                gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'ui_upgrade') { // Amélioration
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(900, now + 0.15);
+                gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'ui_sell') { // Vente
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(300, now + 0.15);
+                gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            }
+        }
+
         // --- CHARGEMENT IMAGES ---
         const imgs = {};
         const imgFiles = {
@@ -145,18 +213,20 @@
         canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); hoveredGrid.x = Math.floor((e.clientX - rect.left) / tileSize); hoveredGrid.y = Math.floor((e.clientY - rect.top) / tileSize); });
         canvas.addEventListener('mouseleave', () => { hoveredGrid = {x: -1, y: -1}; });
         canvas.addEventListener('click', () => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             if (gameOver) return; const hx = hoveredGrid.x; const hy = hoveredGrid.y;
             const clickedTower = towers.find(t => Math.floor(t.x/tileSize) === hx && Math.floor(t.y/tileSize) === hy);
             if (clickedTower) { selectedTowerInstance = clickedTower; updateUpgradePanel(); return; }
             selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none';
             
             if (hx < 0 || hx >= cols || hy < 0 || hy >= rows) return;
-            if (mapGrid[hx][hy] === 1) { alert("Impossible de construire sur la route !"); return; }
+            if (mapGrid[hx][hy] === 1) { return; } // Bloqué sur le chemin
             
             const def = towerDefs[selectedTowerType];
             if (gold >= def.cost) {
                 gold -= def.cost; 
                 towers.push(new Tower(hx, hy, selectedTowerType)); 
+                playSound('ui_buy');
                 updateUI();
             }
         });
@@ -169,13 +239,17 @@
         };
         window.upgradeSelectedTower = () => { 
             if (selectedTowerInstance && selectedTowerInstance.level < 3 && gold >= selectedTowerInstance.upgradeCost) { 
-                gold -= selectedTowerInstance.upgradeCost; selectedTowerInstance.upgrade(); updateUI(); updateUpgradePanel(); 
+                gold -= selectedTowerInstance.upgradeCost; selectedTowerInstance.upgrade(); 
+                playSound('ui_upgrade');
+                updateUI(); updateUpgradePanel(); 
             } 
         };
         window.sellSelectedTower = () => { 
             if (selectedTowerInstance) { 
                 gold += Math.floor(selectedTowerInstance.totalValue * 0.6); towers = towers.filter(t => t !== selectedTowerInstance); 
-                selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none'; updateUI(); 
+                selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none'; 
+                playSound('ui_sell');
+                updateUI(); 
             } 
         };
 
@@ -227,16 +301,13 @@
             constructor(type, currentWave) {
                 this.id = Math.random().toString(36).substr(2, 9);
                 this.type = type; 
-                this.skin = type; // gobelin, squelette, boss1, boss2
+                this.skin = type; 
                 
-                // HP exponentiel pour forcer la défaite un jour
                 let hpScale = Math.pow(1.2, currentWave); 
                 let baseHp = 30 + (currentWave * 20); 
                 
                 if(type === 'gobelin') { this.maxHp = baseHp * hpScale; this.speed = 1.3 + (currentWave*0.01); this.radius = 12; this.rew = 5; }
                 if(type === 'squelette') { this.maxHp = baseHp * hpScale * 2.5; this.speed = 0.9 + (currentWave*0.01); this.radius = 15; this.rew = 12; }
-                
-                // Les boss sont extrêmement tanky
                 if(type === 'boss1') { this.maxHp = baseHp * hpScale * 15; this.speed = 0.6; this.radius = 25; this.rew = 500; this.abilityTimer = 0;} 
                 if(type === 'boss2') { this.maxHp = baseHp * hpScale * 20; this.speed = 0.5; this.radius = 25; this.rew = 500; this.abilityTimer = 0;} 
                 
@@ -251,14 +322,12 @@
             applyDebuff(name, duration, power) { this.debuffs[name] = { timer: duration, power: power }; }
 
             draw() {
-                // Rotation vers la cible de mouvement
                 let target = this.path[this.wpIndex] || this.path[this.path.length-1];
                 let angle = Math.atan2(target.y - this.y, target.x - this.x);
 
                 ctx.save();
                 ctx.translate(this.x, this.y);
 
-                // Aura de debuff
                 if (this.debuffs['slow'] || this.debuffs['armorBreak'] || this.debuffs['poison']) {
                     ctx.beginPath(); ctx.arc(0, 0, this.radius + 6, 0, Math.PI*2); 
                     if (this.debuffs['poison']) ctx.fillStyle = 'rgba(16, 185, 129, 0.4)';
@@ -277,7 +346,6 @@
                 }
                 ctx.restore();
                 
-                // Barre de vie
                 ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(this.x - 15, this.y - this.radius - 12, 30, 4); 
                 ctx.fillStyle = (this.type.includes('boss')) ? '#f1c40f' : '#10b981'; ctx.fillRect(this.x - 15, this.y - this.radius - 12, 30 * (this.hp / this.maxHp), 4);
             }
@@ -295,10 +363,9 @@
                 }
                 if (this.debuffs['armorBreak']) { this.armorBroken = true; this.debuffs['armorBreak'].timer--; if(this.debuffs['armorBreak'].timer <= 0) delete this.debuffs['armorBreak']; }
 
-                // --- MECANIQUES DES BOSS ---
                 if (this.type === 'boss1') {
                     this.abilityTimer++;
-                    if (this.abilityTimer >= 150) { // Invoque un petit gobelin régulièrement
+                    if (this.abilityTimer >= 150) { 
                         this.abilityTimer = 0;
                         let minion = new Enemy('gobelin', wave);
                         minion.x = this.x; minion.y = this.y; minion.wpIndex = this.wpIndex;
@@ -307,12 +374,12 @@
                 }
                 if (this.type === 'boss2') {
                     this.abilityTimer++;
-                    if (this.abilityTimer >= 180) { // Désactive une tour aléatoire
+                    if (this.abilityTimer >= 180) { 
                         this.abilityTimer = 0;
                         let activeTowers = towers.filter(t => t.disabledTimer <= 0);
                         if(activeTowers.length > 0) {
                             let targetTower = activeTowers[Math.floor(Math.random() * activeTowers.length)];
-                            targetTower.disabledTimer = 180; // 3 sec disable
+                            targetTower.disabledTimer = 180; 
                             empWaves.push({x1: this.x, y1: this.y, x2: targetTower.x, y2: targetTower.y, life: 20});
                         }
                     }
@@ -341,7 +408,7 @@
                 this.dType = def.type; this.range = def.range; this.damage = def.damage; this.cdMax = def.cooldown; this.cd = 0;
                 this.pColor = def.pColor; this.angle = 0; this.level = 1; this.baseCost = def.cost; 
                 this.upgradeCost = Math.floor(def.cost * 1.5); this.totalValue = def.cost;
-                this.disabledTimer = 0; // Géré par Boss 2
+                this.disabledTimer = 0; 
             }
             
             upgrade() { 
@@ -352,7 +419,6 @@
             }
             
             draw() {
-                // Socle de la tour
                 ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(this.x - 14, this.y - 14, 28, 28);
                 
                 ctx.save();
@@ -368,13 +434,11 @@
 
                 ctx.restore();
 
-                // Indicateur de niveau
                 ctx.fillStyle = 'white'; for(let i=0; i<this.level; i++) ctx.fillRect(this.x - 6 + (i*5), this.y + 14, 3, 3);
                 
-                // Effet de désactivation (Boss 2)
                 if (this.disabledTimer > 0) {
                     ctx.beginPath(); ctx.arc(this.x, this.y, 20, 0, Math.PI*2);
-                    ctx.fillStyle = 'rgba(168, 85, 247, 0.4)'; ctx.fill(); // Violet EMP
+                    ctx.fillStyle = 'rgba(168, 85, 247, 0.4)'; ctx.fill(); 
                     ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2; ctx.stroke();
                 }
             }
@@ -390,19 +454,20 @@
                 }
 
                 if (target) {
-                    // ROTATION FLUIDE VERS LA CIBLE
                     let targetAngle = Math.atan2(target.y - this.y, target.x - this.x); 
                     let diff = targetAngle - this.angle;
-                    // Normalisation de l'angle pour tourner du bon coté
                     diff = Math.atan2(Math.sin(diff), Math.cos(diff)); 
-                    this.angle += diff * 0.2; // Vitesse de rotation (lerp)
+                    this.angle += diff * 0.2; 
 
-                    // Point de sortie du canon (Le canon est à l'avant, vers la droite de l'image)
                     let barrelX = this.x + Math.cos(this.angle) * 15;
                     let barrelY = this.y + Math.sin(this.angle) * 15;
 
-                    // On tire seulement si la tour pointe à peu près vers l'ennemi
                     if (this.cd <= 0 && Math.abs(diff) < 0.5) { 
+                        
+                        // Joue le son correspondant à la tour
+                        const soundMap = {1: 'shoot_normal', 2: 'shoot_ricochet', 3: 'shoot_armor', 4: 'shoot_sniper', 5: 'shoot_aoe', 6: 'shoot_poison'};
+                        playSound(soundMap[this.tK]);
+
                         if (this.dType === 'pierce') {
                             projectiles.push(new Projectile(barrelX, barrelY, target, this.damage, this.pColor, this.dType, this.level, this.angle, this.range)); 
                         } else {
@@ -439,6 +504,7 @@
                         if (!this.hitSet.has(e.id) && Math.hypot(e.x - this.x, e.y - this.y) < e.radius + 8) {
                             this.hitSet.add(e.id);
                             e.hp -= e.armorBroken ? this.dmg * 1.5 : this.dmg;
+                            playSound('hit');
                             particles.push({x: this.x, y: this.y, vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4, life: 10, color: this.color});
                         }
                     });
@@ -455,19 +521,23 @@
                         let splashRadius = 50 + (this.level * 15);
                         enemies.forEach(e => { if(Math.hypot(e.x - this.x, e.y - this.y) <= splashRadius) e.hp -= e.armorBroken ? this.dmg * 1.5 : this.dmg; });
                         ctx.beginPath(); ctx.arc(this.x, this.y, splashRadius, 0, Math.PI*2); ctx.fillStyle = 'rgba(249, 115, 22, 0.3)'; ctx.fill();
+                        playSound('hit');
                     } 
                     else if (this.type === 'poison') {
                         this.target.hp -= actualDmg;
                         this.target.applyDebuff('poison', 150, this.level * 8); 
                         this.target.applyDebuff('slow', 60, 0.5);
+                        playSound('hit');
                     }
                     else if (this.type === 'armorBreak') {
                         this.target.hp -= actualDmg;
                         this.target.applyDebuff('armorBreak', 120, 1.5); 
                         this.target.applyDebuff('slow', 60, 0.7); 
+                        playSound('hit');
                     }
                     else if (this.type === 'ricochet') {
                         this.target.hp -= actualDmg;
+                        playSound('hit');
                         if (this.bounces > 0) {
                             let nextTarget = null; let minD = 150;
                             for(let e of enemies) {
@@ -479,7 +549,10 @@
                             if (nextTarget) { projectiles.push(new Projectile(this.target.x, this.target.y, nextTarget, this.dmg * 0.8, this.color, 'ricochet', this.level, 0, 0, this.bounces - 1)); }
                         }
                     }
-                    else { this.target.hp -= actualDmg; }
+                    else { 
+                        this.target.hp -= actualDmg; 
+                        playSound('hit');
+                    }
                     
                     for(let i=0; i<6; i++) particles.push({x: this.x, y: this.y, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, life: 15, color: this.color}); 
                     return true; 
@@ -500,12 +573,10 @@
                 ctx.drawImage(imgs['map'], 0, 0, canvas.width, canvas.height);
             }
 
-            // Quadrillage discret
             ctx.fillStyle = 'rgba(255,255,255,0.02)';
             for(let x=0; x<canvas.width; x+=tileSize) { ctx.fillRect(x, 0, 1, canvas.height); }
             for(let y=0; y<canvas.height; y+=tileSize) { ctx.fillRect(0, y, canvas.width, 1); }
 
-            // Dessin visuel de la Route
             ctx.fillStyle = 'rgba(40, 50, 70, 0.4)';
             for(let x=0; x<cols; x++) {
                 for(let y=0; y<rows; y++) {
@@ -557,15 +628,18 @@
                 let e = enemies[i], status = e.update();
                 if (status === "reached_end") { 
                     lives -= (e.type.includes('boss')? 10 : 1); enemies.splice(i, 1); 
+                    playSound('base_damage');
                     if (lives <= 0) { 
                         gameOver = true; document.getElementById('game-over').style.display = 'block'; 
                         document.getElementById('survive-message').innerText = `Vous avez survécu jusqu'à l'Anomalie ${wave}.`;
+                        playSound('game_over');
                     } 
                 } 
                 else if (e.hp <= 0) { 
                     gold += e.rew; 
-                    if (e.type === 'boss1') skeletonsUnlocked = true; // Débloque les squelettes !
+                    if (e.type === 'boss1') skeletonsUnlocked = true; 
                     enemies.splice(i, 1); 
+                    playSound('kill');
                 } 
             }
         }
@@ -582,7 +656,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             drawMapAndHover();
             
-            // Lignes EMP (Boss 2)
             for (let i = empWaves.length - 1; i >= 0; i--) {
                 let w = empWaves[i];
                 ctx.beginPath(); ctx.moveTo(w.x1, w.y1); ctx.lineTo(w.x2, w.y2);
@@ -600,12 +673,9 @@
         }
         updateUI(); requestAnimationFrame(gameLoop);
     </script>
-    <!-- ========================================== -->
+    
     <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
-    <!-- ========================================== -->
     <script>
-        // 1. Liste de tes jeux dans l'ordre souhaité. 
-        // /!\ Vérifie que les noms des dossiers correspondent bien aux tiens.
         const gamesHubList = [
             "../cybertank/index.html",
             "../tower_defense/index.html",
@@ -620,14 +690,12 @@
         let touchendX = 0;
         
         function handleSwipeGesture() {
-            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
+            const swipeThreshold = 75; 
             
             if (touchendX < touchstartX - swipeThreshold) {
-                // Swipe vers la gauche (Jeu suivant)
                 navigateGames(1);
             }
             if (touchendX > touchstartX + swipeThreshold) {
-                // Swipe vers la droite (Jeu précédent)
                 navigateGames(-1);
             }
         }
@@ -635,30 +703,22 @@
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
             
-            // Trouve l'index du jeu actuel en regardant l'URL
             let currentIndex = gamesHubList.findIndex(game => {
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
             });
             
-            // Si on ne trouve pas (erreur de nom de dossier), on annule
             if (currentIndex === -1) return;
 
-            // Calcul du prochain jeu avec une boucle (le dernier ramène au premier)
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
-            
-            // Redirection
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Écoute du début du touché
         document.addEventListener('touchstart', e => {
-            // On ignore le swipe si on touche le canvas pour ne pas gâcher le gameplay
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchstartX = e.changedTouches[0].screenX;
         }, { passive: true });
 
-        // Écoute de la fin du touché
         document.addEventListener('touchend', e => {
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchendX = e.changedTouches[0].screenX;
