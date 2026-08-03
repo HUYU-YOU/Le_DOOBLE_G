@@ -72,7 +72,6 @@
     <h1>Cyber Slime Arena</h1>
     
     <div id="game-container">
-        
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
             <h1 style="font-size: 3.5em; margin-bottom: 30px; text-shadow: 0 0 20px var(--p1);">ARENA OS</h1>
@@ -123,26 +122,23 @@
             <div class="joystick-zone" id="joy-move"><div class="joystick-knob" id="knob-move"></div></div>
             <div class="joystick-zone right" id="joy-aim"><div class="joystick-knob" id="knob-aim"></div></div>
         </div>
-
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // --- CHARGEMENT DES ASSETS ---
+        // --- 1. CORRECTION DES CHEMINS D'IMAGES ---
+        // Basé EXACTEMENT sur ton screen du dossier
         const imgs = {};
-        // 🚨 ATTENTION: J'ai utilisé './img/' pour forcer le chemin relatif propre.
-        // J'ai respecté tes noms exacts : obs2, obs3, obs4, slimerouge, slimenoir (sans le _)
-        // Si ça ne charge toujours pas, vérifie que les noms de tes fichiers dans le dossier img/ n'ont VRAIMENT pas de '_'
         const imgFiles = {
             'map': './img/maptankslime.png',
-            'obs1': './img/_obs1.png', 
+            'obs1': './img/obs1.png', 
             'obs2': './img/obs2.png', 
             'obs3': './img/obs3.png', 
             'obs4': './img/obs4.png', 
-            'obs5': './img/_obs5.png',
-            'slime_bleu': './img/_slimebleu.png', 
+            'obs5': './img/obs5.png',
+            'slime_bleu': './img/slimebleu.png', 
             'slime_rouge': './img/slimerouge.png', 
             'slime_noir': './img/slimenoir.png'
         };
@@ -178,7 +174,7 @@
                 this.x = x; this.y = y;
                 this.w = 32; this.h = 32;
                 this.skin = skin; 
-                this.color = color; 
+                this.color = color; // Doit être un HEX (ex: '#00f0ff') pour le canvas natif
                 this.team = team;
                 
                 this.vx = 0; this.vy = 0;
@@ -213,7 +209,7 @@
                 if (!collideY) this.y = nextY;
                 if (this.vx !== 0 || this.vy !== 0) this.angle = Math.atan2(this.vy, this.vx);
 
-                // --- IA AVEC STEERING AVOIDANCE (POUR NE PLUS BLOQUER) ---
+                // --- IA AVEC STEERING AVOIDANCE ---
                 if (this.isAI && gameMode !== 'client') {
                     let p1 = tanks.find(t => t.team === 1);
                     if(p1 && p1.hp > 0) {
@@ -235,16 +231,14 @@
                         }
                         
                         // 2. ÉVITEMENT DES MURS (Force de répulsion)
-                        let margin = 20; // Rayon de détection autour de l'IA
+                        let margin = 20; 
                         for(let w of walls) {
-                            // Si l'IA s'approche trop près d'un mur...
                             if (this.x + this.w/2 + margin > w.x && this.x - this.w/2 - margin < w.x + w.w &&
                                 this.y + this.h/2 + margin > w.y && this.y - this.h/2 - margin < w.y + w.h) {
                                 
                                 let cx = w.x + w.w/2; let cy = w.y + w.h/2;
                                 let pushX = this.x - cx; let pushY = this.y - cy;
                                 
-                                // Pousse l'IA pour la faire glisser le long du mur
                                 if (Math.abs(pushX) / (w.w/2) > Math.abs(pushY) / (w.h/2)) {
                                     this.vx += Math.sign(pushX) * this.speed * 0.8;
                                 } else {
@@ -253,14 +247,12 @@
                             }
                         }
                         
-                        // Normalisation de la vitesse pour pas qu'ils n'accélèrent trop
                         let currentSpeed = Math.hypot(this.vx, this.vy);
                         if (currentSpeed > this.speed * 0.6) {
                             this.vx = (this.vx / currentSpeed) * (this.speed * 0.6);
                             this.vy = (this.vy / currentSpeed) * (this.speed * 0.6);
                         }
 
-                        // Petits sauts aléatoires
                         if(Math.random() < 0.05) { this.vx += (Math.random()-0.5)*2; this.vy += (Math.random()-0.5)*2; }
 
                         let fireRate = this.isBoss ? 0.04 : 0.02;
@@ -284,8 +276,10 @@
                     ctx.scale(scaleX, scaleY);
                     ctx.drawImage(img, -this.w/2, -this.h/2, this.w, this.h);
                 } else {
-                    // Fallback (Ce que tu voyais sur ton screen)
-                    ctx.strokeStyle = this.color; ctx.lineWidth = 3;
+                    // --- 2. CORRECTION DU FALLBACK INVISIBLE ---
+                    // Utilise la couleur Hexa passée en paramètre
+                    ctx.strokeStyle = this.color; 
+                    ctx.lineWidth = 3;
                     ctx.fillStyle = 'rgba(0,0,0,0.8)';
                     ctx.beginPath(); ctx.rect(-this.w/2, -this.h/2, this.w, this.h); ctx.fill(); ctx.stroke();
                 }
@@ -376,12 +370,14 @@
 
         // --- MAP & CORE ---
         function generateMap() {
+            // --- 3. CORRECTION DU SQUASHING ---
+            // 'rotated: true' tourne l'image de 90° au rendu sans modifier les collisions !
             walls = [
-                {x: 350, y: 250, w: 100, h: 100, img: 'obs5'}, 
-                {x: 150, y: 100, w: 50, h: 150, img: 'obs1'},  
-                {x: 600, y: 350, w: 50, h: 150, img: 'obs2'},  
-                {x: 150, y: 450, w: 150, h: 50, img: 'obs3'},  
-                {x: 500, y: 100, w: 150, h: 50, img: 'obs4'}   
+                {x: 350, y: 250, w: 100, h: 100, img: 'obs5', rotated: false}, // Carré Central
+                {x: 150, y: 100, w: 50, h: 150, img: 'obs1', rotated: true},  // Rectangle Vertical Gauche (Tourné)
+                {x: 600, y: 350, w: 50, h: 150, img: 'obs2', rotated: true},  // Rectangle Vertical Droit (Tourné)
+                {x: 150, y: 450, w: 150, h: 50, img: 'obs3', rotated: false}, // Rectangle Horizontal Bas-Gauche
+                {x: 500, y: 100, w: 150, h: 50, img: 'obs4', rotated: false}  // Rectangle Horizontal Haut-Droit
             ];
         }
 
@@ -422,14 +418,12 @@
             }
         }
 
-        // --- GÉNÉRATION SÉCURISÉE DES IA ---
         function getSafeSpawn() {
             let x, y, safe;
             do {
                 safe = true;
                 x = 650 + Math.random() * 100;
                 y = 50 + Math.random() * 500;
-                // On vérifie que le point de spawn n'est pas dans un mur (avec une marge)
                 for(let w of walls) {
                     if (x + 30 > w.x && x - 30 < w.x + w.w && y + 30 > w.y && y - 30 < w.y + w.h) {
                         safe = false; break;
@@ -447,7 +441,8 @@
                 hudP1.classList.add('boss');
                 
                 let spawn = getSafeSpawn();
-                let b = new Tank('boss_'+w, spawn.x, spawn.y, 'slime_noir', 'var(--boss)', 2);
+                // Utilisation des vrais codes HEX pour prévenir le bug d'invisibilité
+                let b = new Tank('boss_'+w, spawn.x, spawn.y, 'slime_noir', '#b82aff', 2);
                 b.isAI = true; b.isBoss = true; b.w = 56; b.h = 56; b.speed = 2.5; 
                 b.hp = 2 + (w / 3); b.maxHp = b.hp;
                 tanks.push(b);
@@ -458,7 +453,8 @@
                 let count = Math.min(w, 5); 
                 for(let i=0; i<count; i++) {
                     let spawn = getSafeSpawn();
-                    let t = new Tank('ai_'+i, spawn.x, spawn.y, 'slime_rouge', 'var(--p2)', 2);
+                    // Utilisation HEX (#ff007f = rose)
+                    let t = new Tank('ai_'+i, spawn.x, spawn.y, 'slime_rouge', '#ff007f', 2);
                     t.isAI = true; t.hp = 1; t.maxHp = 1; tanks.push(t);
                 }
             }
@@ -475,16 +471,17 @@
 
             if (mode === 'solo_survival') {
                 wave = 1;
-                let p = new Tank('p1', 100, 300, 'slime_bleu', 'var(--p1)', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
+                // #00f0ff = cyan. P1 est maintenant protégé par son HEX.
+                let p = new Tank('p1', 100, 300, 'slime_bleu', '#00f0ff', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
                 hudP2.innerText = "";
                 spawnWave(wave);
             } else if (mode === 'solo_1v1') {
-                let p = new Tank('p1', 100, 300, 'slime_bleu', 'var(--p1)', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
-                let b = new Tank('bot', 700, 300, 'slime_rouge', 'var(--p2)', 2); b.isAI = true; b.hp = 3; b.maxHp = 3; tanks.push(b);
+                let p = new Tank('p1', 100, 300, 'slime_bleu', '#00f0ff', 1); p.hp = 3; p.maxHp = 3; tanks.push(p);
+                let b = new Tank('bot', 700, 300, 'slime_rouge', '#ff007f', 2); b.isAI = true; b.hp = 3; b.maxHp = 3; tanks.push(b);
                 hudP1.innerText = "JOUEUR"; hudP2.innerText = "BOT IA"; hudP2.style.color = "var(--p2)"; hudP2.style.textShadow = "0 0 10px var(--p2)";
             } else if (mode === 'host') {
-                let p1 = new Tank('p1', 100, 300, 'slime_bleu', 'var(--p1)', 1); p1.hp = 3; p1.maxHp = 3; tanks.push(p1);
-                let p2 = new Tank('p2', 700, 300, 'slime_rouge', 'var(--p2)', 2); p2.hp = 3; p2.maxHp = 3; tanks.push(p2);
+                let p1 = new Tank('p1', 100, 300, 'slime_bleu', '#00f0ff', 1); p1.hp = 3; p1.maxHp = 3; tanks.push(p1);
+                let p2 = new Tank('p2', 700, 300, 'slime_rouge', '#ff007f', 2); p2.hp = 3; p2.maxHp = 3; tanks.push(p2);
                 hudP1.innerText = "P1: " + p1Wins; hudP2.innerText = "P2: " + p2Wins; hudP2.style.color = "var(--p2)"; hudP2.style.textShadow = "0 0 10px var(--p2)";
             }
 
@@ -590,7 +587,7 @@
             if(isMove) { jMove.x = nx; jMove.y = ny; } else { jAim.x = nx; jAim.y = ny; jAim.firing = true; }
         }
         joyMove.addEventListener('touchstart', e => handleJoystick(e, true)); joyMove.addEventListener('touchmove', e => handleJoystick(e, true)); joyMove.addEventListener('touchend', e => handleJoystick(e, true));
-        joyAim.addEventListener('touchstart', e => handleJoystick(e, false)); joyAim.addEventListener('touchmove', e => handleJoystick(e, false)); joyAim.addEventListener('touchend', e => handleJoystick(e, false));
+        joyAim.addEventListener('touchstart', e => handleJoystick(e, false)); joyAim.addEventListener('touchmove', e => handleJoystick(e, false)); joyAim.addEventListener('touchmove', e => handleJoystick(e, false));
 
         // --- GAME LOOP ---
         function update() {
@@ -632,7 +629,19 @@
             for(let w of walls) {
                 let img = imgs[w.img];
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    ctx.drawImage(img, w.x, w.y, w.w, w.h);
+                    // --- NOUVEAU RENDU ANTI-SQUASH ---
+                    ctx.save();
+                    ctx.translate(w.x + w.w/2, w.y + w.h/2); // On se place au centre de la hitbox
+                    
+                    if (w.rotated) {
+                        ctx.rotate(Math.PI / 2); // On tourne le Canvas de 90°
+                        // On dessine l'image avec hauteur et largeur inversées pour correspondre à ses proportions d'origine !
+                        ctx.drawImage(img, -w.h/2, -w.w/2, w.h, w.w); 
+                    } else {
+                        // Dessin normal
+                        ctx.drawImage(img, -w.w/2, -w.h/2, w.w, w.h);
+                    }
+                    ctx.restore();
                 } else {
                     ctx.shadowBlur = 15; ctx.shadowColor = '#0055ff'; ctx.fillStyle = 'rgba(0, 40, 100, 0.4)'; ctx.strokeStyle = '#0088ff'; ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.rect(w.x, w.y, w.w, w.h); ctx.fill(); ctx.stroke();
