@@ -241,6 +241,7 @@
                 <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 VARIÉTÉ (OLD & NOSTALGIE)</button>
                 <button class="btn-main" onclick="launchGame('POP')" style="border-color: #ff00aa; color: #ff88cc;">🌍 POP INTERNATIONALE</button>
                 <button class="btn-main btn-sys" onclick="launchGame('ANIME')">📺 ANIME (OPENINGS)</button>
+                <button class="btn-main" onclick="launchGame('FILMS')" style="border-color: #ffd700; color: #ffeb66; grid-column: 1 / -1;">🎬 FILMS & HANS ZIMMER</button>
             </div>
             
             <div id="loading-api" style="display: none; flex-direction: column; align-items: center;">
@@ -279,6 +280,38 @@
                 { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" }, { anime: "Cyberpunk Edgerunners", aliases: ["cyberpunk", "edgerunners"], search: "This Fffire Franz Ferdinand" },
                 { anime: "Saint Seiya", aliases: ["les chevaliers du zodiaque"], search: "Pegasus Fantasy Make-Up" }, { anime: "Sailor Moon", aliases: ["sailormoon"], search: "Moonlight Densetsu" },
                 { anime: "Goldorak", aliases: ["ufo robot grendizer"], search: "Goldorak Noam" }, { anime: "Captain Tsubasa", aliases: ["olive et tom"], search: "Moete Hero" }
+            ],
+            FILMS: [
+                { film: "Interstellar", aliases: ["interstellar"], search: "Hans Zimmer Cornfield Chase" },
+                { film: "Inception", aliases: ["inception"], search: "Hans Zimmer Time" },
+                { film: "Gladiator", aliases: ["gladiator"], search: "Hans Zimmer Now We Are Free" },
+                { film: "The Dark Knight", aliases: ["dark knight", "batman", "the dark knight"], search: "Hans Zimmer Why So Serious" },
+                { film: "Le Roi Lion", aliases: ["lion king", "le roi lion"], search: "Hans Zimmer This Land" },
+                { film: "Pirates des Caraïbes", aliases: ["pirates of the caribbean", "pirate des caraibes"], search: "Klaus Badelt He's a Pirate" },
+                { film: "Man of Steel", aliases: ["superman man of steel", "man of steel"], search: "Hans Zimmer Flight" },
+                { film: "Dune", aliases: ["dune part 1", "dune part 2", "dune"], search: "Hans Zimmer Paul's Dream" },
+                { film: "Pearl Harbor", aliases: ["pearl harbor"], search: "Hans Zimmer Tennessee" },
+                { film: "Le Dernier Samouraï", aliases: ["the last samurai", "dernier samourai"], search: "Hans Zimmer A Way of Life" },
+                { film: "Spirit", aliases: ["spirit l'étalon des plaines", "spirit l'etalon des plaines", "spirit"], search: "Hans Zimmer Homeland" },
+                { film: "Da Vinci Code", aliases: ["da vinci code", "the da vinci code"], search: "Hans Zimmer Chevaliers de Sangreal" },
+                { film: "Batman Begins", aliases: ["batman begins"], search: "Hans Zimmer Molossus" },
+                { film: "Star Wars", aliases: ["starwars", "star war"], search: "John Williams Imperial March" },
+                { film: "Harry Potter", aliases: ["harrypotter"], search: "John Williams Hedwig's Theme" },
+                { film: "Jurassic Park", aliases: ["jurassicpark"], search: "John Williams Theme from Jurassic Park" },
+                { film: "Indiana Jones", aliases: ["indiana jones", "les aventuriers de l'arche perdue"], search: "John Williams Raiders March" },
+                { film: "Les Dents de la Mer", aliases: ["jaws", "dents de la mer"], search: "John Williams Theme From Jaws" },
+                { film: "E.T. l'extra-terrestre", aliases: ["e.t.", "et l'extra-terrestre", "et l extraterrestre"], search: "John Williams Flying Theme E.T." },
+                { film: "Le Seigneur des Anneaux", aliases: ["lord of the rings", "lotr", "lsda", "seigneur des anneaux"], search: "Howard Shore The Shire" },
+                { film: "Game of Thrones", aliases: ["got", "game of throne"], search: "Ramin Djawadi Game of Thrones" },
+                { film: "Avengers", aliases: ["avenger", "marvel avengers", "the avengers"], search: "Alan Silvestri The Avengers" },
+                { film: "Retour vers le futur", aliases: ["back to the future", "retour vers le futur"], search: "Alan Silvestri Back to the Future" },
+                { film: "Forrest Gump", aliases: ["forrestgump", "forrest gump"], search: "Alan Silvestri Forrest Gump Suite" },
+                { film: "Oppenheimer", aliases: ["oppenheimer"], search: "Ludwig Goransson Can You Hear The Music" },
+                { film: "Rocky", aliases: ["rocky", "rocky balboa"], search: "Bill Conti Gonna Fly Now" },
+                { film: "Terminator", aliases: ["terminator"], search: "Brad Fiedel The Terminator Theme" },
+                { film: "Mission Impossible", aliases: ["mission impossible"], search: "Lalo Schifrin Mission Impossible" },
+                { film: "James Bond", aliases: ["james bond", "007"], search: "Monty Norman James Bond Theme" },
+                { film: "Le Bon, la Brute et le Truand", aliases: ["the good the bad and the ugly", "le bon la brute"], search: "Ennio Morricone The Good The Bad" }
             ],
             RAP: [
                 "Orelsan", "Booba", "PNL", "Damso", "Nekfeu", "Alpha Wann", "Freeze Corleone", "Kaaris", 
@@ -329,7 +362,7 @@
         let audioPlayer = new Audio();
         
         // État de la manche
-        let state = { artistFound: false, titleFound: false, animeFound: false, timeLeft: 20 };
+        let state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, timeLeft: 20 };
         let roundInterval = null;
         let isRoundActive = false;
         
@@ -367,11 +400,17 @@
 
         function setupUIForCategory(cat) {
             currentCategory = cat;
-            if (cat === 'ANIME') {
+            if (cat === 'ANIME' || cat === 'FILMS') {
                 boxArtist.style.display = 'none';
                 boxTitle.style.display = 'none';
                 boxAnime.style.display = 'block';
-                guessInput.placeholder = "Tapez le nom de l'anime (ex: SNK, Jojo...)";
+                if (cat === 'ANIME') {
+                    guessInput.placeholder = "Tapez le nom de l'anime (ex: SNK, Jojo...)";
+                    boxAnime.innerText = "📺 ANIME : ? ? ?";
+                } else {
+                    guessInput.placeholder = "Tapez le nom du film (ex: Interstellar...)";
+                    boxAnime.innerText = "🎬 FILM : ? ? ?";
+                }
             } else {
                 boxAnime.style.display = 'none';
                 boxArtist.style.display = 'block';
@@ -487,7 +526,7 @@
                 if (selectedTracks.length >= 10) break; // S'arrête quand on a nos 10 pistes pour la manche
                 try {
                     let searchItem = shuffled[i];
-                    let searchTerm = cat === 'ANIME' ? searchItem.search : searchItem;
+                    let searchTerm = (cat === 'ANIME' || cat === 'FILMS') ? searchItem.search : searchItem;
                     
                     let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&media=music&entity=song&limit=10`);
                     let data = await res.json();
@@ -499,6 +538,11 @@
                         if (cat === 'ANIME') {
                             selectedTracks.push({
                                 animeName: searchItem.anime, aliases: searchItem.aliases,
+                                previewUrl: rTrack.previewUrl
+                            });
+                        } else if (cat === 'FILMS') {
+                            selectedTracks.push({
+                                filmName: searchItem.film, aliases: searchItem.aliases,
                                 previewUrl: rTrack.previewUrl
                             });
                         } else {
@@ -539,7 +583,7 @@
             if (currentTrackIndex >= playlist.length) { endGame(); return; }
 
             currentTrack = playlist[currentTrackIndex];
-            state = { artistFound: false, titleFound: false, animeFound: false, timeLeft: 20 };
+            state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, timeLeft: 20 };
             
             clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
 
@@ -598,6 +642,10 @@
             if (currentCategory === 'ANIME') {
                 if (stateData.animeFound && !boxAnime.classList.contains('found')) {
                     boxAnime.classList.add('found'); boxAnime.innerText = "📺 ANIME TROUVÉ !";
+                }
+            } else if (currentCategory === 'FILMS') {
+                if (stateData.filmFound && !boxAnime.classList.contains('found')) {
+                    boxAnime.classList.add('found'); boxAnime.innerText = "🎬 FILM TROUVÉ !";
                 }
             } else {
                 if (stateData.artistFound && !boxArtist.classList.contains('found')) {
@@ -680,6 +728,23 @@
                     boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : "📺 ANIME TROUVÉ !";
                     if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
                 }
+            } else if (currentCategory === 'FILMS') {
+                if (state.filmFound) return;
+                
+                correct = checkMatch(text, currentTrack.filmName);
+                if (!correct && currentTrack.aliases) {
+                    for (let alias of currentTrack.aliases) { if (checkMatch(text, alias)) { correct = true; break; } }
+                }
+
+                if (correct) {
+                    state.filmFound = true; scores[pid]++;
+                    let msg = `🔥 Joueur ${pid} a trouvé le Film !`;
+                    displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
+                    
+                    boxAnime.classList.add('found');
+                    boxAnime.innerText = gameMode === 'solo' ? `🎬 ${currentTrack.filmName}` : "🎬 FILM TROUVÉ !";
+                    if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
+                }
             } else {
                 let aMatch = !state.artistFound && checkMatch(text, currentTrack.artistName);
                 let tMatch = !state.titleFound && checkMatch(text, currentTrack.trackName);
@@ -749,6 +814,8 @@
             timerBox.innerText = "20"; timerBox.style.color = 'var(--gold)';
             if (currentCategory === 'ANIME') {
                 boxAnime.className = 'mystery-box'; boxAnime.innerText = "📺 ANIME : ? ? ?";
+            } else if (currentCategory === 'FILMS') {
+                boxAnime.className = 'mystery-box'; boxAnime.innerText = "🎬 FILM : ? ? ?";
             } else {
                 boxArtist.className = 'mystery-box'; boxArtist.innerText = "🧑‍🎤 ARTISTE : ? ? ?";
                 boxTitle.className = 'mystery-box'; boxTitle.innerText = "🎵 TITRE : ? ? ?";
@@ -759,6 +826,8 @@
         function revealAnswers(trackObj) {
             if (currentCategory === 'ANIME') {
                 boxAnime.classList.add('found'); boxAnime.innerText = `📺 ${trackObj.animeName}`;
+            } else if (currentCategory === 'FILMS') {
+                boxAnime.classList.add('found'); boxAnime.innerText = `🎬 ${trackObj.filmName}`;
             } else {
                 boxArtist.classList.add('found'); boxArtist.innerText = `🧑‍🎤 ${trackObj.artistName}`;
                 boxTitle.classList.add('found'); boxTitle.innerText = `🎵 ${trackObj.trackName.split('(')[0]}`;
@@ -771,7 +840,7 @@
             let t = document.getElementById('final-scores-text');
             
             if (gameMode === 'solo') {
-                let maxPts = currentCategory === 'ANIME' ? 10 : 20;
+                let maxPts = (currentCategory === 'ANIME' || currentCategory === 'FILMS') ? 10 : 20;
                 t.innerHTML = `Score Final : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>`;
             } else {
                 let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
