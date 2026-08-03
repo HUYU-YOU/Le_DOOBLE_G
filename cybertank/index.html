@@ -132,13 +132,24 @@
         
         // --- CHARGEMENT DES ASSETS ---
         const imgs = {};
+        // 🚨 ATTENTION: J'ai utilisé './img/' pour forcer le chemin relatif propre.
+        // J'ai respecté tes noms exacts : obs2, obs3, obs4, slimerouge, slimenoir (sans le _)
+        // Si ça ne charge toujours pas, vérifie que les noms de tes fichiers dans le dossier img/ n'ont VRAIMENT pas de '_'
         const imgFiles = {
-            'map': 'img/maptankslime.png', // <-- AJOUT DE LA MAP ICI
-            'obs1': 'img/_obs1.png', 'obs2': 'img/_obs2.png', 'obs3': 'img/_obs3.png', 'obs4': 'img/_obs4.png', 'obs5': 'img/_obs5.png',
-            'slime_bleu': 'img/_slimebleu.png', 'slime_rouge': 'img/_slimerouge.png', 'slime_noir': 'img/_slimenoir.png'
+            'map': './img/maptankslime.png',
+            'obs1': './img/_obs1.png', 
+            'obs2': './img/obs2.png', 
+            'obs3': './img/obs3.png', 
+            'obs4': './img/obs4.png', 
+            'obs5': './img/_obs5.png',
+            'slime_bleu': './img/_slimebleu.png', 
+            'slime_rouge': './img/slimerouge.png', 
+            'slime_noir': './img/slimenoir.png'
         };
+        
         Object.keys(imgFiles).forEach(k => { 
-            imgs[k] = new Image(); imgs[k].src = imgFiles[k]; 
+            imgs[k] = new Image(); 
+            imgs[k].src = imgFiles[k]; 
         });
 
         // --- ETAT DU JEU ---
@@ -148,17 +159,13 @@
         let myTeam = 1; 
         let peer = null, conn = null;
 
-        // Entités
         let tanks = [];
         let bullets = [];
         let particles = [];
         let walls = [];
-        
-        // Progression globale
         let wave = 1;
         let p1Wins = 0, p2Wins = 0;
 
-        // Contrôles
         let keys = { w:false, a:false, s:false, d:false, arrowup:false, arrowleft:false, arrowdown:false, arrowright:false };
         let mouse = { x: 400, y: 300, down: false };
         let jMove = { x: 0, y: 0 }; 
@@ -190,6 +197,7 @@
             update() {
                 if (this.cd > 0) this.cd--;
 
+                // Physique et Collisions
                 let nextX = this.x + this.vx; let nextY = this.y + this.vy;
                 let collideX = false, collideY = false;
                 
@@ -203,12 +211,9 @@
 
                 if (!collideX) this.x = nextX;
                 if (!collideY) this.y = nextY;
+                if (this.vx !== 0 || this.vy !== 0) this.angle = Math.atan2(this.vy, this.vx);
 
-                if (this.vx !== 0 || this.vy !== 0) {
-                    this.angle = Math.atan2(this.vy, this.vx);
-                }
-
-                // --- IA ---
+                // --- IA AVEC STEERING AVOIDANCE (POUR NE PLUS BLOQUER) ---
                 if (this.isAI && gameMode !== 'client') {
                     let p1 = tanks.find(t => t.team === 1);
                     if(p1 && p1.hp > 0) {
@@ -217,19 +222,48 @@
                         this.turretAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.1;
                         
                         let safeDist = this.isBoss ? 150 : 250;
+                        
+                        // 1. Déplacement basique vers le joueur
                         if (dist > safeDist) {
-                            this.vx = Math.cos(this.turretAngle) * (this.speed * 0.6);
-                            this.vy = Math.sin(this.turretAngle) * (this.speed * 0.6);
+                            this.vx = Math.cos(this.turretAngle) * this.speed * 0.6;
+                            this.vy = Math.sin(this.turretAngle) * this.speed * 0.6;
                         } else if (dist < safeDist / 2) {
-                            this.vx = -Math.cos(this.turretAngle) * (this.speed * 0.6);
-                            this.vy = -Math.sin(this.turretAngle) * (this.speed * 0.6);
+                            this.vx = -Math.cos(this.turretAngle) * this.speed * 0.6;
+                            this.vy = -Math.sin(this.turretAngle) * this.speed * 0.6;
                         } else {
                             this.vx = 0; this.vy = 0; 
                         }
                         
+                        // 2. ÉVITEMENT DES MURS (Force de répulsion)
+                        let margin = 20; // Rayon de détection autour de l'IA
+                        for(let w of walls) {
+                            // Si l'IA s'approche trop près d'un mur...
+                            if (this.x + this.w/2 + margin > w.x && this.x - this.w/2 - margin < w.x + w.w &&
+                                this.y + this.h/2 + margin > w.y && this.y - this.h/2 - margin < w.y + w.h) {
+                                
+                                let cx = w.x + w.w/2; let cy = w.y + w.h/2;
+                                let pushX = this.x - cx; let pushY = this.y - cy;
+                                
+                                // Pousse l'IA pour la faire glisser le long du mur
+                                if (Math.abs(pushX) / (w.w/2) > Math.abs(pushY) / (w.h/2)) {
+                                    this.vx += Math.sign(pushX) * this.speed * 0.8;
+                                } else {
+                                    this.vy += Math.sign(pushY) * this.speed * 0.8;
+                                }
+                            }
+                        }
+                        
+                        // Normalisation de la vitesse pour pas qu'ils n'accélèrent trop
+                        let currentSpeed = Math.hypot(this.vx, this.vy);
+                        if (currentSpeed > this.speed * 0.6) {
+                            this.vx = (this.vx / currentSpeed) * (this.speed * 0.6);
+                            this.vy = (this.vy / currentSpeed) * (this.speed * 0.6);
+                        }
+
+                        // Petits sauts aléatoires
                         if(Math.random() < 0.05) { this.vx += (Math.random()-0.5)*2; this.vy += (Math.random()-0.5)*2; }
 
-                        let fireRate = this.isBoss ? 0.05 : 0.02;
+                        let fireRate = this.isBoss ? 0.04 : 0.02;
                         if (this.cd === 0 && Math.random() < fireRate) shoot(this);
                     }
                 }
@@ -246,12 +280,11 @@
                 let img = imgs[this.skin];
                 if (img && img.complete && img.naturalWidth !== 0) {
                     let scaleX = 1; let scaleY = 1;
-                    if (this.vx !== 0 || this.vy !== 0) {
-                        scaleX = 1.05; scaleY = 0.95;
-                    }
+                    if (this.vx !== 0 || this.vy !== 0) { scaleX = 1.05; scaleY = 0.95; }
                     ctx.scale(scaleX, scaleY);
                     ctx.drawImage(img, -this.w/2, -this.h/2, this.w, this.h);
                 } else {
+                    // Fallback (Ce que tu voyais sur ton screen)
                     ctx.strokeStyle = this.color; ctx.lineWidth = 3;
                     ctx.fillStyle = 'rgba(0,0,0,0.8)';
                     ctx.beginPath(); ctx.rect(-this.w/2, -this.h/2, this.w, this.h); ctx.fill(); ctx.stroke();
@@ -265,7 +298,6 @@
                 
                 ctx.restore();
 
-                // Barre HP
                 ctx.fillStyle = 'rgba(255,255,255,0.2)';
                 ctx.fillRect(this.x - this.w/2, this.y - this.h/2 - 10, this.w, 4);
                 ctx.fillStyle = this.color;
@@ -276,15 +308,10 @@
         class Bullet {
             constructor(x, y, angle, color, team) {
                 this.x = x; this.y = y;
-                this.vx = Math.cos(angle) * 8;
-                this.vy = Math.sin(angle) * 8;
-                this.color = color;
-                this.team = team;
-                this.bounces = 1; 
-                this.life = 300;
-                this.history = []; 
+                this.vx = Math.cos(angle) * 8; this.vy = Math.sin(angle) * 8;
+                this.color = color; this.team = team;
+                this.bounces = 1; this.life = 300; this.history = []; 
             }
-
             update() {
                 this.history.push({x: this.x, y: this.y});
                 if(this.history.length > 5) this.history.shift();
@@ -309,14 +336,12 @@
                     if (nextY < 0 || nextY > canvas.height) { if(this.bounces > 0){ this.vy *= -1; this.bounces--; } else this.life = 0; }
                 }
 
-                this.x += this.vx; this.y += this.vy;
-                this.life--;
+                this.x += this.vx; this.y += this.vy; this.life--;
 
                 for(let t of tanks) {
                     if (t.hp > 0 && t.team !== this.team) {
                         let hitDist = t.isBoss ? (t.w/2 + 5) : 18;
                         let dist = Math.hypot(this.x - t.x, this.y - t.y);
-                        
                         if (dist < hitDist) { 
                             t.hp--; this.life = 0;
                             createParticles(this.x, this.y, this.color, 15);
@@ -325,7 +350,6 @@
                     }
                 }
             }
-
             draw(ctx) {
                 ctx.shadowBlur = 10; ctx.shadowColor = this.color;
                 ctx.beginPath();
@@ -379,12 +403,7 @@
                 if (deadTeam === 2) {
                     let aliveEnemies = tanks.filter(t => t.team === 2 && t.hp > 0).length;
                     if (aliveEnemies === 0) {
-                        setTimeout(() => {
-                            if(gameActive) {
-                                wave++; 
-                                spawnWave(wave);
-                            }
-                        }, 1000);
+                        setTimeout(() => { if(gameActive) { wave++; spawnWave(wave); } }, 1000);
                     }
                 } else if (deadTeam === 1) {
                     endGame("DÉTRUIT", `Vagues Survéçues : ${wave}`);
@@ -403,6 +422,23 @@
             }
         }
 
+        // --- GÉNÉRATION SÉCURISÉE DES IA ---
+        function getSafeSpawn() {
+            let x, y, safe;
+            do {
+                safe = true;
+                x = 650 + Math.random() * 100;
+                y = 50 + Math.random() * 500;
+                // On vérifie que le point de spawn n'est pas dans un mur (avec une marge)
+                for(let w of walls) {
+                    if (x + 30 > w.x && x - 30 < w.x + w.w && y + 30 > w.y && y - 30 < w.y + w.h) {
+                        safe = false; break;
+                    }
+                }
+            } while(!safe);
+            return {x, y};
+        }
+
         function spawnWave(w) {
             let hudP1 = document.getElementById('hud-p1');
             
@@ -410,13 +446,10 @@
                 hudP1.innerText = `⚠️ VAGUE ${w} : BOSS ! ⚠️`;
                 hudP1.classList.add('boss');
                 
-                let rx = 600 + Math.random() * 100; let ry = 100 + Math.random() * 400;
-                let b = new Tank('boss_'+w, rx, ry, 'slime_noir', 'var(--boss)', 2);
-                b.isAI = true; b.isBoss = true;
-                b.w = 56; b.h = 56; 
-                b.speed = 2.5; 
-                b.hp = 2 + (w / 3); 
-                b.maxHp = b.hp;
+                let spawn = getSafeSpawn();
+                let b = new Tank('boss_'+w, spawn.x, spawn.y, 'slime_noir', 'var(--boss)', 2);
+                b.isAI = true; b.isBoss = true; b.w = 56; b.h = 56; b.speed = 2.5; 
+                b.hp = 2 + (w / 3); b.maxHp = b.hp;
                 tanks.push(b);
             } else {
                 hudP1.innerText = "VAGUE : " + w;
@@ -424,8 +457,8 @@
                 
                 let count = Math.min(w, 5); 
                 for(let i=0; i<count; i++) {
-                    let rx = 650 + Math.random() * 100; let ry = 50 + Math.random() * 500;
-                    let t = new Tank('ai_'+i, rx, ry, 'slime_rouge', 'var(--p2)', 2);
+                    let spawn = getSafeSpawn();
+                    let t = new Tank('ai_'+i, spawn.x, spawn.y, 'slime_rouge', 'var(--p2)', 2);
                     t.isAI = true; t.hp = 1; t.maxHp = 1; tanks.push(t);
                 }
             }
@@ -464,32 +497,23 @@
 
         function startMode(mode) { myTeam = 1; initGame(mode); }
 
-        // --- RESTART SANS DECONNEXION ---
         function requestRestart() {
-            if (gameMode === 'host' || gameMode === 'client') {
-                if (conn && conn.open) conn.send({type: 'restart'});
-            }
+            if (gameMode === 'host' || gameMode === 'client') { if (conn && conn.open) conn.send({type: 'restart'}); }
             restartRound();
         }
 
         function restartRound() {
             document.getElementById('game-over').style.display = 'none';
-            if (gameMode === 'solo_survival' || gameMode === 'solo_1v1') {
-                initGame(gameMode);
-            } else if (gameMode === 'host') {
-                initGame('host'); 
-            } else if (gameMode === 'client') {
+            if (gameMode === 'solo_survival' || gameMode === 'solo_1v1') { initGame(gameMode); } 
+            else if (gameMode === 'host') { initGame('host'); } 
+            else if (gameMode === 'client') {
                 tanks = []; bullets = []; particles = []; gameActive = true; 
-                document.getElementById('hud-p1').innerText = "P1: " + p1Wins;
-                document.getElementById('hud-p2').innerText = "P2: " + p2Wins;
+                document.getElementById('hud-p1').innerText = "P1: " + p1Wins; document.getElementById('hud-p2').innerText = "P2: " + p2Wins;
             }
         }
 
         // --- NETWORK (PEERJS) ---
-        function showNetworkMenu() {
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('network-menu').style.display = 'flex';
-        }
+        function showNetworkMenu() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('network-menu').style.display = 'flex'; }
 
         function hostGame() {
             let status = document.getElementById('status-text');
@@ -548,34 +572,23 @@
         // --- INPUTS ---
         window.addEventListener('keydown', e => { let k=e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true; });
         window.addEventListener('keyup', e => { let k=e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false; });
-        
-        canvas.addEventListener('mousemove', e => {
-            let rect = canvas.getBoundingClientRect();
-            mouse.x = (e.clientX - rect.left) / (rect.width / canvas.width);
-            mouse.y = (e.clientY - rect.top) / (rect.height / canvas.height);
-        });
+        canvas.addEventListener('mousemove', e => { let rect = canvas.getBoundingClientRect(); mouse.x = (e.clientX - rect.left) / (rect.width / canvas.width); mouse.y = (e.clientY - rect.top) / (rect.height / canvas.height); });
         canvas.addEventListener('mousedown', () => mouse.down = true);
         canvas.addEventListener('mouseup', () => mouse.down = false);
 
-        // Joysticks Mobile
         const joyMove = document.getElementById('joy-move'); const knobMove = document.getElementById('knob-move');
         const joyAim = document.getElementById('joy-aim'); const knobAim = document.getElementById('knob-aim');
-
         function handleJoystick(e, isMove) {
             e.preventDefault();
             let touch = e.targetTouches[0]; let zone = isMove ? joyMove : joyAim; let knob = isMove ? knobMove : knobAim;
-            
             if(!touch) { knob.style.transform = `translate(-50%, -50%)`; if(isMove) { jMove.x = 0; jMove.y = 0; } else { jAim.firing = false; } return; }
             let rect = zone.getBoundingClientRect(); let cx = rect.left + rect.width/2; let cy = rect.top + rect.height/2;
             let dx = touch.clientX - cx; let dy = touch.clientY - cy; let dist = Math.hypot(dx, dy); let maxDist = rect.width/2 - 20;
-
             if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
             knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-            
             let nx = dx / maxDist; let ny = dy / maxDist;
             if(isMove) { jMove.x = nx; jMove.y = ny; } else { jAim.x = nx; jAim.y = ny; jAim.firing = true; }
         }
-
         joyMove.addEventListener('touchstart', e => handleJoystick(e, true)); joyMove.addEventListener('touchmove', e => handleJoystick(e, true)); joyMove.addEventListener('touchend', e => handleJoystick(e, true));
         joyAim.addEventListener('touchstart', e => handleJoystick(e, false)); joyAim.addEventListener('touchmove', e => handleJoystick(e, false)); joyAim.addEventListener('touchend', e => handleJoystick(e, false));
 
@@ -584,7 +597,6 @@
             if(!gameActive) return;
 
             let myTank = tanks.find(t => t.team === myTeam);
-
             if (myTank && myTank.hp > 0) {
                 myTank.vx = 0; myTank.vy = 0;
                 if (keys.w || keys.arrowup) myTank.vy = -myTank.speed;
@@ -603,30 +615,20 @@
             }
 
             if (gameMode !== 'client') {
-                tanks.forEach(t => { 
-                    if(t.update) t.update(); 
-                });
-                
+                tanks.forEach(t => { if(t.update) t.update(); });
                 for(let i=bullets.length-1; i>=0; i--) { bullets[i].update(); if(bullets[i].life <= 0) bullets.splice(i, 1); }
-                
                 tanks = tanks.filter(t => t.hp > 0);
-                
                 if(gameMode === 'host' && conn && conn.open) conn.send({type: 'state', tanks: tanks, bullets: bullets});
             }
-
             particles.forEach(p => p.update()); particles = particles.filter(p => p.life > 0);
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // DESSIN DE LA MAP DE FOND
             let mapImg = imgs['map'];
-            if (mapImg && mapImg.complete && mapImg.naturalWidth !== 0) {
-                ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height);
-            }
+            if (mapImg && mapImg.complete && mapImg.naturalWidth !== 0) { ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height); }
 
-            // DESSIN DES OBSTACLES MURS
             for(let w of walls) {
                 let img = imgs[w.img];
                 if (img && img.complete && img.naturalWidth !== 0) {
@@ -639,20 +641,12 @@
                 }
             }
 
-            tanks.forEach(t => {
-                if(t.draw) t.draw(ctx);
-                else Object.assign(new Tank(), t).draw(ctx);
-            });
-            bullets.forEach(b => {
-                if(b.draw) b.draw(ctx);
-                else Object.assign(new Bullet(), b).draw(ctx);
-            });
+            tanks.forEach(t => { if(t.draw) t.draw(ctx); else Object.assign(new Tank(), t).draw(ctx); });
+            bullets.forEach(b => { if(b.draw) b.draw(ctx); else Object.assign(new Bullet(), b).draw(ctx); });
             particles.forEach(p => p.draw(ctx));
         }
 
-        function gameLoop() {
-            update(); draw(); requestAnimationFrame(gameLoop);
-        }
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
     </script>
     
     <!-- SCRIPT SWIPE UNIVERSEL -->
