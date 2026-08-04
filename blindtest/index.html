@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Blind Test - Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- Police Futuriste -->
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -56,7 +55,6 @@
         
         .menu-title { font-size: 2.5em; font-weight: 700; margin-bottom: 25px; color: #fff; text-transform: uppercase; letter-spacing: 3px; }
         
-        /* BOUTONS CYBERPUNK */
         .btn-main { 
             background: rgba(255,255,255,0.05); color: #fff; border: 2px solid #555; 
             padding: 15px 35px; font-size: 1.3em; font-weight: 700; font-family: var(--font-main);
@@ -81,7 +79,6 @@
         .btn-sys { border-color: var(--sys); color: var(--sys); background: rgba(57, 255, 20, 0.05); }
         .btn-sys:hover { background: var(--sys); color: #000; box-shadow: 0 0 20px var(--sys); }
         
-        /* HEADER (SCORES MULTIJOUEURS & TEMPS) */
         #game-header { 
             display: flex; justify-content: space-between; align-items: center; 
             background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 12px; 
@@ -100,7 +97,6 @@
             line-height: 1;
         }
 
-        /* TRACK INFO HYBRIDE - DESIGN HOLOGRAMME */
         #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; align-items: center; width: 100%; }
         
         .mystery-box { 
@@ -125,7 +121,6 @@
         }
         .mystery-box.found::before { display: none; }
         
-        /* TCHAT - TERMINAL STYLE */
         #chat-container { 
             flex-grow: 1; background: rgba(5,5,8,0.8); border-radius: 12px; 
             border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; 
@@ -162,7 +157,6 @@
         }
         .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
 
-        /* BULLES DE TCHAT */
         .msg { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.2em; font-weight: 500; backdrop-filter: blur(4px); }
         .msg-sys { 
             background: rgba(57, 255, 20, 0.05); color: var(--sys); align-self: center; 
@@ -185,7 +179,7 @@
             <div id="timer-box">20</div>
         </div>
 
-        <!-- TRACK INFO (HYBRIDE) -->
+        <!-- TRACK INFO -->
         <div id="track-info">
             <div class="mystery-box" id="box-artist" style="display: none;">🧑‍🎤 ARTISTE : ? ? ?</div>
             <div class="mystery-box" id="box-title" style="display: none;">🎵 TITRE : ? ? ?</div>
@@ -237,8 +231,8 @@
             <p id="lobby-count" style="color:#0ff; font-weight:700; font-size:1.3em; display:none; margin-bottom: 5px;">1 joueur(s) dans le salon</p>
             
             <div class="cat-grid" id="cat-buttons">
-                <button class="btn-main" onclick="launchGame('RAP')" style="border-color: #ff5500; color: #ffaa00;">🎤 RAP</button>
-                <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 VARIÉTÉ </button>
+                <button class="btn-main" onclick="launchGame('RAP')" style="border-color: #ff5500; color: #ffaa00;">🎤 RAP FR</button>
+                <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 OLD / NOSTALGIE </button>
                 <button class="btn-main" onclick="launchGame('POP')" style="border-color: #ff00aa; color: #ff88cc;">🌍 POP INTERNATIONALE</button>
                 <button class="btn-main btn-sys" onclick="launchGame('ANIME')">📺 ANIME</button>
                 <button class="btn-main" onclick="launchGame('FILMS')" style="border-color: #ffd700; color: #ffeb66; grid-column: 1 / -1;">🎬 MOVIES </button>
@@ -317,36 +311,131 @@
                 { film: "James Bond", aliases: ["james bond", "007"], search: "Monty Norman James Bond Theme" },
                 { film: "Le Bon, la Brute et le Truand", aliases: ["the good the bad and the ugly", "le bon la brute"], search: "Ennio Morricone The Good The Bad" }
             ],
+            // Modifications Majeures : Objets stricts pour forcer le Rap FR et éviter les confusions internationales
             RAP: [
-                "Orelsan", "Booba", "PNL", "Damso", "Nekfeu", "Alpha Wann", "Freeze Corleone", "Kaaris", 
-                "SCH", "IAM", "Suprême NTM", "Vald", "Hugo TSR", "Lino", "Despo Rutti", "Ninho", 
-                "Gazo", "Koba LaD", "Josman", "Dinos", "Disiz", "1995", "Fonky Family", "Rohff", 
-                "La Fouine", "Kalash Criminel", "Niska", "Gradur", "Mac Tyer", "Kery James", 
-                "Sniper", "113", "Mafia K'1 Fry", "Lunatic", "Sexion d'Assaut", "PLK", "Ziak", 
-                "Seth Gueko", "Youssoupha", "Medine", "Sinik", "Diam's", "Salif", "Guizmo", 
-                "Naps", "Jul", "Werenoi", "Tiakola", "SDM", "Maes", "Alkpote", "Bosh", "Niro"
+                { search: "Orelsan", artist: "Orelsan" },
+                { search: "Booba", artist: "Booba" },
+                { search: "PNL", artist: "PNL" },
+                { search: "Damso", artist: "Damso" },
+                { search: "Nekfeu", artist: "Nekfeu" },
+                { search: "Alpha Wann", artist: "Alpha Wann" },
+                { search: "Freeze Corleone", artist: "Freeze Corleone" },
+                { search: "Kaaris", artist: "Kaaris" },
+                { search: "SCH", artist: "SCH" },
+                { search: "IAM rap", artist: "IAM" },
+                { search: "Supreme NTM", artist: "Suprême NTM", aliases: ["ntm", "supreme ntm"] },
+                { search: "Vald", artist: "Vald" },
+                { search: "Hugo TSR", artist: "Hugo TSR", aliases: ["hugo (tsr)", "tsr crew"] },
+                { search: "Lino Arsenik", artist: "Lino" },
+                { search: "Despo Rutti", artist: "Despo Rutti" },
+                { search: "Ninho", artist: "Ninho" },
+                { search: "Gazo", artist: "Gazo" },
+                { search: "Koba LaD", artist: "Koba LaD" },
+                { search: "Josman", artist: "Josman" },
+                { search: "Dinos Punchlinovic", artist: "Dinos", aliases: ["dinos punchlinovic"] },
+                { search: "Disiz", artist: "Disiz", aliases: ["disiz la peste"] },
+                { search: "1995 rap", artist: "1995" },
+                { search: "Fonky Family", artist: "Fonky Family", aliases: ["ff", "la fonky family"] },
+                { search: "Rohff", artist: "Rohff" },
+                { search: "La Fouine", artist: "La Fouine" },
+                { search: "Kalash Criminel", artist: "Kalash Criminel" },
+                { search: "Niska", artist: "Niska" },
+                { search: "Gradur", artist: "Gradur" },
+                { search: "Mac Tyer", artist: "Mac Tyer" },
+                { search: "Kery James", artist: "Kery James" },
+                { search: "Sniper rap", artist: "Sniper" },
+                { search: "113 rap", artist: "113" },
+                { search: "Mafia K'1 Fry", artist: "Mafia K'1 Fry", aliases: ["mafia k1 fry"] },
+                { search: "Lunatic Booba", artist: "Lunatic" },
+                { search: "Sexion d'Assaut", artist: "Sexion d'Assaut", aliases: ["sexion dassaut"] },
+                { search: "PLK", artist: "PLK" },
+                { search: "Ziak", artist: "Ziak" },
+                { search: "Seth Gueko", artist: "Seth Gueko" },
+                { search: "Youssoupha", artist: "Youssoupha" },
+                { search: "Medine rap", artist: "Medine" },
+                { search: "Sinik", artist: "Sinik" },
+                { search: "Diam's", artist: "Diam's", aliases: ["diams"] },
+                { search: "Salif rap", artist: "Salif" },
+                { search: "Guizmo rap", artist: "Guizmo" },
+                { search: "Naps", artist: "Naps" },
+                { search: "Jul rap", artist: "Jul" },
+                { search: "Werenoi", artist: "Werenoi" },
+                { search: "Tiakola", artist: "Tiakola" },
+                { search: "SDM", artist: "SDM" },
+                { search: "Maes", artist: "Maes" },
+                { search: "Alkpote", artist: "Alkpote" },
+                { search: "Bosh rap", artist: "Bosh" },
+                { search: "Niro rap", artist: "Niro" }
             ],
             FR: [
-                "Georges Brassens", "Barbara", "Charles Aznavour", "Gregory Lemarchal", "Lorie", 
-                "Jenifer", "Tragedie", "Anne Sylvestre", "Jacques Brel", "Edith Piaf", "Renaud", 
-                "Francis Cabrel", "Jean-Jacques Goldman", "Celine Dion", "Claude Francois", 
-                "Daniel Balavoine", "K-Maro", "Diam's", "Larusso", "Alizee", "Michel Sardou", 
-                "Johnny Hallyday", "Joe Dassin", "Mylene Farmer", "France Gall", "Michel Berger", 
-                "Kyo", "Tribal King", "Serge Gainsbourg", "Leo Ferre", "Georges Moustaki", "Dalida", 
-                "Christophe", "Michel Polnareff", "Laurent Voulzy", "Alain Souchon", "Julien Clerc", 
-                "Maxime Le Forestier", "Nino Ferrer", "Sheila", "Sylvie Vartan", "Priscilla", 
-                "Amel Bent", "Nadiya", "L5", "Garou", "Willy Denzey", "Leslie", "Magic System", "Yannick"
+                { search: "Georges Brassens", artist: "Georges Brassens" },
+                { search: "Barbara aigle", artist: "Barbara" },
+                { search: "Charles Aznavour", artist: "Charles Aznavour" },
+                { search: "Gregory Lemarchal", artist: "Gregory Lemarchal" },
+                { search: "Lorie", artist: "Lorie" },
+                { search: "Jenifer soleil", artist: "Jenifer" },
+                { search: "Tragedie hey oh", artist: "Tragedie" },
+                { search: "Anne Sylvestre", artist: "Anne Sylvestre" },
+                { search: "Jacques Brel", artist: "Jacques Brel" },
+                { search: "Edith Piaf", artist: "Edith Piaf" },
+                { search: "Renaud mistral", artist: "Renaud" },
+                { search: "Francis Cabrel", artist: "Francis Cabrel" },
+                { search: "Jean-Jacques Goldman", artist: "Jean-Jacques Goldman", aliases: ["jjg", "jean jacques goldman"] },
+                { search: "Celine Dion francais", artist: "Celine Dion" },
+                { search: "Claude Francois", artist: "Claude Francois", aliases: ["cloclo"] },
+                { search: "Daniel Balavoine", artist: "Daniel Balavoine" },
+                { search: "K-Maro", artist: "K-Maro", aliases: ["kmaro"] },
+                { search: "Larusso", artist: "Larusso" },
+                { search: "Alizee lolita", artist: "Alizee" },
+                { search: "Michel Sardou", artist: "Michel Sardou" },
+                { search: "Johnny Hallyday", artist: "Johnny Hallyday" },
+                { search: "Joe Dassin", artist: "Joe Dassin" },
+                { search: "Mylene Farmer", artist: "Mylene Farmer" },
+                { search: "France Gall", artist: "France Gall" },
+                { search: "Michel Berger", artist: "Michel Berger" },
+                { search: "Kyo derniere danse", artist: "Kyo" },
+                { search: "Tribal King", artist: "Tribal King" },
+                { search: "Serge Gainsbourg", artist: "Serge Gainsbourg" },
+                { search: "Leo Ferre", artist: "Leo Ferre" },
+                { search: "Georges Moustaki", artist: "Georges Moustaki" },
+                { search: "Dalida", artist: "Dalida" },
+                { search: "Christophe aline", artist: "Christophe" },
+                { search: "Michel Polnareff", artist: "Michel Polnareff" },
+                { search: "Laurent Voulzy", artist: "Laurent Voulzy" },
+                { search: "Alain Souchon", artist: "Alain Souchon" },
+                { search: "Julien Clerc", artist: "Julien Clerc" },
+                { search: "Maxime Le Forestier", artist: "Maxime Le Forestier" },
+                { search: "Nino Ferrer", artist: "Nino Ferrer" },
+                { search: "Sheila francais", artist: "Sheila" },
+                { search: "Sylvie Vartan", artist: "Sylvie Vartan" },
+                { search: "Priscilla amour", artist: "Priscilla" },
+                { search: "Amel Bent", artist: "Amel Bent" },
+                { search: "Nadiya", artist: "Nadiya" },
+                { search: "L5 toutes", artist: "L5" },
+                { search: "Garou", artist: "Garou" },
+                { search: "Willy Denzey", artist: "Willy Denzey" },
+                { search: "Leslie pardonner", artist: "Leslie" },
+                { search: "Magic System", artist: "Magic System" },
+                { search: "Yannick soirees", artist: "Yannick" }
             ],
             POP: [
-                "Michael Jackson", "Queen", "The Weeknd", "Dua Lipa", "Daft Punk", "Bruno Mars", 
-                "Lady Gaga", "Ed Sheeran", "Coldplay", "Rihanna", "Eminem", "Gorillaz", "Beyonce", 
-                "Katy Perry", "Maroon 5", "Adele", "Taylor Swift", "Justin Timberlake", "Britney Spears", 
-                "Shakira", "Madonna", "Elton John", "David Bowie", "Prince", "Sia", "ABBA", 
-                "The Beatles", "The Rolling Stones", "AC/DC", "U2", "Oasis", "Nirvana", 
-                "Red Hot Chili Peppers", "Linkin Park", "The Black Eyed Peas", "Justin Bieber", 
-                "Ariana Grande", "Billie Eilish", "Harry Styles", "Miley Cyrus", "Kylie Minogue", 
-                "Spice Girls", "Backstreet Boys", "NSYNC", "Destiny's Child", "Avril Lavigne", 
-                "Pink", "Gwen Stefani", "Alicia Keys", "Usher", "50 Cent"
+                { search: "Michael Jackson", artist: "Michael Jackson" }, { search: "Queen", artist: "Queen" }, { search: "The Weeknd", artist: "The Weeknd" }, 
+                { search: "Dua Lipa", artist: "Dua Lipa" }, { search: "Daft Punk", artist: "Daft Punk" }, { search: "Bruno Mars", artist: "Bruno Mars" }, 
+                { search: "Lady Gaga", artist: "Lady Gaga" }, { search: "Ed Sheeran", artist: "Ed Sheeran" }, { search: "Coldplay", artist: "Coldplay" }, 
+                { search: "Rihanna", artist: "Rihanna" }, { search: "Eminem", artist: "Eminem" }, { search: "Gorillaz", artist: "Gorillaz" }, 
+                { search: "Beyonce", artist: "Beyonce" }, { search: "Katy Perry", artist: "Katy Perry" }, { search: "Maroon 5", artist: "Maroon 5" }, 
+                { search: "Adele", artist: "Adele" }, { search: "Taylor Swift", artist: "Taylor Swift" }, { search: "Justin Timberlake", artist: "Justin Timberlake" }, 
+                { search: "Britney Spears", artist: "Britney Spears" }, { search: "Shakira", artist: "Shakira" }, { search: "Madonna", artist: "Madonna" }, 
+                { search: "Elton John", artist: "Elton John" }, { search: "David Bowie", artist: "David Bowie" }, { search: "Prince", artist: "Prince" }, 
+                { search: "Sia", artist: "Sia" }, { search: "ABBA", artist: "ABBA" }, { search: "The Beatles", artist: "The Beatles" }, 
+                { search: "The Rolling Stones", artist: "The Rolling Stones" }, { search: "AC/DC", artist: "AC/DC" }, { search: "U2", artist: "U2" }, 
+                { search: "Oasis", artist: "Oasis" }, { search: "Nirvana", artist: "Nirvana" }, { search: "Red Hot Chili Peppers", artist: "Red Hot Chili Peppers" }, 
+                { search: "Linkin Park", artist: "Linkin Park" }, { search: "The Black Eyed Peas", artist: "The Black Eyed Peas" }, { search: "Justin Bieber", artist: "Justin Bieber" }, 
+                { search: "Ariana Grande", artist: "Ariana Grande" }, { search: "Billie Eilish", artist: "Billie Eilish" }, { search: "Harry Styles", artist: "Harry Styles" }, 
+                { search: "Miley Cyrus", artist: "Miley Cyrus" }, { search: "Kylie Minogue", artist: "Kylie Minogue" }, { search: "Spice Girls", artist: "Spice Girls" }, 
+                { search: "Backstreet Boys", artist: "Backstreet Boys" }, { search: "NSYNC", artist: "NSYNC" }, { search: "Destiny's Child", artist: "Destiny's Child" }, 
+                { search: "Avril Lavigne", artist: "Avril Lavigne" }, { search: "Pink", artist: "Pink" }, { search: "Gwen Stefani", artist: "Gwen Stefani" }, 
+                { search: "Alicia Keys", artist: "Alicia Keys" }, { search: "Usher", artist: "Usher" }, { search: "50 Cent", artist: "50 Cent" }
             ]
         };
 
@@ -523,16 +612,18 @@
             document.getElementById('loading-api').style.display = 'flex';
 
             let selectedTracks = [];
-            // Mélange le tableau complet de plus de 50 artistes
+            // Mélange le tableau complet d'artistes
             let shuffled = catalogs[cat].sort(() => Math.random() - 0.5);
 
             for (let i = 0; i < shuffled.length; i++) {
                 if (selectedTracks.length >= 10) break; // S'arrête quand on a nos 10 pistes pour la manche
                 try {
                     let searchItem = shuffled[i];
-                    let searchTerm = (cat === 'ANIME' || cat === 'FILMS') ? searchItem.search : searchItem;
+                    // Si on a défini un terme précis de recherche (ex: Lino Arsenik), on l'utilise
+                    let searchTerm = searchItem.search || searchItem;
                     
-                    let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&media=music&entity=song&limit=10`);
+                    // Ajout du paramètre &country=fr pour interdire les musiques étrangères imprévues 
+                    let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=fr&media=music&entity=song&limit=15`);
                     let data = await res.json();
                     
                     let validTracks = data.results.filter(t => t.previewUrl);
@@ -550,8 +641,12 @@
                                 previewUrl: rTrack.previewUrl
                             });
                         } else {
+                            // On utilise le nom d'artiste PROPRE de notre base de données s'il existe ! (ex: Hugo TSR au lieu de Hugo (TSR) de l'API)
                             selectedTracks.push({
-                                artistName: rTrack.artistName, trackName: rTrack.trackName, previewUrl: rTrack.previewUrl
+                                artistName: searchItem.artist || rTrack.artistName, 
+                                trackName: rTrack.trackName, 
+                                previewUrl: rTrack.previewUrl,
+                                aliases: searchItem.aliases || []
                             });
                         }
                     }
@@ -559,7 +654,7 @@
             }
 
             if (selectedTracks.length === 0) {
-                alert("Erreur réseau : Impossible de contacter la base de données musicale.");
+                alert("Erreur réseau : Impossible de contacter la base de données musicale iTunes.");
                 location.reload(); return;
             }
 
@@ -666,13 +761,27 @@
             revealAnswers(track); displaySys(`Fin de la manche. Préparation de la suivante...`);
         }
 
-        // --- ALGORITHME DE CORRECTION ORTHOGRAPHIQUE (LEVENSHTEIN) ---
+        // --- ALGORITHME DE CORRECTION ORTHOGRAPHIQUE (LEVENSHTEIN ET CLEAN) ---
         function cleanText(str) {
             if (!str) return '';
-            let s = str.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, ''); 
-            s = s.split(/feat\.|ft\./i)[0]; 
+            let s = str.toLowerCase();
+            
+            // On supprime les "feat." et tout ce qui est après
+            s = s.split(/feat\.|ft\.|featuring/i)[0];
+            
+            // On supprime les informations gênantes entre crochets
+            s = s.replace(/\[.*?\]/g, ''); 
+            
+            // On supprime les mots spécifiques (souvent entre parenthèses) qui gênent, sans pour autant TOUT supprimer dans les parenthèses
+            s = s.replace(/\(?(remastered|remaster|radio edit|live|version|instrumental).*?\)?/gi, '');
+            
+            // Retrait des accents
             s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
-            return s.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+            
+            // Retrait de TOUT ce qui n'est pas une lettre ou un chiffre (supprime les espaces, les parenthèses restantes)
+            s = s.replace(/[^a-z0-9]/g, '');
+            
+            return s;
         }
 
         function levenshtein(a, b) {
@@ -693,9 +802,11 @@
         function checkMatch(guess, target) {
             let g = cleanText(guess); let t = cleanText(target);
             if (g.length < 2) return false;
+            
+            // Si c'est exact, ou que le mot est contenu à au moins 75%
             if (g === t || (t.includes(g) && g.length >= t.length * 0.75) || (g.includes(t) && t.length >= g.length * 0.75)) return true;
             
-            // Tolérance aux fautes de frappe
+            // Tolérance aux fautes de frappe (Levenshtein)
             let distance = levenshtein(g, t);
             if (t.length > 5 && distance <= 2) return true; // 2 erreurs max pour mots longs
             if (t.length <= 5 && distance <= 1) return true; // 1 erreur max pour mots courts
@@ -751,6 +862,10 @@
                 }
             } else {
                 let aMatch = !state.artistFound && checkMatch(text, currentTrack.artistName);
+                if (!aMatch && currentTrack.aliases) {
+                    for (let alias of currentTrack.aliases) { if (checkMatch(text, alias)) { aMatch = true; break; } }
+                }
+
                 let tMatch = !state.titleFound && checkMatch(text, currentTrack.trackName);
 
                 if (aMatch) {
