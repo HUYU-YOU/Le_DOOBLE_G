@@ -285,7 +285,7 @@
         let gameMode = 'local_1v1';
         let currentPlayer = 1; 
         let retreatFrames = 0; 
-        let turnFrames = 300; // 5 secondes (60 fps)
+        let turnFrames = 480; // 8 secondes (60 fps)
         let mapImage = new Image();
         let selectedMapId = 1;
 
@@ -807,7 +807,7 @@
                 <div id="ui-left" class="team-container"></div>
                 <div id="ui-center" style="display:flex; flex-direction:column; align-items:center;">
                     <div id="turn-indicator" style="color: var(--p1); border-color: var(--p1);">Tour J1</div>
-                    <div id="turn-timer">05.00s</div>
+                    <div id="turn-timer">08.00s</div>
                 </div>
                 <div id="ui-right" class="team-container"></div>
             `;
@@ -855,7 +855,7 @@
             
             buildUI();
             currentPlayer = 1; gameState = 'playing'; retreatFrames = 0;
-            turnFrames = 300; // Reset timer 5s
+            turnFrames = 480; // Reset timer 8s
             camera.x = worms[0].x - WIDTH / 2; 
             updateUI();
             
@@ -890,7 +890,7 @@
             let safeCounter = 0;
             do { currentPlayer = (currentPlayer % worms.length) + 1; safeCounter++; } while (worms[currentPlayer-1].isDead && safeCounter < 10);
             
-            gameState = 'playing'; projectile = null; turnFrames = 300; // Reset Timer 5s
+            gameState = 'playing'; projectile = null; turnFrames = 480; // Reset Timer 8s
             updateUI();
             if (worms[currentPlayer - 1].isBot) setTimeout(playAITurn, 500); 
         }
