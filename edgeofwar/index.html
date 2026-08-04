@@ -250,10 +250,13 @@
                 this.team = team; this.type = type;
                 this.w = s.w; this.h = s.h; 
                 
-                // SPAWN AU MILIEU DE LA MAP
-                this.x = team === 1 ? (WORLD_WIDTH / 2) - this.w - 10 : (WORLD_WIDTH / 2) + 10; 
+                // Spawn aux extrémités (Full Gauche / Full Droite)
+                this.x = team === 1 ? bases[1].spawnX : bases[2].spawnX - this.w; 
                 
-                this.y = floorY - this.h; 
+                // Spawn plus haut pour être sur le chemin (au milieu vertical de l'image)
+                const PATH_Y = 180;
+                this.y = PATH_Y - this.h; 
+                
                 this.speed = s.spd * bases[team].dir; 
                 this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; 
                 this.cdMax = s.cd; this.cd = 0; 
@@ -679,7 +682,27 @@
                 ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x - 50, canvas.height); ctx.stroke();
             }
 
-            // 3. UNITES
+            // 3. STRUCTURES DES BASES (Cœurs uniquement car le décor forme la base)
+            [1, 2].forEach(t => {
+                let b = bases[t]; let color = t === 1 ? '#00f0ff' : '#ff0055';
+                let p = t === 1 ? gameState.p1 : gameState.p2;
+                
+                ctx.fillStyle = `rgba(10,15,30,0.9)`;
+                ctx.beginPath(); 
+                if (t === 1) { ctx.moveTo(b.x, 100); ctx.lineTo(b.x + b.w, floorY); ctx.lineTo(b.x, floorY); } 
+                else { ctx.moveTo(b.x + b.w, 100); ctx.lineTo(b.x, floorY); ctx.lineTo(b.x + b.w, floorY); }
+                ctx.fill();
+                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+                
+                ctx.shadowBlur = 20; ctx.shadowColor = color;
+                ctx.fillStyle = color;
+                ctx.fillRect(t === 1 ? b.x + 20 : b.x + b.w - 40, 150, 20, 20); // Core
+                if (p.age >= 2) ctx.fillRect(t === 1 ? b.x + 10 : b.x + b.w - 50, 180, 40, 10);
+                if (p.age >= 3) { ctx.beginPath(); ctx.arc(t === 1 ? b.x + 30 : b.x + b.w - 30, 120, 15, 0, Math.PI*2); ctx.fill(); }
+                ctx.shadowBlur = 0;
+            });
+
+            // 4. UNITES
             gameState.units.forEach(u => {
                 let color = u.team === 1 ? '#00f0ff' : '#ff0055';
                 let p = u.team === 1 ? gameState.p1 : gameState.p2;
@@ -726,7 +749,7 @@
                 ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x, u.y - 12, u.w * (u.hp / u.maxHp), 4);
             });
 
-            // 4. EFFETS
+            // 5. EFFETS
             gameState.effects.forEach(eff => {
                 let prog = eff.life / eff.maxLife;
                 let color = eff.team === 1 ? '#00f0ff' : '#ff0055';
