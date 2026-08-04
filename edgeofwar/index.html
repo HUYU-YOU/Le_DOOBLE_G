@@ -50,8 +50,35 @@
         .gold { font-size: 2.2em; color: var(--gold); font-weight: bold; text-shadow: 0 0 15px rgba(255, 215, 0, 0.6); line-height: 1;}
         .income { font-size: 0.9em; color: #aaa; margin-top: 2px;}
 
-        canvas { border-radius: 10px; width: 100%; box-shadow: 0 0 20px #000, inset 0 0 30px rgba(0, 240, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); background: #03050a; cursor: crosshair;}
+        canvas { border-radius: 10px; width: 100%; display: block; box-shadow: 0 0 20px #000, inset 0 0 30px rgba(0, 240, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); background: #03050a; cursor: crosshair;}
         
+        /* ALERTE ENNEMI (Le curseur TP) */
+        #enemy-alert {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 0, 85, 0.85);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid var(--enemy);
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 0 15px var(--enemy);
+            animation: alert-pulse 1s infinite;
+            z-index: 10;
+            display: none;
+            pointer-events: auto;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            backdrop-filter: blur(5px);
+        }
+        @keyframes alert-pulse {
+            0%, 100% { transform: translateY(-50%) scale(1); box-shadow: 0 0 10px var(--enemy); }
+            50% { transform: translateY(-50%) scale(1.05); box-shadow: 0 0 20px var(--enemy); }
+        }
+
         /* CONTROLS (UNITES, SORTS, ECO) */
         .controls-container { display: flex; gap: 15px; width: 100%; justify-content: center; }
         .team-controls { flex: 1; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 10px;}
@@ -151,7 +178,11 @@
             </div>
         </div>
 
-        <canvas id="gameCanvas" width="900" height="300"></canvas>
+        <!-- ZONE DU CANVAS AVEC ALERTE ENNEMIE -->
+        <div style="position: relative; width: 100%;">
+            <canvas id="gameCanvas" width="900" height="300"></canvas>
+            <div id="enemy-alert" onclick="jumpToEnemy()">⚠️ ENNEMIS ▶</div>
+        </div>
         
         <div class="controls-container" id="deployment-controls"></div>
     </div>
@@ -161,7 +192,7 @@
         const ctx = canvas.getContext('2d');
         
         // --- CONSTANTES DU MONDE GEANT ---
-        const WORLD_WIDTH = 2500; // Le monde est très grand pour obliger à scroller
+        const WORLD_WIDTH = 2500; 
         let cameraX = 0;
         let scrollSpeed = 0;
         let isDraggingCam = false;
@@ -188,7 +219,6 @@
         let screenShake = 0;
         let globalOffset = 0; 
         
-        // Modèle de données enrichi
         let gameState = {
             p1: { gold: 75, xp: 0, age: 1, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 },
             p2: { gold: 75, xp: 0, age: 1, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 }, 
@@ -219,7 +249,10 @@
                 this.id = Math.random().toString(36).substr(2, 9);
                 this.team = team; this.type = type;
                 this.w = s.w; this.h = s.h; 
-                this.x = team === 1 ? bases[1].spawnX : bases[2].spawnX - this.w; 
+                
+                // SPAWN AU MILIEU DE LA MAP
+                this.x = team === 1 ? (WORLD_WIDTH / 2) - this.w - 10 : (WORLD_WIDTH / 2) + 10; 
+                
                 this.y = floorY - this.h; 
                 this.speed = s.spd * bases[team].dir; 
                 this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; 
@@ -233,18 +266,13 @@
         canvas.addEventListener('mousemove', (e) => {
             let rect = canvas.getBoundingClientRect();
             let mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
-            
-            // Si on approche des bords à la souris, on fait défiler !
             if (mouseX < 80) scrollSpeed = -15;
             else if (mouseX > canvas.width - 80) scrollSpeed = 15;
             else scrollSpeed = 0;
         });
 
-        canvas.addEventListener('mouseleave', () => {
-            scrollSpeed = 0;
-        });
+        canvas.addEventListener('mouseleave', () => scrollSpeed = 0);
 
-        // Scroll Mobile / Tactile (Glisser pour regarder autour)
         canvas.addEventListener('touchstart', (e) => {
             lastTouchX = e.touches[0].clientX;
             isDraggingCam = true;
@@ -256,13 +284,36 @@
             let delta = currentX - lastTouchX;
             cameraX -= delta * 1.5; 
             lastTouchX = currentX;
-            
-            // On empêche la caméra de sortir du monde
             if (cameraX < 0) cameraX = 0;
             if (cameraX > WORLD_WIDTH - canvas.width) cameraX = WORLD_WIDTH - canvas.width;
         }, { passive: true });
 
         canvas.addEventListener('touchend', () => isDraggingCam = false);
+
+
+        // --- TELEPORTATION (CURSEUR D'ALERTE) ---
+        function jumpToEnemy() {
+            let enemyTeam = myTeam === 1 ? 2 : 1;
+            let vanguard = null;
+
+            // Trouve l'unité ennemie la plus avancée
+            gameState.units.forEach(u => {
+                if (u.team === enemyTeam) {
+                    if (!vanguard) vanguard = u;
+                    else {
+                        if (myTeam === 1 && u.x < vanguard.x) vanguard = u; // Ennemis se déplacent vers la gauche
+                        if (myTeam === 2 && u.x > vanguard.x) vanguard = u; // Ennemis se déplacent vers la droite
+                    }
+                }
+            });
+
+            if (vanguard) {
+                // Centre la caméra sur les troupes
+                cameraX = vanguard.x - canvas.width / 2;
+                if (cameraX < 0) cameraX = 0;
+                if (cameraX > WORLD_WIDTH - canvas.width) cameraX = WORLD_WIDTH - canvas.width;
+            }
+        }
 
 
         // --- GESTION MENUS & PEERJS ---
@@ -351,7 +402,6 @@
             document.querySelectorAll('.overlay').forEach(e => e.style.display = 'none');
             document.getElementById('game-hud').style.visibility = 'visible';
             
-            // Placement de la caméra au début pour que le Joueur 2 voie directement sa propre base (à droite)
             if (myTeam === 2) {
                 cameraX = WORLD_WIDTH - canvas.width;
             } else {
@@ -381,7 +431,6 @@
             gameState.p1.gold += gameState.p1.incomeRate;
             gameState.p2.gold += gameState.p2.incomeRate;
             
-            // INTELLIGENCE ARTIFICIELLE
             if(gameMode === 'solo' || gameMode === 'hardcore') {
                 let ai = gameState.p2;
                 let r = Math.random();
@@ -389,13 +438,9 @@
 
                 if (isHard) ai.gold += Math.floor(timeElapsed / 10) + 2; 
 
-                // Upgrade Eco
                 if (ai.gold > ai.incomeCost * 1.5 && r > 0.5) processAction(2, 'upgradeEco', null);
-
-                // Evolve
                 if (ai.xp >= xpToEvolve[ai.age - 1]) processAction(2, 'evolve', null);
 
-                // Spawn Logic
                 if(ai.age === 1) {
                     if(ai.gold >= 30 && r > 0.6) processAction(2, 'spawn', 'blaster');
                     else if(ai.gold >= 15 && r > 0.2) processAction(2, 'spawn', 'drone');
@@ -438,10 +483,10 @@
             else if(action === 'spell' && p.gold >= spellStats[val].cost && p.spells[val] === 0) {
                 p.gold -= spellStats[val].cost;
                 p.spells[val] = spellStats[val].cdMax;
-                if(val === 1) { // Frappe
+                if(val === 1) { 
                     addEffect('orbital', 0, 0, team); screenShake = 15;
                     gameState.units.filter(u => u.team !== team).forEach(u => u.hp -= 60);
-                } else if(val === 2) { // Soin
+                } else if(val === 2) { 
                     addEffect('heal', 0, 0, team);
                     gameState.units.filter(u => u.team === team).forEach(u => u.hp = Math.min(u.maxHp, u.hp + 100));
                     p.hp = Math.min(p.maxHp, p.hp + 200);
@@ -450,7 +495,7 @@
             else if(action === 'evolve' && p.age < 3 && p.xp >= xpToEvolve[p.age - 1]) {
                 p.xp -= xpToEvolve[p.age - 1];
                 p.age++; 
-                p.maxHp += 1000; p.hp += 1000; // Bonus HP en passant d'age
+                p.maxHp += 1000; p.hp += 1000; 
                 addEffect('text', bases[team].spawnX, 80, team, 'TECH UP!');
                 screenShake = 10;
             }
@@ -461,12 +506,10 @@
         }
 
         function updatePhysics() {
-            // Mise à jour de la caméra par rapport au scroll de la souris
             cameraX += scrollSpeed;
             if (cameraX < 0) cameraX = 0;
             if (cameraX > WORLD_WIDTH - canvas.width) cameraX = WORLD_WIDTH - canvas.width;
 
-            // Tourelles de bases
             [1, 2].forEach(t => {
                 let p = t === 1 ? gameState.p1 : gameState.p2;
                 if (p.turretCd > 0) p.turretCd--;
@@ -477,25 +520,22 @@
                         if (u.team !== t && Math.abs(u.x - bx) < 300) { target = u; break; }
                     }
                     if (target) {
-                        target.hp -= 15; p.turretCd = 60; // Tir tourelle toutes les 1s
+                        target.hp -= 15; p.turretCd = 60; 
                         addEffect('laser', bx, 100, t, target.x + target.w/2);
                         addEffect('hit', target.x + target.w/2, target.y + target.h/2, t);
                     }
                 }
             });
 
-            // Sorts CD & Effets
             [gameState.p1, gameState.p2].forEach(p => { if(p.spells[1] > 0) p.spells[1]--; if(p.spells[2] > 0) p.spells[2]--; });
             for(let i = gameState.effects.length-1; i >= 0; i--) {
                 gameState.effects[i].life--;
                 if(gameState.effects[i].life <= 0) gameState.effects.splice(i, 1);
             }
 
-            // Unités
             for (let i = gameState.units.length - 1; i >= 0; i--) {
                 let u = gameState.units[i]; let target = null; u.action = 'walk';
                 
-                // Ciblage
                 for (let j = 0; j < gameState.units.length; j++) { 
                     let other = gameState.units[j]; 
                     if (u.team !== other.team) { 
@@ -508,7 +548,6 @@
                     if (distToBase <= u.rng) target = u.team === 1 ? gameState.p2 : gameState.p1; 
                 }
                 
-                // Attaque
                 if (target) { 
                     u.action = 'attack'; 
                     if (u.cd <= 0) { 
@@ -524,7 +563,6 @@
                         addEffect('hit', tx, ty, u.team);
                     } 
                 } else {
-                    // Mouvement & Anti-Stacking
                     let canMove = true; let hitboxSpacing = u.w + 5;
                     for (let j = 0; j < gameState.units.length; j++) {
                         let other = gameState.units[j];
@@ -547,7 +585,6 @@
                 }
             }
 
-            // Victoire
             if (gameState.p1.hp <= 0 || gameState.p2.hp <= 0) {
                 gameActive = false; document.getElementById('game-over').style.display = 'flex'; 
                 const msg = document.getElementById('end-message');
@@ -566,7 +603,6 @@
             }
         }
 
-        // --- CLAVIER ---
         window.addEventListener('keydown', e => {
             if(!gameActive) return; let k = e.key.toLowerCase();
             let act = (k, team) => {
@@ -614,63 +650,36 @@
             ctx.save();
             ctx.translate(-cameraX, 0);
 
-            // 2. DESSIN DU FOND DU MONDE (Images Map qui remplissent tout)
+            // 2. DESSIN DU FOND DU MONDE
             let p1MapName = gameState.p1.age === 1 ? 'map1' : (gameState.p1.age === 2 ? 'map1_tech1' : 'map1_tech2');
             let p2MapName = gameState.p2.age === 1 ? 'map2' : (gameState.p2.age === 2 ? 'map2_tech1' : 'map2_tech2');
             
             let img1 = imgs[p1MapName];
             if (img1 && img1.complete && img1.naturalWidth !== 0) {
-                // S'étale de la base gauche jusqu'au milieu du monde
                 ctx.drawImage(img1, 0, 0, WORLD_WIDTH / 2, floorY);
             }
             
             let img2 = imgs[p2MapName];
             if (img2 && img2.complete && img2.naturalWidth !== 0) {
-                // S'étale du milieu du monde jusqu'à la base droite
                 ctx.drawImage(img2, WORLD_WIDTH / 2, 0, WORLD_WIDTH / 2, floorY);
             }
 
-            // Ligne d'horizon neon
             ctx.shadowBlur = 15; ctx.shadowColor = '#00f0ff'; ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
             ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(WORLD_WIDTH, floorY); ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Grille sol (Défile avec le monde)
             globalOffset = (globalOffset + 1) % 40;
             ctx.strokeStyle = 'rgba(255, 0, 127, 0.2)'; ctx.lineWidth = 1;
             
-            // Lignes horizontales
             for(let i = floorY; i < canvas.height; i += (i - floorY + 10) * 0.2) {
                 let y = i + (globalOffset/40) * ((i - floorY + 10) * 0.2);
                 if(y < canvas.height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_WIDTH, y); ctx.stroke(); }
             }
-            // Lignes verticales étalées sur tout le monde
             for(let x = 0; x <= WORLD_WIDTH; x += 100) {
                 ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x - 50, canvas.height); ctx.stroke();
             }
 
-            // 3. STRUCTURES DES BASES (Cœurs uniquement car le décor forme la base)
-            [1, 2].forEach(t => {
-                let b = bases[t]; let color = t === 1 ? '#00f0ff' : '#ff0055';
-                let p = t === 1 ? gameState.p1 : gameState.p2;
-                
-                // Dessin d'un "cœur" structurel lumineux pour montrer où la base prend les dégâts
-                ctx.fillStyle = `rgba(10,15,30,0.9)`;
-                ctx.beginPath(); 
-                if (t === 1) { ctx.moveTo(b.x, 100); ctx.lineTo(b.x + b.w, floorY); ctx.lineTo(b.x, floorY); } 
-                else { ctx.moveTo(b.x + b.w, 100); ctx.lineTo(b.x, floorY); ctx.lineTo(b.x + b.w, floorY); }
-                ctx.fill();
-                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
-                
-                ctx.shadowBlur = 20; ctx.shadowColor = color;
-                ctx.fillStyle = color;
-                ctx.fillRect(t === 1 ? b.x + 20 : b.x + b.w - 40, 150, 20, 20); // Core
-                if (p.age >= 2) ctx.fillRect(t === 1 ? b.x + 10 : b.x + b.w - 50, 180, 40, 10);
-                if (p.age >= 3) { ctx.beginPath(); ctx.arc(t === 1 ? b.x + 30 : b.x + b.w - 30, 120, 15, 0, Math.PI*2); ctx.fill(); }
-                ctx.shadowBlur = 0;
-            });
-
-            // 4. UNITES (Rendu d'Images)
+            // 3. UNITES
             gameState.units.forEach(u => {
                 let color = u.team === 1 ? '#00f0ff' : '#ff0055';
                 let p = u.team === 1 ? gameState.p1 : gameState.p2;
@@ -686,7 +695,6 @@
                     if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (pct<0.3?10:0) : (pct<0.3?-10:0), 0);
                 }
 
-                // Choix du skin basé sur l'âge du joueur propriétaire
                 let imgName = '';
                 if (p.age === 1) {
                     if (u.type === 'drone') imgName = 'fantassin_est';
@@ -706,21 +714,19 @@
 
                 let img = imgs[imgName];
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    // Les unités de l'équipe 2 regardent vers la gauche, on les inverse horizontalement (miroir)
                     if (u.team === 2) ctx.scale(-1, 1);
                     ctx.drawImage(img, -u.w/2, -u.h/2, u.w, u.h);
                 } else {
-                    drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color); // Fallback si l'image n'est pas chargée
+                    drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color); 
                 }
                 
                 ctx.restore();
 
-                // HP Bar
                 ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(u.x, u.y - 12, u.w, 4); 
                 ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x, u.y - 12, u.w * (u.hp / u.maxHp), 4);
             });
 
-            // 5. EFFETS (Lasers, Explosions, Textes)
+            // 4. EFFETS
             gameState.effects.forEach(eff => {
                 let prog = eff.life / eff.maxLife;
                 let color = eff.team === 1 ? '#00f0ff' : '#ff0055';
@@ -733,7 +739,7 @@
                     ctx.beginPath(); ctx.arc(eff.x, eff.y, (1-prog)* (eff.type==='explosion'?30:15), 0, Math.PI*2); ctx.fill();
                 } else if (eff.type === 'orbital') {
                     ctx.fillStyle = color; ctx.globalAlpha = prog * 0.5;
-                    ctx.fillRect(0, 0, WORLD_WIDTH, canvas.height); // L'orbital frappe tout le monde !
+                    ctx.fillRect(0, 0, WORLD_WIDTH, canvas.height); 
                     ctx.globalAlpha = 1; ctx.shadowBlur = 20; ctx.shadowColor = color;
                     for(let i=0; i<30; i++) { ctx.fillRect(Math.random()*WORLD_WIDTH, 0, 5, canvas.height); }
                 } else if (eff.type === 'heal') {
@@ -750,8 +756,8 @@
                 ctx.globalAlpha = 1; ctx.shadowBlur = 0;
             });
 
-            ctx.restore(); // Fin de la caméra
-            ctx.restore(); // Fin du ScreenShake
+            ctx.restore(); 
+            ctx.restore(); 
         }
 
         function updateHUD() {
@@ -775,7 +781,7 @@
             document.getElementById('p1-hp-bar').style.width = (gameState.p1.hp / gameState.p1.maxHp * 100) + '%'; 
             document.getElementById('p2-hp-bar').style.width = (gameState.p2.hp / gameState.p2.maxHp * 100) + '%';
 
-            // XP / Age
+            // XP / Age & Boutons
             [1, 2].forEach(t => {
                 let p = t === 1 ? gameState.p1 : gameState.p2;
                 let pre = t === 1 ? 'p1' : 'p2';
@@ -793,7 +799,6 @@
                     if(btnEvolve) btnEvolve.style.display = 'none';
                 }
 
-                // Unlock Boutons HUD (Local = met à jour les 2, Reseau = met à jour le mien)
                 if (gameMode === 'local' || myTeam === t) {
                     let locks = [null, null, null, document.getElementById(`lock-${pre}-3`), document.getElementById(`lock-${pre}-4`), document.getElementById(`lock-${pre}-5`)];
                     ['drone', 'blaster', 'mech', 'sniper', 'titan'].forEach((type, i) => { 
@@ -812,6 +817,46 @@
                     });
                 }
             });
+
+            // GESTION DU CURSEUR D'ALERTE ENNEMI
+            let alertEl = document.getElementById('enemy-alert');
+            if (alertEl && gameMode !== 'local') {
+                let enemyTeam = myTeam === 1 ? 2 : 1;
+                let vanguard = null;
+
+                gameState.units.forEach(u => {
+                    if (u.team === enemyTeam) {
+                        if (!vanguard) vanguard = u;
+                        else {
+                            if (myTeam === 1 && u.x < vanguard.x) vanguard = u;
+                            if (myTeam === 2 && u.x > vanguard.x) vanguard = u;
+                        }
+                    }
+                });
+
+                if (vanguard) {
+                    let isOffscreen = false;
+                    if (myTeam === 1 && vanguard.x > cameraX + canvas.width) isOffscreen = true; 
+                    if (myTeam === 2 && vanguard.x < cameraX) isOffscreen = true; 
+
+                    if (isOffscreen) {
+                        alertEl.style.display = 'block';
+                        if (myTeam === 1) {
+                            alertEl.style.left = 'auto';
+                            alertEl.style.right = '15px';
+                            alertEl.innerHTML = '⚠️ ENNEMIS ▶';
+                        } else {
+                            alertEl.style.right = 'auto';
+                            alertEl.style.left = '15px';
+                            alertEl.innerHTML = '◀ ENNEMIS ⚠️';
+                        }
+                    } else {
+                        alertEl.style.display = 'none';
+                    }
+                } else {
+                    alertEl.style.display = 'none';
+                }
+            }
         }
 
         function gameLoop() {
@@ -856,8 +901,7 @@
 
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
-            // J'ai ajouté 'canvas' pour ne pas changer de jeu en essayant de scroller l'écran
-            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
+            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select' || target.id === 'enemy-alert') return true;
             if (target.closest('#game-container') || target.closest('.hud') || target.closest('.controls-container')) return true;
             return false;
         }
