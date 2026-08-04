@@ -418,11 +418,12 @@
                             let angle = Math.atan2(this.y - startY, this.x - startX);
                             ctx.rotate(angle);
                             let dist = Math.hypot(this.x - startX, this.y - startY);
-                            ctx.drawImage(ropeImg, 0, -8, dist, 16); 
+                            // Corde beaucoup plus épaisse pour la Brute
+                            ctx.drawImage(ropeImg, 0, -16, dist, 32); 
                             ctx.restore();
                         } else {
                             ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(this.x, this.y);
-                            ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 4; ctx.stroke();
+                            ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 10; ctx.stroke();
                         }
                     }
                 }
@@ -450,7 +451,10 @@
                     
                     let drawW = 45; let drawH = 45 * (projImg.naturalHeight / projImg.naturalWidth);
                     if (this.isShuriken) { drawW = 60; drawH = 60 * (projImg.naturalHeight / projImg.naturalWidth); }
-                    else if (this.ownerSkinKey === 'sumo') { drawW = 80; drawH = 80 * (projImg.naturalHeight / projImg.naturalWidth); } 
+                    else if (this.ownerSkinKey === 'sumo') { 
+                        // Projectile beaucoup plus grand pour la Brute
+                        drawW = 130; drawH = 130 * (projImg.naturalHeight / projImg.naturalWidth); 
+                    } 
                     
                     ctx.drawImage(projImg, -drawW/2, -drawH/2, drawW, drawH);
                     ctx.restore();
@@ -678,7 +682,8 @@
                         ctx.fillRect(-20, -3, 40, 6); ctx.fillRect(-3, -20, 6, 40); ctx.restore();
                     } else if (this.skinKey === 'sumo' && this.chargingAtk === 'H') {
                         ctx.shadowBlur = 15; ctx.shadowColor = '#ff007f'; ctx.beginPath();
-                        ctx.arc(0, 0, this.w + (this.chargeTimer * 0.3), 0, Math.PI*2);
+                        // Cercle de la Brute BEAUCOUP plus petit et resserré
+                        ctx.arc(0, 0, (this.w * 0.55) + (this.chargeTimer * 0.15), 0, Math.PI*2);
                         ctx.strokeStyle = `rgba(255, 0, 127, ${this.chargeTimer/90})`;
                         ctx.lineWidth = 4; ctx.stroke(); ctx.shadowBlur = 0;
                     } else if (this.skinKey === 'gunner' && this.chargingAtk === 'L') {
