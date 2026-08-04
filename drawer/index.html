@@ -136,14 +136,12 @@
                 </div>
             </div>
 
-            <!-- BUG FIX: LA ZONE D'ACTION EST MAINTENANT SOUS LE CANVAS -->
             <div id="action-overlay" style="display:none; flex-direction:column; align-items:center; background:var(--panel); padding:20px; border-radius:10px; border:1px solid var(--cyan); margin-top:10px; width: 100%; box-sizing: border-box;">
                 <h2 id="action-title" style="color:var(--cyan); margin-top:0;">Action requise</h2>
                 <input type="text" id="action-input" class="gartic-input" placeholder="..." style="margin: 10px 0; width: 90%;">
                 <button class="btn" onclick="submitGarticAction()" style="padding:15px 40px; font-size:1.2em;">Validate</button>
             </div>
 
-            <!-- NOUVELLE BARRE D'OUTILS AVEC LES FORMES ET OUTILS -->
             <div id="toolbar" style="display:none;">
                 <button class="tool-btn active" onclick="setTool('pen', this)" title="Pinceau">✏️</button>
                 <button class="tool-btn" onclick="setTool('eraser', this)" title="Gomme">🧹</button>
@@ -185,7 +183,8 @@
         let dict = (typeof dictionary !== 'undefined' && dictionary.length > 0) ? dictionary : defaultDict;
         let availableWords = []; // Le sac à mots pour éviter les répétitions
 
-        const peer = new Peer();
+        // MODIFICATION: peer est maintenant défini avec "let" pour pouvoir le redéclarer avec le code DRW
+        let peer = new Peer();
         let myId = null, myName = "", isHost = false, myConn = null;
         let connections = []; 
         
@@ -198,29 +197,38 @@
         };
 
         // --- GESTION RESEAU ---
-        peer.on('open', id => { myId = id; if(document.getElementById('my-id')) document.getElementById('my-id').innerText = id; });
+        // On regroupe l'initialisation des événements de connexion pour éviter la répétition
+        function setupPeerEvents(p) {
+            p.on('open', id => { 
+                myId = id; 
+                if(document.getElementById('my-id')) document.getElementById('my-id').innerText = id; 
+            });
 
-        peer.on('connection', conn => {
-            if(!isHost) return;
-            connections.push(conn);
-            conn.on('data', data => {
-                if(data.type === 'join') {
-                    state.players.push({ id: conn.peer, name: data.name, score: 0, isDone: false });
-                    updateLobbyUI();
+            p.on('connection', conn => {
+                if(!isHost) return;
+                connections.push(conn);
+                conn.on('data', data => {
+                    if(data.type === 'join') {
+                        state.players.push({ id: conn.peer, name: data.name, score: 0, isDone: false });
+                        updateLobbyUI();
+                        broadcastState();
+                    }
+                    if(data.type === 'chat') handleChat(conn.peer, data.msg);
+                    if(data.type === 'draw' || data.type === 'shape') { remoteDraw(data); relayData(data, conn.peer); }
+                    if(data.type === 'clear') { clearCanvasLocal(); relayData(data, conn.peer); }
+                    if(data.type === 'img_sync') { syncImage(data.src); relayData(data, conn.peer); }
+                    if(data.type === 'submit_gartic') handleGarticSubmission(conn.peer, data.content);
+                });
+                conn.on('close', () => {
+                    state.players = state.players.filter(player => player.id !== conn.peer);
+                    connections = connections.filter(c => c.peer !== conn.peer);
                     broadcastState();
-                }
-                if(data.type === 'chat') handleChat(conn.peer, data.msg);
-                if(data.type === 'draw' || data.type === 'shape') { remoteDraw(data); relayData(data, conn.peer); }
-                if(data.type === 'clear') { clearCanvasLocal(); relayData(data, conn.peer); }
-                if(data.type === 'img_sync') { syncImage(data.src); relayData(data, conn.peer); }
-                if(data.type === 'submit_gartic') handleGarticSubmission(conn.peer, data.content);
+                });
             });
-            conn.on('close', () => {
-                state.players = state.players.filter(p => p.id !== conn.peer);
-                connections = connections.filter(c => c.peer !== conn.peer);
-                broadcastState();
-            });
-        });
+        }
+        
+        // Initialisation par défaut au chargement de la page
+        setupPeerEvents(peer);
 
         function broadcastState() { if(isHost) connections.forEach(c => c.send({ type: 'state', state })); }
         function broadcastData(data) { if(isHost) connections.forEach(c => c.send(data)); }
@@ -234,10 +242,19 @@
             document.getElementById('flag-' + l).classList.add('active');
         }
 
+        // MODIFICATION: hostGame génère le code DRW + 4 chiffres et recrée le serveur Peer
         function hostGame() {
+            let code = 'DRW' + Math.floor(1000 + Math.random() * 9000);
+            
+            // On détruit l'ancienne connexion Peer de base et on en crée une nouvelle avec le code fixe DRW
+            peer.destroy();
+            peer = new Peer(code);
+            setupPeerEvents(peer);
+            
             myName = document.getElementById('player-name').value || "Hôte";
             isHost = true;
-            state.players.push({ id: 'host', name: myName, score: 0, isDone: false });
+            state.players = [{ id: 'host', name: myName, score: 0, isDone: false }];
+            
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('host-lobby').style.display = 'block';
             updateLobbyUI();
@@ -245,7 +262,8 @@
 
         function joinGame() {
             myName = document.getElementById('player-name').value || "Joueur";
-            let hostId = document.getElementById('join-id').value;
+            // MODIFICATION: On force le toUpperCase() pour que le joueur puisse taper drw1234 sans que ça bug
+            let hostId = document.getElementById('join-id').value.toUpperCase().trim();
             if(!hostId) return;
             document.getElementById('status-text').innerText = "Connexion...";
             
@@ -411,7 +429,6 @@
             let pIndex = state.players.findIndex(x => x.id === peerId);
             if(pIndex === -1) return;
             
-            // BUG FIX: On additionne (+) au lieu de soustraire pour toujours faire tourner vers l'avant !
             let chainIndex = (pIndex + state.round) % state.players.length;
             let stepType = (state.round % 2 === 0) ? 'text' : 'img';
             
@@ -509,7 +526,6 @@
                     return;
                 }
                 
-                // BUG FIX: Pareil ici, on additionne (+) pour suivre la bonne chaîne.
                 let chainIndex = (myIndex + state.round) % state.players.length;
                 let myChain = state.chains[chainIndex];
                 
