@@ -160,6 +160,22 @@
         const canvas = document.getElementById('gameCanvas'); 
         const ctx = canvas.getContext('2d');
         
+        // --- CHARGEMENT DES ASSETS (MAPS & SKINS) ---
+        const imgs = {};
+        const imgFiles = {
+            'map1': 'img/map1.png', 'map2': 'img/map2.png',
+            'map1_tech1': 'img/map1_tech1.png', 'map2_tech1': 'img/map2_tech1.png',
+            'map1_tech2': 'img/map1_tech2.png', 'map2_tech2': 'img/map2_tech2.png',
+            'fantassin_est': 'img/fantassin_est.png', 'tirreur_est': 'img/tirreur_est.png',
+            'drone': 'img/drone.png', 'blaster': 'img/blaster.png', 'mech': 'img/mech.png', 'sniper1': 'img/sniper1.png',
+            'drone2': 'img/drone2.png', 'blaster2': 'img/blaster2.png', 'mech2': 'img/mech2.png', 'sniper2': 'img/sniper2.png', 'titan2': 'img/titan2.png'
+        };
+
+        Object.keys(imgFiles).forEach(k => {
+            imgs[k] = new Image();
+            imgs[k].src = imgFiles[k];
+        });
+
         // --- RESEAU & ETAT ---
         let peer = null, conn = null, gameMode = null, myTeam = 1, gameActive = false, timeElapsed = 0;
         let screenShake = 0;
@@ -252,7 +268,6 @@
                 if (gameMode === 'host' && data.type === 'action') processAction(2, data.action, data.val);
                 if (gameMode === 'client' && data.type === 'state') {
                     gameState = data.state; updateHUD();
-                    // Générer effets sonores/vibrations locaux basé sur les triggers (optionnel)
                 }
             });
         }
@@ -562,42 +577,85 @@
 
             drawBackground();
 
-            // BASES (Pyramides Neon)
+            // BASES (Rendu d'Images Map)
             [1, 2].forEach(t => {
                 let b = bases[t]; let color = t === 1 ? '#00f0ff' : '#ff0055';
                 let p = t === 1 ? gameState.p1 : gameState.p2;
                 ctx.shadowBlur = 20; ctx.shadowColor = color;
                 
-                // Structure
-                ctx.fillStyle = `rgba(10,15,30,0.9)`;
-                ctx.beginPath(); ctx.moveTo(b.x + b.w/2, 100); ctx.lineTo(b.x + b.w, floorY); ctx.lineTo(b.x, floorY); ctx.fill();
-                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+                let mapName = `map${t}`;
+                if (p.age === 2) mapName += `_tech1`;
+                if (p.age === 3) mapName += `_tech2`;
                 
-                // Tourelle & Age details
-                ctx.fillStyle = color;
-                ctx.fillRect(b.x + b.w/2 - 10, 80, 20, 20); // Core
-                if (p.age >= 2) ctx.fillRect(b.x + b.w/2 - 20, 150, 40, 10);
-                if (p.age >= 3) { ctx.beginPath(); ctx.arc(b.x + b.w/2, 50, 15, 0, Math.PI*2); ctx.fill(); }
+                let img = imgs[mapName];
+                let baseHeight = 150; // Correspond à la hauteur classique du rendu d'origine
+
+                if (img && img.complete && img.naturalWidth !== 0) {
+                    // Si l'image est bien chargée, on l'affiche
+                    ctx.drawImage(img, b.x, floorY - baseHeight, b.w, baseHeight);
+                } else {
+                    // Structure de Secours en cas d'erreur de chargement
+                    ctx.fillStyle = `rgba(10,15,30,0.9)`;
+                    ctx.beginPath(); ctx.moveTo(b.x + b.w/2, 100); ctx.lineTo(b.x + b.w, floorY); ctx.lineTo(b.x, floorY); ctx.fill();
+                    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+                    
+                    // Tourelle & Age details
+                    ctx.fillStyle = color;
+                    ctx.fillRect(b.x + b.w/2 - 10, 80, 20, 20); // Core
+                    if (p.age >= 2) ctx.fillRect(b.x + b.w/2 - 20, 150, 40, 10);
+                    if (p.age >= 3) { ctx.beginPath(); ctx.arc(b.x + b.w/2, 50, 15, 0, Math.PI*2); ctx.fill(); }
+                }
                 
                 ctx.shadowBlur = 0;
             });
 
-            // UNITES
+            // UNITES (Rendu d'Images Unités)
             gameState.units.forEach(u => {
                 let color = u.team === 1 ? '#00f0ff' : '#ff0055';
+                let p = u.team === 1 ? gameState.p1 : gameState.p2;
                 
                 ctx.save();
                 ctx.translate(u.x + u.w/2, u.y + u.h/2);
                 
                 if (u.action === 'walk') {
-                    u.animCycle += 0.15 * u.speed;
+                    u.animCycle += 0.15 * Math.abs(u.speed);
                     ctx.translate(0, -Math.abs(Math.sin(u.animCycle)) * 4);
                 } else if (u.action === 'attack') {
-                    let p = (u.cdMax - u.cd) / u.cdMax;
-                    if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (p<0.3?10:0) : (p<0.3?-10:0), 0);
+                    let pct = (u.cdMax - u.cd) / u.cdMax;
+                    if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (pct<0.3?10:0) : (pct<0.3?-10:0), 0);
                 }
 
-                drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color);
+                // Choix de l'image en fonction de l'âge du joueur
+                let imgName = '';
+                if (p.age === 1) {
+                    if (u.type === 'drone') imgName = 'fantassin_est';
+                    if (u.type === 'blaster') imgName = 'tirreur_est';
+                } else if (p.age === 2) {
+                    if (u.type === 'drone') imgName = 'drone';
+                    if (u.type === 'blaster') imgName = 'blaster';
+                    if (u.type === 'mech') imgName = 'mech';
+                    if (u.type === 'sniper') imgName = 'sniper1';
+                } else if (p.age === 3) {
+                    if (u.type === 'drone') imgName = 'drone2';
+                    if (u.type === 'blaster') imgName = 'blaster2';
+                    if (u.type === 'mech') imgName = 'mech2';
+                    if (u.type === 'sniper') imgName = 'sniper2';
+                    if (u.type === 'titan') imgName = 'titan2';
+                }
+
+                let img = imgs[imgName];
+                if (img && img.complete && img.naturalWidth !== 0) {
+                    // Les sprites _est / originaux regardent sûrement à gauche (Est). 
+                    // Pour que l'équipe de Droite (Joueur 2) regarde à Gauche, et l'équipe Gauche (J1) à Droite, on fait un miroir.
+                    // Si l'équipe est la 2, on inverse son regard
+                    if (u.team === 2) ctx.scale(-1, 1);
+                    
+                    ctx.drawImage(img, -u.w/2, -u.h/2, u.w, u.h);
+                } else {
+                    // Dessin vectoriel classique en cas d'image manquante
+                    drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color);
+                }
+                
                 ctx.restore();
 
                 // HP Bar
