@@ -50,7 +50,7 @@
         .gold { font-size: 2.2em; color: var(--gold); font-weight: bold; text-shadow: 0 0 15px rgba(255, 215, 0, 0.6); line-height: 1;}
         .income { font-size: 0.9em; color: #aaa; margin-top: 2px;}
 
-        canvas { border-radius: 10px; width: 100%; box-shadow: 0 0 20px #000, inset 0 0 30px rgba(0, 240, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); background: #03050a; }
+        canvas { border-radius: 10px; width: 100%; box-shadow: 0 0 20px #000, inset 0 0 30px rgba(0, 240, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); background: #03050a; cursor: crosshair;}
         
         /* CONTROLS (UNITES, SORTS, ECO) */
         .controls-container { display: flex; gap: 15px; width: 100%; justify-content: center; }
@@ -160,6 +160,13 @@
         const canvas = document.getElementById('gameCanvas'); 
         const ctx = canvas.getContext('2d');
         
+        // --- CONSTANTES DU MONDE GEANT ---
+        const WORLD_WIDTH = 2500; // Le monde est très grand pour obliger à scroller
+        let cameraX = 0;
+        let scrollSpeed = 0;
+        let isDraggingCam = false;
+        let lastTouchX = 0;
+
         // --- CHARGEMENT DES ASSETS (MAPS & SKINS) ---
         const imgs = {};
         const imgFiles = {
@@ -179,20 +186,20 @@
         // --- RESEAU & ETAT ---
         let peer = null, conn = null, gameMode = null, myTeam = 1, gameActive = false, timeElapsed = 0;
         let screenShake = 0;
-        let globalOffset = 0; // Pour animer la grille
+        let globalOffset = 0; 
         
         // Modèle de données enrichi
         let gameState = {
             p1: { gold: 75, xp: 0, age: 1, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 },
             p2: { gold: 75, xp: 0, age: 1, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 }, 
             units: [],
-            effects: [] // gère les lasers, explosions, floating texts
+            effects: [] 
         };
 
-        const xpToEvolve = [100, 250, 9999]; // XP requise pour T2, T3
+        const xpToEvolve = [100, 250, 9999]; 
         const bases = { 
-            1: { x: -30, w: 100, h: 160, spawnX: 70, dir: 1, color: '#00f0ff' }, 
-            2: { x: 830, w: 100, h: 160, spawnX: 830, dir: -1, color: '#ff0055' } 
+            1: { x: 0, w: 120, h: 160, spawnX: 120, dir: 1, color: '#00f0ff' }, 
+            2: { x: WORLD_WIDTH - 120, w: 120, h: 160, spawnX: WORLD_WIDTH - 120, dir: -1, color: '#ff0055' } 
         };
         const floorY = 250;
         
@@ -221,6 +228,42 @@
                 this.action = 'walk'; this.animCycle = 0;
             }
         }
+
+        // --- GESTION DE LA CAMERA (SCROLL) ---
+        canvas.addEventListener('mousemove', (e) => {
+            let rect = canvas.getBoundingClientRect();
+            let mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            
+            // Si on approche des bords à la souris, on fait défiler !
+            if (mouseX < 80) scrollSpeed = -15;
+            else if (mouseX > canvas.width - 80) scrollSpeed = 15;
+            else scrollSpeed = 0;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            scrollSpeed = 0;
+        });
+
+        // Scroll Mobile / Tactile (Glisser pour regarder autour)
+        canvas.addEventListener('touchstart', (e) => {
+            lastTouchX = e.touches[0].clientX;
+            isDraggingCam = true;
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDraggingCam) return;
+            let currentX = e.touches[0].clientX;
+            let delta = currentX - lastTouchX;
+            cameraX -= delta * 1.5; 
+            lastTouchX = currentX;
+            
+            // On empêche la caméra de sortir du monde
+            if (cameraX < 0) cameraX = 0;
+            if (cameraX > WORLD_WIDTH - canvas.width) cameraX = WORLD_WIDTH - canvas.width;
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', () => isDraggingCam = false);
+
 
         // --- GESTION MENUS & PEERJS ---
         function startSolo(mode) { gameMode = mode; myTeam = 1; startGame(); }
@@ -308,6 +351,13 @@
             document.querySelectorAll('.overlay').forEach(e => e.style.display = 'none');
             document.getElementById('game-hud').style.visibility = 'visible';
             
+            // Placement de la caméra au début pour que le Joueur 2 voie directement sa propre base (à droite)
+            if (myTeam === 2) {
+                cameraX = WORLD_WIDTH - canvas.width;
+            } else {
+                cameraX = 0;
+            }
+
             if (gameMode === 'local') {
                 document.getElementById('deployment-controls').innerHTML = buildControls(1) + buildControls(2);
                 document.getElementById('p2-gold-container').style.display = 'block';
@@ -411,6 +461,11 @@
         }
 
         function updatePhysics() {
+            // Mise à jour de la caméra par rapport au scroll de la souris
+            cameraX += scrollSpeed;
+            if (cameraX < 0) cameraX = 0;
+            if (cameraX > WORLD_WIDTH - canvas.width) cameraX = WORLD_WIDTH - canvas.width;
+
             // Tourelles de bases
             [1, 2].forEach(t => {
                 let p = t === 1 ? gameState.p1 : gameState.p2;
@@ -529,31 +584,7 @@
             if (gameMode === 'local' && ['1','2','3','4','5','7','8','9'].includes(e.key)) act(e.key, 2);
         });
 
-        // --- RENDU CYBERPUNK (CANVAS) ---
-        function drawBackground() {
-            // Ciel
-            let grad = ctx.createLinearGradient(0, 0, 0, floorY);
-            grad.addColorStop(0, '#020205'); grad.addColorStop(1, '#0a1025');
-            ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Ligne d'horizon neon
-            ctx.shadowBlur = 15; ctx.shadowColor = '#00f0ff'; ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
-            ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(canvas.width, floorY); ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            // Grille sol (Perspective fake 3D)
-            globalOffset = (globalOffset + 1) % 40;
-            ctx.strokeStyle = 'rgba(255, 0, 127, 0.2)'; ctx.lineWidth = 1;
-            for(let i = floorY; i < canvas.height; i += (i - floorY + 10) * 0.2) {
-                let y = i + (globalOffset/40) * ((i - floorY + 10) * 0.2);
-                if(y < canvas.height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
-            }
-            let vanishX = canvas.width / 2;
-            for(let i = -10; i < 10; i++) {
-                ctx.beginPath(); ctx.moveTo(vanishX, floorY); ctx.lineTo(vanishX + i * 150, canvas.height); ctx.stroke();
-            }
-        }
-
+        // --- RENDU (CANVAS) ---
         function drawShape(type, x, y, w, h, color) {
             ctx.fillStyle = color;
             ctx.shadowBlur = 10; ctx.shadowColor = color;
@@ -564,7 +595,6 @@
             else if (type === 'sniper') { ctx.fillRect(x, y, w*0.4, h); ctx.fillRect(x, y+h*0.3, w, h*0.2); }
             else if (type === 'titan') { ctx.moveTo(x+w/2, y); ctx.lineTo(x+w, y+h*0.3); ctx.lineTo(x+w*0.8, y+h); ctx.lineTo(x+w*0.2, y+h); ctx.lineTo(x, y+h*0.3); }
             ctx.fill(); ctx.shadowBlur = 0;
-            // Highlight
             ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
         }
 
@@ -575,41 +605,72 @@
                 screenShake *= 0.9; if(screenShake < 0.5) screenShake = 0;
             }
 
-            drawBackground();
+            // 1. DESSIN DU CIEL (Fixe)
+            let grad = ctx.createLinearGradient(0, 0, 0, floorY);
+            grad.addColorStop(0, '#020205'); grad.addColorStop(1, '#0a1025');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // BASES (Rendu d'Images Map)
+            // APPLIQUER LA CAMERA POUR LE RESTE DU MONDE
+            ctx.save();
+            ctx.translate(-cameraX, 0);
+
+            // 2. DESSIN DU FOND DU MONDE (Images Map qui remplissent tout)
+            let p1MapName = gameState.p1.age === 1 ? 'map1' : (gameState.p1.age === 2 ? 'map1_tech1' : 'map1_tech2');
+            let p2MapName = gameState.p2.age === 1 ? 'map2' : (gameState.p2.age === 2 ? 'map2_tech1' : 'map2_tech2');
+            
+            let img1 = imgs[p1MapName];
+            if (img1 && img1.complete && img1.naturalWidth !== 0) {
+                // S'étale de la base gauche jusqu'au milieu du monde
+                ctx.drawImage(img1, 0, 0, WORLD_WIDTH / 2, floorY);
+            }
+            
+            let img2 = imgs[p2MapName];
+            if (img2 && img2.complete && img2.naturalWidth !== 0) {
+                // S'étale du milieu du monde jusqu'à la base droite
+                ctx.drawImage(img2, WORLD_WIDTH / 2, 0, WORLD_WIDTH / 2, floorY);
+            }
+
+            // Ligne d'horizon neon
+            ctx.shadowBlur = 15; ctx.shadowColor = '#00f0ff'; ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+            ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(WORLD_WIDTH, floorY); ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Grille sol (Défile avec le monde)
+            globalOffset = (globalOffset + 1) % 40;
+            ctx.strokeStyle = 'rgba(255, 0, 127, 0.2)'; ctx.lineWidth = 1;
+            
+            // Lignes horizontales
+            for(let i = floorY; i < canvas.height; i += (i - floorY + 10) * 0.2) {
+                let y = i + (globalOffset/40) * ((i - floorY + 10) * 0.2);
+                if(y < canvas.height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_WIDTH, y); ctx.stroke(); }
+            }
+            // Lignes verticales étalées sur tout le monde
+            for(let x = 0; x <= WORLD_WIDTH; x += 100) {
+                ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x - 50, canvas.height); ctx.stroke();
+            }
+
+            // 3. STRUCTURES DES BASES (Cœurs uniquement car le décor forme la base)
             [1, 2].forEach(t => {
                 let b = bases[t]; let color = t === 1 ? '#00f0ff' : '#ff0055';
                 let p = t === 1 ? gameState.p1 : gameState.p2;
+                
+                // Dessin d'un "cœur" structurel lumineux pour montrer où la base prend les dégâts
+                ctx.fillStyle = `rgba(10,15,30,0.9)`;
+                ctx.beginPath(); 
+                if (t === 1) { ctx.moveTo(b.x, 100); ctx.lineTo(b.x + b.w, floorY); ctx.lineTo(b.x, floorY); } 
+                else { ctx.moveTo(b.x + b.w, 100); ctx.lineTo(b.x, floorY); ctx.lineTo(b.x + b.w, floorY); }
+                ctx.fill();
+                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+                
                 ctx.shadowBlur = 20; ctx.shadowColor = color;
-                
-                let mapName = `map${t}`;
-                if (p.age === 2) mapName += `_tech1`;
-                if (p.age === 3) mapName += `_tech2`;
-                
-                let img = imgs[mapName];
-                let baseHeight = 150; // Correspond à la hauteur classique du rendu d'origine
-
-                if (img && img.complete && img.naturalWidth !== 0) {
-                    // Si l'image est bien chargée, on l'affiche
-                    ctx.drawImage(img, b.x, floorY - baseHeight, b.w, baseHeight);
-                } else {
-                    // Structure de Secours en cas d'erreur de chargement
-                    ctx.fillStyle = `rgba(10,15,30,0.9)`;
-                    ctx.beginPath(); ctx.moveTo(b.x + b.w/2, 100); ctx.lineTo(b.x + b.w, floorY); ctx.lineTo(b.x, floorY); ctx.fill();
-                    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
-                    
-                    // Tourelle & Age details
-                    ctx.fillStyle = color;
-                    ctx.fillRect(b.x + b.w/2 - 10, 80, 20, 20); // Core
-                    if (p.age >= 2) ctx.fillRect(b.x + b.w/2 - 20, 150, 40, 10);
-                    if (p.age >= 3) { ctx.beginPath(); ctx.arc(b.x + b.w/2, 50, 15, 0, Math.PI*2); ctx.fill(); }
-                }
-                
+                ctx.fillStyle = color;
+                ctx.fillRect(t === 1 ? b.x + 20 : b.x + b.w - 40, 150, 20, 20); // Core
+                if (p.age >= 2) ctx.fillRect(t === 1 ? b.x + 10 : b.x + b.w - 50, 180, 40, 10);
+                if (p.age >= 3) { ctx.beginPath(); ctx.arc(t === 1 ? b.x + 30 : b.x + b.w - 30, 120, 15, 0, Math.PI*2); ctx.fill(); }
                 ctx.shadowBlur = 0;
             });
 
-            // UNITES (Rendu d'Images Unités)
+            // 4. UNITES (Rendu d'Images)
             gameState.units.forEach(u => {
                 let color = u.team === 1 ? '#00f0ff' : '#ff0055';
                 let p = u.team === 1 ? gameState.p1 : gameState.p2;
@@ -625,7 +686,7 @@
                     if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (pct<0.3?10:0) : (pct<0.3?-10:0), 0);
                 }
 
-                // Choix de l'image en fonction de l'âge du joueur
+                // Choix du skin basé sur l'âge du joueur propriétaire
                 let imgName = '';
                 if (p.age === 1) {
                     if (u.type === 'drone') imgName = 'fantassin_est';
@@ -645,15 +706,11 @@
 
                 let img = imgs[imgName];
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    // Les sprites _est / originaux regardent sûrement à gauche (Est). 
-                    // Pour que l'équipe de Droite (Joueur 2) regarde à Gauche, et l'équipe Gauche (J1) à Droite, on fait un miroir.
-                    // Si l'équipe est la 2, on inverse son regard
+                    // Les unités de l'équipe 2 regardent vers la gauche, on les inverse horizontalement (miroir)
                     if (u.team === 2) ctx.scale(-1, 1);
-                    
                     ctx.drawImage(img, -u.w/2, -u.h/2, u.w, u.h);
                 } else {
-                    // Dessin vectoriel classique en cas d'image manquante
-                    drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color);
+                    drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color); // Fallback si l'image n'est pas chargée
                 }
                 
                 ctx.restore();
@@ -663,22 +720,22 @@
                 ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x, u.y - 12, u.w * (u.hp / u.maxHp), 4);
             });
 
-            // EFFETS (Lasers, Explosions, Textes)
+            // 5. EFFETS (Lasers, Explosions, Textes)
             gameState.effects.forEach(eff => {
                 let prog = eff.life / eff.maxLife;
                 let color = eff.team === 1 ? '#00f0ff' : '#ff0055';
 
                 if (eff.type === 'laser') {
                     ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.strokeStyle = color; ctx.lineWidth = prog * 4;
-                    ctx.beginPath(); ctx.moveTo(eff.x, eff.y); ctx.lineTo(eff.text /* targetX */, eff.y); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(eff.x, eff.y); ctx.lineTo(eff.text, eff.y); ctx.stroke();
                 } else if (eff.type === 'hit' || eff.type === 'explosion') {
                     ctx.fillStyle = color; ctx.globalAlpha = prog;
                     ctx.beginPath(); ctx.arc(eff.x, eff.y, (1-prog)* (eff.type==='explosion'?30:15), 0, Math.PI*2); ctx.fill();
                 } else if (eff.type === 'orbital') {
                     ctx.fillStyle = color; ctx.globalAlpha = prog * 0.5;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillRect(0, 0, WORLD_WIDTH, canvas.height); // L'orbital frappe tout le monde !
                     ctx.globalAlpha = 1; ctx.shadowBlur = 20; ctx.shadowColor = color;
-                    for(let i=0; i<10; i++) { ctx.fillRect(Math.random()*canvas.width, 0, 5, canvas.height); }
+                    for(let i=0; i<30; i++) { ctx.fillRect(Math.random()*WORLD_WIDTH, 0, 5, canvas.height); }
                 } else if (eff.type === 'heal') {
                     ctx.fillStyle = '#39ff14'; ctx.globalAlpha = prog;
                     gameState.units.filter(u => u.team === eff.team).forEach(u => {
@@ -693,7 +750,8 @@
                 ctx.globalAlpha = 1; ctx.shadowBlur = 0;
             });
 
-            ctx.restore();
+            ctx.restore(); // Fin de la caméra
+            ctx.restore(); // Fin du ScreenShake
         }
 
         function updateHUD() {
@@ -798,6 +856,7 @@
 
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
+            // J'ai ajouté 'canvas' pour ne pas changer de jeu en essayant de scroller l'écran
             if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
             if (target.closest('#game-container') || target.closest('.hud') || target.closest('.controls-container')) return true;
             return false;
@@ -812,17 +871,6 @@
             globalTouchEndX = e.changedTouches[0].screenX; globalTouchEndY = e.changedTouches[0].screenY;
             handleSwipeGesture();
         }, { passive: true });
-
-        let isMouseDown = false;
-        document.addEventListener('mousedown', e => {
-            if (isExcludedElement(e.target)) return;
-            isMouseDown = true; globalTouchStartX = e.screenX; globalTouchStartY = e.screenY;
-        });
-        document.addEventListener('mouseup', e => {
-            if (isExcludedElement(e.target) || !isMouseDown) { isMouseDown = false; return; }
-            isMouseDown = false; globalTouchEndX = e.screenX; globalTouchEndY = e.screenY;
-            handleSwipeGesture();
-        });
     </script>
 </body>
 </html>
