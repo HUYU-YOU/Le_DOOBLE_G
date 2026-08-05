@@ -52,7 +52,7 @@
 
         /* GAME CONTAINER */
         #game-wrapper { position: relative; width: 100%; max-width: 800px; height: 600px; border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.15); border: 2px solid rgba(255,255,255,0.1); overflow: hidden; background: #000; cursor: crosshair; }
-        #bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; transition: opacity 0.5s; }
+        #bg-video, #bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; transition: opacity 0.5s; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #canvas-terrain { z-index: 2; } 
         #canvas-entities { z-index: 3; }
@@ -88,6 +88,9 @@
             .btn { min-width: 200px; font-size: 1em; padding: 10px 15px;}
             #weapon-panel { transform: translateX(-50%) scale(0.85); bottom: 5px; }
             .weapon-btn { padding: 5px 10px; }
+            .selection-grid { gap: 10px; }
+            .map-card { width: 100px; padding: 5px; }
+            .map-card img { width: 90px; height: 50px; }
         }
     </style>
 </head>
@@ -98,6 +101,8 @@
         <video id="bg-video" autoplay loop muted playsinline>
             <source src="img/background.mp4" type="video/mp4">
         </video>
+        <!-- Ajout de l'image de fond pour la map 4 -->
+        <img id="bg-image" class="hidden" src="" alt="Background">
 
         <!-- UI & ARMES -->
         <div id="ui-layer" class="hidden"></div>
@@ -128,6 +133,9 @@
                     <div class="map-card" onclick="selectSlimeMap(3, this)">
                         <img src="img/map3.png" alt="Map 3"><b>Arène Géante</b>
                     </div>
+                    <div class="map-card" onclick="selectSlimeMap(4, this)">
+                        <img src="img/map4.png" alt="Map 4"><b>Arène 4</b>
+                    </div>
                 </div>
 
                 <button class="btn" onclick="startGame('local_1v1')">🕹️ 1 VS 1 (Local)</button>
@@ -147,14 +155,17 @@
                 <h3 style="color: #fff; margin-top: 0; font-size: 1.2em; text-transform: uppercase;">Créer une partie</h3>
                 <h4 style="color: var(--p1); margin-bottom: 10px; font-size: 0.9em; letter-spacing: 1px;">CHOIX DE L'ARÈNE</h4>
                 <div class="selection-grid" style="margin-bottom: 15px; gap: 10px;">
-                    <div class="map-card selected" onclick="selectSlimeMap(1, this)" style="width: 120px; padding: 5px;">
-                        <img src="img/map1.png" style="width: 110px; height: 60px; margin-bottom: 5px;"><b>Arène Bleue</b>
+                    <div class="map-card selected" onclick="selectSlimeMap(1, this)" style="width: 90px; padding: 5px;">
+                        <img src="img/map1.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Bleue</b>
                     </div>
-                    <div class="map-card" onclick="selectSlimeMap(2, this)" style="width: 120px; padding: 5px;">
-                        <img src="img/map2.png" style="width: 110px; height: 60px; margin-bottom: 5px;"><b>Arène Rouge</b>
+                    <div class="map-card" onclick="selectSlimeMap(2, this)" style="width: 90px; padding: 5px;">
+                        <img src="img/map2.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Rouge</b>
                     </div>
-                    <div class="map-card" onclick="selectSlimeMap(3, this)" style="width: 120px; padding: 5px;">
-                        <img src="img/map3.png" style="width: 110px; height: 60px; margin-bottom: 5px;"><b>Arène Géante</b>
+                    <div class="map-card" onclick="selectSlimeMap(3, this)" style="width: 90px; padding: 5px;">
+                        <img src="img/map3.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Géante</b>
+                    </div>
+                    <div class="map-card" onclick="selectSlimeMap(4, this)" style="width: 90px; padding: 5px;">
+                        <img src="img/map4.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène 4</b>
                     </div>
                 </div>
                 <button class="btn" style="min-width: 200px; padding: 10px;" onclick="hostGame()">Héberger</button>
@@ -329,17 +340,33 @@
             }
 
             document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
-            el.classList.add('selected');
+            if (el) el.classList.add('selected');
             
             let videoElement = document.getElementById('bg-video');
+            let imageElement = document.getElementById('bg-image');
+            
             videoElement.style.opacity = 0;
+            imageElement.style.opacity = 0;
+            
             setTimeout(() => {
-                if(id === 1) videoElement.src = 'img/background.mp4';
-                else if(id === 2) videoElement.src = 'img/background2.mp4';
-                else videoElement.src = 'img/background4.mp4';
-                videoElement.play();
-                videoElement.style.opacity = 0.6;
+                if (id === 4) {
+                    // Basculer sur l'image de fond statique (background3.png)
+                    videoElement.classList.add('hidden');
+                    imageElement.classList.remove('hidden');
+                    imageElement.src = 'img/background3.png';
+                    imageElement.style.opacity = 0.6;
+                } else {
+                    // Basculer sur la vidéo
+                    imageElement.classList.add('hidden');
+                    videoElement.classList.remove('hidden');
+                    if(id === 1) videoElement.src = 'img/background.mp4';
+                    else if(id === 2) videoElement.src = 'img/background2.mp4';
+                    else if(id === 3) videoElement.src = 'img/background4.mp4';
+                    videoElement.play().catch(e => console.log(e));
+                    videoElement.style.opacity = 0.6;
+                }
             }, 500);
+            
             if (sprites['map' + id]) mapImage = sprites['map' + id];
         }
 
@@ -413,14 +440,30 @@
                         WORLD_WIDTH = 2000;
                         WORLD_HEIGHT = 600;
                     }
+                    
                     let videoElement = document.getElementById('bg-video');
+                    let imageElement = document.getElementById('bg-image');
+                    
                     videoElement.style.opacity = 0;
+                    imageElement.style.opacity = 0;
+                    
                     setTimeout(() => {
-                        if(selectedMapId === 1) videoElement.src = 'img/background.mp4';
-                        else if(selectedMapId === 2) videoElement.src = 'img/background2.mp4';
-                        else videoElement.src = 'img/background4.mp4';
-                        videoElement.play(); videoElement.style.opacity = 0.6;
+                        if (selectedMapId === 4) {
+                            videoElement.classList.add('hidden');
+                            imageElement.classList.remove('hidden');
+                            imageElement.src = 'img/background3.png';
+                            imageElement.style.opacity = 0.6;
+                        } else {
+                            imageElement.classList.add('hidden');
+                            videoElement.classList.remove('hidden');
+                            if(selectedMapId === 1) videoElement.src = 'img/background.mp4';
+                            else if(selectedMapId === 2) videoElement.src = 'img/background2.mp4';
+                            else if(selectedMapId === 3) videoElement.src = 'img/background4.mp4';
+                            videoElement.play().catch(e => console.log(e));
+                            videoElement.style.opacity = 0.6;
+                        }
                     }, 500);
+                    
                     if (sprites['map' + selectedMapId]) mapImage = sprites['map' + selectedMapId];
                 }
                 
@@ -477,7 +520,7 @@
         // --- PRÉCHARGEMENT DES ASSETS ---
         const sprites = {};
         const imagesToLoad = {
-            map1: 'img/map1.png', map2: 'img/map2.png', map3: 'img/map3.png',
+            map1: 'img/map1.png', map2: 'img/map2.png', map3: 'img/map3.png', map4: 'img/map4.png',
             s1_idle_r: 'img/slime1_right.png', s1_idle_l: 'img/slime1_left.png',
             s1_walk_r1: 'img/slime1_moveright1.png', s1_walk_r2: 'img/slime1_moveright2.png', s1_walk_r3: 'img/slime1_moveright3.png',
             s1_walk_l1: 'img/slime1_moveleft1.png', s1_walk_l2: 'img/slime1_moveleft2.png', s1_walk_l3: 'img/slime1_moveleft3.png',
