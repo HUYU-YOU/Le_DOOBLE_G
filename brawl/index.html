@@ -157,6 +157,11 @@
         const canvas = document.getElementById('gameCanvas'); 
         const ctx = canvas.getContext('2d');
         
+        // --- CONSTANTES DE CAMERA ET TAILLE LOGIQUE (Adaptatif) ---
+        let CAMERA_ZOOM = 1.0;
+        let LOGICAL_WIDTH = 800;
+        let LOGICAL_HEIGHT = 500;
+
         // --- CHARGEMENT DYNAMIQUE DE TOUS LES SPRITES ---
         const imgs = {};
         const imgFiles = {
@@ -199,7 +204,6 @@
         };
 
         // --- GÉNÉRATION AUTOMATIQUE DES ANIMATIONS ---
-        // NINJA
         for (let i = 1; i <= 8; i++) {
             imgFiles[`leftatqninja${i}`] = `img/leftatqninja${i}.png`;
             imgFiles[`rightatqninja${i}`] = `img/rightatqninja${i}.png`;
@@ -209,42 +213,27 @@
             imgFiles[`atqright_top${i}`] = `img/atqright_top${i}.png`;
             imgFiles[`atqleft_bot${i}`] = `img/atqleft_bot${i}.png`;
             imgFiles[`atqright_bot${i}`] = `img/atqright_bot${i}.png`;
-        }
-        
-        // MAGE
-        for (let i = 1; i <= 4; i++) {
+            
             imgFiles[`mage_topleft${i}`] = `img/mage_topleft${i}.png`;
             imgFiles[`mage_topright${i}`] = `img/mage_topright${i}.png`;
             imgFiles[`mage_atqleft${i}`] = `img/mage_atqleft${i}.png`;
             imgFiles[`mage_atqright${i}`] = `img/mage_atqright${i}.png`;
-        }
-        for (let i = 1; i <= 3; i++) {
-            imgFiles[`mage_botleft${i}`] = `img/mage_botleft${i}.png`;
-            imgFiles[`mage_botright${i}`] = `img/mage_botright${i}.png`;
-        }
-
-        // BRUTE
-        for (let i = 1; i <= 3; i++) {
-            imgFiles[`leftatqbrute${i}`] = `img/leftatqbrute${i}.png`;
-            imgFiles[`rightatqbrute${i}`] = `img/rightatqbrute${i}.png`;
-        }
-        for (let i = 1; i <= 4; i++) {
+            
             imgFiles[`brute_lefttop${i}`] = `img/brute_lefttop${i}.png`;
             imgFiles[`brute_righttop${i}`] = `img/brute_righttop${i}.png`;
             imgFiles[`brute_leftbot${i}`] = `img/brute_leftbot${i}.png`;
             imgFiles[`brute_rightbot${i}`] = `img/brute_rightbot${i}.png`;
         }
-
-        // GUNNER
         for (let i = 1; i <= 3; i++) {
+            imgFiles[`mage_botleft${i}`] = `img/mage_botleft${i}.png`;
+            imgFiles[`mage_botright${i}`] = `img/mage_botright${i}.png`;
+            imgFiles[`leftatqbrute${i}`] = `img/leftatqbrute${i}.png`;
+            imgFiles[`rightatqbrute${i}`] = `img/rightatqbrute${i}.png`;
             imgFiles[`gunner_lefttop${i}`] = `img/gunner_lefttop${i}.png`;
             imgFiles[`gunner_righttop${i}`] = `img/gunner_righttop${i}.png`;
             imgFiles[`gunner_leftbot${i}`] = `img/gunner_leftbot${i}.png`;
             imgFiles[`gunner_rightbot${i}`] = `img/gunner_rightbot${i}.png`;
-        }
-
-        // PATHKILLER
-        for (let i = 1; i <= 3; i++) {
+            
             imgFiles[`pathkiller_leftclicright${i}`] = `img/pathkiller_leftclicright${i}.png`;
             imgFiles[`pathkiller_leftclicleft${i}`] = `img/pathkiller_leftclicleft${i}.png`;
             imgFiles[`pathkiller_rightclicright${i}`] = `img/pathkiller_rightclicright${i}.png`;
@@ -263,10 +252,9 @@
         // --- AUDIO & MUSIC DE FOND ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const bgmPlayer = new Audio();
-        bgmPlayer.volume = 0.25; // 25% de volume
+        bgmPlayer.volume = 0.08; // Baissé drastiquement
         bgmPlayer.loop = true;
 
-        // Déverrouillage global du son
         function forceAudioUnlock() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             document.removeEventListener('click', forceAudioUnlock);
@@ -292,7 +280,6 @@
             let playPromise = bgmPlayer.play();
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
-                    console.log("Musique bloquée en attente d'un clic utilisateur...");
                     document.addEventListener('click', () => { bgmPlayer.play().catch(e=>{}); }, {once: true});
                 });
             }
@@ -303,31 +290,29 @@
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
             
-            // --- NOUVEAUX SONS D'ATTAQUES ---
             if (type === 'slash') { 
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); 
-                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
+                gain.gain.setValueAtTime(0.015, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
             } 
             else if (type === 'punch') { 
                 osc.type = 'square'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.15); 
-                gain.gain.setValueAtTime(0.025, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); 
+                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); 
             } 
             else if (type === 'magic') { 
                 osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.2); 
-                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); 
+                gain.gain.setValueAtTime(0.015, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); 
             }
             else if (type === 'grapple') { 
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1); 
-                gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
+                gain.gain.setValueAtTime(0.015, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); 
             }
-            // --- ANCIENS SONS ---
-            else if (type === 'jump') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.025, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
-            else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.1); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
-            else if (type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gain.gain.setValueAtTime(0.025, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); } 
-            else if (type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); } 
-            else if (type === 'death') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4); gain.gain.setValueAtTime(0.075, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); }
-            else if (type === 'shatter') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); } 
-            else if (type === 'squish') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.2); gain.gain.setValueAtTime(0.075, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25); }
+            else if (type === 'jump') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
+            else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.1); gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1); } 
+            else if (type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); } 
+            else if (type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(900, now + 0.2); gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2); } 
+            else if (type === 'death') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 0.4); gain.gain.setValueAtTime(0.06, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4); }
+            else if (type === 'shatter') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3); gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); } 
+            else if (type === 'squish') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.2); gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25); }
             
             osc.start(now); osc.stop(now + 0.4);
         }
@@ -338,7 +323,6 @@
         window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
         window.addEventListener('mousedown', e => { if(e.button === 0) keys['mouse_left'] = true; if(e.button === 2) keys['mouse_right'] = true; });
         window.addEventListener('mouseup', e => { if(e.button === 0) keys['mouse_left'] = false; if(e.button === 2) keys['mouse_right'] = false; });
-        // BLOQUE LE MENU DU CLIC DROIT POUR POUVOIR ATTAQUER
         canvas.addEventListener('contextmenu', e => e.preventDefault());
 
         function getCtrl(pId) {
@@ -355,9 +339,10 @@
             slime: { skinKey: 'slime', color: '#00ffcc', w: 60, h: 60, speed: 3.5, jump: -9.0, weight: 1.1, dmg: 4.0, kb: 4.0, isRanged: false, maxJumps: 5 }
         };
         
+        // La Map 2 a été redimensionnée en multipliant ses dimensions par 1.33 pour s'adapter au "dézoom" de la caméra.
         const mapData = [
             [{x: 180, y: 300, w: 440, h: 20}], 
-            [{x: 120, y: 310, w: 560, h: 20}, {x: 180, y: 200, w: 120, h: 10}, {x: 500, y: 200, w: 120, h: 10}, {x: 340, y: 90, w: 120, h: 10}], 
+            [{x: 160, y: 413, w: 746, h: 26}, {x: 240, y: 266, w: 160, h: 13}, {x: 666, y: 266, w: 160, h: 13}, {x: 453, y: 120, w: 160, h: 13}], 
             [{x: 100, y: 330, w: 180, h: 20}, {x: 520, y: 330, w: 180, h: 20}] 
         ];
 
@@ -404,7 +389,8 @@
                 this.angle = 0; 
                 this.life = isMine ? 600 : (isShortRange ? 12 : 60); 
                 if (isHook) this.life = 15; 
-                if (isRope) this.life = 10; 
+                // NERF PORTÉE DE LA BRUTE
+                if (isRope) this.life = 8; 
             }
             
             draw() { 
@@ -418,7 +404,6 @@
                             let angle = Math.atan2(this.y - startY, this.x - startX);
                             ctx.rotate(angle);
                             let dist = Math.hypot(this.x - startX, this.y - startY);
-                            // Corde beaucoup plus épaisse pour la Brute
                             ctx.drawImage(ropeImg, 0, -16, dist, 32); 
                             ctx.restore();
                         } else {
@@ -452,7 +437,6 @@
                     let drawW = 45; let drawH = 45 * (projImg.naturalHeight / projImg.naturalWidth);
                     if (this.isShuriken) { drawW = 60; drawH = 60 * (projImg.naturalHeight / projImg.naturalWidth); }
                     else if (this.ownerSkinKey === 'sumo') { 
-                        // Projectile beaucoup plus grand pour la Brute
                         drawW = 130; drawH = 130 * (projImg.naturalHeight / projImg.naturalWidth); 
                     } 
                     
@@ -492,7 +476,8 @@
                     this.x += this.vx; this.y += this.vy; this.life--; 
                 }
                 
-                if (this.life <= 0 || this.x < -100 || this.x > canvas.width + 100 || this.y > canvas.height + 100) this.active = false; 
+                // Adapté pour la taille logique
+                if (this.life <= 0 || this.x < -100 || this.x > LOGICAL_WIDTH + 100 || this.y > LOGICAL_HEIGHT + 100) this.active = false; 
                 
                 players.forEach(pl => { 
                     if (areEnemies(pl.id, this.ownerId) && !pl.isDead && this.active && this.x + 8 > pl.x && this.x - 8 < pl.x + pl.w && this.y + 8 > pl.y && this.y - 8 < pl.y + pl.h) { 
@@ -554,8 +539,8 @@
                 
                 if (this.outOfBoundsTimer > 0) {
                     ctx.fillStyle = 'red'; ctx.font = "35px Arial";
-                    let warnX = Math.max(20, Math.min(canvas.width - 40, this.x));
-                    let warnY = Math.max(40, Math.min(canvas.height - 20, this.y));
+                    let warnX = Math.max(20, Math.min(LOGICAL_WIDTH - 40, this.x));
+                    let warnY = Math.max(40, Math.min(LOGICAL_HEIGHT - 20, this.y));
                     ctx.fillText("⚠️", warnX, warnY);
                 }
 
@@ -682,7 +667,6 @@
                         ctx.fillRect(-20, -3, 40, 6); ctx.fillRect(-3, -20, 6, 40); ctx.restore();
                     } else if (this.skinKey === 'sumo' && this.chargingAtk === 'H') {
                         ctx.shadowBlur = 15; ctx.shadowColor = '#ff007f'; ctx.beginPath();
-                        // Cercle de la Brute BEAUCOUP plus petit et resserré
                         ctx.arc(0, 0, (this.w * 0.55) + (this.chargeTimer * 0.15), 0, Math.PI*2);
                         ctx.strokeStyle = `rgba(255, 0, 127, ${this.chargeTimer/90})`;
                         ctx.lineWidth = 4; ctx.stroke(); ctx.shadowBlur = 0;
@@ -763,7 +747,8 @@
                     this.attackTimer = 25; this.maxAttackTimer = 25; playSound('punch');
                     let dmg = this.baseDmg * 1.2 * (1 + chargePct * 0.5);
                     let kb = this.baseKb * 1.2 * (1 + chargePct * 0.5);
-                    let speed = 25; 
+                    // NERF DE LA BRUTE ICI (Vitesse réduite pour une portée plus courte)
+                    let speed = 20; 
                     let projVx = aimX * speed; let projVy = aimY * speed; if (aimX !== 0 && aimY !== 0) { projVx *= 0.707; projVy *= 0.707; } if (aimX === 0 && aimY === 0) projVx = this.facing * speed;
                     projectiles.push(new Projectile(px, py, projVx, projVy, this.id, dmg, kb, this.color, false, false, false, false, this.skinKey, true)); 
                 }
@@ -852,13 +837,24 @@
                             else if (this.skinKey === 'slime') {
                                 doRanged = false;
                                 if (aimY === 1) { // Plongeon
-                                    attackDuration = 30; this.vy = 12; this.vx = 0;
+                                    attackDuration = 30;
                                 } else if (aimY === -1) { // Haut
                                     attackDuration = 25;
                                 } else if (!isHeavy) { // Roulade
                                     attackDuration = 40;
                                 } else { // Frappe
                                     attackDuration = 25;
+                                }
+                            }
+
+                            // IMPULSION DE MOUVEMENT (MÊLÉE - Gère la poussée vers le haut ou le plongeon vers le bas)
+                            if (!doRanged && !isHook) {
+                                if (aimY === -1) { 
+                                    this.vy = this.jumpForce * 1.15; // Propulsion Haut
+                                    this.grounded = false;
+                                } else if (aimY === 1 && !this.grounded) { 
+                                    this.vy = 18; // Plongeon Bas
+                                    this.vx *= 0.5; // Ralentit horizontalement pour faire une belle chute
                                 }
                             }
 
@@ -910,10 +906,9 @@
                 
                 if (this.attackTimer > 0) this.attackTimer--; 
                 
-                // Slime Sustain
+                // Slime Sustain Hitbox
                 if (this.skinKey === 'slime' && this.attackTimer > 0) {
                     if (this.atkDirY === 1) { 
-                        if (!this.grounded) { this.vy = 18; this.vx = 0; if (this.attackTimer < 15) this.attackTimer = 15; }
                         players.forEach(pl => {
                             if (areEnemies(pl.id, this.id) && !pl.isDead && !this.hitEnemies.includes(pl.id) && Math.abs(pl.x - this.x) < (this.w + pl.w)/2 + 10 && Math.abs(pl.y - this.y) < (this.h + pl.h)/2 + 15) {
                                  this.hitEnemies.push(pl.id); pl.takeDamage(7, 6, this.facing);
@@ -932,11 +927,12 @@
                 this.vy += 0.55; this.x += this.vx; this.y += this.vy; this.grounded = false;
                 for (let p of platforms) { if (this.vy > 0 && this.x + this.w > p.x && this.x < p.x + p.w && this.y + this.h >= p.y && this.y + this.h <= p.y + this.vy + 2) { this.y = p.y - this.h; this.vy = 0; this.grounded = true; this.jumps = this.maxJumps; } }
                 
-                if (this.x < -150 || this.x > canvas.width + 150 || this.y < -300 || this.y > canvas.height + 50) {
+                // Adapté pour la taille logique
+                if (this.x < -150 || this.x > LOGICAL_WIDTH + 150 || this.y < -300 || this.y > LOGICAL_HEIGHT + 50) {
                     this.outOfBoundsTimer++;
                     if (this.outOfBoundsTimer > 180) this.die(); 
                 } else { this.outOfBoundsTimer = 0; }
-                if (this.y > canvas.height + 200) this.die();
+                if (this.y > LOGICAL_HEIGHT + 200) this.die();
             }
             
             fireUltimate() {
@@ -955,7 +951,9 @@
                 this.chargingAtk = null; this.chargeTimer = 0; this.mageShots = 0; this.mageCooldown = 0; this.activeMines = [];
                 updateHUD();
                 for (let i = 0; i < 30; i++) particles.push(new Particle(this.x, this.y, this.color));
-                if (this.lives <= 0) { this.isDead = true; checkGameEnd(); } else { this.x = canvas.width / 2 + (Math.random() * 100 - 50); this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; }
+                
+                // Adapté pour la taille logique
+                if (this.lives <= 0) { this.isDead = true; checkGameEnd(); } else { this.x = LOGICAL_WIDTH / 2 + (Math.random() * 100 - 50); this.y = 50; this.vx = 0; this.vy = 0; this.invincibleTimer = 120; }
             }
             
             takeDamage(dmg, baseKb, dir) {
@@ -992,8 +990,9 @@
             if (dx > 40) ctrl.right = true; else if (dx < -40) ctrl.left = true;
             if (dy < -50 && Math.random() < 0.05) ctrl.jump = true;
             
+            // Adapté pour la taille logique
             let platformBelow = platforms.some(p => bot.x > p.x - 20 && bot.x < p.x + p.w + 20 && p.y > bot.y);
-            if (!platformBelow || bot.y > 400) { if (bot.vy > 0) ctrl.jump = true; if (bot.x < 100) ctrl.right = true; if (bot.x > 700) ctrl.left = true; }
+            if (!platformBelow || bot.y > LOGICAL_HEIGHT - 100) { if (bot.vy > 0) ctrl.jump = true; if (bot.x < 100) ctrl.right = true; if (bot.x > LOGICAL_WIDTH - 100) ctrl.left = true; }
             if (minDist < 100 && target.attackTimer > 0 && bot.shieldHealth > 30 && Math.random() < 0.4) { ctrl.block = true; ctrl.right = false; ctrl.left = false; }
             if (bot.superMeter >= 150 && minDist < 300) { ctrl.ult = true; }
             if (!ctrl.block && minDist < (bot.isRanged ? 300 : 70) && Math.random() < (bot.isRanged ? 0.05 : 0.15)) { if (Math.random() < 0.3) ctrl.atkH = true; else ctrl.atkL = true; }
@@ -1068,7 +1067,7 @@
 
         function drawMapBackground() {
             let mapImg = imgs[`map${currentMapIdx + 1}`];
-            if (mapImg && mapImg.complete && mapImg.naturalWidth !== 0) ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height); else { ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+            if (mapImg && mapImg.complete && mapImg.naturalWidth !== 0) ctx.drawImage(mapImg, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT); else { ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT); }
         }
 
         let currentIsBot = false;
@@ -1093,8 +1092,15 @@
         function chooseMap(idx) { locMapChoice = idx; currentMapIdx = idx; playSound('powerup'); if (locSelections.length > 0) document.getElementById('start-local-btn').style.display = 'block'; }
         
         function startLocalGame() {
-            if(gameActive) return; document.getElementById('local-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; platforms = mapData[locMapChoice];
-            players = locSelections.map((selection, i) => { document.getElementById(`h${i + 1}`).style.display = 'block'; let p = new Player(i + 1, i===0 ? 150 : 650, selection.char); p.isBot = selection.bot; return p; });
+            if(gameActive) return; 
+            
+            // Gestion de l'agrandissement Logique (Zoom out pour Ciel Brisé)
+            if (locMapChoice === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; }
+            LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM;
+            LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM;
+            
+            document.getElementById('local-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; platforms = mapData[locMapChoice];
+            players = locSelections.map((selection, i) => { document.getElementById(`h${i + 1}`).style.display = 'block'; let p = new Player(i + 1, i===0 ? 150 : (LOGICAL_WIDTH - 150), selection.char); p.isBot = selection.bot; return p; });
             projectiles = []; particles = []; items = []; gameActive = true; updateHUD(); 
             playBGM('battle', locMapChoice);
             if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); gameLoopLocal();
@@ -1102,8 +1108,12 @@
 
         function gameLoopLocal() {
             if (!gameActive) return; ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save();
+            
+            // On Applique le ZOOM OUT Global ici
+            ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM);
+            
             if (screenShake > 0) { ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake); screenShake--; } drawMapBackground();
-            itemSpawnTimer++; if (itemSpawnTimer > 500 && items.length === 0) { items.push(new Item(Math.random() * 500 + 150, 100)); itemSpawnTimer = 0; }
+            itemSpawnTimer++; if (itemSpawnTimer > 500 && items.length === 0) { items.push(new Item(Math.random() * (LOGICAL_WIDTH - 300) + 150, 100)); itemSpawnTimer = 0; }
             ctx.fillStyle = 'rgba(0, 0, 0, 0)'; platforms.forEach(p => { ctx.fillRect(p.x, p.y, p.w, p.h); }); 
             items.forEach((it, i) => { it.draw(); it.y += 2; platforms.forEach(p => { if (it.y + it.h >= p.y && it.x + it.w > p.x && it.x < p.x + p.w) it.y = p.y - it.h; }); players.forEach(pl => { if (!pl.isDead && pl.x < it.x + it.w && pl.x + pl.w > it.x && pl.y < it.y + it.h && pl.y + pl.h > it.y) { pl.applyBuff(it.type); items.splice(i, 1); } }); });
             
@@ -1155,6 +1165,8 @@
                         document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; 
                         gameActive = true; projectiles = []; particles = []; 
                         currentMapIdx = data.mapIdx || 0;
+                        if (currentMapIdx === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; }
+                        LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM; LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM;
                         playBGM('battle', currentMapIdx);
                     }
                     if (data.type === 'state') {
@@ -1178,9 +1190,13 @@
         }
 
         function startNetworkGameHost() {
+            // Gestion de l'agrandissement Logique (Zoom out pour Ciel Brisé)
+            if (currentMapIdx === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; }
+            LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM; LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM;
+
             document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; platforms = mapData[0]; currentMapIdx = 0; projectiles = []; particles = [];
             players = [new Player(1, 150, netSelectedChar)];
-            netPlayersData.forEach((np, i) => { let spawnX = 150 + (np.id * 150); if(maxNetPlayers === 2) spawnX = 650; players.push(new Player(np.id, spawnX, np.char)); });
+            netPlayersData.forEach((np, i) => { let spawnX = 150 + (np.id * 150); if(maxNetPlayers === 2) spawnX = LOGICAL_WIDTH - 150; players.push(new Player(np.id, spawnX, np.char)); });
             players.forEach(p => { document.getElementById(`h${p.id}`).style.display = 'block'; document.getElementById(`n${p.id}`).innerText = `J${p.id}`; });
             playBGM('battle', currentMapIdx);
             connsNet.forEach(c => c.send({type: 'start', mapIdx: currentMapIdx})); 
@@ -1189,8 +1205,11 @@
 
         function hostLoop() {
             if (!gameActive) return; ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save();
+            
+            ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM);
             if (screenShake > 0) { ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake); screenShake--; } drawMapBackground();
-            itemSpawnTimer++; if (itemSpawnTimer > 500 && items.length === 0) { items.push(new Item(Math.random() * 500 + 150, 100)); itemSpawnTimer = 0; }
+            
+            itemSpawnTimer++; if (itemSpawnTimer > 500 && items.length === 0) { items.push(new Item(Math.random() * (LOGICAL_WIDTH - 300) + 150, 100)); itemSpawnTimer = 0; }
             ctx.fillStyle = 'rgba(0,0,0,0)'; platforms.forEach(p => { ctx.fillRect(p.x, p.y, p.w, p.h); }); 
             items.forEach((it, i) => { it.draw(); it.y += 2; platforms.forEach(p => { if (it.y + it.h >= p.y && it.x + it.w > p.x && it.x < p.x + p.w) it.y = p.y - it.h; }); players.forEach(pl => { if (!pl.isDead && pl.x < it.x + it.w && pl.x + pl.w > it.x && pl.y < it.y + it.h && pl.y + pl.h > it.y) { pl.applyBuff(it.type); items.splice(i, 1); } }); });
             
@@ -1206,7 +1225,11 @@
         }
 
         function drawClientGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); drawMapBackground();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM);
+            drawMapBackground();
+            
             items.forEach(it => { ctx.shadowBlur = 15; ctx.shadowColor = it.color; ctx.font = "24px Arial"; ctx.fillText(it.type==='dmg'?'💥':(it.type==='heal'?'❤️':'⚡'), it.x, it.y+22); ctx.shadowBlur = 0; });
             players.forEach(pl => {
                 if (pl.isDead) return; if (pl.invincibleTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
@@ -1218,6 +1241,7 @@
                 let pObj = new Projectile(pr.x, pr.y, pr.vx, pr.vy, pr.ownerId, pr.dmg, pr.kb, pr.color, false, pr.isMine, pr.isShuriken, pr.isHook, pr.ownerSkinKey, pr.isRope);
                 pObj.life = pr.life; pObj.angle = pr.angle || 0; pObj.draw(); 
             });
+            ctx.restore();
         }
     </script>
     
