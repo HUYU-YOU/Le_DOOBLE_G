@@ -52,7 +52,7 @@
 
         /* GAME CONTAINER */
         #game-wrapper { position: relative; width: 100%; max-width: 800px; height: 600px; border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.15); border: 2px solid rgba(255,255,255,0.1); overflow: hidden; background: #000; cursor: crosshair; }
-        #bg-video, #bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; transition: opacity 0.5s; }
+        #bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; transition: opacity 0.5s; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #canvas-terrain { z-index: 2; } 
         #canvas-entities { z-index: 3; }
@@ -101,7 +101,6 @@
         <video id="bg-video" autoplay loop muted playsinline>
             <source src="img/background.mp4" type="video/mp4">
         </video>
-        <img id="bg-image" class="hidden" src="" alt="Background">
 
         <!-- UI & ARMES -->
         <div id="ui-layer" class="hidden"></div>
@@ -337,26 +336,18 @@
             if (el) el.classList.add('selected');
             
             let videoElement = document.getElementById('bg-video');
-            let imageElement = document.getElementById('bg-image');
-            
             videoElement.style.opacity = 0;
-            imageElement.style.opacity = 0;
             
             setTimeout(() => {
-                if (id === 4) {
-                    videoElement.classList.add('hidden');
-                    imageElement.classList.remove('hidden');
-                    imageElement.src = 'img/background3.png';
-                    imageElement.style.opacity = 0.6;
-                } else {
-                    imageElement.classList.add('hidden');
-                    videoElement.classList.remove('hidden');
-                    if(id === 1) videoElement.src = 'img/background.mp4';
-                    else if(id === 2) videoElement.src = 'img/background2.mp4';
-                    else if(id === 3) videoElement.src = 'img/background4.mp4';
-                    videoElement.play().catch(e => console.log(e));
-                    videoElement.style.opacity = 0.6;
-                }
+                // MISE A JOUR DES VIDEOS EN FONCTION DE LA DEMANDE
+                if(id === 1) videoElement.src = 'img/background.mp4';
+                else if(id === 2) videoElement.src = 'img/background2.mp4';
+                else if(id === 3) videoElement.src = 'img/background4.mp4'; // Map 3 utilise video 4
+                else if(id === 4) videoElement.src = 'img/background3.mp4'; // Map 4 utilise video 3
+                
+                videoElement.load(); // CRUCIAL : Force le navigateur à charger la nouvelle source mp4
+                videoElement.play().catch(e => console.log(e));
+                videoElement.style.opacity = 0.6;
             }, 500);
             
             if (sprites['map' + id]) mapImage = sprites['map' + id];
@@ -610,7 +601,8 @@
             constructor(x, y, id, type, color, team, name, isBot = false) {
                 this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
                 this.team = team; this.name = name; this.isBot = isBot;
-                this.scale = 1; this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
+                // ON REDUIT LA TAILLE GLOBALE DU SLIME POUR QU'IL RESTE PETIT ET MIGNON !
+                this.scale = 1; this.radius = 8; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
                 
@@ -675,7 +667,7 @@
                     if (this.state === 'walk') this.state = 'idle';
                 }
 
-                // X Collision : On prend en compte la tête pour ne pas glisser dans un mur
+                // X Collision
                 if (this.vx !== 0) {
                     let nextX = this.x + this.vx; 
                     let step = 0; let maxStep = 8; 
@@ -696,12 +688,11 @@
                     }
                 }
 
-                // Y Collision Séparée (Correction Tête au plafond / Pieds au sol)
+                // Y Collision
                 this.vy += GRAVITY; 
                 this.y += this.vy;
                 
                 if (this.vy >= 0 && isSolid(this.x, this.y + this.radius)) {
-                    // Touche le Sol
                     if (this.state === 'air' && this.vy > 2) { 
                         this.state = 'landed'; this.landTimer = 15; 
                     } else if (this.state === 'air') {
@@ -715,7 +706,6 @@
                         push++;
                     }
                 } else if (this.vy < 0 && isSolid(this.x, this.y - this.radius)) {
-                    // Se cogne la Tête !
                     this.vy = 0;
                     let push = 0;
                     while(isSolid(this.x, this.y - this.radius + 1) && push < 20) {
@@ -729,17 +719,17 @@
                 // ADAPTATION DYNAMIQUE AU CHEMIN (SQUISH)
                 let availableHeight = 0;
                 let checkY = Math.floor(this.y + this.radius);
-                while (availableHeight < 40 && !isSolid(this.x, checkY - availableHeight)) {
+                while (availableHeight < 26 && !isSolid(this.x, checkY - availableHeight)) {
                     availableHeight++;
                 }
                 
                 let targetScale = 1;
-                if (availableHeight < 35) {
-                    targetScale = Math.max(0.35, availableHeight / 35);
+                if (availableHeight < 24) {
+                    targetScale = Math.max(0.4, availableHeight / 24);
                 }
                 if (!this.scale) this.scale = 1;
-                this.scale += (targetScale - this.scale) * 0.15; // Transition douce
-                this.radius = 12 * this.scale;
+                this.scale += (targetScale - this.scale) * 0.15;
+                this.radius = 8 * this.scale;
 
                 // Animations
                 if (this.state === 'walk') {
@@ -812,24 +802,25 @@
                 ctxEnt.translate(renderX, renderY);
                 ctxEnt.scale(this.scale, this.scale);
 
+                // TAILLE DE BASE DE 24x24 AU LIEU DE 40x40
                 if (img && img.complete && img.naturalWidth > 0) {
-                    ctxEnt.drawImage(img, -20, -25, 40, 40);
+                    ctxEnt.drawImage(img, -12, -15, 24, 24);
                 } else { 
-                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(-10, -10, 20, 20); 
+                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(-8, -8, 16, 16); 
                 }
                 ctxEnt.restore();
 
-                // Noms & Flèche sans déformation
-                ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Segoe UI'"; ctxEnt.textAlign = "center";
-                ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 30 * this.scale); ctxEnt.shadowBlur = 0;
+                // Noms & Flèche de la bonne taille
+                ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 10px 'Segoe UI'"; ctxEnt.textAlign = "center";
+                ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 20 * this.scale); ctxEnt.shadowBlur = 0;
 
                 if (currentPlayer === this.id && gameState !== 'end') {
                     ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
                     ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = ctxEnt.fillStyle;
                     ctxEnt.beginPath(); 
-                    ctxEnt.moveTo(renderX - 6, renderY - 45 * this.scale); 
-                    ctxEnt.lineTo(renderX + 6, renderY - 45 * this.scale); 
-                    ctxEnt.lineTo(renderX, renderY - 35 * this.scale); 
+                    ctxEnt.moveTo(renderX - 4, renderY - 30 * this.scale); 
+                    ctxEnt.lineTo(renderX + 4, renderY - 30 * this.scale); 
+                    ctxEnt.lineTo(renderX, renderY - 22 * this.scale); 
                     ctxEnt.fill(); 
                     ctxEnt.shadowBlur = 0;
                 }
@@ -1082,7 +1073,7 @@
                 ai.facing = (target.x < ai.x) ? 'l' : 'r'; ai.isAiming = true;
                 if(turnFrames > 180) turnFrames = 180;
 
-                let dx = target.x - ai.x; let dy = (target.y - ai.y) - 15; 
+                let dx = target.x - ai.x; let dy = (target.y - ai.y) - 10; 
                 
                 let errorOffsetX = (Math.random() - 0.5) * (minDist * 0.15); 
                 let errorOffsetY = (Math.random() - 0.5) * (minDist * 0.15);
@@ -1102,11 +1093,11 @@
                         ai.triggerAttackAnimation(ai.weapon);
 
                         if (ai.weapon === 'boxe') {
-                            executePunch(ai, ai.x, ai.y - 15 * ai.scale, angle, ai.color, true);
+                            executePunch(ai, ai.x, ai.y - 10 * ai.scale, angle, ai.color, true);
                         } else {
                             if (ai.weapon === 'bazooka') playSound('bazooka_fire');
                             if (ai.weapon === 'grenade') playSound('grenade_throw');
-                            projectile = new Projectile(ai.x, ai.y - 15 * ai.scale, Math.cos(angle) * power, Math.sin(angle) * power, ai.weapon);
+                            projectile = new Projectile(ai.x, ai.y - 10 * ai.scale, Math.cos(angle) * power, Math.sin(angle) * power, ai.weapon);
                             gameState = 'flying'; retreatFrames = 60; 
                         }
                     }
@@ -1211,7 +1202,7 @@
                 document.getElementById('weapon-panel').classList.add('hidden'); 
                 activeWorm.triggerAttackAnimation(activeWorm.weapon);
 
-                let startY = activeWorm.y - 15 * activeWorm.scale;
+                let startY = activeWorm.y - 10 * activeWorm.scale;
 
                 if (activeWorm.weapon === 'boxe') {
                     executePunch(activeWorm, activeWorm.x, startY, angle, activeWorm.color, true);
@@ -1282,7 +1273,7 @@
                     ctxEnt.save(); ctxEnt.translate(radarX, radarY);
                     let angle = Math.atan2(screenY - HEIGHT/2, screenX - WIDTH/2); ctxEnt.rotate(angle);
                     ctxEnt.fillStyle = enemy.color; ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = enemy.color;
-                    ctxEnt.beginPath(); ctxEnt.moveTo(15, 0); ctxEnt.lineTo(-10, 10); ctxEnt.lineTo(-10, -10); ctxEnt.fill();
+                    ctxEnt.beginPath(); ctxEnt.moveTo(10, 0); ctxEnt.lineTo(-6, 6); ctxEnt.lineTo(-6, -6); ctxEnt.fill();
                     ctxEnt.restore();
                 }
             });
@@ -1348,7 +1339,7 @@
                 let power = Math.min(Math.hypot(dx, dy), activeWorm.weapon === 'boxe' ? 50 : 180); 
                 let angle = Math.atan2(dy, dx);
                 
-                let startX = activeWorm.x; let startY = activeWorm.y - 15 * activeWorm.scale;
+                let startX = activeWorm.x; let startY = activeWorm.y - 10 * activeWorm.scale;
                 
                 ctxEnt.beginPath(); ctxEnt.moveTo(startX, startY); ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
                 ctxEnt.strokeStyle = activeWorm.weapon === 'boxe' ? '#ff0000' : activeWorm.color;
