@@ -101,7 +101,6 @@
         <video id="bg-video" autoplay loop muted playsinline>
             <source src="img/background.mp4" type="video/mp4">
         </video>
-        <!-- Ajout de l'image de fond pour la map 4 -->
         <img id="bg-image" class="hidden" src="" alt="Background">
 
         <!-- UI & ARMES -->
@@ -229,7 +228,6 @@
             let playPromise = bgmPlayer.play();
             if (playPromise !== undefined) {
                 playPromise.catch(e => {
-                    console.log("Audio play prevented by browser. Waiting for interaction...");
                     document.addEventListener('click', () => { bgmPlayer.play().catch(e=>{}); }, {once: true});
                 });
             }
@@ -315,7 +313,9 @@
             if (gameState !== 'playing') return;
             let activeWorm = worms[currentPlayer - 1];
             
-            if (gameMode === 'online' && currentPlayer !== myPlayerId) return;
+            let hasControl = (gameMode !== 'online' || (myPlayerId === 1 && activeWorm.team === 'A') || (myPlayerId === 2 && activeWorm.team === 'B'));
+            if (!hasControl) return;
+            
             if (activeWorm && !activeWorm.isBot) {
                 activeWorm.weapon = wType;
                 document.querySelectorAll('.weapon-btn').forEach(btn => btn.classList.remove('active'));
@@ -330,14 +330,8 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
             selectedMapId = id;
             
-            // Mise à jour de la taille du monde
-            if (id === 3) {
-                WORLD_WIDTH = 4000;
-                WORLD_HEIGHT = 1200;
-            } else {
-                WORLD_WIDTH = 2000;
-                WORLD_HEIGHT = 600;
-            }
+            if (id === 3) { WORLD_WIDTH = 4000; WORLD_HEIGHT = 1200; } 
+            else { WORLD_WIDTH = 2000; WORLD_HEIGHT = 600; }
 
             document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
             if (el) el.classList.add('selected');
@@ -350,13 +344,11 @@
             
             setTimeout(() => {
                 if (id === 4) {
-                    // Basculer sur l'image de fond statique (background3.png)
                     videoElement.classList.add('hidden');
                     imageElement.classList.remove('hidden');
                     imageElement.src = 'img/background3.png';
                     imageElement.style.opacity = 0.6;
                 } else {
-                    // Basculer sur la vidéo
                     imageElement.classList.add('hidden');
                     videoElement.classList.remove('hidden');
                     if(id === 1) videoElement.src = 'img/background.mp4';
@@ -432,39 +424,7 @@
         function setupConnection() {
             conn.on('data', (data) => {
                 if (data.type === 'map_sync') {
-                    selectedMapId = data.mapId;
-                    if (selectedMapId === 3) {
-                        WORLD_WIDTH = 4000;
-                        WORLD_HEIGHT = 1200;
-                    } else {
-                        WORLD_WIDTH = 2000;
-                        WORLD_HEIGHT = 600;
-                    }
-                    
-                    let videoElement = document.getElementById('bg-video');
-                    let imageElement = document.getElementById('bg-image');
-                    
-                    videoElement.style.opacity = 0;
-                    imageElement.style.opacity = 0;
-                    
-                    setTimeout(() => {
-                        if (selectedMapId === 4) {
-                            videoElement.classList.add('hidden');
-                            imageElement.classList.remove('hidden');
-                            imageElement.src = 'img/background3.png';
-                            imageElement.style.opacity = 0.6;
-                        } else {
-                            imageElement.classList.add('hidden');
-                            videoElement.classList.remove('hidden');
-                            if(selectedMapId === 1) videoElement.src = 'img/background.mp4';
-                            else if(selectedMapId === 2) videoElement.src = 'img/background2.mp4';
-                            else if(selectedMapId === 3) videoElement.src = 'img/background4.mp4';
-                            videoElement.play().catch(e => console.log(e));
-                            videoElement.style.opacity = 0.6;
-                        }
-                    }, 500);
-                    
-                    if (sprites['map' + selectedMapId]) mapImage = sprites['map' + selectedMapId];
+                    selectSlimeMap(data.mapId, null);
                 }
                 
                 if (data.type === 'weapon_sync') {
@@ -473,10 +433,13 @@
                 }
 
                 if (data.type === 'sync' && gameState === 'playing') {
-                    let enemy = worms[myPlayerId === 1 ? 1 : 0];
-                    enemy.x = data.x; enemy.y = data.y; enemy.facing = data.facing; 
-                    enemy.state = data.state; enemy.animFrame = data.animFrame;
-                    enemy.isAiming = data.isAiming || false; enemy.aimDy = data.aimDy || 0;
+                    let myTeam = myPlayerId === 1 ? 'A' : 'B';
+                    let enemy = worms.find(w => w.id === currentPlayer && w.team !== myTeam);
+                    if (enemy) {
+                        enemy.x = data.x; enemy.y = data.y; enemy.facing = data.facing; 
+                        enemy.state = data.state; enemy.animFrame = data.animFrame;
+                        enemy.isAiming = data.isAiming || false; enemy.aimDy = data.aimDy || 0;
+                    }
                 }
 
                 if (data.type === 'start_aim') {
@@ -506,14 +469,17 @@
         }
 
         function syncPlayerState() {
-            if (conn && conn.open && gameMode === 'online' && currentPlayer === myPlayerId) {
-                let me = worms[myPlayerId - 1];
-                let dy = isDragging ? (dragStartY - dragCurrentY) : 0;
-                conn.send({ 
-                    type: 'sync', 
-                    x: me.x, y: me.y, facing: me.facing, state: me.state, animFrame: me.animFrame,
-                    isAiming: isDragging, aimDy: dy
-                });
+            if (conn && conn.open && gameMode === 'online') {
+                let myTeam = myPlayerId === 1 ? 'A' : 'B';
+                let me = worms[currentPlayer - 1];
+                if (me && me.team === myTeam) {
+                    let dy = isDragging ? (dragStartY - dragCurrentY) : 0;
+                    conn.send({ 
+                        type: 'sync', 
+                        x: me.x, y: me.y, facing: me.facing, state: me.state, animFrame: me.animFrame,
+                        isAiming: isDragging, aimDy: dy
+                    });
+                }
             }
         }
 
@@ -537,7 +503,6 @@
             s2_atqtop_l: 'img/slime2_leftatqtop.png', s2_atqbot_l: 'img/slime2_leftatqbot.png'
         };
 
-        // AJOUT DYNAMIQUE DES 24 NOUVELLES ANIMATIONS BOXE/GRENADE
         for(let s = 1; s <= 2; s++) {
             for(let i = 1; i <= 3; i++) {
                 imagesToLoad[`s${s}_greleft${i}`] = `img/slime${s}_greleft${i}.png`;
@@ -582,15 +547,14 @@
             mouseScreenY = (e.clientY - rect.top) * (HEIGHT / rect.height);
         });
         
-        // --- NOUVEAU: MOLETTE DE ZOOM ---
+        // --- MOLETTE DE ZOOM ---
         window.addEventListener('wheel', (e) => {
             if (e.target.closest('#game-wrapper')) {
                 e.preventDefault();
-                let zoomAmount = e.deltaY > 0 ? -0.1 : 0.1; // Molette bas = dézoomer, haut = zoomer
+                let zoomAmount = e.deltaY > 0 ? -0.1 : 0.1;
                 let oldZoom = camera.zoom;
-                camera.zoom = Math.max(0.4, Math.min(camera.zoom + zoomAmount, 2.0)); // Zoom max 2x, Zoom min 0.4x
+                camera.zoom = Math.max(0.4, Math.min(camera.zoom + zoomAmount, 2.0)); 
 
-                // Ajuster la caméra pour centrer le zoom par rapport au centre de l'écran
                 let viewW_old = WIDTH / oldZoom;
                 let viewH_old = HEIGHT / oldZoom;
                 let viewW_new = WIDTH / camera.zoom;
@@ -623,19 +587,36 @@
             ctxOffTerrain.globalCompositeOperation = 'source-over';
         }
 
+        // Recherche d'un spawn parfait (Sans buguer dans le plafond)
+        function getValidSpawn(x, position = 'top') {
+            if (position === 'top') {
+                for (let y = 10; y < WORLD_HEIGHT - 30; y++) {
+                    if (!isSolid(x, y) && !isSolid(x, y + 10) && isSolid(x, y + 20)) {
+                        return y + 5; 
+                    }
+                }
+            } else {
+                for (let y = WORLD_HEIGHT - 40; y > 50; y--) {
+                    if (!isSolid(x, y) && !isSolid(x, y - 10) && isSolid(x, y + 20)) {
+                        return y + 5;
+                    }
+                }
+            }
+            return 100; // Fallback
+        }
+
         // --- CLASSES DU JEU ---
         class Slime {
             constructor(x, y, id, type, color, team, name, isBot = false) {
                 this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
                 this.team = team; this.name = name; this.isBot = isBot;
-                this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
+                this.scale = 1; this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
                 
                 this.weapon = 'bazooka';
                 this.aiInput = { left: false, right: false, space: false };
 
-                // Variables de gestion d'animation d'attaque
                 this.isAiming = false; 
                 this.aimDy = 0;
                 this.isAttacking = false;
@@ -647,7 +628,7 @@
 
             triggerAttackAnimation(weaponUsed) {
                 this.isAttacking = true;
-                this.attackFrame = 2; // On commence à la frame d'impact
+                this.attackFrame = 2; 
                 this.attackTimer = 0;
                 this.lastWeaponUsed = weaponUsed;
             }
@@ -655,7 +636,6 @@
             update() {
                 if (this.isDead) return;
 
-                // 1. Gestion de l'animation d'attaque prioritaire
                 if (this.isAttacking) {
                     this.attackTimer++;
                     if (this.attackTimer > 6) { 
@@ -668,11 +648,15 @@
                     }
                 }
 
-                // 2. Gestion Physique et Mouvements
-                let isMyTurn = (currentPlayer === this.id);
-                if (gameMode === 'online' && currentPlayer !== myPlayerId) isMyTurn = false;
+                let isMyTurn = false;
+                if (gameMode === 'online') {
+                    let myTeam = myPlayerId === 1 ? 'A' : 'B';
+                    isMyTurn = (this.id === currentPlayer && this.team === myTeam);
+                } else {
+                    isMyTurn = (currentPlayer === this.id);
+                }
+
                 let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0));
-                
                 let wasOnGround = this.isOnGround;
                 this.isOnGround = false;
 
@@ -691,28 +675,33 @@
                     if (this.state === 'walk') this.state = 'idle';
                 }
 
-                // CORRECTION DU MICRO-BOUNCING
+                // X Collision : On prend en compte la tête pour ne pas glisser dans un mur
                 if (this.vx !== 0) {
-                    let nextX = this.x + this.vx; let step = 0; let maxStep = 6; 
-                    while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) step++;
+                    let nextX = this.x + this.vx; 
+                    let step = 0; let maxStep = 8; 
+                    while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) {
+                        step++;
+                    }
                     
-                    if (step > maxStep) {
+                    if (step > maxStep || isSolid(nextX, this.y - this.radius + 2)) {
                         this.vx = 0; 
                     } else { 
                         this.x = nextX; 
                         this.y -= step; 
                         if (wasOnGround && this.vy >= 0) {
-                            let drop = 0; let maxDrop = 6;
+                            let drop = 0; let maxDrop = 8;
                             while (drop <= maxDrop && !isSolid(this.x, this.y + this.radius + drop)) drop++;
                             if (drop <= maxDrop) this.y += drop; 
                         }
                     }
                 }
 
+                // Y Collision Séparée (Correction Tête au plafond / Pieds au sol)
                 this.vy += GRAVITY; 
                 this.y += this.vy;
                 
-                if (isSolid(this.x, this.y + this.radius)) {
+                if (this.vy >= 0 && isSolid(this.x, this.y + this.radius)) {
+                    // Touche le Sol
                     if (this.state === 'air' && this.vy > 2) { 
                         this.state = 'landed'; this.landTimer = 15; 
                     } else if (this.state === 'air') {
@@ -720,11 +709,39 @@
                     }
                     this.vy = 0; 
                     this.isOnGround = true;
-                    while(isSolid(this.x, this.y + this.radius - 1)) this.y -= 1;
+                    let push = 0;
+                    while(isSolid(this.x, this.y + this.radius - 1) && push < 20) {
+                        this.y -= 1;
+                        push++;
+                    }
+                } else if (this.vy < 0 && isSolid(this.x, this.y - this.radius)) {
+                    // Se cogne la Tête !
+                    this.vy = 0;
+                    let push = 0;
+                    while(isSolid(this.x, this.y - this.radius + 1) && push < 20) {
+                        this.y += 1;
+                        push++;
+                    }
                 } else if (Math.abs(this.vy) > 1.5) { 
                     this.state = 'air'; 
                 }
 
+                // ADAPTATION DYNAMIQUE AU CHEMIN (SQUISH)
+                let availableHeight = 0;
+                let checkY = Math.floor(this.y + this.radius);
+                while (availableHeight < 40 && !isSolid(this.x, checkY - availableHeight)) {
+                    availableHeight++;
+                }
+                
+                let targetScale = 1;
+                if (availableHeight < 35) {
+                    targetScale = Math.max(0.35, availableHeight / 35);
+                }
+                if (!this.scale) this.scale = 1;
+                this.scale += (targetScale - this.scale) * 0.15; // Transition douce
+                this.radius = 12 * this.scale;
+
+                // Animations
                 if (this.state === 'walk') {
                     this.animTimer++;
                     if (this.animTimer > 6) { this.animFrame++; if (this.animFrame > 3) this.animFrame = 1; this.animTimer = 0; }
@@ -739,11 +756,17 @@
             draw() {
                 if (this.isDead) return;
                 
-                let isMe = (currentPlayer === this.id);
+                let isMe = false;
+                if (gameMode === 'online') {
+                    let myTeam = myPlayerId === 1 ? 'A' : 'B';
+                    isMe = (this.id === currentPlayer && this.team === myTeam);
+                } else {
+                    isMe = (currentPlayer === this.id);
+                }
+
                 let aiming = (isMe && isDragging) || (!isMe && this.isAiming) || (this.isAiming && this.isBot);
                 let currentAimDy = isMe && !this.isBot ? (dragStartY - dragCurrentY) : this.aimDy;
 
-                // --- INVERSION COULEUR GANT DE BOXE ET GRENADE ---
                 let visualType = this.type;
                 let isDrawingInvertedWeapon = false;
 
@@ -758,7 +781,6 @@
                 }
 
                 let spriteName = `s${visualType}_`;
-                // --------------------------------------
 
                 if (this.isAttacking) {
                     if (this.lastWeaponUsed === 'bazooka') {
@@ -783,23 +805,32 @@
                 else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
                 else spriteName += `idle_${this.facing}`;
 
-                // NOUVEAU: Le dessin est maintenant absolu grâce au ctxEnt.scale() et translate()
                 let renderX = this.x; let renderY = this.y;
                 let img = sprites[spriteName];
                 
-                if (img && img.complete && img.naturalWidth > 0) {
-                    ctxEnt.drawImage(img, renderX - 20, renderY - 25, 40, 40);
-                } else { 
-                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(renderX - 10, renderY - 10, 20, 20); 
-                }
+                ctxEnt.save();
+                ctxEnt.translate(renderX, renderY);
+                ctxEnt.scale(this.scale, this.scale);
 
+                if (img && img.complete && img.naturalWidth > 0) {
+                    ctxEnt.drawImage(img, -20, -25, 40, 40);
+                } else { 
+                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(-10, -10, 20, 20); 
+                }
+                ctxEnt.restore();
+
+                // Noms & Flèche sans déformation
                 ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Segoe UI'"; ctxEnt.textAlign = "center";
-                ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 30); ctxEnt.shadowBlur = 0;
+                ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 30 * this.scale); ctxEnt.shadowBlur = 0;
 
                 if (currentPlayer === this.id && gameState !== 'end') {
                     ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
                     ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = ctxEnt.fillStyle;
-                    ctxEnt.beginPath(); ctxEnt.moveTo(renderX - 6, renderY - 45); ctxEnt.lineTo(renderX + 6, renderY - 45); ctxEnt.lineTo(renderX, renderY - 35); ctxEnt.fill(); 
+                    ctxEnt.beginPath(); 
+                    ctxEnt.moveTo(renderX - 6, renderY - 45 * this.scale); 
+                    ctxEnt.lineTo(renderX + 6, renderY - 45 * this.scale); 
+                    ctxEnt.lineTo(renderX, renderY - 35 * this.scale); 
+                    ctxEnt.fill(); 
                     ctxEnt.shadowBlur = 0;
                 }
             }
@@ -868,7 +899,7 @@
             draw() {
                 if (!this.active) return;
                 ctxEnt.beginPath(); 
-                ctxEnt.arc(this.x, this.y, this.radius, 0, Math.PI * 2); // Dessin absolu
+                ctxEnt.arc(this.x, this.y, this.radius, 0, Math.PI * 2); 
                 
                 if (this.type === 'grenade') {
                     ctxEnt.fillStyle = (Math.floor(this.timer / 10) % 2 === 0) ? '#ff0000' : '#228b22'; 
@@ -907,8 +938,10 @@
                 <div id="ui-right" class="team-container"></div>
             `;
             let left = document.getElementById('ui-left'); let right = document.getElementById('ui-right');
-            worms.forEach((w, index) => {
-                let container = (index % 2 === 0) ? left : right;
+            
+            // Regroupe par Team
+            worms.forEach(w => {
+                let container = (w.team === 'A' || w.team === 'C') ? left : right;
                 let card = document.createElement('div'); card.className = 'player-info';
                 card.innerHTML = `<b style="color: ${w.color}">${w.name}</b><div class="hp-bar-bg"><div id="hp-p${w.id}" class="hp-bar" style="background: ${w.color}; width: 100%; box-shadow: 0 0 10px ${w.color};"></div></div>`;
                 container.appendChild(card);
@@ -926,32 +959,52 @@
             
             generateTerrain();
             
-            if (mode === 'ai') {
+            if (selectedMapId === 3 && mode !== 'local_ffa') {
+                // Map GÉANTE : FORCER LA PRÉSENCE DE 4 SLIMES POUR REMPLIR (TEAM BLEU vs TEAM ROSE)
+                let s1_x = 300, s2_x = WORLD_WIDTH - 300, s3_x = 500, s4_x = WORLD_WIDTH - 500;
+                let s1_y = getValidSpawn(s1_x, 'top');
+                let s3_y = getValidSpawn(s3_x, 'bottom'); // Spawn Bleu En Bas à Gauche
+                let s2_y = getValidSpawn(s2_x, 'top');
+                let s4_y = getValidSpawn(s4_x, 'bottom'); // Spawn Rose En Bas à Droite
+
                 worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'JOUEUR 1', false),
-                    new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)', 'B', 'ARTILLERY BOT', true)
+                    new Slime(s1_x, s1_y, 1, 1, 'var(--p1)', 'A', 'Bleu (Haut)', false),
+                    new Slime(s2_x, s2_y, 2, 2, 'var(--p2)', 'B', 'Rose (Haut)', mode === 'ai'),
+                    new Slime(s3_x, s3_y, 3, 1, 'var(--p1)', 'A', 'Bleu (Bas)', false),
+                    new Slime(s4_x, s4_y, 4, 2, 'var(--p2)', 'B', 'Rose (Bas)', mode === 'ai')
                 ];
-            } else if (mode === 'local_1v1' || mode === 'online') {
-                worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'JOUEUR 1', false),
-                    new Slime(WORLD_WIDTH - 200, 100, 2, 2, 'var(--p2)', 'B', 'JOUEUR 2', false)
-                ];
-            } else if (mode === 'local_2v2') {
-                worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false), new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
-                    new Slime(1400, 100, 3, 1, 'var(--p1)', 'A', 'J3 (Cyan)', false), new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p2)', 'B', 'J4 (Rose)', false)
-                ];
-            } else if (mode === 'local_ffa') {
-                worms = [
-                    new Slime(200, 100, 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false), new Slime(800, 100, 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
-                    new Slime(1400, 100, 3, 1, 'var(--p3)', 'C', 'J3 (Or)', false), new Slime(WORLD_WIDTH - 200, 100, 4, 2, 'var(--p4)', 'D', 'J4 (Vert)', false)
-                ];
+            } else {
+                if (mode === 'ai') {
+                    worms = [
+                        new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'JOUEUR 1', false),
+                        new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 2, 2, 'var(--p2)', 'B', 'ARTILLERY BOT', true)
+                    ];
+                } else if (mode === 'local_1v1' || mode === 'online') {
+                    worms = [
+                        new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'JOUEUR 1', false),
+                        new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 2, 2, 'var(--p2)', 'B', 'JOUEUR 2', false)
+                    ];
+                } else if (mode === 'local_2v2') {
+                    worms = [
+                        new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false), 
+                        new Slime(800, getValidSpawn(800), 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
+                        new Slime(1400, getValidSpawn(1400), 3, 1, 'var(--p1)', 'A', 'J3 (Cyan)', false), 
+                        new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 4, 2, 'var(--p2)', 'B', 'J4 (Rose)', false)
+                    ];
+                } else if (mode === 'local_ffa') {
+                    worms = [
+                        new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false), 
+                        new Slime(800, getValidSpawn(800), 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
+                        new Slime(1400, getValidSpawn(1400), 3, 1, 'var(--p3)', 'C', 'J3 (Or)', false), 
+                        new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 4, 2, 'var(--p4)', 'D', 'J4 (Vert)', false)
+                    ];
+                }
             }
             
             buildUI();
             currentPlayer = 1; gameState = 'playing'; retreatFrames = 0;
-            turnFrames = 480; // Reset timer 8s
-            camera.zoom = 1; // Remise à zéro du zoom
+            turnFrames = 480; 
+            camera.zoom = 1; 
             let viewW = WIDTH / camera.zoom; let viewH = HEIGHT / camera.zoom;
             
             camera.x = worms[0].x - viewW / 2; 
@@ -973,7 +1026,9 @@
                 turnInd.innerText = `TOUR ${activeWorm.name}`;
                 turnInd.style.color = activeWorm.color; turnInd.style.borderColor = activeWorm.color;
 
-                if (!activeWorm.isBot && (gameMode !== 'online' || myPlayerId === currentPlayer)) {
+                let hasControl = !activeWorm.isBot && (gameMode !== 'online' || (myPlayerId === 1 && activeWorm.team === 'A') || (myPlayerId === 2 && activeWorm.team === 'B'));
+
+                if (hasControl) {
                     document.getElementById('weapon-panel').classList.remove('hidden');
                     document.querySelectorAll('.weapon-btn').forEach(btn => btn.classList.remove('active'));
                     document.getElementById(`btn-wpn-${activeWorm.weapon}`).classList.add('active');
@@ -989,7 +1044,7 @@
             let safeCounter = 0;
             do { currentPlayer = (currentPlayer % worms.length) + 1; safeCounter++; } while (worms[currentPlayer-1].isDead && safeCounter < 10);
             
-            gameState = 'playing'; projectile = null; turnFrames = 480; // Reset Timer 8s
+            gameState = 'playing'; projectile = null; turnFrames = 480; 
             updateUI();
             if (worms[currentPlayer - 1].isBot) setTimeout(playAITurn, 500); 
         }
@@ -1025,7 +1080,7 @@
                 if (ai.isDead || target.isDead || gameState !== 'playing') return;
 
                 ai.facing = (target.x < ai.x) ? 'l' : 'r'; ai.isAiming = true;
-                if(turnFrames > 180) turnFrames = 180; // Passage en mode visée (3s max)
+                if(turnFrames > 180) turnFrames = 180;
 
                 let dx = target.x - ai.x; let dy = (target.y - ai.y) - 15; 
                 
@@ -1047,11 +1102,11 @@
                         ai.triggerAttackAnimation(ai.weapon);
 
                         if (ai.weapon === 'boxe') {
-                            executePunch(ai, ai.x, ai.y - 15, angle, ai.color, true);
+                            executePunch(ai, ai.x, ai.y - 15 * ai.scale, angle, ai.color, true);
                         } else {
                             if (ai.weapon === 'bazooka') playSound('bazooka_fire');
                             if (ai.weapon === 'grenade') playSound('grenade_throw');
-                            projectile = new Projectile(ai.x, ai.y - 15, Math.cos(angle) * power, Math.sin(angle) * power, ai.weapon);
+                            projectile = new Projectile(ai.x, ai.y - 15 * ai.scale, Math.cos(angle) * power, Math.sin(angle) * power, ai.weapon);
                             gameState = 'flying'; retreatFrames = 60; 
                         }
                     }
@@ -1098,12 +1153,11 @@
                 document.getElementById('weapon-panel').classList.add('hidden');
                 let winnerText = document.getElementById('winner-text');
                 if (aliveCount === 0) { winnerText.innerText = "ÉGALITÉ (MORT SUBITE)"; winnerText.style.color = "#fff"; } 
-                else if (gameMode === 'local_2v2') {
+                else {
                     let winningTeam = Array.from(aliveTeams)[0];
-                    winnerText.innerText = winningTeam === 'A' ? "ÉQUIPE CYAN GAGNE" : "ÉQUIPE ROSE GAGNE";
-                    winnerText.style.color = winningTeam === 'A' ? 'var(--p1)' : 'var(--p2)';
-                } else {
-                    winnerText.innerText = lastAlivePlayer.name + " GAGNE"; winnerText.style.color = lastAlivePlayer.color;
+                    if (winningTeam === 'A') { winnerText.innerText = "ÉQUIPE CYAN GAGNE"; winnerText.style.color = "var(--p1)"; }
+                    else if (winningTeam === 'B') { winnerText.innerText = "ÉQUIPE ROSE GAGNE"; winnerText.style.color = "var(--p2)"; }
+                    else { winnerText.innerText = lastAlivePlayer.name + " GAGNE"; winnerText.style.color = lastAlivePlayer.color; }
                 }
                 setTimeout(() => { document.getElementById('game-over').classList.remove('hidden'); }, 1500);
             }
@@ -1117,12 +1171,13 @@
 
             let activeWorm = worms[currentPlayer - 1];
             if (gameState !== 'playing' || activeWorm.isBot) return; 
-            if (gameMode === 'online' && currentPlayer !== myPlayerId) return; 
+            
+            let hasControl = (gameMode !== 'online' || (myPlayerId === 1 && activeWorm.team === 'A') || (myPlayerId === 2 && activeWorm.team === 'B'));
+            if (!hasControl) return; 
             
             e.stopPropagation(); let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX; let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
-            // Correction des coordonnées pour s'adapter au ZOOM
             dragStartX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) / camera.zoom + camera.x;
             dragStartY = ((clientY - rect.top) * (canvasEnt.height / rect.height)) / camera.zoom + camera.y; 
             
@@ -1138,7 +1193,6 @@
             let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX; let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
-            // Correction des coordonnées pour s'adapter au ZOOM
             dragCurrentX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) / camera.zoom + camera.x;
             dragCurrentY = ((clientY - rect.top) * (canvasEnt.height / rect.height)) / camera.zoom + camera.y;
             worms[currentPlayer - 1].facing = (dragStartX - dragCurrentX > 0) ? 'r' : 'l';
@@ -1157,16 +1211,18 @@
                 document.getElementById('weapon-panel').classList.add('hidden'); 
                 activeWorm.triggerAttackAnimation(activeWorm.weapon);
 
+                let startY = activeWorm.y - 15 * activeWorm.scale;
+
                 if (activeWorm.weapon === 'boxe') {
-                    executePunch(activeWorm, activeWorm.x, activeWorm.y - 15, angle, activeWorm.color, true);
+                    executePunch(activeWorm, activeWorm.x, startY, angle, activeWorm.color, true);
                 } else {
                     if (activeWorm.weapon === 'bazooka') playSound('bazooka_fire');
                     if (activeWorm.weapon === 'grenade') playSound('grenade_throw');
                     
                     let vx = Math.cos(angle) * power; let vy = Math.sin(angle) * power;
-                    projectile = new Projectile(activeWorm.x, activeWorm.y - 15, vx, vy, activeWorm.weapon);
+                    projectile = new Projectile(activeWorm.x, startY, vx, vy, activeWorm.weapon);
                     gameState = 'flying'; retreatFrames = 60; 
-                    if (conn && conn.open) conn.send({ type: 'fire', px: activeWorm.x, py: activeWorm.y - 15, vx: vx, vy: vy, wType: activeWorm.weapon, pid: activeWorm.id });
+                    if (conn && conn.open) conn.send({ type: 'fire', px: activeWorm.x, py: startY, vx: vx, vy: vy, wType: activeWorm.weapon, pid: activeWorm.id });
                 }
             }
         }
@@ -1207,9 +1263,8 @@
             camera.x += (targetX - camera.x) * 0.1; 
             camera.y += (targetY - camera.y) * 0.1;
             
-            // Sécurité anti-débordement adaptative au zoom
             if (WORLD_WIDTH > viewW) camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH - viewW));
-            else camera.x = (WORLD_WIDTH - viewW) / 2; // Si la map est plus petite que l'écran (très fort dézoom)
+            else camera.x = (WORLD_WIDTH - viewW) / 2; 
             
             if (WORLD_HEIGHT > viewH) camera.y = Math.max(0, Math.min(camera.y, WORLD_HEIGHT - viewH));
             else camera.y = (WORLD_HEIGHT - viewH) / 2;
@@ -1220,7 +1275,6 @@
             if (!me || me.isDead) return;
             worms.forEach(enemy => {
                 if (enemy.id === me.id || enemy.isDead || enemy.team === me.team) return; 
-                // Conversion en repère HUD fixe (en prenant compte du zoom)
                 let screenX = (enemy.x - camera.x) * camera.zoom; 
                 let screenY = (enemy.y - camera.y) * camera.zoom;
                 if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
@@ -1239,19 +1293,17 @@
             if (gameState === 'menu') return;
             if (retreatFrames > 0) retreatFrames--;
 
-            // GESTION DU TIMER GLOBAL
             if (gameState === 'playing') {
                 turnFrames--;
                 
-                // Mettre à jour l'UI
                 let timerUI = document.getElementById('turn-timer');
                 if (timerUI) {
                     let seconds = (Math.max(0, turnFrames) / 60).toFixed(2);
                     timerUI.innerText = seconds + "s";
                     
-                    if (turnFrames <= 120) { // Moins de 2 sec = DANGER
+                    if (turnFrames <= 120) { 
                         timerUI.className = 'timer-danger';
-                    } else if (isDragging || worms[currentPlayer - 1].isAiming) { // Visée
+                    } else if (isDragging || worms[currentPlayer - 1].isAiming) { 
                         timerUI.className = 'timer-aim';
                     } else {
                         timerUI.className = '';
@@ -1264,7 +1316,9 @@
                     let isMyTurn = (currentPlayer === myPlayerId);
                     let isHostHandlingBot = (activeWorm.isBot && myPlayerId === 1);
                     
-                    if (gameMode !== 'online' || isMyTurn || isHostHandlingBot) {
+                    let hasControl = (gameMode !== 'online' || (myPlayerId === 1 && activeWorm.team === 'A') || (myPlayerId === 2 && activeWorm.team === 'B'));
+
+                    if (hasControl || isHostHandlingBot) {
                         isDragging = false;
                         if (conn && conn.open) conn.send({type: 'timeout'});
                         nextTurn();
@@ -1278,12 +1332,10 @@
             let viewH = HEIGHT / camera.zoom;
 
             ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
-            // On gère le zoom du terrain directement depuis le point source offscreen
             ctxTerrain.drawImage(offscreenTerrain, camera.x, camera.y, viewW, viewH, 0, 0, WIDTH, HEIGHT);
             
             ctxEnt.clearRect(0, 0, WIDTH, HEIGHT);
             
-            // On applique le zoom sur le calque des entités
             ctxEnt.save();
             ctxEnt.scale(camera.zoom, camera.zoom);
             ctxEnt.translate(-camera.x, -camera.y);
@@ -1296,8 +1348,7 @@
                 let power = Math.min(Math.hypot(dx, dy), activeWorm.weapon === 'boxe' ? 50 : 180); 
                 let angle = Math.atan2(dy, dx);
                 
-                // Dessin absolu
-                let startX = activeWorm.x; let startY = activeWorm.y - 15;
+                let startX = activeWorm.x; let startY = activeWorm.y - 15 * activeWorm.scale;
                 
                 ctxEnt.beginPath(); ctxEnt.moveTo(startX, startY); ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
                 ctxEnt.strokeStyle = activeWorm.weapon === 'boxe' ? '#ff0000' : activeWorm.color;
@@ -1325,7 +1376,6 @@
                 if (p.life <= 0) punchEffects.splice(i, 1);
             }
 
-            // On restaure l'échelle normale AVANT de dessiner l'interface UI et le Radar
             ctxEnt.restore();
 
             drawRadar();
