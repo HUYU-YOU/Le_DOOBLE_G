@@ -186,7 +186,7 @@
         let WORLD_HEIGHT = 600;
         const GRAVITY = 0.18; 
         
-        let camera = { x: 0, y: 0 };
+        let camera = { x: 0, y: 0, zoom: 1 };
         let mouseScreenX = WIDTH / 2; 
         let mouseScreenY = HEIGHT / 2;
         let manualCameraControl = false; 
@@ -538,6 +538,25 @@
             mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width); 
             mouseScreenY = (e.clientY - rect.top) * (HEIGHT / rect.height);
         });
+        
+        // --- NOUVEAU: MOLETTE DE ZOOM ---
+        window.addEventListener('wheel', (e) => {
+            if (e.target.closest('#game-wrapper')) {
+                e.preventDefault();
+                let zoomAmount = e.deltaY > 0 ? -0.1 : 0.1; // Molette bas = dézoomer, haut = zoomer
+                let oldZoom = camera.zoom;
+                camera.zoom = Math.max(0.4, Math.min(camera.zoom + zoomAmount, 2.0)); // Zoom max 2x, Zoom min 0.4x
+
+                // Ajuster la caméra pour centrer le zoom par rapport au centre de l'écran
+                let viewW_old = WIDTH / oldZoom;
+                let viewH_old = HEIGHT / oldZoom;
+                let viewW_new = WIDTH / camera.zoom;
+                let viewH_new = HEIGHT / camera.zoom;
+                
+                camera.x += (viewW_old - viewW_new) / 2;
+                camera.y += (viewH_old - viewH_new) / 2;
+            }
+        }, { passive: false });
 
         // --- TERRAIN ---
         function generateTerrain() {
@@ -583,7 +602,6 @@
                 this.lastAimTop = false;
             }
 
-            // Déclenche l'animation de tir fluide
             triggerAttackAnimation(weaponUsed) {
                 this.isAttacking = true;
                 this.attackFrame = 2; // On commence à la frame d'impact
@@ -722,7 +740,8 @@
                 else if (this.state === 'walk') spriteName += `walk_${this.facing}${this.animFrame}`;
                 else spriteName += `idle_${this.facing}`;
 
-                let renderX = this.x - camera.x; let renderY = this.y - camera.y;
+                // NOUVEAU: Le dessin est maintenant absolu grâce au ctxEnt.scale() et translate()
+                let renderX = this.x; let renderY = this.y;
                 let img = sprites[spriteName];
                 
                 if (img && img.complete && img.naturalWidth > 0) {
@@ -806,7 +825,7 @@
             draw() {
                 if (!this.active) return;
                 ctxEnt.beginPath(); 
-                ctxEnt.arc(this.x - camera.x, this.y - camera.y, this.radius, 0, Math.PI * 2); 
+                ctxEnt.arc(this.x, this.y, this.radius, 0, Math.PI * 2); // Dessin absolu
                 
                 if (this.type === 'grenade') {
                     ctxEnt.fillStyle = (Math.floor(this.timer / 10) % 2 === 0) ? '#ff0000' : '#228b22'; 
@@ -823,7 +842,7 @@
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = life; this.maxLife = life; 
             }
             update() { this.x += this.vx; this.y += this.vy; this.life--; }
-            draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife; ctxEnt.fillRect(this.x - camera.x, this.y - camera.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
+            draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife; ctxEnt.fillRect(this.x, this.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
         }
 
         // --- GESTION DES JOUEURS & UI ---
@@ -889,8 +908,11 @@
             buildUI();
             currentPlayer = 1; gameState = 'playing'; retreatFrames = 0;
             turnFrames = 480; // Reset timer 8s
-            camera.x = worms[0].x - WIDTH / 2; 
-            camera.y = Math.max(0, Math.min(worms[0].y - HEIGHT / 2, WORLD_HEIGHT - HEIGHT));
+            camera.zoom = 1; // Remise à zéro du zoom
+            let viewW = WIDTH / camera.zoom; let viewH = HEIGHT / camera.zoom;
+            
+            camera.x = worms[0].x - viewW / 2; 
+            camera.y = Math.max(0, Math.min(worms[0].y - viewH / 2, WORLD_HEIGHT - viewH));
             updateUI();
             
             requestAnimationFrame(gameLoop);
@@ -1057,12 +1079,12 @@
             e.stopPropagation(); let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX; let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
-            dragStartX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) + camera.x;
-            dragStartY = ((clientY - rect.top) * (canvasEnt.height / rect.height)) + camera.y; 
+            // Correction des coordonnées pour s'adapter au ZOOM
+            dragStartX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) / camera.zoom + camera.x;
+            dragStartY = ((clientY - rect.top) * (canvasEnt.height / rect.height)) / camera.zoom + camera.y; 
             
             isDragging = true; activeWorm.state = 'idle'; 
 
-            // TIMER : On passe en phase de visée (Max 3s)
             if (turnFrames > 180) turnFrames = 180;
             if (conn && conn.open) conn.send({type: 'start_aim', frames: turnFrames});
         }
@@ -1073,8 +1095,9 @@
             let rect = canvasEnt.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX; let clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
-            dragCurrentX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) + camera.x;
-            dragCurrentY = ((clientY - rect.top) * (canvasEnt.height / rect.height)) + camera.y;
+            // Correction des coordonnées pour s'adapter au ZOOM
+            dragCurrentX = ((clientX - rect.left) * (canvasEnt.width / rect.width)) / camera.zoom + camera.x;
+            dragCurrentY = ((clientY - rect.top) * (canvasEnt.height / rect.height)) / camera.zoom + camera.y;
             worms[currentPlayer - 1].facing = (dragStartX - dragCurrentX > 0) ? 'r' : 'l';
         }
 
@@ -1110,6 +1133,9 @@
 
         // --- CAMERA ET RADAR ---
         function updateCamera() {
+            let viewW = WIDTH / camera.zoom;
+            let viewH = HEIGHT / camera.zoom;
+            
             let targetX = camera.x; 
             let targetY = camera.y;
             manualCameraControl = false;
@@ -1121,25 +1147,29 @@
 
             if (!manualCameraControl) {
                 if (projectile && projectile.active) {
-                    targetX = projectile.x - WIDTH / 2;
-                    targetY = projectile.y - HEIGHT / 2;
+                    targetX = projectile.x - viewW / 2;
+                    targetY = projectile.y - viewH / 2;
                 } else if (!isDragging && worms[currentPlayer - 1]) {
-                    targetX = worms[currentPlayer - 1].x - WIDTH / 2;
-                    targetY = worms[currentPlayer - 1].y - HEIGHT / 2;
+                    targetX = worms[currentPlayer - 1].x - viewW / 2;
+                    targetY = worms[currentPlayer - 1].y - viewH / 2;
                 }
             } else {
                 if (projectile && projectile.active) {
-                    targetY = projectile.y - HEIGHT / 2;
+                    targetY = projectile.y - viewH / 2;
                 } else if (!isDragging && worms[currentPlayer - 1]) {
-                    targetY = worms[currentPlayer - 1].y - HEIGHT / 2;
+                    targetY = worms[currentPlayer - 1].y - viewH / 2;
                 }
             }
 
             camera.x += (targetX - camera.x) * 0.1; 
             camera.y += (targetY - camera.y) * 0.1;
             
-            camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH - WIDTH));
-            camera.y = Math.max(0, Math.min(camera.y, WORLD_HEIGHT - HEIGHT));
+            // Sécurité anti-débordement adaptative au zoom
+            if (WORLD_WIDTH > viewW) camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH - viewW));
+            else camera.x = (WORLD_WIDTH - viewW) / 2; // Si la map est plus petite que l'écran (très fort dézoom)
+            
+            if (WORLD_HEIGHT > viewH) camera.y = Math.max(0, Math.min(camera.y, WORLD_HEIGHT - viewH));
+            else camera.y = (WORLD_HEIGHT - viewH) / 2;
         }
 
         function drawRadar() {
@@ -1147,7 +1177,9 @@
             if (!me || me.isDead) return;
             worms.forEach(enemy => {
                 if (enemy.id === me.id || enemy.isDead || enemy.team === me.team) return; 
-                let screenX = enemy.x - camera.x; let screenY = enemy.y - camera.y;
+                // Conversion en repère HUD fixe (en prenant compte du zoom)
+                let screenX = (enemy.x - camera.x) * camera.zoom; 
+                let screenY = (enemy.y - camera.y) * camera.zoom;
                 if (screenX < 0 || screenX > WIDTH || screenY < 0 || screenY > HEIGHT) {
                     let radarX = Math.max(20, Math.min(WIDTH - 20, screenX)); let radarY = Math.max(20, Math.min(HEIGHT - 20, screenY));
                     ctxEnt.save(); ctxEnt.translate(radarX, radarY);
@@ -1183,14 +1215,12 @@
                     }
                 }
 
-                // Fin du temps imparti (Timeout)
                 if (turnFrames <= 0) {
                     turnFrames = 0;
                     let activeWorm = worms[currentPlayer - 1];
                     let isMyTurn = (currentPlayer === myPlayerId);
                     let isHostHandlingBot = (activeWorm.isBot && myPlayerId === 1);
                     
-                    // Seul le joueur actif ou l'hôte (si IA) déclenche la fin pour tout le monde
                     if (gameMode !== 'online' || isMyTurn || isHostHandlingBot) {
                         isDragging = false;
                         if (conn && conn.open) conn.send({type: 'timeout'});
@@ -1201,9 +1231,19 @@
 
             syncPlayerState(); updateCamera();
 
+            let viewW = WIDTH / camera.zoom;
+            let viewH = HEIGHT / camera.zoom;
+
             ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
-            ctxTerrain.drawImage(offscreenTerrain, camera.x, camera.y, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT);
+            // On gère le zoom du terrain directement depuis le point source offscreen
+            ctxTerrain.drawImage(offscreenTerrain, camera.x, camera.y, viewW, viewH, 0, 0, WIDTH, HEIGHT);
+            
             ctxEnt.clearRect(0, 0, WIDTH, HEIGHT);
+            
+            // On applique le zoom sur le calque des entités
+            ctxEnt.save();
+            ctxEnt.scale(camera.zoom, camera.zoom);
+            ctxEnt.translate(-camera.x, -camera.y);
 
             worms.forEach(w => { w.update(); w.draw(); });
 
@@ -1212,7 +1252,9 @@
                 let dx = dragStartX - dragCurrentX; let dy = dragStartY - dragCurrentY;
                 let power = Math.min(Math.hypot(dx, dy), activeWorm.weapon === 'boxe' ? 50 : 180); 
                 let angle = Math.atan2(dy, dx);
-                let startX = activeWorm.x - camera.x; let startY = activeWorm.y - camera.y - 15;
+                
+                // Dessin absolu
+                let startX = activeWorm.x; let startY = activeWorm.y - 15;
                 
                 ctxEnt.beginPath(); ctxEnt.moveTo(startX, startY); ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
                 ctxEnt.strokeStyle = activeWorm.weapon === 'boxe' ? '#ff0000' : activeWorm.color;
@@ -1229,7 +1271,7 @@
             for (let i = punchEffects.length - 1; i >= 0; i--) {
                 let p = punchEffects[i];
                 ctxEnt.save();
-                ctxEnt.translate(p.x - camera.x, p.y - camera.y);
+                ctxEnt.translate(p.x, p.y);
                 ctxEnt.rotate(p.angle);
                 ctxEnt.fillStyle = `rgba(255, 0, 0, ${p.life/p.maxLife})`;
                 ctxEnt.shadowBlur = 15; ctxEnt.shadowColor = '#ff0000';
@@ -1239,6 +1281,9 @@
                 p.life--;
                 if (p.life <= 0) punchEffects.splice(i, 1);
             }
+
+            // On restaure l'échelle normale AVANT de dessiner l'interface UI et le Radar
+            ctxEnt.restore();
 
             drawRadar();
             requestAnimationFrame(gameLoop);
