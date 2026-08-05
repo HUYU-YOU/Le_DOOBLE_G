@@ -8,10 +8,10 @@
         :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; --sys: #39ff14; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; }
         h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px #fff; }
-        #game-container { position: relative; background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
+        #game-container { position: relative; background: var(--panel); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; transition: background-image 0.3s ease; }
         canvas { background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%); border-radius: 10px; border: 2px solid #333; display: block; box-shadow: inset 0 0 50px #000; cursor: crosshair; }
         
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
         .menu-title { font-size: 1.8em; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
         
         .selection-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; max-width: 750px; }
@@ -69,20 +69,20 @@
             <button class="btn-main" id="bot-toggle-btn" onclick="toggleBot()" style="background:#555; color:#fff; font-size:1em; padding:8px 20px; margin-bottom:15px; border:2px solid #333;">👤 Contrôlé par : Humain</button>
             
             <div class="selection-grid" id="char-select">
-                <div class="card" onclick="chooseChar('slime')"><img src="img/slime_est.png" alt="Slime" onerror="this.src='img/sumo_est.png'"><b>Slime</b></div>
-                <div class="card" onclick="chooseChar('ninja')"><img src="img/ninja_est.png" alt="Ninja"><b>Ninja</b></div>
-                <div class="card" onclick="chooseChar('tank')"><img src="img/sumo_est.png" alt="Brute"><b>Brute</b></div>
-                <div class="card" onclick="chooseChar('gunner')"><img src="img/gunner_est.png" alt="Gunner"><b>Gunner</b></div>
-                <div class="card" onclick="chooseChar('mage')"><img src="img/mage_est.png" alt="Mage"><b>Mage</b></div>
-                <div class="card" onclick="chooseChar('pathkiller')"><img src="img/pathkiller_right.png" alt="Pathkiller" onerror="this.src='img/sumo_est.png'"><b>Pathkiller</b></div>
+                <div class="card" onclick="chooseChar('slime')"><img src="img/SLIME.png" alt="Slime"><b>Slime</b></div>
+                <div class="card" onclick="chooseChar('ninja')"><img src="img/_NINJA.png" alt="Ninja"><b>Ninja</b></div>
+                <div class="card" onclick="chooseChar('tank')"><img src="img/BRUTE.png" alt="Brute"><b>Brute</b></div>
+                <div class="card" onclick="chooseChar('gunner')"><img src="img/GUNNER.png" alt="Gunner"><b>Gunner</b></div>
+                <div class="card" onclick="chooseChar('mage')"><img src="img/MAGE.PNG" alt="Mage"><b>Mage</b></div>
+                <div class="card" onclick="chooseChar('pathkiller')"><img src="img/PATHKILLER.png" alt="Pathkiller"><b>Pathkiller</b></div>
             </div>
             
             <div id="map-select-container" style="display: none;">
                 <div class="menu-title" style="font-size: 1.2em; margin-top:10px;">Choix de l'Arène</div>
                 <div class="selection-grid">
-                    <div class="card map-card" onclick="chooseMap(0)"><img src="img/map1.png" alt="Map 1">Arène Royale</div>
-                    <div class="card map-card" onclick="chooseMap(1)"><img src="img/map2.png" alt="Map 2">Ciel Brisé</div>
-                    <div class="card map-card" onclick="chooseMap(2)"><img src="img/map3.png" alt="Map 3">Le Gouffre</div>
+                    <div class="card map-card" onclick="chooseMap(0, this)"><img src="img/map1.png" alt="Map 1">Arène Royale</div>
+                    <div class="card map-card" onclick="chooseMap(1, this)"><img src="img/map2.png" alt="Map 2">Ciel Brisé</div>
+                    <div class="card map-card" onclick="chooseMap(2, this)"><img src="img/map3.png" alt="Map 3">Le Gouffre</div>
                 </div>
             </div>
             
@@ -99,12 +99,12 @@
             <div style="margin-bottom: 20px;">
                 <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Slime</span></div>
                 <div class="selection-grid" id="net-char-grid">
-                    <div class="card selected" onclick="selectNetChar('slime', this)"><img src="img/slime_est.png" onerror="this.src='img/sumo_est.png'"><b>Slime</b></div>
-                    <div class="card" onclick="selectNetChar('ninja', this)"><img src="img/ninja_est.png"><b>Ninja</b></div>
-                    <div class="card" onclick="selectNetChar('tank', this)"><img src="img/sumo_est.png"><b>Brute</b></div>
-                    <div class="card" onclick="selectNetChar('gunner', this)"><img src="img/gunner_est.png"><b>Gunner</b></div>
-                    <div class="card" onclick="selectNetChar('mage', this)"><img src="img/mage_est.png"><b>Mage</b></div>
-                    <div class="card" onclick="selectNetChar('pathkiller', this)"><img src="img/pathkiller_right.png" onerror="this.src='img/sumo_est.png'"><b>Pathkiller</b></div>
+                    <div class="card selected" onclick="selectNetChar('slime', this)"><img src="img/SLIME.png"><b>Slime</b></div>
+                    <div class="card" onclick="selectNetChar('ninja', this)"><img src="img/_NINJA.png"><b>Ninja</b></div>
+                    <div class="card" onclick="selectNetChar('tank', this)"><img src="img/BRUTE.png"><b>Brute</b></div>
+                    <div class="card" onclick="selectNetChar('gunner', this)"><img src="img/GUNNER.png"><b>Gunner</b></div>
+                    <div class="card" onclick="selectNetChar('mage', this)"><img src="img/MAGE.PNG"><b>Mage</b></div>
+                    <div class="card" onclick="selectNetChar('pathkiller', this)"><img src="img/PATHKILLER.png"><b>Pathkiller</b></div>
                 </div>
             </div>
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
@@ -1071,6 +1071,7 @@
                 document.getElementById('start-local-btn').style.display = 'none';
                 document.getElementById('instruction-title').innerText = "Select player 1";
                 locSelections = []; gameActive = false;
+                document.getElementById('game-container').style.backgroundImage = 'none'; // Reset le fond du conteneur
                 playBGM('select');
             } else if (isHost) {
                 document.getElementById('game-over-overlay').style.display = 'none';
@@ -1110,7 +1111,23 @@
                 document.getElementById('map-select-container').style.display = 'block';
             } else { document.getElementById('instruction-title').innerText = `Sélection Joueur ${locSelections.length + 1}`; }
         }
-        function chooseMap(idx) { locMapChoice = idx; currentMapIdx = idx; playSound('powerup'); if (locSelections.length > 0) document.getElementById('start-local-btn').style.display = 'block'; }
+        
+        function chooseMap(idx, element) { 
+            locMapChoice = idx; currentMapIdx = idx; playSound('powerup'); 
+            
+            // Met en évidence la map sélectionnée
+            if(element) {
+                document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+                element.classList.add('selected');
+            }
+
+            // Met la map en fond du conteneur global !
+            document.getElementById('game-container').style.backgroundImage = `url('img/map${idx + 1}.png')`;
+            document.getElementById('game-container').style.backgroundSize = 'cover';
+            document.getElementById('game-container').style.backgroundPosition = 'center';
+            
+            if (locSelections.length > 0) document.getElementById('start-local-btn').style.display = 'block'; 
+        }
         
         function startLocalGame() {
             if(gameActive) return; 
@@ -1124,6 +1141,10 @@
             players = locSelections.map((selection, i) => { document.getElementById(`h${i + 1}`).style.display = 'block'; let p = new Player(i + 1, i===0 ? 150 : (LOGICAL_WIDTH - 150), selection.char); p.isBot = selection.bot; return p; });
             projectiles = []; particles = []; items = []; gameActive = true; updateHUD(); 
             playBGM('battle', locMapChoice);
+            
+            // On peut retirer le fond dynamique une fois en jeu vu que le canvas le dessine
+            document.getElementById('game-container').style.backgroundImage = 'none';
+            
             if (audioCtx.state === 'suspended') audioCtx.resume(); cancelAnimationFrame(gameLoopId); gameLoopLocal();
         }
 
