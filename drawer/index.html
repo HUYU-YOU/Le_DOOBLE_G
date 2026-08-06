@@ -443,7 +443,12 @@
                 state.players.forEach(p => p.isDone = false);
                 undoStack = [];
                 
-                if(state.round >= state.players.length) {
+                // --- AJOUT DE LA LOGIQUE POUR FINIR SUR UNE PHRASE ---
+                // Si le nombre de joueurs est pair, on ajoute une manche (rounds total = length + 1)
+                // Sinon, le nombre de joueurs est impair, on garde ce nombre tel quel (rounds total = length)
+                let targetRounds = (state.players.length % 2 === 0) ? (state.players.length + 1) : state.players.length;
+
+                if(state.round >= targetRounds) {
                     broadcastData({ type: 'gartic_results', chains: state.chains });
                     showResults(state.chains);
                 } else {
@@ -512,7 +517,10 @@
             } 
             else if (state.mode === 'gartic') {
                 document.getElementById('chat-box').style.display = 'none';
-                updateTimerUI(`Round ${state.round + 1}/${state.players.length}`);
+                
+                // --- MISE A JOUR DE L'AFFICHAGE DU NOMBRE DE ROUNDS TOTAL ---
+                let totalRounds = (state.players.length % 2 === 0) ? (state.players.length + 1) : state.players.length;
+                updateTimerUI(`Round ${state.round + 1}/${totalRounds}`);
                 
                 if(state.round !== lastRenderedRound) {
                     clearCanvasLocal(); 
