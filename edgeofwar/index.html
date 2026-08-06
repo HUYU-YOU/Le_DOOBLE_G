@@ -182,6 +182,11 @@
             'map1': 'img/map1.png', 'map2': 'img/map2.png',
             'map1_tech1': 'img/map1_tech1.png', 'map2_tech1': 'img/map2_tech1.png',
             'map1_tech2': 'img/map1_tech2.png', 'map2_tech2': 'img/map2_tech2.png',
+            // --- NOUVEAUX SLIMES TECH 1 AJOUTES ICI ---
+            'slimewest1': 'img/slimewest1.png',
+            'slimewest2': 'img/slimewest2.png',
+            'slimewest3': 'img/slimewest3.png',
+            // --- RESTES DES ANCIENS SPRITES ---
             'fantassin_est': 'img/fantassin_est.png', 'tirreur_est': 'img/tirreur_est.png',
             'drone': 'img/drone.png', 'blaster': 'img/blaster.png', 'mech': 'img/mech.png', 'sniper1': 'img/sniper1.png',
             'drone2': 'img/drone2.png', 'blaster2': 'img/blaster2.png', 'mech2': 'img/mech2.png', 'sniper2': 'img/sniper2.png', 'titan2': 'img/titan2.png'
@@ -783,9 +788,9 @@
                     if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (pct<0.3?10:0) : (pct<0.3?-10:0), 0);
                 }
 
-                // Mapper les nouvelles unités sur les anciens sprites
+                // Mapper les nouvelles unités sur les anciens sprites ET tes nouveaux sprites
                 const spriteMap = {
-                    'slime': 'fantassin_est', 'spear_slime': 'tirreur_est', 'dino_slime': 'mech', 
+                    'slime': 'slimewest1', 'spear_slime': 'slimewest2', 'dino_slime': 'slimewest3', 
                     'warrior_slime': 'drone', 'mage_slime': 'blaster', 'mega_slime': 'mech', 'sniper_slime': 'sniper1', 
                     'cyber_slime': 'drone2', 'shooter_slime': 'blaster2', 'mecha_slime': 'mech2', 'sniper_slime_3': 'sniper2', 'dragon_slime': 'titan2'
                 };
