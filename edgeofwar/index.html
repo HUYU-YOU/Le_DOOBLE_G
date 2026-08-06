@@ -182,7 +182,7 @@
             'map1_tech1': 'img/map1_tech1.png', 'map2_tech1': 'img/map2_tech1.png',
             'map1_tech2': 'img/map1_tech2.png', 'map2_tech2': 'img/map2_tech2.png',
             // --- NOUVEAUX SLIMES TECH 1 (Les noms DOIVENT correspondre à tes vrais fichiers PNG) ---
-            'slimewest': 'img/slimewest.png',
+            'slimewest1': 'img/slimewest1.png',
             'slimewest2': 'img/slimewest2.png',
             'slimewest3': 'img/slimewest3.png',
             // --- ANCIENS SPRITES RECYCLES ---
@@ -219,21 +219,21 @@
         // Le code retournera automatiquement l'image si l'équipe doit avancer vers la droite.
         const unitStats = {
             // TECH 1
-            slime:       { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 36, h: 42,  type: 'melee', rew: 10, xp: 10, imgKey: 'slimewest', nativeFace: 'left', tech: 1 },
-            spear_slime: { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 36, h: 45,  type: 'ranged', rew: 15, xp: 15, imgKey: 'slimewest2', nativeFace: 'left', tech: 1, projectile: true },
+            slime:       { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 25, h: 29,  type: 'melee', rew: 10, xp: 10, imgKey: 'slimewest1', nativeFace: 'left', tech: 1 },
+            spear_slime: { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 25, h: 32,  type: 'ranged', rew: 15, xp: 15, imgKey: 'slimewest2', nativeFace: 'left', tech: 1, projectile: true },
             dino_slime:  { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 90, h: 100, type: 'melee', rew: 30, xp: 25, imgKey: 'slimewest3', nativeFace: 'left', tech: 1 },
             
             // TECH 2
-            warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 42, h: 51,  type: 'melee', rew: 50, xp: 40, imgKey: 'drone', nativeFace: 'right', tech: 2 },
-            mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 36, h: 51,  type: 'ranged', rew: 70, xp: 60, imgKey: 'blaster', nativeFace: 'right', tech: 2 },
-            mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 66, h: 72,type: 'melee', rew: 120, xp: 90, imgKey: 'mech', nativeFace: 'right', tech: 2 },
-            sniper_slime: { cost: 350, hp: 150, dmg: 120,spd: 0.8, rng: 350, cd: 100,w: 42, h: 54,  type: 'ranged', rew: 150, xp: 120, imgKey: 'sniper1', nativeFace: 'right', tech: 2 },
+            warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 29, h: 36,  type: 'melee', rew: 50, xp: 40, imgKey: 'drone', nativeFace: 'right', tech: 2 },
+            mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 25, h: 36,  type: 'ranged', rew: 70, xp: 60, imgKey: 'blaster', nativeFace: 'right', tech: 2 },
+            mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 46, h: 50,type: 'melee', rew: 120, xp: 90, imgKey: 'mech', nativeFace: 'right', tech: 2 },
+            sniper_slime: { cost: 350, hp: 150, dmg: 120,spd: 0.8, rng: 350, cd: 100,w: 29, h: 38,  type: 'ranged', rew: 150, xp: 120, imgKey: 'sniper1', nativeFace: 'right', tech: 2 },
             
             // TECH 3
-            cyber_slime:  { cost: 400, hp: 800, dmg: 110, spd: 1.3, rng: 30,  cd: 40, w: 48, h: 57,  type: 'melee', rew: 200, xp: 150, imgKey: 'drone2', nativeFace: 'right', tech: 3 },
-            shooter_slime:{ cost: 500, hp: 400, dmg: 150, spd: 1.0, rng: 250, cd: 50, w: 48, h: 57,  type: 'ranged', rew: 250, xp: 180, imgKey: 'blaster2', nativeFace: 'right', tech: 3 },
-            mecha_slime:  { cost: 800, hp: 1800,dmg: 250, spd: 0.8, rng: 40,  cd: 60, w: 90,h: 102, type: 'melee', rew: 350, xp: 250, imgKey: 'mech2', nativeFace: 'right', tech: 3 },
-            sniper_slime_3:{ cost: 1000,hp: 350, dmg: 400, spd: 0.9, rng: 450, cd: 110,w: 48, h: 60,  type: 'ranged', rew: 450, xp: 350, imgKey: 'sniper2', nativeFace: 'right', tech: 3 },
+            cyber_slime:  { cost: 400, hp: 800, dmg: 110, spd: 1.3, rng: 30,  cd: 40, w: 34, h: 40,  type: 'melee', rew: 200, xp: 150, imgKey: 'drone2', nativeFace: 'right', tech: 3 },
+            shooter_slime:{ cost: 500, hp: 400, dmg: 150, spd: 1.0, rng: 250, cd: 50, w: 34, h: 40,  type: 'ranged', rew: 250, xp: 180, imgKey: 'blaster2', nativeFace: 'right', tech: 3 },
+            mecha_slime:  { cost: 800, hp: 1800,dmg: 250, spd: 0.8, rng: 40,  cd: 60, w: 63,h: 71, type: 'melee', rew: 350, xp: 250, imgKey: 'mech2', nativeFace: 'right', tech: 3 },
+            sniper_slime_3:{ cost: 1000,hp: 350, dmg: 400, spd: 0.9, rng: 450, cd: 110,w: 34, h: 42,  type: 'ranged', rew: 450, xp: 350, imgKey: 'sniper2', nativeFace: 'right', tech: 3 },
             dragon_slime: { cost: 1500,hp: 3000,dmg: 500, spd: 1.0, rng: 150, cd: 70, w: 132,h: 132, type: 'ranged',rew: 600, xp: 500, imgKey: 'titan2', nativeFace: 'right', tech: 3 }
         };
 
@@ -669,7 +669,7 @@
                         }
                     } 
                 } else {
-                    let canMove = true; let hitboxSpacing = u.w + 5;
+                    let canMove = true; let hitboxSpacing = u.w + 10;
                     for (let j = 0; j < gameState.units.length; j++) {
                         let other = gameState.units[j];
                         if (u.team === other.team && u.id !== other.id) {
