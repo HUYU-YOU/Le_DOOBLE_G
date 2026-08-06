@@ -166,6 +166,14 @@
         
         .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 85%; max-width: 600px; margin-top: 20px;}
         @media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; } }
+
+        .input-pseudo {
+            padding: 15px; font-size: 1.4em; border-radius: 8px; border: 1px solid #444; 
+            background: #111; color: #fff; outline:none; text-align:center; width: 100%; 
+            box-sizing: border-box; text-transform: uppercase; font-family: var(--font-main); font-weight: 700;
+            margin-bottom: 20px; transition: 0.3s;
+        }
+        .input-pseudo:focus { border-color: var(--gold); box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
     </style>
 </head>
 <body>
@@ -206,23 +214,30 @@
         <div class="overlay" id="network-menu" style="display: none;">
             <div class="menu-title" style="color: var(--p2);">CONNEXION RÉSEAU</div>
             
-            <div style="background: rgba(0,0,0,0.7); padding: 30px; border-radius: 15px; border: 1px solid var(--p1); width: 340px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; font-weight: 700;">CRÉER UN SALON</h3>
-                <p style="color: #aaa; font-size: 1em; margin-bottom: 10px;">Code de votre salon :</p>
-                <div id="my-id" style="color:var(--p1); font-weight:700; font-size:3em; letter-spacing: 4px; margin: 15px 0; min-height: 40px; text-shadow: 0 0 15px var(--p1);">...</div>
-                
-                <button class="btn-main btn-cyan" id="btn-host" onclick="hostGame()" style="width: 100%; padding: 15px; font-size: 1.1em;">1. Générer le Code</button>
-                <button class="btn-main btn-sys" id="btn-start-host" onclick="goToLobby()" style="width: 100%; padding: 15px; font-size: 1.1em; display: none;">2. Configurer ➔</button>
+            <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px; border: 1px solid var(--gold); width: 340px; margin-bottom: 20px; text-align: center;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">VOTRE PSEUDO :</h3>
+                <input type="text" id="player-name-input" class="input-pseudo" placeholder="Ex: CyberNinja" maxlength="12">
             </div>
 
-            <div style="background: rgba(0,0,0,0.7); padding: 30px; border-radius: 15px; border: 1px solid var(--p2); width: 340px; text-align: center; box-shadow: 0 0 20px rgba(255, 0, 127, 0.1);">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; font-weight: 700;">REJOINDRE UN SALON</h3>
-                <input type="text" id="join-id" placeholder="Code de l'hôte..." style="padding: 15px; font-size: 1.4em; border-radius: 8px; border: 1px solid #444; background: #111; color: #fff; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase; font-family: var(--font-main); font-weight: 700;">
-                <button class="btn-main btn-pink" onclick="joinGame()" style="width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px;">Rejoindre</button>
+            <div style="display: flex; gap: 20px;">
+                <div style="background: rgba(0,0,0,0.7); padding: 30px; border-radius: 15px; border: 1px solid var(--p1); width: 300px; text-align: center; box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);">
+                    <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; font-weight: 700;">CRÉER UN SALON</h3>
+                    <p style="color: #aaa; font-size: 1em; margin-bottom: 10px;">Code de votre salon :</p>
+                    <div id="my-id" style="color:var(--p1); font-weight:700; font-size:2.5em; letter-spacing: 4px; margin: 15px 0; min-height: 40px; text-shadow: 0 0 15px var(--p1);">...</div>
+                    
+                    <button class="btn-main btn-cyan" id="btn-host" onclick="hostGame()" style="width: 100%; padding: 15px; font-size: 1.1em;">1. Générer le Code</button>
+                    <button class="btn-main btn-sys" id="btn-start-host" onclick="goToLobby()" style="width: 100%; padding: 15px; font-size: 1.1em; display: none;">2. Configurer ➔</button>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.7); padding: 30px; border-radius: 15px; border: 1px solid var(--p2); width: 300px; text-align: center; box-shadow: 0 0 20px rgba(255, 0, 127, 0.1);">
+                    <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; font-weight: 700;">REJOINDRE</h3>
+                    <input type="text" id="join-id" placeholder="Code de l'hôte..." class="input-pseudo" style="margin-bottom:0; font-size: 1.2em;">
+                    <button class="btn-main btn-pink" onclick="joinGame()" style="width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px;">Infiltrer</button>
+                </div>
             </div>
             
             <div id="conn-status" style="margin-top: 25px; font-weight: 700; font-size: 1.2em; transition: 0.3s; text-align: center;"></div>
-            <button class="btn-main" style="font-size:1em; margin-top:30px; border-color: #444; color:#888;" onclick="location.reload()">Retour au Menu</button>
+            <button class="btn-main" style="font-size:1em; margin-top:10px; border-color: #444; color:#888;" onclick="location.reload()">Retour</button>
         </div>
 
         <!-- MENU CATÉGORIE -->
@@ -240,7 +255,7 @@
             
             <div id="loading-api" style="display: none; flex-direction: column; align-items: center;">
                 <div class="loader"></div>
-                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px;">Génération des pistes en cours...</p>
+                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px;">Génération des pistes originales en cours...</p>
             </div>
         </div>
 
@@ -257,7 +272,7 @@
         const catalogs = {
             ANIME: [
                 { anime: "Naruto", aliases: ["naruto shippuden"], search: "Silhouette Kana-Boon" }, { anime: "Naruto", aliases: ["naruto shippuden"], search: "Blue Bird Ikimonogakari" },
-                { anime: "One Piece", aliases: ["onepiece"], search: "We Are Hiroshi Kitadani" }, { anime: "One Piece", aliases: ["onepiece"], search: "Hope Namie Amuro" },
+                { anime: "One Piece", aliases: ["onepiece"], search: "We Are! Hiroshi Kitadani" }, { anime: "One Piece", aliases: ["onepiece"], search: "Hope Namie Amuro" },
                 { anime: "Bleach", aliases: ["bleachanime"], search: "Asterisk Orange Range" }, { anime: "Bleach", aliases: ["bleachanime"], search: "Ranbu no Melody SID" },
                 { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball", "dragon ball"], search: "Cha La Head Cha La" }, { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Departure Ono Masatoshi" },
                 { anime: "Fairy Tail", aliases: ["fairytail"], search: "Snow Fairy FUNKIST" }, { anime: "Gintama", aliases: ["gin tama"], search: "Tougenkyou Alien" },
@@ -280,143 +295,83 @@
                 { anime: "Dragon Ball", aliases: ["db", "dragonball"], search: "Makafushigi Adventure" }, { anime: "Black Clover", aliases: ["blackclover"], search: "Black Rover Vickeblanka" }
             ],
             FILMS: [
-                { film: "Interstellar", aliases: ["interstellar"], search: "Hans Zimmer Cornfield Chase" },
-                { film: "Inception", aliases: ["inception"], search: "Hans Zimmer Time" },
-                { film: "Gladiator", aliases: ["gladiator"], search: "Hans Zimmer Now We Are Free" },
-                { film: "The Dark Knight", aliases: ["dark knight", "batman", "the dark knight"], search: "Hans Zimmer Why So Serious" },
-                { film: "Le Roi Lion", aliases: ["lion king", "le roi lion"], search: "Hans Zimmer This Land" },
-                { film: "Pirates des Caraïbes", aliases: ["pirates of the caribbean", "pirate des caraibes"], search: "Klaus Badelt He's a Pirate" },
-                { film: "Man of Steel", aliases: ["superman man of steel", "man of steel"], search: "Hans Zimmer Flight" },
-                { film: "Dune", aliases: ["dune part 1", "dune part 2", "dune"], search: "Hans Zimmer Paul's Dream" },
-                { film: "Pearl Harbor", aliases: ["pearl harbor"], search: "Hans Zimmer Tennessee" },
-                { film: "Le Dernier Samouraï", aliases: ["the last samurai", "dernier samourai"], search: "Hans Zimmer A Way of Life" },
-                { film: "Spirit", aliases: ["spirit l'étalon des plaines", "spirit l'etalon des plaines", "spirit"], search: "Hans Zimmer Homeland" },
-                { film: "Da Vinci Code", aliases: ["da vinci code", "the da vinci code"], search: "Hans Zimmer Chevaliers de Sangreal" },
-                { film: "Batman Begins", aliases: ["batman begins"], search: "Hans Zimmer Molossus" },
-                { film: "Star Wars", aliases: ["starwars", "star war"], search: "John Williams Imperial March" },
-                { film: "Harry Potter", aliases: ["harrypotter"], search: "John Williams Hedwig's Theme" },
-                { film: "Jurassic Park", aliases: ["jurassicpark"], search: "John Williams Theme from Jurassic Park" },
-                { film: "Indiana Jones", aliases: ["indiana jones", "les aventuriers de l'arche perdue"], search: "John Williams Raiders March" },
-                { film: "Les Dents de la Mer", aliases: ["jaws", "dents de la mer"], search: "John Williams Theme From Jaws" },
-                { film: "E.T. l'extra-terrestre", aliases: ["e.t.", "et l'extra-terrestre", "et l extraterrestre"], search: "John Williams Flying Theme E.T." },
-                { film: "Le Seigneur des Anneaux", aliases: ["lord of the rings", "lotr", "lsda", "seigneur des anneaux"], search: "Howard Shore The Shire" },
-                { film: "Game of Thrones", aliases: ["got", "game of throne"], search: "Ramin Djawadi Game of Thrones" },
-                { film: "Avengers", aliases: ["avenger", "marvel avengers", "the avengers"], search: "Alan Silvestri The Avengers" },
-                { film: "Retour vers le futur", aliases: ["back to the future", "retour vers le futur"], search: "Alan Silvestri Back to the Future" },
-                { film: "Forrest Gump", aliases: ["forrestgump", "forrest gump"], search: "Alan Silvestri Forrest Gump Suite" },
-                { film: "Oppenheimer", aliases: ["oppenheimer"], search: "Ludwig Goransson Can You Hear The Music" },
-                { film: "Rocky", aliases: ["rocky", "rocky balboa"], search: "Bill Conti Gonna Fly Now" },
-                { film: "Terminator", aliases: ["terminator"], search: "Brad Fiedel The Terminator Theme" },
-                { film: "Mission Impossible", aliases: ["mission impossible"], search: "Lalo Schifrin Mission Impossible" },
-                { film: "James Bond", aliases: ["james bond", "007"], search: "Monty Norman James Bond Theme" },
-                { film: "Le Bon, la Brute et le Truand", aliases: ["the good the bad and the ugly", "le bon la brute"], search: "Ennio Morricone The Good The Bad" }
+                { film: "Interstellar", aliases: ["interstellar"], search: "Cornfield Chase Hans Zimmer" },
+                { film: "Inception", aliases: ["inception"], search: "Time Hans Zimmer" },
+                { film: "Gladiator", aliases: ["gladiator"], search: "Now We Are Free Hans Zimmer" },
+                { film: "The Dark Knight", aliases: ["dark knight", "batman", "the dark knight"], search: "Why So Serious Hans Zimmer" },
+                { film: "Le Roi Lion", aliases: ["lion king", "le roi lion"], search: "This Land Hans Zimmer" },
+                { film: "Pirates des Caraïbes", aliases: ["pirates of the caribbean", "pirate des caraibes"], search: "He's a Pirate Klaus Badelt" },
+                { film: "Man of Steel", aliases: ["superman man of steel", "man of steel"], search: "Flight Hans Zimmer" },
+                { film: "Dune", aliases: ["dune part 1", "dune part 2", "dune"], search: "Paul's Dream Hans Zimmer" },
+                { film: "Pearl Harbor", aliases: ["pearl harbor"], search: "Tennessee Hans Zimmer" },
+                { film: "Le Dernier Samouraï", aliases: ["the last samurai", "dernier samourai"], search: "A Way of Life Hans Zimmer" },
+                { film: "Spirit", aliases: ["spirit l'étalon des plaines", "spirit l'etalon des plaines", "spirit"], search: "Homeland Hans Zimmer" },
+                { film: "Da Vinci Code", aliases: ["da vinci code", "the da vinci code"], search: "Chevaliers de Sangreal Hans Zimmer" },
+                { film: "Batman Begins", aliases: ["batman begins"], search: "Molossus Hans Zimmer" },
+                { film: "Star Wars", aliases: ["starwars", "star war"], search: "The Imperial March John Williams" },
+                { film: "Harry Potter", aliases: ["harrypotter"], search: "Hedwig's Theme John Williams" },
+                { film: "Jurassic Park", aliases: ["jurassicpark"], search: "Theme from Jurassic Park John Williams" },
+                { film: "Indiana Jones", aliases: ["indiana jones", "les aventuriers de l'arche perdue"], search: "Raiders March John Williams" },
+                { film: "Les Dents de la Mer", aliases: ["jaws", "dents de la mer"], search: "Theme From Jaws John Williams" },
+                { film: "E.T. l'extra-terrestre", aliases: ["e.t.", "et l'extra-terrestre", "et l extraterrestre"], search: "Flying Theme E.T. John Williams" },
+                { film: "Le Seigneur des Anneaux", aliases: ["lord of the rings", "lotr", "lsda", "seigneur des anneaux"], search: "The Shire Howard Shore" },
+                { film: "Game of Thrones", aliases: ["got", "game of throne"], search: "Game of Thrones Ramin Djawadi" },
+                { film: "Avengers", aliases: ["avenger", "marvel avengers", "the avengers"], search: "The Avengers Alan Silvestri" },
+                { film: "Retour vers le futur", aliases: ["back to the future", "retour vers le futur"], search: "Back to the Future Alan Silvestri" },
+                { film: "Forrest Gump", aliases: ["forrestgump", "forrest gump"], search: "Forrest Gump Suite Alan Silvestri" },
+                { film: "Oppenheimer", aliases: ["oppenheimer"], search: "Can You Hear The Music Ludwig Goransson" },
+                { film: "Rocky", aliases: ["rocky", "rocky balboa"], search: "Gonna Fly Now Bill Conti" },
+                { film: "Terminator", aliases: ["terminator"], search: "The Terminator Theme Brad Fiedel" },
+                { film: "Mission Impossible", aliases: ["mission impossible"], search: "Mission Impossible Lalo Schifrin" },
+                { film: "James Bond", aliases: ["james bond", "007"], search: "James Bond Theme Monty Norman" },
+                { film: "Le Bon, la Brute et le Truand", aliases: ["the good the bad and the ugly", "le bon la brute"], search: "The Good The Bad Ennio Morricone" }
             ],
-            // Modifications Majeures : Objets stricts pour forcer le Rap FR et éviter les confusions internationales
             RAP: [
-                { search: "Orelsan", artist: "Orelsan" },
-                { search: "Booba", artist: "Booba" },
-                { search: "PNL", artist: "PNL" },
-                { search: "Damso", artist: "Damso" },
-                { search: "Nekfeu", artist: "Nekfeu" },
-                { search: "Alpha Wann", artist: "Alpha Wann" },
-                { search: "Freeze Corleone", artist: "Freeze Corleone" },
-                { search: "Kaaris", artist: "Kaaris" },
-                { search: "SCH", artist: "SCH" },
-                { search: "IAM rap", artist: "IAM" },
-                { search: "Supreme NTM", artist: "Suprême NTM", aliases: ["ntm", "supreme ntm"] },
-                { search: "Vald", artist: "Vald" },
-                { search: "Hugo TSR", artist: "Hugo TSR", aliases: ["hugo (tsr)", "tsr crew"] },
-                { search: "Lino Arsenik", artist: "Lino" },
-                { search: "Despo Rutti", artist: "Despo Rutti" },
-                { search: "Ninho", artist: "Ninho" },
-                { search: "Gazo", artist: "Gazo" },
-                { search: "Koba LaD", artist: "Koba LaD" },
-                { search: "Josman", artist: "Josman" },
-                { search: "Dinos Punchlinovic", artist: "Dinos", aliases: ["dinos punchlinovic"] },
-                { search: "Disiz", artist: "Disiz", aliases: ["disiz la peste"] },
-                { search: "1995 rap", artist: "1995" },
-                { search: "Fonky Family", artist: "Fonky Family", aliases: ["ff", "la fonky family"] },
-                { search: "Rohff", artist: "Rohff" },
-                { search: "La Fouine", artist: "La Fouine" },
-                { search: "Kalash Criminel", artist: "Kalash Criminel" },
-                { search: "Niska", artist: "Niska" },
-                { search: "Gradur", artist: "Gradur" },
-                { search: "Mac Tyer", artist: "Mac Tyer" },
-                { search: "Kery James", artist: "Kery James" },
-                { search: "Sniper rap", artist: "Sniper" },
-                { search: "113 rap", artist: "113" },
-                { search: "Mafia K'1 Fry", artist: "Mafia K'1 Fry", aliases: ["mafia k1 fry"] },
-                { search: "Lunatic Booba", artist: "Lunatic" },
-                { search: "Sexion d'Assaut", artist: "Sexion d'Assaut", aliases: ["sexion dassaut"] },
-                { search: "PLK", artist: "PLK" },
-                { search: "Ziak", artist: "Ziak" },
-                { search: "Seth Gueko", artist: "Seth Gueko" },
-                { search: "Youssoupha", artist: "Youssoupha" },
-                { search: "Medine rap", artist: "Medine" },
-                { search: "Sinik", artist: "Sinik" },
-                { search: "Diam's", artist: "Diam's", aliases: ["diams"] },
-                { search: "Salif rap", artist: "Salif" },
-                { search: "Guizmo rap", artist: "Guizmo" },
-                { search: "Naps", artist: "Naps" },
-                { search: "Jul rap", artist: "Jul" },
-                { search: "Werenoi", artist: "Werenoi" },
-                { search: "Tiakola", artist: "Tiakola" },
-                { search: "SDM", artist: "SDM" },
-                { search: "Maes", artist: "Maes" },
-                { search: "Alkpote", artist: "Alkpote" },
-                { search: "Bosh rap", artist: "Bosh" },
-                { search: "Niro rap", artist: "Niro" }
+                { search: "Orelsan", artist: "Orelsan" }, { search: "Booba", artist: "Booba" }, { search: "PNL", artist: "PNL" },
+                { search: "Damso", artist: "Damso" }, { search: "Nekfeu", artist: "Nekfeu" }, { search: "Alpha Wann", artist: "Alpha Wann" },
+                { search: "Freeze Corleone", artist: "Freeze Corleone" }, { search: "Kaaris", artist: "Kaaris" }, { search: "SCH", artist: "SCH" },
+                { search: "IAM rap", artist: "IAM" }, { search: "Supreme NTM", artist: "Suprême NTM", aliases: ["ntm", "supreme ntm"] },
+                { search: "Vald", artist: "Vald" }, { search: "Hugo TSR", artist: "Hugo TSR", aliases: ["hugo (tsr)", "tsr crew"] },
+                { search: "Lino Arsenik", artist: "Lino" }, { search: "Despo Rutti", artist: "Despo Rutti" }, { search: "Ninho", artist: "Ninho" },
+                { search: "Gazo", artist: "Gazo" }, { search: "Koba LaD", artist: "Koba LaD" }, { search: "Josman", artist: "Josman" },
+                { search: "Dinos Punchlinovic", artist: "Dinos", aliases: ["dinos punchlinovic"] }, { search: "Disiz", artist: "Disiz", aliases: ["disiz la peste"] },
+                { search: "1995 rap", artist: "1995" }, { search: "Fonky Family", artist: "Fonky Family", aliases: ["ff", "la fonky family"] },
+                { search: "Rohff", artist: "Rohff" }, { search: "La Fouine", artist: "La Fouine" }, { search: "Kalash Criminel", artist: "Kalash Criminel" },
+                { search: "Niska", artist: "Niska" }, { search: "Gradur", artist: "Gradur" }, { search: "Mac Tyer", artist: "Mac Tyer" },
+                { search: "Kery James", artist: "Kery James" }, { search: "Sniper rap", artist: "Sniper" }, { search: "113 rap", artist: "113" },
+                { search: "Mafia K'1 Fry", artist: "Mafia K'1 Fry", aliases: ["mafia k1 fry"] }, { search: "Lunatic Booba", artist: "Lunatic" },
+                { search: "Sexion d'Assaut", artist: "Sexion d'Assaut", aliases: ["sexion dassaut"] }, { search: "PLK", artist: "PLK" },
+                { search: "Ziak", artist: "Ziak" }, { search: "Seth Gueko", artist: "Seth Gueko" }, { search: "Youssoupha", artist: "Youssoupha" },
+                { search: "Medine rap", artist: "Medine" }, { search: "Sinik", artist: "Sinik" }, { search: "Diam's", artist: "Diam's", aliases: ["diams"] },
+                { search: "Salif rap", artist: "Salif" }, { search: "Guizmo rap", artist: "Guizmo" }, { search: "Naps", artist: "Naps" },
+                { search: "Jul rap", artist: "Jul" }, { search: "Werenoi", artist: "Werenoi" }, { search: "Tiakola", artist: "Tiakola" },
+                { search: "SDM", artist: "SDM" }, { search: "Maes", artist: "Maes" }, { search: "Alkpote", artist: "Alkpote" },
+                { search: "Bosh rap", artist: "Bosh" }, { search: "Niro rap", artist: "Niro" }
             ],
             FR: [
-                { search: "Georges Brassens", artist: "Georges Brassens" },
-                { search: "Barbara aigle", artist: "Barbara" },
-                { search: "Charles Aznavour", artist: "Charles Aznavour" },
-                { search: "Gregory Lemarchal", artist: "Gregory Lemarchal" },
-                { search: "Lorie", artist: "Lorie" },
-                { search: "Jenifer soleil", artist: "Jenifer" },
-                { search: "Tragedie hey oh", artist: "Tragedie" },
-                { search: "Anne Sylvestre", artist: "Anne Sylvestre" },
-                { search: "Jacques Brel", artist: "Jacques Brel" },
-                { search: "Edith Piaf", artist: "Edith Piaf" },
-                { search: "Renaud mistral", artist: "Renaud" },
-                { search: "Francis Cabrel", artist: "Francis Cabrel" },
-                { search: "Jean-Jacques Goldman", artist: "Jean-Jacques Goldman", aliases: ["jjg", "jean jacques goldman"] },
-                { search: "Celine Dion francais", artist: "Celine Dion" },
-                { search: "Claude Francois", artist: "Claude Francois", aliases: ["cloclo"] },
-                { search: "Daniel Balavoine", artist: "Daniel Balavoine" },
-                { search: "K-Maro", artist: "K-Maro", aliases: ["kmaro"] },
-                { search: "Larusso", artist: "Larusso" },
-                { search: "Alizee lolita", artist: "Alizee" },
-                { search: "Michel Sardou", artist: "Michel Sardou" },
-                { search: "Johnny Hallyday", artist: "Johnny Hallyday" },
-                { search: "Joe Dassin", artist: "Joe Dassin" },
-                { search: "Mylene Farmer", artist: "Mylene Farmer" },
-                { search: "France Gall", artist: "France Gall" },
-                { search: "Michel Berger", artist: "Michel Berger" },
-                { search: "Kyo derniere danse", artist: "Kyo" },
-                { search: "Tribal King", artist: "Tribal King" },
-                { search: "Serge Gainsbourg", artist: "Serge Gainsbourg" },
-                { search: "Leo Ferre", artist: "Leo Ferre" },
-                { search: "Georges Moustaki", artist: "Georges Moustaki" },
-                { search: "Dalida", artist: "Dalida" },
-                { search: "Christophe aline", artist: "Christophe" },
-                { search: "Michel Polnareff", artist: "Michel Polnareff" },
-                { search: "Laurent Voulzy", artist: "Laurent Voulzy" },
-                { search: "Alain Souchon", artist: "Alain Souchon" },
-                { search: "Julien Clerc", artist: "Julien Clerc" },
-                { search: "Maxime Le Forestier", artist: "Maxime Le Forestier" },
-                { search: "Nino Ferrer", artist: "Nino Ferrer" },
-                { search: "Sheila francais", artist: "Sheila" },
-                { search: "Sylvie Vartan", artist: "Sylvie Vartan" },
-                { search: "Priscilla amour", artist: "Priscilla" },
-                { search: "Amel Bent", artist: "Amel Bent" },
-                { search: "Nadiya", artist: "Nadiya" },
-                { search: "L5 toutes", artist: "L5" },
-                { search: "Garou", artist: "Garou" },
-                { search: "Willy Denzey", artist: "Willy Denzey" },
-                { search: "Leslie pardonner", artist: "Leslie" },
-                { search: "Magic System", artist: "Magic System" },
-                { search: "Yannick soirees", artist: "Yannick" }
+                { search: "Georges Brassens", artist: "Georges Brassens" }, { search: "Barbara aigle", artist: "Barbara" },
+                { search: "Charles Aznavour", artist: "Charles Aznavour" }, { search: "Gregory Lemarchal", artist: "Gregory Lemarchal" },
+                { search: "Lorie", artist: "Lorie" }, { search: "Jenifer soleil", artist: "Jenifer" }, { search: "Tragedie hey oh", artist: "Tragedie" },
+                { search: "Anne Sylvestre", artist: "Anne Sylvestre" }, { search: "Jacques Brel", artist: "Jacques Brel" },
+                { search: "Edith Piaf", artist: "Edith Piaf" }, { search: "Renaud mistral", artist: "Renaud" },
+                { search: "Francis Cabrel", artist: "Francis Cabrel" }, { search: "Jean-Jacques Goldman", artist: "Jean-Jacques Goldman", aliases: ["jjg", "jean jacques goldman"] },
+                { search: "Celine Dion francais", artist: "Celine Dion" }, { search: "Claude Francois", artist: "Claude Francois", aliases: ["cloclo"] },
+                { search: "Daniel Balavoine", artist: "Daniel Balavoine" }, { search: "K-Maro", artist: "K-Maro", aliases: ["kmaro"] },
+                { search: "Larusso", artist: "Larusso" }, { search: "Alizee lolita", artist: "Alizee" }, { search: "Michel Sardou", artist: "Michel Sardou" },
+                { search: "Johnny Hallyday", artist: "Johnny Hallyday" }, { search: "Joe Dassin", artist: "Joe Dassin" },
+                { search: "Mylene Farmer", artist: "Mylene Farmer" }, { search: "France Gall", artist: "France Gall" },
+                { search: "Michel Berger", artist: "Michel Berger" }, { search: "Kyo derniere danse", artist: "Kyo" },
+                { search: "Tribal King", artist: "Tribal King" }, { search: "Serge Gainsbourg", artist: "Serge Gainsbourg" },
+                { search: "Leo Ferre", artist: "Leo Ferre" }, { search: "Georges Moustaki", artist: "Georges Moustaki" },
+                { search: "Dalida", artist: "Dalida" }, { search: "Christophe aline", artist: "Christophe" },
+                { search: "Michel Polnareff", artist: "Michel Polnareff" }, { search: "Laurent Voulzy", artist: "Laurent Voulzy" },
+                { search: "Alain Souchon", artist: "Alain Souchon" }, { search: "Julien Clerc", artist: "Julien Clerc" },
+                { search: "Maxime Le Forestier", artist: "Maxime Le Forestier" }, { search: "Nino Ferrer", artist: "Nino Ferrer" },
+                { search: "Sheila francais", artist: "Sheila" }, { search: "Sylvie Vartan", artist: "Sylvie Vartan" },
+                { search: "Priscilla amour", artist: "Priscilla" }, { search: "Amel Bent", artist: "Amel Bent" },
+                { search: "Nadiya", artist: "Nadiya" }, { search: "L5 toutes", artist: "L5" }, { search: "Garou", artist: "Garou" },
+                { search: "Willy Denzey", artist: "Willy Denzey" }, { search: "Leslie pardonner", artist: "Leslie" },
+                { search: "Magic System", artist: "Magic System" }, { search: "Yannick soirees", artist: "Yannick" }
             ],
             POP: [
                 { search: "Michael Jackson", artist: "Michael Jackson" }, { search: "Queen", artist: "Queen" }, { search: "The Weeknd", artist: "The Weeknd" }, 
@@ -443,10 +398,12 @@
         let gameMode = 'solo'; 
         let currentCategory = 'RAP'; 
         let myPid = 1; 
+        let myName = "Joueur";
         
         let peer = null; 
         let conns = []; 
         let scores = { 1: 0 }; 
+        let playerNames = { 1: "Hôte" }; // Map Pid -> Nom
         let playerColors = ['#00f0ff', '#ff007f', '#f1c40f', '#39ff14', '#ff8800', '#b800ff', '#00ffaa', '#ff0000'];
         
         let playlist = [];
@@ -480,6 +437,8 @@
             gameMode = mode;
             document.getElementById('main-menu').style.display = 'none';
             if (mode === 'solo') {
+                myName = "Solo";
+                playerNames = { 1: "Solo" };
                 document.getElementById('category-menu').style.display = 'flex';
                 updateScoreUI(); 
             } else {
@@ -515,6 +474,10 @@
         // --- GESTION RÉSEAU (PEERJS) ---
         function hostGame() { 
             let status = document.getElementById('conn-status');
+            let pseudoInput = document.getElementById('player-name-input').value.trim();
+            myName = pseudoInput ? pseudoInput : "Hôte";
+            playerNames[1] = myName;
+
             status.style.color = "var(--p1)";
             status.innerText = "Création du serveur..."; 
             
@@ -539,21 +502,31 @@
 
             peer.on('connection', c => { 
                 c.on('open', () => {
-                    let newPid = Object.keys(scores).length + 1; 
-                    c.pid = newPid; scores[newPid] = 0; conns.push(c); 
-                    
-                    status.style.color = "var(--sys)";
-                    status.innerText = `${conns.length + 1} joueur(s) connectés !`;
-                    document.getElementById('lobby-count').innerText = Object.keys(scores).length + " joueur(s) dans le salon";
-
-                    c.send({ type: 'init', pid: newPid });
-                    
-                    let msg = `Joueur ${newPid} a rejoint la partie !`;
-                    broadcast({ type: 'sys', msg: msg });
-                    displaySys(msg); updateScoreUI();
+                    // Ne rien initialiser tant que le client n'a pas envoyé son nom
                 });
 
-                c.on('data', data => { if (data.type === 'guess') processGuess(data.text, c.pid); });
+                c.on('data', data => { 
+                    if (data.type === 'join') {
+                        let newPid = Object.keys(scores).length + 1; 
+                        c.pid = newPid; 
+                        scores[newPid] = 0; 
+                        playerNames[newPid] = data.name.substring(0, 15); // Sécurité taille
+                        conns.push(c); 
+                        
+                        status.style.color = "var(--sys)";
+                        status.innerText = `${conns.length + 1} joueur(s) connectés !`;
+                        document.getElementById('lobby-count').innerText = Object.keys(scores).length + " joueur(s) dans le salon";
+
+                        // Sync le nouveau joueur
+                        c.send({ type: 'init', pid: newPid, playerNames: playerNames, scores: scores, category: currentCategory });
+                        
+                        // Informer tout le monde
+                        let msg = `${playerNames[newPid]} a rejoint la partie !`;
+                        broadcast({ type: 'sys', msg: msg, playerNames: playerNames, scores: scores });
+                        displaySys(msg); updateScoreUI();
+                    }
+                    if (data.type === 'guess') processGuess(data.text, c.pid); 
+                });
             }); 
             
             peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = "Erreur de création : " + err.type; });
@@ -568,6 +541,9 @@
         
         function joinGame() { 
             let id = document.getElementById('join-id').value.trim().toUpperCase(); 
+            let pseudoInput = document.getElementById('player-name-input').value.trim();
+            myName = pseudoInput ? pseudoInput : "Joueur";
+
             if (!id) return; 
             
             let status = document.getElementById('conn-status');
@@ -581,18 +557,34 @@
                 
                 conn.on('open', () => {
                     conns = [conn]; 
+                    // Envoyer mon nom à l'hôte
+                    conn.send({ type: 'join', name: myName });
+
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('main-menu').style.display = 'flex';
-                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2.5em; margin-bottom:20px;">CONNEXION ÉTABLIE</div><p style="font-size:1.5em; color:#fff; font-weight:600;">En attente de l\'hôte...</p><div class="loader"></div>';
+                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2.5em; margin-bottom:20px;">CONNEXION ÉTABLIE</div><p style="font-size:1.5em; color:#fff; font-weight:600;">En attente du lancement par l\'hôte...</p><div class="loader"></div>';
                 });
                 
                 conn.on('data', data => {
-                    if (data.type === 'init') { myPid = data.pid; }
+                    if (data.type === 'init') { 
+                        myPid = data.pid; 
+                        playerNames = data.playerNames;
+                        scores = data.scores;
+                        updateScoreUI();
+                    }
                     if (data.type === 'chat') { displayChat(data.msg, data.pid); }
-                    if (data.type === 'sys') { displaySys(data.msg); }
+                    if (data.type === 'sys') { 
+                        if (data.playerNames) playerNames = data.playerNames;
+                        if (data.scores) scores = data.scores;
+                        displaySys(data.msg); 
+                        updateScoreUI();
+                    }
                     if (data.type === 'start_game') { setupUIForCategory(data.category); } 
                     if (data.type === 'start_round') { clientStartRound(data.track); }
-                    if (data.type === 'update_state') { clientUpdateState(data.stateData); }
+                    if (data.type === 'update_state') { 
+                        if (data.stateData.playerNames) playerNames = data.stateData.playerNames;
+                        clientUpdateState(data.stateData); 
+                    }
                     if (data.type === 'end_round') { clientEndRound(data.track); }
                     if (data.type === 'end_game') { showEndScreen(data.scores); }
                 });
@@ -619,16 +611,32 @@
                 if (selectedTracks.length >= 10) break; // S'arrête quand on a nos 10 pistes pour la manche
                 try {
                     let searchItem = shuffled[i];
-                    // Si on a défini un terme précis de recherche (ex: Lino Arsenik), on l'utilise
                     let searchTerm = searchItem.search || searchItem;
                     
-                    // Ajout du paramètre &country=fr pour interdire les musiques étrangères imprévues 
-                    let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=fr&media=music&entity=song&limit=15`);
+                    // On filtre brutalement les covers via l'API iTunes en analysant finement les resultats.
+                    let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=fr&media=music&entity=song&limit=20`);
                     let data = await res.json();
                     
-                    let validTracks = data.results.filter(t => t.previewUrl);
+                    // ANTI COVER & ANTI VERSIONS SUSPECTES FILTER
+                    let validTracks = data.results.filter(t => {
+                        if (!t.previewUrl) return false;
+                        let n = t.trackName.toLowerCase();
+                        let a = t.artistName.toLowerCase();
+                        // Exclure les mots-clés problématiques
+                        if (/cover|tribute|karaoke|instrumental|8-bit|lullaby|version|remix/i.test(n)) return false;
+                        if (/cover|tribute|karaoke/i.test(a)) return false;
+                        return true;
+                    });
+
+                    // Si on a été trop stricte on prend quand même ce qu'il y a
+                    if (validTracks.length === 0 && data.results.length > 0) {
+                        validTracks = data.results.filter(t => t.previewUrl);
+                    }
+
                     if (validTracks.length > 0) {
-                        let rTrack = validTracks[Math.floor(Math.random() * Math.min(validTracks.length, 5))];
+                        // FIX MAJEUR: On ne prend PAS un résultat random. L'API d'iTunes trie par pertinence. 
+                        // Le [0] est l'original 99% du temps. Prendre du random donnait souvent des remix.
+                        let rTrack = validTracks[0];
                         
                         if (cat === 'ANIME') {
                             selectedTracks.push({
@@ -641,7 +649,7 @@
                                 previewUrl: rTrack.previewUrl
                             });
                         } else {
-                            // On utilise le nom d'artiste PROPRE de notre base de données s'il existe ! (ex: Hugo TSR au lieu de Hugo (TSR) de l'API)
+                            // On utilise le nom d'artiste PROPRE de notre base de données s'il existe ! (ex: Hugo TSR au lieu de Hugo (TSR))
                             selectedTracks.push({
                                 artistName: searchItem.artist || rTrack.artistName, 
                                 trackName: rTrack.trackName, 
@@ -700,7 +708,7 @@
                 state.timeLeft--; timerBox.innerText = state.timeLeft;
                 if (state.timeLeft <= 3) timerBox.style.color = '#ff0000'; else timerBox.style.color = 'var(--gold)';
                 if (state.timeLeft === 3) startFadeOut();
-                if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
+                if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores, playerNames: playerNames } });
                 if (state.timeLeft <= 0) endRound();
             }, 1000);
         }
@@ -825,6 +833,7 @@
 
         function processGuess(text, pid) {
             let correct = false;
+            let playerPseudo = playerNames[pid] || `Joueur ${pid}`;
 
             if (currentCategory === 'ANIME') {
                 if (state.animeFound) return;
@@ -836,7 +845,7 @@
 
                 if (correct) {
                     state.animeFound = true; scores[pid]++;
-                    let msg = `🔥 Joueur ${pid} a trouvé l'Anime !`;
+                    let msg = `🔥 ${playerPseudo} a trouvé l'Anime !`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
                     
                     boxAnime.classList.add('found');
@@ -853,7 +862,7 @@
 
                 if (correct) {
                     state.filmFound = true; scores[pid]++;
-                    let msg = `🔥 Joueur ${pid} a trouvé le Film !`;
+                    let msg = `🔥 ${playerPseudo} a trouvé le Film !`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
                     
                     boxAnime.classList.add('found');
@@ -870,13 +879,13 @@
 
                 if (aMatch) {
                     state.artistFound = true; scores[pid]++; correct = true;
-                    let msg = `🔥 Joueur ${pid} a trouvé l'Artiste !`;
+                    let msg = `🔥 ${playerPseudo} a trouvé l'Artiste !`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
                     boxArtist.classList.add('found'); boxArtist.innerText = gameMode === 'solo' ? `🧑‍🎤 ${currentTrack.artistName}` : "🧑‍🎤 ARTISTE TROUVÉ !";
                 }
                 if (tMatch) {
                     state.titleFound = true; scores[pid]++; correct = true;
-                    let msg = `🔥 Joueur ${pid} a trouvé le Titre !`;
+                    let msg = `🔥 ${playerPseudo} a trouvé le Titre !`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
                     boxTitle.classList.add('found'); boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : "🎵 TITRE TROUVÉ !";
                 }
@@ -884,7 +893,7 @@
             }
 
             updateScoreUI();
-            if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores } });
+            if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores, playerNames: playerNames } });
 
             if (!correct) {
                 displayChat(text, pid);
@@ -897,6 +906,8 @@
             let div = document.createElement('div'); div.className = 'msg'; let color = getPlayerColor(pid);
             div.style.alignSelf = pid === myPid ? 'flex-end' : 'flex-start';
             
+            let pseudo = playerNames[pid] || `Joueur ${pid}`;
+
             if (pid === myPid) {
                 div.style.borderRight = `4px solid ${color}`;
                 div.style.background = `linear-gradient(90deg, rgba(255,255,255,0.02), rgba(${hexToRgb(color)}, 0.15))`;
@@ -905,7 +916,8 @@
                 div.style.background = `linear-gradient(90deg, rgba(${hexToRgb(color)}, 0.15), rgba(255,255,255,0.02))`;
             }
             
-            div.style.color = '#fff'; div.innerText = msg;
+            div.style.color = '#fff'; 
+            div.innerHTML = `<span style="font-size:0.7em; opacity:0.7; display:block; margin-bottom:2px; color:${color};">${pseudo}</span>${msg}`;
             chatMsgs.appendChild(div); chatMsgs.scrollTop = chatMsgs.scrollHeight;
         }
 
@@ -925,7 +937,8 @@
                 let div = document.createElement('div'); div.className = 'score-box'; let color = getPlayerColor(pid);
                 div.style.color = color; div.style.borderColor = color; 
                 div.style.boxShadow = `0 0 15px rgba(${hexToRgb(color)}, 0.3)`; 
-                div.innerText = `J${pid} : ${scoresData[pid]}`; container.appendChild(div);
+                let pseudo = playerNames[pid] || `J${pid}`;
+                div.innerText = `${pseudo} : ${scoresData[pid]}`; container.appendChild(div);
             }
         }
 
@@ -964,9 +977,11 @@
             } else {
                 let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
                 let winnerPid = sortedPids[0]; let winnerColor = getPlayerColor(winnerPid);
-                t.innerHTML = `<span style="color:${winnerColor}; font-weight:700; text-shadow: 0 0 15px ${winnerColor};">JOUEUR ${winnerPid} REMPORTE LA PARTIE !</span><br><br>`;
+                let winnerName = playerNames[winnerPid] || `JOUEUR ${winnerPid}`;
+                t.innerHTML = `<span style="color:${winnerColor}; font-weight:700; text-shadow: 0 0 15px ${winnerColor}; text-transform: uppercase;">${winnerName} REMPORTE LA PARTIE !</span><br><br>`;
                 sortedPids.forEach(pid => { 
-                    t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 8px; font-weight:600; font-size: 1.2em;">Joueur ${pid} : ${finalScores[pid]} pts</div>`; 
+                    let pseudo = playerNames[pid] || `Joueur ${pid}`;
+                    t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 8px; font-weight:600; font-size: 1.2em;">${pseudo} : ${finalScores[pid]} pts</div>`; 
                 });
             }
         }
