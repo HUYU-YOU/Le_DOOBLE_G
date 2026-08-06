@@ -601,8 +601,9 @@
             constructor(x, y, id, type, color, team, name, isBot = false) {
                 this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
                 this.team = team; this.name = name; this.isBot = isBot;
-                // ON REDUIT LA TAILLE GLOBALE DU SLIME POUR QU'IL RESTE PETIT ET MIGNON !
-                this.scale = 1; this.radius = 8; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
+                
+                // TAILLE DE BASE AJUSTEE POUR ETRE PARFAITE (Ni trop gros, ni trop petit)
+                this.scale = 1; this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
                 
@@ -719,17 +720,17 @@
                 // ADAPTATION DYNAMIQUE AU CHEMIN (SQUISH)
                 let availableHeight = 0;
                 let checkY = Math.floor(this.y + this.radius);
-                while (availableHeight < 26 && !isSolid(this.x, checkY - availableHeight)) {
+                while (availableHeight < 45 && !isSolid(this.x, checkY - availableHeight)) {
                     availableHeight++;
                 }
                 
                 let targetScale = 1;
-                if (availableHeight < 24) {
-                    targetScale = Math.max(0.4, availableHeight / 24);
+                if (availableHeight < 40) {
+                    targetScale = Math.max(0.35, availableHeight / 40);
                 }
                 if (!this.scale) this.scale = 1;
                 this.scale += (targetScale - this.scale) * 0.15;
-                this.radius = 8 * this.scale;
+                this.radius = 12 * this.scale; // Suit parfaitement la taille visuelle
 
                 // Animations
                 if (this.state === 'walk') {
@@ -802,25 +803,25 @@
                 ctxEnt.translate(renderX, renderY);
                 ctxEnt.scale(this.scale, this.scale);
 
-                // TAILLE DE BASE DE 24x24 AU LIEU DE 40x40
+                // REDESSIN EN 40x40 (Taille optimale)
                 if (img && img.complete && img.naturalWidth > 0) {
-                    ctxEnt.drawImage(img, -12, -15, 24, 24);
+                    ctxEnt.drawImage(img, -20, -25, 40, 40);
                 } else { 
-                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(-8, -8, 16, 16); 
+                    ctxEnt.fillStyle = this.color; ctxEnt.fillRect(-10, -10, 20, 20); 
                 }
                 ctxEnt.restore();
 
-                // Noms & Flèche de la bonne taille
-                ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 10px 'Segoe UI'"; ctxEnt.textAlign = "center";
-                ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 20 * this.scale); ctxEnt.shadowBlur = 0;
+                // Noms & Flèche replacés avec la bonne échelle
+                ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Segoe UI'"; ctxEnt.textAlign = "center";
+                ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 30 * this.scale); ctxEnt.shadowBlur = 0;
 
                 if (currentPlayer === this.id && gameState !== 'end') {
                     ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
                     ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = ctxEnt.fillStyle;
                     ctxEnt.beginPath(); 
-                    ctxEnt.moveTo(renderX - 4, renderY - 30 * this.scale); 
-                    ctxEnt.lineTo(renderX + 4, renderY - 30 * this.scale); 
-                    ctxEnt.lineTo(renderX, renderY - 22 * this.scale); 
+                    ctxEnt.moveTo(renderX - 6, renderY - 45 * this.scale); 
+                    ctxEnt.lineTo(renderX + 6, renderY - 45 * this.scale); 
+                    ctxEnt.lineTo(renderX, renderY - 35 * this.scale); 
                     ctxEnt.fill(); 
                     ctxEnt.shadowBlur = 0;
                 }
@@ -1073,7 +1074,7 @@
                 ai.facing = (target.x < ai.x) ? 'l' : 'r'; ai.isAiming = true;
                 if(turnFrames > 180) turnFrames = 180;
 
-                let dx = target.x - ai.x; let dy = (target.y - ai.y) - 10; 
+                let dx = target.x - ai.x; let dy = (target.y - ai.y) - 15; 
                 
                 let errorOffsetX = (Math.random() - 0.5) * (minDist * 0.15); 
                 let errorOffsetY = (Math.random() - 0.5) * (minDist * 0.15);
@@ -1093,11 +1094,11 @@
                         ai.triggerAttackAnimation(ai.weapon);
 
                         if (ai.weapon === 'boxe') {
-                            executePunch(ai, ai.x, ai.y - 10 * ai.scale, angle, ai.color, true);
+                            executePunch(ai, ai.x, ai.y - 15 * ai.scale, angle, ai.color, true);
                         } else {
                             if (ai.weapon === 'bazooka') playSound('bazooka_fire');
                             if (ai.weapon === 'grenade') playSound('grenade_throw');
-                            projectile = new Projectile(ai.x, ai.y - 10 * ai.scale, Math.cos(angle) * power, Math.sin(angle) * power, ai.weapon);
+                            projectile = new Projectile(ai.x, ai.y - 15 * ai.scale, Math.cos(angle) * power, Math.sin(angle) * power, ai.weapon);
                             gameState = 'flying'; retreatFrames = 60; 
                         }
                     }
@@ -1202,7 +1203,7 @@
                 document.getElementById('weapon-panel').classList.add('hidden'); 
                 activeWorm.triggerAttackAnimation(activeWorm.weapon);
 
-                let startY = activeWorm.y - 10 * activeWorm.scale;
+                let startY = activeWorm.y - 15 * activeWorm.scale;
 
                 if (activeWorm.weapon === 'boxe') {
                     executePunch(activeWorm, activeWorm.x, startY, angle, activeWorm.color, true);
@@ -1339,7 +1340,7 @@
                 let power = Math.min(Math.hypot(dx, dy), activeWorm.weapon === 'boxe' ? 50 : 180); 
                 let angle = Math.atan2(dy, dx);
                 
-                let startX = activeWorm.x; let startY = activeWorm.y - 10 * activeWorm.scale;
+                let startX = activeWorm.x; let startY = activeWorm.y - 15 * activeWorm.scale;
                 
                 ctxEnt.beginPath(); ctxEnt.moveTo(startX, startY); ctxEnt.lineTo(startX + Math.cos(angle)*power, startY + Math.sin(angle)*power);
                 ctxEnt.strokeStyle = activeWorm.weapon === 'boxe' ? '#ff0000' : activeWorm.color;
