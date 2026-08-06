@@ -74,10 +74,9 @@
         .spells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
         
-        .unit-btn { flex: 1 1 18%; min-width: 80px; max-width: 120px; background: linear-gradient(180deg, rgba(30,40,60,0.8), rgba(10,15,25,0.9)); color: #fff; border: 1px solid #444; padding: 8px 5px; border-radius: 8px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; font-size: 0.9em; text-align: center;}
+        .unit-btn { flex: 1 1 18%; min-width: 80px; max-width: 120px; background: linear-gradient(180deg, rgba(30,40,60,0.8), rgba(10,15,25,0.9)); color: #fff; border: 1px solid #444; padding: 8px 5px; border-radius: 8px; font-family: 'Rajdhani'; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; font-size: 0.9em; text-align: center;}
         .unit-btn:hover:not(:disabled) { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 240, 255, 0.3); background: rgba(0, 240, 255, 0.1);}
         .unit-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(100%); }
-        .unit-icon { font-size: 1.8em; margin-bottom: 2px; }
         .unit-cost { color: var(--gold); font-size: 1.2em; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
 
         .spell-btn { background: rgba(0, 255, 204, 0.05); border: 1px solid var(--spell); color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: 'Rajdhani'; position: relative; overflow: hidden; font-size: 1em; text-transform: uppercase;}
@@ -182,11 +181,11 @@
             'map1': 'img/map1.png', 'map2': 'img/map2.png',
             'map1_tech1': 'img/map1_tech1.png', 'map2_tech1': 'img/map2_tech1.png',
             'map1_tech2': 'img/map1_tech2.png', 'map2_tech2': 'img/map2_tech2.png',
-            // --- NOUVEAUX SLIMES TECH 1 AJOUTES ICI ---
+            // --- NOUVEAUX SLIMES TECH 1 (Les noms DOIVENT correspondre à tes vrais fichiers PNG) ---
             'slimewest1': 'img/slimewest1.png',
             'slimewest2': 'img/slimewest2.png',
             'slimewest3': 'img/slimewest3.png',
-            // --- RESTES DES ANCIENS SPRITES ---
+            // --- ANCIENS SPRITES RECYCLES ---
             'fantassin_est': 'img/fantassin_est.png', 'tirreur_est': 'img/tirreur_est.png',
             'drone': 'img/drone.png', 'blaster': 'img/blaster.png', 'mech': 'img/mech.png', 'sniper1': 'img/sniper1.png',
             'drone2': 'img/drone2.png', 'blaster2': 'img/blaster2.png', 'mech2': 'img/mech2.png', 'sniper2': 'img/sniper2.png', 'titan2': 'img/titan2.png'
@@ -215,25 +214,27 @@
         };
         const floorY = 250;
         
-        // --- NOUVELLES TAILLES A GRANDIES (x2.5 à x3) ---
+        // --- BASE DE DONNEES DES UNITES (Tailles augmentées + Direction Fixe) ---
+        // nativeFace: 'left' signifie que le PNG de base regarde vers la gauche (l'Ouest).
+        // Le code retournera automatiquement l'image si l'équipe doit avancer vers la droite.
         const unitStats = {
             // TECH 1
-            slime:       { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 50, h: 60,  type: 'melee', rew: 10, xp: 10, icon: '💧', tech: 1 },
-            spear_slime: { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 50, h: 65,  type: 'ranged', rew: 15, xp: 15, icon: '🔱', tech: 1 },
-            dino_slime:  { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 80, h: 90,  type: 'melee', rew: 30, xp: 25, icon: '🦖', tech: 1 },
+            slime:       { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 60, h: 70,  type: 'melee', rew: 10, xp: 10, imgKey: 'slimewest1', nativeFace: 'left', tech: 1 },
+            spear_slime: { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 60, h: 75,  type: 'ranged', rew: 15, xp: 15, imgKey: 'slimewest2', nativeFace: 'left', tech: 1 },
+            dino_slime:  { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 90, h: 100, type: 'melee', rew: 30, xp: 25, imgKey: 'slimewest3', nativeFace: 'left', tech: 1 },
             
             // TECH 2
-            warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 60, h: 75,  type: 'melee', rew: 50, xp: 40, icon: '⚔️', tech: 2 },
-            mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 50, h: 75,  type: 'ranged', rew: 70, xp: 60, icon: '🧙', tech: 2 },
-            mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 100, h: 110,type: 'melee', rew: 120, xp: 90, icon: '💪', tech: 2 },
-            sniper_slime: { cost: 350, hp: 150, dmg: 120,spd: 0.8, rng: 350, cd: 100,w: 60, h: 80,  type: 'ranged', rew: 150, xp: 120, icon: '🎯', tech: 2 },
+            warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 70, h: 85,  type: 'melee', rew: 50, xp: 40, imgKey: 'drone', nativeFace: 'right', tech: 2 },
+            mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 60, h: 85,  type: 'ranged', rew: 70, xp: 60, imgKey: 'blaster', nativeFace: 'right', tech: 2 },
+            mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 110, h: 120,type: 'melee', rew: 120, xp: 90, imgKey: 'mech', nativeFace: 'right', tech: 2 },
+            sniper_slime: { cost: 350, hp: 150, dmg: 120,spd: 0.8, rng: 350, cd: 100,w: 70, h: 90,  type: 'ranged', rew: 150, xp: 120, imgKey: 'sniper1', nativeFace: 'right', tech: 2 },
             
             // TECH 3
-            cyber_slime:  { cost: 400, hp: 800, dmg: 110, spd: 1.3, rng: 30,  cd: 40, w: 70, h: 85,  type: 'melee', rew: 200, xp: 150, icon: '🦾', tech: 3 },
-            shooter_slime:{ cost: 500, hp: 400, dmg: 150, spd: 1.0, rng: 250, cd: 50, w: 70, h: 85,  type: 'ranged', rew: 250, xp: 180, icon: '🔫', tech: 3 },
-            mecha_slime:  { cost: 800, hp: 1800,dmg: 250, spd: 0.8, rng: 40,  cd: 60, w: 140,h: 160, type: 'melee', rew: 350, xp: 250, icon: '🤖', tech: 3 },
-            sniper_slime_3:{ cost: 1000,hp: 350, dmg: 400, spd: 0.9, rng: 450, cd: 110,w: 70, h: 90,  type: 'ranged', rew: 450, xp: 350, icon: '🔭', tech: 3 },
-            dragon_slime: { cost: 1500,hp: 3000,dmg: 500, spd: 1.0, rng: 150, cd: 70, w: 200,h: 200, type: 'ranged',rew: 600, xp: 500, icon: '🐉', tech: 3 }
+            cyber_slime:  { cost: 400, hp: 800, dmg: 110, spd: 1.3, rng: 30,  cd: 40, w: 80, h: 95,  type: 'melee', rew: 200, xp: 150, imgKey: 'drone2', nativeFace: 'right', tech: 3 },
+            shooter_slime:{ cost: 500, hp: 400, dmg: 150, spd: 1.0, rng: 250, cd: 50, w: 80, h: 95,  type: 'ranged', rew: 250, xp: 180, imgKey: 'blaster2', nativeFace: 'right', tech: 3 },
+            mecha_slime:  { cost: 800, hp: 1800,dmg: 250, spd: 0.8, rng: 40,  cd: 60, w: 150,h: 170, type: 'melee', rew: 350, xp: 250, imgKey: 'mech2', nativeFace: 'right', tech: 3 },
+            sniper_slime_3:{ cost: 1000,hp: 350, dmg: 400, spd: 0.9, rng: 450, cd: 110,w: 80, h: 100,  type: 'ranged', rew: 450, xp: 350, imgKey: 'sniper2', nativeFace: 'right', tech: 3 },
+            dragon_slime: { cost: 1500,hp: 3000,dmg: 500, spd: 1.0, rng: 150, cd: 70, w: 220,h: 220, type: 'ranged',rew: 600, xp: 500, imgKey: 'titan2', nativeFace: 'right', tech: 3 }
         };
 
         const spellStats = { 
@@ -352,7 +353,7 @@
             });
         }
 
-        // --- INTERFACE DEPLOIEMENT DYNAMIQUE ---
+        // --- INTERFACE DEPLOIEMENT DYNAMIQUE (AVEC IMAGES PNG) ---
         function buildControlsContainer(team) {
             return `<div class="team-controls" id="team-controls-${team}"></div>`;
         }
@@ -363,7 +364,6 @@
             let tName = team === 1 ? 'WEST' : 'EAST';
             let color = team === 1 ? 'var(--primary)' : 'var(--enemy)';
             
-            // Touches
             let keysText = team === 1 ? "(1,2,3,4,5)" : "(Num 1,2,3,4,5)";
             if (gameMode !== 'local') keysText = "(1,2,3,4,5)";
 
@@ -372,8 +372,10 @@
             let unitBtnsHtml = availableUnits.map((uKey, i) => {
                 let u = unitStats[uKey];
                 let displayName = uKey.replace(/_/g, ' ').toUpperCase();
+                let imgSrc = imgFiles[u.imgKey]; // Cherche le bon PNG !
+                
                 return `<button class="unit-btn" id="btn-${pre}-u${i+1}" onclick="sendAction(${team}, 'spawn', '${uKey}')">
-                            <div class="unit-icon">${u.icon}</div>
+                            <img src="${imgSrc}" style="height: 38px; max-width: 100%; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));" alt="icon">
                             ${displayName} 
                             <span class="unit-cost">${u.cost} 💰</span>
                         </button>`;
@@ -445,7 +447,6 @@
             gameState.p1.gold += gameState.p1.incomeRate;
             gameState.p2.gold += gameState.p2.incomeRate;
             
-            // INTELLIGENCE ARTIFICIELLE AMELIOREE
             if(gameMode === 'solo' || gameMode === 'hardcore') {
                 let ai = gameState.p2;
                 let r = Math.random();
@@ -461,7 +462,7 @@
                 let p1Count = p1Units.length;
                 let p2Count = p2Units.length;
 
-                // Sorts
+                // Sorts AI
                 if (p1Count >= 4 && ai.spells[1] === 0 && ai.gold >= spellStats[1].cost[ai.age - 1]) {
                     processAction(2, 'spell', 1);
                 }
@@ -469,19 +470,17 @@
                     processAction(2, 'spell', 2);
                 }
 
-                // Logique de spawn (Miroir ou Counter)
+                // Logique AI de spawn
                 let availableUnits = Object.keys(unitStats).filter(k => unitStats[k].tech === ai.age);
                 let spawnType = availableUnits[0]; 
 
                 if (p1Count > 0) {
                     let lastPlayerUnit = p1Units[p1Units.length - 1];
                     if (r > 0.5) { 
-                        // Miroir : Cherche la même classe (melee/ranged)
                         let equivalent = availableUnits.find(k => unitStats[k].type === unitStats[lastPlayerUnit.type].type);
                         if (equivalent) spawnType = equivalent;
                         else spawnType = availableUnits[availableUnits.length - 1]; 
                     } else { 
-                        // Counter
                         if (unitStats[lastPlayerUnit.type].type === 'ranged') {
                             spawnType = availableUnits.find(k => unitStats[k].type === 'melee' && unitStats[k].hp >= 100) || availableUnits[0];
                         } else {
@@ -756,27 +755,12 @@
                 ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x - 50, canvas.height); ctx.stroke();
             }
 
-            // 3. STRUCTURES DES BASES (Cores uniquement, fond propre)
-            [1, 2].forEach(t => {
-                let b = bases[t]; let color = t === 1 ? '#00f0ff' : '#ff0055';
-                let p = t === 1 ? gameState.p1 : gameState.p2;
-                
-                ctx.shadowBlur = 20; ctx.shadowColor = color;
-                ctx.fillStyle = color;
-                
-                let coreX = t === 1 ? b.x + 40 : b.x + b.w - 60;
-                let coreY = floorY - 50;
-
-                ctx.fillRect(coreX, coreY, 20, 20); // Core
-                if (p.age >= 2) ctx.fillRect(coreX - 10, coreY + 30, 40, 10);
-                if (p.age >= 3) { ctx.beginPath(); ctx.arc(coreX + 10, coreY - 30, 15, 0, Math.PI*2); ctx.fill(); }
-                ctx.shadowBlur = 0;
-            });
+            // --- PLUS DE DESSIN DE BASE (SUPPRIMÉ COMPLETEMENT) ---
 
             // 4. UNITES AVEC GESTION PARFAITE DE LA TAILLE ET DU SENS
             gameState.units.forEach(u => {
                 let color = u.team === 1 ? '#00f0ff' : '#ff0055';
-                let p = u.team === 1 ? gameState.p1 : gameState.p2;
+                let stat = unitStats[u.type];
                 
                 ctx.save();
                 ctx.translate(u.x + u.w/2, u.y + u.h/2);
@@ -786,34 +770,24 @@
                     ctx.translate(0, -Math.abs(Math.sin(u.animCycle)) * 4);
                 } else if (u.action === 'attack') {
                     let pct = (u.cdMax - u.cd) / u.cdMax;
-                    if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (pct<0.3?10:0) : (pct<0.3?-10:0), 0);
+                    if(stat.type === 'melee') ctx.translate(u.team===1 ? (pct<0.3?10:0) : (pct<0.3?-10:0), 0);
                 }
-
-                // Map des sprites avec tes nouvelles images Tech 1
-                const spriteMap = {
-                    'slime': 'slimewest1', 'spear_slime': 'slimewest2', 'dino_slime': 'slimewest3', 
-                    'warrior_slime': 'drone', 'mage_slime': 'blaster', 'mega_slime': 'mech', 'sniper_slime': 'sniper1', 
-                    'cyber_slime': 'drone2', 'shooter_slime': 'blaster2', 'mecha_slime': 'mech2', 'sniper_slime_3': 'sniper2', 'dragon_slime': 'titan2'
-                };
                 
-                let imgName = spriteMap[u.type];
+                let imgName = stat.imgKey;
                 let img = imgs[imgName];
                 
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    // --- INTELLIGENCE DIRECTIONNELLE (FLIP) ---
-                    // Si l'image s'appelle "west", elle regarde vers la gauche naturellement.
-                    let nativelyFacesWest = imgName.includes('west');
-                    let flip = false;
                     
-                    // L'Equipe 1 avance vers la DROITE. Si l'image regarde à GAUCHE, on la retourne.
-                    if (u.team === 1 && nativelyFacesWest) flip = true;
-                    // L'Equipe 2 avance vers la GAUCHE. Si l'image regarde à DROITE, on la retourne.
-                    if (u.team === 2 && !nativelyFacesWest) flip = true;
+                    let flip = false;
+                    // L'Equipe 1 avance vers la DROITE. Si l'image regarde vers l'OUEST (Gauche), on la retourne !
+                    if (u.team === 1 && stat.nativeFace === 'left') flip = true;
+                    // L'Equipe 2 avance vers la GAUCHE. Si l'image regarde vers l'EST (Droite), on la retourne !
+                    if (u.team === 2 && stat.nativeFace === 'right') flip = true;
 
                     if (flip) ctx.scale(-1, 1);
                     
                     // --- GESTION DES PROPORTIONS (ASPECT RATIO) ---
-                    // Au lieu d'écraser l'image dans u.w et u.h, on calcule sa vraie largeur par rapport à sa hauteur
+                    // Calcule la bonne largeur selon la hauteur choisie pour pas que ça s'écrase
                     let ratio = img.naturalWidth / img.naturalHeight;
                     let drawW = u.h * ratio;
                     
