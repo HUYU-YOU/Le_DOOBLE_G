@@ -215,24 +215,25 @@
         };
         const floorY = 250;
         
+        // --- NOUVELLES TAILLES A GRANDIES (x2.5 à x3) ---
         const unitStats = {
             // TECH 1
-            slime:       { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 20, h: 25, type: 'melee', rew: 10, xp: 10, icon: '💧', tech: 1 },
-            spear_slime: { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 20, h: 30, type: 'ranged', rew: 15, xp: 15, icon: '🔱', tech: 1 },
-            dino_slime:  { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 40, h: 40, type: 'melee', rew: 30, xp: 25, icon: '🦖', tech: 1 },
+            slime:       { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 50, h: 60,  type: 'melee', rew: 10, xp: 10, icon: '💧', tech: 1 },
+            spear_slime: { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 50, h: 65,  type: 'ranged', rew: 15, xp: 15, icon: '🔱', tech: 1 },
+            dino_slime:  { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 80, h: 90,  type: 'melee', rew: 30, xp: 25, icon: '🦖', tech: 1 },
             
             // TECH 2
-            warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 30, h: 35, type: 'melee', rew: 50, xp: 40, icon: '⚔️', tech: 2 },
-            mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 25, h: 35, type: 'ranged', rew: 70, xp: 60, icon: '🧙', tech: 2 },
-            mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 50, h: 50, type: 'melee', rew: 120, xp: 90, icon: '💪', tech: 2 },
-            sniper_slime: { cost: 350, hp: 150, dmg: 120,spd: 0.8, rng: 350, cd: 100,w: 30, h: 40, type: 'ranged', rew: 150, xp: 120, icon: '🎯', tech: 2 },
+            warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 60, h: 75,  type: 'melee', rew: 50, xp: 40, icon: '⚔️', tech: 2 },
+            mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 50, h: 75,  type: 'ranged', rew: 70, xp: 60, icon: '🧙', tech: 2 },
+            mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 100, h: 110,type: 'melee', rew: 120, xp: 90, icon: '💪', tech: 2 },
+            sniper_slime: { cost: 350, hp: 150, dmg: 120,spd: 0.8, rng: 350, cd: 100,w: 60, h: 80,  type: 'ranged', rew: 150, xp: 120, icon: '🎯', tech: 2 },
             
             // TECH 3
-            cyber_slime:  { cost: 400, hp: 800, dmg: 110, spd: 1.3, rng: 30,  cd: 40, w: 35, h: 40, type: 'melee', rew: 200, xp: 150, icon: '🦾', tech: 3 },
-            shooter_slime:{ cost: 500, hp: 400, dmg: 150, spd: 1.0, rng: 250, cd: 50, w: 35, h: 40, type: 'ranged', rew: 250, xp: 180, icon: '🔫', tech: 3 },
-            mecha_slime:  { cost: 800, hp: 1800,dmg: 250, spd: 0.8, rng: 40,  cd: 60, w: 70, h: 80, type: 'melee', rew: 350, xp: 250, icon: '🤖', tech: 3 },
-            sniper_slime_3:{ cost: 1000,hp: 350, dmg: 400, spd: 0.9, rng: 450, cd: 110,w: 35, h: 45, type: 'ranged', rew: 450, xp: 350, icon: '🔭', tech: 3 },
-            dragon_slime: { cost: 1500,hp: 3000,dmg: 500, spd: 1.0, rng: 150, cd: 70, w: 100, h: 100, type: 'ranged',rew: 600, xp: 500, icon: '🐉', tech: 3 }
+            cyber_slime:  { cost: 400, hp: 800, dmg: 110, spd: 1.3, rng: 30,  cd: 40, w: 70, h: 85,  type: 'melee', rew: 200, xp: 150, icon: '🦾', tech: 3 },
+            shooter_slime:{ cost: 500, hp: 400, dmg: 150, spd: 1.0, rng: 250, cd: 50, w: 70, h: 85,  type: 'ranged', rew: 250, xp: 180, icon: '🔫', tech: 3 },
+            mecha_slime:  { cost: 800, hp: 1800,dmg: 250, spd: 0.8, rng: 40,  cd: 60, w: 140,h: 160, type: 'melee', rew: 350, xp: 250, icon: '🤖', tech: 3 },
+            sniper_slime_3:{ cost: 1000,hp: 350, dmg: 400, spd: 0.9, rng: 450, cd: 110,w: 70, h: 90,  type: 'ranged', rew: 450, xp: 350, icon: '🔭', tech: 3 },
+            dragon_slime: { cost: 1500,hp: 3000,dmg: 500, spd: 1.0, rng: 150, cd: 70, w: 200,h: 200, type: 'ranged',rew: 600, xp: 500, icon: '🐉', tech: 3 }
         };
 
         const spellStats = { 
@@ -772,7 +773,7 @@
                 ctx.shadowBlur = 0;
             });
 
-            // 4. UNITES
+            // 4. UNITES AVEC GESTION PARFAITE DE LA TAILLE ET DU SENS
             gameState.units.forEach(u => {
                 let color = u.team === 1 ? '#00f0ff' : '#ff0055';
                 let p = u.team === 1 ? gameState.p1 : gameState.p2;
@@ -788,7 +789,7 @@
                     if(unitStats[u.type].type === 'melee') ctx.translate(u.team===1 ? (pct<0.3?10:0) : (pct<0.3?-10:0), 0);
                 }
 
-                // Mapper les nouvelles unités sur les anciens sprites ET tes nouveaux sprites
+                // Map des sprites avec tes nouvelles images Tech 1
                 const spriteMap = {
                     'slime': 'slimewest1', 'spear_slime': 'slimewest2', 'dino_slime': 'slimewest3', 
                     'warrior_slime': 'drone', 'mage_slime': 'blaster', 'mega_slime': 'mech', 'sniper_slime': 'sniper1', 
@@ -799,14 +800,31 @@
                 let img = imgs[imgName];
                 
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    if (u.team === 2) ctx.scale(-1, 1);
-                    ctx.drawImage(img, -u.w/2, -u.h/2, u.w, u.h);
+                    // --- INTELLIGENCE DIRECTIONNELLE (FLIP) ---
+                    // Si l'image s'appelle "west", elle regarde vers la gauche naturellement.
+                    let nativelyFacesWest = imgName.includes('west');
+                    let flip = false;
+                    
+                    // L'Equipe 1 avance vers la DROITE. Si l'image regarde à GAUCHE, on la retourne.
+                    if (u.team === 1 && nativelyFacesWest) flip = true;
+                    // L'Equipe 2 avance vers la GAUCHE. Si l'image regarde à DROITE, on la retourne.
+                    if (u.team === 2 && !nativelyFacesWest) flip = true;
+
+                    if (flip) ctx.scale(-1, 1);
+                    
+                    // --- GESTION DES PROPORTIONS (ASPECT RATIO) ---
+                    // Au lieu d'écraser l'image dans u.w et u.h, on calcule sa vraie largeur par rapport à sa hauteur
+                    let ratio = img.naturalWidth / img.naturalHeight;
+                    let drawW = u.h * ratio;
+                    
+                    ctx.drawImage(img, -drawW/2, -u.h/2, drawW, u.h);
                 } else {
                     drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color); 
                 }
                 
                 ctx.restore();
 
+                // Barres de vie ajustées
                 ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(u.x, u.y - 12, u.w, 4); 
                 ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x, u.y - 12, u.w * (u.hp / u.maxHp), 4);
             });
