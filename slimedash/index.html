@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber-Dash : Ultimate Overdrive</title>
+    <title>Slime-Dash : Neon Overdrive</title>
     <style>
+        /* =========================================
+           1. VARIABLES CYBERPUNK ET RESET
+           ========================================= */
         :root {
             --bg-color: #0b0c10;
             --neon-cyan: #00f0ff;
@@ -22,12 +25,15 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: var(--font-main);
-            overflow: hidden;
+            overflow: hidden; /* Empêche le scroll natif */
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
+        /* =========================================
+           2. CONTENEUR PRINCIPAL DU JEU
+           ========================================= */
         #game-container {
             position: relative;
             width: 100%;
@@ -35,10 +41,10 @@
             max-width: 1000px;
             max-height: 600px;
             background: #000;
-            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
-            touch-action: none;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.2); /* Lueur verte */
+            touch-action: none; /* Bloque le swipe/zoom natif */
             overflow: hidden;
-            border: 2px solid rgba(0, 240, 255, 0.2);
+            border: 2px solid rgba(57, 255, 20, 0.3);
             border-radius: 8px;
         }
 
@@ -48,13 +54,16 @@
             height: 100%;
         }
 
+        /* =========================================
+           3. INTERFACE UTILISATEUR (UI)
+           ========================================= */
         #ui-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
+            pointer-events: none; /* Les clics passent à travers vers le canvas */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -67,8 +76,8 @@
             justify-content: space-between;
             font-size: 1.8rem;
             font-weight: bold;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 12px var(--neon-cyan);
+            color: var(--neon-green);
+            text-shadow: 0 0 12px var(--neon-green);
             letter-spacing: 2px;
         }
 
@@ -78,19 +87,20 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            pointer-events: auto;
+            pointer-events: auto; /* Réactive les clics pour le menu */
             background: rgba(11, 12, 16, 0.92);
             padding: 40px;
             border: 2px solid var(--neon-pink);
             box-shadow: 0 0 25px var(--neon-pink);
             border-radius: 12px;
             backdrop-filter: blur(8px);
+            z-index: 10;
         }
 
         h1 {
             margin-top: 0;
-            color: var(--neon-pink);
-            text-shadow: 0 0 15px var(--neon-pink);
+            color: var(--neon-green);
+            text-shadow: 0 0 15px var(--neon-green);
             text-transform: uppercase;
             font-size: 3rem;
             letter-spacing: 3px;
@@ -105,8 +115,8 @@
 
         button {
             background: transparent;
-            border: 2px solid var(--neon-cyan);
-            color: var(--neon-cyan);
+            border: 2px solid var(--neon-green);
+            color: var(--neon-green);
             padding: 15px 35px;
             font-size: 1.3rem;
             font-family: inherit;
@@ -119,28 +129,39 @@
         }
 
         button:hover {
-            background: var(--neon-cyan);
+            background: var(--neon-green);
             color: var(--bg-color);
-            box-shadow: 0 0 20px var(--neon-cyan);
+            box-shadow: 0 0 20px var(--neon-green);
             transform: scale(1.05);
         }
     </style>
 </head>
 <body>
 
-    <!-- Protection Swipe Hub -->
+    <!-- =========================================
+         PROTECTION GLOBALE CONTRE LE SWIPE HUB
+         ========================================= -->
     <script>
         document.addEventListener('touchstart', (e) => {
-            if(e.target.closest('.no-swipe')) { e.stopPropagation(); }
+            if(e.target.closest('.no-swipe')) {
+                e.stopPropagation();
+            }
         }, { passive: false });
+        
         document.addEventListener('mousedown', (e) => {
-            if(e.target.closest('.no-swipe')) { e.stopPropagation(); }
+            if(e.target.closest('.no-swipe')) {
+                e.stopPropagation();
+            }
         });
     </script>
 
+    <!-- =========================================
+         CONTENEUR DU JEU
+         ========================================= -->
     <div id="game-container" class="no-swipe">
         <canvas id="gameCanvas"></canvas>
         
+        <!-- Score -->
         <div id="ui-layer">
             <div class="score-board">
                 <div>SCORE: <span id="score">0</span></div>
@@ -148,16 +169,21 @@
             </div>
         </div>
 
+        <!-- Menu / Game Over -->
         <div id="menu-screen">
-            <h1 id="menu-title">Cyber-Dash</h1>
+            <h1 id="menu-title">Slime-Dash</h1>
             <p id="menu-desc">
-                ESPACE, CLIC ou TAP pour sauter.<br>Survis à l'Overdrive Quantique.
+                ESPACE, CLIC ou TAP pour sauter.<br>Échappe à l'infection quantique.
             </p>
-            <button id="start-btn">Système Start</button>
+            <button id="start-btn">Initialiser</button>
         </div>
     </div>
 
+    <!-- =========================================
+         MOTEUR DU JEU (JAVASCRIPT COMPLET)
+         ========================================= -->
     <script>
+        // --- 1. SETUP CANVAS & VARIABLES GLOBALES ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('score');
@@ -169,36 +195,77 @@
         let width, height;
         let gameState = 'START'; // START, PLAYING, GAMEOVER
         let score = 0;
-        let hiScore = localStorage.getItem('cyberDashUltimateHiScore') || 0;
+        let hiScore = localStorage.getItem('slimeDashHiScore') || 0;
         hiScoreEl.innerText = Math.floor(hiScore);
         
-        // Physique normalisée Delta Time
+        // Physique normalisée pour 60 FPS (Delta Time)
         let gameSpeed = 450; // pixels par seconde
-        const GRAVITY = 2200; // pixels / sec²
-        const JUMP_FORCE = -750; // pixels / sec
+        const GRAVITY = 2400; // pixels / sec²
+        const JUMP_FORCE = -800; // pixels / sec
         const GROUND_HEIGHT = 90;
-
-        // Effets visuels (Screen Shake)
-        let shakeTimer = 0;
-        let shakeIntensity = 0;
-
-        // Joueur
-        const player = {
-            x: 120,
-            y: 0,
-            size: 42,
-            vy: 0,
-            isGrounded: false,
-            rotation: 0,
-            trail: []
-        };
 
         let obstacles = [];
         let particles = [];
         let spawnTimer = 0;
         let bgGridX = 0;
+        let shakeTimer = 0;
+        let shakeIntensity = 0;
 
-        // --- GESTION HDPI / RETINA CANVAS ---
+        // --- 2. GESTIONNAIRE DES SPRITES DU SLIME ---
+        const sprites = {
+            idle: [],   // 1, 2, 3, 4
+            run: [],    // 5, 6, 7, 8
+            jump: [],   // 10, 11, 12, 13, 14, 15, 16
+            land: []    // 17, 18, 19, 20
+        };
+        
+        // Préchargeur d'images
+        function loadFrames(category, filenames) {
+            filenames.forEach(file => {
+                const img = new Image();
+                img.src = file;
+                sprites[category].push(img);
+            });
+        }
+
+        // Chargement exact de tes fichiers
+        loadFrames('idle', ['slm.png', 'slm2.png', 'slm3.png', 'slm4.png']);
+        loadFrames('run',  ['slm5.png', 'slm6.png', 'slm7.png', 'slm8.png']);
+        loadFrames('jump', ['slm10.png', 'slm11.png', 'slm12.png', 'slm13.png', 'slm14.png', 'slm15.png', 'slm16.png']);
+        loadFrames('land', ['slm17.png', 'slm18.png', 'slm19.png', 'slm20.png']);
+
+        // --- 3. OBJET JOUEUR ET MACHINE A ETATS D'ANIMATION ---
+        const player = {
+            x: 120,
+            y: 0,
+            size: 50,
+            vy: 0,
+            isGrounded: false,
+            trail: [], // Enregistre les positions pour la traînée lumineuse
+            
+            // Paramètres d'animation
+            animState: 'IDLE', // IDLE, RUN, JUMP, LAND, RECOVER
+            frameIndex: 0,
+            animTimer: 0,
+            animSpeed: 0.1 // Temps en secondes par image
+        };
+
+        // Fonction pour changer l'animation proprement
+        function setAnimState(newState) {
+            if (player.animState === newState) return; // Ne relance pas si on y est déjà
+            player.animState = newState;
+            player.frameIndex = 0;
+            player.animTimer = 0;
+            
+            // Ajustement de la vitesse selon l'action (Peut être tweaké)
+            if (newState === 'LAND') player.animSpeed = 0.05;       // Très rapide pour l'impact
+            else if (newState === 'RECOVER') player.animSpeed = 0.08;
+            else if (newState === 'RUN') player.animSpeed = 0.08;   // Vitesse de course
+            else if (newState === 'JUMP') player.animSpeed = 0.06;  // Vitesse de déploiement en saut
+            else player.animSpeed = 0.15;                           // IDLE (lent au menu)
+        }
+
+        // --- 4. HDPI & GESTION DE LA FENETRE ---
         function resize() {
             const container = canvas.parentElement;
             const rect = container.getBoundingClientRect();
@@ -211,6 +278,7 @@
             
             ctx.scale(dpr, dpr);
 
+            // Placement initial du slime au sol
             if(gameState === 'START') {
                 player.y = height - GROUND_HEIGHT - player.size;
             }
@@ -218,7 +286,7 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // --- SYSTÈME DE PARTICULES ---
+        // --- 5. SYSTEME DE PARTICULES ET FX ---
         function spawnParticles(x, y, color, count = 10) {
             for (let i = 0; i < count; i++) {
                 const angle = Math.random() * Math.PI * 2;
@@ -236,13 +304,19 @@
             }
         }
 
-        // --- INPUTS ---
+        function triggerShake(duration, intensity) {
+            shakeTimer = duration;
+            shakeIntensity = intensity;
+        }
+
+        // --- 6. CONTROLES DU JOUEUR ---
         function triggerJump() {
             if (gameState === 'PLAYING') {
                 if (player.isGrounded) {
                     player.vy = JUMP_FORCE;
                     player.isGrounded = false;
-                    spawnParticles(player.x + player.size/2, player.y + player.size, '#00f0ff', 8);
+                    setAnimState('JUMP');
+                    spawnParticles(player.x + player.size/2, player.y + player.size, 'var(--neon-green)', 15);
                 }
             } else if (gameState === 'GAMEOVER') {
                 resetGame();
@@ -270,20 +344,41 @@
             if(gameState === 'START' || gameState === 'GAMEOVER') resetGame();
         });
 
-        // --- LOGIQUE DE JEU ---
+        // --- 7. LOGIQUE DE BOUCLE GLOBALE (START / GAMEOVER) ---
         function resetGame() {
             player.y = height - GROUND_HEIGHT - player.size;
             player.vy = 0;
-            player.rotation = 0;
             player.trail = [];
+            setAnimState('RUN'); // Dès qu'on joue, il court
+            
             obstacles = [];
             particles = [];
             score = 0;
             gameSpeed = 450;
             spawnTimer = 0;
             shakeTimer = 0;
+            
             gameState = 'PLAYING';
             menuScreen.style.display = 'none';
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            triggerShake(0.4, 15);
+            spawnParticles(player.x + player.size/2, player.y + player.size/2, '#ff007f', 30);
+            
+            setAnimState('IDLE'); // Il retourne triste/inerte au game over
+            
+            menuScreen.style.display = 'block';
+            menuTitle.innerText = "CRASH INFECTION";
+            menuTitle.style.color = "#ff007f";
+            startBtn.innerText = "Ressusciter";
+            
+            if (score > hiScore) {
+                hiScore = score;
+                localStorage.setItem('slimeDashHiScore', hiScore);
+                hiScoreEl.innerText = Math.floor(hiScore);
+            }
         }
 
         function spawnObstacle() {
@@ -297,47 +392,28 @@
             });
         }
 
-        function triggerShake(duration, intensity) {
-            shakeTimer = duration;
-            shakeIntensity = intensity;
-        }
-
-        function gameOver() {
-            gameState = 'GAMEOVER';
-            triggerShake(0.4, 15);
-            spawnParticles(player.x + player.size/2, player.y + player.size/2, '#ff007f', 25);
-
-            menuScreen.style.display = 'block';
-            menuTitle.innerText = "CRASH SYSTÈME";
-            menuTitle.style.color = "#ff007f";
-            startBtn.innerText = "Reboot";
-            
-            if (score > hiScore) {
-                hiScore = score;
-                localStorage.setItem('cyberDashUltimateHiScore', hiScore);
-                hiScoreEl.innerText = Math.floor(hiScore);
-            }
-        }
-
-        // --- COLLISIONS (AABB Précis) ---
+        // Hitbox du slime plus indulgente qu'un carré parfait
         function checkCollision(p, obs) {
-            const tolerance = 6;
-            const hitX = (p.x + tolerance < obs.x + obs.size) && (p.x + p.size - tolerance > obs.x);
+            const tolX = 12; // Marge de tolérance X pour le Sprite
+            const tolY = 12; // Marge de tolérance Y
+            
+            const hitX = (p.x + tolX < obs.x + obs.size) && (p.x + p.size - tolX > obs.x);
             let hitY = false;
 
             if (obs.type === 'block') {
-                hitY = (p.y + tolerance < obs.y + obs.size) && (p.y + p.size - tolerance > obs.y);
+                hitY = (p.y + tolY < obs.y + obs.size) && (p.y + p.size - tolY > obs.y);
             } else if (obs.type === 'spike') {
-                hitY = (p.y + p.size - tolerance > obs.y + obs.size * 0.35);
+                // Le spike est un triangle, on tolère encore plus en haut
+                hitY = (p.y + p.size - tolY > obs.y + obs.size * 0.4);
             }
             return hitX && hitY;
         }
 
-        // --- BOUCLE PRINCIPALE (FIXED / DELTA TIME) ---
+        // --- 8. LA BOUCLE DU MOTEUR (FIXED DELTA TIME) ---
         let lastTime = performance.now();
 
         function mainLoop(currentTime) {
-            const dt = Math.min((currentTime - lastTime) / 1000, 0.1); // Cap delta time
+            const dt = Math.min((currentTime - lastTime) / 1000, 0.1); // Sécurité anti-lag spike
             lastTime = currentTime;
 
             update(dt);
@@ -346,55 +422,93 @@
             requestAnimationFrame(mainLoop);
         }
 
+        // --- 9. LOGIQUE DE MISE A JOUR (UPDATE) ---
         function update(dt) {
+            // A. UPDATE ANIMATION SLIME
+            player.animTimer += dt;
+            if (player.animTimer >= player.animSpeed) {
+                player.animTimer = 0;
+                player.frameIndex++;
+
+                // Machine à États Spécifique
+                if (player.animState === 'JUMP') {
+                    // Bloque sur la dernière image du saut (chute) jusqu'à toucher le sol
+                    if (player.frameIndex >= sprites.jump.length) {
+                        player.frameIndex = sprites.jump.length - 1;
+                    }
+                } 
+                else if (player.animState === 'LAND') {
+                    // L'atterrissage est fini -> on passe à l'état de récupération
+                    if (player.frameIndex >= sprites.land.length) {
+                        setAnimState('RECOVER');
+                    }
+                }
+                else if (player.animState === 'RECOVER') {
+                    // La récupération (anim 1,2,3,4) est finie -> il recommence à courir
+                    if (player.frameIndex >= sprites.idle.length) {
+                        setAnimState('RUN');
+                    }
+                }
+                else if (player.animState === 'IDLE') {
+                    player.frameIndex = player.frameIndex % sprites.idle.length;
+                }
+                else if (player.animState === 'RUN') {
+                    player.frameIndex = player.frameIndex % sprites.run.length;
+                }
+            }
+
             if (gameState !== 'PLAYING') return;
 
-            // 1. Accélération & Score
-            gameSpeed += dt * 8;
+            // B. UPDATE VITESSE ET SCORE
+            gameSpeed += dt * 8; // Le jeu va de plus en plus vite
             score += gameSpeed * dt * 0.1;
             scoreEl.innerText = Math.floor(score);
 
-            // 2. Parallax Grid
+            // C. UPDATE PARALLAX (Le fond)
             bgGridX -= gameSpeed * dt;
-            if (bgGridX <= -50) bgGridX += 50;
+            if (bgGridX <= -50) bgGridX += 50; // Reset seamless
 
-            // 3. Physique Joueur
+            // D. UPDATE PHYSIQUE JOUEUR
             player.vy += GRAVITY * dt;
             player.y += player.vy * dt;
 
-            // Trail
-            player.trail.push({x: player.x, y: player.y});
-            if (player.trail.length > 12) player.trail.shift();
+            // Enregistrement de la traînée (Trail)
+            // On sauvegarde l'état complet pour dessiner le fantôme
+            player.trail.push({
+                x: player.x, 
+                y: player.y, 
+                state: player.animState, 
+                frame: player.frameIndex
+            });
+            if (player.trail.length > 8) player.trail.shift(); // Longueur du trail
 
-            // Sol & Rotation
+            // Détection du Sol
             const groundLevel = height - GROUND_HEIGHT - player.size;
             if (player.y >= groundLevel) {
                 player.y = groundLevel;
                 player.vy = 0;
-                if (!player.isGrounded) {
-                    spawnParticles(player.x + player.size/2, player.y + player.size, 'rgba(0,240,255,0.6)', 4);
-                }
-                player.isGrounded = true;
                 
-                // Snap géométrique de rotation
-                let mod = player.rotation % (Math.PI / 2);
-                if (mod > 0.05) {
-                    player.rotation += (Math.PI / 2 - mod) * 15 * dt;
-                } else {
-                    player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
+                // S'il vient de toucher le sol
+                if (!player.isGrounded) {
+                    player.isGrounded = true;
+                    setAnimState('LAND'); // Déclenche l'animation d'impact
+                    spawnParticles(player.x + player.size/2, player.y + player.size, 'rgba(57, 255, 20, 0.7)', 8);
                 }
             } else {
                 player.isGrounded = false;
-                player.rotation += 4 * dt;
+                // Si le slime tombe (ex: d'une plateforme si tu en rajoutes) sans avoir sauté
+                if (player.animState !== 'JUMP') {
+                    setAnimState('JUMP');
+                }
             }
 
-            // 4. Gestion Obstacles avec sécurité d'espacement minimal
+            // E. UPDATE OBSTACLES
             spawnTimer -= gameSpeed * dt;
             if (spawnTimer <= 0) {
                 spawnObstacle();
-                // Délai dynamique basé sur la vitesse pour garantir la jouabilité
-                const minDistance = 280 + (gameSpeed * 0.4);
-                spawnTimer = minDistance + Math.random() * 150;
+                // Espace dynamique entre les obstacles (plus le jeu va vite, plus l'écart est grand)
+                const minDistance = 300 + (gameSpeed * 0.3);
+                spawnTimer = minDistance + Math.random() * 200;
             }
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
@@ -411,7 +525,7 @@
                 }
             }
 
-            // 5. Mise à jour Particules
+            // F. UPDATE FX (Particules et Camera Shake)
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.vx * dt;
@@ -420,29 +534,27 @@
                 if (p.alpha <= 0) particles.splice(i, 1);
             }
 
-            // 6. Screen Shake Update
-            if (shakeTimer > 0) {
-                shakeTimer -= dt;
-            }
+            if (shakeTimer > 0) shakeTimer -= dt;
         }
 
+        // --- 10. MOTEUR DE RENDU (DRAW) ---
         function draw() {
             ctx.save();
 
-            // Application du Screen Shake
+            // Application du Screen Shake global
             if (shakeTimer > 0) {
                 const offsetX = (Math.random() - 0.5) * shakeIntensity;
                 const offsetY = (Math.random() - 0.5) * shakeIntensity;
                 ctx.translate(offsetX, offsetY);
             }
 
-            // Effet de balayage de fond (Motion trail clean)
+            // Nettoyage fond
             ctx.fillStyle = '#0b0c10';
             ctx.fillRect(0, 0, width, height);
 
             if (gameState !== 'START') {
-                // --- GRILLE CYBERPUNK PARALLAX ---
-                ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
+                // --- A. GRILLE CYBERPUNK (Fond) ---
+                ctx.strokeStyle = 'rgba(57, 255, 20, 0.08)'; // Vert subtil
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 for(let x = bgGridX; x < width; x += 50) {
@@ -453,44 +565,66 @@
                 }
                 ctx.stroke();
 
-                // --- SOL ---
+                // --- B. SOL ---
                 const groundY = height - GROUND_HEIGHT;
                 ctx.fillStyle = '#050508';
                 ctx.fillRect(0, groundY, width, GROUND_HEIGHT);
                 
                 ctx.shadowBlur = 15;
-                ctx.shadowColor = 'var(--neon-pink)';
-                ctx.strokeStyle = '#ff007f';
+                ctx.shadowColor = 'var(--neon-green)';
+                ctx.strokeStyle = 'var(--neon-green)';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.moveTo(0, groundY);
                 ctx.lineTo(width, groundY);
                 ctx.stroke();
-                ctx.shadowBlur = 0;
+                ctx.shadowBlur = 0; // On reset l'ombre pour la suite
 
-                // --- TRAIL ---
+                // Fonction utilitaire pour récupérer l'image courante
+                const getSpriteImage = (state, index) => {
+                    let arr = sprites.idle;
+                    if(state === 'RUN') arr = sprites.run;
+                    else if(state === 'JUMP') arr = sprites.jump;
+                    else if(state === 'LAND') arr = sprites.land;
+                    else if(state === 'RECOVER') arr = sprites.idle;
+                    
+                    // Sécurité d'index
+                    let safeIndex = index % arr.length;
+                    if (state === 'JUMP' && index >= arr.length) safeIndex = arr.length - 1;
+                    
+                    return arr[safeIndex];
+                };
+
+                // --- C. TRAIL (Traînée du Slime fantôme) ---
                 player.trail.forEach((pos, index) => {
-                    const alpha = index / player.trail.length;
-                    ctx.fillStyle = `rgba(0, 240, 255, ${alpha * 0.4})`;
-                    ctx.fillRect(pos.x, pos.y, player.size, player.size);
+                    const alpha = (index / player.trail.length) * 0.4;
+                    const trailImg = getSpriteImage(pos.state, pos.frame);
+                    
+                    ctx.globalAlpha = alpha;
+                    if (trailImg && trailImg.complete && trailImg.naturalWidth !== 0) {
+                        ctx.drawImage(trailImg, pos.x - 10, pos.y, player.size, player.size);
+                    }
                 });
+                ctx.globalAlpha = 1.0; // Reset alpha
 
-                // --- JOUEUR ---
-                ctx.save();
-                ctx.translate(player.x + player.size/2, player.y + player.size/2);
-                ctx.rotate(player.rotation);
-                
-                ctx.shadowBlur = 18;
-                ctx.shadowColor = '#00f0ff';
-                ctx.fillStyle = '#0b0c10';
-                ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
-                
-                ctx.strokeStyle = '#00f0ff';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(-player.size/2, -player.size/2, player.size, player.size);
-                ctx.restore();
+                // --- D. JOUEUR (Sprite principal) ---
+                const activeImg = getSpriteImage(player.animState, player.frameIndex);
 
-                // --- OBSTACLES ---
+                if (activeImg && activeImg.complete && activeImg.naturalWidth !== 0) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = 'var(--neon-green)';
+                    ctx.drawImage(activeImg, player.x, player.y, player.size, player.size);
+                    ctx.shadowBlur = 0;
+                } else {
+                    // Fallback Sécurité si image manquante
+                    ctx.fillStyle = '#0b0c10';
+                    ctx.fillRect(player.x, player.y, player.size, player.size);
+                    ctx.strokeStyle = '#39ff14';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(player.x, player.y, player.size, player.size);
+                }
+
+                // --- E. OBSTACLES (Rouge Cyberpunk) ---
                 ctx.shadowBlur = 12;
                 ctx.shadowColor = '#ff007f';
                 ctx.fillStyle = '#ff007f';
@@ -515,7 +649,7 @@
                 });
                 ctx.shadowBlur = 0;
 
-                // --- PARTICULES ---
+                // --- F. PARTICULES ---
                 particles.forEach(p => {
                     ctx.fillStyle = p.color;
                     ctx.globalAlpha = Math.max(0, p.alpha);
@@ -527,7 +661,7 @@
             ctx.restore();
         }
 
-        // Lancement de la boucle principale
+        // --- 11. LANCEMENT DE LA BOUCLE ---
         requestAnimationFrame(mainLoop);
     </script>
 </body>
