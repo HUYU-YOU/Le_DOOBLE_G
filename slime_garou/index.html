@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Slime-Garou : Infection Protocol</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --neon-cyan: #00f0ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --neon-yellow: #fce803;
+            --neon-purple: #9b59b6;
+            --text-color: #e0e0e0;
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1, h2 {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+            text-transform: uppercase;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--neon-pink);
+            box-shadow: 0 0 15px var(--neon-pink);
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+
+        /* Exclusion du swipe global */
+        .no-swipe { touch-action: none; }
+
+        input[type="text"], input[type="number"], button {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus { box-shadow: 0 0 10px var(--neon-cyan); }
+
+        button {
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        button:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .btn-host { border-color: var(--neon-pink); color: var(--neon-pink); }
+        .btn-host:hover { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
+
+        .btn-start { border-color: var(--neon-green); color: var(--neon-green); display: none;}
+        .btn-start:hover { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            text-align: left;
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px dashed var(--neon-yellow);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--neon-pink);
+            width: 20px;
+            height: 20px;
+        }
+
+        #game-area { display: none; }
+        .role-card {
+            border: 2px solid var(--neon-cyan);
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 0 20px var(--neon-cyan);
+            background: #111;
+            transition: all 0.5s;
+        }
+        
+        .role-img {
+            max-width: 120px;
+            display: block;
+            margin: 0 auto 15px;
+            filter: drop-shadow(0 0 10px var(--neon-cyan));
+        }
+
+        .player-list { list-style: none; padding: 0; text-align: left; }
+        .player-list li { margin: 5px 0; padding: 5px; border-bottom: 1px solid #333; }
+        
+        .sys-log {
+            font-size: 0.9em;
+            color: var(--neon-green);
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            height: 120px;
+            overflow-y: auto;
+            text-align: left;
+            border: 1px solid var(--neon-green);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Logique globale du hub simulée (swipe protection) -->
+    <script>
+        document.addEventListener('touchstart', (e) => {
+            if(e.target.closest('.no-swipe')) {
+                e.stopPropagation(); 
+            }
+        });
+    </script>
+
+    <div class="container no-swipe">
+        <h1>Slime-Garou</h1>
+        
+        <!-- MENU PRINCIPAL -->
+        <div id="menu">
+            <button id="btn-create" class="btn-host">Créer un Serveur (Hôte)</button>
+            <hr style="border-color: #333; margin: 20px 0;">
+            <input type="text" id="join-id" placeholder="ID de Connexion (Hôte)">
+            <input type="text" id="player-name" placeholder="Ton Pseudo Cyber">
+            <button id="btn-join">Rejoindre la Partie</button>
+        </div>
+
+        <!-- LOBBY -->
+        <div id="lobby" style="display: none;">
+            <h2>Réseau Local</h2>
+            <p>ID Hôte : <span id="my-id" style="color: var(--neon-pink); font-weight: bold; user-select: all;">Génération...</span></p>
+            
+            <div id="host-config" style="display: none;">
+                <h3>Configuration de la Partie</h3>
+                <div class="config-grid">
+                    <div>
+                        <label>Nb. Slime-Garous :</label>
+                        <input type="number" id="cfg-wolves" value="1" min="1" max="3" style="width: 50px;">
+                    </div>
+                    <div class="checkbox-group">
+                        <label>Slime Voyante</label>
+                        <input type="checkbox" id="cfg-seer" checked>
+                    </div>
+                    <div class="checkbox-group">
+                        <label>Slime Sorcière</label>
+                        <input type="checkbox" id="cfg-witch" checked>
+                    </div>
+                    <div class="checkbox-group">
+                        <label>Slime Chasseur</label>
+                        <input type="checkbox" id="cfg-hunter">
+                    </div>
+                </div>
+            </div>
+
+            <h3>Joueurs Connectés (<span id="player-count">1</span>)</h3>
+            <ul id="players-list" class="player-list"></ul>
+            
+            <button id="btn-start" class="btn-start">Initialiser le Protocole (Lancer)</button>
+        </div>
+
+        <!-- ZONE DE JEU -->
+        <div id="game-area" class="no-swipe">
+            <h2 id="phase-title">Phase : Chargement...</h2>
+            
+            <div class="role-card" id="my-role-card">
+                <img id="role-image" class="role-img" src="slime.png" alt="Role Image">
+                <h3 id="role-name" style="margin:0;">En attente de rôle</h3>
+                <p id="role-desc" style="font-size: 0.9em; color: gray;">...</p>
+            </div>
+
+            <h3>Interface d'Action</h3>
+            <div id="action-panel" style="margin-bottom: 20px; min-height: 50px;">
+                <p style="color:var(--neon-yellow);">En attente des ordres du système...</p>
+            </div>
+
+            <h3>Logs Système</h3>
+            <div class="sys-log" id="sys-log">
+                > Connexion établie...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 🛠️ VARIABLES GLOBALES & UTILITAIRES
+        // ==========================================
+        let peer = null;
+        let connections = []; // { conn, name, role, isAlive, id, isHost }
+        let isHost = false;
+        let myName = "Hôte";
+        let myRole = "";
+
+        // Inventaire de la sorcière
+        let witchPotions = { heal: 1, poison: 1 };
+
+        const menuDiv = document.getElementById('menu');
+        const lobbyDiv = document.getElementById('lobby');
+        const gameArea = document.getElementById('game-area');
+        const logArea = document.getElementById('sys-log');
+
+        function addLog(msg) {
+            logArea.innerHTML += `<br>> ${msg}`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function initPeer(callback) {
+            peer = new Peer();
+            peer.on('open', (id) => { if(callback) callback(id); });
+            peer.on('error', (err) => { alert("Erreur Réseau : " + err); });
+        }
+
+        function broadcast(data) {
+            connections.forEach(c => {
+                if(!c.isHost && c.conn && c.conn.open) c.conn.send(data);
+            });
+        }
+
+        // ==========================================
+        // 👑 HÔTE : CRÉATION & RÉCEPTION RÉSEAU
+        // ==========================================
+        document.getElementById('btn-create').addEventListener('click', () => {
+            isHost = true;
+            menuDiv.style.display = 'none';
+            lobbyDiv.style.display = 'block';
+            document.getElementById('host-config').style.display = 'block';
+            
+            connections.push({ isHost: true, name: "Hôte", role: null, isAlive: true, id: 'host' });
+            updatePlayerListUI();
+
+            initPeer((id) => { document.getElementById('my-id').innerText = id; });
+
+            peer.on('connection', (conn) => {
+                conn.on('data', (data) => {
+                    // Un joueur rejoint le lobby
+                    if (data.type === 'join') {
+                        connections.push({ conn: conn, name: data.name, role: null, isAlive: true, id: conn.peer });
+                        updatePlayerListUI();
+                        broadcast({ type: 'lobby_update', count: connections.length, list: connections.map(c => c.name) });
+                        
+                        if (connections.length >= 3) { // Min 3 pour tester
+                            document.getElementById('btn-start').style.display = 'block';
+                        }
+                    } 
+                    // Un joueur envoie une action pendant la partie (C'EST ICI QUE CA SE JOUE !)
+                    else if (data.type === 'action') {
+                        handleNetworkAction(conn.peer, data);
+                    }
+                });
+            });
+        });
+
+        // ==========================================
+        // 👾 CLIENT : CONNEXION & RÉCEPTION RÉSEAU
+        // ==========================================
+        document.getElementById('btn-join').addEventListener('click', () => {
+            const hostId = document.getElementById('join-id').value.trim();
+            myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
+            if(!hostId) return alert("ID Requis");
+
+            menuDiv.style.display = 'none';
+            lobbyDiv.style.display = 'block';
+            document.getElementById('my-id').parentElement.style.display = 'none';
+
+            initPeer(() => {
+                const conn = peer.connect(hostId);
+                conn.on('open', () => {
+                    connections.push({conn: conn}); // Stocker la co vers l'hôte
+                    conn.send({ type: 'join', name: myName });
+                });
+
+                conn.on('data', (data) => {
+                    if (data.type === 'lobby_update') {
+                        document.getElementById('player-count').innerText = data.count;
+                        document.getElementById('players-list').innerHTML = data.list.map(n => `<li>${n}</li>`).join('');
+                    }
+                    else if (data.type === 'game_start') {
+                        lobbyDiv.style.display = 'none';
+                        gameArea.style.display = 'block';
+                        setupRoleUI(data.role);
+                        addLog("Système initialisé. Nuit imminente...");
+                    }
+                    else if (data.type === 'phase_change') {
+                        addLog(data.message);
+                        updateClientUI(data.phase, data.message, data.extra);
+                    }
+                    else if (data.type === 'scan_result') {
+                        addLog(`[SCAN RÉUSSI] La cible est : ${data.role}`);
+                    }
+                });
+            });
+        });
+
+        function updatePlayerListUI() {
+            document.getElementById('player-count').innerText = connections.length;
+            document.getElementById('players-list').innerHTML = connections.map(c => `<li>${c.name}</li>`).join('');
+        }
+
+        // ==========================================
+        // 🎲 DISTRIBUTION DES RÔLES
+        // ==========================================
+        document.getElementById('btn-start').addEventListener('click', () => {
+            const numPlayers = connections.length;
+            const nbWolves = parseInt(document.getElementById('cfg-wolves').value);
+            
+            let roles = [];
+            for(let i=0; i<nbWolves; i++) roles.push('slimegarou');
+            if (document.getElementById('cfg-seer').checked) roles.push('voyante');
+            if (document.getElementById('cfg-witch').checked) roles.push('sorciere');
+            if (document.getElementById('cfg-hunter').checked) roles.push('chasseur');
+            
+            while(roles.length < numPlayers) roles.push('slime');
+
+            roles.sort(() => Math.random() - 0.5); // Fisher-Yates simplifié
+
+            connections.forEach((c, index) => {
+                c.role = roles[index];
+                if(c.isHost) {
+                    lobbyDiv.style.display = 'none';
+                    gameArea.style.display = 'block';
+                    setupRoleUI(c.role);
+                } else {
+                    c.conn.send({ type: 'game_start', role: c.role });
+                }
+            });
+
+            // Lancement de la machine à états !
+            setTimeout(() => startNightPhase(), 3000); 
+        });
+
+        // ==========================================
+        // 🌑 MOTEUR MULTIJOUEUR : STATE MACHINE
+        // ==========================================
+        let gameState = {
+            phase: 'lobby',
+            votes: {},      
+            deadTonight: [] 
+        };
+
+        // --- PHASES DE LA NUIT ---
+        function startNightPhase() {
+            gameState.phase = 'night_wolves';
+            gameState.votes = {};
+            const msg = "NOUVELLE NUIT : Les Slime-Garous choisissent leur cible.";
+            addLog(msg);
+            broadcast({ type: 'phase_change', phase: 'night_wolves', message: msg });
+            updateClientUI('night_wolves', msg);
+        }
+
+        function startSeerPhase() {
+            gameState.phase = 'night_seer';
+            const msg = "Les Loups dorment. La Voyante active son scan.";
+            addLog(msg);
+            broadcast({ type: 'phase_change', phase: 'night_seer', message: msg });
+            updateClientUI('night_seer', msg);
+
+            // Si la voyante est morte ou n'existe pas, on simule un délai
+            if (!connections.find(c => c.role === 'voyante' && c.isAlive)) {
+                setTimeout(() => startWitchPhase(), 3000);
+            }
+        }
+
+        function startWitchPhase() {
+            gameState.phase = 'night_witch';
+            const msg = "La Sorcière prépare ses potions...";
+            addLog(msg);
+            broadcast({ type: 'phase_change', phase: 'night_witch', message: msg, extra: { dead: gameState.deadTonight[0] } });
+            updateClientUI('night_witch', msg, { dead: gameState.deadTonight[0] });
+
+            if (!connections.find(c => c.role === 'sorciere' && c.isAlive)) {
+                setTimeout(() => startDayPhase(), 3000);
+            }
+        }
+
+        // --- PHASE DE JOUR ---
+        function startDayPhase() {
+            gameState.phase = 'day_vote';
+            gameState.votes = {}; // Reset pour le vote de jour
+            
+            let deathMsg = gameState.deadTonight.length > 0 ? `Mort(s) cette nuit : ${gameState.deadTonight.join(', ')}.` : "Aucun mort cette nuit.";
+            let msg = `Le JOUR se lève. ${deathMsg} Débattez et votez.`;
+            addLog(msg);
+            
+            broadcast({ type: 'phase_change', phase: 'day_vote', message: msg });
+            updateClientUI('day_vote', msg);
+            gameState.deadTonight = []; 
+        }
+
+        // --- ROUTEUR D'ACTIONS RÉSEAU (HÔTE UNIQUEMENT) ---
+        function handleNetworkAction(clientId, data) {
+            const sender = connections.find(c => c.id === clientId || (c.isHost && clientId === 'host'));
+            if (!sender || !sender.isAlive) return;
+
+            if (gameState.phase === 'night_wolves' && data.role === 'slimegarou') {
+                gameState.votes[sender.name] = data.target;
+                const aliveWolves = connections.filter(c => c.role === 'slimegarou' && c.isAlive);
+                if (Object.keys(gameState.votes).length === aliveWolves.length) {
+                    // Cible verrouillée
+                    const targetName = Object.values(gameState.votes)[0];
+                    if(!gameState.deadTonight.includes(targetName)) gameState.deadTonight.push(targetName);
+                    setTimeout(() => startSeerPhase(), 1500);
+                }
+            }
+            else if (gameState.phase === 'night_seer' && data.role === 'voyante') {
+                const targetInfo = connections.find(c => c.name === data.target);
+                if(targetInfo) {
+                    // Renvoie l'info uniquement à la voyante
+                    if (sender.isHost) { addLog(`[SCAN] ${targetInfo.name} est ${targetInfo.role}`); }
+                    else { sender.conn.send({ type: 'scan_result', role: targetInfo.role }); }
+                }
+                setTimeout(() => startWitchPhase(), 1500);
+            }
+            else if (gameState.phase === 'night_witch' && data.role === 'sorciere') {
+                if (data.action === 'heal' && gameState.deadTonight.includes(data.target)) {
+                    gameState.deadTonight = gameState.deadTonight.filter(n => n !== data.target);
+                } else if (data.action === 'poison') {
+                    if(!gameState.deadTonight.includes(data.target)) gameState.deadTonight.push(data.target);
+                }
+                setTimeout(() => startDayPhase(), 1500);
+            }
+            else if (gameState.phase === 'day_vote') {
+                gameState.votes[sender.name] = data.target;
+                const alivePlayers = connections.filter(c => c.isAlive);
+                if (Object.keys(gameState.votes).length === alivePlayers.length) {
+                    // Fin du vote : on tue la cible choisie par majorité (simplifié ici à la 1ere cible majoritaire)
+                    const voteCounts = {};
+                    Object.values(gameState.votes).forEach(v => voteCounts[v] = (voteCounts[v] || 0) + 1);
+                    const targetName = Object.keys(voteCounts).reduce((a, b) => voteCounts[a] > voteCounts[b] ? a : b);
+                    
+                    const victim = connections.find(c => c.name === targetName);
+                    if(victim) victim.isAlive = false;
+                    addLog(`Le village a déconnecté : ${targetName}`);
+                    
+                    // Fin du jour, on relance la nuit
+                    setTimeout(() => startNightPhase(), 4000);
+                }
+            }
+        }
+
+        // ==========================================
+        // 🖥️ INTERFACE ET ENVOI CLIENT
+        // ==========================================
+        function sendActionToServer(actionType, targetName) {
+            const data = { type: 'action', role: myRole, action: actionType, target: targetName };
+            document.getElementById('action-panel').innerHTML = "<p>Ordre transmis. En attente...</p>";
+            
+            if (isHost) handleNetworkAction('host', data);
+            else connections[0].conn.send(data);
+        }
+
+        function updateClientUI(phase, message, extra = null) {
+            document.getElementById('phase-title').innerText = message;
+            const actionPanel = document.getElementById('action-panel');
+            actionPanel.innerHTML = ''; 
+
+            const alivePlayers = connections.filter(c => c.isAlive && c.name !== myName);
+            const myStatus = connections.find(c => c.name === myName);
+            if(myStatus && !myStatus.isAlive) {
+                actionPanel.innerHTML = `<p style="color:red;">VOUS ÊTES MORT. Connexion rompue.</p>`;
+                return;
+            }
+
+            // Génération des boutons selon la phase et le rôle
+            if (phase === 'night_wolves' && myRole === 'slimegarou') {
+                actionPanel.innerHTML = `<p style="color:var(--neon-pink);">Qui infecter ?</p>`;
+                alivePlayers.forEach(c => {
+                    if(c.role !== 'slimegarou') actionPanel.appendChild(createBtn(c.name, 'var(--neon-pink)', () => sendActionToServer('kill', c.name)));
+                });
+            } 
+            else if (phase === 'night_seer' && myRole === 'voyante') {
+                actionPanel.innerHTML = `<p style="color:var(--neon-cyan);">Qui scanner ?</p>`;
+                alivePlayers.forEach(c => {
+                    actionPanel.appendChild(createBtn(c.name, 'var(--neon-cyan)', () => sendActionToServer('scan', c.name)));
+                });
+            }
+            else if (phase === 'night_witch' && myRole === 'sorciere') {
+                let html = `<p style="color:var(--neon-purple);">Victime: ${extra.dead || 'Personne'}</p>`;
+                if (extra.dead && witchPotions.heal > 0) {
+                    html += `<button onclick="sendActionToServer('heal', '${extra.dead}'); witchPotions.heal--; " style="border-color:#2ecc71; color:#2ecc71;">Sauver (Heal)</button>`;
+                }
+                if (witchPotions.poison > 0) {
+                    html += `<p style="color:var(--neon-purple);">Empoisonner quelqu'un ?</p>`;
+                    alivePlayers.forEach(c => {
+                        html += `<button onclick="sendActionToServer('poison', '${c.name}'); witchPotions.poison--; " style="border-color:#e74c3c; color:#e74c3c;">Poison ${c.name}</button>`;
+                    });
+                }
+                html += `<button onclick="sendActionToServer('skip', 'none')" style="border-color:gray; color:gray;">Ne rien faire</button>`;
+                actionPanel.innerHTML = html;
+            }
+            else if (phase.startsWith('night') && myRole !== 'slimegarou') {
+                actionPanel.innerHTML = `<p style="color:gray;">Ferme les yeux, ton système est en veille...</p>`;
+            }
+            else if (phase === 'day_vote') {
+                actionPanel.innerHTML = `<p style="color:var(--neon-yellow);">Vote pour éliminer un suspect :</p>`;
+                alivePlayers.forEach(c => {
+                    actionPanel.appendChild(createBtn(`Voter ${c.name}`, 'var(--neon-yellow)', () => sendActionToServer('vote', c.name)));
+                });
+            }
+        }
+
+        function createBtn(text, color, onClickCallback) {
+            let btn = document.createElement('button');
+            btn.innerText = text;
+            btn.style.borderColor = color;
+            btn.style.color = color;
+            btn.onclick = onClickCallback;
+            return btn;
+        }
+
+        // Affichage cosmétique des rôles
+        function setupRoleUI(role) {
+            myRole = role;
+            const rName = document.getElementById('role-name');
+            const rDesc = document.getElementById('role-desc');
+            const rImg = document.getElementById('role-image');
+            const card = document.getElementById('my-role-card');
+            
+            let cfg = {
+                'slimegarou': { n: "Slime-Garou", d: "Dévore un Slime la nuit.", i: "slimegarou.png", c: "var(--neon-pink)" },
+                'voyante': { n: "Slime Voyante", d: "Scanne un joueur la nuit.", i: "voyante.png", c: "var(--neon-cyan)" },
+                'sorciere': { n: "Slime Sorcière", d: "Soin et Poison (1x).", i: "sorciere.png", c: "var(--neon-purple)" },
+                'chasseur': { n: "Slime Chasseur", d: "Tire en mourant.", i: "chasseur.png", c: "var(--neon-yellow)" },
+                'slime': { n: "Slime (Civil)", d: "Trouve les infectés.", i: "slime.png", c: "var(--neon-green)" }
+            };
+
+            let r = cfg[role] || cfg['slime'];
+            rName.innerText = r.n; rDesc.innerText = r.d; rImg.src = r.i;
+            card.style.borderColor = r.c; card.style.boxShadow = `0 0 20px ${r.c}`; rName.style.color = r.c;
+        }
+    </script>
+</body>
+</html>
