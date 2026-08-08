@@ -108,7 +108,7 @@
             background: rgba(0,0,0,0.8); border: 2px solid var(--neon-cyan); color: var(--neon-cyan);
             padding: 15px 30px; font-size: 1.2rem; font-family: inherit; text-transform: uppercase;
             font-weight: bold; cursor: pointer; transition: all 0.3s ease; outline: none; border-radius: 4px;
-            width: 100%; max-width: 250px; pointer-events: auto; /* Force clickable */
+            width: 100%; max-width: 250px; pointer-events: auto;
         }
         
         .btn-play { border-color: var(--neon-green); color: var(--neon-green); }
@@ -168,7 +168,6 @@
         document.addEventListener('touchstart', (e) => { 
             if(e.target.closest('.no-swipe')) e.stopPropagation(); 
         }, { passive: false });
-        // NOTE: mousedown stopPropagation a été retiré pour garantir que les clics sur les boutons ne soient pas bloqués.
     </script>
 
     <!-- BOUTON RETOUR HUB (Ajuste le href selon ton arborescence) -->
@@ -188,8 +187,15 @@
         
         <div id="ui-layer">
             <div class="score-board">
-                <div id="status-text">MENU</div>
-                <div id="completion-text" style="color:var(--neon-yellow); display:none;">NIVEAU ACCOMPLI !</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div id="status-text">MENU</div>
+                    <div id="completion-text" style="color:var(--neon-yellow); display:none;">NIVEAU ACCOMPLI !</div>
+                </div>
+                <!-- AJOUT DES BLOCS DE SCORE QUI MANQUAIENT ICI -->
+                <div style="text-align: right; font-size: 1.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan);">
+                    <div>SCORE: <span id="score" style="color: #fff;">0</span></div>
+                    <div style="font-size: 1.1rem; color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink);">HI-SCORE: <span id="hi-score" style="color: #fff;">0</span></div>
+                </div>
             </div>
         </div>
 
@@ -238,7 +244,6 @@
 
     <!-- MOTEUR COMPLET (SÉCURISÉ) -->
     <script>
-        // ON S'ASSURE QUE LE DOM EST CHARGÉ AVANT D'ATTACHER LES EVENEMENTS
         document.addEventListener('DOMContentLoaded', () => {
 
             // --- 1. AUDIO YOUTUBE ---
@@ -285,7 +290,10 @@
             let editorCamTarget = 0;
             let score = 0;
             let hiScore = localStorage.getItem('slimeDashHiScore') || 0;
-            document.getElementById('hi-score').innerText = Math.floor(hiScore);
+            
+            // Sécurité ajoutée pour vérifier l'existence de l'élément avant mise à jour
+            const hiScoreElem = document.getElementById('hi-score');
+            if (hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
 
             let particles = [];
             let shakeTimer = 0, shakeIntensity = 0;
@@ -303,7 +311,6 @@
                 {x: 35, y: 0, type: 'flag'}
             ];
 
-            // Try-Catch robuste pour éviter le crash au chargement du localStorage
             try {
                 let savedLvl = localStorage.getItem('slimeDashLevel');
                 if(savedLvl && savedLvl !== "null" && savedLvl !== "undefined") { 
@@ -420,7 +427,6 @@
                 gameState = 'EDITOR';
                 menuScreen.style.display = 'none';
                 
-                // On reset le transform pour le repositionner proprement au centre au premier lancement
                 editorPanel.style.transform = 'translateX(-50%)';
                 editorPanel.style.left = '50%';
                 editorPanel.style.top = '20px';
@@ -456,7 +462,8 @@
                     if (score > hiScore) {
                         hiScore = score;
                         localStorage.setItem('slimeDashHiScore', hiScore);
-                        document.getElementById('hi-score').innerText = Math.floor(hiScore);
+                        const hiScoreElem = document.getElementById('hi-score');
+                        if(hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
                     }
                 }
             }
@@ -519,7 +526,7 @@
             document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
-                    e.currentTarget.classList.add('active'); // CurrentTarget évite de cibler le span s'il y en a un
+                    e.currentTarget.classList.add('active'); 
                     currentTool = e.currentTarget.getAttribute('data-tool');
                 });
             });
@@ -762,7 +769,8 @@
                     if (player.trail.length > 8) player.trail.shift();
 
                     score += gameSpeed * dt * 0.1;
-                    document.getElementById('score').innerText = Math.floor(score);
+                    const scoreElem = document.getElementById('score');
+                    if (scoreElem) scoreElem.innerText = Math.floor(score);
 
                     if (gameState === 'PLAYING_ENDLESS') {
                         gameSpeed += dt * 10; 
