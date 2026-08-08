@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Slime-Garou : Infection Protocol</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         :root {
             --bg-color: #0b0c10;
@@ -17,40 +18,55 @@
             --font-main: 'Courier New', Courier, monospace;
         }
 
-        body {
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh;
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: var(--font-main);
-            margin: 0;
+            overflow-x: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            min-height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
+        }
+
+        /* Video Background */
+        #bg-video {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -100;
+            transform: translateX(-50%) translateY(-50%);
+            object-fit: cover;
+            opacity: 0.4; /* Sombre pour laisser l'interface lisible */
+            transition: opacity 1s ease-in-out;
         }
 
         h1, h2, h3 { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); text-transform: uppercase; margin-bottom: 10px;}
 
         .container {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(11, 12, 16, 0.85);
             border: 2px solid var(--neon-pink);
             box-shadow: 0 0 15px var(--neon-pink);
             padding: 20px;
             border-radius: 10px;
-            width: 100%;
+            width: 90%;
             max-width: 600px;
-            margin-bottom: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(5px);
         }
 
         .no-swipe { touch-action: none; }
 
         input[type="text"], input[type="number"], button {
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.7);
             border: 1px solid var(--neon-cyan);
             color: var(--neon-cyan);
             padding: 10px;
@@ -64,30 +80,19 @@
         }
 
         input:focus { box-shadow: 0 0 10px var(--neon-cyan); }
-
         button { cursor: pointer; text-transform: uppercase; font-weight: bold; }
         button:hover { background: var(--neon-cyan); color: var(--bg-color); box-shadow: 0 0 10px var(--neon-cyan); }
 
         .btn-host { border-color: var(--neon-pink); color: var(--neon-pink); }
         .btn-host:hover { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
-
         .btn-start { border-color: var(--neon-green); color: var(--neon-green); display: none;}
         .btn-start:hover { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
 
-        /* Lang Selector */
         .lang-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
         .lang-btn { width: auto; padding: 5px 15px; border-radius: 20px; border: 1px solid gray; color: gray; }
         .lang-btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
 
-        .config-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            text-align: left;
-            margin: 15px 0;
-            padding: 15px;
-            border: 1px dashed var(--neon-yellow);
-        }
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; margin: 15px 0; padding: 15px; border: 1px dashed var(--neon-yellow); }
         .checkbox-group { display: flex; align-items: center; justify-content: space-between; }
         input[type="checkbox"] { accent-color: var(--neon-pink); width: 20px; height: 20px; }
 
@@ -97,12 +102,11 @@
             padding: 20px;
             margin: 20px 0;
             box-shadow: 0 0 20px var(--neon-cyan);
-            background: #111;
+            background: rgba(0,0,0,0.8);
             transition: all 0.5s;
         }
         
         .role-img { max-width: 120px; display: block; margin: 0 auto 15px; filter: drop-shadow(0 0 10px var(--neon-cyan)); }
-        
         .player-list { list-style: none; padding: 0; text-align: left; }
         .player-list li { margin: 5px 0; padding: 5px; border-bottom: 1px solid #333; }
         
@@ -117,12 +121,26 @@
             text-align: left;
             border: 1px solid var(--neon-green);
         }
+
+        #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--neon-yellow); padding: 20px; box-shadow: 0 0 20px var(--neon-yellow); background: #111;}
     </style>
 </head>
 <body>
 
+    <!-- MEDIA DYNAMIQUE -->
+    <video id="bg-video" autoplay loop muted playsinline>
+        <source id="bg-video-source" src="backgroundnight.mp4" type="video/mp4">
+    </video>
+    
+    <!-- Lecteur YouTube invisible pour BGM -->
+    <div id="yt-player" style="display: none;"></div>
+
     <script>
+        // Swipe global protection pour le Hub
         document.addEventListener('touchstart', (e) => {
+            if(e.target.closest('.no-swipe')) { e.stopPropagation(); }
+        });
+        document.addEventListener('mousedown', (e) => {
             if(e.target.closest('.no-swipe')) { e.stopPropagation(); }
         });
     </script>
@@ -183,12 +201,81 @@
             <h3 class="ui-text" data-key="actionInterface">Interface d'Action</h3>
             <div id="action-panel" style="margin-bottom: 20px; min-height: 50px;"></div>
 
+            <!-- ECRAN DE FIN DE JEU -->
+            <div id="game-over-screen">
+                <h2 id="winner-text" style="color: var(--neon-yellow);">...</h2>
+                <p id="winner-desc" style="color: white;"></p>
+            </div>
+
             <h3 class="ui-text" data-key="sysLogs">Logs Système</h3>
             <div class="sys-log" id="sys-log">> SYSTEM_READY</div>
         </div>
     </div>
 
     <script>
+        // ==========================================
+        // 🎵 GESTION AUDIO & VIDEO (YOUTUBE API)
+        // ==========================================
+        let ytPlayer;
+        let currentBgm = 'night'; // Commence la nuit par défaut
+        let audioStarted = false;
+
+        const YOUTUBE_NIGHT = '3ecxZy8luDg'; // Track de Nuit (Bois / Angoisse)
+        const YOUTUBE_DAY = 'vyg5jJrZ42s';   // Track de Jour
+
+        function onYouTubeIframeAPIReady() {
+            ytPlayer = new YT.Player('yt-player', {
+                height: '0',
+                width: '0',
+                videoId: YOUTUBE_NIGHT,
+                playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
+                events: {
+                    'onReady': (event) => {
+                        event.target.setVolume(5); // Volume à 5%
+                    },
+                    'onStateChange': (event) => {
+                        // Boucle infinie manuelle lors du changement de vidéo
+                        if (event.data === YT.PlayerState.ENDED) {
+                            ytPlayer.playVideo();
+                        }
+                    }
+                }
+            });
+        }
+
+        function initAudio() {
+            if (audioStarted) return;
+            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                ytPlayer.playVideo();
+                audioStarted = true;
+            }
+        }
+
+        // Change Vidéo et Audio selon la phase
+        function setMediaEnvironment(type) {
+            if (currentBgm === type) return; 
+            currentBgm = type;
+            
+            const vidSource = document.getElementById('bg-video-source');
+            const video = document.getElementById('bg-video');
+            
+            // Effet de fade out/in (Optionnel mais propre)
+            video.style.opacity = 0;
+            
+            setTimeout(() => {
+                if (type === 'day') {
+                    vidSource.src = 'backgroundday.mp4';
+                    if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_DAY});
+                } else {
+                    vidSource.src = 'backgroundnight.mp4';
+                    if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_NIGHT});
+                }
+                video.load();
+                video.play();
+                video.style.opacity = 0.4;
+            }, 500); // Attend la fin du fade out
+        }
+
         // ==========================================
         // 🌍 DICTIONNAIRE MULTILINGUE
         // ==========================================
@@ -238,25 +325,19 @@
         };
 
         let currentLang = 'fr';
-
         function updateLang(lang) {
             currentLang = lang;
             document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`lang-${lang}`).classList.add('active');
-            
-            // Update UI
             document.querySelectorAll('.ui-text').forEach(el => {
                 const key = el.getAttribute('data-key');
                 if (i18n[lang].ui[key]) el.innerText = i18n[lang].ui[key];
             });
-
-            // Update Card if game started
             if (myRole) setupRoleUI(myRole);
         }
 
         document.getElementById('lang-fr').addEventListener('click', () => updateLang('fr'));
         document.getElementById('lang-en').addEventListener('click', () => updateLang('en'));
-
 
         // ==========================================
         // 🛠️ VARIABLES GLOBALES & UTILITAIRES
@@ -267,13 +348,13 @@
         let myName = "Hôte";
         let myRole = "";
         let witchPotions = { heal: 1, poison: 1 };
-        let firstNight = true; // Pour Cupidon
+        let firstNight = true; 
 
         const menuDiv = document.getElementById('menu');
         const lobbyDiv = document.getElementById('lobby');
         const gameArea = document.getElementById('game-area');
         const logArea = document.getElementById('sys-log');
-        let cupidTargets = []; // Stockage temporaire client
+        let cupidTargets = []; 
 
         function addLog(msg) {
             logArea.innerHTML += `<br>> ${msg}`;
@@ -296,6 +377,7 @@
         // 👑 HÔTE : CRÉATION & RÉCEPTION RÉSEAU
         // ==========================================
         document.getElementById('btn-create').addEventListener('click', () => {
+            initAudio(); // Déclenche YouTube au 1er clic !
             isHost = true;
             menuDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
@@ -325,6 +407,7 @@
         // 👾 CLIENT : CONNEXION & RÉCEPTION RÉSEAU
         // ==========================================
         document.getElementById('btn-join').addEventListener('click', () => {
+            initAudio(); // Déclenche YouTube au 1er clic !
             const hostId = document.getElementById('join-id').value.trim();
             myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
             if(!hostId) return;
@@ -360,6 +443,9 @@
                         loveInfo.style.display = 'block';
                         loveInfo.innerText = `${i18n[currentLang].ui.loversLinked} ${data.partner}`;
                         addLog("Tu es lié par Cupidon.");
+                    }
+                    else if (data.type === 'game_over') {
+                        showGameOver(data.winner, data.desc);
                     }
                 });
             });
@@ -404,36 +490,84 @@
         // ==========================================
         // 🌑 MOTEUR MULTIJOUEUR : STATE MACHINE
         // ==========================================
-        let gameState = { phase: 'lobby', votes: {}, deadTonight: [], lovers: [] };
+        let gameState = { phase: 'lobby', votes: {}, deadTonight: [], lovers: [], pendingHunter: null, nextPhaseAfterHunter: null };
 
         function killPlayer(targetName) {
             if(!gameState.deadTonight.includes(targetName)) {
                 gameState.deadTonight.push(targetName);
-                // Vérification Cupidon
+                
+                const p = connections.find(c => c.name === targetName);
+                if(p && p.role === 'hunter') {
+                    gameState.pendingHunter = targetName;
+                }
+
                 if(gameState.lovers.includes(targetName)) {
                     const partner = gameState.lovers.find(l => l !== targetName);
                     if(partner && !gameState.deadTonight.includes(partner)) {
-                        gameState.deadTonight.push(partner);
-                        addLog(`[SYSTEM] ${partner} est mort de chagrin (Lien Cupidon).`);
+                        addLog(`[SYSTEM] ${partner} meurt de chagrin.`);
+                        killPlayer(partner); 
                     }
                 }
             }
         }
 
+        function checkWinCondition() {
+            const alive = connections.filter(c => c.isAlive);
+            const wolves = alive.filter(c => c.role === 'werewolf');
+            const others = alive.filter(c => c.role !== 'werewolf');
+            
+            let winner = null, desc = "";
+
+            if (alive.length === 2 && gameState.lovers.includes(alive[0].name) && gameState.lovers.includes(alive[1].name)) {
+                winner = "AMOUR TRIOMPHANT"; desc = "Seuls les amoureux ont survécu.";
+            } else if (wolves.length === 0) {
+                winner = "VICTOIRE DU VILLAGE"; desc = "Tous les infectés ont été purgés.";
+            } else if (wolves.length >= others.length) {
+                winner = "DOMINATION GAROU"; desc = "Le village est tombé.";
+            }
+
+            if (winner) {
+                broadcast({ type: 'game_over', winner: winner, desc: desc });
+                showGameOver(winner, desc);
+                return true; 
+            }
+            return false;
+        }
+
+        function processDeathsAndContinue(nextPhaseFunc) {
+            gameState.deadTonight.forEach(d => {
+                let p = connections.find(c => c.name === d);
+                if(p) p.isAlive = false;
+            });
+
+            if(checkWinCondition()) return;
+
+            if(gameState.pendingHunter) {
+                const hunterName = gameState.pendingHunter;
+                gameState.pendingHunter = null; 
+                gameState.nextPhaseAfterHunter = nextPhaseFunc; 
+                
+                gameState.phase = 'day_hunter';
+                const msg = `⚠️ ALERTE : Le Chasseur (${hunterName}) s'effondre...`;
+                addLog(msg);
+                broadcast({ type: 'phase_change', phase: 'day_hunter', message: msg, extra: { hunter: hunterName } });
+                updateClientUI('day_hunter', msg, { hunter: hunterName });
+            } else {
+                gameState.deadTonight = []; 
+                nextPhaseFunc();
+            }
+        }
+
         function startNightPhase() {
             gameState.votes = {};
-            if(firstNight && connections.find(c => c.role === 'cupid' && c.isAlive)) {
-                startCupidPhase();
-            } else {
-                startWolvesPhase();
-            }
+            if(firstNight && connections.find(c => c.role === 'cupid' && c.isAlive)) startCupidPhase();
+            else startWolvesPhase();
         }
 
         function startCupidPhase() {
             gameState.phase = 'night_cupid';
             broadcast({ type: 'phase_change', phase: 'night_cupid', message: "[Night] Cupidon se réveille." });
             updateClientUI('night_cupid', "[Night] Cupidon se réveille.");
-            // Si pas de Cupidon (mort), skip direct, mais comme c'est Night 1 il est en vie
         }
 
         function startWolvesPhase() {
@@ -455,37 +589,34 @@
             const extraData = { dead: gameState.deadTonight[0] };
             broadcast({ type: 'phase_change', phase: 'night_witch', message: "[Night] Sorcière...", extra: extraData });
             updateClientUI('night_witch', "[Night] Sorcière...", extraData);
-            if (!connections.find(c => c.role === 'witch' && c.isAlive)) setTimeout(() => startDayPhase(), 3000);
+            if (!connections.find(c => c.role === 'witch' && c.isAlive)) setTimeout(() => endNightPhase(), 3000);
         }
 
-        function startDayPhase() {
+        function endNightPhase() {
             firstNight = false;
-            gameState.phase = 'day_vote';
-            gameState.votes = {};
-            
-            // Appliquer les morts
-            gameState.deadTonight.forEach(d => {
-                let p = connections.find(c => c.name === d);
-                if(p) p.isAlive = false;
-            });
-
             let deathMsg = gameState.deadTonight.length > 0 ? `Code mort: ${gameState.deadTonight.join(', ')}` : "Aucun mort.";
-            let msg = `[DAY] ${deathMsg}. Votez.`;
-            addLog(msg);
+            addLog(`[DAY] ${deathMsg}`);
             
-            broadcast({ type: 'phase_change', phase: 'day_vote', message: msg });
-            updateClientUI('day_vote', msg);
-            gameState.deadTonight = []; 
+            processDeathsAndContinue(() => {
+                gameState.phase = 'day_vote';
+                gameState.votes = {};
+                const msg = `[DAY] Débattez et votez.`;
+                broadcast({ type: 'phase_change', phase: 'day_vote', message: msg });
+                updateClientUI('day_vote', msg);
+            });
         }
 
         // --- ROUTEUR D'ACTIONS RÉSEAU (HÔTE UNIQUEMENT) ---
         function handleNetworkAction(clientId, data) {
             const sender = connections.find(c => c.id === clientId || (c.isHost && clientId === 'host'));
-            if (!sender || !sender.isAlive) return;
+            if (!sender) return; 
+            
+            if (!sender.isAlive && !(gameState.phase === 'day_hunter' && data.role === 'hunter' && sender.name === data.extra?.hunter)) {
+                if(gameState.phase !== 'day_hunter') return;
+            }
 
             if (gameState.phase === 'night_cupid' && data.role === 'cupid') {
                 gameState.lovers = [data.target1, data.target2];
-                // Notifier les amoureux
                 connections.forEach(c => {
                     if(c.name === data.target1) {
                         if(c.isHost) { document.getElementById('lovers-info').style.display='block'; document.getElementById('lovers-info').innerText = `Cupidon lié à: ${data.target2}`; }
@@ -513,11 +644,11 @@
             }
             else if (gameState.phase === 'night_witch' && data.role === 'witch') {
                 if (data.action === 'heal' && gameState.deadTonight.includes(data.target)) {
-                    gameState.deadTonight = gameState.deadTonight.filter(n => n !== data.target); // Annule la mort
+                    gameState.deadTonight = gameState.deadTonight.filter(n => n !== data.target); 
                 } else if (data.action === 'poison') {
                     killPlayer(data.target);
                 }
-                setTimeout(() => startDayPhase(), 1500);
+                setTimeout(() => endNightPhase(), 1500);
             }
             else if (gameState.phase === 'day_vote') {
                 gameState.votes[sender.name] = data.target;
@@ -531,11 +662,21 @@
                     addLog(`Le village a déconnecté : ${targetName}`);
                     
                     setTimeout(() => {
-                        gameState.deadTonight.forEach(d => { let p = connections.find(c => c.name===d); if(p) p.isAlive = false; });
-                        gameState.deadTonight = [];
-                        startNightPhase();
-                    }, 4000);
+                        processDeathsAndContinue(() => {
+                            startNightPhase(); 
+                        });
+                    }, 3000);
                 }
+            }
+            else if (gameState.phase === 'day_hunter' && data.role === 'hunter') {
+                const targetName = data.target;
+                addLog(`PAN ! Le Chasseur emporte ${targetName}`);
+                gameState.deadTonight = [];
+                killPlayer(targetName);
+                
+                setTimeout(() => {
+                    processDeathsAndContinue(gameState.nextPhaseAfterHunter);
+                }, 2000);
             }
         }
 
@@ -554,10 +695,29 @@
             panel.innerHTML = ''; 
             const langUI = i18n[currentLang].ui;
 
-            const alivePlayers = connections.filter(c => c.isAlive && c.name !== myName);
-            const allAlivePlayers = connections.filter(c => c.isAlive); // Cupidon peut se choisir
+            // 🎵 GESTION DYNAMIQUE VIDEO/MUSIQUE 🎵
+            if (phase.includes('day')) {
+                setMediaEnvironment('day');
+            } else if (phase.includes('night')) {
+                setMediaEnvironment('night');
+            }
 
+            const alivePlayers = connections.filter(c => c.isAlive && c.name !== myName);
+            const allAlivePlayers = connections.filter(c => c.isAlive); 
             const myStatus = connections.find(c => c.name === myName);
+
+            if (phase === 'day_hunter') {
+                if (myName === extra.hunter) {
+                    panel.innerHTML = `<p style="color:var(--neon-yellow);">DERNIER SOUFFLE ! Choisis qui emporter :</p>`;
+                    allAlivePlayers.forEach(c => {
+                        panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', () => sendActionToServer({type:'action', role:'hunter', target: c.name, extra: {hunter: myName}})));
+                    });
+                } else {
+                    panel.innerHTML = `<p style="color:red;">À couvert ! Le Chasseur arme son arme...</p>`;
+                }
+                return; 
+            }
+
             if(myStatus && !myStatus.isAlive) {
                 panel.innerHTML = `<p style="color:red;">${langUI.dead}</p>`; return;
             }
@@ -621,18 +781,23 @@
         function setupRoleUI(role) {
             myRole = role;
             const rData = i18n[currentLang].roles[role] || i18n[currentLang].roles['villager'];
-            
             document.getElementById('role-name').innerText = rData.name;
             document.getElementById('role-desc').innerText = rData.desc;
-            document.getElementById('role-image').src = rData.img; // Va piocher la bonne image traduite !
-            
+            document.getElementById('role-image').src = rData.img; 
             const card = document.getElementById('my-role-card');
             card.style.borderColor = rData.color;
             card.style.boxShadow = `0 0 20px ${rData.color}`;
             document.getElementById('role-name').style.color = rData.color;
         }
 
-        // Init UI au chargement
+        function showGameOver(winner, desc) {
+            document.getElementById('action-panel').innerHTML = "";
+            const goScreen = document.getElementById('game-over-screen');
+            goScreen.style.display = 'block';
+            document.getElementById('winner-text').innerText = winner;
+            document.getElementById('winner-desc').innerText = desc;
+        }
+
         updateLang('fr');
     </script>
 </body>
