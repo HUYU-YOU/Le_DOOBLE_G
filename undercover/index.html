@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber-Spy Multiplayer (Undercover)</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --container-bg: rgba(10, 13, 16, 0.95);
+            --neon-cyan: #00f0ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --neon-yellow: #ffea00;
+            --text-color: #e0e0e0;
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            margin: 0; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        /* Scrollbar style */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-pink); }
+
+        h1, h2, h3 { text-transform: uppercase; letter-spacing: 2px; margin-top: 0; }
+        h1 { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); font-size: 24px; }
+        h2 { color: var(--neon-pink); font-size: 18px; }
+        h3 { color: var(--text-color); font-size: 16px; }
+
+        .container {
+            background: var(--container-bg);
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+            padding: 20px;
+            border-radius: 5px;
+            width: 90%; max-width: 450px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .container::before {
+            content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border: 2px solid var(--neon-pink); border-radius: 5px;
+            z-index: -1; animation: neon-respawn 3s infinite alternate;
+        }
+
+        @keyframes neon-respawn { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        input, button {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 12px; margin: 8px 0;
+            width: 100%; box-sizing: border-box;
+            font-family: inherit; font-size: 14px;
+            outline: none; transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--neon-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.5); }
+
+        button { cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+        button:hover { background: var(--neon-cyan); color: var(--bg-color); box-shadow: 0 0 10px var(--neon-cyan); }
+        button:disabled { border-color: #555; color: #555; cursor: not-allowed; background: transparent; }
+
+        .screen { display: none; }
+        .active-screen { display: block; }
+        
+        /* Game elements */
+        .word-display {
+            font-size: 20px; color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green);
+            margin: 15px 0; padding: 15px;
+            border: 1px dashed var(--neon-green);
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .status-msg { color: var(--neon-yellow); font-size: 13px; margin: 10px 0; min-height: 1.2em;}
+
+        /* Player Lists */
+        .player-list { list-style: none; padding: 0; text-align: left; margin: 10px 0; }
+        .player-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; border-bottom: 1px solid #222; font-size: 14px;
+        }
+        .player-name { color: var(--text-color); }
+        .player-status { font-size: 12px; }
+        .status-host { color: var(--neon-cyan); }
+        .status-ready { color: var(--neon-green); }
+        .status-eliminated { color: #555; text-decoration: line-through; }
+        .status-speaking { animation: alert-blink 1s infinite; color: var(--neon-yellow); }
+
+        /* Chat Area */
+        #chat-area {
+            height: 200px; overflow-y: auto;
+            border: 1px solid #333; background: rgba(0,0,0,0.3);
+            margin-top: 15px; padding: 10px;
+            text-align: left; font-size: 13px;
+            display: flex; flex-direction: column-reverse; /* Newest at bottom */
+        }
+        .chat-msg { margin-bottom: 6px; line-height: 1.4; }
+        .chat-system { color: var(--neon-yellow); font-style: italic; }
+        .chat-player { color: var(--neon-cyan); font-weight: bold; }
+        .chat-eliminated { color: #555; font-style: italic;}
+
+        #chat-input-area { display: flex; gap: 5px; display: none; }
+        #btn-send-desc { width: 30%; }
+
+        /* Voting Area */
+        #voting-zone { margin-top: 15px; display: none; border-top: 1px solid var(--neon-pink); padding-top: 10px;}
+        .vote-btn {
+            background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink);
+            margin: 4px; width: auto; padding: 8px 15px; font-size: 12px;
+        }
+        .vote-btn:hover:not(:disabled) { background: var(--neon-pink); color: white; }
+
+        @keyframes alert-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        hr { border: 0; border-top: 1px solid #333; margin: 15px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container no-swipe">
+        <h1>&gt; Cyber-Spy.exe</h1>
+        
+        <!-- 1. Screen: Login -->
+        <div id="screen-login" class="screen active-screen">
+            <h2>Initialisation Connexion</h2>
+            <input type="text" id="player-name" placeholder="Entrez votre Pseudonyme Hacker" maxlength="12">
+            <button id="btn-host">Créer Réseau (Hôte)</button>
+            <hr>
+            <input type="text" id="join-id" placeholder="ID Réseau à rejoindre">
+            <button id="btn-join">Rejoindre Réseau</button>
+            <p class="status-msg" id="login-error"></p>
+        </div>
+
+        <!-- 2. Screen: Lobby -->
+        <div id="screen-lobby" class="screen">
+            <h2>Salle d'attente</h2>
+            <p id="lobby-id-display" style="font-size:12px; word-break:break-all; color:gray;">ID: <span id="my-id" style="color: var(--neon-cyan);">...</span></p>
+            <h3>Hackers Connectés (<span id="player-count">0</span>/6)</h3>
+            <ul id="lobby-players-list" class="player-list">
+                <!-- <li class="player-item"><span class="player-name">Toi</span><span class="player-status status-host">[HÔTE]</span></li> -->
+            </ul>
+            <p class="status-msg">Minimum 3 joueurs pour lancer.</p>
+            <button id="btn-start" style="display:none; border-color: var(--neon-green); color: var(--neon-green);">Lancer le Hack</button>
+        </div>
+
+        <!-- 3. Screen: Game -->
+        <div id="screen-game" class="screen">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Infiltration en cours</h2>
+                <span id="game-player-rpc" style="font-size:12px; color:var(--neon-pink);"></span>
+            </div>
+            
+            <div id="role-setup">
+                <p>Analyse des données...</p>
+                <button id="btn-reveal-role">Décrypter mon rôle</button>
+            </div>
+
+            <div id="role-display" style="display:none;">
+                <p style="font-size:12px; margin-bottom:5px;">Vos données décryptées :</p>
+                <div id="secret-word" class="word-display">...</div>
+            </div>
+
+            <p class="status-msg" id="game-status">Attente des autres hackers...</p>
+            
+            <!-- Zone d'élimination / Vote spéciale Glitch -->
+            <div id="glitch-guess-zone" style="display:none; border: 1px solid var(--neon-yellow); padding: 10px; background:rgba(255,234,0,0.1);">
+                <p style="color:var(--neon-yellow);">TU ES LE GLITCH. Devine le mot des Civils :</p>
+                <input type="text" id="glitch-guess-input" placeholder="Votre pronostic...">
+                <button id="btn-glitch-submit" style="border-color:var(--neon-yellow); color:var(--neon-yellow);">Soumettre</button>
+            </div>
+
+            <!-- Liste des joueurs pour le suivi du tour et des éliminations -->
+            <ul id="game-players-list" class="player-list" style="max-height: 120px; overflow-y: auto;"></ul>
+
+            <!-- Chat / Descriptions -->
+            <div id="chat-area"></div>
+            <div id="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Décrivez votre mot..." maxlength="50">
+                <button id="btn-send-desc">Envoyer</button>
+            </div>
+
+            <!-- Zone de Vote -->
+            <div id="voting-zone">
+                <h3>VOTEZ : Identifier l'Anomalie</h3>
+                <div id="vote-buttons-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- CONFIGURATION & DONNÉES --- */
+        const wordPairs = [
+            ["Serveur", "Base de données"], ["Pare-feu", "Antivirus"], ["Fibre optique", "Câble Ethernet"],
+            ["Chiffrement", "Hachage"], ["Cyborg", "Androïde"], ["Néon", "Laser"],
+            ["Bitcoin", "Ethereum"], ["Linux", "Windows"], ["Clavier", "Souris"],
+            ["Darknet", "Deepweb"], ["IA", "Algorithme"], ["Robot", "Drone"]
+        ];
+
+        const ROLES = { CIVIL: 'Civil', UNDERCOVER: 'Undercover', GLITCH: 'Glitch' };
+        const GAME_PHASES = { LOBBY: 1, ROLE_REVEAL: 2, DESCRIPTION: 3, VOTING: 4, GLITCH_GUESS: 5, END: 6 };
+
+        /* --- ÉTAT GLOBAL DU JEU --- */
+        let peer = null;
+        let myId = null;
+        let myPseudo = "Anonyme";
+        let hostId = null;
+        let isHost = false;
+        
+        // Structure d'un joueur : { id, peerId, pseudo, conn, role, isAlive: true, ready: false, votesReceived: 0 }
+        let players = []; 
+        let gameLogic = {
+            phase: null,
+            currentPair: [],
+            turnOrder: [], // tableau d'IDs
+            turnIndex: 0,
+            civilWord: "",
+            roundNumber: 0,
+            hasVoted: false,
+            eliminatedThisRound: null
+        };
+
+        // Éléments UI
+        const screens = document.querySelectorAll('.screen');
+        const loginErr = document.getElementById('login-error');
+        const chatArea = document.getElementById('chat-area');
+        const gameStatus = document.getElementById('game-status');
+
+        /* --- UTILITAIRES UI --- */
+        function showScreen(screenId) {
+            screens.forEach(s => s.classList.remove('active-screen'));
+            document.getElementById(screenId).classList.add('active-screen');
+        }
+
+        function setStatus(msg, blink = false) {
+            gameStatus.innerText = msg;
+            gameStatus.style.animation = blink ? "alert-blink 1s infinite" : "none";
+        }
+
+        function addChatMsg(senderStr, msg, type = 'player') {
+            const msgEl = document.createElement('div');
+            msgEl.classList.add('chat-msg');
+            
+            if (type === 'system') {
+                msgEl.innerHTML = `<span class="chat-system">&gt; ${msg}</span>`;
+            } else if (type === 'eliminated') {
+                msgEl.innerHTML = `<span class="chat-eliminated">[DE CONNECTÉ] ${senderStr} :${msg}</span>`;
+            } else {
+                msgEl.innerHTML = `<span class="chat-player">${senderStr} :</span> <span class="chat-text">${msg}</span>`;
+            }
+            chatArea.prepend(msgEl); // Nouveau en haut (car flex-direction reverse)
+        }
+
+        /* --- GESTION RÉSEAU (PEERJS) --- */
+        
+        function initPeer(pseudo, callback) {
+            myPseudo = pseudo || "Hacker_" + Math.floor(Math.random()*1000);
+            
+            // Afficher loader
+            loginErr.innerText = "Initialisation du protocole PeerJS...";
+            loginErr.style.color = "var(--neon-cyan)";
+
+            peer = new Peer(undefined, { debug: 1 });
+
+            peer.on('open', (id) => {
+                myId = id;
+                console.log('ID Réseau généré : ' + id);
+                loginErr.innerText = "";
+                callback(id);
+            });
+
+            peer.on('error', (err) => {
+                console.error('Erreur PeerJS:', err.type);
+                showScreen('screen-login');
+                let friendlyMsg = "Erreur réseau.";
+                if(err.type === 'peer-unavailable') friendlyMsg = "Réseau hôte introuvable.";
+                if(err.type === 'network') friendlyMsg = "Erreur déconnexion.";
+                loginErr.innerText =友 friendlyMsg;
+                loginErr.style.color = "var(--neon-pink)";
+            });
+
+            // En tant que client, on écoute les données de l'hôte
+            peer.on('connection', (conn) => {
+                if (isHost) {
+                    handleHostIncomingConnection(conn);
+                } else {
+                    // Un client ne devrait pas recevoir de connexion directe d'un autre client dans ce schéma
+                    conn.close();
+                }
+            });
+        }
+
+        // Envoyer data à tout le monde (Hôte seulement)
+        function broadcast(data) {
+            if (!isHost) return;
+            players.forEach(p => {
+                if (p.conn && p.peerId !== myId) {
+                    p.conn.send(data);
+                }
+            });
+        }
+
+        // Envoyer data à un joueur spécifique (Hôte seulement)
+        function sendTo(playerId, data) {
+            const player = players.find(p => p.id === playerId);
+            if (player && player.conn) {
+                player.conn.send(data);
+            }
+        }
+
+        /* --- LOGIQUE CLIENT --- */
+
+        document.getElementById('btn-join').addEventListener('click', () => {
+            const pseudo = document.getElementById('player-name').value.trim();
+            if(!pseudo) { loginErr.innerText = "Pseudo requis."; return; }
+            const targetId = document.getElementById('join-id').value.trim();
+            if(!targetId) { loginErr.innerText = "ID Réseau requis."; return; }
+
+            initPeer(pseudo, (id) => {
+                hostId = targetId;
+                isHost = false;
+                console.log(`Tentative de connexion à l'hôte: ${targetId}`);
+                loginErr.innerText = "Connexion au réseau hôte...";
+                loginErr.style.color = "var(--neon-green)";
+
+                const conn = peer.connect(targetId);
+                
+                setupClientConnectionEvents(conn);
+            });
+        });
+
+        function setupClientConnectionEvents(conn) {
+            conn.on('open', () => {
+                console.log('Connecté à l\'hôte. Envoi handshake.');
+                // 1. Handshake : On envoie notre pseudo
+                conn.send({ type: 'c_handshake', pseudo: myPseudo });
+            });
+
+            conn.on('data', (data) => {
+                handleClientIncomingData(data, conn);
+            });
+
+            conn.on('close', () => {
+                addChatMsg("SYSTÈME", "Connexion perdue avec l'hôte.", 'system');
+                setStatus("DÉCONNECTÉ", true);
+                setTimeout(()=> location.reload(), 3000);
+            });
+        }
+
+        function handleClientIncomingData(data, conn) {
+            console.log("Client reçu:", data.type, data);
+            
+            switch (data.type) {
+                case 's_handshake_ok':
+                    isHost = false;
+                    hostId = conn.peer;
+                    document.getElementById('my-id').innerText = myId;
+                    showScreen('screen-lobby');
+                    break;
+                
+                case 's_lobby_update':
+                    updateLobbyUI(data.playerList);
+                    break;
+
+                case 's_game_setup':
+                    // data: { playerList, turnOrder }
+                    players = data.playerList;
+                    gameLogic.turnOrder = data.turnOrder;
+                    showScreen('screen-game');
+                    setupGameUI();
+                    gameLogic.phase = GAME_PHASES.ROLE_REVEAL;
+                    break;
+
+                case 's_role_data':
+                    // data: { word, isGlitch, civilWord (si glitch elimine) }
+                    document.getElementById('role-setup').style.display = 'none';
+                    document.getElementById('role-display').style.display = 'block';
+                    document.getElementById('secret-word').innerText = data.word;
+                    setStatus("Mémorisez votre mot. Attente lancement du tour.");
+                    break;
+
+                case 's_start_descriptions':
+                    // data: { round }
+                    addChatMsg("SYSTÈME", `--- TOUR ${data.round} : Phase de description ---`, 'system');
+                    gameLogic.phase = GAME_PHASES.DESCRIPTION;
+                    gameLogic.turnIndex = 0;
+                    updateGamePlayersListUI(); // Pour afficher qui parle
+                    checkIfMyTurnDesc();
+                    break;
+
+                case 's_player_desc':
+                    // data: { playerId, msg }
+                    const speaker = players.find(p => p.id === data.playerId);
+                    if(speaker) {
+                        addChatMsg(speaker.pseudo, data.msg);
+                        // Passer au suivant dans l'UI locale
+                        gameLogic.turnIndex++;
+                        updateGamePlayersListUI();
+                    }
+                    checkIfMyTurnDesc();
+                    break;
+                
+                case 's_start_voting':
+                    handleStartVoting(data.vokPlayerIds);
+                    break;
+
+                case 's_vote_feed':
+                    // data: { voterPseudo, targetPseudo }
+                    addChatMsg("VOTE", `${data.voterPseudo} a voté contre ${data.targetPseudo}`, 'system');
+                    break;
+
+                case 's_elimination_results':
+                    handleEliminationResults(data);
+                    break;
+
+                case 's_glitch_last_chance':
+                    handleGlitchLastChance(data.glitchPlayerId);
+                    break;
+
+                case 's_game_over':
+                    handleGameOver(data);
+                    break;
+
+                case 's_error':
+                    alert("Erreur serveur: " + data.message);
+                    location.reload();
+                    break;
+            }
+        }
+
+        /* --- LOGIQUE HÔTE --- */
+
+        document.getElementById('btn-host').addEventListener('click', () => {
+            const pseudo = document.getElementById('player-name').value.trim();
+            if(!pseudo) { loginErr.innerText = "Pseudo requis."; return; }
+
+            initPeer(pseudo, (id) => {
+                isHost = true;
+                hostId = id;
+                document.getElementById('my-id').innerText = id;
+                showScreen('screen-lobby');
+                
+                // L'hôte est le joueur 0
+                players = [{
+                    id: 0,
+                    peerId: id,
+                    pseudo: pseudo,
+                    conn: null, // Pas de connexion pour soi-même
+                    role: null,
+                    isAlive: true,
+                    ready: true,
+                    votesReceived: 0
+                }];
+                updateLobbyUI(players);
+            });
+        });
+
+        function handleHostIncomingConnection(conn) {
+            console.log('Hôte : Nouvelle connexion entrante de ' + conn.peer);
+            
+            if (players.length >= 6) {
+                conn.on('open', () => conn.send({ type: 's_error', message: 'Serveur plein (Max 6).' }));
+                setTimeout(() => conn.close(), 1000);
+                return;
+            }
+
+            if (gameLogic.phase && gameLogic.phase !== GAME_PHASES.LOBBY) {
+                 conn.on('open', () => conn.send({ type: 's_error', message: 'Partie déjà en cours.' }));
+                 setTimeout(() => conn.close(), 1000);
+                 return;
+            }
+
+            conn.on('data', (data) => {
+                console.log("Hôte reçu:", data.type, data);
+                
+                if (data.type === 'c_handshake') {
+                    // Créer le nouveau joueur
+                    const newPlayer = {
+                        id: players.length, // simple ID numérique incrementiel
+                        peerId: conn.peer,
+                        pseudo: data.pseudo || "Hacker_" + conn.peer.substring(0,4),
+                        conn: conn,
+                        role: null,
+                        isAlive: true,
+                        ready: true,
+                        votesReceived: 0
+                    };
+                    players.push(newPlayer);
+                    
+                    conn.send({ type: 's_handshake_ok' });
+                    
+                    // Informer tout le monde de la nouvelle liste
+                    sendLobbyUpdate();
+                }
+
+                if (gameLogic.phase === GAME_PHASES.DESCRIPTION && data.type === 'c_desc_msg') {
+                    handleClientDescription(conn.peer, data.msg);
+                }
+
+                if (gameLogic.phase === GAME_PHASES.VOTING && data.type === 'c_vote') {
+                    handleClientVote(conn.peer, data.targetPlayerId);
+                }
+
+                if (gameLogic.phase === GAME_PHASES.GLITCH_GUESS && data.type === 'c_glitch_guess') {
+                    handleGlitchGuessSubmit(data.guess);
+                }
+            });
+
+            conn.on('close', () => {
+                console.log('Connexion fermée avec ' + conn.peer);
+                // Gérer déconnexion en jeu (simplifié: on reset tout)
+                if (gameLogic.phase && gameLogic.phase !== GAME_PHASES.LOBBY && gameLogic.phase !== GAME_PHASES.END) {
+                    broadcast({type: 's_error', message: 'Un hacker a quitté le réseau. Protocole corrompu.'});
+                    setTimeout(()=> location.reload(), 2000);
+                } else {
+                    // Juste retirer du lobby
+                    players = players.filter(p => p.peerId !== conn.peer);
+                    sendLobbyUpdate();
+                }
+            });
+        }
+
+        function sendLobbyUpdate() {
+            // Créer une version light de la liste sans les objets 'conn' pour le JSON
+            const lightList = players.map(p => ({ id: p.id, pseudo: p.pseudo, isHost: p.id === 0 }));
+            updateLobbyUI(lightList); // Update local Host
+            broadcast({ type: 's_lobby_update', playerList: lightList });
+            
+            // UI Bouton Start
+            if (isHost && players.length >= 3) {
+                document.getElementById('btn-start').style.display = 'block';
+            } else if (isHost) {
+                document.getElementById('btn-start').style.display = 'none';
+            }
+        }
+
+        /* --- UI LOBBY --- */
+        function updateLobbyUI(playerList) {
+            document.getElementById('player-count').innerText = playerList.length;
+            const listUI = document.getElementById('lobby-players-list');
+            listUI.innerHTML = "";
+            
+            playerList.forEach(p => {
+                const li = document.createElement('li');
+                li.classList.add('player-item');
+                
+                let statusSpan = "";
+                if (p.isHost) {
+                    statusSpan = `<span class="player-status status-host">[HÔTE]</span>`;
+                } else {
+                    statusSpan = `<span class="player-status status-ready">[CONNECTÉ]</span>`;
+                }
+                
+                li.innerHTML = `<span class="player-name">${p.pseudo}</span>${statusSpan}`;
+                listUI.appendChild(li);
+            });
+        }
+
+        /* --- CYCLE DE JEU (HÔTE) --- */
+
+        document.getElementById('btn-start').addEventListener('click', () => {
+            if (!isHost || players.length < 3) return;
+            launchGameProtocol();
+        });
+
+        function launchGameProtocol() {
+            gameLogic.roundNumber = 0;
+            
+            // 1. Sélectionner Mots
+            const pair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
+            gameLogic.currentPair = pair;
+            
+            // Assigner Civil/Undercover aléatoirement
+            if (Math.random() > 0.5) {
+                gameLogic.civilWord = pair[0];
+                gameLogic.undercoverWord = pair[1];
+            } else {
+                gameLogic.civilWord = pair[1];
+                gameLogic.undercoverWord = pair[0];
+            }
+
+            console.log("Mots du jeu:", gameLogic.civilWord, "(Civil) /", gameLogic.undercoverWord, "(Underc.)");
+
+            // 2. Assigner Rôles
+            const n = players.length;
+            let rolesDeck = [];
+            
+            // Par défaut: 1 Undercover. Si 5+ joueurs, possibilité de configurer 2, mais restons simple.
+            rolesDeck.push(ROLES.UNDERCOVER);
+            
+            // Mr White (Glitch) si 5 ou 6 joueurs
+            if (n >= 5) {
+                rolesDeck.push(ROLES.GLITCH);
+            }
+
+            // Remplir le reste avec Civils
+            while (rolesDeck.length < n) {
+                rolesDeck.push(ROLES.CIVIL);
+            }
+
+            // Mélanger Deck (Fisher-Yates)
+            for (let i = rolesDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [rolesDeck[i], rolesDeck[j]] = [rolesDeck[j], rolesDeck[i]];
+            }
+
+            // Attribuer
+            players.forEach((p, i) => {
+                p.role = rolesDeck[i];
+                p.isAlive = true;
+            });
+
+            // 3. Définir ordre du tour
+            gameLogic.turnOrder = players.map(p => p.id);
+            // Mélanger l'ordre
+             for (let i = gameLogic.turnOrder.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gameLogic.turnOrder[i], gameLogic.turnOrder[j]] = [gameLogic.turnOrder[j], gameLogic.turnOrder[i]];
+            }
+
+            gameLogic.phase = GAME_PHASES.ROLE_REVEAL;
+
+            // 4. Envoyer Setup aux clients
+            // On sanitize la liste des joueurs (pas de rôles cachés envoyés tout de suite)
+            const cleanPlayerList = players.map(p => ({ id: p.id, pseudo: p.pseudo, isAlive: true }));
+            
+            broadcast({ 
+                type: 's_game_setup', 
+                playerList: cleanPlayerList,
+                turnOrder: gameLogic.turnOrder
+            });
+
+            // Setup UI locale Hôte
+            showScreen('screen-game');
+            setupGameUI(); // Listera cleanPlayerList définie ci-dessus
+
+            // 5. Envoyer Rôles (spécifique à chacun)
+            players.forEach(p => {
+                let wordToSend = "";
+                if (p.role === ROLES.CIVIL) wordToSend = gameLogic.civilWord;
+                if (p.role === ROLES.UNDERCOVER) wordToSend = gameLogic.undercoverWord;
+                if (p.role === ROLES.GLITCH) wordToSend = "TU EST LE GLITCH. Fais semblant.";
+
+                const roleData = { type: 's_role_data', word: wordToSend };
+                
+                if (p.id === 0) {
+                    // Local Hôte
+                    document.getElementById('role-setup').style.display = 'none';
+                    document.getElementById('role-display').style.display = 'block';
+                    document.getElementById('secret-word').innerText = wordToSend;
+                } else {
+                    sendTo(p.id, roleData);
+                }
+            });
+
+            addChatMsg("SYSTÈME", "Hack lancé. Décryptez vos rôles.", "system");
+            
+            // Laisser temps de lecture (5s), puis lancer descriptions
+            setTimeout(hostStartDescriptionPhase, 6000);
+        }
+
+        /* --- CYCLE DE JEU (COMMUN/PARTAGÉ) --- */
+
+        // UI commune setup au lancement
+        function setupGameUI() {
+            document.getElementById('game-player-rpc').innerText = myPseudo;
+            // Reset éléments
+            chatArea.innerHTML = "";
+            document.getElementById('glitch-guess-zone').style.display = 'none';
+            document.getElementById('voting-zone').style.display = 'none';
+            
+            // Setup bouton revéler (pour les paranoiaques, même si c'est automatisé par l'hôte après 1s)
+            const revealBtn = document.getElementById('btn-reveal-role');
+            revealBtn.style.display = 'block';
+            revealBtn.onclick = function() {
+                document.getElementById('role-setup').style.display = 'none';
+                revealBtn.style.display = 'none';
+                document.getElementById('role-display').style.display = 'block';
+            };
+
+            updateGamePlayersListUI();
+        }
+
+        function updateGamePlayersListUI() {
+            const listUI = document.getElementById('game-players-list');
+            listUI.innerHTML = "";
+
+            players.forEach(p => {
+                const li = document.createElement('li');
+                li.classList.add('player-item');
+                if (!p.isAlive) li.classList.add('status-eliminated');
+
+                let nameSpan = `<span class="player-name">${p.pseudo}</span>`;
+                
+                let statusStr = "";
+                if (!p.isAlive) {
+                    statusStr = `<span class="player-status status-eliminated">[DÉCONNECTÉ]</span>`;
+                } else if (gameLogic.phase === GAME_PHASES.DESCRIPTION) {
+                    // Qui parle ?
+                    const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
+                    if (p.id === currentSpeakerId) {
+                        statusStr = `<span class="player-status status-speaking">[TRANSFERT...]</span>`;
+                    } else {
+                        statusStr = `<span class="player-status">[EN LIGNE]</span>`;
+                    }
+                } else {
+                    statusStr = `<span class="player-status">[EN LIGNE]</span>`;
+                }
+
+                li.innerHTML = `${nameSpan}${statusStr}`;
+                listUI.appendChild(li);
+            });
+        }
+
+        /* --- PHASE 1 : DESCRIPTIONS --- */
+
+        // HOTE
+        function hostStartDescriptionPhase() {
+            gameLogic.phase = GAME_PHASES.DESCRIPTION;
+            gameLogic.roundNumber++;
+            gameLogic.turnIndex = 0;
+            
+            broadcast({ type: 's_start_descriptions', round: gameLogic.roundNumber });
+            
+            // UI locale
+            addChatMsg("SYSTÈME", `--- TOUR ${gameLogic.roundNumber} : Phase de description ---`, 'system');
+            updateGamePlayersListUI();
+            checkIfMyTurnDesc();
+        }
+
+        // TOUS
+        function checkIfMyTurnDesc() {
+            if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
+            
+            const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
+            const chatInputArea = document.getElementById('chat-input-area');
+
+            if (currentSpeakerId === players.find(p => p.peerId === myId).id) {
+                // C'est à moi
+                setStatus("C'est votre tour. Transmettez votre description.", true);
+                chatInputArea.style.display = 'flex';
+                document.getElementById('chat-input').focus();
+            } else {
+                // Attente
+                const speakerPseudo = players.find(p => p.id === currentSpeakerId).pseudo;
+                setStatus(`Attente transmission de données de : ${speakerPseudo}`);
+                chatInputArea.style.display = 'none';
+            }
+        }
+
+        // Input handler (TOUS)
+        document.getElementById('btn-send-desc').addEventListener('click', submitDescription);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') submitDescription();
+        });
+
+        function submitDescription() {
+            if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
+            const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
+            if (currentSpeakerId !== players.find(p => p.peerId === myId).id) return; // Sécurité
+
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            input.value = "";
+            document.getElementById('chat-input-area').style.display = 'none';
+
+            if (isHost) {
+                handleClientDescription(myId, msg); // Traitement local immédiat
+            } else {
+                peer.connections[hostId][0].send({ type: 'c_desc_msg', msg: msg });
+            }
+        }
+
+        // HOTE reçoit description
+        function handleClientDescription(peerId, msg) {
+            if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
+            
+            const speaker = players.find(p => p.peerId === peerId);
+            const expectedSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
+
+            if (!speaker || speaker.id !== expectedSpeakerId) return; // Pas son tour
+
+            console.log(`Description reçue de ${speaker.pseudo} :${msg}`);
+
+            // Relayer à tout le monde
+            broadcast({ type: 's_player_desc', playerId: speaker.id, msg: msg });
+            
+            // Afficher localement chez l'hôte
+            addChatMsg(speaker.pseudo, msg);
+
+            // Passer au suivant
+            hostAdvanceDescriptionTurn();
+        }
+
+        function hostAdvanceDescriptionTurn() {
+            gameLogic.turnIndex++;
+            updateGamePlayersListUI();
+
+            if (gameLogic.turnIndex >= gameLogic.turnOrder.length) {
+                // Tour terminé -> Passage au vote
+                gameLogic.phase = GAME_PHASES.VOTING;
+                setTimeout(hostStartVotingPhase, 2000);
+            } else {
+                checkIfMyTurnDesc();
+            }
+        }
+
+        /* --- PHASE 2 : VOTES ---C'est un grand classique ! Ton système d'écrasement dynamique ("squish" pour les tunnels) avait un petit défaut de logique : il commençait sa détection exactement sous les pieds du slime. Du coup, quand le slime était posé, le code touchait le sol, croyait que c'était un plafond très bas, et écrasait ton slime à 35% de sa taille. En sautant, il ne touchait plus le sol, donc il reprenait sa taille normale !
+
+J'ai juste modifié **une seule ligne** (en y ajoutant `- 5` pixels pour que le scan commence légèrement au-dessus du sol) et je te renvoie **l'intégralité de ton code sans supprimer la moindre ligne**.
+
+Voici ton fichier complet et corrigé :
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber Slimes Artillery (Worms-like)</title>
+    <script src="[https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js](https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js)"></script>
+    <style>
+        :root { 
+            --bg: #090a0f; 
+            --p1: #00f0ff; /* Cyan */
+            --p2: #ff007f; /* Rose */
+            --p3: #ffea00; /* Or */
+            --p4: #39ff14; /* Vert */
+            --sys: #39ff14; 
+            --weapon-bg: rgba(20, 25, 40, 0.85);
+        }
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background-color: var(--bg); 
+            color: #fff; 
+            margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; overflow: hidden; 
+            touch-action: none; user-select: none; 
+        }
+        
+        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px);}
+        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); }
+
+        /* HEADER UI DYNAMIQUE */
+        #ui-layer { position: absolute; top: 10px; width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 20px; box-sizing: border-box; z-index: 100; pointer-events: none; }
+        .team-container { display: flex; flex-direction: column; gap: 10px; }
+        .player-info { background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 8px; border: 1px solid #333; text-align: center; backdrop-filter: blur(4px); }
+        .hp-bar-bg { width: 130px; height: 12px; background: #222; border-radius: 10px; margin-top: 5px; overflow: hidden; border: 1px solid #555; }
+        .hp-bar { height: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        #turn-indicator { font-size: 1.3em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; border: 2px solid #fff; transition: 0.3s; text-align: center; backdrop-filter: blur(4px); }
+        
+        /* TIMER UI */
+        #turn-timer { font-size: 1.8em; font-family: monospace; font-weight: bold; margin-top: 5px; text-shadow: 0 0 5px #fff; transition: color 0.2s; }
+        @keyframes pulse-timer { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+        .timer-danger { color: #ff0000 !important; text-shadow: 0 0 15px #ff0000 !important; animation: pulse-timer 0.5s infinite; }
+        .timer-aim { color: #ffea00 !important; text-shadow: 0 0 15px #ffea00 !important; }
+
+        /* PANNEAU D'ARMES */
+        #weapon-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: var(--weapon-bg); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--p1); z-index: 100; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); backdrop-filter: blur(8px); transition: 0.3s; }
+        .weapon-btn { background: rgba(0,0,0,0.5); border: 2px solid #444; color: #fff; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto;}
+        .weapon-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff;}
+        .weapon-btn.active { background: rgba(0, 240, 255, 0.2); border-color: var(--p1); color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);}
+        .w-icon { font-size: 1.5em; margin-bottom: 5px; }
+
+        /* GAME CONTAINER */
+        #game-wrapper { position: relative; width: 100%; max-width: 800px; height: 600px; border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.15); border: 2px solid rgba(255,255,255,0.1); overflow: hidden; background: #000; cursor: crosshair; }
+        #bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; transition: opacity 0.5s; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #canvas-terrain { z-index: 2; } 
+        #canvas-entities { z-index: 3; }
+
+        /* MENUS */
+        .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(8px); }
+        .menu-overlay h1, .menu-overlay h2 { font-size: 3em; margin-bottom: 20px; text-transform: uppercase; color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 2px; text-align: center;}
+        
+        .selection-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
+        .map-card { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; text-align: center; transition: 0.2s; width: 140px; }
+        .map-card:hover, .map-card.selected { background: rgba(255,255,255,0.2); transform: translateY(-3px); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .map-card img { width: 120px; height: 70px; object-fit: cover; border-radius: 5px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
+
+        .btn { background: rgba(0, 240, 255, 0.1); color: var(--p1); border: 2px solid var(--p1); padding: 12px 25px; font-size: 1.1em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease-in-out; margin: 8px; min-width: 250px; text-align: center; font-family: inherit; }
+        .btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); transform: translateY(-2px); }
+        
+        .btn-pink { color: var(--p2); border-color: var(--p2); background: rgba(255, 0, 127, 0.1); }
+        .btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 15px var(--p2); }
+
+        .btn-gold { color: var(--p3); border-color: var(--p3); background: rgba(255, 234, 0, 0.1); }
+        .btn-gold:hover { background: var(--p3); color: #000; box-shadow: 0 0 15px var(--p3); }
+
+        .loader { font-size: 1.2em; color: var(--sys); margin-bottom: 20px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .hidden { display: none !important; }
+        
+        #conn-status { margin-top: 20px; font-weight: bold; font-size: 1.1em; transition: 0.3s; text-align: center;}
+
+        @media (max-width: 800px) {
+            #game-wrapper { height: 70vh; border-radius: 0; border: none; }
+            .hp-bar-bg { width: 90px; }
+            #turn-indicator { font-size: 1em; padding: 6px 12px; }
+            .btn { min-width: 200px; font-size: 1em; padding: 10px 15px;}
+            #weapon-panel { transform: translateX(-50%) scale(0.85); bottom: 5px; }
+            .weapon-btn { padding: 5px 10px; }
+            .selection-grid { gap: 10px; }
+            .map-card { width: 100px; padding: 5px; }
+            .map-card img { width: 90px; height: 50px; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+    <div id="game-wrapper">
+        <video id="bg-video" autoplay loop muted playsinline>
+            <source src="img/background.mp4" type="video/mp4">
+        </video>
+
+        <!-- UI & ARMES -->
+        <div id="ui-layer" class="hidden"></div>
+        
+        <div id="weapon-panel" class="hidden">
+            <button class="weapon-btn active" id="btn-wpn-bazooka" onmousedown="selectWeapon('bazooka', event)" ontouchstart="selectWeapon('bazooka', event)"><span class="w-icon">🚀</span>Bazooka</button>
+            <button class="weapon-btn" id="btn-wpn-grenade" onmousedown="selectWeapon('grenade', event)" ontouchstart="selectWeapon('grenade', event)"><span class="w-icon">💣</span>Grenade</button>
+            <button class="weapon-btn" id="btn-wpn-boxe" onmousedown="selectWeapon('boxe', event)" ontouchstart="selectWeapon('boxe', event)"><span class="w-icon">🥊</span>Gant Boxe</button>
+        </div>
+
+        <canvas id="canvas-terrain" width="800" height="600"></canvas>
+        <canvas id="canvas-entities" width="800" height="600"></canvas>
+
+        <!-- MENU PRINCIPAL -->
+        <div id="main-menu" class="menu-overlay">
+            <h1>Cyber Slimes</h1>
+            <div id="loading-text" class="loader">Chargement des sprites...</div>
+            
+            <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column; align-items: center;">
+                <h3 style="color: #aaa; margin-top: 0; margin-bottom: 10px; font-weight: normal; letter-spacing: 2px;">ARÈNE DE COMBAT</h3>
+                <div class="selection-grid" id="map-select">
+                    <div class="map-card selected" onclick="selectSlimeMap(1, this)">
+                        <img src="img/map1.png" alt="Map 1"><b>Arène Bleue</b>
+                    </div>
+                    <div class="map-card" onclick="selectSlimeMap(2, this)">
+                        <img src="img/map2.png" alt="Map 2"><b>Arène Rouge</b>
+                    </div>
+                    <div class="map-card" onclick="selectSlimeMap(3, this)">
+                        <img src="img/map3.png" alt="Map 3"><b>Arène Géante</b>
+                    </div>
+                    <div class="map-card" onclick="selectSlimeMap(4, this)">
+                        <img src="img/map4.png" alt="Map 4"><b>Arène 4</b>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="startGame('local_1v1')">🕹️ 1 VS 1 (Local)</button>
+                <button class="btn btn-gold" onclick="startGame('local_2v2')">🛡️ 2 VS 2 (Équipes)</button>
+                <button class="btn btn-pink" onclick="startGame('local_ffa')">⚔️ 4 Joueurs (Chacun pour soi)</button>
+                <hr style="width: 80%; border-color: rgba(255,255,255,0.2); margin: 10px 0;">
+                <button class="btn" onclick="startGame('ai')" style="border-color:#fff; color:#fff;">🤖 Contre l'IA</button>
+                <button class="btn" onclick="showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multijoueur (En Ligne)</button>
+            </div>
+        </div>
+
+        <!-- MENU MULTIJOUEUR -->
+        <div id="online-menu" class="menu-overlay hidden">
+            <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR</h2>
+            
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 440px;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em; text-transform: uppercase;">Créer une partie</h3>
+                <h4 style="color: var(--p1); margin-bottom: 10px; font-size: 0.9em; letter-spacing: 1px;">CHOIX DE L'ARÈNE</h4>
+                <div class="selection-grid" style="margin-bottom: 15px; gap: 10px;">
+                    <div class="map-card selected" onclick="selectSlimeMap(1, this)" style="width: 90px; padding: 5px;">
+                        <img src="img/map1.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Bleue</b>
+                    </div>
+                    <div class="map-card" onclick="selectSlimeMap(2, this)" style="width: 90px; padding: 5px;">
+                        <img src="img/map2.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Rouge</b>
+                    </div>
+                    <div class="map-card" onclick="selectSlimeMap(3, this)" style="width: 90px; padding: 5px;">
+                        <img src="img/map3.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Géante</b>
+                    </div>
+                    <div class="map-card" onclick="selectSlimeMap(4, this)" style="width: 90px; padding: 5px;">
+                        <img src="img/map4.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène 4</b>
+                    </div>
+                </div>
+                <button class="btn" style="min-width: 200px; padding: 10px;" onclick="hostGame()">Héberger</button>
+                <p style="margin-top: 15px; margin-bottom: 0;">Code Hôte : <br><b id="lobby-code-display" style="color: var(--p1); font-size:2em; letter-spacing:4px;">...</b></p>
+            </div>
+            
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); text-align: center; width: 440px;">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em; text-transform: uppercase;">Rejoindre une partie</h3>
+                <input type="text" id="join-code-input" placeholder="Code de l'hôte..." style="padding: 12px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase;">
+                <button class="btn btn-pink" style="min-width: 200px; padding: 10px; margin-top: 15px;" onclick="joinGame()">Rejoindre</button>
+            </div>
+            
+            <div id="conn-status"></div>
+            <button class="btn" style="border-color:#555; color:#aaa; margin-top: 30px; background: transparent;" onclick="hideOnlineMenu()">Retour</button>
+        </div>
+
+        <!-- MENU FIN -->
+        <div id="game-over" class="menu-overlay hidden">
+            <h2 id="winner-text">VICTOIRE</h2>
+            <button class="btn" onclick="location.reload()">Retour au menu</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTES DU MONDE (DYNAMIQUES) ---
+        const WIDTH = 800; 
+        const HEIGHT = 600; 
+        let WORLD_WIDTH = 2000; 
+        let WORLD_HEIGHT = 600;
+        const GRAVITY = 0.18; 
+        
+        let camera = { x: 0, y: 0, zoom: 1 };
+        let mouseScreenX = WIDTH / 2; 
+        let mouseScreenY = HEIGHT / 2;
+        let manualCameraControl = false; 
+
+        // --- GESTION AUDIO (BGM & SFX) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const bgmPlayer = new Audio();
+        bgmPlayer.loop = true;
+        bgmPlayer.volume = 0.25;
+
+        // --- DEVERROUILLAGE GLOBAL DU SON ---
+        function forceAudioUnlock() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            document.removeEventListener('click', forceAudioUnlock);
+            document.removeEventListener('keydown', forceAudioUnlock);
+        }
+        document.addEventListener('click', forceAudioUnlock);
+        document.addEventListener('keydown', forceAudioUnlock);
+
+        function playBGM(mapId) {
+            bgmPlayer.pause();
+            if (mapId === 1) {
+                bgmPlayer.src = Math.random() < 0.5 ? 'img/paradise1.mp3' : 'img/paradise2.mp3';
+            } else if (mapId === 2) {
+                bgmPlayer.src = Math.random() < 0.5 ? 'img/hell1.mp3' : 'img/hell2.mp3';
+            } else {
+                bgmPlayer.src = Math.random() < 0.5 ? 'img/paradise1.mp3' : 'img/hell1.mp3';
+            }
+            let playPromise = bgmPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    document.addEventListener('click', () => { bgmPlayer.play().catch(e=>{}); }, {once: true});
+                });
+            }
+        }
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'bazooka_fire') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+                gain.gain.setValueAtTime(0.025, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'grenade_throw') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.015, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'punch') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(20, now + 0.15);
+                gain.gain.setValueAtTime(0.025, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'explosion') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            } else if (type === 'squish') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                gain.gain.setValueAtTime(0.015, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'hit') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+                gain.gain.setValueAtTime(0.015, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            }
+        }
+
+        // Initialisation Canvas
+        const canvasTerrain = document.getElementById('canvas-terrain');
+        const ctxTerrain = canvasTerrain.getContext('2d'); 
+        
+        const offscreenTerrain = document.createElement('canvas');
+        offscreenTerrain.width = WORLD_WIDTH; 
+        offscreenTerrain.height = WORLD_HEIGHT;
+        const ctxOffTerrain = offscreenTerrain.getContext('2d', { willReadFrequently: true });
+
+        const canvasEnt = document.getElementById('canvas-entities');
+        const ctxEnt = canvasEnt.getContext('2d');
+
+        // Variables de jeu & TIMER
+        let gameState = 'menu'; 
+        let gameMode = 'local_1v1';
+        let currentPlayer = 1; 
+        let retreatFrames = 0; 
+        let turnFrames = 480; // 8 secondes (60 fps)
+        let mapImage = new Image();
+        let selectedMapId = 1;
+
+        // --- GESTION DES ARMES ---
+        function selectWeapon(wType, event) {
+            if (event) { event.stopPropagation(); event.preventDefault(); }
+            if (gameState !== 'playing') return;
+            let activeWorm = worms[currentPlayer - 1];
+            
+            let hasControl = (gameMode !== 'online' || (myPlayerId === 1 && activeWorm.team === 'A') || (myPlayerId === 2 && activeWorm.team === 'B'));
+            if (!hasControl) return;
+            
+            if (activeWorm && !activeWorm.isBot) {
+                activeWorm.weapon = wType;
+                document.querySelectorAll('.weapon-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`btn-wpn-${wType}`).classList.add('active');
+
+                if (conn && conn.open) conn.send({ type: 'weapon_sync', wType: wType, pid: activeWorm.id });
+            }
+        }
+
+        // --- SELECTION DYNAMIQUE DE LA MAP ---
+        function selectSlimeMap(id, el) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            selectedMapId = id;
+            
+            if (id === 3) { WORLD_WIDTH = 4000; WORLD_HEIGHT = 1200; } 
+            else { WORLD_WIDTH = 2000; WORLD_HEIGHT = 600; }
+
+            document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+            if (el) el.classList.add('selected');
+            
+            let videoElement = document.getElementById('bg-video');
+            videoElement.style.opacity = 0;
+            
+            setTimeout(() => {
+                // MISE A JOUR DES VIDEOS EN FONCTION DE LA DEMANDE
+                if(id === 1) videoElement.src = 'img/background.mp4';
+                else if(id === 2) videoElement.src = 'img/background2.mp4';
+                else if(id === 3) videoElement.src = 'img/background4.mp4'; // Map 3 utilise video 4
+                else if(id === 4) videoElement.src = 'img/background3.mp4'; // Map 4 utilise video 3
+                
+                videoElement.load(); // CRUCIAL : Force le navigateur à charger la nouvelle source mp4
+                videoElement.play().catch(e => console.log(e));
+                videoElement.style.opacity = 0.6;
+            }, 500);
+            
+            if (sprites['map' + id]) mapImage = sprites['map' + id];
+        }
+
+        // --- GESTION WEBRTC (PeerJS) ---
+        let peer = null; 
+        let conn = null; 
+        let myPlayerId = 1;
+
+        function showOnlineMenu() { document.getElementById('online-menu').classList.remove('hidden'); }
+        function hideOnlineMenu() { 
+            document.getElementById('online-menu').classList.add('hidden');
+            if (peer) { peer.destroy(); peer = null; }
+            document.getElementById('conn-status').innerText = ""; 
+            document.getElementById('lobby-code-display').innerText = "...";
+        }
+
+        function hostGame() {
+            if (peer) peer.destroy();
+            let status = document.getElementById('conn-status'); 
+            status.style.color = "var(--sys)"; status.innerText = "Création du serveur local...";
+            
+            let code = 'SLM' + Math.floor(1000 + Math.random() * 9000);
+            peer = new Peer(code);
+            
+            peer.on('open', (id) => { 
+                document.getElementById('lobby-code-display').innerText = id; 
+                status.innerText = "En attente d'un adversaire..."; myPlayerId = 1; 
+            });
+            
+            peer.on('connection', (connection) => { 
+                conn = connection; 
+                conn.on('open', () => { 
+                    conn.send({ type: 'map_sync', mapId: selectedMapId });
+                    setupConnection(); 
+                    status.innerText = "Adversaire connecté ! Lancement..."; 
+                    setTimeout(() => startGame('online'), 1000); 
+                }); 
+            });
+            peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = "Erreur : " + err.type; });
+        }
+
+        function joinGame() {
+            let code = document.getElementById('join-code-input').value.trim().toUpperCase();
+            if(!code) return alert("Code invalide.");
+            if (peer) peer.destroy();
+            
+            let status = document.getElementById('conn-status'); 
+            status.style.color = "var(--p1)"; status.innerText = "Connexion...";
+            
+            peer = new Peer();
+            peer.on('open', () => {
+                conn = peer.connect(code, { reliable: true });
+                conn.on('open', () => { 
+                    setupConnection(); myPlayerId = 2; 
+                    status.style.color = "var(--sys)"; status.innerText = "Connecté !"; 
+                    setTimeout(() => startGame('online'), 1000); 
+                });
+                conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Échec de connexion."; });
+            });
+            peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = err.type === 'peer-unavailable' ? "Partie introuvable." : "Erreur : " + err.type; });
+        }
+
+        function setupConnection() {
+            conn.on('data', (data) => {
+                if (data.type === 'map_sync') {
+                    selectSlimeMap(data.mapId, null);
+                }
+                
+                if (data.type === 'weapon_sync') {
+                    let w = worms.find(worm => worm.id === data.pid);
+                    if (w) w.weapon = data.wType;
+                }
+
+                if (data.type === 'sync' && gameState === 'playing') {
+                    let myTeam = myPlayerId === 1 ? 'A' : 'B';
+                    let enemy = worms.find(w => w.id === currentPlayer && w.team !== myTeam);
+                    if (enemy) {
+                        enemy.x = data.x; enemy.y = data.y; enemy.facing = data.facing; 
+                        enemy.state = data.state; enemy.animFrame = data.animFrame;
+                        enemy.isAiming = data.isAiming || false; enemy.aimDy = data.aimDy || 0;
+                    }
+                }
+
+                if (data.type === 'start_aim') {
+                    turnFrames = data.frames;
+                }
+
+                if (data.type === 'timeout') {
+                    isDragging = false;
+                    nextTurn();
+                }
+
+                if (data.type === 'fire') { 
+                    let w = worms.find(worm => worm.id === data.pid);
+                    if (w) w.triggerAttackAnimation(data.wType);
+                    projectile = new Projectile(data.px, data.py, data.vx, data.vy, data.wType); 
+                    if (data.wType === 'bazooka') playSound('bazooka_fire');
+                    if (data.wType === 'grenade') playSound('grenade_throw');
+                    gameState = 'flying'; retreatFrames = 60; 
+                }
+
+                if (data.type === 'punch') {
+                    let w = worms.find(worm => worm.id === data.pid);
+                    if (w) w.triggerAttackAnimation('boxe');
+                    executePunch(w, data.px, data.py, data.angle, data.color, false);
+                }
+            });
+        }
+
+        function syncPlayerState() {
+            if (conn && conn.open && gameMode === 'online') {
+                let myTeam = myPlayerId === 1 ? 'A' : 'B';
+                let me = worms[currentPlayer - 1];
+                if (me && me.team === myTeam) {
+                    let dy = isDragging ? (dragStartY - dragCurrentY) : 0;
+                    conn.send({ 
+                        type: 'sync', 
+                        x: me.x, y: me.y, facing: me.facing, state: me.state, animFrame: me.animFrame,
+                        isAiming: isDragging, aimDy: dy
+                    });
+                }
+            }
+        }
+
+        // --- PRÉCHARGEMENT DES ASSETS ---
+        const sprites = {};
+        const imagesToLoad = {
+            map1: 'img/map1.png', map2: 'img/map2.png', map3: 'img/map3.png', map4: 'img/map4.png',
+            s1_idle_r: 'img/slime1_right.png', s1_idle_l: 'img/slime1_left.png',
+            s1_walk_r1: 'img/slime1_moveright1.png', s1_walk_r2: 'img/slime1_moveright2.png', s1_walk_r3: 'img/slime1_moveright3.png',
+            s1_walk_l1: 'img/slime1_moveleft1.png', s1_walk_l2: 'img/slime1_moveleft2.png', s1_walk_l3: 'img/slime1_moveleft3.png',
+            s1_jump_r1: 'img/slime1_jumpright1.png', s1_jump_r2: 'img/slime1_jumpright2.png', s1_jump_r3: 'img/slime1_jumpright3.png',
+            s1_jump_l1: 'img/slime1_jumpleft1.png', s1_jump_l2: 'img/slime1_jumpleft2.png', s1_jump_l3: 'img/slime1_jumpleft3.png',
+            s1_atqtop_r: 'img/slime1_rightatqtop.png', s1_atqbot_r: 'img/slime1_rightatqbot.png',
+            s1_atqtop_l: 'img/slime1_leftatqtop.png', s1_atqbot_l: 'img/slime1_leftatqbot.png',
+            s2_idle_r: 'img/slime2_right.png', s2_idle_l: 'img/slime2_left.png',
+            s2_walk_r1: 'img/slime2_moveright1.png', s2_walk_r2: 'img/slime2_moveright2.png', s2_walk_r3: 'img/slime2_moveright3.png',
+            s2_walk_l1: 'img/slime2_moveleft1.png', s2_walk_l2: 'img/slime2_moveleft2.png', s2_walk_l3: 'img/slime2_moveleft3.png',
+            s2_jump_r1: 'img/slime2_jumpright1.png', s2_jump_r2: 'img/slime2_jumpright2.png', s2_jump_r3: 'img/slime2_jumpright3.png',
+            s2_jump_l1: 'img/slime2_jumpleft1.png', s2_jump_l2: 'img/slime2_jumpleft2.png', s2_jump_l3: 'img/slime2_jumpleft3.png',
+            s2_atqtop_r: 'img/slime2_rightatqtop.png', s2_atqbot_r: 'img/slime2_rightatqbot.png',
+            s2_atqtop_l: 'img/slime2_leftatqtop.png', s2_atqbot_l: 'img/slime2_leftatqbot.png'
+        };
+
+        for(let s = 1; s <= 2; s++) {
+            for(let i = 1; i <= 3; i++) {
+                imagesToLoad[`s${s}_greleft${i}`] = `img/slime${s}_greleft${i}.png`;
+                imagesToLoad[`s${s}_greright${i}`] = `img/slime${s}_greright${i}.png`;
+                imagesToLoad[`s${s}_boxleft${i}`] = `img/slime${s}_boxleft${i}.png`;
+                imagesToLoad[`s${s}_boxright${i}`] = `img/slime${s}_boxright${i}.png`;
+            }
+        }
+
+        let loadedCount = 0; let totalImages = Object.keys(imagesToLoad).length;
+        
+        for (let key in imagesToLoad) {
+            let img = new Image(); img.onload = onLoadComplete; 
+            img.onerror = () => { img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; onLoadComplete(); };
+            img.src = imagesToLoad[key]; sprites[key] = img;
+        }
+
+        function onLoadComplete() {
+            loadedCount++;
+            if (loadedCount >= totalImages) { 
+                document.getElementById('loading-text').classList.add('hidden'); 
+                document.getElementById('menu-buttons').classList.remove('hidden'); 
+                mapImage = sprites['map' + selectedMapId] || sprites['map1']; 
+            }
+        }
+
+        // --- CONTRÔLES ---
+        const keys = { left: false, right: false, space: false };
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+            if (e.key === ' ' || e.code === 'Space') { keys.space = true; if (e.target === document.body || e.target.closest('#game-wrapper')) e.preventDefault(); }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+            if (e.key === ' ' || e.code === 'Space') keys.space = false;
+        });
+        window.addEventListener('mousemove', (e) => { 
+            let rect = document.getElementById('game-wrapper').getBoundingClientRect(); 
+            mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width); 
+            mouseScreenY = (e.clientY - rect.top) * (HEIGHT / rect.height);
+        });
+        
+        // --- MOLETTE DE ZOOM ---
+        window.addEventListener('wheel', (e) => {
+            if (e.target.closest('#game-wrapper')) {
+                e.preventDefault();
+                let zoomAmount = e.deltaY > 0 ? -0.1 : 0.1;
+                let oldZoom = camera.zoom;
+                camera.zoom = Math.max(0.4, Math.min(camera.zoom + zoomAmount, 2.0)); 
+
+                let viewW_old = WIDTH / oldZoom;
+                let viewH_old = HEIGHT / oldZoom;
+                let viewW_new = WIDTH / camera.zoom;
+                let viewH_new = HEIGHT / camera.zoom;
+                
+                camera.x += (viewW_old - viewW_new) / 2;
+                camera.y += (viewH_old - viewH_new) / 2;
+            }
+        }, { passive: false });
+
+        // --- TERRAIN ---
+        function generateTerrain() {
+            offscreenTerrain.width = WORLD_WIDTH; 
+            offscreenTerrain.height = WORLD_HEIGHT;
+            ctxOffTerrain.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+            if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+            else { ctxOffTerrain.fillStyle = "#45a29e"; ctxOffTerrain.fillRect(0, WORLD_HEIGHT/2, WORLD_WIDTH, WORLD_HEIGHT/2); }
+        }
+
+        function isSolid(x, y) {
+            let px = Math.floor(x); let py = Math.floor(y);
+            if (px < 0 || px >= WORLD_WIDTH || py >= WORLD_HEIGHT) return false;
+            if (py < 0) return false;
+            return ctxOffTerrain.getImageData(px, py, 1, 1).data[3] > 50; 
+        }
+
+        function explodeTerrain(ex, ey, radius) {
+            ctxOffTerrain.globalCompositeOperation = 'destination-out';
+            ctxOffTerrain.beginPath(); ctxOffTerrain.arc(ex, ey, radius, 0, Math.PI * 2); ctxOffTerrain.fill();
+            ctxOffTerrain.globalCompositeOperation = 'source-over';
+        }
+
+        // Recherche d'un spawn parfait (Sans buguer dans le plafond)
+        function getValidSpawn(x, position = 'top') {
+            if (position === 'top') {
+                for (let y = 10; y < WORLD_HEIGHT - 30; y++) {
+                    if (!isSolid(x, y) && !isSolid(x, y + 10) && isSolid(x, y + 20)) {
+                        return y + 5; 
+                    }
+                }
+            } else {
+                for (let y = WORLD_HEIGHT - 40; y > 50; y--) {
+                    if (!isSolid(x, y) && !isSolid(x, y - 10) && isSolid(x, y + 20)) {
+                        return y + 5;
+                    }
+                }
+            }
+            return 100; // Fallback
+        }
+
+        // --- CLASSES DU JEU ---
+        class Slime {
+            constructor(x, y, id, type, color, team, name, isBot = false) {
+                this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
+                this.team = team; this.name = name; this.isBot = isBot;
+                
+                // TAILLE DE BASE AJUSTEE POUR ETRE PARFAITE (Ni trop gros, ni trop petit)
+                this.scale = 1; this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
+                this.facing = id % 2 !== 0 ? 'r' : 'l'; 
+                this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
+                
+                this.weapon = 'bazooka';
+                this.aiInput = { left: false, right: false, space: false };
+
+                this.isAiming = false; 
+                this.aimDy = 0;
+                this.isAttacking = false;
+                this.attackFrame = 1;
+                this.attackTimer = 0;
+                this.lastWeaponUsed = 'bazooka';
+                this.lastAimTop = false;
+            }
+
+            triggerAttackAnimation(weaponUsed) {
+                this.isAttacking = true;
+                this.attackFrame = 2; 
+                this.attackTimer = 0;
+                this.lastWeaponUsed = weaponUsed;
+            }
+
+            update() {
+                if (this.isDead) return;
+
+                if (this.isAttacking) {
+                    this.attackTimer++;
+                    if (this.attackTimer > 6) { 
+                        this.attackFrame++;
+                        this.attackTimer = 0;
+                        if (this.attackFrame > 3) {
+                            this.isAttacking = false; 
+                            this.attackFrame = 1;
+                        }
+                    }
+                }
+
+                let isMyTurn = false;
+                if (gameMode === 'online') {
+                    let myTeam = myPlayerId === 1 ? 'A' : 'B';
+                    isMyTurn = (this.id === currentPlayer && this.team === myTeam);
+                } else {
+                    isMyTurn = (currentPlayer === this.id);
+                }
+
+                let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0));
+                let wasOnGround = this.isOnGround;
+                this.isOnGround = false;
+
+                if (canMove && !isDragging) {
+                    let activeKeys = this.isBot ? this.aiInput : keys;
+                    if (activeKeys.left) { this.vx = -1.5; this.facing = 'l'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
+                    else if (activeKeys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
+                    else { this.vx = 0; if(this.state === 'walk') this.state = 'idle'; }
+
+                    if (activeKeys.space && wasOnGround) { 
+                        playSound('squish');
+                        this.vy = -6.5; this.state = 'air'; this.animFrame = 2; activeKeys.space = false; 
+                    }
+                } else if (!canMove && wasOnGround) {
+                    this.vx *= 0.5; if(Math.abs(this.vx) < 0.1) this.vx = 0;
+                    if (this.state === 'walk') this.state = 'idle';
+                }
+
+                // X Collision
+                if (this.vx !== 0) {
+                    let nextX = this.x + this.vx; 
+                    let step = 0; let maxStep = 8; 
+                    while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) {
+                        step++;
+                    }
+                    
+                    if (step > maxStep || isSolid(nextX, this.y - this.radius + 2)) {
+                        this.vx = 0; 
+                    } else { 
+                        this.x = nextX; 
+                        this.y -= step; 
+                        if (wasOnGround && this.vy >= 0) {
+                            let drop = 0; let maxDrop = 8;
+                            while (drop <= maxDrop && !isSolid(this.x, this.y + this.radius + drop)) drop++;
+                            if (drop <= maxDrop) this.y += drop; 
+                        }
+                    }
+                }
+
+                // Y Collision
+                this.vy += GRAVITY; 
+                this.y += this.vy;
+                
+                if (this.vy >= 0 && isSolid(this.x, this.y + this.radius)) {
+                    if (this.state === 'air' && this.vy > 2) { 
+                        this.state = 'landed'; this.landTimer = 15; 
+                    } else if (this.state === 'air') {
+                        this.state = 'idle';
+                    }
+                    this.vy = 0; 
+                    this.isOnGround = true;
+                    let push = 0;
+                    while(isSolid(this.x, this.y + this.radius - 1) && push < 20) {
+                        this.y -= 1;
+                        push++;
+                    }
+                } else if (this.vy < 0 && isSolid(this.x, this.y - this.radius)) {
+                    this.vy = 0;
+                    let push = 0;
+                    while(isSolid(this.x, this.y - this.radius + 1) && push < 20) {
+                        this.y += 1;
+                        push++;
+                    }
+                } else if (Math.abs(this.vy) > 1.5) { 
+                    this.state = 'air'; 
+                }
+
+                // ADAPTATION DYNAMIQUE AU CHEMIN (SQUISH)
+                let availableHeight = 0;
+                let checkY = Math.floor(this.y + this.radius - 5);
+                while (availableHeight < 45 && !isSolid(this.x, checkY - availableHeight)) {
+                    availableHeight++;
+                }
+                
+                let targetScale = 1;
+                if (availableHeight < 40) {
+                    targetScale = Math.max(0.35, availableHeight / 40);
+                }
+                if (!this.scale) this.scale = 1;
+                this.scale += (targetScale - this.scale) * 0.15;
+                this.radius = 12 * this.scale;
+
+                // Animations
+                if (this.state === 'walk') {
+                    this.animTimer++;
+                    if (this.animTimer > 6) { this.animFrame++; if (this.animFrame > 3) this.animFrame = 1; this.animTimer = 0; }
+                } else if (this.state === 'air') { this.animFrame = 2; } 
+                else if (this.state === 'landed') { this.animFrame = 3; this.landTimer--; if (this.landTimer <= 0) this.state = 'idle'; } 
+                else { this.animFrame = 1; }
+
+                if (this.y > WORLD_HEIGHT + 50) { this.hp = 0; this.isDead = true; checkWin(); }
+                if(this.x < 10) this.x = 10; if(this.x > WORLD_WIDTH - 10) this.x = WORLD_WIDTH - 10;
+            }
+
+            draw() {
+                if (this.isDead) return;
+                
+                let isMe = false;
+                if (gameMode === 'online') {
+                    let myTeam = myPlayerId === 1 ? 'A' : 'B';
+                    isMe = (this.id === currentPlayer && this.team === myTeam);
+                } else {
+                    isMe = (currentPlayer === this.id);
+                }
+
+                let aiming = (isMe && isDragging) || (!isMe && this.isAiming) || (this.isAiming && this.isBot);
+                let currentAimDy = isMe && !this.isBot ? (dragStartY - dragCurrentY) : this.aimDy;
+
+                let visualType = this.type;
+                let isDrawingInvertedWeapon = false;
+
+                if (this.isAttacking && (this.lastWeaponUsed === 'boxe' || this.lastWeaponUsed === 'grenade')) {
+                    isDrawingInvertedWeapon = true;
+                } else if (aiming && this.state !== 'air' && this.state !== 'walk' && (this.weapon === 'boxe' || this.weapon === 'grenade')) {
+                    isDrawingInvertedWeapon = true;
+                }
+
+                if (isDrawingInvertedWeapon) {
+                    visualType = this.type === 1 ? 2 : 1; 
+                }
+
+                let spriteName = `s${visualType}_`;
+
+                if (this.isAttacking) {
+                    if (this.lastWeaponUsed === 'bazooka') {
+                        spriteName += `atq${this.lastAimTop ? 'top' : 'bot'}_${this.facing}`;
+                    } else if (this.lastWeaponUsed === 'grenade') {
+                        spriteName += `gre${this.facing === 'r'http://googleusercontent.com/image_generation_content/842
