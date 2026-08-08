@@ -40,7 +40,7 @@
         }
 
         /* =========================================
-           2. BOUTON RETOUR HUB (Style Image 1)
+           2. BOUTON RETOUR HUB
            ========================================= */
         #btn-retour-hub {
             position: fixed; top: 20px; left: 20px; z-index: 9999;
@@ -125,7 +125,7 @@
            5. ZONES SPÉCIFIQUES (LOBBY & JEU)
            ========================================= */
         .share-code-text { font-size: 1.1rem; color: #aaa; margin-bottom: 20px; }
-        .share-code-val { color: var(--neon-cyan); font-weight: bold; font-size: 1.3rem; letter-spacing: 1px; user-select: all; }
+        .share-code-val { color: var(--neon-cyan); font-weight: bold; font-size: 1.6rem; letter-spacing: 2px; user-select: all; }
 
         /* Player Connected Box */
         .player-box {
@@ -169,7 +169,7 @@
 </head>
 <body>
 
-    <!-- BOUTON RETOUR HUB (Design fidèle à l'image) -->
+    <!-- BOUTON RETOUR HUB -->
     <a href="../index.html" id="btn-retour-hub">
         &#11013; Retour au Hub
     </a>
@@ -199,12 +199,12 @@
             
             <hr style="border-color: rgba(255,255,255,0.1); margin: 25px 0;">
             
-            <input type="text" id="join-id" placeholder="Code de la partie (ex: DRW8369)">
+            <input type="text" id="join-id" placeholder="Code de la partie (ex: GAR8369)" style="text-transform: uppercase;">
             <input type="text" id="player-name" placeholder="Votre Pseudo">
             <button id="btn-join" class="btn-solid btn-pink ui-text" data-key="btnJoin">Rejoindre</button>
         </div>
 
-        <!-- LOBBY (Style Drawer Exact) -->
+        <!-- LOBBY -->
         <div id="lobby" style="display: none;">
             <h2 class="ui-text" data-key="configTitle">Configuration</h2>
             
@@ -315,12 +315,12 @@
                     vidSource.src = 'backgroundnight.mp4';
                     if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_NIGHT});
                 }
-                video.load(); video.play(); video.style.opacity = 0.2; // Opacité ajustée pour ui sombre
+                video.load(); video.play(); video.style.opacity = 0.2; 
             }, 500); 
         }
 
         // ==========================================
-        // 🌍 DICTIONNAIRE MULTILINGUE (Mise à jour UI Drawer)
+        // 🌍 DICTIONNAIRE MULTILINGUE
         // ==========================================
         const i18n = {
             fr: {
@@ -359,7 +359,7 @@
                     playersConnected: "Player connected:", dictLang: "Dictionary language",
                     cfgWolves: "Werewolves:", roleSeer: "Seer", roleWitch: "Witch", roleCupid: "Cupid", roleHunter: "Hunter",
                     btnStart: "Start Game", waitingHost: "Waiting for host to start...",
-                    actionInterface: "Actions", waiting: "Waiting for other players...", dead: "YOU ARE DEAD. Connection lost.",
+                    actionInterface: "Action", waiting: "Waiting for other players...", dead: "YOU ARE DEAD. Connection lost.",
                     sleep: "Close your eyes, the village goes to sleep...",
                     selectTarget: "Select a target:", healMsg: "Heal", poisonMsg: "Poison", skipMsg: "Skip",
                     loversLinked: "You are secretly bound to:"
@@ -383,7 +383,7 @@
         document.getElementById('lang-en').addEventListener('click', () => updateLang('en'));
 
         // ==========================================
-        // 🛠️ VARIABLES GLOBALES & UTILITAIRES
+        // 🛠️ VARIABLES GLOBALES & RÉSEAU
         // ==========================================
         let peer = null;
         let connections = []; 
@@ -404,10 +404,22 @@
             logArea.scrollTop = logArea.scrollHeight;
         }
 
-        function initPeer(callback) {
-            peer = new Peer();
-            peer.on('open', (id) => { if(callback) callback(id); });
-            peer.on('error', (err) => { alert("Erreur Réseau : " + err); });
+        // INIT PEER AVEC IDENTIFIANT CUSTOM
+        function initPeer(callback, customId = null) {
+            // Si l'hôte fournit un ID custom, on l'utilise
+            peer = customId ? new Peer(customId) : new Peer();
+            
+            peer.on('open', (id) => { 
+                if(callback) callback(id); 
+            });
+            
+            peer.on('error', (err) => { 
+                if (err.type === 'unavailable-id') {
+                    alert("Ce code serveur existe déjà ou est indisponible. Veuillez réessayer.");
+                } else {
+                    alert("Erreur Réseau : " + err); 
+                }
+            });
         }
 
         function broadcast(data) {
@@ -427,7 +439,12 @@
             connections.push({ isHost: true, name: "Host", role: null, isAlive: true, id: 'host' });
             updatePlayerListUI();
 
-            initPeer((id) => { document.getElementById('my-id').innerText = id; });
+            // Génération de l'identifiant GARxxxx
+            const roomId = 'GAR' + Math.floor(1000 + Math.random() * 9000);
+
+            initPeer((id) => { 
+                document.getElementById('my-id').innerText = id; 
+            }, roomId);
 
             peer.on('connection', (conn) => {
                 conn.on('data', (data) => {
@@ -449,13 +466,18 @@
         // ==========================================
         document.getElementById('btn-join').addEventListener('click', () => {
             initAudio(); 
-            const hostId = document.getElementById('join-id').value.trim();
+            const hostId = document.getElementById('join-id').value.trim().toUpperCase();
             myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
-            if(!hostId) return;
+            
+            if(!hostId) {
+                alert("Veuillez entrer un code de partie.");
+                return;
+            }
 
             menuDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
-            document.getElementById('waiting-host-msg').style.display = 'block'; // Affiche message d'attente client
+            document.getElementById('waiting-host-msg').style.display = 'block'; 
+            document.getElementById('my-id').innerText = hostId; // Montre le code qu'il a rejoint
 
             initPeer(() => {
                 const conn = peer.connect(hostId);
@@ -466,7 +488,6 @@
 
                 conn.on('data', (data) => {
                     if (data.type === 'lobby_update') {
-                        // document.getElementById('player-count').innerText = data.count;
                         generatePlayerBadges(data.list);
                     }
                     else if (data.type === 'game_start') {
@@ -496,7 +517,6 @@
             generatePlayerBadges(connections.map(c => c.name));
         }
 
-        // Génère le HTML pour les badges style "Drawer"
         function generatePlayerBadges(namesList) {
             const container = document.getElementById('players-list-container');
             container.innerHTML = namesList.map(n => `<span class="player-badge">${n}</span>`).join('');
