@@ -34,28 +34,18 @@
         }
 
         /* =========================================
-           2. BOUTON RETOUR AU HUB (DESIGN EXACT)
+           2. BOUTON RETOUR AU HUB
            ========================================= */
         #btn-retour-hub {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 9999;
+            position: fixed; top: 20px; left: 20px; z-index: 9999;
             background-color: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #e0e0e0;
-            padding: 8px 15px;
-            font-family: inherit;
-            font-size: 14px;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            color: #e0e0e0; padding: 8px 15px; font-family: inherit;
+            font-size: 14px; border-radius: 5px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
             transition: background-color 0.2s ease, border-color 0.2s ease;
             text-decoration: none;
         }
-
         #btn-retour-hub:hover {
             background-color: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.5);
@@ -85,6 +75,7 @@
         .score-board {
             display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: bold;
             color: var(--neon-green); text-shadow: 0 0 12px var(--neon-green); letter-spacing: 2px;
+            pointer-events: auto;
         }
 
         #menu-screen {
@@ -170,7 +161,7 @@
         }, { passive: false });
     </script>
 
-    <!-- BOUTON RETOUR HUB (Ajuste le href selon ton arborescence) -->
+    <!-- BOUTON RETOUR HUB -->
     <a href="../index.html" id="btn-retour-hub" title="Retour au Hub Global">
         &#11013; Retour au Hub
     </a>
@@ -187,11 +178,10 @@
         
         <div id="ui-layer">
             <div class="score-board">
-                <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; flex-direction: column; gap: 5px;">
                     <div id="status-text">MENU</div>
                     <div id="completion-text" style="color:var(--neon-yellow); display:none;">NIVEAU ACCOMPLI !</div>
                 </div>
-                <!-- AJOUT DES BLOCS DE SCORE QUI MANQUAIENT ICI -->
                 <div style="text-align: right; font-size: 1.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan);">
                     <div>SCORE: <span id="score" style="color: #fff;">0</span></div>
                     <div style="font-size: 1.1rem; color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink);">HI-SCORE: <span id="hi-score" style="color: #fff;">0</span></div>
@@ -242,7 +232,7 @@
         </div>
     </div>
 
-    <!-- MOTEUR COMPLET (SÉCURISÉ) -->
+    <!-- MOTEUR COMPLET ET CORRIGÉ -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -279,7 +269,6 @@
             let width, height;
             let gameState = 'START'; 
             
-            // Physique & Grille
             const GRID_SIZE = 50; 
             const GROUND_HEIGHT = 90;
             let gameSpeed = 500; 
@@ -291,14 +280,12 @@
             let score = 0;
             let hiScore = localStorage.getItem('slimeDashHiScore') || 0;
             
-            // Sécurité ajoutée pour vérifier l'existence de l'élément avant mise à jour
             const hiScoreElem = document.getElementById('hi-score');
             if (hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
 
             let particles = [];
             let shakeTimer = 0, shakeIntensity = 0;
 
-            // --- 3. GESTION SÉCURISÉE DES NIVEAUX ---
             let levelData = []; 
             let endlessLevelData = []; 
             let nextEndlessSpawnX = 0; 
@@ -384,15 +371,19 @@
             function triggerShake(duration, intensity) { shakeTimer = duration; shakeIntensity = intensity; }
 
             // --- 8. LOGIQUE GLOBALE DES ÉTATS ET ÉCOUTEURS MENUS ---
-            document.getElementById('btn-play-endless').addEventListener('click', () => { startGame('PLAYING_ENDLESS'); });
-            document.getElementById('btn-create-map').addEventListener('click', () => { startEditor(); });
+            document.getElementById('btn-play-endless').addEventListener('click', () => { 
+                console.log("Bouton Jouer cliqué !");
+                startGame('PLAYING_ENDLESS'); 
+            });
+            document.getElementById('btn-create-map').addEventListener('click', () => { 
+                startEditor(); 
+            });
             document.getElementById('btn-play-code').addEventListener('click', () => {
                 const sec = document.getElementById('code-section');
                 sec.style.display = sec.style.display === 'flex' ? 'none' : 'flex';
             });
 
             function startGame(mode) {
-                console.log("Game Starting Mode: ", mode); // Log de débug
                 initAudio();
                 gameState = mode;
                 menuScreen.style.display = 'none';
@@ -666,6 +657,21 @@
                     }
                 }
             }
+
+            // Ajout d'écouteurs globaux clavier/tactile pour sauter à tout moment en jeu
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' || e.code === 'ArrowUp') {
+                    if (gameState.startsWith('PLAYING')) {
+                        e.preventDefault();
+                        triggerJump();
+                    }
+                }
+            });
+            canvas.addEventListener('pointerdown', (e) => {
+                if (gameState.startsWith('PLAYING')) {
+                    triggerJump();
+                }
+            });
 
             function checkCollisions(activeLevelData) {
                 if (!activeLevelData || !Array.isArray(activeLevelData)) return;
