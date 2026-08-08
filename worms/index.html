@@ -717,20 +717,24 @@
                     this.state = 'air'; 
                 }
 
-                // ADAPTATION DYNAMIQUE AU CHEMIN (SQUISH)
-                let availableHeight = 0;
-                let checkY = Math.floor(this.y + this.radius - 5); // FIX: On évite de toucher le sol pour le calcul du plafond
-                while (availableHeight < 45 && !isSolid(this.x, checkY - availableHeight)) {
-                    availableHeight++;
-                }
-                
-                let targetScale = 1;
-                if (availableHeight < 40) {
-                    targetScale = Math.max(0.35, availableHeight / 40);
-                }
+                // --- NOUVELLE LOGIQUE D'ÉLASTICITÉ AU PLAFOND ---
+                let targetScale = 1; // Par défaut, taille normale
+
+                // 1. Détection d'impact physique immédiat
+                // On vérifie si le haut de sa "tête normale" (virtuelle à scale 1) touche un solide.
+                // Le radius de base est 12.
+                if (isSolid(this.x, this.y - 12)) {
+                    // Contact détecté ! On force la cible de rétrécissement.
+                    targetScale = 0.35; 
+                } 
+                // Note : J'ai supprimé la logique de proximity-scan qui rétrécissait 
+                // le slime quand il était posé au sol (détecté à tort comme un tunnel).
+                // Désormais, il ne rétrécit QU'EN CAS D'IMPACT au plafond.
+
+                // Appliquer l'interpolation (transition douce) vers la cible
                 if (!this.scale) this.scale = 1;
                 this.scale += (targetScale - this.scale) * 0.15;
-                this.radius = 12 * this.scale; // Suit parfaitement la taille visuelle
+                this.radius = 12 * this.scale; // Le radius de collision et dessin suit la taille visuelle
 
                 // Animations
                 if (this.state === 'walk') {
