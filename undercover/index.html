@@ -5,70 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber-Spy (Undercover)</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         :root {
             --bg: #0b0c10;
             --panel: rgba(31, 40, 51, 0.95);
+            --inner-bg: #0d1117;
             --cyan: #00f0ff;
             --pink: #ff007f;
             --teal: #45a29e;
             --text: #c5c6c7;
-            --font-main: 'Rajdhani', sans-serif;
+            --font-main: 'Rajdhani', 'Segoe UI', sans-serif;
         }
 
-        body {
-            font-family: var(--font-main);
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0; padding: 20px;
+        body, html {
+            margin: 0; padding: 0; width: 100%; min-height: 100vh;
+            background-color: var(--bg); color: var(--text);
+            font-family: var(--font-main); overflow-x: hidden;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh; overflow-x: hidden; user-select: none;
         }
 
-        h1 {
-            color: var(--cyan);
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin: 10px 0 25px 0;
+        /* Video Background */
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            z-index: -100; transform: translateX(-50%) translateY(-50%);
+            object-fit: cover; opacity: 0.2; transition: opacity 1s ease-in-out;
+        }
+
+        /* BOUTON RETOUR HUB */
+        .hub-link { 
+            position: fixed; top: 15px; left: 15px; 
+            color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; 
+            background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.2); z-index: 9999; 
+            transition: 0.2s; backdrop-filter: blur(5px);
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+
+        .main-title {
+            color: var(--cyan); text-transform: uppercase; letter-spacing: 4px;
+            margin-top: 20px; margin-bottom: 20px; font-size: 2.5em; font-weight: 700;
             text-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
-            font-size: 2.5em;
-            font-weight: 700;
         }
 
         .container {
             background: var(--panel);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            text-align: center;
             border: 1px solid rgba(0, 240, 255, 0.3);
-            max-width: 550px;
-            width: 100%;
-            box-sizing: border-box;
-            position: relative;
+            border-radius: 15px; padding: 30px; width: 90%; max-width: 550px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            margin-bottom: 40px; text-align: center; box-sizing: border-box;
         }
 
-        h2 { color: var(--cyan); text-transform: uppercase; letter-spacing: 2px; font-size: 1.5em; margin-top: 0; }
-        h3 { color: #fff; font-size: 1.2em; }
+        .no-swipe { touch-action: none; }
 
-        .input-box {
-            padding: 12px; margin: 10px 0;
-            border-radius: 8px; border: 1px solid var(--teal);
-            background: #111; color: #fff;
-            text-align: center; font-weight: bold; font-size: 1.1em;
-            width: 100%; box-sizing: border-box; font-family: var(--font-main);
-            outline: none; transition: 0.3s;
+        h2, h3 { color: var(--cyan); margin-top: 0; margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;}
+        
+        input[type="text"], input[type="number"] {
+            background: var(--inner-bg); border: 1px solid var(--teal);
+            color: #fff; padding: 12px; margin: 10px 0; width: 100%;
+            box-sizing: border-box; font-family: inherit; font-size: 1.1em;
+            border-radius: 8px; outline: none; transition: 0.3s; text-align: center; font-weight: bold;
         }
-        .input-box:focus { border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        input:focus { border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
 
         .btn {
-            background: var(--cyan); color: #000; border: none;
-            padding: 15px 25px; font-weight: bold; font-size: 1.1em;
-            border-radius: 8px; cursor: pointer; text-transform: uppercase;
-            margin: 10px 0; width: 100%; transition: 0.2s;
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-            font-family: var(--font-main); letter-spacing: 1px;
+            width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px;
+            font-size: 1.1em; font-weight: bold; text-transform: uppercase;
+            cursor: pointer; transition: 0.2s; font-family: inherit;
+            background: var(--cyan); color: #000; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+            letter-spacing: 1px;
         }
         .btn:hover { transform: scale(1.02); box-shadow: 0 0 20px var(--cyan); background: #fff; }
         
@@ -78,69 +83,52 @@
         .btn-green { background: var(--teal); color: #000; box-shadow: 0 0 10px rgba(69, 162, 158, 0.3); }
         .btn-green:hover { background: #fff; box-shadow: 0 0 20px var(--teal); }
 
-        .screen { display: none; }
-        .active-screen { display: block; }
+        .lang-selector { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
+        .lang-btn { 
+            background: transparent; border: none; font-size: 2rem; 
+            cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 0;
+            filter: grayscale(100%);
+        }
+        .lang-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 10px rgba(255,255,255,0.5)); transform: scale(1.1); }
+
+        .share-code-text { font-size: 1.1em; color: #aaa; margin-bottom: 20px; }
+        .share-code-val { color: var(--cyan); font-weight: bold; font-size: 1.4em; letter-spacing: 2px; user-select: all; }
+
+        .player-box {
+            background: var(--inner-bg);
+            border: 1px solid var(--teal);
+            border-radius: 8px; padding: 15px; margin-bottom: 20px;
+            text-align: center;
+        }
+        .player-box h4 { margin: 0 0 15px 0; color: #fff; font-weight: 500; }
         
-        /* Game elements */
-        .word-display {
-            font-size: 1.8em; letter-spacing: 2px; font-weight: bold;
-            color: var(--cyan); text-align: center;
-            background: #111; padding: 15px; border-radius: 8px;
-            border: 1px solid var(--teal); margin: 15px 0;
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+        .players-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .player-badge {
+            background: #222; border: 1px solid var(--teal); color: #fff;
+            padding: 6px 12px; border-radius: 6px; font-size: 1em; font-weight: bold;
         }
 
-        .status-msg { color: var(--pink); font-size: 1.1em; font-weight: bold; margin: 15px 0; min-height: 1.5em; }
-
-        /* Player Lists */
-        .player-list { list-style: none; padding: 0; text-align: left; margin: 15px 0; }
-        .player-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px;
-            border-left: 4px solid var(--teal); margin-bottom: 8px; font-size: 1.1em;
+        .config-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; 
+            background: var(--inner-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;
         }
-        .player-name { color: #fff; font-weight: bold; }
-        .player-status { font-size: 0.9em; }
-        .status-host { color: var(--cyan); }
-        .status-ready { color: var(--teal); }
-        .status-eliminated { color: #555; text-decoration: line-through; }
-        .status-speaking { color: var(--pink); font-weight: bold; }
+        .checkbox-group { display: flex; align-items: center; justify-content: space-between; font-size: 0.95em; }
+        input[type="checkbox"] { accent-color: var(--pink); width: 18px; height: 18px; }
 
-        /* Chat Area */
-        #chat-area {
-            height: 180px; overflow-y: auto;
-            border: 1px solid var(--teal); background: rgba(0,0,0,0.5);
-            border-radius: 8px; margin-top: 15px; padding: 12px;
-            text-align: left; font-size: 1em;
-            display: flex; flex-direction: column-reverse;
+        #game-area { display: none; }
+        .role-card {
+            border: 2px solid var(--cyan); padding: 20px; margin: 20px 0;
+            box-shadow: 0 0 20px rgba(0,240,255,0.2); background: var(--inner-bg); border-radius: 8px;
         }
-        .chat-msg { margin-bottom: 8px; line-height: 1.4; }
-        .chat-system { color: var(--pink); font-weight: bold; text-align: center; }
-        .chat-player { color: var(--cyan); font-weight: bold; }
-        .chat-eliminated { color: #555; font-style: italic; }
-
-        #chat-input-area { display: flex; gap: 8px; margin-top: 10px; display: none; }
-        #chat-input { flex: 1; margin: 0; }
-        #btn-send-desc { width: 35%; margin: 0; }
-
-        /* Voting Area */
-        #voting-zone { margin-top: 20px; display: none; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; }
-        .vote-btn {
-            background: #222; border: 1px solid var(--pink); color: var(--pink);
-            margin: 5px; padding: 10px 20px; font-size: 1em; border-radius: 6px;
-            cursor: pointer; font-family: var(--font-main); font-weight: bold; transition: 0.2s;
+        .role-img { max-width: 100px; display: block; margin: 0 auto 15px; filter: drop-shadow(0 0 10px var(--cyan)); }
+        
+        .sys-log {
+            font-size: 0.9em; font-family: 'Courier New', monospace; color: var(--teal);
+            background: #000; padding: 10px; border-radius: 5px; height: 100px;
+            overflow-y: auto; text-align: left; border: 1px solid var(--teal); margin-top: 20px;
         }
-        .vote-btn:hover:not(:disabled) { background: var(--pink); color: #fff; box-shadow: 0 0 15px var(--pink); }
 
-        .hub-link {
-            position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.7);
-            text-decoration: none; font-weight: bold; background: rgba(0,0,0,0.6);
-            padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
-            z-index: 100; transition: 0.2s;
-        }
-        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--cyan); }
-
-        hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0; }
+        #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--yellow); padding: 20px; border-radius: 8px; background: var(--inner-bg);}
     </style>
 </head>
 <body>
@@ -156,7 +144,7 @@
             <input type="text" id="player-name" class="input-box" placeholder="Votre Pseudo Hacker" maxlength="12">
             <button class="btn" id="btn-host">Créer une table (Hôte)</button>
             <hr>
-            <input type="text" id="join-id" class="input-box" placeholder="ID de la table">
+            <input type="text" id="join-id" class="input-box" placeholder="Code de la partie (ex: SPY5945)" style="text-transform: uppercase;">
             <button class="btn btn-pink" id="btn-join">Rejoindre</button>
             <p class="status-msg" id="login-error"></p>
         </div>
@@ -164,15 +152,40 @@
         <!-- 2. Screen: Lobby -->
         <div id="screen-lobby" class="screen">
             <h2>Configuration</h2>
-            <p style="font-size: 1.1em; color: #aaa;">Partagez ce code aux joueurs : <br><b id="my-id" style="color: var(--cyan); font-size: 1.4em; user-select: all;">...</b></p>
+            <p class="share-code-text">
+                Partagez ce code aux joueurs :<br>
+                <span id="my-id" class="share-code-val">Génération...</span>
+            </p>
             
-            <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border: 1px solid var(--teal); margin: 20px 0;">
-                <h3 style="margin-top:0;">Hackers Connectés (<span id="player-count">0</span>/6)</h3>
-                <ul id="lobby-players-list" class="player-list" style="margin:0;"></ul>
+            <div class="player-box">
+                <h4>Hackers Connectés</h4>
+                <div id="players-list-container" class="players-container">
+                    <span class="player-badge">Toi</span>
+                </div>
             </div>
 
-            <p class="status-msg">Minimum 3 joueurs pour lancer.</p>
-            <button class="btn btn-green" id="btn-start" style="display:none;">Lancer le Hack</button>
+            <p style="color: #fff; font-weight: 500; margin-bottom: 5px;">Langue du dictionnaire</p>
+            <div class="lang-selector">
+                <button id="lang-fr" class="lang-btn active" title="Français">🇫🇷</button>
+                <button id="lang-en" class="lang-btn" title="English">🇬🇧</button>
+            </div>
+
+            <div id="host-config" style="display: none;">
+                <div class="config-grid">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <label>Garous :</label>
+                        <input type="number" id="cfg-wolves" value="1" min="1" max="3" style="width: 60px; margin: 0; padding: 8px;">
+                    </div>
+                    <div class="checkbox-group"><label>Voyante</label><input type="checkbox" id="cfg-seer" checked></div>
+                    <div class="checkbox-group"><label>Sorcière</label><input type="checkbox" id="cfg-witch" checked></div>
+                    <div class="checkbox-group"><label>Cupidon</label><input type="checkbox" id="cfg-cupid"></div>
+                    <div class="checkbox-group"><label>Chasseur</label><input type="checkbox" id="cfg-hunter"></div>
+                </div>
+                
+                <p id="min-players-msg" style="color: var(--pink); font-size: 0.9em;">(En attente d'au moins 3 joueurs)</p>
+                <button id="btn-start" class="btn btn-green" style="display:none;">Lancer la partie</button>
+            </div>
+            <p id="waiting-host-msg" style="color: gray; display:none;">En attente de l'hôte...</p>
         </div>
 
         <!-- 3. Screen: Game -->
@@ -431,8 +444,11 @@
             const pseudo = document.getElementById('player-name').value.trim();
             if(!pseudo) { loginErr.innerText = "Pseudo requis."; return; }
 
+            isHost = true;
+            // Génération du code au format SPY + 4 chiffres aléatoires
+            const roomId = 'SPY' + Math.floor(1000 + Math.random() * 9000);
+
             initPeer(pseudo, (id) => {
-                isHost = true;
                 hostId = id;
                 document.getElementById('my-id').innerText = id;
                 showScreen('screen-lobby');
@@ -448,7 +464,7 @@
                     votesReceived: 0
                 }];
                 updateLobbyUI(players);
-            });
+            }, roomId);
         });
 
         function handleHostIncomingConnection(conn) {
@@ -651,7 +667,6 @@
             gameLogic.roundNumber++;
             gameLogic.turnIndex = 0;
             
-            // Ne garder que les vivants pour les tours de parole
             gameLogic.turnOrder = players.filter(p => p.isAlive).map(p => p.id);
 
             broadcast({ type: 's_start_descriptions', round: gameLogic.roundNumber });
@@ -825,7 +840,6 @@
                 return;
             }
 
-            // Élimination de la cible
             target.isAlive = false;
             addChatMsg("SYSTÈME", `${target.pseudo} a été éjecté(e) du réseau (${maxVotes} votes).`, 'system');
             
@@ -861,7 +875,6 @@
             const aliveCivils = alive.filter(p => p.role === ROLES.CIVIL);
             const glitch = alive.find(p => p.role === ROLES.GLITCH);
 
-            // 1. Si le Glitch (Mr. White) est éliminé
             if (eliminatedPlayer.role === ROLES.GLITCH) {
                 if (aliveUndercovers.length === 0) {
                     hostGameOver('civils_win', "Le Glitch a été éliminé et il n'y a plus d'Undercover ! Victoire des Civils.");
@@ -869,10 +882,8 @@
                 }
             }
 
-            // 2. Si tous les Undercovers sont morts
             if (aliveUndercovers.length === 0) {
                 if (glitch) {
-                    // Le Glitch a une chance de deviner le mot
                     hostLaunchGlitchGuess(glitch);
                 } else {
                     hostGameOver('civils_win', "Tous les Undercovers ont été éliminés ! Victoire des Civils.");
@@ -880,13 +891,11 @@
                 return;
             }
 
-            // 3. Si les Undercovers sont en nombre égal ou supérieur aux Civils
             if (aliveUndercovers.length >= aliveCivils.length) {
                 hostGameOver('undercover_win', "Les Undercovers contrôlent le réseau ! Victoire des Anomalies.");
                 return;
             }
 
-            // Sinon la partie continue
             setTimeout(hostStartDescriptionPhase, 4000);
         }
 
@@ -903,7 +912,6 @@
             const myPlayer = players.find(p => p.peerId === myId);
 
             if (myPlayer && myPlayer.id === glitchPlayerId) {
-                // C'est moi le glitch !
                 setStatus("DERNIÈRE CHANCE : Devinez le mot civil !", true);
                 const glitchZone = document.getElementById('glitch-guess-zone');
                 glitchZone.style.display = 'block';
