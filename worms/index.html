@@ -719,7 +719,7 @@
 
                 // ADAPTATION DYNAMIQUE AU CHEMIN (SQUISH)
                 let availableHeight = 0;
-                let checkY = Math.floor(this.y + this.radius);
+                let checkY = Math.floor(this.y + this.radius - 5); // FIX: On évite de toucher le sol pour le calcul du plafond
                 while (availableHeight < 45 && !isSolid(this.x, checkY - availableHeight)) {
                     availableHeight++;
                 }
