@@ -3,206 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber-Spy Multiplayer (Undercover)</title>
+    <title>Cyber-Spy (Undercover)</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0b0c10;
-            --container-bg: rgba(10, 13, 16, 0.95);
-            --neon-cyan: #00f0ff;
-            --neon-pink: #ff007f;
-            --neon-green: #39ff14;
-            --neon-yellow: #ffea00;
-            --text-color: #e0e0e0;
-            --font-main: 'Courier New', Courier, monospace;
+            --bg: #0b0c10;
+            --panel: rgba(31, 40, 51, 0.95);
+            --cyan: #00f0ff;
+            --pink: #ff007f;
+            --teal: #45a29e;
+            --text: #c5c6c7;
+            --font-main: 'Rajdhani', sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
             font-family: var(--font-main);
-            margin: 0; padding: 0;
-            display: flex; align-items: center; justify-content: center;
-            min-height: 100vh;
-            text-align: center;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; overflow-x: hidden; user-select: none;
         }
 
-        /* Scrollbar style */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #050505; }
-        ::-webkit-scrollbar-thumb { background: var(--neon-pink); }
-
-        h1, h2, h3 { text-transform: uppercase; letter-spacing: 2px; margin-top: 0; }
-        h1 { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); font-size: 24px; }
-        h2 { color: var(--neon-pink); font-size: 18px; }
-        h3 { color: var(--text-color); font-size: 16px; }
+        h1 {
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin: 10px 0 25px 0;
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+            font-size: 2.5em;
+            font-weight: 700;
+        }
 
         .container {
-            background: var(--container-bg);
-            border: 2px solid var(--neon-cyan);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
-            padding: 20px;
-            border-radius: 5px;
-            width: 90%; max-width: 450px;
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            text-align: center;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            max-width: 550px;
+            width: 100%;
             box-sizing: border-box;
             position: relative;
         }
-        
-        .container::before {
-            content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
-            border: 2px solid var(--neon-pink); border-radius: 5px;
-            z-index: -1; animation: neon-respawn 3s infinite alternate;
-        }
 
-        @keyframes neon-respawn { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        h2 { color: var(--cyan); text-transform: uppercase; letter-spacing: 2px; font-size: 1.5em; margin-top: 0; }
+        h3 { color: #fff; font-size: 1.2em; }
 
-        input, button {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            padding: 12px; margin: 8px 0;
-            width: 100%; box-sizing: border-box;
-            font-family: inherit; font-size: 14px;
+        .input-box {
+            padding: 12px; margin: 10px 0;
+            border-radius: 8px; border: 1px solid var(--teal);
+            background: #111; color: #fff;
+            text-align: center; font-weight: bold; font-size: 1.1em;
+            width: 100%; box-sizing: border-box; font-family: var(--font-main);
             outline: none; transition: 0.3s;
         }
+        .input-box:focus { border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
 
-        input:focus { border-color: var(--neon-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.5); }
+        .btn {
+            background: var(--cyan); color: #000; border: none;
+            padding: 15px 25px; font-weight: bold; font-size: 1.1em;
+            border-radius: 8px; cursor: pointer; text-transform: uppercase;
+            margin: 10px 0; width: 100%; transition: 0.2s;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+            font-family: var(--font-main); letter-spacing: 1px;
+        }
+        .btn:hover { transform: scale(1.02); box-shadow: 0 0 20px var(--cyan); background: #fff; }
+        
+        .btn-pink { background: var(--pink); color: #fff; box-shadow: 0 0 10px rgba(255, 0, 127, 0.3); }
+        .btn-pink:hover { background: #fff; color: #000; box-shadow: 0 0 20px var(--pink); }
 
-        button { cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
-        button:hover { background: var(--neon-cyan); color: var(--bg-color); box-shadow: 0 0 10px var(--neon-cyan); }
-        button:disabled { border-color: #555; color: #555; cursor: not-allowed; background: transparent; }
+        .btn-green { background: var(--teal); color: #000; box-shadow: 0 0 10px rgba(69, 162, 158, 0.3); }
+        .btn-green:hover { background: #fff; box-shadow: 0 0 20px var(--teal); }
 
         .screen { display: none; }
         .active-screen { display: block; }
         
         /* Game elements */
         .word-display {
-            font-size: 20px; color: var(--neon-green);
-            text-shadow: 0 0 10px var(--neon-green);
-            margin: 15px 0; padding: 15px;
-            border: 1px dashed var(--neon-green);
-            background: rgba(0, 255, 0, 0.05);
+            font-size: 1.8em; letter-spacing: 2px; font-weight: bold;
+            color: var(--cyan); text-align: center;
+            background: #111; padding: 15px; border-radius: 8px;
+            border: 1px solid var(--teal); margin: 15px 0;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
         }
 
-        .status-msg { color: var(--neon-yellow); font-size: 13px; margin: 10px 0; min-height: 1.2em;}
+        .status-msg { color: var(--pink); font-size: 1.1em; font-weight: bold; margin: 15px 0; min-height: 1.5em; }
 
         /* Player Lists */
-        .player-list { list-style: none; padding: 0; text-align: left; margin: 10px 0; }
+        .player-list { list-style: none; padding: 0; text-align: left; margin: 15px 0; }
         .player-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 8px; border-bottom: 1px solid #222; font-size: 14px;
+            background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px;
+            border-left: 4px solid var(--teal); margin-bottom: 8px; font-size: 1.1em;
         }
-        .player-name { color: var(--text-color); }
-        .player-status { font-size: 12px; }
-        .status-host { color: var(--neon-cyan); }
-        .status-ready { color: var(--neon-green); }
+        .player-name { color: #fff; font-weight: bold; }
+        .player-status { font-size: 0.9em; }
+        .status-host { color: var(--cyan); }
+        .status-ready { color: var(--teal); }
         .status-eliminated { color: #555; text-decoration: line-through; }
-        .status-speaking { animation: alert-blink 1s infinite; color: var(--neon-yellow); }
+        .status-speaking { color: var(--pink); font-weight: bold; }
 
         /* Chat Area */
         #chat-area {
-            height: 200px; overflow-y: auto;
-            border: 1px solid #333; background: rgba(0,0,0,0.3);
-            margin-top: 15px; padding: 10px;
-            text-align: left; font-size: 13px;
-            display: flex; flex-direction: column-reverse; /* Newest at bottom */
+            height: 180px; overflow-y: auto;
+            border: 1px solid var(--teal); background: rgba(0,0,0,0.5);
+            border-radius: 8px; margin-top: 15px; padding: 12px;
+            text-align: left; font-size: 1em;
+            display: flex; flex-direction: column-reverse;
         }
-        .chat-msg { margin-bottom: 6px; line-height: 1.4; }
-        .chat-system { color: var(--neon-yellow); font-style: italic; }
-        .chat-player { color: var(--neon-cyan); font-weight: bold; }
-        .chat-eliminated { color: #555; font-style: italic;}
+        .chat-msg { margin-bottom: 8px; line-height: 1.4; }
+        .chat-system { color: var(--pink); font-weight: bold; text-align: center; }
+        .chat-player { color: var(--cyan); font-weight: bold; }
+        .chat-eliminated { color: #555; font-style: italic; }
 
-        #chat-input-area { display: flex; gap: 5px; display: none; }
-        #btn-send-desc { width: 30%; }
+        #chat-input-area { display: flex; gap: 8px; margin-top: 10px; display: none; }
+        #chat-input { flex: 1; margin: 0; }
+        #btn-send-desc { width: 35%; margin: 0; }
 
         /* Voting Area */
-        #voting-zone { margin-top: 15px; display: none; border-top: 1px solid var(--neon-pink); padding-top: 10px;}
+        #voting-zone { margin-top: 20px; display: none; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; }
         .vote-btn {
-            background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink);
-            margin: 4px; width: auto; padding: 8px 15px; font-size: 12px;
+            background: #222; border: 1px solid var(--pink); color: var(--pink);
+            margin: 5px; padding: 10px 20px; font-size: 1em; border-radius: 6px;
+            cursor: pointer; font-family: var(--font-main); font-weight: bold; transition: 0.2s;
         }
-        .vote-btn:hover:not(:disabled) { background: var(--neon-pink); color: white; }
+        .vote-btn:hover:not(:disabled) { background: var(--pink); color: #fff; box-shadow: 0 0 15px var(--pink); }
 
-        @keyframes alert-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        hr { border: 0; border-top: 1px solid #333; margin: 15px 0; }
+        .hub-link {
+            position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.7);
+            text-decoration: none; font-weight: bold; background: rgba(0,0,0,0.6);
+            padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
+            z-index: 100; transition: 0.2s;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--cyan); }
+
+        hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0; }
     </style>
 </head>
 <body>
 
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    <h1>Cyber-Spy</h1>
+
     <div class="container no-swipe">
-        <h1>&gt; Cyber-Spy.exe</h1>
         
         <!-- 1. Screen: Login -->
         <div id="screen-login" class="screen active-screen">
-            <h2>Initialisation Connexion</h2>
-            <input type="text" id="player-name" placeholder="Entrez votre Pseudonyme Hacker" maxlength="12">
-            <button id="btn-host">Créer Réseau (Hôte)</button>
+            <h2>Connexion Réseau</h2>
+            <input type="text" id="player-name" class="input-box" placeholder="Votre Pseudo Hacker" maxlength="12">
+            <button class="btn" id="btn-host">Créer une table (Hôte)</button>
             <hr>
-            <input type="text" id="join-id" placeholder="ID Réseau à rejoindre">
-            <button id="btn-join">Rejoindre Réseau</button>
+            <input type="text" id="join-id" class="input-box" placeholder="ID de la table">
+            <button class="btn btn-pink" id="btn-join">Rejoindre</button>
             <p class="status-msg" id="login-error"></p>
         </div>
 
         <!-- 2. Screen: Lobby -->
         <div id="screen-lobby" class="screen">
-            <h2>Salle d'attente</h2>
-            <p id="lobby-id-display" style="font-size:12px; word-break:break-all; color:gray;">ID: <span id="my-id" style="color: var(--neon-cyan);">...</span></p>
-            <h3>Hackers Connectés (<span id="player-count">0</span>/6)</h3>
-            <ul id="lobby-players-list" class="player-list">
-                <!-- <li class="player-item"><span class="player-name">Toi</span><span class="player-status status-host">[HÔTE]</span></li> -->
-            </ul>
+            <h2>Configuration</h2>
+            <p style="font-size: 1.1em; color: #aaa;">Partagez ce code aux joueurs : <br><b id="my-id" style="color: var(--cyan); font-size: 1.4em; user-select: all;">...</b></p>
+            
+            <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border: 1px solid var(--teal); margin: 20px 0;">
+                <h3 style="margin-top:0;">Hackers Connectés (<span id="player-count">0</span>/6)</h3>
+                <ul id="lobby-players-list" class="player-list" style="margin:0;"></ul>
+            </div>
+
             <p class="status-msg">Minimum 3 joueurs pour lancer.</p>
-            <button id="btn-start" style="display:none; border-color: var(--neon-green); color: var(--neon-green);">Lancer le Hack</button>
+            <button class="btn btn-green" id="btn-start" style="display:none;">Lancer le Hack</button>
         </div>
 
         <!-- 3. Screen: Game -->
         <div id="screen-game" class="screen">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>Infiltration en cours</h2>
-                <span id="game-player-rpc" style="font-size:12px; color:var(--neon-pink);"></span>
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px 15px; border-radius:8px; border:1px solid var(--teal); margin-bottom:15px;">
+                <h2 style="margin:0; font-size:1.2em;">Infiltration</h2>
+                <span id="game-player-rpc" style="color:var(--pink); font-weight:bold;"></span>
             </div>
             
             <div id="role-setup">
-                <p>Analyse des données...</p>
-                <button id="btn-reveal-role">Décrypter mon rôle</button>
+                <p style="color:#aaa;">Analyse des données en cours...</p>
+                <button class="btn" id="btn-reveal-role">Décrypter mon rôle</button>
             </div>
 
             <div id="role-display" style="display:none;">
-                <p style="font-size:12px; margin-bottom:5px;">Vos données décryptées :</p>
+                <p style="margin:0; font-size:0.9em; color:#aaa;">Vos données décryptées :</p>
                 <div id="secret-word" class="word-display">...</div>
             </div>
 
             <p class="status-msg" id="game-status">Attente des autres hackers...</p>
             
             <!-- Zone d'élimination / Vote spéciale Glitch -->
-            <div id="glitch-guess-zone" style="display:none; border: 1px solid var(--neon-yellow); padding: 10px; background:rgba(255,234,0,0.1);">
-                <p style="color:var(--neon-yellow);">TU ES LE GLITCH. Devine le mot des Civils :</p>
-                <input type="text" id="glitch-guess-input" placeholder="Votre pronostic...">
-                <button id="btn-glitch-submit" style="border-color:var(--neon-yellow); color:var(--neon-yellow);">Soumettre</button>
+            <div id="glitch-guess-zone" style="display:none; border: 1px solid var(--neon-yellow); padding: 15px; border-radius: 8px; background:rgba(255,234,0,0.05); margin-bottom:15px;">
+                <p style="color:#ffea00; font-weight:bold; margin-top:0;">TU ES LE GLITCH. Devine le mot des Civils :</p>
+                <input type="text" id="glitch-guess-input" class="input-box" placeholder="Votre pronostic...">
+                <button class="btn" id="btn-glitch-submit" style="background:#ffea00; color:#000;">Soumettre</button>
             </div>
 
-            <!-- Liste des joueurs pour le suivi du tour et des éliminations -->
-            <ul id="game-players-list" class="player-list" style="max-height: 120px; overflow-y: auto;"></ul>
+            <!-- Liste des joueurs pour le suivi -->
+            <ul id="game-players-list" class="player-list" style="max-height: 130px; overflow-y: auto;"></ul>
 
             <!-- Chat / Descriptions -->
             <div id="chat-area"></div>
             <div id="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Décrivez votre mot..." maxlength="50">
-                <button id="btn-send-desc">Envoyer</button>
+                <input type="text" id="chat-input" class="input-box" placeholder="Décrivez votre mot..." maxlength="50">
+                <button class="btn btn-pink" id="btn-send-desc">Envoyer</button>
             </div>
 
             <!-- Zone de Vote -->
             <div id="voting-zone">
-                <h3>VOTEZ : Identifier l'Anomalie</h3>
+                <h3 style="color:var(--pink);">VOTEZ : Identifier l'Anomalie</h3>
                 <div id="vote-buttons-container"></div>
             </div>
         </div>
     </div>
 
-    <!-- On charge le dictionnaire externe ici -->
+    <!-- Chargement du dictionnaire de mots externe -->
     <script src="mots.js"></script>
 
-    <!-- Code logique du jeu -->
     <script>
         const ROLES = { CIVIL: 'Civil', UNDERCOVER: 'Undercover', GLITCH: 'Glitch' };
         const GAME_PHASES = { LOBBY: 1, ROLE_REVEAL: 2, DESCRIPTION: 3, VOTING: 4, GLITCH_GUESS: 5, END: 6 };
@@ -258,13 +277,12 @@
             myPseudo = pseudo || "Hacker_" + Math.floor(Math.random()*1000);
             
             loginErr.innerText = "Initialisation du protocole PeerJS...";
-            loginErr.style.color = "var(--neon-cyan)";
+            loginErr.style.color = "var(--cyan)";
 
             peer = new Peer(undefined, { debug: 1 });
 
             peer.on('open', (id) => {
                 myId = id;
-                console.log('ID Réseau généré : ' + id);
                 loginErr.innerText = "";
                 callback(id);
             });
@@ -276,7 +294,7 @@
                 if(err.type === 'peer-unavailable') friendlyMsg = "Réseau hôte introuvable.";
                 if(err.type === 'network') friendlyMsg = "Erreur déconnexion.";
                 loginErr.innerText = friendlyMsg;
-                loginErr.style.color = "var(--neon-pink)";
+                loginErr.style.color = "var(--pink)";
             });
 
             peer.on('connection', (conn) => {
@@ -307,25 +325,22 @@
         document.getElementById('btn-join').addEventListener('click', () => {
             const pseudo = document.getElementById('player-name').value.trim();
             if(!pseudo) { loginErr.innerText = "Pseudo requis."; return; }
-            const targetId = document.getElementById('join-id').value.trim();
+            const targetId = document.getElementById('join-id').value.trim().toUpperCase();
             if(!targetId) { loginErr.innerText = "ID Réseau requis."; return; }
 
             initPeer(pseudo, (id) => {
                 hostId = targetId;
                 isHost = false;
-                console.log(`Tentative de connexion à l'hôte: ${targetId}`);
                 loginErr.innerText = "Connexion au réseau hôte...";
-                loginErr.style.color = "var(--neon-green)";
+                loginErr.style.color = "var(--teal)";
 
                 const conn = peer.connect(targetId);
-                
                 setupClientConnectionEvents(conn);
             });
         });
 
         function setupClientConnectionEvents(conn) {
             conn.on('open', () => {
-                console.log('Connecté à l\'hôte. Envoi handshake.');
                 conn.send({ type: 'c_handshake', pseudo: myPseudo });
             });
 
@@ -335,14 +350,11 @@
 
             conn.on('close', () => {
                 addChatMsg("SYSTÈME", "Connexion perdue avec l'hôte.", 'system');
-                setStatus("DÉCONNECTÉ", true);
                 setTimeout(()=> location.reload(), 3000);
             });
         }
 
         function handleClientIncomingData(data, conn) {
-            console.log("Client reçu:", data.type, data);
-            
             switch (data.type) {
                 case 's_handshake_ok':
                     isHost = false;
@@ -440,8 +452,6 @@
         });
 
         function handleHostIncomingConnection(conn) {
-            console.log('Hôte : Nouvelle connexion entrante de ' + conn.peer);
-            
             if (players.length >= 6) {
                 conn.on('open', () => conn.send({ type: 's_error', message: 'Serveur plein (Max 6).' }));
                 setTimeout(() => conn.close(), 1000);
@@ -455,8 +465,6 @@
             }
 
             conn.on('data', (data) => {
-                console.log("Hôte reçu:", data.type, data);
-                
                 if (data.type === 'c_handshake') {
                     const newPlayer = {
                         id: players.length,
@@ -487,9 +495,8 @@
             });
 
             conn.on('close', () => {
-                console.log('Connexion fermée avec ' + conn.peer);
                 if (gameLogic.phase && gameLogic.phase !== GAME_PHASES.LOBBY && gameLogic.phase !== GAME_PHASES.END) {
-                    broadcast({type: 's_error', message: 'Un hacker a quitté le réseau. Protocole corrompu.'});
+                    broadcast({type: 's_error', message: 'Un hacker a quitté le réseau.'});
                     setTimeout(()=> location.reload(), 2000);
                 } else {
                     players = players.filter(p => p.peerId !== conn.peer);
@@ -519,13 +526,7 @@
                 const li = document.createElement('li');
                 li.classList.add('player-item');
                 
-                let statusSpan = "";
-                if (p.isHost) {
-                    statusSpan = `<span class="player-status status-host">[HÔTE]</span>`;
-                } else {
-                    statusSpan = `<span class="player-status status-ready">[CONNECTÉ]</span>`;
-                }
-                
+                let statusSpan = p.isHost ? `<span class="player-status status-host">[HÔTE]</span>` : `<span class="player-status status-ready">[CONNECTÉ]</span>`;
                 li.innerHTML = `<span class="player-name">${p.pseudo}</span>${statusSpan}`;
                 listUI.appendChild(li);
             });
@@ -533,9 +534,8 @@
 
         document.getElementById('btn-start').addEventListener('click', () => {
             if (!isHost || players.length < 3) return;
-            // Sécurité : vérifier si la liste externe est bien chargée
             if (typeof wordPairs === 'undefined' || wordPairs.length === 0) {
-                alert("Erreur: La liste externe 'mots.js' n'est pas chargée ou est vide.");
+                alert("Erreur: Le dictionnaire 'mots.js' est introuvable.");
                 return;
             }
             launchGameProtocol();
@@ -543,8 +543,6 @@
 
         function launchGameProtocol() {
             gameLogic.roundNumber = 0;
-            
-            // Sélectionner Mots (depuis mots.js chargé à l'hôte)
             const pair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
             gameLogic.currentPair = pair;
             
@@ -556,19 +554,12 @@
                 gameLogic.undercoverWord = pair[0];
             }
 
-            console.log("Mots:", gameLogic.civilWord, "(Civil) /", gameLogic.undercoverWord, "(Underc.)");
-
             const n = players.length;
             let rolesDeck = [];
             rolesDeck.push(ROLES.UNDERCOVER);
-            
-            if (n >= 5) {
-                rolesDeck.push(ROLES.GLITCH);
-            }
+            if (n >= 5) rolesDeck.push(ROLES.GLITCH);
 
-            while (rolesDeck.length < n) {
-                rolesDeck.push(ROLES.CIVIL);
-            }
+            while (rolesDeck.length < n) rolesDeck.push(ROLES.CIVIL);
 
             for (let i = rolesDeck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -581,7 +572,7 @@
             });
 
             gameLogic.turnOrder = players.map(p => p.id);
-             for (let i = gameLogic.turnOrder.length - 1; i > 0; i--) {
+            for (let i = gameLogic.turnOrder.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [gameLogic.turnOrder[i], gameLogic.turnOrder[j]] = [gameLogic.turnOrder[j], gameLogic.turnOrder[i]];
             }
@@ -589,12 +580,7 @@
             gameLogic.phase = GAME_PHASES.ROLE_REVEAL;
 
             const cleanPlayerList = players.map(p => ({ id: p.id, pseudo: p.pseudo, isAlive: true }));
-            
-            broadcast({ 
-                type: 's_game_setup', 
-                playerList: cleanPlayerList,
-                turnOrder: gameLogic.turnOrder
-            });
+            broadcast({ type: 's_game_setup', playerList: cleanPlayerList, turnOrder: gameLogic.turnOrder });
 
             showScreen('screen-game');
             setupGameUI();
@@ -603,10 +589,9 @@
                 let wordToSend = "";
                 if (p.role === ROLES.CIVIL) wordToSend = gameLogic.civilWord;
                 if (p.role === ROLES.UNDERCOVER) wordToSend = gameLogic.undercoverWord;
-                if (p.role === ROLES.GLITCH) wordToSend = "TU EST LE GLITCH. Fais semblant.";
+                if (p.role === ROLES.GLITCH) wordToSend = "TU ES LE GLITCH. Fais semblant.";
 
                 const roleData = { type: 's_role_data', word: wordToSend };
-                
                 if (p.id === 0) {
                     document.getElementById('role-setup').style.display = 'none';
                     document.getElementById('role-display').style.display = 'block';
@@ -617,7 +602,6 @@
             });
 
             addChatMsg("SYSTÈME", "Hack lancé. Décryptez vos rôles.", "system");
-            
             setTimeout(hostStartDescriptionPhase, 6000);
         }
 
@@ -648,19 +632,13 @@
                 if (!p.isAlive) li.classList.add('status-eliminated');
 
                 let nameSpan = `<span class="player-name">${p.pseudo}</span>`;
-                
-                let statusStr = "";
-                if (!p.isAlive) {
-                    statusStr = `<span class="player-status status-eliminated">[DÉCONNECTÉ]</span>`;
-                } else if (gameLogic.phase === GAME_PHASES.DESCRIPTION) {
+                let statusStr = !p.isAlive ? `<span class="player-status status-eliminated">[DÉCONNECTÉ]</span>` : `<span class="player-status">[EN LIGNE]</span>`;
+
+                if (gameLogic.phase === GAME_PHASES.DESCRIPTION && p.isAlive) {
                     const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
                     if (p.id === currentSpeakerId) {
-                        statusStr = `<span class="player-status status-speaking">[TRANSFERT...]</span>`;
-                    } else {
-                        statusStr = `<span class="player-status">[EN LIGNE]</span>`;
+                        statusStr = `<span class="player-status status-speaking">[PARLE...]</span>`;
                     }
-                } else {
-                    statusStr = `<span class="player-status">[EN LIGNE]</span>`;
                 }
 
                 li.innerHTML = `${nameSpan} ${statusStr}`;
@@ -673,6 +651,9 @@
             gameLogic.roundNumber++;
             gameLogic.turnIndex = 0;
             
+            // Ne garder que les vivants pour les tours de parole
+            gameLogic.turnOrder = players.filter(p => p.isAlive).map(p => p.id);
+
             broadcast({ type: 's_start_descriptions', round: gameLogic.roundNumber });
             
             addChatMsg("SYSTÈME", `--- TOUR ${gameLogic.roundNumber} : Phase de description ---`, 'system');
@@ -686,13 +667,15 @@
             const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
             const chatInputArea = document.getElementById('chat-input-area');
 
-            if (currentSpeakerId === players.find(p => p.peerId === myId).id) {
-                setStatus("C'est votre tour. Transmettez votre description.", true);
+            const myPlayerObj = players.find(p => p.peerId === myId);
+            if (myPlayerObj && currentSpeakerId === myPlayerObj.id) {
+                setStatus("C'est votre tour. Donnez votre indice !", true);
                 chatInputArea.style.display = 'flex';
                 document.getElementById('chat-input').focus();
             } else {
-                const speakerPseudo = players.find(p => p.id === currentSpeakerId).pseudo;
-                setStatus(`Attente transmission de données de : ${speakerPseudo}`);
+                const speaker = players.find(p => p.id === currentSpeakerId);
+                const speakerPseudo = speaker ? speaker.pseudo : "?";
+                setStatus(`Attente description de : ${speakerPseudo}`);
                 chatInputArea.style.display = 'none';
             }
         }
@@ -705,7 +688,8 @@
         function submitDescription() {
             if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
             const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
-            if (currentSpeakerId !== players.find(p => p.peerId === myId).id) return;
+            const myPlayerObj = players.find(p => p.peerId === myId);
+            if (!myPlayerObj || currentSpeakerId !== myPlayerObj.id) return;
 
             const input = document.getElementById('chat-input');
             const msg = input.value.trim();
@@ -729,8 +713,6 @@
 
             if (!speaker || speaker.id !== expectedSpeakerId) return;
 
-            console.log(`Description reçue de ${speaker.pseudo} : ${msg}`);
-
             broadcast({ type: 's_player_desc', playerId: speaker.id, msg: msg });
             addChatMsg(speaker.pseudo, msg);
             hostAdvanceDescriptionTurn();
@@ -750,22 +732,19 @@
 
         function hostStartVotingPhase() {
             addChatMsg("SYSTÈME", "--- Phase de vote lancée ---", 'system');
-            
             players.forEach(p => p.votesReceived = 0);
             gameLogic.votesCast = 0;
             
             const vokPlayerIds = players.filter(p => p.isAlive).map(p => p.id);
-            
             broadcast({ type: 's_start_voting', vokPlayerIds: vokPlayerIds });
             handleStartVoting(vokPlayerIds);
         }
 
         function handleStartVoting(vokPlayerIds) {
-            addChatMsg("SYSTÈME", "--- Phase de vote lancée ---", 'system');
             gameLogic.phase = GAME_PHASES.VOTING;
             gameLogic.hasVoted = false;
             
-            setStatus("Analysez et identifiez l'Anomalie !", true);
+            setStatus("VOTEZ : Identifiez l'Anomalie !", true);
             
             const container = document.getElementById('vote-buttons-container');
             container.innerHTML = "";
@@ -779,7 +758,7 @@
 
             vokPlayerIds.forEach(id => {
                 const p = players.find(player => player.id === id);
-                if(p && p.peerId !== myId) {
+                if(p && p.peerId !== myId && p.isAlive) {
                     const btn = document.createElement('button');
                     btn.classList.add('vote-btn');
                     btn.innerText = p.pseudo;
@@ -791,10 +770,9 @@
 
         function submitVote(targetPlayerId) {
             if (gameLogic.phase !== GAME_PHASES.VOTING || gameLogic.hasVoted) return;
-            
             gameLogic.hasVoted = true;
             votingZone.style.display = 'none';
-            setStatus("Transmission vote envoyée.");
+            setStatus("Transmission du vote...");
 
             if(isHost) {
                 handleClientVote(myId, targetPlayerId);
@@ -811,8 +789,6 @@
 
             if (!voter || !target) return;
 
-            console.log(`Vote : ${voter.pseudo} contre ${target.pseudo}`);
-            
             target.votesReceived++;
             gameLogic.votesCast++;
 
@@ -821,128 +797,130 @@
 
             const aliveCount = players.filter(p => p.isAlive).length;
             if (gameLogic.votesCast >= aliveCount) {
-                processElimination();
+                processVoteResolution();
             }
         }
 
-        function processElimination() {
-            gameLogic.phase = GAME_PHASES.ROLE_REVEAL; // Pause avant résultat
-            votingZone.style.display = 'none';
-
+        function processVoteResolution() {
             let maxVotes = -1;
-            let tiedPlayers = [];
+            let target = null;
+            let equality = false;
 
             players.forEach(p => {
-                if(p.isAlive && p.votesReceived > maxVotes) {
-                    maxVotes = p.votesReceived;
-                    tiedPlayers = [p];
-                } else if (p.isAlive && p.votesReceived === maxVotes) {
-                    tiedPlayers.push(p);
+                if(p.isAlive) {
+                    if(p.votesReceived > maxVotes) {
+                        maxVotes = p.votesReceived;
+                        target = p;
+                        equality = false;
+                    } else if (p.votesReceived === maxVotes) {
+                        equality = true;
+                    }
                 }
             });
 
-            if (tiedPlayers.length === 1 && maxVotes > 0) {
-                const elim = tiedPlayers[0];
-                elim.isAlive = false;
-                elim.conn = null; // Important : coupe le lien PeerJS interne
-
-                addChatMsg("SYSTÈME", `${elim.pseudo} a été déconnecté du réseau (${maxVotes} votes).`, 'system');
-                
-                broadcast({ type: 's_elimination_results', consensus: true, pseudo: elim.pseudo, role: elim.role });
-                handleEliminationResults({consensus: true, pseudo: elim.pseudo, role: elim.role});
-
-                checkWinCondition(elim);
-            } else {
-                addChatMsg("SYSTÈME", "Aucun consensus. Égalité des votes.", 'system');
-                broadcast({ type: 's_elimination_results', consensus: false });
-                handleEliminationResults({consensus: false});
+            if (equality || !target) {
+                addChatMsg("SYSTÈME", "Égalité des votes ! Personne n'est éliminé.", 'system');
+                broadcast({ type: 's_elimination_results', text: "Égalité ! Aucun éliminé." });
                 setTimeout(hostStartDescriptionPhase, 4000);
+                return;
             }
+
+            // Élimination de la cible
+            target.isAlive = false;
+            addChatMsg("SYSTÈME", `${target.pseudo} a été éjecté(e) du réseau (${maxVotes} votes).`, 'system');
+            
+            broadcast({ 
+                type: 's_elimination_results', 
+                text: `${target.pseudo} a été éliminé(e) ! C'était un ${target.role}.`,
+                deadId: target.id 
+            });
+
+            handleEliminationResultsLocally(target);
+            checkWinConditionsAfterElimination(target);
         }
 
         function handleEliminationResults(data) {
             votingZone.style.display = 'none';
-            chatInputArea.style.display = 'none'; // Sécurité
-
-            if (data.consensus) {
-                setStatus(`Hacker déconnecté : ${data.pseudo}.`);
-                addChatMsg("RÉSEAU", `${data.pseudo} était : ${data.role}`, 'system');
-                
-                const p = players.find(p => p.pseudo === data.pseudo);
+            setStatus(data.text);
+            if(data.deadId !== undefined) {
+                const p = players.find(player => player.id === data.deadId);
                 if(p) p.isAlive = false;
-            } else {
-                setStatus("Aucune élimination ce tour.");
             }
             updateGamePlayersListUI();
         }
 
-        function checkWinCondition(eliminatedPlayer) {
-            const alivePlayers = players.filter(p => p.isAlive);
-            const aliveUndercovers = alivePlayers.filter(p => p.role === ROLES.UNDERCOVER);
-            const aliveCivils = alivePlayers.filter(p => p.role === ROLES.CIVIL);
-            const glitch = alivePlayers.find(p => p.role === ROLES.GLITCH);
+        function handleEliminationResultsLocally(target) {
+            votingZone.style.display = 'none';
+            setStatus(`${target.pseudo} éliminé(e). C'était un ${target.role}.`);
+            updateGamePlayersListUI();
+        }
 
-            // Cas Mr White éliminé
+        function checkWinConditionsAfterElimination(eliminatedPlayer) {
+            const alive = players.filter(p => p.isAlive);
+            const aliveUndercovers = alive.filter(p => p.role === ROLES.UNDERCOVER);
+            const aliveCivils = alive.filter(p => p.role === ROLES.CIVIL);
+            const glitch = alive.find(p => p.role === ROLES.GLITCH);
+
+            // 1. Si le Glitch (Mr. White) est éliminé
             if (eliminatedPlayer.role === ROLES.GLITCH) {
-                // S'il reste des Undercover, la partie continue
                 if (aliveUndercovers.length === 0) {
-                     hostGameOver('civils_win', "Mr White démasqué. Réseau sécurisé.");
-                     return;
+                    hostGameOver('civils_win', "Le Glitch a été éliminé et il n'y a plus d'Undercover ! Victoire des Civils.");
+                    return;
                 }
             }
 
-            // Cas Undercovers tous éliminés
+            // 2. Si tous les Undercovers sont morts
             if (aliveUndercovers.length === 0) {
                 if (glitch) {
-                    // Phase Glitch Guess
-                    gameLogic.phase = GAME_PHASES.GLITCH_GUESS;
-                    hostLauchGlitchGuess(glitch);
+                    // Le Glitch a une chance de deviner le mot
+                    hostLaunchGlitchGuess(glitch);
                 } else {
-                    hostGameOver('civils_win', "Toutes les anomalies ont été purgées.");
+                    hostGameOver('civils_win', "Tous les Undercovers ont été éliminés ! Victoire des Civils.");
                 }
                 return;
             }
 
-            // Cas Undercovers majoritaires
+            // 3. Si les Undercovers sont en nombre égal ou supérieur aux Civils
             if (aliveUndercovers.length >= aliveCivils.length) {
-                // Mr White gagne avec les Undercovers s'il est là, mais la condition Undercover l'emporte
-                 hostGameOver('undercover_win', "Anomalies indétectables. Réseau corrompu.");
-                 return;
+                hostGameOver('undercover_win', "Les Undercovers contrôlent le réseau ! Victoire des Anomalies.");
+                return;
             }
 
-            // Sinon, on continue
+            // Sinon la partie continue
             setTimeout(hostStartDescriptionPhase, 4000);
         }
 
-        function hostLauchGlitchGuess(glitchPlayer) {
-            addChatMsg("SYSTÈME", `Undercover démasqué ! Mais ${glitchPlayer.pseudo} (Mr White) a une dernière chance de voler la victoire...`, 'system');
+        function hostLaunchGlitchGuess(glitchPlayer) {
+            gameLogic.phase = GAME_PHASES.GLITCH_GUESS;
+            addChatMsg("SYSTÈME", `${glitchPlayer.pseudo} (Le Glitch) tente une dernière chance de piratage...`, 'system');
             
             broadcast({ type: 's_glitch_last_chance', glitchPlayerId: glitchPlayer.id });
-            handleGlitchLastChance(glitchPlayer.id); // Local
+            handleGlitchLastChance(glitchPlayer.id);
         }
 
         function handleGlitchLastChance(glitchPlayerId) {
-            glitchZone.style.display = 'block';
-            setStatus("ALERTE GLITCH. Mr White détecté.", true);
             gameLogic.phase = GAME_PHASES.GLITCH_GUESS;
-            
-            if (glitchPlayerId === players.find(p => p.peerId === myId).id) {
+            const myPlayer = players.find(p => p.peerId === myId);
+
+            if (myPlayer && myPlayer.id === glitchPlayerId) {
                 // C'est moi le glitch !
+                setStatus("DERNIÈRE CHANCE : Devinez le mot civil !", true);
+                const glitchZone = document.getElementById('glitch-guess-zone');
+                glitchZone.style.display = 'block';
+                
                 const input = document.getElementById('glitch-guess-input');
                 const btn = document.getElementById('btn-glitch-submit');
-                
-                glitchZone.querySelector('p').innerText = "VOUS ETES LE GLITCH. Devinez le mot des Civils pour corrompre le réseau :";
-                input.style.display = 'block';
-                btn.style.display = 'block';
-                input.focus();
-                
-                btn.onclick = function() {
+                input.value = "";
+                input.disabled = false;
+                btn.disabled = false;
+
+                btn.onclick = () => {
                     const guess = input.value.trim();
                     if(!guess) return;
                     input.disabled = true;
                     btn.disabled = true;
-                    setStatus("Transmission pronostic...");
-                    
+                    setStatus("Transmission du pronostic...");
+
                     if(isHost) {
                         handleGlitchGuessSubmit(guess);
                     } else {
@@ -950,70 +928,46 @@
                     }
                 };
             } else {
-                const glPseudo = players.find(p => p.id === glitchPlayerId).pseudo;
-                glitchZone.querySelector('p').innerText = `${glPseudo} (Mr White) cherche à crypter le mot civil...`;
-                document.getElementById('glitch-guess-input').style.display = 'none';
-                document.getElementById('btn-glitch-submit').style.display = 'none';
+                const glitchP = players.find(p => p.id === glitchPlayerId);
+                setStatus(`Le Glitch (${glitchP ? glitchP.pseudo : '?'}) tente de deviner le mot...`);
             }
         }
 
         function handleGlitchGuessSubmit(guess) {
-            addChatMsg("GLITCH", `Pronostic transmis : "${guess}"`, 'system');
-
-            // Normalisation simple pour comparaison
             const normGuess = guess.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             const normCivil = gameLogic.civilWord.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-            if (normGuess === normCivil) {
-                hostGameOver('glitch_win', `Mr White a trouvé le mot civil : ${gameLogic.civilWord} !`);
+            if (normGuess === normCivil || normCivil.includes(normGuess)) {
+                hostGameOver('glitch_win', `Le Glitch a deviné le mot ("${gameLogic.civilWord}") ! Victoire volée !`);
             } else {
-                hostGameOver('civils_win', `Mr White s'est trompé. Le mot était : ${gameLogic.civilWord}.`);
+                hostGameOver('civils_win', `Le Glitch s'est trompé. Le mot était "${gameLogic.civilWord}". Victoire des Civils !`);
             }
         }
 
         function hostGameOver(type, reason) {
             gameLogic.phase = GAME_PHASES.END;
-            
-            // Relayer resultats complets
             broadcast({ 
                 type: 's_game_over', 
-                resultType: type, 
-                msg: reason, 
-                civilWord: gameLogic.civilWord, 
-                undercoverWord: gameLogic.undercoverWord 
+                winner: type === 'civils_win' ? "VICTOIRE CIVILE" : type === 'undercover_win' ? "VICTOIRE ANOMALIE" : "VICTOIRE DU GLITCH", 
+                desc: reason 
             });
-            
-            handleGameOver({ resultType: type, msg: reason, civilWord: gameLogic.civilWord, undercoverWord: gameLogic.undercoverWord });
+            showGameOver(
+                type === 'civils_win' ? "VICTOIRE CIVILE" : type === 'undercover_win' ? "VICTOIRE ANOMALIE" : "VICTOIRE DU GLITCH", 
+                reason
+            );
         }
 
-        function handleGameOver(data) {
-            let title = "";
-            let color = "";
-            if(data.resultType === 'civils_win') { title = "RÉSEAU SÉCURISÉ (Victoire Civile)"; color = "var(--neon-green)"; }
-            else if(data.resultType === 'undercover_win') { title = "INFILTRATION RÉUSSIE (Victoire Anomalie)"; color = "var(--neon-pink)"; }
-            else if(data.resultType === 'glitch_win') { title = "HACK TOTAL (Victoire Glitch)"; color = "var(--neon-yellow)"; }
-            
-            glitchZone.style.display = 'none';
-            chatInputArea.style.display = 'none';
-            document.getElementById('secret-word').innerText = "--- PROTOCOLE CLOS ---";
+        function showGameOver(winner, desc) {
+            document.getElementById('action-panel').innerHTML = "";
+            document.getElementById('chat-input-area').style.display = 'none';
+            document.getElementById('voting-zone').style.display = 'none';
+            document.getElementById('glitch-guess-zone').style.display = 'none';
 
-            addChatMsg("SYSTÈME", "--- PARTIE TERMINÉE ---", 'system');
-            addChatMsg("SYSTÈME", `Raison: ${data.msg}`, 'system');
-            addChatMsg("DONNÉES", `Mot Civil: ${data.civilWord}`, 'system');
-            addChatMsg("DONNÉES", `Mot Undercover: ${data.undercoverWord}`, 'system');
-
-            setStatus(title);
-            gameStatus.style.color = color;
-            gameStatus.style.animation = "none";
-            gameLogic.phase = GAME_PHASES.END;
-            
-            if(isHost) {
-                 document.getElementById('btn-start').innerText = "Relancer le Hack";
-                 document.getElementById('btn-start').style.display = 'block';
-            }
+            const goScreen = document.getElementById('game-over-screen');
+            goScreen.style.display = 'block';
+            document.getElementById('winner-text').innerText = winner;
+            document.getElementById('winner-desc').innerText = desc;
         }
-
-        const chatInputArea = document.getElementById('chat-input-area');
     </script>
 </body>
 </html>
