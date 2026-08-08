@@ -34,11 +34,7 @@
             box-sizing: border-box;
         }
 
-        h1, h2 {
-            color: var(--neon-cyan);
-            text-shadow: 0 0 10px var(--neon-cyan);
-            text-transform: uppercase;
-        }
+        h1, h2, h3 { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); text-transform: uppercase; margin-bottom: 10px;}
 
         .container {
             background: rgba(0, 0, 0, 0.8);
@@ -51,7 +47,6 @@
             margin-bottom: 20px;
         }
 
-        /* Exclusion du swipe global */
         .no-swipe { touch-action: none; }
 
         input[type="text"], input[type="number"], button {
@@ -70,22 +65,19 @@
 
         input:focus { box-shadow: 0 0 10px var(--neon-cyan); }
 
-        button {
-            cursor: pointer;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-        button:hover {
-            background: var(--neon-cyan);
-            color: var(--bg-color);
-            box-shadow: 0 0 10px var(--neon-cyan);
-        }
+        button { cursor: pointer; text-transform: uppercase; font-weight: bold; }
+        button:hover { background: var(--neon-cyan); color: var(--bg-color); box-shadow: 0 0 10px var(--neon-cyan); }
 
         .btn-host { border-color: var(--neon-pink); color: var(--neon-pink); }
         .btn-host:hover { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
 
         .btn-start { border-color: var(--neon-green); color: var(--neon-green); display: none;}
         .btn-start:hover { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+
+        /* Lang Selector */
+        .lang-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .lang-btn { width: auto; padding: 5px 15px; border-radius: 20px; border: 1px solid gray; color: gray; }
+        .lang-btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
 
         .config-grid {
             display: grid;
@@ -96,18 +88,8 @@
             padding: 15px;
             border: 1px dashed var(--neon-yellow);
         }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        input[type="checkbox"] {
-            accent-color: var(--neon-pink);
-            width: 20px;
-            height: 20px;
-        }
+        .checkbox-group { display: flex; align-items: center; justify-content: space-between; }
+        input[type="checkbox"] { accent-color: var(--neon-pink); width: 20px; height: 20px; }
 
         #game-area { display: none; }
         .role-card {
@@ -119,13 +101,8 @@
             transition: all 0.5s;
         }
         
-        .role-img {
-            max-width: 120px;
-            display: block;
-            margin: 0 auto 15px;
-            filter: drop-shadow(0 0 10px var(--neon-cyan));
-        }
-
+        .role-img { max-width: 120px; display: block; margin: 0 auto 15px; filter: drop-shadow(0 0 10px var(--neon-cyan)); }
+        
         .player-list { list-style: none; padding: 0; text-align: left; }
         .player-list li { margin: 5px 0; padding: 5px; border-bottom: 1px solid #333; }
         
@@ -144,99 +121,159 @@
 </head>
 <body>
 
-    <!-- Logique globale du hub simulée (swipe protection) -->
     <script>
         document.addEventListener('touchstart', (e) => {
-            if(e.target.closest('.no-swipe')) {
-                e.stopPropagation(); 
-            }
+            if(e.target.closest('.no-swipe')) { e.stopPropagation(); }
         });
     </script>
 
     <div class="container no-swipe">
-        <h1>Slime-Garou</h1>
+        <h1 id="ui-title">Slime-Garou</h1>
         
+        <div class="lang-selector">
+            <button id="lang-fr" class="lang-btn active">FR</button>
+            <button id="lang-en" class="lang-btn">EN</button>
+        </div>
+
         <!-- MENU PRINCIPAL -->
         <div id="menu">
-            <button id="btn-create" class="btn-host">Créer un Serveur (Hôte)</button>
+            <button id="btn-create" class="btn-host ui-text" data-key="btnCreate">Créer un Serveur (Hôte)</button>
             <hr style="border-color: #333; margin: 20px 0;">
             <input type="text" id="join-id" placeholder="ID de Connexion (Hôte)">
-            <input type="text" id="player-name" placeholder="Ton Pseudo Cyber">
-            <button id="btn-join">Rejoindre la Partie</button>
+            <input type="text" id="player-name" placeholder="Pseudo / Handle">
+            <button id="btn-join" class="ui-text" data-key="btnJoin">Rejoindre la Partie</button>
         </div>
 
         <!-- LOBBY -->
         <div id="lobby" style="display: none;">
-            <h2>Réseau Local</h2>
-            <p>ID Hôte : <span id="my-id" style="color: var(--neon-pink); font-weight: bold; user-select: all;">Génération...</span></p>
+            <h2 class="ui-text" data-key="lobbyTitle">Réseau Local</h2>
+            <p>ID : <span id="my-id" style="color: var(--neon-pink); font-weight: bold; user-select: all;">Génération...</span></p>
             
             <div id="host-config" style="display: none;">
-                <h3>Configuration de la Partie</h3>
+                <h3 class="ui-text" data-key="configTitle">Configuration</h3>
                 <div class="config-grid">
                     <div>
-                        <label>Nb. Slime-Garous :</label>
+                        <label class="ui-text" data-key="cfgWolves">Garous :</label>
                         <input type="number" id="cfg-wolves" value="1" min="1" max="3" style="width: 50px;">
                     </div>
-                    <div class="checkbox-group">
-                        <label>Slime Voyante</label>
-                        <input type="checkbox" id="cfg-seer" checked>
-                    </div>
-                    <div class="checkbox-group">
-                        <label>Slime Sorcière</label>
-                        <input type="checkbox" id="cfg-witch" checked>
-                    </div>
-                    <div class="checkbox-group">
-                        <label>Slime Chasseur</label>
-                        <input type="checkbox" id="cfg-hunter">
-                    </div>
+                    <div class="checkbox-group"><label class="ui-text" data-key="roleSeer">Voyante</label><input type="checkbox" id="cfg-seer" checked></div>
+                    <div class="checkbox-group"><label class="ui-text" data-key="roleWitch">Sorcière</label><input type="checkbox" id="cfg-witch" checked></div>
+                    <div class="checkbox-group"><label class="ui-text" data-key="roleCupid">Cupidon</label><input type="checkbox" id="cfg-cupid"></div>
+                    <div class="checkbox-group"><label class="ui-text" data-key="roleHunter">Chasseur</label><input type="checkbox" id="cfg-hunter"></div>
                 </div>
             </div>
 
-            <h3>Joueurs Connectés (<span id="player-count">1</span>)</h3>
+            <h3><span class="ui-text" data-key="players">Joueurs</span> (<span id="player-count">1</span>)</h3>
             <ul id="players-list" class="player-list"></ul>
             
-            <button id="btn-start" class="btn-start">Initialiser le Protocole (Lancer)</button>
+            <button id="btn-start" class="btn-start ui-text" data-key="btnStart">Lancer l'Infection</button>
         </div>
 
         <!-- ZONE DE JEU -->
         <div id="game-area" class="no-swipe">
-            <h2 id="phase-title">Phase : Chargement...</h2>
+            <h2 id="phase-title">...</h2>
             
             <div class="role-card" id="my-role-card">
-                <img id="role-image" class="role-img" src="slime.png" alt="Role Image">
-                <h3 id="role-name" style="margin:0;">En attente de rôle</h3>
+                <img id="role-image" class="role-img" src="" alt="Role Image">
+                <h3 id="role-name" style="margin:0;">...</h3>
                 <p id="role-desc" style="font-size: 0.9em; color: gray;">...</p>
+                <p id="lovers-info" style="color: #ff69b4; font-weight: bold; display:none;"></p>
             </div>
 
-            <h3>Interface d'Action</h3>
-            <div id="action-panel" style="margin-bottom: 20px; min-height: 50px;">
-                <p style="color:var(--neon-yellow);">En attente des ordres du système...</p>
-            </div>
+            <h3 class="ui-text" data-key="actionInterface">Interface d'Action</h3>
+            <div id="action-panel" style="margin-bottom: 20px; min-height: 50px;"></div>
 
-            <h3>Logs Système</h3>
-            <div class="sys-log" id="sys-log">
-                > Connexion établie...
-            </div>
+            <h3 class="ui-text" data-key="sysLogs">Logs Système</h3>
+            <div class="sys-log" id="sys-log">> SYSTEM_READY</div>
         </div>
     </div>
 
     <script>
         // ==========================================
+        // 🌍 DICTIONNAIRE MULTILINGUE
+        // ==========================================
+        const i18n = {
+            fr: {
+                roles: {
+                    werewolf: { name: "Slime-Garou", desc: "Dévore un joueur chaque nuit.", img: "garou.png", color: "var(--neon-pink)" },
+                    seer: { name: "Voyante", desc: "Scanne l'identité d'un joueur la nuit.", img: "voyante.png", color: "var(--neon-cyan)" },
+                    witch: { name: "Sorcière", desc: "Possède une potion de soin et une de poison.", img: "sorciere.png", color: "var(--neon-purple)" },
+                    hunter: { name: "Chasseur", desc: "Si tu meurs, tu tires sur un joueur.", img: "chasseur.png", color: "var(--neon-yellow)" },
+                    cupid: { name: "Cupidon", desc: "Désigne deux amoureux la première nuit.", img: "cupidon.png", color: "#ff69b4" },
+                    villager: { name: "Slime Civil", desc: "Trouve et élimine les infectés le jour.", img: "slime.png", color: "var(--neon-green)" }
+                },
+                ui: {
+                    btnCreate: "Créer un Serveur (Hôte)", btnJoin: "Rejoindre la Partie",
+                    lobbyTitle: "Réseau Local", configTitle: "Configuration",
+                    cfgWolves: "Nb Garous :", roleSeer: "Voyante", roleWitch: "Sorcière", roleCupid: "Cupidon", roleHunter: "Chasseur",
+                    players: "Joueurs Connectés", btnStart: "Initialiser le Protocole",
+                    actionInterface: "Interface d'Action", sysLogs: "Logs Système",
+                    waiting: "En attente des ordres...", dead: "VOUS ÊTES MORT. Connexion rompue.",
+                    sleep: "Ferme les yeux, ton système est en veille...",
+                    selectTarget: "Choisis une cible :", healMsg: "Ressusciter", poisonMsg: "Empoisonner", skipMsg: "Ne rien faire",
+                    loversLinked: "Tu es secrètement lié à :"
+                }
+            },
+            en: {
+                roles: {
+                    werewolf: { name: "Werewolf", desc: "Devour a player every night.", img: "werewolf.png", color: "var(--neon-pink)" },
+                    seer: { name: "Seer", desc: "Scan a player's identity at night.", img: "seer.png", color: "var(--neon-cyan)" },
+                    witch: { name: "Witch", desc: "Has one heal and one poison potion.", img: "witch.png", color: "var(--neon-purple)" },
+                    hunter: { name: "Hunter", desc: "If you die, you shoot a player.", img: "hunter.png", color: "var(--neon-yellow)" },
+                    cupid: { name: "Cupid", desc: "Link two lovers on the first night.", img: "cupid.png", color: "#ff69b4" },
+                    villager: { name: "Villager", desc: "Find and eliminate the infected by day.", img: "villager.png", color: "var(--neon-green)" }
+                },
+                ui: {
+                    btnCreate: "Host Server", btnJoin: "Join Game",
+                    lobbyTitle: "Local Network", configTitle: "Settings",
+                    cfgWolves: "Werewolves:", roleSeer: "Seer", roleWitch: "Witch", roleCupid: "Cupid", roleHunter: "Hunter",
+                    players: "Connected Players", btnStart: "Initialize Protocol",
+                    actionInterface: "Action Interface", sysLogs: "System Logs",
+                    waiting: "Awaiting system orders...", dead: "YOU ARE DEAD. Connection lost.",
+                    sleep: "Close your eyes, system in standby...",
+                    selectTarget: "Select a target:", healMsg: "Heal/Revive", poisonMsg: "Poison", skipMsg: "Skip",
+                    loversLinked: "You are secretly bound to:"
+                }
+            }
+        };
+
+        let currentLang = 'fr';
+
+        function updateLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            
+            // Update UI
+            document.querySelectorAll('.ui-text').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (i18n[lang].ui[key]) el.innerText = i18n[lang].ui[key];
+            });
+
+            // Update Card if game started
+            if (myRole) setupRoleUI(myRole);
+        }
+
+        document.getElementById('lang-fr').addEventListener('click', () => updateLang('fr'));
+        document.getElementById('lang-en').addEventListener('click', () => updateLang('en'));
+
+
+        // ==========================================
         // 🛠️ VARIABLES GLOBALES & UTILITAIRES
         // ==========================================
         let peer = null;
-        let connections = []; // { conn, name, role, isAlive, id, isHost }
+        let connections = []; 
         let isHost = false;
         let myName = "Hôte";
         let myRole = "";
-
-        // Inventaire de la sorcière
         let witchPotions = { heal: 1, poison: 1 };
+        let firstNight = true; // Pour Cupidon
 
         const menuDiv = document.getElementById('menu');
         const lobbyDiv = document.getElementById('lobby');
         const gameArea = document.getElementById('game-area');
         const logArea = document.getElementById('sys-log');
+        let cupidTargets = []; // Stockage temporaire client
 
         function addLog(msg) {
             logArea.innerHTML += `<br>> ${msg}`;
@@ -264,24 +301,19 @@
             lobbyDiv.style.display = 'block';
             document.getElementById('host-config').style.display = 'block';
             
-            connections.push({ isHost: true, name: "Hôte", role: null, isAlive: true, id: 'host' });
+            connections.push({ isHost: true, name: "Host", role: null, isAlive: true, id: 'host' });
             updatePlayerListUI();
 
             initPeer((id) => { document.getElementById('my-id').innerText = id; });
 
             peer.on('connection', (conn) => {
                 conn.on('data', (data) => {
-                    // Un joueur rejoint le lobby
                     if (data.type === 'join') {
                         connections.push({ conn: conn, name: data.name, role: null, isAlive: true, id: conn.peer });
                         updatePlayerListUI();
                         broadcast({ type: 'lobby_update', count: connections.length, list: connections.map(c => c.name) });
-                        
-                        if (connections.length >= 3) { // Min 3 pour tester
-                            document.getElementById('btn-start').style.display = 'block';
-                        }
+                        if (connections.length >= 3) document.getElementById('btn-start').style.display = 'block';
                     } 
-                    // Un joueur envoie une action pendant la partie (C'EST ICI QUE CA SE JOUE !)
                     else if (data.type === 'action') {
                         handleNetworkAction(conn.peer, data);
                     }
@@ -295,7 +327,7 @@
         document.getElementById('btn-join').addEventListener('click', () => {
             const hostId = document.getElementById('join-id').value.trim();
             myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
-            if(!hostId) return alert("ID Requis");
+            if(!hostId) return;
 
             menuDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
@@ -304,7 +336,7 @@
             initPeer(() => {
                 const conn = peer.connect(hostId);
                 conn.on('open', () => {
-                    connections.push({conn: conn}); // Stocker la co vers l'hôte
+                    connections.push({conn: conn}); 
                     conn.send({ type: 'join', name: myName });
                 });
 
@@ -317,14 +349,17 @@
                         lobbyDiv.style.display = 'none';
                         gameArea.style.display = 'block';
                         setupRoleUI(data.role);
-                        addLog("Système initialisé. Nuit imminente...");
+                        addLog("Game Initialized.");
                     }
                     else if (data.type === 'phase_change') {
                         addLog(data.message);
                         updateClientUI(data.phase, data.message, data.extra);
                     }
-                    else if (data.type === 'scan_result') {
-                        addLog(`[SCAN RÉUSSI] La cible est : ${data.role}`);
+                    else if (data.type === 'lovers_linked') {
+                        const loveInfo = document.getElementById('lovers-info');
+                        loveInfo.style.display = 'block';
+                        loveInfo.innerText = `${i18n[currentLang].ui.loversLinked} ${data.partner}`;
+                        addLog("Tu es lié par Cupidon.");
                     }
                 });
             });
@@ -343,14 +378,14 @@
             const nbWolves = parseInt(document.getElementById('cfg-wolves').value);
             
             let roles = [];
-            for(let i=0; i<nbWolves; i++) roles.push('slimegarou');
-            if (document.getElementById('cfg-seer').checked) roles.push('voyante');
-            if (document.getElementById('cfg-witch').checked) roles.push('sorciere');
-            if (document.getElementById('cfg-hunter').checked) roles.push('chasseur');
+            for(let i=0; i<nbWolves; i++) roles.push('werewolf');
+            if (document.getElementById('cfg-seer').checked) roles.push('seer');
+            if (document.getElementById('cfg-witch').checked) roles.push('witch');
+            if (document.getElementById('cfg-cupid').checked) roles.push('cupid');
+            if (document.getElementById('cfg-hunter').checked) roles.push('hunter');
             
-            while(roles.length < numPlayers) roles.push('slime');
-
-            roles.sort(() => Math.random() - 0.5); // Fisher-Yates simplifié
+            while(roles.length < numPlayers) roles.push('villager');
+            roles.sort(() => Math.random() - 0.5);
 
             connections.forEach((c, index) => {
                 c.role = roles[index];
@@ -363,61 +398,79 @@
                 }
             });
 
-            // Lancement de la machine à états !
-            setTimeout(() => startNightPhase(), 3000); 
+            setTimeout(() => startNightPhase(), 2000); 
         });
 
         // ==========================================
         // 🌑 MOTEUR MULTIJOUEUR : STATE MACHINE
         // ==========================================
-        let gameState = {
-            phase: 'lobby',
-            votes: {},      
-            deadTonight: [] 
-        };
+        let gameState = { phase: 'lobby', votes: {}, deadTonight: [], lovers: [] };
 
-        // --- PHASES DE LA NUIT ---
+        function killPlayer(targetName) {
+            if(!gameState.deadTonight.includes(targetName)) {
+                gameState.deadTonight.push(targetName);
+                // Vérification Cupidon
+                if(gameState.lovers.includes(targetName)) {
+                    const partner = gameState.lovers.find(l => l !== targetName);
+                    if(partner && !gameState.deadTonight.includes(partner)) {
+                        gameState.deadTonight.push(partner);
+                        addLog(`[SYSTEM] ${partner} est mort de chagrin (Lien Cupidon).`);
+                    }
+                }
+            }
+        }
+
         function startNightPhase() {
+            gameState.votes = {};
+            if(firstNight && connections.find(c => c.role === 'cupid' && c.isAlive)) {
+                startCupidPhase();
+            } else {
+                startWolvesPhase();
+            }
+        }
+
+        function startCupidPhase() {
+            gameState.phase = 'night_cupid';
+            broadcast({ type: 'phase_change', phase: 'night_cupid', message: "[Night] Cupidon se réveille." });
+            updateClientUI('night_cupid', "[Night] Cupidon se réveille.");
+            // Si pas de Cupidon (mort), skip direct, mais comme c'est Night 1 il est en vie
+        }
+
+        function startWolvesPhase() {
             gameState.phase = 'night_wolves';
             gameState.votes = {};
-            const msg = "NOUVELLE NUIT : Les Slime-Garous choisissent leur cible.";
-            addLog(msg);
-            broadcast({ type: 'phase_change', phase: 'night_wolves', message: msg });
-            updateClientUI('night_wolves', msg);
+            broadcast({ type: 'phase_change', phase: 'night_wolves', message: "[Night] Garous..." });
+            updateClientUI('night_wolves', "[Night] Garous...");
         }
 
         function startSeerPhase() {
             gameState.phase = 'night_seer';
-            const msg = "Les Loups dorment. La Voyante active son scan.";
-            addLog(msg);
-            broadcast({ type: 'phase_change', phase: 'night_seer', message: msg });
-            updateClientUI('night_seer', msg);
-
-            // Si la voyante est morte ou n'existe pas, on simule un délai
-            if (!connections.find(c => c.role === 'voyante' && c.isAlive)) {
-                setTimeout(() => startWitchPhase(), 3000);
-            }
+            broadcast({ type: 'phase_change', phase: 'night_seer', message: "[Night] Voyante..." });
+            updateClientUI('night_seer', "[Night] Voyante...");
+            if (!connections.find(c => c.role === 'seer' && c.isAlive)) setTimeout(() => startWitchPhase(), 3000);
         }
 
         function startWitchPhase() {
             gameState.phase = 'night_witch';
-            const msg = "La Sorcière prépare ses potions...";
-            addLog(msg);
-            broadcast({ type: 'phase_change', phase: 'night_witch', message: msg, extra: { dead: gameState.deadTonight[0] } });
-            updateClientUI('night_witch', msg, { dead: gameState.deadTonight[0] });
-
-            if (!connections.find(c => c.role === 'sorciere' && c.isAlive)) {
-                setTimeout(() => startDayPhase(), 3000);
-            }
+            const extraData = { dead: gameState.deadTonight[0] };
+            broadcast({ type: 'phase_change', phase: 'night_witch', message: "[Night] Sorcière...", extra: extraData });
+            updateClientUI('night_witch', "[Night] Sorcière...", extraData);
+            if (!connections.find(c => c.role === 'witch' && c.isAlive)) setTimeout(() => startDayPhase(), 3000);
         }
 
-        // --- PHASE DE JOUR ---
         function startDayPhase() {
+            firstNight = false;
             gameState.phase = 'day_vote';
-            gameState.votes = {}; // Reset pour le vote de jour
+            gameState.votes = {};
             
-            let deathMsg = gameState.deadTonight.length > 0 ? `Mort(s) cette nuit : ${gameState.deadTonight.join(', ')}.` : "Aucun mort cette nuit.";
-            let msg = `Le JOUR se lève. ${deathMsg} Débattez et votez.`;
+            // Appliquer les morts
+            gameState.deadTonight.forEach(d => {
+                let p = connections.find(c => c.name === d);
+                if(p) p.isAlive = false;
+            });
+
+            let deathMsg = gameState.deadTonight.length > 0 ? `Code mort: ${gameState.deadTonight.join(', ')}` : "Aucun mort.";
+            let msg = `[DAY] ${deathMsg}. Votez.`;
             addLog(msg);
             
             broadcast({ type: 'phase_change', phase: 'day_vote', message: msg });
@@ -430,30 +483,39 @@
             const sender = connections.find(c => c.id === clientId || (c.isHost && clientId === 'host'));
             if (!sender || !sender.isAlive) return;
 
-            if (gameState.phase === 'night_wolves' && data.role === 'slimegarou') {
+            if (gameState.phase === 'night_cupid' && data.role === 'cupid') {
+                gameState.lovers = [data.target1, data.target2];
+                // Notifier les amoureux
+                connections.forEach(c => {
+                    if(c.name === data.target1) {
+                        if(c.isHost) { document.getElementById('lovers-info').style.display='block'; document.getElementById('lovers-info').innerText = `Cupidon lié à: ${data.target2}`; }
+                        else { c.conn.send({ type: 'lovers_linked', partner: data.target2 }); }
+                    }
+                    if(c.name === data.target2) {
+                        if(c.isHost) { document.getElementById('lovers-info').style.display='block'; document.getElementById('lovers-info').innerText = `Cupidon lié à: ${data.target1}`; }
+                        else { c.conn.send({ type: 'lovers_linked', partner: data.target1 }); }
+                    }
+                });
+                setTimeout(() => startWolvesPhase(), 2000);
+            }
+            else if (gameState.phase === 'night_wolves' && data.role === 'werewolf') {
                 gameState.votes[sender.name] = data.target;
-                const aliveWolves = connections.filter(c => c.role === 'slimegarou' && c.isAlive);
+                const aliveWolves = connections.filter(c => c.role === 'werewolf' && c.isAlive);
                 if (Object.keys(gameState.votes).length === aliveWolves.length) {
-                    // Cible verrouillée
-                    const targetName = Object.values(gameState.votes)[0];
-                    if(!gameState.deadTonight.includes(targetName)) gameState.deadTonight.push(targetName);
+                    killPlayer(Object.values(gameState.votes)[0]);
                     setTimeout(() => startSeerPhase(), 1500);
                 }
             }
-            else if (gameState.phase === 'night_seer' && data.role === 'voyante') {
+            else if (gameState.phase === 'night_seer' && data.role === 'seer') {
                 const targetInfo = connections.find(c => c.name === data.target);
-                if(targetInfo) {
-                    // Renvoie l'info uniquement à la voyante
-                    if (sender.isHost) { addLog(`[SCAN] ${targetInfo.name} est ${targetInfo.role}`); }
-                    else { sender.conn.send({ type: 'scan_result', role: targetInfo.role }); }
-                }
+                if(targetInfo) addLog(`[SCAN HOTE] Cible est ${targetInfo.role}`); 
                 setTimeout(() => startWitchPhase(), 1500);
             }
-            else if (gameState.phase === 'night_witch' && data.role === 'sorciere') {
+            else if (gameState.phase === 'night_witch' && data.role === 'witch') {
                 if (data.action === 'heal' && gameState.deadTonight.includes(data.target)) {
-                    gameState.deadTonight = gameState.deadTonight.filter(n => n !== data.target);
+                    gameState.deadTonight = gameState.deadTonight.filter(n => n !== data.target); // Annule la mort
                 } else if (data.action === 'poison') {
-                    if(!gameState.deadTonight.includes(data.target)) gameState.deadTonight.push(data.target);
+                    killPlayer(data.target);
                 }
                 setTimeout(() => startDayPhase(), 1500);
             }
@@ -461,17 +523,18 @@
                 gameState.votes[sender.name] = data.target;
                 const alivePlayers = connections.filter(c => c.isAlive);
                 if (Object.keys(gameState.votes).length === alivePlayers.length) {
-                    // Fin du vote : on tue la cible choisie par majorité (simplifié ici à la 1ere cible majoritaire)
                     const voteCounts = {};
                     Object.values(gameState.votes).forEach(v => voteCounts[v] = (voteCounts[v] || 0) + 1);
                     const targetName = Object.keys(voteCounts).reduce((a, b) => voteCounts[a] > voteCounts[b] ? a : b);
                     
-                    const victim = connections.find(c => c.name === targetName);
-                    if(victim) victim.isAlive = false;
+                    killPlayer(targetName);
                     addLog(`Le village a déconnecté : ${targetName}`);
                     
-                    // Fin du jour, on relance la nuit
-                    setTimeout(() => startNightPhase(), 4000);
+                    setTimeout(() => {
+                        gameState.deadTonight.forEach(d => { let p = connections.find(c => c.name===d); if(p) p.isAlive = false; });
+                        gameState.deadTonight = [];
+                        startNightPhase();
+                    }, 4000);
                 }
             }
         }
@@ -479,93 +542,98 @@
         // ==========================================
         // 🖥️ INTERFACE ET ENVOI CLIENT
         // ==========================================
-        function sendActionToServer(actionType, targetName) {
-            const data = { type: 'action', role: myRole, action: actionType, target: targetName };
-            document.getElementById('action-panel').innerHTML = "<p>Ordre transmis. En attente...</p>";
-            
+        function sendActionToServer(data) {
+            document.getElementById('action-panel').innerHTML = `<p>${i18n[currentLang].ui.waiting}</p>`;
             if (isHost) handleNetworkAction('host', data);
             else connections[0].conn.send(data);
         }
 
         function updateClientUI(phase, message, extra = null) {
             document.getElementById('phase-title').innerText = message;
-            const actionPanel = document.getElementById('action-panel');
-            actionPanel.innerHTML = ''; 
+            const panel = document.getElementById('action-panel');
+            panel.innerHTML = ''; 
+            const langUI = i18n[currentLang].ui;
 
             const alivePlayers = connections.filter(c => c.isAlive && c.name !== myName);
+            const allAlivePlayers = connections.filter(c => c.isAlive); // Cupidon peut se choisir
+
             const myStatus = connections.find(c => c.name === myName);
             if(myStatus && !myStatus.isAlive) {
-                actionPanel.innerHTML = `<p style="color:red;">VOUS ÊTES MORT. Connexion rompue.</p>`;
-                return;
+                panel.innerHTML = `<p style="color:red;">${langUI.dead}</p>`; return;
             }
 
-            // Génération des boutons selon la phase et le rôle
-            if (phase === 'night_wolves' && myRole === 'slimegarou') {
-                actionPanel.innerHTML = `<p style="color:var(--neon-pink);">Qui infecter ?</p>`;
+            if (phase === 'night_cupid' && myRole === 'cupid') {
+                panel.innerHTML = `<p style="color:var(--neon-pink);">${langUI.selectTarget}</p>`;
+                allAlivePlayers.forEach(c => {
+                    let btn = createBtn(c.name, 'var(--neon-pink)', () => {
+                        btn.style.background = 'var(--neon-pink)'; btn.style.color = '#000';
+                        cupidTargets.push(c.name);
+                        if(cupidTargets.length === 2) {
+                            sendActionToServer({ type: 'action', role: 'cupid', target1: cupidTargets[0], target2: cupidTargets[1] });
+                            cupidTargets = [];
+                        }
+                    });
+                    panel.appendChild(btn);
+                });
+            }
+            else if (phase === 'night_wolves' && myRole === 'werewolf') {
+                panel.innerHTML = `<p style="color:var(--neon-pink);">${langUI.selectTarget}</p>`;
                 alivePlayers.forEach(c => {
-                    if(c.role !== 'slimegarou') actionPanel.appendChild(createBtn(c.name, 'var(--neon-pink)', () => sendActionToServer('kill', c.name)));
+                    if(c.role !== 'werewolf') panel.appendChild(createBtn(c.name, 'var(--neon-pink)', () => sendActionToServer({type:'action', role:'werewolf', target: c.name})));
                 });
             } 
-            else if (phase === 'night_seer' && myRole === 'voyante') {
-                actionPanel.innerHTML = `<p style="color:var(--neon-cyan);">Qui scanner ?</p>`;
+            else if (phase === 'night_seer' && myRole === 'seer') {
+                panel.innerHTML = `<p style="color:var(--neon-cyan);">${langUI.selectTarget}</p>`;
                 alivePlayers.forEach(c => {
-                    actionPanel.appendChild(createBtn(c.name, 'var(--neon-cyan)', () => sendActionToServer('scan', c.name)));
+                    panel.appendChild(createBtn(c.name, 'var(--neon-cyan)', () => sendActionToServer({type:'action', role:'seer', target: c.name})));
                 });
             }
-            else if (phase === 'night_witch' && myRole === 'sorciere') {
+            else if (phase === 'night_witch' && myRole === 'witch') {
                 let html = `<p style="color:var(--neon-purple);">Victime: ${extra.dead || 'Personne'}</p>`;
                 if (extra.dead && witchPotions.heal > 0) {
-                    html += `<button onclick="sendActionToServer('heal', '${extra.dead}'); witchPotions.heal--; " style="border-color:#2ecc71; color:#2ecc71;">Sauver (Heal)</button>`;
+                    html += `<button onclick="witchPotions.heal--; sendActionToServer({type:'action', role:'witch', action:'heal', target:'${extra.dead}'});" style="border-color:#2ecc71; color:#2ecc71;">${langUI.healMsg}</button>`;
                 }
                 if (witchPotions.poison > 0) {
-                    html += `<p style="color:var(--neon-purple);">Empoisonner quelqu'un ?</p>`;
                     alivePlayers.forEach(c => {
-                        html += `<button onclick="sendActionToServer('poison', '${c.name}'); witchPotions.poison--; " style="border-color:#e74c3c; color:#e74c3c;">Poison ${c.name}</button>`;
+                        html += `<button onclick="witchPotions.poison--; sendActionToServer({type:'action', role:'witch', action:'poison', target:'${c.name}'});" style="border-color:#e74c3c; color:#e74c3c;">${langUI.poisonMsg} ${c.name}</button>`;
                     });
                 }
-                html += `<button onclick="sendActionToServer('skip', 'none')" style="border-color:gray; color:gray;">Ne rien faire</button>`;
-                actionPanel.innerHTML = html;
+                html += `<button onclick="sendActionToServer({type:'action', role:'witch', action:'skip'})" style="border-color:gray; color:gray;">${langUI.skipMsg}</button>`;
+                panel.innerHTML = html;
             }
-            else if (phase.startsWith('night') && myRole !== 'slimegarou') {
-                actionPanel.innerHTML = `<p style="color:gray;">Ferme les yeux, ton système est en veille...</p>`;
+            else if (phase.startsWith('night') && myRole !== 'werewolf' && myRole !== 'cupid') {
+                panel.innerHTML = `<p style="color:gray;">${langUI.sleep}</p>`;
             }
             else if (phase === 'day_vote') {
-                actionPanel.innerHTML = `<p style="color:var(--neon-yellow);">Vote pour éliminer un suspect :</p>`;
+                panel.innerHTML = `<p style="color:var(--neon-yellow);">${langUI.selectTarget}</p>`;
                 alivePlayers.forEach(c => {
-                    actionPanel.appendChild(createBtn(`Voter ${c.name}`, 'var(--neon-yellow)', () => sendActionToServer('vote', c.name)));
+                    panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', () => sendActionToServer({type:'action', role:'day', target: c.name})));
                 });
             }
         }
 
         function createBtn(text, color, onClickCallback) {
             let btn = document.createElement('button');
-            btn.innerText = text;
-            btn.style.borderColor = color;
-            btn.style.color = color;
-            btn.onclick = onClickCallback;
-            return btn;
+            btn.innerText = text; btn.style.borderColor = color; btn.style.color = color;
+            btn.onclick = onClickCallback; return btn;
         }
 
-        // Affichage cosmétique des rôles
         function setupRoleUI(role) {
             myRole = role;
-            const rName = document.getElementById('role-name');
-            const rDesc = document.getElementById('role-desc');
-            const rImg = document.getElementById('role-image');
-            const card = document.getElementById('my-role-card');
+            const rData = i18n[currentLang].roles[role] || i18n[currentLang].roles['villager'];
             
-            let cfg = {
-                'slimegarou': { n: "Slime-Garou", d: "Dévore un Slime la nuit.", i: "slimegarou.png", c: "var(--neon-pink)" },
-                'voyante': { n: "Slime Voyante", d: "Scanne un joueur la nuit.", i: "voyante.png", c: "var(--neon-cyan)" },
-                'sorciere': { n: "Slime Sorcière", d: "Soin et Poison (1x).", i: "sorciere.png", c: "var(--neon-purple)" },
-                'chasseur': { n: "Slime Chasseur", d: "Tire en mourant.", i: "chasseur.png", c: "var(--neon-yellow)" },
-                'slime': { n: "Slime (Civil)", d: "Trouve les infectés.", i: "slime.png", c: "var(--neon-green)" }
-            };
-
-            let r = cfg[role] || cfg['slime'];
-            rName.innerText = r.n; rDesc.innerText = r.d; rImg.src = r.i;
-            card.style.borderColor = r.c; card.style.boxShadow = `0 0 20px ${r.c}`; rName.style.color = r.c;
+            document.getElementById('role-name').innerText = rData.name;
+            document.getElementById('role-desc').innerText = rData.desc;
+            document.getElementById('role-image').src = rData.img; // Va piocher la bonne image traduite !
+            
+            const card = document.getElementById('my-role-card');
+            card.style.borderColor = rData.color;
+            card.style.boxShadow = `0 0 20px ${rData.color}`;
+            document.getElementById('role-name').style.color = rData.color;
         }
+
+        // Init UI au chargement
+        updateLang('fr');
     </script>
 </body>
 </html>
