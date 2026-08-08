@@ -57,6 +57,7 @@
         .score-board {
             display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: bold;
             color: var(--neon-green); text-shadow: 0 0 12px var(--neon-green); letter-spacing: 2px;
+            margin-left: 100px; /* Pour laisser la place au bouton Hub */
         }
 
         #menu-screen {
@@ -104,15 +105,39 @@
         }
         input[type="text"]:focus { box-shadow: 0 0 10px var(--neon-pink); }
 
+        /* Bouton Retour Hub */
+        #btn-home {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.3s;
+            width: auto;
+        }
+        #btn-home:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
         /* =========================================
            4. PANNEAU DE L'ÉDITEUR (DRAGGABLE)
            ========================================= */
         #editor-panel {
-            position: absolute; top: 20px; left: 20px; /* Position initiale */
+            position: absolute; top: 80px; left: 20px; /* Décalé pour ne pas cacher le bouton HUB */
             background: rgba(11, 12, 16, 0.95); border: 2px solid var(--neon-yellow);
             padding: 15px 20px; border-radius: 10px; display: none; gap: 15px; pointer-events: auto;
             box-shadow: 0 0 15px var(--neon-yellow); z-index: 20; align-items: center; flex-wrap: nowrap; 
-            cursor: grab; /* Indique qu'on peut le déplacer */
+            cursor: grab;
         }
         #editor-panel:active { cursor: grabbing; }
 
@@ -125,7 +150,7 @@
         .divider { width: 2px; height: 40px; background: gray; margin: 0 10px; }
 
         /* Boutons d'actions éditeur (Design per Image) */
-        .action-btn { padding: 10px 20px; font-size: 1.1rem; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; }
+        .action-btn { padding: 10px 20px; font-size: 1.1rem; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; width: auto;}
         .action-tester { border: 2px solid var(--neon-green); color: var(--neon-green); background: #000; }
         .action-exporter { border: 2px solid var(--neon-cyan); color: var(--neon-cyan); background: #000; }
         .action-quitter { border: 2px solid var(--neon-pink); color: var(--neon-pink); background: #000; }
@@ -151,6 +176,10 @@
 
     <!-- JEU -->
     <div id="game-container" class="no-swipe">
+        
+        <!-- BOUTON RETOUR HUB -->
+        <button id="btn-home" title="Retour au Hub Global">🏠 HUB</button>
+
         <canvas id="gameCanvas"></canvas>
         
         <div id="ui-layer">
@@ -181,11 +210,14 @@
 
         <!-- PANNEAU ÉDITEUR (DRAGGABLE) -->
         <div id="editor-panel">
-            <span style="color:var(--neon-yellow); font-weight:bold; font-size: 1.2rem; pointer-events: none;">OUTILS:</span>
+            <span style="color:var(--neon-yellow); font-weight:bold; font-size: 1.2rem; pointer-events: none; display: none;">OUTILS:</span>
             
             <button class="tool-btn active" data-tool="block" title="Bloc">🟦</button>
             <button class="tool-btn" data-tool="spike" title="Pic">🔺</button>
             <button class="tool-btn" data-tool="hole" title="Trou">🕳️</button>
+            <button class="tool-btn" data-tool="pad" title="Propulseur">🚀</button>
+            <button class="tool-btn" data-tool="holo" title="Hologramme (Fake)">👻</button>
+            <button class="tool-btn" data-tool="coin" title="Data Chip (Bonus)">💎</button>
             <button class="tool-btn" data-tool="flag" title="Fin du niveau">🏁</button>
             <button class="tool-btn" data-tool="eraser" title="Gomme">❌</button>
             
@@ -204,6 +236,15 @@
 
     <!-- MOTEUR COMPLET -->
     <script>
+        // --- 0. BOUTON HUB LOGIQUE ---
+        document.getElementById('btn-home').addEventListener('click', () => {
+            // Sauvegarde de précaution si on quitte pendant l'édition
+            if (gameState === 'EDITOR') {
+                localStorage.setItem('slimeDashLevel', JSON.stringify(levelData));
+            }
+            window.location.href = '../index.html'; // Retour au Hub (ajuste le chemin si besoin)
+        });
+
         // --- 1. AUDIO YOUTUBE ---
         let ytPlayer;
         let audioStarted = false;
@@ -255,8 +296,8 @@
         let savedLvl = localStorage.getItem('slimeDashLevel');
         if(savedLvl) levelData = JSON.parse(savedLvl);
 
-        const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4 };
-        const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag' };
+        const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7 };
+        const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin' };
 
         // --- 4. GESTIONNAIRE DES SPRITES ---
         const sprites = { idle: [], run: [], jump: [], land: [] };
@@ -269,7 +310,6 @@
             });
         }
         
-        // Fichiers exacts demandés par l'utilisateur
         loadFrames('idle', ['slm.png', 'slm2.png', 'slm3.png', 'slm4.png']);
         loadFrames('run',  ['slm5.png', 'slm6.png', 'slm7.png', 'slm8.png']);
         loadFrames('jump', ['slm10.png', 'slm11.png', 'slm12.png', 'slm13.png', 'slm14.png', 'slm15.png', 'slm16.png']);
@@ -336,6 +376,7 @@
             setAnimState('RUN');
             
             cameraX = 0; score = 0; particles = []; shakeTimer = 0;
+            levelData.forEach(obs => obs.collected = false);
             
             if (mode === 'PLAYING_ENDLESS') {
                 gameSpeed = 500;
@@ -344,7 +385,7 @@
                 statusText.innerText = "COURSE INFINIE";
                 statusText.style.color = "var(--neon-pink)";
             } else {
-                gameSpeed = 500; // Vitesse fixe pour les maps customs
+                gameSpeed = 500; 
                 statusText.innerText = "MAP CUSTOM";
                 statusText.style.color = "var(--neon-green)";
             }
@@ -356,6 +397,7 @@
             menuScreen.style.display = 'none';
             editorPanel.style.display = 'flex';
             document.getElementById('completion-text').style.display = 'none';
+            levelData.forEach(obs => obs.collected = false);
             
             player.y = height - GROUND_HEIGHT - player.size;
             setAnimState('IDLE');
@@ -404,11 +446,9 @@
         let panelOffsetX, panelOffsetY;
 
         editorPanel.addEventListener('mousedown', (e) => {
-            // Ne pas drag si on clique sur un bouton ou outil
             if(e.target.closest('.tool-btn') || e.target.closest('.action-btn')) return;
             isDraggingPanel = true;
             const rect = editorPanel.getBoundingClientRect();
-            // On retire le transform CSS s'il y en a un pour gérer le left/top pur
             editorPanel.style.transform = 'none'; 
             panelOffsetX = e.clientX - rect.left;
             panelOffsetY = e.clientY - rect.top;
@@ -418,12 +458,11 @@
             if (!isDraggingPanel) return;
             editorPanel.style.left = (e.clientX - panelOffsetX) + 'px';
             editorPanel.style.top = (e.clientY - panelOffsetY) + 'px';
-            editorPanel.style.bottom = 'auto'; // Remplace le bottom CSS initial
+            editorPanel.style.bottom = 'auto'; 
         });
 
         document.addEventListener('mouseup', () => { isDraggingPanel = false; });
 
-        // Tactile pour le panneau
         editorPanel.addEventListener('touchstart', (e) => {
             if(e.target.closest('.tool-btn') || e.target.closest('.action-btn')) return;
             isDraggingPanel = true;
@@ -466,7 +505,6 @@
             showMenu("Slime-Dash", "var(--neon-cyan)");
         });
 
-        // Encodage/Décodage
         document.getElementById('export-btn').addEventListener('click', () => {
             try {
                 const minified = levelData.map(o => [o.x, o.y, typeMap[o.type]]);
@@ -506,7 +544,7 @@
 
         function placeBlockAtCursor() {
             if (hoverGridY < 0 && currentTool !== 'hole') return; 
-            if (currentTool === 'flag') levelData = levelData.filter(o => o.type !== 'flag'); // Un seul drapeau max
+            if (currentTool === 'flag') levelData = levelData.filter(o => o.type !== 'flag'); 
 
             const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
             if (currentTool === 'eraser') {
@@ -552,27 +590,26 @@
         // --- 11. GENERATEUR INFINI ---
         function updateEndlessGeneration() {
             const currentGridX = Math.floor(cameraX / GRID_SIZE);
-            const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 5; // Regarde loin devant
+            const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 5; 
 
             if (nextEndlessSpawnX < targetGridX) {
-                // Génère un chunk d'obstacle
                 const r = Math.random();
                 let type = 'block';
                 if(r > 0.8) type = 'hole';
                 else if(r > 0.5) type = 'spike';
+                else if(r > 0.4) type = 'pad';
+                else if(r > 0.3) type = 'coin';
 
-                // Y aléatoire pour les blocs
                 let y = 0;
-                if(type === 'block' && Math.random() > 0.5) y = Math.floor(Math.random() * 3);
+                if((type === 'block' || type === 'pad' || type === 'coin') && Math.random() > 0.5) y = Math.floor(Math.random() * 3);
+                if (type === 'coin') y += 1;
 
-                endlessLevelData.push({x: nextEndlessSpawnX, y: type === 'hole' ? 0 : y, type: type});
+                endlessLevelData.push({x: nextEndlessSpawnX, y: type === 'hole' ? 0 : y, type: type, collected: false});
                 
-                // Espacement dynamique selon la vitesse
                 const gap = Math.floor(Math.random() * 3) + Math.floor(gameSpeed / 150);
                 nextEndlessSpawnX += gap;
             }
 
-            // Nettoyage de la mémoire (supprime ce qui est loin derrière)
             if (endlessLevelData.length > 50 && endlessLevelData[0].x < currentGridX - 10) {
                 endlessLevelData.shift();
             }
@@ -580,16 +617,6 @@
 
 
         // --- 12. CONTROLES SAUT & COLLISIONS ---
-        function triggerJump() {
-            if (gameState.startsWith('PLAYING')) {
-                if (player.isGrounded) {
-                    player.vy = JUMP_FORCE; player.isGrounded = false;
-                    setAnimState('JUMP');
-                    spawnParticles(player.x + player.size/2, player.y + player.size, 'var(--neon-green)', 15);
-                }
-            }
-        }
-
         function checkCollisions(activeLevelData) {
             const playerWorldX = player.x + cameraX;
             
@@ -613,6 +640,8 @@
             const nearbyObjects = activeLevelData.filter(o => o.type !== 'hole' && Math.abs((o.x * GRID_SIZE) - playerWorldX) < 200);
             
             for (let obs of nearbyObjects) {
+                if(obs.collected || obs.type === 'holo') continue; 
+
                 const obsScreenX = (obs.x * GRID_SIZE) - cameraX;
                 const obsScreenY = height - GROUND_HEIGHT - ((obs.y + 1) * GRID_SIZE);
                 const obsSize = GRID_SIZE;
@@ -620,12 +649,26 @@
                 const tolX = 12, tolY = 12;
                 const hitX = (player.x + tolX < obsScreenX + obsSize) && (player.x + player.size - tolX > obsScreenX);
                 
-                if (obs.type === 'block') {
+                if (obs.type === 'coin') {
+                    const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
+                    if (hitX && hitY) {
+                        obs.collected = true; score += 500;
+                        spawnParticles(obsScreenX + obsSize/2, obsScreenY + obsSize/2, 'var(--neon-yellow)', 20);
+                    }
+                    continue; 
+                }
+
+                if (obs.type === 'block' || obs.type === 'pad') {
                     const hitY = (player.y + tolY < obsScreenY + obsSize) && (player.y + player.size - tolY > obsScreenY);
                     if (hitX && hitY) {
                         if (player.vy > 0 && player.y + player.size - player.vy * 0.05 <= obsScreenY + 15) {
-                            player.y = obsScreenY - player.size; player.vy = 0;
-                            if(!player.isGrounded) { player.isGrounded = true; setAnimState('LAND'); }
+                            player.y = obsScreenY - player.size; 
+                            if (obs.type === 'pad') {
+                                player.vy = JUMP_FORCE * 1.5; player.isGrounded = false; setAnimState('JUMP');
+                                spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 15);
+                            } else {
+                                player.vy = 0; if(!player.isGrounded) { player.isGrounded = true; setAnimState('LAND'); }
+                            }
                             continue; 
                         }
                         gameOver(false); return;
@@ -680,11 +723,11 @@
                 document.getElementById('score').innerText = Math.floor(score);
 
                 if (gameState === 'PLAYING_ENDLESS') {
-                    gameSpeed += dt * 10; // Accélération constante en mode infini
+                    gameSpeed += dt * 10; 
                     updateEndlessGeneration();
                     checkCollisions(endlessLevelData);
                 } else {
-                    checkCollisions(levelData); // Custom Map (Vitesse fixe)
+                    checkCollisions(levelData); 
                 }
             } 
             // EDITOR Update
@@ -701,6 +744,25 @@
                 ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                 ctx.shadowBlur = 10; ctx.shadowColor = '#00f0ff'; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.shadowBlur=0;
             } 
+            else if (type === 'pad') {
+                ctx.fillStyle = 'var(--neon-cyan)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
+                ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)'; ctx.strokeRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2); ctx.shadowBlur=0;
+            }
+            else if (type === 'holo') {
+                ctx.fillStyle = 'rgba(0, 240, 255, 0.15)'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+                ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.setLineDash([]);
+            }
+            else if (type === 'coin') {
+                const floatY = screenY + Math.sin(performance.now()/200) * 5;
+                ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-yellow)'; ctx.fillStyle = 'var(--neon-yellow)';
+                ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, floatY + GRID_SIZE/4);
+                ctx.lineTo(screenX + GRID_SIZE*0.75, floatY + GRID_SIZE/2);
+                ctx.lineTo(screenX + GRID_SIZE/2, floatY + GRID_SIZE*0.75);
+                ctx.lineTo(screenX + GRID_SIZE/4, floatY + GRID_SIZE/2);
+                ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
+            }
             else if (type === 'spike') {
                 ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
@@ -755,7 +817,7 @@
 
             // C. NIVEAU 
             activeLevelData.forEach(obs => {
-                if (obs.type === 'hole') return; 
+                if (obs.type === 'hole' || obs.collected) return; 
                 const screenX = (obs.x * GRID_SIZE) - cameraX;
                 const screenY = groundY - ((obs.y + 1) * GRID_SIZE);
                 if(screenX + GRID_SIZE < 0 || screenX > width) return;
@@ -793,7 +855,6 @@
             
             const activeImg = currentArray[safeIndex];
 
-            // Rendu Slime (Avec Fallback Box propre si img absente ou erreur 404)
             if (activeImg && activeImg.complete && activeImg.naturalWidth > 0) {
                 ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-green)';
                 ctx.drawImage(activeImg, player.x, player.y, player.size, player.size);
