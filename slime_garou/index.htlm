@@ -435,5 +435,119 @@
             roleNameEl.style.color = color;
         }
     </script>
+    // ==========================================
+        // 🌑 MOTEUR MULTIJOUEUR : CYCLE JOUR / NUIT
+        // ==========================================
+
+        let gameState = {
+            phase: 'lobby', // lobby, night_wolves, night_seer, night_witch, day_vote
+            votes: {},      // Stocke les votes en cours
+            deadTonight: [] // Victimes de la nuit
+        };
+
+        // --- HÔTE : GESTION DES PHASES ---
+        
+        function startNightPhase() {
+            gameState.phase = 'night_wolves';
+            gameState.votes = {};
+            addLog("Système en veille... Les Slime-Garous se réveillent.");
+            
+            // On demande à tous les clients de mettre à jour leur UI
+            broadcast({ type: 'phase_change', phase: 'night_wolves', message: 'Nuit : Les infectés choisissent leur cible.' });
+            
+            // L'hôte met aussi à jour sa propre UI
+            updateClientUI('night_wolves', 'Nuit : Les infectés choisissent leur cible.');
+        }
+
+        // L'hôte reçoit les actions réseau des joueurs
+        function handleNetworkAction(clientId, data) {
+            if (data.type === 'action') {
+                if (gameState.phase === 'night_wolves' && data.role === 'slimegarou') {
+                    gameState.votes[clientId] = data.target;
+                    checkWolvesVotes();
+                }
+                // Ici on ajoutera la voyante, la sorcière, etc.
+            }
+        }
+
+        function checkWolvesVotes() {
+            const aliveWolves = connections.filter(c => c.role === 'slimegarou' && c.isAlive);
+            const votesCount = Object.keys(gameState.votes).length;
+
+            if (votesCount === aliveWolves.length) {
+                // Tous les loups ont voté ! On détermine la cible (simplifié : on prend le 1er vote unanime)
+                const targetId = Object.values(gameState.votes)[0]; 
+                const victim = connections.find(c => c.name === targetId);
+                
+                if(victim) {
+                    victim.isAlive = false;
+                    gameState.deadTonight.push(victim.name);
+                }
+                
+                // Passage à la phase suivante (ex: Le Jour)
+                setTimeout(() => startDayPhase(), 2000);
+            }
+        }
+
+        function startDayPhase() {
+            gameState.phase = 'day_vote';
+            let msg = `Le jour se lève. Code mort : ${gameState.deadTonight.join(', ') || 'Aucun'}.`;
+            addLog(msg);
+            
+            broadcast({ type: 'phase_change', phase: 'day_vote', message: msg });
+            updateClientUI('day_vote', msg);
+            gameState.deadTonight = []; // Reset
+        }
+
+        // --- CLIENT : MISE À JOUR DE L'INTERFACE ---
+
+        function updateClientUI(phase, message) {
+            document.getElementById('phase-title').innerText = message;
+            const actionPanel = document.getElementById('action-panel');
+            actionPanel.innerHTML = ''; // On vide le panel
+
+            // Si c'est la nuit et que je suis Slime-Garou
+            if (phase === 'night_wolves' && myRole === 'slimegarou') {
+                actionPanel.innerHTML = `<p style="color:var(--neon-pink);">Choisis un Slime à infecter :</p>`;
+                
+                // Afficher des boutons pour chaque joueur en vie
+                connections.forEach(c => {
+                    if (c.name !== myName && c.isAlive) {
+                        let btn = document.createElement('button');
+                        btn.innerText = `[Tuer] ${c.name}`;
+                        btn.style.borderColor = "var(--neon-pink)";
+                        btn.onclick = () => sendActionToServer('kill', c.name);
+                        actionPanel.appendChild(btn);
+                    }
+                });
+            } 
+            // Si c'est la nuit et que je suis un civil
+            else if (phase.startsWith('night') && myRole !== 'slimegarou') {
+                actionPanel.innerHTML = `<p style="color:gray;">Ferme les yeux, ton système est en veille...</p>`;
+            }
+            // Si c'est le jour, tout le monde peut voter pour éliminer
+            else if (phase === 'day_vote') {
+                actionPanel.innerHTML = `<p style="color:var(--neon-yellow);">Vote pour déconnecter un suspect :</p>`;
+                // ... logique des boutons de vote de jour
+            }
+        }
+
+        // Fonction pour que le client envoie son choix à l'Hôte
+        function sendActionToServer(actionType, targetName) {
+            const data = { type: 'action', role: myRole, action: actionType, target: targetName };
+            
+            if (isHost) {
+                // L'hôte s'envoie la donnée à lui-même
+                handleNetworkAction(myName, data);
+                document.getElementById('action-panel').innerHTML = "<p>Donnée transmise. En attente des autres...</p>";
+            } else {
+                // Le client envoie à l'Hôte via PeerJS
+                connections[0].conn.send(data);
+                document.getElementById('action-panel').innerHTML = "<p>Donnée transmise au serveur. En attente...</p>";
+            }
+        }
+
+        // N'oublie pas de modifier la réception de données chez l'Hôte (dans btn-create)
+        // pour écouter "handleNetworkAction(conn.peer, data);" quand il reçoit un {type: 'action'}
 </body>
 </html>
