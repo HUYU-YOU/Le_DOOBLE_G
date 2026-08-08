@@ -7,198 +7,257 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <style>
+        /* =========================================
+           1. VARIABLES CYBERPUNK ET RESET
+           ========================================= */
         :root {
             --bg-color: #0b0c10;
-            --neon-cyan: #00f0ff;
+            --container-bg: #1a1e24; /* Couleur gris/bleu sombre du Drawer */
+            --inner-bg: #0d1117;     /* Couleur plus sombre pour les inputs/box */
+            --neon-cyan: #00e5ff;
             --neon-pink: #ff007f;
             --neon-green: #39ff14;
             --neon-yellow: #fce803;
             --neon-purple: #9b59b6;
             --text-color: #e0e0e0;
-            --font-main: 'Courier New', Courier, monospace;
+            /* Police plus moderne pour l'UI, monospace pour les logs */
+            --font-ui: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            min-height: 100vh;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--font-main);
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
+            margin: 0; padding: 0; width: 100%; min-height: 100vh;
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: var(--font-ui); overflow-x: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
         }
 
         /* Video Background */
         #bg-video {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            z-index: -100;
-            transform: translateX(-50%) translateY(-50%);
-            object-fit: cover;
-            opacity: 0.4; /* Sombre pour laisser l'interface lisible */
-            transition: opacity 1s ease-in-out;
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            z-index: -100; transform: translateX(-50%) translateY(-50%);
+            object-fit: cover; opacity: 0.2; transition: opacity 1s ease-in-out;
         }
 
-        h1, h2, h3 { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); text-transform: uppercase; margin-bottom: 10px;}
+        /* =========================================
+           2. BOUTON RETOUR HUB (Style Image 1)
+           ========================================= */
+        #btn-retour-hub {
+            position: fixed; top: 20px; left: 20px; z-index: 9999;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff; padding: 8px 15px; font-family: var(--font-ui);
+            font-size: 14px; border-radius: 6px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+            text-decoration: none; transition: 0.3s ease;
+        }
+        #btn-retour-hub:hover { background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.5); }
 
+        /* Titre Haut de page */
+        .main-title {
+            color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+            text-transform: uppercase; margin-top: 50px; margin-bottom: 20px;
+            font-size: 2.5rem; letter-spacing: 3px; font-weight: bold;
+        }
+
+        /* =========================================
+           3. CONTENEUR PRINCIPAL (Style Drawer)
+           ========================================= */
         .container {
-            background: rgba(11, 12, 16, 0.85);
-            border: 2px solid var(--neon-pink);
-            box-shadow: 0 0 15px var(--neon-pink);
-            padding: 20px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 600px;
-            margin: 20px 0;
-            backdrop-filter: blur(5px);
+            background: var(--container-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; padding: 30px; width: 90%; max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 40px; text-align: center;
         }
 
         .no-swipe { touch-action: none; }
 
-        input[type="text"], input[type="number"], button {
-            background: rgba(0,0,0,0.7);
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            padding: 10px;
-            margin: 10px 0;
-            width: 100%;
-            box-sizing: border-box;
-            font-family: inherit;
-            font-size: 16px;
-            outline: none;
-            transition: 0.3s;
+        h2, h3 { color: var(--neon-cyan); margin-top: 0; margin-bottom: 15px; font-weight: 600; }
+        
+        /* =========================================
+           4. INPUTS ET BOUTONS
+           ========================================= */
+        input[type="text"], input[type="number"] {
+            background: var(--inner-bg); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; padding: 12px; margin: 10px 0; width: 100%;
+            box-sizing: border-box; font-family: inherit; font-size: 16px;
+            border-radius: 6px; outline: none; transition: 0.3s; text-align: center;
+        }
+        input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
+
+        /* Boutons Solid Neon (Style Drawer) */
+        .btn-solid {
+            width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px;
+            font-size: 1.1rem; font-weight: bold; text-transform: uppercase;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; font-family: inherit;
+        }
+        .btn-solid:active { transform: scale(0.98); }
+        
+        .btn-pink {
+            background-color: var(--neon-pink); color: #fff;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
+        }
+        .btn-pink:hover { box-shadow: 0 0 25px rgba(255, 0, 127, 0.8); }
+
+        .btn-cyan {
+            background-color: var(--neon-cyan); color: #000;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+        }
+        .btn-cyan:hover { box-shadow: 0 0 25px rgba(0, 229, 255, 0.8); }
+
+        /* Boutons secondaires (Outlined) */
+        .btn-outline {
+            background: transparent; border: 2px solid gray; color: gray;
+            padding: 10px; border-radius: 6px; cursor: pointer; transition: 0.3s;
         }
 
-        input:focus { box-shadow: 0 0 10px var(--neon-cyan); }
-        button { cursor: pointer; text-transform: uppercase; font-weight: bold; }
-        button:hover { background: var(--neon-cyan); color: var(--bg-color); box-shadow: 0 0 10px var(--neon-cyan); }
+        /* Lang Selector (Drapeaux/Boutons) */
+        .lang-selector { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
+        .lang-btn { 
+            background: transparent; border: none; font-size: 2rem; 
+            cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 0;
+            filter: grayscale(100%);
+        }
+        .lang-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 10px rgba(255,255,255,0.5)); transform: scale(1.1); }
 
-        .btn-host { border-color: var(--neon-pink); color: var(--neon-pink); }
-        .btn-host:hover { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
-        .btn-start { border-color: var(--neon-green); color: var(--neon-green); display: none;}
-        .btn-start:hover { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+        /* =========================================
+           5. ZONES SPÉCIFIQUES (LOBBY & JEU)
+           ========================================= */
+        .share-code-text { font-size: 1.1rem; color: #aaa; margin-bottom: 20px; }
+        .share-code-val { color: var(--neon-cyan); font-weight: bold; font-size: 1.3rem; letter-spacing: 1px; user-select: all; }
 
-        .lang-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .lang-btn { width: auto; padding: 5px 15px; border-radius: 20px; border: 1px solid gray; color: gray; }
-        .lang-btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+        /* Player Connected Box */
+        .player-box {
+            background: var(--inner-bg);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 8px; padding: 15px; margin-bottom: 20px;
+            min-height: 80px; text-align: center;
+        }
+        .player-box h4 { margin: 0 0 15px 0; color: #fff; font-weight: 500; }
+        
+        .players-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .player-badge {
+            background: transparent; border: 1px solid #555; color: #ccc;
+            padding: 6px 12px; border-radius: 4px; font-size: 0.9rem;
+        }
 
-        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; margin: 15px 0; padding: 15px; border: 1px dashed var(--neon-yellow); }
-        .checkbox-group { display: flex; align-items: center; justify-content: space-between; }
-        input[type="checkbox"] { accent-color: var(--neon-pink); width: 20px; height: 20px; }
+        /* Config Grid */
+        .config-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; 
+            background: var(--inner-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;
+        }
+        .checkbox-group { display: flex; align-items: center; justify-content: space-between; font-size: 0.95rem; }
+        input[type="checkbox"] { accent-color: var(--neon-pink); width: 18px; height: 18px; }
 
+        /* Game Area */
         #game-area { display: none; }
         .role-card {
-            border: 2px solid var(--neon-cyan);
-            padding: 20px;
-            margin: 20px 0;
-            box-shadow: 0 0 20px var(--neon-cyan);
-            background: rgba(0,0,0,0.8);
-            transition: all 0.5s;
+            border: 2px solid var(--neon-cyan); padding: 20px; margin: 20px 0;
+            box-shadow: 0 0 20px rgba(0,229,255,0.2); background: var(--inner-bg); border-radius: 8px; transition: all 0.5s;
         }
-        
         .role-img { max-width: 120px; display: block; margin: 0 auto 15px; filter: drop-shadow(0 0 10px var(--neon-cyan)); }
-        .player-list { list-style: none; padding: 0; text-align: left; }
-        .player-list li { margin: 5px 0; padding: 5px; border-bottom: 1px solid #333; }
         
         .sys-log {
-            font-size: 0.9em;
-            color: var(--neon-green);
-            background: #000;
-            padding: 10px;
-            border-radius: 5px;
-            height: 120px;
-            overflow-y: auto;
-            text-align: left;
-            border: 1px solid var(--neon-green);
+            font-size: 0.9em; font-family: var(--font-mono); color: var(--neon-green);
+            background: #000; padding: 10px; border-radius: 5px; height: 120px;
+            overflow-y: auto; text-align: left; border: 1px solid rgba(57, 255, 20, 0.3); margin-top: 20px;
         }
 
-        #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--neon-yellow); padding: 20px; box-shadow: 0 0 20px var(--neon-yellow); background: #111;}
+        #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--neon-yellow); padding: 20px; border-radius: 8px; box-shadow: 0 0 20px rgba(252, 232, 3, 0.2); background: var(--inner-bg);}
     </style>
 </head>
 <body>
+
+    <!-- BOUTON RETOUR HUB (Design fidèle à l'image) -->
+    <a href="../index.html" id="btn-retour-hub">
+        &#11013; Retour au Hub
+    </a>
 
     <!-- MEDIA DYNAMIQUE -->
     <video id="bg-video" autoplay loop muted playsinline>
         <source id="bg-video-source" src="backgroundnight.mp4" type="video/mp4">
     </video>
-    
-    <!-- Lecteur YouTube invisible pour BGM -->
     <div id="yt-player" style="display: none;"></div>
 
     <script>
         // Swipe global protection pour le Hub
         document.addEventListener('touchstart', (e) => {
             if(e.target.closest('.no-swipe')) { e.stopPropagation(); }
-        });
-        document.addEventListener('mousedown', (e) => {
-            if(e.target.closest('.no-swipe')) { e.stopPropagation(); }
-        });
+        }, {passive: false});
     </script>
 
-    <div class="container no-swipe">
-        <h1 id="ui-title">Slime-Garou</h1>
-        
-        <div class="lang-selector">
-            <button id="lang-fr" class="lang-btn active">FR</button>
-            <button id="lang-en" class="lang-btn">EN</button>
-        </div>
+    <div class="main-title" id="ui-title">SLIME-GAROU</div>
 
+    <div class="container no-swipe">
+        
         <!-- MENU PRINCIPAL -->
         <div id="menu">
-            <button id="btn-create" class="btn-host ui-text" data-key="btnCreate">Créer un Serveur (Hôte)</button>
-            <hr style="border-color: #333; margin: 20px 0;">
-            <input type="text" id="join-id" placeholder="ID de Connexion (Hôte)">
-            <input type="text" id="player-name" placeholder="Pseudo / Handle">
-            <button id="btn-join" class="ui-text" data-key="btnJoin">Rejoindre la Partie</button>
+            <h2 class="ui-text" data-key="menuTitle" style="color: #fff;">Connexion</h2>
+            
+            <button id="btn-create" class="btn-solid btn-cyan ui-text" data-key="btnCreate">Créer une partie</button>
+            
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 25px 0;">
+            
+            <input type="text" id="join-id" placeholder="Code de la partie (ex: DRW8369)">
+            <input type="text" id="player-name" placeholder="Votre Pseudo">
+            <button id="btn-join" class="btn-solid btn-pink ui-text" data-key="btnJoin">Rejoindre</button>
         </div>
 
-        <!-- LOBBY -->
+        <!-- LOBBY (Style Drawer Exact) -->
         <div id="lobby" style="display: none;">
-            <h2 class="ui-text" data-key="lobbyTitle">Réseau Local</h2>
-            <p>ID : <span id="my-id" style="color: var(--neon-pink); font-weight: bold; user-select: all;">Génération...</span></p>
+            <h2 class="ui-text" data-key="configTitle">Configuration</h2>
             
+            <p class="share-code-text">
+                <span class="ui-text" data-key="shareText">Partagez ce code aux joueurs :</span> 
+                <span id="my-id" class="share-code-val">Génération...</span>
+            </p>
+            
+            <!-- Zone Joueurs -->
+            <div class="player-box">
+                <h4 class="ui-text" data-key="playersConnected">Player connected :</h4>
+                <div id="players-list-container" class="players-container">
+                    <span class="player-badge">Toi</span>
+                </div>
+            </div>
+
+            <!-- Langues -->
+            <p style="color: #fff; font-weight: 500; margin-bottom: 5px;" class="ui-text" data-key="dictLang">Dictionary language</p>
+            <div class="lang-selector">
+                <button id="lang-fr" class="lang-btn active" title="Français">🇫🇷</button>
+                <button id="lang-en" class="lang-btn" title="English">🇬🇧</button>
+            </div>
+
+            <!-- Configuration Hôte -->
             <div id="host-config" style="display: none;">
-                <h3 class="ui-text" data-key="configTitle">Configuration</h3>
                 <div class="config-grid">
-                    <div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
                         <label class="ui-text" data-key="cfgWolves">Garous :</label>
-                        <input type="number" id="cfg-wolves" value="1" min="1" max="3" style="width: 50px;">
+                        <input type="number" id="cfg-wolves" value="1" min="1" max="3" style="width: 60px; margin: 0; padding: 8px;">
                     </div>
                     <div class="checkbox-group"><label class="ui-text" data-key="roleSeer">Voyante</label><input type="checkbox" id="cfg-seer" checked></div>
                     <div class="checkbox-group"><label class="ui-text" data-key="roleWitch">Sorcière</label><input type="checkbox" id="cfg-witch" checked></div>
                     <div class="checkbox-group"><label class="ui-text" data-key="roleCupid">Cupidon</label><input type="checkbox" id="cfg-cupid"></div>
                     <div class="checkbox-group"><label class="ui-text" data-key="roleHunter">Chasseur</label><input type="checkbox" id="cfg-hunter"></div>
                 </div>
+                
+                <button id="btn-start" class="btn-solid btn-pink ui-text" data-key="btnStart" style="display:none;">Lancer la partie</button>
             </div>
-
-            <h3><span class="ui-text" data-key="players">Joueurs</span> (<span id="player-count">1</span>)</h3>
-            <ul id="players-list" class="player-list"></ul>
-            
-            <button id="btn-start" class="btn-start ui-text" data-key="btnStart">Lancer l'Infection</button>
+            <p id="waiting-host-msg" style="color: gray; display:none;" class="ui-text" data-key="waitingHost">En attente de l'hôte...</p>
         </div>
 
         <!-- ZONE DE JEU -->
         <div id="game-area" class="no-swipe">
-            <h2 id="phase-title">...</h2>
+            <h2 id="phase-title" style="color: #fff;">...</h2>
             
             <div class="role-card" id="my-role-card">
                 <img id="role-image" class="role-img" src="" alt="Role Image">
                 <h3 id="role-name" style="margin:0;">...</h3>
-                <p id="role-desc" style="font-size: 0.9em; color: gray;">...</p>
+                <p id="role-desc" style="font-size: 0.9em; color: #aaa;">...</p>
                 <p id="lovers-info" style="color: #ff69b4; font-weight: bold; display:none;"></p>
             </div>
 
-            <h3 class="ui-text" data-key="actionInterface">Interface d'Action</h3>
+            <h3 class="ui-text" data-key="actionInterface" style="color: #fff; font-size: 1.2rem;">Action</h3>
             <div id="action-panel" style="margin-bottom: 20px; min-height: 50px;"></div>
 
             <!-- ECRAN DE FIN DE JEU -->
@@ -207,61 +266,47 @@
                 <p id="winner-desc" style="color: white;"></p>
             </div>
 
-            <h3 class="ui-text" data-key="sysLogs">Logs Système</h3>
             <div class="sys-log" id="sys-log">> SYSTEM_READY</div>
         </div>
     </div>
 
+    <!-- SCRIPT COMPLET INTACT (LOGIQUE DE JEU) -->
     <script>
         // ==========================================
         // 🎵 GESTION AUDIO & VIDEO (YOUTUBE API)
         // ==========================================
         let ytPlayer;
-        let currentBgm = 'night'; // Commence la nuit par défaut
+        let currentBgm = 'night';
         let audioStarted = false;
 
-        const YOUTUBE_NIGHT = '3ecxZy8luDg'; // Track de Nuit (Bois / Angoisse)
-        const YOUTUBE_DAY = 'vyg5jJrZ42s';   // Track de Jour
+        const YOUTUBE_NIGHT = '3ecxZy8luDg'; 
+        const YOUTUBE_DAY = 'vyg5jJrZ42s';   
 
-        function onYouTubeIframeAPIReady() {
+        window.onYouTubeIframeAPIReady = function() {
             ytPlayer = new YT.Player('yt-player', {
-                height: '0',
-                width: '0',
-                videoId: YOUTUBE_NIGHT,
+                height: '0', width: '0', videoId: YOUTUBE_NIGHT,
                 playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
                 events: {
-                    'onReady': (event) => {
-                        event.target.setVolume(5); // Volume à 5%
-                    },
-                    'onStateChange': (event) => {
-                        // Boucle infinie manuelle lors du changement de vidéo
-                        if (event.data === YT.PlayerState.ENDED) {
-                            ytPlayer.playVideo();
-                        }
-                    }
+                    'onReady': (event) => { event.target.setVolume(5); },
+                    'onStateChange': (event) => { if (event.data === YT.PlayerState.ENDED) ytPlayer.playVideo(); }
                 }
             });
-        }
+        };
 
         function initAudio() {
             if (audioStarted) return;
             if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                ytPlayer.playVideo();
-                audioStarted = true;
+                ytPlayer.playVideo(); audioStarted = true;
             }
         }
 
-        // Change Vidéo et Audio selon la phase
         function setMediaEnvironment(type) {
             if (currentBgm === type) return; 
             currentBgm = type;
-            
             const vidSource = document.getElementById('bg-video-source');
             const video = document.getElementById('bg-video');
             
-            // Effet de fade out/in (Optionnel mais propre)
             video.style.opacity = 0;
-            
             setTimeout(() => {
                 if (type === 'day') {
                     vidSource.src = 'backgroundday.mp4';
@@ -270,14 +315,12 @@
                     vidSource.src = 'backgroundnight.mp4';
                     if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_NIGHT});
                 }
-                video.load();
-                video.play();
-                video.style.opacity = 0.4;
-            }, 500); // Attend la fin du fade out
+                video.load(); video.play(); video.style.opacity = 0.2; // Opacité ajustée pour ui sombre
+            }, 500); 
         }
 
         // ==========================================
-        // 🌍 DICTIONNAIRE MULTILINGUE
+        // 🌍 DICTIONNAIRE MULTILINGUE (Mise à jour UI Drawer)
         // ==========================================
         const i18n = {
             fr: {
@@ -290,14 +333,14 @@
                     villager: { name: "Slime Civil", desc: "Trouve et élimine les infectés le jour.", img: "slime.png", color: "var(--neon-green)" }
                 },
                 ui: {
-                    btnCreate: "Créer un Serveur (Hôte)", btnJoin: "Rejoindre la Partie",
-                    lobbyTitle: "Réseau Local", configTitle: "Configuration",
+                    menuTitle: "Connexion", btnCreate: "Créer une partie", btnJoin: "Rejoindre",
+                    configTitle: "Configuration", shareText: "Partagez ce code aux joueurs :",
+                    playersConnected: "Joueurs connectés :", dictLang: "Langue du jeu",
                     cfgWolves: "Nb Garous :", roleSeer: "Voyante", roleWitch: "Sorcière", roleCupid: "Cupidon", roleHunter: "Chasseur",
-                    players: "Joueurs Connectés", btnStart: "Initialiser le Protocole",
-                    actionInterface: "Interface d'Action", sysLogs: "Logs Système",
-                    waiting: "En attente des ordres...", dead: "VOUS ÊTES MORT. Connexion rompue.",
-                    sleep: "Ferme les yeux, ton système est en veille...",
-                    selectTarget: "Choisis une cible :", healMsg: "Ressusciter", poisonMsg: "Empoisonner", skipMsg: "Ne rien faire",
+                    btnStart: "Lancer la partie", waitingHost: "En attente du lancement par l'hôte...",
+                    actionInterface: "Actions", waiting: "En attente des autres joueurs...", dead: "VOUS ÊTES MORT. Connexion rompue.",
+                    sleep: "Ferme les yeux, le village s'endort...",
+                    selectTarget: "Choisissez une cible :", healMsg: "Ressusciter", poisonMsg: "Empoisonner", skipMsg: "Passer",
                     loversLinked: "Tu es secrètement lié à :"
                 }
             },
@@ -311,14 +354,14 @@
                     villager: { name: "Villager", desc: "Find and eliminate the infected by day.", img: "villager.png", color: "var(--neon-green)" }
                 },
                 ui: {
-                    btnCreate: "Host Server", btnJoin: "Join Game",
-                    lobbyTitle: "Local Network", configTitle: "Settings",
+                    menuTitle: "Connection", btnCreate: "Create Game", btnJoin: "Join",
+                    configTitle: "Configuration", shareText: "Share this code with players:",
+                    playersConnected: "Player connected:", dictLang: "Dictionary language",
                     cfgWolves: "Werewolves:", roleSeer: "Seer", roleWitch: "Witch", roleCupid: "Cupid", roleHunter: "Hunter",
-                    players: "Connected Players", btnStart: "Initialize Protocol",
-                    actionInterface: "Action Interface", sysLogs: "System Logs",
-                    waiting: "Awaiting system orders...", dead: "YOU ARE DEAD. Connection lost.",
-                    sleep: "Close your eyes, system in standby...",
-                    selectTarget: "Select a target:", healMsg: "Heal/Revive", poisonMsg: "Poison", skipMsg: "Skip",
+                    btnStart: "Start Game", waitingHost: "Waiting for host to start...",
+                    actionInterface: "Actions", waiting: "Waiting for other players...", dead: "YOU ARE DEAD. Connection lost.",
+                    sleep: "Close your eyes, the village goes to sleep...",
+                    selectTarget: "Select a target:", healMsg: "Heal", poisonMsg: "Poison", skipMsg: "Skip",
                     loversLinked: "You are secretly bound to:"
                 }
             }
@@ -368,16 +411,14 @@
         }
 
         function broadcast(data) {
-            connections.forEach(c => {
-                if(!c.isHost && c.conn && c.conn.open) c.conn.send(data);
-            });
+            connections.forEach(c => { if(!c.isHost && c.conn && c.conn.open) c.conn.send(data); });
         }
 
         // ==========================================
         // 👑 HÔTE : CRÉATION & RÉCEPTION RÉSEAU
         // ==========================================
         document.getElementById('btn-create').addEventListener('click', () => {
-            initAudio(); // Déclenche YouTube au 1er clic !
+            initAudio(); 
             isHost = true;
             menuDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
@@ -407,14 +448,14 @@
         // 👾 CLIENT : CONNEXION & RÉCEPTION RÉSEAU
         // ==========================================
         document.getElementById('btn-join').addEventListener('click', () => {
-            initAudio(); // Déclenche YouTube au 1er clic !
+            initAudio(); 
             const hostId = document.getElementById('join-id').value.trim();
             myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
             if(!hostId) return;
 
             menuDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
-            document.getElementById('my-id').parentElement.style.display = 'none';
+            document.getElementById('waiting-host-msg').style.display = 'block'; // Affiche message d'attente client
 
             initPeer(() => {
                 const conn = peer.connect(hostId);
@@ -425,8 +466,8 @@
 
                 conn.on('data', (data) => {
                     if (data.type === 'lobby_update') {
-                        document.getElementById('player-count').innerText = data.count;
-                        document.getElementById('players-list').innerHTML = data.list.map(n => `<li>${n}</li>`).join('');
+                        // document.getElementById('player-count').innerText = data.count;
+                        generatePlayerBadges(data.list);
                     }
                     else if (data.type === 'game_start') {
                         lobbyDiv.style.display = 'none';
@@ -452,8 +493,13 @@
         });
 
         function updatePlayerListUI() {
-            document.getElementById('player-count').innerText = connections.length;
-            document.getElementById('players-list').innerHTML = connections.map(c => `<li>${c.name}</li>`).join('');
+            generatePlayerBadges(connections.map(c => c.name));
+        }
+
+        // Génère le HTML pour les badges style "Drawer"
+        function generatePlayerBadges(namesList) {
+            const container = document.getElementById('players-list-container');
+            container.innerHTML = namesList.map(n => `<span class="player-badge">${n}</span>`).join('');
         }
 
         // ==========================================
@@ -495,11 +541,8 @@
         function killPlayer(targetName) {
             if(!gameState.deadTonight.includes(targetName)) {
                 gameState.deadTonight.push(targetName);
-                
                 const p = connections.find(c => c.name === targetName);
-                if(p && p.role === 'hunter') {
-                    gameState.pendingHunter = targetName;
-                }
+                if(p && p.role === 'hunter') gameState.pendingHunter = targetName;
 
                 if(gameState.lovers.includes(targetName)) {
                     const partner = gameState.lovers.find(l => l !== targetName);
@@ -517,7 +560,6 @@
             const others = alive.filter(c => c.role !== 'werewolf');
             
             let winner = null, desc = "";
-
             if (alive.length === 2 && gameState.lovers.includes(alive[0].name) && gameState.lovers.includes(alive[1].name)) {
                 winner = "AMOUR TRIOMPHANT"; desc = "Seuls les amoureux ont survécu.";
             } else if (wolves.length === 0) {
@@ -535,26 +577,19 @@
         }
 
         function processDeathsAndContinue(nextPhaseFunc) {
-            gameState.deadTonight.forEach(d => {
-                let p = connections.find(c => c.name === d);
-                if(p) p.isAlive = false;
-            });
-
+            gameState.deadTonight.forEach(d => { let p = connections.find(c => c.name === d); if(p) p.isAlive = false; });
             if(checkWinCondition()) return;
 
             if(gameState.pendingHunter) {
                 const hunterName = gameState.pendingHunter;
-                gameState.pendingHunter = null; 
-                gameState.nextPhaseAfterHunter = nextPhaseFunc; 
-                
+                gameState.pendingHunter = null; gameState.nextPhaseAfterHunter = nextPhaseFunc; 
                 gameState.phase = 'day_hunter';
                 const msg = `⚠️ ALERTE : Le Chasseur (${hunterName}) s'effondre...`;
                 addLog(msg);
                 broadcast({ type: 'phase_change', phase: 'day_hunter', message: msg, extra: { hunter: hunterName } });
                 updateClientUI('day_hunter', msg, { hunter: hunterName });
             } else {
-                gameState.deadTonight = []; 
-                nextPhaseFunc();
+                gameState.deadTonight = []; nextPhaseFunc();
             }
         }
 
@@ -571,8 +606,7 @@
         }
 
         function startWolvesPhase() {
-            gameState.phase = 'night_wolves';
-            gameState.votes = {};
+            gameState.phase = 'night_wolves'; gameState.votes = {};
             broadcast({ type: 'phase_change', phase: 'night_wolves', message: "[Night] Garous..." });
             updateClientUI('night_wolves', "[Night] Garous...");
         }
@@ -596,21 +630,18 @@
             firstNight = false;
             let deathMsg = gameState.deadTonight.length > 0 ? `Code mort: ${gameState.deadTonight.join(', ')}` : "Aucun mort.";
             addLog(`[DAY] ${deathMsg}`);
-            
             processDeathsAndContinue(() => {
-                gameState.phase = 'day_vote';
-                gameState.votes = {};
+                gameState.phase = 'day_vote'; gameState.votes = {};
                 const msg = `[DAY] Débattez et votez.`;
                 broadcast({ type: 'phase_change', phase: 'day_vote', message: msg });
                 updateClientUI('day_vote', msg);
             });
         }
 
-        // --- ROUTEUR D'ACTIONS RÉSEAU (HÔTE UNIQUEMENT) ---
+        // --- ROUTEUR D'ACTIONS RÉSEAU ---
         function handleNetworkAction(clientId, data) {
             const sender = connections.find(c => c.id === clientId || (c.isHost && clientId === 'host'));
             if (!sender) return; 
-            
             if (!sender.isAlive && !(gameState.phase === 'day_hunter' && data.role === 'hunter' && sender.name === data.extra?.hunter)) {
                 if(gameState.phase !== 'day_hunter') return;
             }
@@ -645,9 +676,7 @@
             else if (gameState.phase === 'night_witch' && data.role === 'witch') {
                 if (data.action === 'heal' && gameState.deadTonight.includes(data.target)) {
                     gameState.deadTonight = gameState.deadTonight.filter(n => n !== data.target); 
-                } else if (data.action === 'poison') {
-                    killPlayer(data.target);
-                }
+                } else if (data.action === 'poison') { killPlayer(data.target); }
                 setTimeout(() => endNightPhase(), 1500);
             }
             else if (gameState.phase === 'day_vote') {
@@ -657,26 +686,14 @@
                     const voteCounts = {};
                     Object.values(gameState.votes).forEach(v => voteCounts[v] = (voteCounts[v] || 0) + 1);
                     const targetName = Object.keys(voteCounts).reduce((a, b) => voteCounts[a] > voteCounts[b] ? a : b);
-                    
-                    killPlayer(targetName);
-                    addLog(`Le village a déconnecté : ${targetName}`);
-                    
-                    setTimeout(() => {
-                        processDeathsAndContinue(() => {
-                            startNightPhase(); 
-                        });
-                    }, 3000);
+                    killPlayer(targetName); addLog(`Le village a déconnecté : ${targetName}`);
+                    setTimeout(() => { processDeathsAndContinue(() => { startNightPhase(); }); }, 3000);
                 }
             }
             else if (gameState.phase === 'day_hunter' && data.role === 'hunter') {
-                const targetName = data.target;
-                addLog(`PAN ! Le Chasseur emporte ${targetName}`);
-                gameState.deadTonight = [];
-                killPlayer(targetName);
-                
-                setTimeout(() => {
-                    processDeathsAndContinue(gameState.nextPhaseAfterHunter);
-                }, 2000);
+                const targetName = data.target; addLog(`PAN ! Le Chasseur emporte ${targetName}`);
+                gameState.deadTonight = []; killPlayer(targetName);
+                setTimeout(() => { processDeathsAndContinue(gameState.nextPhaseAfterHunter); }, 2000);
             }
         }
 
@@ -684,7 +701,7 @@
         // 🖥️ INTERFACE ET ENVOI CLIENT
         // ==========================================
         function sendActionToServer(data) {
-            document.getElementById('action-panel').innerHTML = `<p>${i18n[currentLang].ui.waiting}</p>`;
+            document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan)">${i18n[currentLang].ui.waiting}</p>`;
             if (isHost) handleNetworkAction('host', data);
             else connections[0].conn.send(data);
         }
@@ -695,12 +712,8 @@
             panel.innerHTML = ''; 
             const langUI = i18n[currentLang].ui;
 
-            // 🎵 GESTION DYNAMIQUE VIDEO/MUSIQUE 🎵
-            if (phase.includes('day')) {
-                setMediaEnvironment('day');
-            } else if (phase.includes('night')) {
-                setMediaEnvironment('night');
-            }
+            if (phase.includes('day')) setMediaEnvironment('day');
+            else if (phase.includes('night')) setMediaEnvironment('night');
 
             const alivePlayers = connections.filter(c => c.isAlive && c.name !== myName);
             const allAlivePlayers = connections.filter(c => c.isAlive); 
@@ -709,24 +722,18 @@
             if (phase === 'day_hunter') {
                 if (myName === extra.hunter) {
                     panel.innerHTML = `<p style="color:var(--neon-yellow);">DERNIER SOUFFLE ! Choisis qui emporter :</p>`;
-                    allAlivePlayers.forEach(c => {
-                        panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', () => sendActionToServer({type:'action', role:'hunter', target: c.name, extra: {hunter: myName}})));
-                    });
-                } else {
-                    panel.innerHTML = `<p style="color:red;">À couvert ! Le Chasseur arme son arme...</p>`;
-                }
+                    allAlivePlayers.forEach(c => { panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', () => sendActionToServer({type:'action', role:'hunter', target: c.name, extra: {hunter: myName}}))); });
+                } else { panel.innerHTML = `<p style="color:red;">À couvert ! Le Chasseur arme son arme...</p>`; }
                 return; 
             }
 
-            if(myStatus && !myStatus.isAlive) {
-                panel.innerHTML = `<p style="color:red;">${langUI.dead}</p>`; return;
-            }
+            if(myStatus && !myStatus.isAlive) { panel.innerHTML = `<p style="color:red; font-weight:bold;">${langUI.dead}</p>`; return; }
 
             if (phase === 'night_cupid' && myRole === 'cupid') {
                 panel.innerHTML = `<p style="color:var(--neon-pink);">${langUI.selectTarget}</p>`;
                 allAlivePlayers.forEach(c => {
                     let btn = createBtn(c.name, 'var(--neon-pink)', () => {
-                        btn.style.background = 'var(--neon-pink)'; btn.style.color = '#000';
+                        btn.style.background = 'var(--neon-pink)'; btn.style.color = '#fff';
                         cupidTargets.push(c.name);
                         if(cupidTargets.length === 2) {
                             sendActionToServer({ type: 'action', role: 'cupid', target1: cupidTargets[0], target2: cupidTargets[1] });
@@ -738,27 +745,21 @@
             }
             else if (phase === 'night_wolves' && myRole === 'werewolf') {
                 panel.innerHTML = `<p style="color:var(--neon-pink);">${langUI.selectTarget}</p>`;
-                alivePlayers.forEach(c => {
-                    if(c.role !== 'werewolf') panel.appendChild(createBtn(c.name, 'var(--neon-pink)', () => sendActionToServer({type:'action', role:'werewolf', target: c.name})));
-                });
+                alivePlayers.forEach(c => { if(c.role !== 'werewolf') panel.appendChild(createBtn(c.name, 'var(--neon-pink)', () => sendActionToServer({type:'action', role:'werewolf', target: c.name}))); });
             } 
             else if (phase === 'night_seer' && myRole === 'seer') {
                 panel.innerHTML = `<p style="color:var(--neon-cyan);">${langUI.selectTarget}</p>`;
-                alivePlayers.forEach(c => {
-                    panel.appendChild(createBtn(c.name, 'var(--neon-cyan)', () => sendActionToServer({type:'action', role:'seer', target: c.name})));
-                });
+                alivePlayers.forEach(c => { panel.appendChild(createBtn(c.name, 'var(--neon-cyan)', () => sendActionToServer({type:'action', role:'seer', target: c.name}))); });
             }
             else if (phase === 'night_witch' && myRole === 'witch') {
                 let html = `<p style="color:var(--neon-purple);">Victime: ${extra.dead || 'Personne'}</p>`;
                 if (extra.dead && witchPotions.heal > 0) {
-                    html += `<button onclick="witchPotions.heal--; sendActionToServer({type:'action', role:'witch', action:'heal', target:'${extra.dead}'});" style="border-color:#2ecc71; color:#2ecc71;">${langUI.healMsg}</button>`;
+                    html += `<button class="btn-outline" onclick="witchPotions.heal--; sendActionToServer({type:'action', role:'witch', action:'heal', target:'${extra.dead}'});" style="border-color:#2ecc71; color:#2ecc71;">${langUI.healMsg}</button>`;
                 }
                 if (witchPotions.poison > 0) {
-                    alivePlayers.forEach(c => {
-                        html += `<button onclick="witchPotions.poison--; sendActionToServer({type:'action', role:'witch', action:'poison', target:'${c.name}'});" style="border-color:#e74c3c; color:#e74c3c;">${langUI.poisonMsg} ${c.name}</button>`;
-                    });
+                    alivePlayers.forEach(c => { html += `<button class="btn-outline" onclick="witchPotions.poison--; sendActionToServer({type:'action', role:'witch', action:'poison', target:'${c.name}'});" style="border-color:#e74c3c; color:#e74c3c; margin-left:10px;">${langUI.poisonMsg} ${c.name}</button>`; });
                 }
-                html += `<button onclick="sendActionToServer({type:'action', role:'witch', action:'skip'})" style="border-color:gray; color:gray;">${langUI.skipMsg}</button>`;
+                html += `<button class="btn-outline" onclick="sendActionToServer({type:'action', role:'witch', action:'skip'})" style="border-color:gray; color:gray; margin-left:10px;">${langUI.skipMsg}</button>`;
                 panel.innerHTML = html;
             }
             else if (phase.startsWith('night') && myRole !== 'werewolf' && myRole !== 'cupid') {
@@ -766,15 +767,15 @@
             }
             else if (phase === 'day_vote') {
                 panel.innerHTML = `<p style="color:var(--neon-yellow);">${langUI.selectTarget}</p>`;
-                alivePlayers.forEach(c => {
-                    panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', () => sendActionToServer({type:'action', role:'day', target: c.name})));
-                });
+                alivePlayers.forEach(c => { panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', () => sendActionToServer({type:'action', role:'day', target: c.name}))); });
             }
         }
 
         function createBtn(text, color, onClickCallback) {
             let btn = document.createElement('button');
+            btn.className = "btn-outline";
             btn.innerText = text; btn.style.borderColor = color; btn.style.color = color;
+            btn.style.margin = "5px";
             btn.onclick = onClickCallback; return btn;
         }
 
@@ -786,7 +787,7 @@
             document.getElementById('role-image').src = rData.img; 
             const card = document.getElementById('my-role-card');
             card.style.borderColor = rData.color;
-            card.style.boxShadow = `0 0 20px ${rData.color}`;
+            card.style.boxShadow = `0 0 20px rgba(${rData.color === 'var(--neon-pink)' ? '255,0,127' : rData.color === 'var(--neon-cyan)' ? '0,229,255' : '155,89,182'}, 0.4)`;
             document.getElementById('role-name').style.color = rData.color;
         }
 
@@ -798,7 +799,7 @@
             document.getElementById('winner-desc').innerText = desc;
         }
 
-        updateLang('fr');
+        updateLang('fr'); // Init Langue
     </script>
 </body>
 </html>
