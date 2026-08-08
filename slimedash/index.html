@@ -314,18 +314,18 @@
             const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7 };
             const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin' };
 
-            // --- 4. GESTIONNAIRE DES SPRITES ---
+            // --- 4. GESTIONNAIRE DES SPRITES (CHEMIN CORRIGÉ DANS img/) ---
             const sprites = { idle: [], run: [], jump: [], land: [] };
             
             function loadFrames(category, filenames) {
                 filenames.forEach(file => { 
                     const img = new Image(); 
-                    img.src = file; 
+                    img.src = 'img/' + file; 
                     sprites[category].push(img); 
                 });
             }
             
-            loadFrames('idle', ['slm.png', 'slm2.png', 'slm3.png', 'slm4.png']);
+            loadFrames('idle', ['slm1.png', 'slm2.png', 'slm3.png', 'slm4.png']);
             loadFrames('run',  ['slm5.png', 'slm6.png', 'slm7.png', 'slm8.png']);
             loadFrames('jump', ['slm10.png', 'slm11.png', 'slm12.png', 'slm13.png', 'slm14.png', 'slm15.png', 'slm16.png']);
             loadFrames('land', ['slm17.png', 'slm18.png', 'slm19.png', 'slm20.png']);
@@ -372,7 +372,6 @@
 
             // --- 8. LOGIQUE GLOBALE DES ÉTATS ET ÉCOUTEURS MENUS ---
             document.getElementById('btn-play-endless').addEventListener('click', () => { 
-                console.log("Bouton Jouer cliqué !");
                 startGame('PLAYING_ENDLESS'); 
             });
             document.getElementById('btn-create-map').addEventListener('click', () => { 
@@ -658,7 +657,6 @@
                 }
             }
 
-            // Ajout d'écouteurs globaux clavier/tactile pour sauter à tout moment en jeu
             window.addEventListener('keydown', (e) => {
                 if (e.code === 'Space' || e.code === 'ArrowUp') {
                     if (gameState.startsWith('PLAYING')) {
