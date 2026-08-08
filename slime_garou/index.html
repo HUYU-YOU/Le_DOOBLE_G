@@ -241,6 +241,8 @@
                     <div class="checkbox-group"><label class="ui-text" data-key="roleHunter">Chasseur</label><input type="checkbox" id="cfg-hunter"></div>
                 </div>
                 
+                <!-- Ajout du texte préventif -->
+                <p id="min-players-msg" style="color: var(--neon-yellow); font-size: 0.9rem;">(En attente d'au moins 3 joueurs)</p>
                 <button id="btn-start" class="btn-solid btn-pink ui-text" data-key="btnStart" style="display:none;">Lancer la partie</button>
             </div>
             <p id="waiting-host-msg" style="color: gray; display:none;" class="ui-text" data-key="waitingHost">En attente de l'hôte...</p>
@@ -432,11 +434,16 @@
         document.getElementById('btn-create').addEventListener('click', () => {
             initAudio(); 
             isHost = true;
+
+            // CORRECTION 1 : On récupère le VRAI pseudo de l'Hôte
+            myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
+
             menuDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
             document.getElementById('host-config').style.display = 'block';
             
-            connections.push({ isHost: true, name: "Host", role: null, isAlive: true, id: 'host' });
+            // On injecte le vrai nom de l'hôte au lieu de "Host"
+            connections.push({ isHost: true, name: myName, role: null, isAlive: true, id: 'host' });
             updatePlayerListUI();
 
             // Génération de l'identifiant GARxxxx
@@ -452,7 +459,12 @@
                         connections.push({ conn: conn, name: data.name, role: null, isAlive: true, id: conn.peer });
                         updatePlayerListUI();
                         broadcast({ type: 'lobby_update', count: connections.length, list: connections.map(c => c.name) });
-                        if (connections.length >= 3) document.getElementById('btn-start').style.display = 'block';
+                        
+                        // Fait apparaître le bouton quand il y a 3 joueurs
+                        if (connections.length >= 3) {
+                            document.getElementById('btn-start').style.display = 'block';
+                            document.getElementById('min-players-msg').style.display = 'none';
+                        }
                     } 
                     else if (data.type === 'action') {
                         handleNetworkAction(conn.peer, data);
@@ -523,20 +535,40 @@
         }
 
         // ==========================================
-        // 🎲 DISTRIBUTION DES RÔLES
+        // 🎲 DISTRIBUTION DES RÔLES SÉCURISÉE
         // ==========================================
         document.getElementById('btn-start').addEventListener('click', () => {
             const numPlayers = connections.length;
             const nbWolves = parseInt(document.getElementById('cfg-wolves').value);
             
             let roles = [];
-            for(let i=0; i<nbWolves; i++) roles.push('werewolf');
-            if (document.getElementById('cfg-seer').checked) roles.push('seer');
-            if (document.getElementById('cfg-witch').checked) roles.push('witch');
-            if (document.getElementById('cfg-cupid').checked) roles.push('cupid');
-            if (document.getElementById('cfg-hunter').checked) roles.push('hunter');
             
-            while(roles.length < numPlayers) roles.push('villager');
+            // CORRECTION 2 : On s'assure de toujours placer les Garous en premier (priorité absolue)
+            for(let i=0; i<nbWolves; i++) {
+                if (roles.length < numPlayers) roles.push('werewolf');
+            }
+            
+            // On prépare les rôles spéciaux
+            let specialRoles = [];
+            if (document.getElementById('cfg-seer').checked) specialRoles.push('seer');
+            if (document.getElementById('cfg-witch').checked) specialRoles.push('witch');
+            if (document.getElementById('cfg-cupid').checked) specialRoles.push('cupid');
+            if (document.getElementById('cfg-hunter').checked) specialRoles.push('hunter');
+            
+            // Mélanger les rôles spéciaux pour que si on manque de place, l'exclusion soit aléatoire
+            specialRoles.sort(() => Math.random() - 0.5);
+
+            // On ajoute les rôles spéciaux SEULEMENT s'il reste de la place
+            for (let role of specialRoles) {
+                if (roles.length < numPlayers) roles.push(role);
+            }
+            
+            // On comble les éventuels trous restants par des villageois (civils)
+            while(roles.length < numPlayers) {
+                roles.push('villager');
+            }
+            
+            // On mélange le deck complet pour distribuer
             roles.sort(() => Math.random() - 0.5);
 
             connections.forEach((c, index) => {
