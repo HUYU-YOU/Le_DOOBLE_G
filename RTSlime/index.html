@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber-Command : Micro RTS</title>
+    <style>
+        /* =========================================
+           1. VARIABLES CYBERPUNK ET RESET
+           ========================================= */
+        :root {
+            --bg-color: #050508;
+            --neon-cyan: #00f0ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --neon-yellow: #fce803;
+            --neon-red: #ff3333;
+            --text-color: #e0e0e0;
+            --font-ui: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: var(--font-ui); overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            user-select: none; /* Désactive la sélection de texte */
+            -webkit-user-select: none;
+        }
+
+        /* Background Grid */
+        body::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px; z-index: -1;
+        }
+
+        /* =========================================
+           2. BOUTON RETOUR HUB
+           ========================================= */
+        #btn-retour-hub {
+            position: fixed; top: 15px; left: 15px; z-index: 9999;
+            background-color: rgba(0, 0, 0, 0.8); border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan); padding: 8px 15px; font-weight: bold;
+            font-size: 14px; border-radius: 6px; cursor: pointer;
+            text-decoration: none; transition: 0.3s ease; text-transform: uppercase;
+        }
+        #btn-retour-hub:hover { background-color: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+
+        /* =========================================
+           3. UI DU RTS (Ressources & Build)
+           ========================================= */
+        #ui-top {
+            position: absolute; top: 15px; right: 20px; z-index: 10;
+            background: rgba(0,0,0,0.8); border: 2px solid var(--neon-yellow);
+            padding: 10px 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(252, 232, 3, 0.3);
+            font-size: 1.2rem; font-weight: bold; color: var(--neon-yellow);
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        #ui-bottom {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
+            background: rgba(0,0,0,0.8); border: 2px solid var(--neon-cyan);
+            padding: 15px; border-radius: 12px; display: flex; gap: 15px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); backdrop-filter: blur(5px);
+        }
+
+        .build-btn {
+            background: transparent; border: 2px solid gray; color: gray;
+            padding: 10px 20px; font-size: 1rem; font-weight: bold; text-transform: uppercase;
+            border-radius: 6px; cursor: pointer; transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .build-btn span { font-size: 0.8rem; opacity: 0.8; }
+        
+        .build-btn.available-drone { border-color: var(--neon-green); color: var(--neon-green); }
+        .build-btn.available-drone:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
+        
+        .build-btn.available-mech { border-color: var(--neon-pink); color: var(--neon-pink); }
+        .build-btn.available-mech:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 15px var(--neon-pink); }
+
+        #game-over-screen {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95); border: 2px solid var(--neon-red);
+            padding: 40px; border-radius: 12px; text-align: center; z-index: 50; display: none;
+            box-shadow: 0 0 30px var(--neon-red);
+        }
+        #game-over-screen h1 { color: var(--neon-red); text-shadow: 0 0 15px var(--neon-red); margin-top:0; font-size: 3rem; text-transform: uppercase;}
+        .restart-btn {
+            background: transparent; border: 2px solid var(--neon-cyan); color: var(--neon-cyan);
+            padding: 15px 30px; font-size: 1.2rem; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-weight:bold;
+            margin-top: 20px; transition: 0.3s;
+        }
+        .restart-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 20px var(--neon-cyan); }
+
+        /* =========================================
+           4. CANVAS
+           ========================================= */
+        #game-container {
+            position: relative; width: 100%; height: 100%;
+            touch-action: none; /* Bloque le scroll mobile */
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+
+    </style>
+</head>
+<body>
+
+    <!-- PROTECTION SWIPE HUB -->
+    <script>
+        document.addEventListener('touchstart', (e) => { 
+            if(e.target.closest('.no-swipe')) e.stopPropagation(); 
+        }, { passive: false });
+        
+        // Empêche le menu contextuel par défaut pour le clic droit (Commandes RTS)
+        document.addEventListener('contextmenu', event => event.preventDefault());
+    </script>
+
+    <a href="../index.html" id="btn-retour-hub">&#11013; HUB</a>
+
+    <div id="game-container" class="no-swipe">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="ui-top">
+            💎 DATA: <span id="data-count">50</span>
+        </div>
+
+        <div id="ui-bottom">
+            <button id="btn-drone" class="build-btn">DRONE MINIER <span>(50 DATA)</span></button>
+            <button id="btn-mech" class="build-btn">MECH COMBAT <span>(100 DATA)</span></button>
+        </div>
+
+        <div id="game-over-screen">
+            <h1>MATRICE DÉTRUITE</h1>
+            <p>L'infection a corrompu votre Nexus.</p>
+            <p>Temps survécu : <span id="time-survived">0</span> s</p>
+            <button class="restart-btn" onclick="initGame()">Reboot Système</button>
+        </div>
+    </div>
+
+    <!-- MOTEUR RTS INTÉGRAL -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        // UI Elements
+        const dataCountEl = document.getElementById('data-count');
+        const btnDrone = document.getElementById('btn-drone');
+        const btnMech = document.getElementById('btn-mech');
+        const gameOverScreen = document.getElementById('game-over-screen');
+
+        // Game State
+        let gameState = 'PLAYING';
+        let dataCredits = 50;
+        let survivalTimer = 0;
+        let waveTimer = 0;
+
+        // Entités
+        let units = [];
+        let enemies = [];
+        let resources = [];
+        let base = null;
+        let particles = [];
+
+        // Système de Sélection
+        let selectedUnits = [];
+        let isSelecting = false;
+        let selectionStart = { x: 0, y: 0 };
+        let selectionCurrent = { x: 0, y: 0 };
+        let inputMode = 'mouse'; // 'mouse' ou 'touch'
+
+        // --- CLASSES D'ENTITÉS ---
+
+        class Base {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.size = 60;
+                this.hp = 1000;
+                this.maxHp = 1000;
+                this.color = 'var(--neon-cyan)';
+            }
+            draw() {
+                ctx.fillStyle = '#0b0c10';
+                ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                
+                ctx.shadowBlur = 20; ctx.shadowColor = this.color;
+                ctx.strokeStyle = this.color; ctx.lineWidth = 4;
+                ctx.strokeRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                ctx.shadowBlur = 0;
+
+                // Barre de vie
+                ctx.fillStyle = 'red';
+                ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 15, this.size, 5);
+                ctx.fillStyle = 'var(--neon-green)';
+                ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 15, this.size * (this.hp / this.maxHp), 5);
+            }
+        }
+
+        class ResourceNode {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.radius = 20;
+                this.amount = 1500; // Capacité de data
+                this.color = 'var(--neon-yellow)';
+            }
+            draw() {
+                ctx.shadowBlur = 15; ctx.shadowColor = this.color;
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
+                }
+                ctx.closePath();
+                ctx.fillStyle = '#111'; ctx.fill();
+                ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Quantité
+                ctx.fillStyle = this.color; ctx.font = '10px Arial'; ctx.textAlign = 'center';
+                ctx.fillText(this.amount, this.x, this.y + 4);
+            }
+        }
+
+        class Unit {
+            constructor(x, y, type) {
+                this.x = x; this.y = y;
+                this.type = type; // 'drone' ou 'mech'
+                this.radius = type === 'drone' ? 10 : 15;
+                this.speed = type === 'drone' ? 120 : 90;
+                this.color = type === 'drone' ? 'var(--neon-green)' : 'var(--neon-pink)';
+                
+                this.targetPos = null;
+                this.targetEntity = null;
+                this.state = 'idle'; // idle, moving, gathering, attacking
+                
+                // Combat
+                this.hp = type === 'drone' ? 30 : 150;
+                this.maxHp = this.hp;
+                this.attackRange = type === 'mech' ? 80 : 0;
+                this.damage = type === 'mech' ? 10 : 0;
+                this.attackCooldown = 0;
+
+                // Minage (Drone uniquement)
+                this.payload = 0;
+            }
+
+            setCommand(x, y, entity = null) {
+                this.targetPos = { x, y };
+                this.targetEntity = entity;
+                
+                if (this.type === 'drone' && entity instanceof ResourceNode) this.state = 'moving_to_resource';
+                else if (this.type === 'mech' && entity instanceof Enemy) this.state = 'attacking';
+                else this.state = 'moving';
+            }
+
+            update(dt) {
+                if (this.attackCooldown > 0) this.attackCooldown -= dt;
+
+                // LOGIQUE DRONE (Minage Automatique)
+                if (this.type === 'drone') {
+                    if (this.state === 'moving_to_resource' && this.targetEntity) {
+                        if (dist(this, this.targetEntity) < this.radius + this.targetEntity.radius + 5) {
+                            this.state = 'gathering';
+                            this.targetPos = null;
+                        }
+                    } 
+                    else if (this.state === 'gathering') {
+                        if(this.targetEntity.amount > 0) {
+                            this.payload += 10 * dt; // Mine 10 data / sec
+                            this.targetEntity.amount -= 10 * dt;
+                            if (this.payload >= 20) {
+                                this.payload = 20;
+                                this.targetEntity = base;
+                                this.targetPos = { x: base.x, y: base.y };
+                                this.state = 'returning';
+                            }
+                        } else {
+                            this.state = 'idle'; // Ressource épuisée
+                        }
+                    }
+                    else if (this.state === 'returning') {
+                        if (dist(this, base) < this.radius + base.size/2 + 5) {
+                            dataCredits += Math.floor(this.payload);
+                            this.payload = 0;
+                            // Chercher ressource la plus proche pour continuer
+                            let closestRes = getClosest(this, resources);
+                            if(closestRes) this.setCommand(closestRes.x, closestRes.y, closestRes);
+                            else this.state = 'idle';
+                        }
+                    }
+                }
+
+                // LOGIQUE MECH (Combat)
+                if (this.type === 'mech' && this.state === 'attacking' && this.targetEntity) {
+                    if(this.targetEntity.hp <= 0) {
+                        this.targetEntity = null; this.state = 'idle';
+                    } else if (dist(this, this.targetEntity) <= this.attackRange) {
+                        this.targetPos = null; // Stoppe le mouvement
+                        if (this.attackCooldown <= 0) {
+                            this.targetEntity.hp -= this.damage;
+                            this.attackCooldown = 0.5; // Tir toutes les 0.5s
+                            spawnLaser(this, this.targetEntity, this.color);
+                        }
+                    } else {
+                        // Suit l'ennemi
+                        this.targetPos = { x: this.targetEntity.x, y: this.targetEntity.y };
+                    }
+                }
+
+                // MOUVEMENT PHYSIQUE
+                if (this.targetPos) {
+                    let d = dist(this, this.targetPos);
+                    if (d > 5) {
+                        this.x += ((this.targetPos.x - this.x) / d) * this.speed * dt;
+                        this.y += ((this.targetPos.y - this.y) / d) * this.speed * dt;
+                    } else if (this.state === 'moving') {
+                        this.state = 'idle';
+                        this.targetPos = null;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = '#111';
+                
+                if(selectedUnits.includes(this)) {
+                    ctx.shadowBlur = 10; ctx.shadowColor = this.color;
+                }
+
+                ctx.beginPath();
+                if (this.type === 'drone') {
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                } else {
+                    // Triangle pour Mech
+                    ctx.moveTo(this.x, this.y - this.radius);
+                    ctx.lineTo(this.x + this.radius, this.y + this.radius);
+                    ctx.lineTo(this.x - this.radius, this.y + this.radius);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Indicateur de payload (Drone)
+                if(this.payload > 0) {
+                    ctx.fillStyle = 'var(--neon-yellow)';
+                    ctx.fillRect(this.x - 5, this.y - this.radius - 8, 10 * (this.payload/20), 3);
+                }
+                // Barre de vie (Mech)
+                if(this.type === 'mech' && this.hp < this.maxHp) {
+                    ctx.fillStyle = 'red'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20, 3);
+                    ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20 * (this.hp/this.maxHp), 3);
+                }
+            }
+        }
+
+        class Enemy {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.radius = 12;
+                this.speed = 60 + Math.random() * 40;
+                this.hp = 40;
+                this.color = 'var(--neon-red)';
+                this.attackCooldown = 0;
+            }
+
+            update(dt) {
+                if(this.attackCooldown > 0) this.attackCooldown -= dt;
+
+                // Cherche cible : Unité proche ou Base
+                let target = base;
+                for(let u of units) {
+                    if(dist(this, u) < 150) { target = u; break; }
+                }
+
+                let d = dist(this, target);
+                let range = target === base ? base.size/2 + this.radius : this.radius + target.radius;
+
+                if (d > range + 5) {
+                    this.x += ((target.x - this.x) / d) * this.speed * dt;
+                    this.y += ((target.y - this.y) / d) * this.speed * dt;
+                } else if (this.attackCooldown <= 0) {
+                    target.hp -= 5;
+                    this.attackCooldown = 1;
+                    spawnParticles(target.x, target.y, this.color, 5);
+                }
+            }
+
+            draw() {
+                ctx.shadowBlur = 10; ctx.shadowColor = this.color;
+                ctx.fillStyle = '#111'; ctx.strokeStyle = this.color; ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+                ctx.fill(); ctx.stroke();
+                
+                // Dessin d'une croix de virus à l'intérieur
+                ctx.beginPath(); ctx.moveTo(this.x-5, this.y-5); ctx.lineTo(this.x+5, this.y+5);
+                ctx.moveTo(this.x+5, this.y-5); ctx.lineTo(this.x-5, this.y+5); ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // --- UTILITAIRES ---
+        function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+        function getClosest(entity, array) {
+            let closest = null; let minDist = Infinity;
+            for(let o of array) { let d = dist(entity, o); if(d < minDist) { minDist = d; closest = o; } }
+            return closest;
+        }
+
+        // FX
+        function spawnParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x, y: y, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100,
+                    size: Math.random()*3+1, color: color, life: 1
+                });
+            }
+        }
+        let lasers = [];
+        function spawnLaser(a, b, color) { lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.1 }); }
+
+        // --- INIT & RESIZE ---
+        function resize() {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+        }
+        window.addEventListener('resize', resize); resize();
+
+        function initGame() {
+            gameState = 'PLAYING';
+            dataCredits = 100;
+            survivalTimer = 0; waveTimer = 10;
+            units = []; enemies = []; resources = []; particles = []; lasers = []; selectedUnits = [];
+            gameOverScreen.style.display = 'none';
+
+            base = new Base(width/2, height/2 + 50);
+
+            // Spawn Ressources (4 nodes autour de la base)
+            resources.push(new ResourceNode(width/2 - 150, height/2 + 50));
+            resources.push(new ResourceNode(width/2 + 150, height/2 + 50));
+            resources.push(new ResourceNode(width/2, height/2 - 100));
+
+            // Spawn Unités de départ
+            units.push(new Unit(base.x - 40, base.y + 40, 'drone'));
+            units.push(new Unit(base.x + 40, base.y + 40, 'mech'));
+        }
+
+        // --- INPUTS (SOURIS & TACTILE) ---
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        // Tactile / Clic Gauche : Sélection
+        canvas.addEventListener('mousedown', (e) => {
+            if(e.button !== 0 || gameState !== 'PLAYING') return; // Uniquement Clic gauche
+            isSelecting = true;
+            inputMode = 'mouse';
+            selectionStart = getPointerPos(e);
+            selectionCurrent = { ...selectionStart };
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if(gameState !== 'PLAYING') return;
+            inputMode = 'touch';
+            isSelecting = true;
+            selectionStart = getPointerPos(e);
+            selectionCurrent = { ...selectionStart };
+        }, {passive: false});
+
+        function handlePointerMove(e) {
+            if (!isSelecting) return;
+            selectionCurrent = getPointerPos(e);
+        }
+        canvas.addEventListener('mousemove', handlePointerMove);
+        canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+
+        function handlePointerUp(e) {
+            if (!isSelecting || gameState !== 'PLAYING') return;
+            isSelecting = false;
+
+            // Déterminer la zone de sélection
+            let minX = Math.min(selectionStart.x, selectionCurrent.x);
+            let maxX = Math.max(selectionStart.x, selectionCurrent.x);
+            let minY = Math.min(selectionStart.y, selectionCurrent.y);
+            let maxY = Math.max(selectionStart.y, selectionCurrent.y);
+
+            // Si le glissement est très petit, c'est un clic simple (ou tap)
+            let isClick = (maxX - minX < 10 && maxY - minY < 10);
+
+            if (isClick && inputMode === 'touch') {
+                // Sur mobile, un tap gère la sélection ET les ordres (si unité déjà sélectionnée)
+                let clickedEnemy = enemies.find(en => dist(selectionStart, en) < en.radius + 15);
+                let clickedRes = resources.find(r => dist(selectionStart, r) < r.radius + 15);
+                
+                if (selectedUnits.length > 0 && (clickedEnemy || clickedRes || dist(selectionStart, base) > base.size)) {
+                    // Donne un ordre
+                    issueCommand(selectionStart.x, selectionStart.y, clickedEnemy || clickedRes);
+                    spawnParticles(selectionStart.x, selectionStart.y, 'var(--neon-cyan)', 5);
+                } else {
+                    // Sélectionne une unité
+                    let clickedUnit = units.find(u => dist(selectionStart, u) < u.radius + 10);
+                    if (clickedUnit) selectedUnits = [clickedUnit];
+                    else selectedUnits = []; // Désélection
+                }
+            } 
+            else if (!isClick) {
+                // Sélection par Box (Souris Drag ou Touch Drag long)
+                selectedUnits = units.filter(u => u.x > minX && u.x < maxX && u.y > minY && u.y < maxY);
+            } 
+            else if (isClick && inputMode === 'mouse') {
+                // Souris Clic Gauche simple : Sélectionne 1 unité ou désélectionne
+                let clickedUnit = units.find(u => dist(selectionStart, u) < u.radius + 10);
+                if (clickedUnit) selectedUnits = [clickedUnit];
+                else selectedUnits = [];
+            }
+        }
+
+        canvas.addEventListener('mouseup', handlePointerUp);
+        canvas.addEventListener('touchend', handlePointerUp);
+
+        // Souris Clic Droit : Ordres
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if(gameState !== 'PLAYING' || selectedUnits.length === 0) return;
+            const pos = getPointerPos(e);
+
+            // Check si on a cliqué sur une entité
+            let targetEntity = null;
+            let clickedEnemy = enemies.find(en => dist(pos, en) < en.radius + 10);
+            let clickedRes = resources.find(r => dist(pos, r) < r.radius + 10);
+            targetEntity = clickedEnemy || clickedRes;
+
+            issueCommand(pos.x, pos.y, targetEntity);
+            spawnParticles(pos.x, pos.y, 'var(--neon-cyan)', 5);
+        });
+
+        function issueCommand(x, y, entity) {
+            // Mouvement de groupe (Formation basique)
+            let offset = 0;
+            selectedUnits.forEach((u, i) => {
+                let dx = x + (i%3)*20 - 20;
+                let dy = y + Math.floor(i/3)*20;
+                u.setCommand(entity ? entity.x : dx, entity ? entity.y : dy, entity);
+            });
+        }
+
+        // --- UI BOUTONS BUILD ---
+        btnDrone.addEventListener('click', () => {
+            if(dataCredits >= 50 && gameState === 'PLAYING') {
+                dataCredits -= 50;
+                units.push(new Unit(base.x, base.y + base.size/2 + 20, 'drone'));
+                spawnParticles(base.x, base.y, 'var(--neon-green)', 10);
+            }
+        });
+        btnMech.addEventListener('click', () => {
+            if(dataCredits >= 100 && gameState === 'PLAYING') {
+                dataCredits -= 100;
+                units.push(new Unit(base.x, base.y + base.size/2 + 20, 'mech'));
+                spawnParticles(base.x, base.y, 'var(--neon-pink)', 10);
+            }
+        });
+
+        // --- BOUCLE PRINCIPALE ---
+        let lastTime = performance.now();
+
+        function update(dt) {
+            if (gameState !== 'PLAYING') return;
+
+            survivalTimer += dt;
+            
+            // Mise à jour UI
+            dataCountEl.innerText = Math.floor(dataCredits);
+            btnDrone.className = dataCredits >= 50 ? 'build-btn available-drone' : 'build-btn';
+            btnMech.className = dataCredits >= 100 ? 'build-btn available-mech' : 'build-btn';
+
+            // Vagues d'ennemis
+            waveTimer -= dt;
+            if (waveTimer <= 0) {
+                // Plus on survit, plus la vague est dure
+                let count = 1 + Math.floor(survivalTimer / 30);
+                for(let i=0; i<count; i++) {
+                    // Spawn aléatoire sur les bords de l'écran
+                    let spawnX = Math.random() > 0.5 ? -20 : width + 20;
+                    let spawnY = Math.random() * height;
+                    enemies.push(new Enemy(spawnX, spawnY));
+                }
+                waveTimer = 10; // Nouvelle vague toutes les 10s
+            }
+
+            // Update Base
+            if (base.hp <= 0) {
+                gameState = 'GAMEOVER';
+                document.getElementById('time-survived').innerText = Math.floor(survivalTimer);
+                gameOverScreen.style.display = 'block';
+                spawnParticles(base.x, base.y, 'var(--neon-red)', 50);
+            }
+
+            // Update Units
+            for (let i = units.length - 1; i >= 0; i--) {
+                let u = units[i];
+                u.update(dt);
+                if (u.hp <= 0) {
+                    spawnParticles(u.x, u.y, u.color, 15);
+                    if(selectedUnits.includes(u)) selectedUnits.splice(selectedUnits.indexOf(u), 1);
+                    units.splice(i, 1);
+                }
+            }
+
+            // Update Enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                e.update(dt);
+                if (e.hp <= 0) {
+                    spawnParticles(e.x, e.y, e.color, 15);
+                    enemies.splice(i, 1);
+                }
+            }
+
+            // Nettoyage Ressources vides
+            for (let i = resources.length - 1; i >= 0; i--) {
+                if (resources[i].amount <= 0) resources.splice(i, 1);
+            }
+
+            // FX
+            particles.forEach((p, i) => {
+                p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+                if(p.life <= 0) particles.splice(i, 1);
+            });
+            lasers.forEach((l, i) => {
+                l.life -= dt;
+                if(l.life <= 0) lasers.splice(i, 1);
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
+                
+                resources.forEach(r => r.draw());
+                
+                if (base.hp > 0) base.draw();
+
+                units.forEach(u => u.draw());
+                enemies.forEach(e => e.draw());
+
+                // Draw Lasers
+                lasers.forEach(l => {
+                    ctx.strokeStyle = l.color; ctx.lineWidth = 2;
+                    ctx.shadowBlur = 10; ctx.shadowColor = l.color;
+                    ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke();
+                    ctx.shadowBlur = 0;
+                });
+
+                // Draw Particles
+                particles.forEach(p => {
+                    ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+                ctx.globalAlpha = 1;
+
+                // Draw Selection Box
+                if (isSelecting && inputMode === 'mouse') {
+                    ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.lineWidth = 1;
+                    ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
+                    let w = selectionCurrent.x - selectionStart.x;
+                    let h = selectionCurrent.y - selectionStart.y;
+                    ctx.fillRect(selectionStart.x, selectionStart.y, w, h);
+                    ctx.strokeRect(selectionStart.x, selectionStart.y, w, h);
+                }
+            }
+        }
+
+        function loop(timestamp) {
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
+            update(dt);
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        initGame();
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
