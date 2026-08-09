@@ -204,7 +204,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // --- 1. AUDIO YOUTUBE (NOUVELLE MUSIQUE) ---
             let ytPlayer;
             let audioStarted = false;
             window.onYouTubeIframeAPIReady = function() {
@@ -225,7 +224,6 @@
                 }
             }
 
-            // --- 2. VARIABLES GLOBALES ET CONFIGURATION ---
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
             const menuScreen = document.getElementById('menu-screen');
@@ -261,7 +259,6 @@
             let levelData = []; 
             let endlessLevelData = []; 
             let nextEndlessSpawnX = 0; 
-            let consecutiveObstacles = 0; // Sécurité anti-obstacles impossibles
 
             let defaultLevel = [
                 {x: 10, y: 0, type: 'block'}, {x: 11, y: 0, type: 'block'}, {x: 12, y: 1, type: 'block'},
@@ -285,7 +282,6 @@
             const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7 };
             const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin' };
 
-            // --- 4. GESTIONNAIRE DES SPRITES ET FONDS ---
             const sprites = { idle: [], run: [], jump: [], land: [] };
             const bgImages = []; 
             const platformImg = new Image();
@@ -303,17 +299,13 @@
             loadFrames('jump', ['slm10.png', 'slm11.png', 'slm12.png', 'slm13.png', 'slm14.png', 'slm15.png', 'slm16.png']);
             loadFrames('land', ['slm17.png', 'slm18.png', 'slm19.png', 'slm20.png']);
 
-            // Chargement de tes 5 images de fond
             for(let i = 1; i <= 5; i++) {
                 let img = new Image();
                 img.src = `img/img${i}.jpg`;
                 bgImages.push(img);
             }
-
-            // Chargement de la nouvelle image de sol
             platformImg.src = 'img/platform.png';
 
-            // --- 5. OBJET JOUEUR ---
             const player = {
                 x: 150, y: 0, prevY: 0, size: 50, vy: 0, isGrounded: false,
                 animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1
@@ -382,7 +374,6 @@
                 if (mode === 'PLAYING_ENDLESS') {
                     gameSpeed = 300; 
                     endlessLevelData = [];
-                    consecutiveObstacles = 0;
                     nextEndlessSpawnX = Math.floor(width / GRID_SIZE) + 10;
                     statusText.innerText = "COURSE INFINIE";
                     statusText.style.color = "var(--neon-pink)";
@@ -458,7 +449,7 @@
                 } catch(e) {}
             }
 
-            // Drag Éditeur
+            // Éditeur Glisser-Déposer
             let isDraggingPanel = false;
             let panelOffsetX, panelOffsetY;
 
@@ -492,7 +483,6 @@
             }, {passive: false});
             document.addEventListener('touchend', () => { isDraggingPanel = false; });
 
-            // Outils Éditeur
             let currentTool = 'block';
             let isBuilding = false;
             let hoverGridX = -1, hoverGridY = -1;
@@ -517,7 +507,6 @@
             }, { passive: false });
 
             document.getElementById('test-btn').addEventListener('click', () => startGame('PLAYING_CUSTOM'));
-            
             document.getElementById('exit-btn').addEventListener('click', () => {
                 localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); 
                 showMenu("Slime-Dash", "var(--neon-cyan)");
@@ -603,29 +592,35 @@
                 if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; isHovering = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
             });
 
-            // --- 11. GENERATEUR INFINI (CORRIGÉ ET SÉCURISÉ) ---
+            // --- 11. GENERATEUR INFINI (SÉCURISÉ CONTRE LES IMPASSES) ---
             function updateEndlessGeneration() {
                 const currentGridX = Math.floor(cameraX / GRID_SIZE);
-                const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 5; 
+                const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 6; 
 
                 if (nextEndlessSpawnX < targetGridX) {
                     const r = Math.random();
                     let type = 'coin';
                     let y = 0;
-                    let gap = 1;
+                    let gap = 2; // Espacement de sécurité par défaut
 
-                    if (consecutiveObstacles >= 2) {
-                        // Force un espace ou un bonus pour casser l'enchaînement mortel
-                        type = 'coin';
-                        y = 1;
-                        gap = 2;
-                        consecutiveObstacles = 0;
-                    } else {
-                        if (r > 0.85) { type = 'hole'; gap = 2; consecutiveObstacles++; }
-                        else if (r > 0.6) { type = 'spike'; gap = 2; consecutiveObstacles++; }
-                        else if (r > 0.3) { type = 'block'; y = Math.random() > 0.5 ? 1 : 0; gap = 1; consecutiveObstacles++; }
-                        else if (r > 0.2) { type = 'pad'; gap = 2; consecutiveObstacles = 0; }
-                        else { type = 'coin'; y = 1; gap = 1; consecutiveObstacles = 0; }
+                    // Empêche strictement d'enchaîner des pièges mortels rapprochés
+                    if (r > 0.85) { 
+                        type = 'hole'; 
+                        gap = 3; // Gros trou bien espacé
+                    } else if (r > 0.65) { 
+                        type = 'spike'; 
+                        gap = 3; // Pic isolé avec de l'espace autour
+                    } else if (r > 0.4) { 
+                        type = 'block'; 
+                        y = Math.random() > 0.5 ? 1 : 0; 
+                        gap = 2; 
+                    } else if (r > 0.25) { 
+                        type = 'pad'; // Le jumper totalement inoffensif
+                        gap = 2; 
+                    } else { 
+                        type = 'coin'; 
+                        y = 1; 
+                        gap = 2; 
                     }
 
                     endlessLevelData.push({x: nextEndlessSpawnX, y: type === 'hole' ? 0 : y, type: type, collected: false});
@@ -637,7 +632,6 @@
                 }
             }
 
-            // --- 12. CONTROLES SAUT & COLLISIONS ---
             function executeJump() {
                 player.vy = JUMP_FORCE; 
                 player.isGrounded = false;
@@ -669,7 +663,7 @@
 
                 const playerWorldX = player.x + cameraX;
                 const playerCenterGridX = Math.floor((playerWorldX + player.size/2) / GRID_SIZE);
-                const holeUnder = activeLevelData.some(o => o.type === 'hole' && o.x === playerCenterGridX);
+                const holeUnder = activeLevelData.find(o => o.type === 'hole' && o.x === playerCenterGridX);
                 const currentGroundLevel = holeUnder ? 9999 : (height - GROUND_HEIGHT - player.size);
 
                 if (player.y >= currentGroundLevel) {
@@ -708,26 +702,30 @@
                         continue; 
                     }
 
-                    // CORRECTION DU BUG DE COLLISION "SANS RAISON" (On vérifie d'où vient le joueur)
-                    if (obs.type === 'block' || obs.type === 'pad') {
+                    // --- LE JUMPER (PAD) SÉCURISÉ : NE PEUT PLUS TUER, FAIT SAUTER ---
+                    if (obs.type === 'pad') {
+                        const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
+                        if (hitX && hitY) {
+                            player.vy = JUMP_FORCE * 1.5; // Super rebond automatique
+                            player.isGrounded = false; 
+                            setAnimState('JUMP');
+                            spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 20);
+                            continue;
+                        }
+                    }
+
+                    if (obs.type === 'block') {
                         const hitY = (player.y + tolY < obsScreenY + obsSize) && (player.y + player.size - tolY > obsScreenY);
                         if (hitX && hitY) {
                             if (player.vy > 0 && player.prevY + player.size <= obsScreenY + 25) {
-                                // Atterrissage par le dessus sécurisé
                                 player.y = obsScreenY - player.size; 
-                                if (obs.type === 'pad') {
-                                    player.vy = JUMP_FORCE * 1.5; player.isGrounded = false; setAnimState('JUMP');
-                                    spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 15);
-                                } else {
-                                    player.vy = 0; 
-                                    if(!player.isGrounded) { 
-                                        player.isGrounded = true; setAnimState('LAND'); 
-                                        if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
-                                    }
+                                player.vy = 0; 
+                                if(!player.isGrounded) { 
+                                    player.isGrounded = true; setAnimState('LAND'); 
+                                    if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
                                 }
                                 continue; 
                             }
-                            // Si on tape sur le côté
                             gameOver(false); return;
                         }
                     } 
@@ -742,7 +740,6 @@
                 }
             }
 
-            // --- 13. BOUCLE MOTEUR (UPDATE & DRAW) ---
             let lastTime = performance.now();
 
             function mainLoop(currentTime) {
@@ -774,7 +771,7 @@
 
                 if (gameState.startsWith('PLAYING')) {
                     cameraX += gameSpeed * dt;
-                    player.prevY = player.y; // Sauvegarde avant d'appliquer la gravité
+                    player.prevY = player.y; 
                     player.vy += GRAVITY * dt;
                     player.y += player.vy * dt;
 
@@ -783,7 +780,7 @@
                     if (scoreElem) scoreElem.innerText = Math.floor(score);
 
                     if (gameState === 'PLAYING_ENDLESS') {
-                        gameSpeed += dt * 5; // Accélération plus douce
+                        gameSpeed += dt * 5; 
                         updateEndlessGeneration();
                         checkCollisions(endlessLevelData);
                     } else {
@@ -838,9 +835,10 @@
                     ctx.shadowBlur = 10; ctx.shadowColor = '#00f0ff'; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.shadowBlur=0;
                 } 
                 else if (type === 'pad') {
-                    ctx.fillStyle = 'var(--neon-cyan)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
-                    ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)'; ctx.strokeRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2); ctx.shadowBlur=0;
+                    // Jumper sécurisé en cyan
+                    ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
+                    ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+                    ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)'; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.shadowBlur=0;
                 }
                 else if (type === 'holo') {
                     ctx.fillStyle = 'rgba(0, 240, 255, 0.15)'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -875,10 +873,8 @@
                 if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
                 ctx.clearRect(0, 0, width, height);
 
-                // --- DESSIN DU FOND IMAGES ---
                 drawImageBackground(); 
 
-                // --- DESSIN DE LA GRILLE (UNIQUEMENT ÉDITEUR) ---
                 if (gameState === 'EDITOR') {
                     ctx.strokeStyle = `rgba(57, 255, 20, 0.2)`; ctx.lineWidth = 1; ctx.beginPath();
                     const offsetX = cameraX % GRID_SIZE;
@@ -889,7 +885,6 @@
 
                 const groundY = height - GROUND_HEIGHT;
 
-                // --- DESSIN DE LA PLATEFORME (SOL) ---
                 if (platformImg.complete && platformImg.naturalWidth > 0) {
                     const scale = GROUND_HEIGHT / platformImg.naturalHeight;
                     const pWidth = platformImg.naturalWidth * scale;
@@ -903,7 +898,6 @@
                     ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width, groundY); ctx.stroke(); ctx.shadowBlur = 0;
                 }
 
-                // GESTION VISUELLE DES TROUS
                 const activeLevelData = gameState === 'PLAYING_ENDLESS' ? endlessLevelData : levelData;
                 for (let screenX = 0; screenX <= width; screenX += GRID_SIZE) {
                     const worldX = screenX + cameraX; 
@@ -912,7 +906,7 @@
                     if (hasHole) { 
                         const exactScreenX = (gridX * GRID_SIZE) - cameraX;
                         ctx.clearRect(exactScreenX, groundY, GRID_SIZE, GROUND_HEIGHT);
-                        ctx.fillStyle = '#000'; // Trou sombre
+                        ctx.fillStyle = '#000'; 
                         ctx.fillRect(exactScreenX, groundY, GRID_SIZE, GROUND_HEIGHT);
                     } 
                 }
@@ -934,7 +928,6 @@
                     else { drawEditorObject(currentTool, ghostScreenX, ghostScreenY, 0.5); }
                 }
 
-                // Affichage du Joueur
                 let currentArray = sprites.idle;
                 if(player.animState === 'RUN') currentArray = sprites.run;
                 else if(player.animState === 'JUMP') currentArray = sprites.jump;
@@ -962,7 +955,7 @@
 
             requestAnimationFrame(mainLoop);
 
-        }); // FIN DU DOMContentLoaded
+        });
     </script>
 </body>
 </html>
