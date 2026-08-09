@@ -65,6 +65,14 @@
             border-radius: 12px; z-index: 10; width: 90%; max-width: 600px;
         }
 
+        /* ECRAN DE FIN INTERACTIF (GAME OVER / VICTORY) */
+        #gameover-screen {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; pointer-events: auto; background: rgba(11, 12, 16, 0.95);
+            padding: 40px; border: 2px solid var(--neon-pink); box-shadow: 0 0 25px var(--neon-pink);
+            border-radius: 12px; z-index: 30; width: 90%; max-width: 450px; display: none;
+        }
+
         h1 {
             margin-top: 0; color: var(--neon-cyan); text-shadow: 0 0 15px var(--neon-cyan);
             text-transform: uppercase; font-size: 3.5rem; letter-spacing: 3px;
@@ -152,7 +160,6 @@
                 <div style="text-align: right; font-size: 1.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan);">
                     <div>SCORE: <span id="score" style="color: #fff;">0</span></div>
                     <div style="font-size: 1.1rem; color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink);">HI-SCORE: <span id="hi-score" style="color: #fff;">0</span></div>
-                    <!-- COMPTEUR DE LUCIOLES GLOBALES -->
                     <div style="font-size: 1.1rem; color: #ccff00; text-shadow: 0 0 10px #ccff00; margin-top: 5px;">LUCIOLES: <span id="fireflies-count" style="color: #fff;">0</span></div>
                     <div style="font-size: 1.1rem; color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); margin-top: 5px;">DEATHS: <span id="death-count" style="color: #fff;">0</span></div>
                 </div>
@@ -175,6 +182,16 @@
             <div id="code-section">
                 <input type="text" id="map-code-input" placeholder="Coller le code ici...">
                 <button id="load-code-btn" class="action-btn-main btn-code" style="width: auto;">LANCER LA MAP</button>
+            </div>
+        </div>
+
+        <!-- ECRAN FIN DE PARTIE (REJOUER / RETOUR) -->
+        <div id="gameover-screen">
+            <h2 id="go-title" style="color: var(--neon-pink); font-size: 2.2rem; margin-top: 0; text-transform: uppercase;">CRASH CRITIQUE</h2>
+            <p id="go-desc" style="color: #fff; margin-bottom: 25px; font-size: 1.2rem;">Score : <span id="go-score" style="color: var(--neon-green);">0</span></p>
+            <div class="btn-group" style="margin-bottom: 0;">
+                <button id="btn-replay" class="action-btn-main btn-play" style="max-width: 100%;">REJOUER</button>
+                <button id="btn-back-menu" class="action-btn-main btn-edit" style="max-width: 100%;">RETOUR MENU</button>
             </div>
         </div>
 
@@ -229,11 +246,13 @@
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
             const menuScreen = document.getElementById('menu-screen');
+            const gameOverScreen = document.getElementById('gameover-screen');
             const editorPanel = document.getElementById('editor-panel');
             const statusText = document.getElementById('status-text');
 
             let width, height;
             let gameState = 'START'; 
+            let currentActiveMode = 'PLAYING_ENDLESS'; // Pour savoir quel mode relancer lors d'un "Rejouer"
             
             const GRID_SIZE = 50; 
             const GROUND_HEIGHT = 90;
@@ -247,7 +266,17 @@
             let editorCamTarget = 0;
             let score = 0;
             
-            // Récupération des statistiques globales
+            // Système de Seed pour le mode infini
+            let currentEndlessSeed = 12345;
+            let activePRNGSeed = 12345;
+            function resetSeed(s) { activePRNGSeed = s; }
+            function seededRandom() {
+                let t = activePRNGSeed += 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+            
             let hiScore = localStorage.getItem('slimeDashHiScore') || 0;
             const hiScoreElem = document.getElementById('hi-score');
             if (hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
@@ -354,17 +383,37 @@
             }
             function triggerShake(duration, intensity) { shakeTimer = duration; shakeIntensity = intensity; }
 
-            document.getElementById('btn-play-endless').addEventListener('click', () => startGame('PLAYING_ENDLESS'));
+            // --- GESTION DES BOUTONS DE LANCEMENT DE PARTIE ---
+            document.getElementById('btn-play-endless').addEventListener('click', () => {
+                // Nouvelle partie infinie = Nouvelle Seed aléatoire
+                currentEndlessSeed = Math.floor(Math.random() * 10000000);
+                startGame('PLAYING_ENDLESS');
+            });
+
             document.getElementById('btn-create-map').addEventListener('click', () => startEditor());
+            
             document.getElementById('btn-play-code').addEventListener('click', () => {
                 const sec = document.getElementById('code-section');
                 sec.style.display = sec.style.display === 'flex' ? 'none' : 'flex';
             });
 
+            // --- GESTION DES BOUTONS DE FIN DE PARTIE (REJOUER / RETOUR) ---
+            document.getElementById('btn-replay').addEventListener('click', () => {
+                gameOverScreen.style.display = 'none';
+                startGame(currentActiveMode);
+            });
+
+            document.getElementById('btn-back-menu').addEventListener('click', () => {
+                gameOverScreen.style.display = 'none';
+                showMenu("Slime-Dash", "var(--neon-cyan)");
+            });
+
             function startGame(mode) {
                 initAudio();
+                currentActiveMode = mode; // On sauvegarde le mode actif pour le bouton Rejouer
                 gameState = mode;
                 menuScreen.style.display = 'none';
+                gameOverScreen.style.display = 'none';
                 editorPanel.style.display = 'none';
                 document.getElementById('completion-text').style.display = 'none';
                 
@@ -384,11 +433,12 @@
                     endlessLevelData = [];
                     consecutiveObstacles = 0;
                     nextEndlessSpawnX = Math.floor(width / GRID_SIZE) + 10;
+                    resetSeed(currentEndlessSeed); // Réinitialisation de la seed pour un run identique si Rejouer
                     statusText.innerText = "COURSE INFINIE";
                     statusText.style.color = "var(--neon-pink)";
                 } else {
                     gameSpeed = 350; 
-                    statusText.innerText = "MAP CUSTOM";
+                    statusText.innerText = mode === 'PLAYING_CUSTOM' ? "TEST DE MAP" : "MAP PARTAGÉE";
                     statusText.style.color = "var(--neon-green)";
                 }
             }
@@ -397,6 +447,7 @@
                 initAudio();
                 gameState = 'EDITOR';
                 menuScreen.style.display = 'none';
+                gameOverScreen.style.display = 'none';
                 
                 editorPanel.style.transform = 'translateX(-50%)';
                 editorPanel.style.left = '50%';
@@ -424,7 +475,11 @@
                     gameState = 'VICTORY';
                     spawnParticles(player.x + player.size/2, player.y, 'var(--neon-yellow)', 50);
                     document.getElementById('completion-text').style.display = 'block';
-                    setTimeout(() => showMenu("NIVEAU ACCOMPLI", "var(--neon-yellow)"), 3000);
+                    
+                    document.getElementById('go-title').innerText = "NIVEAU ACCOMPLI !";
+                    document.getElementById('go-title').style.color = "var(--neon-yellow)";
+                    document.getElementById('go-score').innerText = Math.floor(score);
+                    gameOverScreen.style.display = 'block';
                 } else {
                     gameState = 'GAMEOVER';
                     spawnParticles(player.x + player.size/2, player.y + player.size/2, '#ff007f', 40);
@@ -439,13 +494,17 @@
                         if(hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
                     }
 
-                    setTimeout(() => showMenu("CRASH CRITIQUE", "var(--neon-pink)"), 1500);
+                    document.getElementById('go-title').innerText = "CRASH CRITIQUE";
+                    document.getElementById('go-title').style.color = "var(--neon-pink)";
+                    document.getElementById('go-score').innerText = Math.floor(score);
+                    gameOverScreen.style.display = 'block';
                 }
             }
 
             function showMenu(title, color) {
                 gameState = 'START';
                 menuScreen.style.display = 'block';
+                gameOverScreen.style.display = 'none';
                 editorPanel.style.display = 'none';
                 document.getElementById('code-section').style.display = 'none';
                 const mTitle = document.getElementById('menu-title');
@@ -538,7 +597,7 @@
                         if (!Array.isArray(newLevel) || newLevel.length === 0) throw new Error();
                         levelData = newLevel;
                         document.getElementById('map-code-input').value = "";
-                        startGame('PLAYING_CUSTOM');
+                        startGame('PLAYING_CUSTOM'); // Jouer une map partagée utilise le mode custom
                     } catch (e) { alert("Erreur : Code Invalide."); }
                 } else { alert("Veuillez coller un code."); }
             });
@@ -561,13 +620,12 @@
                 if (hoverGridY < 0 && currentTool !== 'hole') return; 
                 if (currentTool === 'flag') levelData = levelData.filter(o => o.type !== 'flag'); 
 
-                // --- Limite de 20 Lucioles ---
                 if (currentTool === 'coin') {
                     const currentCoins = levelData.filter(o => o.type === 'coin').length;
                     const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
                     
                     if (existingIndex === -1 || levelData[existingIndex].type !== 'coin') {
-                        if (currentCoins >= 20) return; // Stoppe le placement de la luciole
+                        if (currentCoins >= 20) return; 
                     }
                 }
 
@@ -616,7 +674,7 @@
                 const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 6; 
 
                 if (nextEndlessSpawnX < targetGridX) {
-                    const r = Math.random();
+                    const r = seededRandom();
                     let type = 'coin';
                     let y = 0;
                     let gap = 2; 
@@ -629,7 +687,7 @@
                     } else {
                         if (r > 0.85) { type = 'hole'; gap = 3; consecutiveObstacles++; }
                         else if (r > 0.65) { type = 'spike'; gap = 3; consecutiveObstacles++; }
-                        else if (r > 0.4) { type = 'block'; y = Math.random() > 0.5 ? 1 : 0; gap = 2; consecutiveObstacles++; }
+                        else if (r > 0.4) { type = 'block'; y = seededRandom() > 0.5 ? 1 : 0; gap = 2; consecutiveObstacles++; }
                         else if (r > 0.25) { type = 'pad'; gap = 2; consecutiveObstacles = 0; }
                         else { type = 'coin'; y = 1; gap = 2; consecutiveObstacles = 0; }
                     }
@@ -674,7 +732,7 @@
 
                 const playerWorldX = player.x + cameraX;
                 const playerCenterGridX = Math.floor((playerWorldX + player.size/2) / GRID_SIZE);
-                const holeUnder = activeLevelData.some(o => o.type === 'hole' && o.x === playerCenterGridX);
+                const holeUnder = activeLevelData.find(o => o.type === 'hole' && o.x === playerCenterGridX);
                 const currentGroundLevel = holeUnder ? 9999 : (height - GROUND_HEIGHT - player.size);
 
                 if (player.y >= currentGroundLevel) {
@@ -704,14 +762,12 @@
                     const tolX = 12, tolY = 12;
                     const hitX = (player.x + tolX < obsScreenX + obsSize) && (player.x + player.size - tolX > obsScreenX);
                     
-                    // --- COLLISION DES LUCIOLES ---
                     if (obs.type === 'coin') {
                         const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
                         if (hitX && hitY) {
                             obs.collected = true; 
                             score += 500;
                             
-                            // MàJ du compteur de lucioles
                             totalFireflies++;
                             localStorage.setItem('slimeDashFireflies', totalFireflies);
                             if(firefliesElem) firefliesElem.innerText = totalFireflies;
@@ -863,7 +919,6 @@
                     ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.setLineDash([]);
                 }
                 else if (type === 'coin') {
-                    // --- NOUVELLE APPARENCE LUCIOLE ---
                     const floatY = screenY + Math.sin(performance.now()/150) * 8; 
                     ctx.shadowBlur = 20; ctx.shadowColor = '#ccff00'; ctx.fillStyle = '#eaff80';
                     ctx.beginPath(); 
