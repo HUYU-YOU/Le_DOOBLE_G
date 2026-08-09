@@ -71,7 +71,7 @@
             background: rgba(0,0,0,0.85); border: 2px solid var(--neon-cyan);
             padding: 10px; border-radius: 12px; display: flex; gap: 10px; align-items: center;
             box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); backdrop-filter: blur(5px);
-            max-width: 95vw; overflow-x: auto; white-space: nowrap;
+            max-width: 95vw; overflow-x: auto; white-space: nowrap; min-height: 60px;
         }
         
         #ui-bottom::-webkit-scrollbar { height: 6px; }
@@ -96,6 +96,9 @@
         .color-upgrade { border-color: var(--neon-yellow); color: var(--neon-yellow); }
         .color-upgrade:hover { background: var(--neon-yellow); color: #000; box-shadow: 0 0 15px var(--neon-yellow); }
 
+        .color-destroy { border-color: var(--neon-red); color: var(--neon-red); }
+        .color-destroy:hover { background: var(--neon-red); color: #000; box-shadow: 0 0 15px var(--neon-red); }
+
         .active-mode { background: var(--text-color) !important; color: #000 !important; box-shadow: 0 0 20px white !important; }
 
         #game-over-screen {
@@ -114,8 +117,8 @@
 
         #build-instructions {
             position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 8px;
-            border: 1px solid #555; pointer-events: none; display: none; z-index: 10;
+            background: rgba(0,0,0,0.7); color: var(--neon-cyan); padding: 10px 20px; border-radius: 8px;
+            border: 1px solid var(--neon-cyan); pointer-events: none; display: none; z-index: 10; font-weight: bold;
         }
         
         .ui-divider { min-width: 2px; height: 40px; background: #555; margin: 0 5px; }
@@ -180,7 +183,7 @@
             warrior: 'skins/warrior.png',
             archer: 'skins/archer.png',
             mage: 'skins/mage.png',
-            wheat: 'map/wheat.png' // Fallback shape if not found
+            wheat: 'map/wheat.png'
         };
         const images = {};
         for (let key in ASSETS_PATHS) {
@@ -200,8 +203,9 @@
 
         // Etat du jeu
         let gameState = 'PLAYING';
-        let res = { gold: 50, wood: 100, food: 100, pop: 0, maxPop: 4 };
+        let res = { gold: 50, wood: 100, food: 100, pop: 0, maxPop: 0 };
         let buildMode = null;
+        let moveMode = null; // Bâtiment en cours de déplacement
         let waveTimer = 0;
         let survivalTimer = 0;
 
@@ -217,7 +221,7 @@
 
         // Système de Sélection
         let selectedUnits = [];
-        let selectedBuilding = null; // Bâtiment sélectionné pour ouvrir son menu
+        let selectedBuilding = null; // Peut être Base ou Bâtiment
         let isSelecting = false;
         let selectionStart = { x: 0, y: 0 };
         let selectionCurrent = { x: 0, y: 0 };
@@ -228,12 +232,19 @@
 
         class Base {
             constructor(x, y) {
-                this.x = x; this.y = y;
+                this.x = x; this.y = y; this.type = 'hdv';
                 this.size = 100; 
                 this.hp = 2000; this.maxHp = 2000;
                 this.color = 'var(--neon-cyan)';
             }
             draw() {
+                if (selectedBuilding === this) {
+                    ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)';
+                    ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
+                    ctx.strokeRect(this.x - this.size/2 - 5, this.y - this.size/2 - 5, this.size + 10, this.size + 10);
+                    ctx.shadowBlur = 0;
+                }
+
                 if (images.hdv.complete && images.hdv.naturalWidth > 0) {
                     ctx.drawImage(images.hdv, this.x - this.size/2, this.y - this.size/2, this.size, this.size);
                 } else {
@@ -250,8 +261,8 @@
                 this.x = x; this.y = y; this.type = type;
                 this.size = 64;
                 this.farmersInside = 0; 
-                this.level = 1; // Level 2 débloque les éléments
-                this.attackCooldown = 0; // Pour la tour
+                this.level = 1; 
+                this.attackCooldown = 0; 
 
                 if(type === 'house') { this.color = 'var(--neon-yellow)'; res.maxPop += 4; }
                 if(type === 'farm') { this.color = 'var(--neon-green)'; }
@@ -271,13 +282,15 @@
                         if (closestEnemy && dist(this, closestEnemy) <= 250) {
                             closestEnemy.hp -= 40;
                             spawnLaser(this, closestEnemy, 'var(--neon-cyan)');
-                            this.attackCooldown = 1.2; // Cadence de tir
+                            this.attackCooldown = 1.2; 
                         }
                     }
                 }
             }
 
             draw() {
+                if (moveMode === this) return; // Caché pendant le déplacement
+
                 if (selectedBuilding === this) {
                     ctx.shadowBlur = 15; ctx.shadowColor = 'var(--text-color)';
                     ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
@@ -327,7 +340,7 @@
                     ctx.beginPath();
                     if(this.type === 'tree') {
                         for (let i = 0; i < 6; i++) ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
-                    } else { // Wheat fallback
+                    } else { 
                         ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
                     }
                     ctx.closePath();
@@ -348,7 +361,6 @@
                 this.payload = 0; this.payloadType = null;
                 res.pop++;
 
-                // Couleurs des éléments
                 this.elColor = '#fff';
                 if(element === 'fire') this.elColor = 'var(--neon-red)';
                 if(element === 'water') this.elColor = 'var(--neon-water)';
@@ -435,7 +447,6 @@
                     }
                 }
 
-                // MOUVEMENT PHYSIQUE
                 if (this.targetPos) {
                     let d = dist(this, this.targetPos);
                     if (d > 5) {
@@ -452,21 +463,19 @@
                 spawnLaser(this, primaryTarget, colorFX);
 
                 if (this.type === 'warrior') {
-                    // AoE (Cleave)
                     enemies.forEach(e => {
                         if(dist(this, e) <= this.range + 10) this.applyDamage(e);
                     });
                 } else {
                     this.applyDamage(primaryTarget);
                     if (this.type === 'mage') {
-                        primaryTarget.slowTimer = 2.0; // Ralentissement de 2 secondes
+                        primaryTarget.slowTimer = 2.0; 
                     }
                 }
             }
 
             applyDamage(target) {
                 let mult = 1.0;
-                // Pierre-Feuille-Ciseaux des Eléments
                 if (this.element === 'fire' && target.element === 'plant') mult *= 1.5;
                 if (this.element === 'plant' && target.element === 'water') mult *= 1.5;
                 if (this.element === 'water' && target.element === 'fire') mult *= 1.5;
@@ -531,7 +540,6 @@
                 this.attackCooldown = 0;
                 this.slowTimer = 0;
                 
-                // Element Random
                 const els = ['normal', 'fire', 'water', 'plant'];
                 this.element = els[Math.floor(Math.random() * els.length)];
                 if(this.element === 'normal') this.color = 'var(--neon-red)';
@@ -547,7 +555,6 @@
                 let currentSpeed = this.slowTimer > 0 ? this.baseSpeed * 0.5 : this.baseSpeed;
 
                 let target = base;
-                // Le Virus attaque la tour ou l'unité la plus proche
                 for(let b of buildings) {
                     if(b.type === 'tower' && dist(this, b) < 150) { target = b; break; }
                 }
@@ -580,7 +587,7 @@
                 ctx.moveTo(this.x+5, this.y-5); ctx.lineTo(this.x-5, this.y+5); ctx.stroke();
                 ctx.shadowBlur = 0;
 
-                if(this.slowTimer > 0) { // Indication de ralentissement (Mage)
+                if(this.slowTimer > 0) { 
                     ctx.strokeStyle = 'var(--neon-purple)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+4, 0, Math.PI*2); ctx.stroke();
                 }
 
@@ -615,62 +622,72 @@
         }
         window.addEventListener('resize', resize); 
 
-        // --- GESTION UI DYNAMIQUE ---
+        // --- GESTION UI DYNAMIQUE & BATIMENTS ---
         function renderBottomUI() {
             uiBottom.innerHTML = ""; // Clear
             
             if (selectedBuilding) {
-                // Menu Spécifique au bâtiment
-                let title = document.createElement('div');
-                title.style.color = 'white'; title.style.marginRight = '15px'; title.innerHTML = `<b>${selectedBuilding.type.toUpperCase()}</b> Lv.${selectedBuilding.level}`;
-                uiBottom.appendChild(title);
-
-                if (['barracks', 'archery', 'mage'].includes(selectedBuilding.type)) {
-                    if (selectedBuilding.level === 1) {
-                        let btnUp = createBtn('color-upgrade', 'AMÉLIORER', '100💰 100🪵', () => upgradeBuilding(selectedBuilding));
-                        uiBottom.appendChild(btnUp);
-                        uiBottom.appendChild(createDivider());
-                    }
-
-                    let unitType = selectedBuilding.type === 'barracks' ? 'warrior' : selectedBuilding.type === 'archery' ? 'archer' : 'mage';
-                    uiBottom.appendChild(createBtn('color-recruit', 'NORMAL', '20💰 20🍞', () => buyUnit(unitType, 'normal')));
+                if (selectedBuilding.type === 'hdv') {
+                    // Menu HDV
+                    let title = document.createElement('div');
+                    title.style.color = 'var(--neon-cyan)'; title.style.marginRight = '15px'; title.innerHTML = `<b>HÔTEL DE VILLE</b>`;
+                    uiBottom.appendChild(title);
                     
-                    if (selectedBuilding.level > 1) {
-                        uiBottom.appendChild(createBtn('color-recruit', '🔥 FEU', '40💰 40🍞', () => buyUnit(unitType, 'fire'), 'var(--neon-red)'));
-                        uiBottom.appendChild(createBtn('color-recruit', '💧 EAU', '40💰 40🍞', () => buyUnit(unitType, 'water'), 'var(--neon-water)'));
-                        uiBottom.appendChild(createBtn('color-recruit', '🌿 PLANTE', '40💰 40🍞', () => buyUnit(unitType, 'plant'), 'var(--neon-green)'));
-                    }
-                } else if (['farm', 'sawmill', 'mine'].includes(selectedBuilding.type)) {
-                    let info = document.createElement('div');
-                    info.style.color = '#aaa';
-                    info.innerText = `Ouvriers: ${selectedBuilding.farmersInside}/5. Faites un clic droit avec un Fermier pour l'assigner.`;
-                    uiBottom.appendChild(info);
+                    uiBottom.appendChild(createBtn('color-build', 'MAISON', '10🪵 10🍞', () => setBuildMode('house'), null, 'btn-b-house'));
+                    uiBottom.appendChild(createBtn('color-build', 'FERME', '30🪵 20🍞', () => setBuildMode('farm'), null, 'btn-b-farm'));
+                    uiBottom.appendChild(createBtn('color-build', 'SCIERIE', '30🪵 20🍞', () => setBuildMode('sawmill'), null, 'btn-b-sawmill'));
+                    uiBottom.appendChild(createBtn('color-build', 'MINE', '50🪵 50🍞', () => setBuildMode('mine'), null, 'btn-b-mine'));
+                    uiBottom.appendChild(createDivider());
+                    uiBottom.appendChild(createBtn('color-build', 'CASERNE', '50💰 50🪵', () => setBuildMode('barracks'), null, 'btn-b-barracks'));
+                    uiBottom.appendChild(createBtn('color-build', 'STAND TIR', '50💰 50🪵', () => setBuildMode('archery'), null, 'btn-b-archery'));
+                    uiBottom.appendChild(createBtn('color-build', 'T. MAGE', '50💰 50🪵', () => setBuildMode('mage'), null, 'btn-b-mage'));
+                    uiBottom.appendChild(createBtn('color-build', 'TOUR DEF', '100💰 50🪵', () => setBuildMode('tower'), null, 'btn-b-tower'));
+                    uiBottom.appendChild(createDivider());
+                    uiBottom.appendChild(createBtn('color-recruit', 'FERMIER', '10🍞', () => buyUnit('farmer', 'normal')));
+                    uiBottom.appendChild(createDivider());
+                    uiBottom.appendChild(createBtn('color-build', 'FERMER', '', () => { selectedBuilding = null; renderBottomUI(); }));
+
                 } else {
-                    let info = document.createElement('div');
-                    info.style.color = '#aaa'; info.innerText = "Bâtiment opérationnel.";
-                    uiBottom.appendChild(info);
+                    // Menu Bâtiment Normal
+                    let title = document.createElement('div');
+                    title.style.color = 'white'; title.style.marginRight = '15px'; title.innerHTML = `<b>${selectedBuilding.type.toUpperCase()}</b> Lv.${selectedBuilding.level}`;
+                    uiBottom.appendChild(title);
+
+                    if (['barracks', 'archery', 'mage'].includes(selectedBuilding.type)) {
+                        if (selectedBuilding.level === 1) {
+                            let btnUp = createBtn('color-upgrade', 'AMÉLIORER', '100💰 100🪵', () => upgradeBuilding(selectedBuilding));
+                            uiBottom.appendChild(btnUp);
+                            uiBottom.appendChild(createDivider());
+                        }
+
+                        let unitType = selectedBuilding.type === 'barracks' ? 'warrior' : selectedBuilding.type === 'archery' ? 'archer' : 'mage';
+                        uiBottom.appendChild(createBtn('color-recruit', 'NORMAL', '20💰 20🍞', () => buyUnit(unitType, 'normal')));
+                        
+                        if (selectedBuilding.level > 1) {
+                            uiBottom.appendChild(createBtn('color-recruit', '🔥 FEU', '40💰 40🍞', () => buyUnit(unitType, 'fire'), 'var(--neon-red)'));
+                            uiBottom.appendChild(createBtn('color-recruit', '💧 EAU', '40💰 40🍞', () => buyUnit(unitType, 'water'), 'var(--neon-water)'));
+                            uiBottom.appendChild(createBtn('color-recruit', '🌿 PLANTE', '40💰 40🍞', () => buyUnit(unitType, 'plant'), 'var(--neon-green)'));
+                        }
+                    } else if (['farm', 'sawmill', 'mine'].includes(selectedBuilding.type)) {
+                        let info = document.createElement('div');
+                        info.style.color = '#aaa'; info.innerText = `Ouvriers: ${selectedBuilding.farmersInside}/5.`;
+                        uiBottom.appendChild(info);
+                    } else if (selectedBuilding.type === 'house') {
+                        let info = document.createElement('div');
+                        info.style.color = '#aaa'; info.innerText = "Capacité: 4 unités.";
+                        uiBottom.appendChild(info);
+                    }
+
+                    uiBottom.appendChild(createDivider());
+                    uiBottom.appendChild(createBtn('color-build', 'DÉPLACER', '', () => startMoveBuilding(selectedBuilding), 'var(--neon-cyan)'));
+                    uiBottom.appendChild(createBtn('color-destroy', 'DÉTRUIRE', 'Gains 50%', () => destroyBuilding(selectedBuilding)));
+                    uiBottom.appendChild(createDivider());
+                    uiBottom.appendChild(createBtn('color-build', 'FERMER', '', () => { selectedBuilding = null; renderBottomUI(); }));
                 }
-
-                let btnCancel = createBtn('color-build', 'RETOUR', '', () => { selectedBuilding = null; renderBottomUI(); });
-                uiBottom.appendChild(createDivider());
-                uiBottom.appendChild(btnCancel);
-                
             } else {
-                // Menu Build Général
-                uiBottom.appendChild(createBtn('color-build', 'MAISON', '10🪵 10🍞', () => setBuildMode('house'), null, 'btn-b-house'));
-                uiBottom.appendChild(createBtn('color-build', 'FERME', '30🪵 20🍞', () => setBuildMode('farm'), null, 'btn-b-farm'));
-                uiBottom.appendChild(createBtn('color-build', 'SCIERIE', '30🪵 20🍞', () => setBuildMode('sawmill'), null, 'btn-b-sawmill'));
-                uiBottom.appendChild(createBtn('color-build', 'MINE', '50🪵 50🍞', () => setBuildMode('mine'), null, 'btn-b-mine'));
-                
-                uiBottom.appendChild(createDivider());
-
-                uiBottom.appendChild(createBtn('color-build', 'CASERNE', '50💰 50🪵', () => setBuildMode('barracks'), null, 'btn-b-barracks'));
-                uiBottom.appendChild(createBtn('color-build', 'STAND TIR', '50💰 50🪵', () => setBuildMode('archery'), null, 'btn-b-archery'));
-                uiBottom.appendChild(createBtn('color-build', 'T. MAGE', '50💰 50🪵', () => setBuildMode('mage'), null, 'btn-b-mage'));
-                uiBottom.appendChild(createBtn('color-build', 'TOUR DEF', '100💰 50🪵', () => setBuildMode('tower'), null, 'btn-b-tower'));
-                
-                uiBottom.appendChild(createDivider());
-                uiBottom.appendChild(createBtn('color-recruit', 'FERMIER', '10🍞', () => buyUnit('farmer', 'normal')));
+                let info = document.createElement('div');
+                info.style.color = '#aaa'; info.innerText = "Sélectionnez l'Hôtel de Ville ou un bâtiment.";
+                uiBottom.appendChild(info);
             }
         }
 
@@ -687,19 +704,50 @@
             let d = document.createElement('div'); d.className = 'ui-divider'; return d;
         }
 
+        // --- DEPLACER / DETRUIRE ---
+        function startMoveBuilding(b) {
+            moveMode = b;
+            selectedBuilding = null;
+            renderBottomUI();
+            instructions.style.display = 'block';
+        }
+
+        function destroyBuilding(b) {
+            let cost = getBuildingCost(b.type);
+            res.gold += Math.floor(cost.g / 2);
+            res.wood += Math.floor(cost.w / 2);
+            res.food += Math.floor(cost.f / 2);
+            
+            if(b.type === 'house') res.maxPop -= 4;
+            
+            // Éjecte les fermiers du bâtiment détruit
+            if(b.farmersInside > 0) {
+                units.forEach(u => {
+                    if(u.state === 'farming' && u.targetEntity === b) {
+                        u.state = 'idle'; u.targetEntity = null;
+                    }
+                });
+            }
+
+            buildings = buildings.filter(x => x !== b);
+            spawnParticles(b.x, b.y, 'var(--neon-red)', 30);
+            selectedBuilding = null;
+            updateUI(); renderBottomUI();
+        }
+
         // --- INITIALISATION ---
         function initGame() {
             gameState = 'PLAYING';
-            res = { gold: 50, wood: 50, food: 50, pop: 0, maxPop: 4 }; // Ressources initiales adaptées
-            survivalTimer = 0; waveTimer = 20; // Plus de temps avant 1ere vague
+            res = { gold: 50, wood: 50, food: 50, pop: 0, maxPop: 0 }; 
+            survivalTimer = 0; waveTimer = 20; 
             units = []; enemies = []; trees = []; wheats = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
-            buildMode = null; selectedBuilding = null;
+            buildMode = null; moveMode = null; selectedBuilding = null;
             gameOverScreen.style.display = 'none';
 
             resize();
             base = new Base(width/2, height/2 + 50);
 
-            // Génération de la map (Arbres & Blé)
+            // Génération de la map
             for(let i=0; i<15; i++) {
                 let tx = Math.random() * width; let ty = Math.random() * height;
                 if (dist({x:tx, y:ty}, base) > 150) trees.push(new ResourceNode(tx, ty, 'tree'));
@@ -709,9 +757,12 @@
                 if (dist({x:wx, y:wy}, base) > 150) wheats.push(new ResourceNode(wx, wy, 'wheat'));
             }
 
-            // 2 Fermiers de départ
-            units.push(new Unit(base.x - 40, base.y + 40, 'farmer'));
-            units.push(new Unit(base.x + 40, base.y + 40, 'farmer'));
+            // MAISON DE DEPART (qui génère +4 maxPop et spawn 2 fermiers)
+            let startHouse = new Building(base.x - 100, base.y, 'house');
+            buildings.push(startHouse);
+            
+            units.push(new Unit(startHouse.x - 20, startHouse.y + 30, 'farmer'));
+            units.push(new Unit(startHouse.x + 20, startHouse.y + 30, 'farmer'));
             
             updateUI();
             renderBottomUI();
@@ -728,6 +779,16 @@
         canvas.addEventListener('mousedown', (e) => {
             if(gameState !== 'PLAYING') return;
             const pos = getPointerPos(e);
+
+            if(moveMode) {
+                if(e.button === 0) {
+                    moveMode.x = pos.x; moveMode.y = pos.y;
+                    spawnParticles(pos.x, pos.y, 'var(--neon-cyan)', 20);
+                    moveMode = null; instructions.style.display = 'none'; renderBottomUI();
+                }
+                if(e.button === 2) { moveMode = null; instructions.style.display = 'none'; }
+                return;
+            }
 
             if(buildMode) {
                 if(e.button === 0) placeBuilding(pos);
@@ -759,7 +820,6 @@
             let isClick = (maxX - minX < 10 && maxY - minY < 10);
 
             if (isClick && inputMode === 'mouse') {
-                // Priorité: Sélection Unité -> Sélection Bâtiment -> Désélection
                 let clickedUnit = units.find(u => dist(selectionStart, u) < u.radius + 15 && u.state !== 'farming');
                 if (clickedUnit) {
                     selectedUnits = [clickedUnit];
@@ -767,8 +827,13 @@
                 } else {
                     selectedUnits = [];
                     let clickedBuild = buildings.find(b => dist(selectionStart, b) < b.size/2 + 10);
-                    if(clickedBuild) selectedBuilding = clickedBuild;
-                    else selectedBuilding = null;
+                    if(clickedBuild) {
+                        selectedBuilding = clickedBuild;
+                    } else if (dist(selectionStart, base) < base.size/2 + 10) {
+                        selectedBuilding = base; // CLIC SUR HDV
+                    } else {
+                        selectedBuilding = null;
+                    }
                 }
                 renderBottomUI();
             } else if (!isClick) {
@@ -779,7 +844,7 @@
 
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            if(gameState !== 'PLAYING' || selectedUnits.length === 0 || buildMode) return;
+            if(gameState !== 'PLAYING' || selectedUnits.length === 0 || buildMode || moveMode) return;
             const pos = getPointerPos(e);
 
             let clickedEnemy = enemies.find(en => dist(pos, en) < en.radius + 15);
@@ -823,16 +888,27 @@
         }
 
         function placeBuilding(pos) {
+            if(buildMode === 'house') {
+                let hc = buildings.filter(b => b.type === 'house').length;
+                if(hc >= 10) { alert("Limite de 10 maisons atteinte."); setBuildMode(null); return; }
+            }
+
             let cost = getBuildingCost(buildMode);
             if(res.gold >= cost.g && res.wood >= cost.w && res.food >= cost.f) {
                 res.gold -= cost.g; res.wood -= cost.w; res.food -= cost.f;
-                buildings.push(new Building(pos.x, pos.y, buildMode));
+                
+                let b = new Building(pos.x, pos.y, buildMode);
+                buildings.push(b);
                 spawnParticles(pos.x, pos.y, 'var(--neon-cyan)', 20);
-                setBuildMode(null);
-                updateUI();
-            } else {
-                alert("Ressources insuffisantes !"); setBuildMode(null);
-            }
+                
+                // Spawn gratuit de 2 fermiers si c'est une maison !
+                if(buildMode === 'house') {
+                    units.push(new Unit(pos.x - 20, pos.y + 30, 'farmer'));
+                    units.push(new Unit(pos.x + 20, pos.y + 30, 'farmer'));
+                }
+                
+                setBuildMode(null); updateUI();
+            } else { alert("Ressources insuffisantes !"); setBuildMode(null); }
         }
 
         function upgradeBuilding(b) {
@@ -856,11 +932,8 @@
 
             if (res.gold >= costGold && res.food >= costFood) {
                 res.gold -= costGold; res.food -= costFood;
-                
-                // Spawn position near the building if it's selected, else base
                 let sx = selectedBuilding ? selectedBuilding.x : base.x;
-                let sy = selectedBuilding ? selectedBuilding.y + 50 : base.y + 60;
-                
+                let sy = selectedBuilding ? selectedBuilding.y + 60 : base.y + 70;
                 units.push(new Unit(sx, sy, type, element));
                 updateUI();
             } else { alert("Ressources insuffisantes !"); }
@@ -886,28 +959,22 @@
             // ÉCONOMIE PASSIVE AUTOMATISÉE
             if (ecoTimer >= 1) {
                 ecoTimer = 0;
-                
                 let farmOutput=0, mineOutput=0, sawOutput=0;
                 buildings.forEach(b => { 
                     if(b.type === 'farm') farmOutput += b.farmersInside * 2; 
                     if(b.type === 'mine') mineOutput += b.farmersInside * 1.5; 
                     if(b.type === 'sawmill') sawOutput += b.farmersInside * 2; 
                 });
-                
-                res.food += farmOutput;
-                res.gold += mineOutput;
-                res.wood += sawOutput;
-
-                res.food -= res.pop * 0.2; // Consommation
-                if(res.food < 0) { res.food = 0; /* Ajouter pénalité HP si on veut */ }
-
+                res.food += farmOutput; res.gold += mineOutput; res.wood += sawOutput;
+                res.food -= res.pop * 0.2; 
+                if(res.food < 0) { res.food = 0; }
                 updateUI();
             }
 
             // Vagues d'ennemis
             waveTimer -= dt;
             if (waveTimer <= 0) {
-                let count = 1 + Math.floor(survivalTimer / 60); // Monte plus doucement
+                let count = 1 + Math.floor(survivalTimer / 60);
                 for(let i=0; i<count; i++) {
                     let spawnX = Math.random() > 0.5 ? -20 : width + 20;
                     let spawnY = Math.random() * height;
@@ -921,7 +988,6 @@
                 spawnParticles(base.x, base.y, 'var(--neon-red)', 50);
             }
 
-            // Update Entités
             buildings.forEach(b => b.update(dt));
 
             for (let i = units.length - 1; i >= 0; i--) {
@@ -938,7 +1004,6 @@
                 enemies[i].update(dt);
                 if (enemies[i].hp <= 0) {
                     spawnParticles(enemies[i].x, enemies[i].y, enemies[i].color, 15);
-                    // Gain or quand tué
                     res.gold += 5; updateUI();
                     enemies.splice(i, 1);
                 }
@@ -947,23 +1012,14 @@
             for (let i = trees.length - 1; i >= 0; i--) { if (trees[i].amount <= 0) trees.splice(i, 1); }
             for (let i = wheats.length - 1; i >= 0; i--) { if (wheats[i].amount <= 0) wheats.splice(i, 1); }
 
-            // FX
-            particles.forEach((p, i) => {
-                p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
-                if(p.life <= 0) particles.splice(i, 1);
-            });
-            lasers.forEach((l, i) => {
-                l.life -= dt;
-                if(l.life <= 0) lasers.splice(i, 1);
-            });
+            particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; if(p.life <= 0) particles.splice(i, 1); });
+            lasers.forEach((l, i) => { l.life -= dt; if(l.life <= 0) lasers.splice(i, 1); });
         }
 
         function draw() {
             ctx.clearRect(0, 0, width, height);
 
-            if (images.map.complete && images.map.naturalWidth > 0) {
-                ctx.drawImage(images.map, 0, 0, width, height);
-            }
+            if (images.map.complete && images.map.naturalWidth > 0) ctx.drawImage(images.map, 0, 0, width, height);
 
             if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
                 trees.forEach(t => t.draw());
@@ -975,10 +1031,8 @@
                 enemies.forEach(e => e.draw());
 
                 lasers.forEach(l => {
-                    ctx.strokeStyle = l.color; ctx.lineWidth = 3;
-                    ctx.shadowBlur = 10; ctx.shadowColor = l.color;
-                    ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke();
-                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = l.color; ctx.lineWidth = 3; ctx.shadowBlur = 10; ctx.shadowColor = l.color;
+                    ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke(); ctx.shadowBlur = 0;
                 });
 
                 particles.forEach(p => {
@@ -988,34 +1042,32 @@
                 ctx.globalAlpha = 1;
 
                 if (isSelecting && inputMode === 'mouse') {
-                    ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.lineWidth = 1;
-                    ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
-                    let w = selectionCurrent.x - selectionStart.x;
-                    let h = selectionCurrent.y - selectionStart.y;
-                    ctx.fillRect(selectionStart.x, selectionStart.y, w, h);
-                    ctx.strokeRect(selectionStart.x, selectionStart.y, w, h);
+                    ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.lineWidth = 1; ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
+                    let w = selectionCurrent.x - selectionStart.x; let h = selectionCurrent.y - selectionStart.y;
+                    ctx.fillRect(selectionStart.x, selectionStart.y, w, h); ctx.strokeRect(selectionStart.x, selectionStart.y, w, h);
                 }
 
-                if (buildMode) {
+                // Fantôme de construction & Déplacement
+                let activeGhost = buildMode || (moveMode ? moveMode.type : null);
+                if (activeGhost) {
                     let img = null;
-                    if(buildMode === 'house') img = images.house;
-                    if(buildMode === 'farm') img = images.farm;
-                    if(buildMode === 'sawmill') img = images.sawmill;
-                    if(buildMode === 'mine') img = images.mine;
-                    if(buildMode === 'barracks') img = images.barracks;
-                    if(buildMode === 'archery') img = images.archery;
-                    if(buildMode === 'mage') img = images.mageTower;
-                    if(buildMode === 'tower') img = images.tower;
+                    if(activeGhost === 'house') img = images.house;
+                    if(activeGhost === 'farm') img = images.farm;
+                    if(activeGhost === 'sawmill') img = images.sawmill;
+                    if(activeGhost === 'mine') img = images.mine;
+                    if(activeGhost === 'barracks') img = images.barracks;
+                    if(activeGhost === 'archery') img = images.archery;
+                    if(activeGhost === 'mage') img = images.mageTower;
+                    if(activeGhost === 'tower') img = images.tower;
 
-                    let size = (buildMode === 'barracks' || buildMode === 'archery' || buildMode === 'mage') ? 80 : 64;
-                    if(buildMode === 'tower') size = 50;
+                    let size = (activeGhost === 'barracks' || activeGhost === 'archery' || activeGhost === 'mage') ? 80 : 64;
+                    if(activeGhost === 'tower') size = 50;
 
                     ctx.globalAlpha = 0.5;
                     if (img && img.complete && img.naturalWidth > 0) {
                         ctx.drawImage(img, mouseHover.x - size/2, mouseHover.y - size/2, size, size);
                     } else {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                        ctx.fillRect(mouseHover.x - size/2, mouseHover.y - size/2, size, size);
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; ctx.fillRect(mouseHover.x - size/2, mouseHover.y - size/2, size, size);
                     }
                     ctx.globalAlpha = 1.0;
                 }
@@ -1025,8 +1077,7 @@
         function loop(timestamp) {
             const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
             lastTime = timestamp;
-            update(dt);
-            draw();
+            update(dt); draw();
             requestAnimationFrame(loop);
         }
 
