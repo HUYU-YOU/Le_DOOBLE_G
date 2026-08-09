@@ -131,22 +131,18 @@
 </head>
 <body>
 
-    <!-- PROTECTION SWIPE HUB -->
     <script>
         document.addEventListener('touchstart', (e) => { 
             if(e.target.closest('.no-swipe')) e.stopPropagation(); 
         }, { passive: false });
     </script>
 
-    <!-- BOUTON RETOUR HUB -->
     <a href="../index.html" id="btn-retour-hub" title="Retour au Hub Global">
         &#11013; Retour au Hub
     </a>
 
-    <!-- AUDIO YOUTUBE INVISIBLE -->
     <div id="yt-player" style="display: none;"></div>
 
-    <!-- JEU -->
     <div id="game-container" class="no-swipe">
         <canvas id="gameCanvas"></canvas>
         
@@ -165,7 +161,6 @@
             </div>
         </div>
 
-        <!-- MENU PRINCIPAL -->
         <div id="menu-screen">
             <h1 id="menu-title">Slime-Dash</h1>
             <p id="menu-desc">Échappe à l'infection ou crée ton propre enfer quantique.</p>
@@ -184,7 +179,6 @@
             </div>
         </div>
 
-        <!-- ECRAN FIN DE PARTIE -->
         <div id="gameover-screen">
             <h2 id="go-title" style="color: var(--neon-pink); font-size: 2.2rem; margin-top: 0; text-transform: uppercase;">CRASH CRITIQUE</h2>
             <p id="go-desc" style="color: #fff; margin-bottom: 25px; font-size: 1.2rem;">Score : <span id="go-score" style="color: var(--neon-green);">0</span></p>
@@ -194,7 +188,6 @@
             </div>
         </div>
 
-        <!-- PANNEAU ÉDITEUR -->
         <div id="editor-panel">
             <button class="tool-btn active" data-tool="block" title="Bloc (Carre)">🟦</button>
             <button class="tool-btn" data-tool="spike" title="Pic (Triangle)">🔺</button>
@@ -206,10 +199,8 @@
             <button class="tool-btn" data-tool="eraser" title="Gomme">❌</button>
             
             <div class="divider"></div>
-            
             <button class="tool-btn" id="cam-left" title="Caméra Gauche">◀</button>
             <button class="tool-btn" id="cam-right" title="Caméra Droite">▶</button>
-            
             <div class="divider"></div>
 
             <button id="test-btn" class="action-btn action-tester">TESTER</button>
@@ -218,7 +209,6 @@
         </div>
     </div>
 
-    <!-- MOTEUR COMPLET -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -253,7 +243,8 @@
             let gameState = 'START'; 
             let currentActiveMode = 'PLAYING_ENDLESS'; 
             
-            const GRID_SIZE = 50; 
+            // --- GRILLE ET JOUEUR AGRANDIS ---
+            const GRID_SIZE = 60; 
             const GROUND_HEIGHT = 90;
             let gameSpeed = 300; 
             
@@ -349,9 +340,8 @@
             triangleImg.src = 'img/triangle.png'; 
             rebonImg.src = 'img/rebon.png';       
 
-            // --- TAILLE DU JOUEUR AUGMENTÉE POUR CORRESPONDRE À LA HITBOX ---
             const player = {
-                x: 150, y: 0, prevY: 0, size: 60, vy: 0, isGrounded: false,
+                x: 150, y: 0, prevY: 0, size: 60, vy: 0, isGrounded: false, // Joueur à 60
                 animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1
             };
 
@@ -907,10 +897,17 @@
             function drawEditorObject(type, screenX, screenY, alpha = 1) {
                 ctx.globalAlpha = alpha;
                 
+                // FACTEUR D'ÉCHELLE POUR COMPENSER LES MARGES TRANSPARENTES
+                const VISUAL_SCALE = 1.6;
+                const drawW = GRID_SIZE * VISUAL_SCALE;
+                const drawH = GRID_SIZE * VISUAL_SCALE;
+                const drawX = screenX - (drawW - GRID_SIZE) / 2;
+                const drawY = screenY - (drawH - GRID_SIZE);
+
                 // --- 1. BLOC (carre.png) ---
                 if (type === 'block') {
                     if (carreImg.complete && carreImg.naturalWidth > 0) {
-                        ctx.drawImage(carreImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
+                        ctx.drawImage(carreImg, drawX, drawY, drawW, drawH);
                     } else {
                         ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                         ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -919,7 +916,7 @@
                 // --- 2. PROPULSEUR (rebon.png) ---
                 else if (type === 'pad') {
                     if (rebonImg.complete && rebonImg.naturalWidth > 0) {
-                        ctx.drawImage(rebonImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
+                        ctx.drawImage(rebonImg, drawX, drawY, drawW, drawH);
                     } else {
                         ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
                         ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -935,7 +932,7 @@
                     const floatY = screenY + Math.sin(performance.now()/150) * 8; 
                     if (lucioleImg.complete && lucioleImg.naturalWidth > 0) {
                         ctx.shadowBlur = 15; ctx.shadowColor = '#ccff00';
-                        ctx.drawImage(lucioleImg, screenX, floatY, GRID_SIZE, GRID_SIZE);
+                        ctx.drawImage(lucioleImg, drawX, floatY - (drawH - GRID_SIZE), drawW, drawH);
                         ctx.shadowBlur = 0;
                     } else {
                         ctx.shadowBlur = 20; ctx.shadowColor = '#ccff00'; ctx.fillStyle = '#eaff80';
@@ -945,7 +942,7 @@
                 // --- 4. PIC (triangle.png) ---
                 else if (type === 'spike') {
                     if (triangleImg.complete && triangleImg.naturalWidth > 0) {
-                        ctx.drawImage(triangleImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
+                        ctx.drawImage(triangleImg, drawX, drawY, drawW, drawH);
                     } else {
                         ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
                         ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
