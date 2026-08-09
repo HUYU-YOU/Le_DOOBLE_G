@@ -38,6 +38,20 @@
             border-color: rgba(255, 255, 255, 0.5);
         }
 
+        /* NOUVEAU BOUTON MUTE EN HAUT A DROITE */
+        #btn-mute {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan); padding: 8px 15px; font-family: inherit;
+            font-size: 14px; border-radius: 5px; cursor: pointer;
+            font-weight: bold; transition: 0.2s ease;
+        }
+        #btn-mute:hover {
+            background-color: rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
         #game-container {
             position: relative; width: 100%; height: 100%; max-width: 1200px; max-height: 700px;
             background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
@@ -141,6 +155,9 @@
         &#11013; Retour au Hub
     </a>
 
+    <!-- BOUTON SON -->
+    <button id="btn-mute">🔊 SON: ON</button>
+
     <div id="yt-player" style="display: none;"></div>
 
     <div id="game-container" class="no-swipe">
@@ -214,12 +231,17 @@
 
             let ytPlayer;
             let audioStarted = false;
+            let isMuted = false;
+
             window.onYouTubeIframeAPIReady = function() {
                 ytPlayer = new YT.Player('yt-player', {
                     height: '0', width: '0', videoId: '0QjHiah9Z3I', 
                     playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
                     events: { 
-                        'onReady': (e) => e.target.setVolume(10), 
+                        'onReady': (e) => {
+                            e.target.setVolume(10);
+                            if (isMuted) e.target.mute();
+                        }, 
                         'onStateChange': (e) => { if (e.data === YT.PlayerState.ENDED) ytPlayer.playVideo(); } 
                     }
                 });
@@ -227,10 +249,34 @@
 
             function initAudio() {
                 if (!audioStarted && ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                    try { ytPlayer.playVideo(); audioStarted = true; } 
+                    try { 
+                        ytPlayer.playVideo(); 
+                        if (isMuted) ytPlayer.mute(); else ytPlayer.unMute();
+                        audioStarted = true; 
+                    } 
                     catch(e) { console.warn("Erreur Audio Youtube :", e); }
                 }
             }
+
+            // GESTION DU BOUTON MUTE
+            const btnMute = document.getElementById('btn-mute');
+            btnMute.addEventListener('click', () => {
+                isMuted = !isMuted;
+                if (isMuted) {
+                    if (ytPlayer && typeof ytPlayer.mute === 'function') ytPlayer.mute();
+                    btnMute.innerText = "🔇 SON: OFF";
+                    btnMute.style.color = "var(--neon-pink)";
+                    btnMute.style.borderColor = "var(--neon-pink)";
+                } else {
+                    if (ytPlayer && typeof ytPlayer.unMute === 'function') {
+                        ytPlayer.unMute();
+                        ytPlayer.setVolume(10);
+                    }
+                    btnMute.innerText = "🔊 SON: ON";
+                    btnMute.style.color = "var(--neon-cyan)";
+                    btnMute.style.borderColor = "var(--neon-cyan)";
+                }
+            });
 
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -893,21 +939,22 @@
                 }
             }
 
-            // --- FONCTION D'AFFICHAGE DES OBSTACLES RÉVISÉE ---
+            // --- GESTION DES TAILLES ET POSITIONS VISUELLES ---
             function drawEditorObject(type, screenX, screenY, alpha = 1) {
                 ctx.globalAlpha = alpha;
                 
-                // NOUVEAU FACTEUR D'ÉCHELLE POUR COMPENSER LES MARGES TRANSPARENTES
-                const VISUAL_SCALE = 1.25; 
+                const VISUAL_SCALE = 1.5; 
                 const drawW = GRID_SIZE * VISUAL_SCALE;
                 const drawH = GRID_SIZE * VISUAL_SCALE;
                 const drawX = screenX - (drawW - GRID_SIZE) / 2;
-                const drawY = screenY - (drawH - GRID_SIZE);
+                
+                // Alignement parfait par le bas + décalage vers le bas pour enfoncer dans le sol
+                const alignBottomY = screenY + GRID_SIZE - drawH;
 
                 // --- 1. BLOC (carre.png) ---
                 if (type === 'block') {
                     if (carreImg.complete && carreImg.naturalWidth > 0) {
-                        ctx.drawImage(carreImg, drawX, drawY + 6, drawW, drawH); // +6 pour coller au sol
+                        ctx.drawImage(carreImg, drawX, alignBottomY + 18, drawW, drawH); 
                     } else {
                         ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                         ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -916,7 +963,7 @@
                 // --- 2. PROPULSEUR (rebon.png) ---
                 else if (type === 'pad') {
                     if (rebonImg.complete && rebonImg.naturalWidth > 0) {
-                        ctx.drawImage(rebonImg, drawX, drawY + 10, drawW, drawH); // +10 pour l'ancrer au sol
+                        ctx.drawImage(rebonImg, drawX, alignBottomY + 20, drawW, drawH); 
                     } else {
                         ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
                         ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -930,9 +977,10 @@
                 // --- 3. LUCIOLE (luciole.png) ---
                 else if (type === 'coin') {
                     const floatY = screenY + Math.sin(performance.now()/150) * 8; 
+                    const coinY = floatY - (drawH - GRID_SIZE) / 2;
                     if (lucioleImg.complete && lucioleImg.naturalWidth > 0) {
                         ctx.shadowBlur = 15; ctx.shadowColor = '#ccff00';
-                        ctx.drawImage(lucioleImg, drawX, floatY - (drawH - GRID_SIZE), drawW, drawH);
+                        ctx.drawImage(lucioleImg, drawX, coinY, drawW, drawH);
                         ctx.shadowBlur = 0;
                     } else {
                         ctx.shadowBlur = 20; ctx.shadowColor = '#ccff00'; ctx.fillStyle = '#eaff80';
@@ -942,7 +990,7 @@
                 // --- 4. PIC (triangle.png) ---
                 else if (type === 'spike') {
                     if (triangleImg.complete && triangleImg.naturalWidth > 0) {
-                        ctx.drawImage(triangleImg, drawX, drawY + 16, drawW, drawH); // +16 pour l'écraser au sol
+                        ctx.drawImage(triangleImg, drawX, alignBottomY + 25, drawW, drawH); 
                     } else {
                         ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
                         ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
