@@ -97,7 +97,7 @@
             padding: 8px 15px; border-radius: 6px; font-size: 1em; font-weight: bold;
         }
 
-        /* --- NOUVELLE ZONE DE JEU --- */
+        /* Zone de Jeu */
         #game-area { display: none; }
         
         .panel-header {
@@ -156,7 +156,7 @@
         .chat-system { color: var(--pink); font-weight: bold; font-size: 0.9em; display: block; margin: 8px 0; text-align: center;}
         .chat-player { color: var(--cyan); font-weight: bold; }
 
-        /* Bloc d'Action (Le panneau principal en bas) */
+        /* Bloc d'Action */
         .action-zone {
             background: var(--inner-bg); border: 2px solid var(--neon-yellow);
             border-radius: 8px; padding: 20px; box-shadow: 0 0 15px rgba(252, 232, 3, 0.1);
@@ -268,9 +268,9 @@
                 </div>
 
                 <!-- Input Glitch -->
-                <div id="glitch-guess-zone" class="action-module">
-                    <input type="text" id="glitch-guess-input" placeholder="Le mot est..." style="border-color: var(--neon-yellow);">
-                    <button class="btn" id="btn-glitch-submit" style="background:var(--neon-yellow); color:#000;">Tenter l'infiltration</button>
+                <div id="glitch-guess-zone" class="action-module" style="flex-direction: column;">
+                    <input type="text" id="glitch-guess-input" placeholder="Le mot est..." style="border-color: var(--neon-yellow); margin-bottom:10px;">
+                    <button class="btn" id="btn-glitch-submit" style="background:var(--neon-yellow); color:#000; box-shadow: 0 0 10px rgba(255,234,0,0.5);">Tenter l'infiltration</button>
                 </div>
             </div>
 
@@ -336,8 +336,7 @@
             
             if(activeModule === 'chat') chatInputArea.style.display = 'flex';
             if(activeModule === 'vote') votingZone.style.display = 'block';
-            if(activeModule === 'glitch') glitchZone.style.display = 'flex';
-            if(activeModule === 'glitch-block') glitchZone.style.display = 'block';
+            if(activeModule === 'glitch-block') glitchZone.style.display = 'flex';
         }
 
         function addChatMsg(senderStr, msg, type = 'player') {
@@ -354,14 +353,13 @@
             chatArea.prepend(msgEl);
         }
 
-        // CORRECTION DU BUG D'ID : On ajoute customId en paramètre
+        // INIT PEER
         function initPeer(pseudo, callback, customId = null) {
             myPseudo = pseudo || "Joueur_" + Math.floor(Math.random()*1000);
             
             loginErr.innerText = "Connexion au réseau...";
             loginErr.style.color = "var(--cyan)";
 
-            // On force l'ID personnalisé s'il est fourni (pour l'hôte)
             peer = customId ? new Peer(customId) : new Peer();
 
             peer.on('open', (id) => {
@@ -417,7 +415,7 @@
 
                 const conn = peer.connect(targetId);
                 setupClientConnectionEvents(conn);
-            }); // Pas de customId ici, on laisse PeerJS choisir
+            }); 
         });
 
         function setupClientConnectionEvents(conn) {
@@ -458,8 +456,7 @@
                     break;
 
                 case 's_role_data':
-                    document.getElementById('role-setup').style.display = 'none';
-                    document.getElementById('role-display').style.display = 'block';
+                    // On injecte le mot secret en arrière-plan. Le bouton reste visible pour le joueur.
                     document.getElementById('secret-word').innerText = data.word;
                     setActionUI("ATTENTE", "Mémorisez votre mot. La partie va commencer.");
                     break;
@@ -515,10 +512,9 @@
             if(!pseudo) { loginErr.innerText = "Pseudo requis."; return; }
 
             isHost = true;
-            // Génération du code SPY + 4 chiffres
+            // Format SPY + 4 chiffres
             const roomId = 'SPY' + Math.floor(1000 + Math.random() * 9000);
 
-            // On passe roomId à initPeer
             initPeer(pseudo, (id) => {
                 hostId = id;
                 document.getElementById('my-id').innerText = id;
@@ -678,8 +674,7 @@
 
                 const roleData = { type: 's_role_data', word: wordToSend };
                 if (p.id === 0) {
-                    document.getElementById('role-setup').style.display = 'none';
-                    document.getElementById('role-display').style.display = 'block';
+                    // On modifie juste le texte en arrière-plan sans cacher le bouton
                     document.getElementById('secret-word').innerText = wordToSend;
                 } else {
                     sendTo(p.id, roleData);
@@ -695,6 +690,7 @@
             document.getElementById('game-player-rpc').innerText = myPseudo;
             document.getElementById('game-over-screen').style.display = 'none';
             document.getElementById('action-zone-container').style.display = 'block';
+            document.getElementById('secret-word').innerText = "...";
             
             const revealBtn = document.getElementById('btn-reveal-role');
             revealBtn.style.display = 'block';
