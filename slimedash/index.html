@@ -27,13 +27,6 @@
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* MEDIA BACKGROUND */
-        #bg-video {
-            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
-            z-index: -100; transform: translateX(-50%) translateY(-50%);
-            object-fit: cover; opacity: 0.3; transition: opacity 1s;
-        }
-
         /* =========================================
            2. BOUTON RETOUR AU HUB
            ========================================= */
@@ -167,10 +160,7 @@
         &#11013; Retour au Hub
     </a>
 
-    <!-- MEDIA -->
-    <video id="bg-video" autoplay loop muted playsinline>
-        <source id="bg-video-source" src="backgroundnight.mp4" type="video/mp4">
-    </video>
+    <!-- L'ancienne vidéo a été supprimée. Audio Youtube préservé. -->
     <div id="yt-player" style="display: none;"></div>
 
     <!-- JEU -->
@@ -186,7 +176,6 @@
                 <div style="text-align: right; font-size: 1.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan);">
                     <div>SCORE: <span id="score" style="color: #fff;">0</span></div>
                     <div style="font-size: 1.1rem; color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink);">HI-SCORE: <span id="hi-score" style="color: #fff;">0</span></div>
-                    <!-- AJOUT DU COMPTEUR DE MORTS -->
                     <div style="font-size: 1.1rem; color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); margin-top: 5px;">DEATHS: <span id="death-count" style="color: #fff;">0</span></div>
                 </div>
             </div>
@@ -211,7 +200,7 @@
             </div>
         </div>
 
-        <!-- PANNEAU ÉDITEUR (DRAGGABLE) -->
+        <!-- PANNEAU ÉDITEUR -->
         <div id="editor-panel">
             <button class="tool-btn active" data-tool="block" title="Bloc">🟦</button>
             <button class="tool-btn" data-tool="spike" title="Pic">🔺</button>
@@ -274,10 +263,10 @@
             const GROUND_HEIGHT = 90;
             let gameSpeed = 500; 
             
-            // 🚀 PHYSIQUE AMÉLIORÉE (Sauts plus nerveux)
+            // Physique Améliorée
             const GRAVITY = 3600; 
             const JUMP_FORCE = -1050; 
-            let jumpBufferTimer = 0; // Le fameux Jump Buffer pour la fluidité !
+            let jumpBufferTimer = 0; 
 
             let cameraX = 0;
             let editorCamTarget = 0;
@@ -322,8 +311,9 @@
             const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7 };
             const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin' };
 
-            // --- 4. GESTIONNAIRE DES SPRITES ---
+            // --- 4. GESTIONNAIRE DES SPRITES ET FONDS ---
             const sprites = { idle: [], run: [], jump: [], land: [] };
+            const bgImages = []; // NOOUVEAU : Tableau pour les images de fond
             
             function loadFrames(category, filenames) {
                 filenames.forEach(file => { 
@@ -337,6 +327,13 @@
             loadFrames('run',  ['slm5.png', 'slm6.png', 'slm7.png', 'slm8.png']);
             loadFrames('jump', ['slm10.png', 'slm11.png', 'slm12.png', 'slm13.png', 'slm14.png', 'slm15.png', 'slm16.png']);
             loadFrames('land', ['slm17.png', 'slm18.png', 'slm19.png', 'slm20.png']);
+
+            // Chargement de tes 5 images de fond (img1.jpg à img5.jpg)
+            for(let i = 1; i <= 5; i++) {
+                let img = new Image();
+                img.src = `img/img${i}.jpg`;
+                bgImages.push(img);
+            }
 
             // --- 5. OBJET JOUEUR ---
             const player = {
@@ -452,12 +449,10 @@
                     gameState = 'GAMEOVER';
                     spawnParticles(player.x + player.size/2, player.y + player.size/2, '#ff007f', 40);
                     
-                    // MàJ Compteur Morts
                     deaths++;
                     localStorage.setItem('slimeDashDeaths', deaths);
                     if (deathElem) deathElem.innerText = deaths;
 
-                    // MàJ Hi-Score
                     if (score > hiScore) {
                         hiScore = score;
                         localStorage.setItem('slimeDashHiScore', hiScore);
@@ -669,7 +664,6 @@
                     if (player.isGrounded) {
                         executeJump();
                     } else {
-                        // Jump Buffer : Mémorise l'intention de sauter pendant 150ms
                         jumpBufferTimer = 0.15;
                     }
                 }
@@ -698,11 +692,7 @@
                         player.isGrounded = true; setAnimState('LAND');
                         spawnParticles(player.x + player.size/2, player.y + player.size, 'rgba(57, 255, 20, 0.7)', 8);
                         
-                        // Déclenchement du Jump Buffer
-                        if (jumpBufferTimer > 0) {
-                            executeJump();
-                            jumpBufferTimer = 0;
-                        }
+                        if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
                     }
                 } else {
                     player.isGrounded = false;
@@ -789,6 +779,11 @@
                 particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.alpha -= p.decay * dt; if (p.alpha <= 0) particles.splice(i, 1); });
                 if (shakeTimer > 0) shakeTimer -= dt;
 
+                // Fait avancer lentement la caméra même dans le menu de départ pour animer le fond !
+                if (gameState === 'START') {
+                    cameraX += 30 * dt;
+                }
+
                 if (gameState.startsWith('PLAYING')) {
                     cameraX += gameSpeed * dt;
                     player.vy += GRAVITY * dt;
@@ -815,28 +810,63 @@
                 }
             }
 
-            // Générateur d'arrière-plan Parallax Procédural (Immeubles Cyberpunk)
-            function drawParallaxBackground() {
-                ctx.fillStyle = '#0a0d14'; // Couleur des immeubles en fond
-                const buildingWidth = 60;
-                // On calcule le décalage pour le parallax (bouge à 20% de la vitesse de la caméra)
-                const parallaxX = cameraX * 0.2; 
+            // NOUVEAU : Fonction de dessin du fond infini (Parallaxe 5 Images)
+            function drawImageBackground() {
+                let seqW = 0;
+                let widths = [];
                 
-                // Dessine uniquement les immeubles visibles à l'écran
+                // Calculer la largeur de la série d'images redimensionnées
+                for (let i = 0; i < bgImages.length; i++) {
+                    let img = bgImages[i];
+                    if (img.complete && img.naturalHeight > 0) {
+                        let w = (height / img.naturalHeight) * img.naturalWidth;
+                        widths.push(w);
+                        seqW += w;
+                    } else {
+                        widths.push(0);
+                    }
+                }
+
+                if (seqW === 0) return; // Si rien n'est encore chargé, on annule
+
+                // Vitesse du parallaxe (les images bougent à 15% de la vitesse du sol)
+                let scrollX = cameraX * 0.15; 
+                let startX = -(scrollX % seqW);
+                let currentX = startX;
+
+                // On boucle tant qu'on n'a pas rempli toute la largeur de l'écran
+                while (currentX < width) {
+                    for (let i = 0; i < bgImages.length; i++) {
+                        let img = bgImages[i];
+                        let imgW = widths[i];
+                        
+                        // Si l'image est visible à l'écran, on la dessine
+                        if (imgW > 0 && currentX + imgW > 0 && currentX < width) {
+                            ctx.drawImage(img, currentX, 0, imgW, height);
+                        }
+                        currentX += imgW;
+                    }
+                }
+            }
+
+            // Dessin des immeubles devant les images (légèrement transparents pour l'esthétique)
+            function drawParallaxBackground() {
+                ctx.fillStyle = 'rgba(10, 13, 20, 0.85)'; // Plus transparent pour voir les images derrière
+                const buildingWidth = 60;
+                const parallaxX = cameraX * 0.3; // Bouge un peu plus vite que les images
+                
                 const startIdx = Math.floor(parallaxX / buildingWidth);
                 const endIdx = startIdx + Math.ceil(width / buildingWidth) + 1;
 
                 for (let i = startIdx; i <= endIdx; i++) {
                     let realX = (i * buildingWidth) - parallaxX;
-                    // Hauteur pseudo-aléatoire basée sur l'index de l'immeuble
                     let h = 80 + (Math.sin(i * 13) * 50) + (Math.sin(i * 7) * 80);
                     ctx.fillRect(realX, height - GROUND_HEIGHT - h, buildingWidth - 5, h);
                     
-                    // Petites fenêtres néon
                     if (Math.sin(i*3) > 0) {
                         ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
                         ctx.fillRect(realX + 10, height - GROUND_HEIGHT - h + 20, 10, 10);
-                        ctx.fillStyle = '#0a0d14';
+                        ctx.fillStyle = 'rgba(10, 13, 20, 0.85)';
                     }
                 }
             }
@@ -891,9 +921,11 @@
                 if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
                 ctx.clearRect(0, 0, width, height);
 
-                // Dessin du décor Parallax (Immeubles en fond)
+                // --- DESSIN DU FOND IMAGES ET PARALLAXE ---
+                drawImageBackground(); // Les 5 images (le plus au fond)
+                
                 if (gameState !== 'START') {
-                    drawParallaxBackground();
+                    drawParallaxBackground(); // Les immeubles cyberpunk au milieu
                 }
 
                 const gridAlpha = gameState === 'EDITOR' ? '0.2' : '0.05';
