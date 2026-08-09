@@ -152,6 +152,8 @@
                 <div style="text-align: right; font-size: 1.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan);">
                     <div>SCORE: <span id="score" style="color: #fff;">0</span></div>
                     <div style="font-size: 1.1rem; color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink);">HI-SCORE: <span id="hi-score" style="color: #fff;">0</span></div>
+                    <!-- COMPTEUR DE LUCIOLES GLOBALES -->
+                    <div style="font-size: 1.1rem; color: #ccff00; text-shadow: 0 0 10px #ccff00; margin-top: 5px;">LUCIOLES: <span id="fireflies-count" style="color: #fff;">0</span></div>
                     <div style="font-size: 1.1rem; color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); margin-top: 5px;">DEATHS: <span id="death-count" style="color: #fff;">0</span></div>
                 </div>
             </div>
@@ -183,7 +185,7 @@
             <button class="tool-btn" data-tool="hole" title="Trou">🕳️</button>
             <button class="tool-btn" data-tool="pad" title="Propulseur">🚀</button>
             <button class="tool-btn" data-tool="holo" title="Hologramme (Fake)">👻</button>
-            <button class="tool-btn" data-tool="coin" title="Data Chip (Bonus)">💎</button>
+            <button class="tool-btn" data-tool="coin" title="Luciole (Bonus Max 20)">✨</button>
             <button class="tool-btn" data-tool="flag" title="Fin du niveau">🏁</button>
             <button class="tool-btn" data-tool="eraser" title="Gomme">❌</button>
             
@@ -245,6 +247,7 @@
             let editorCamTarget = 0;
             let score = 0;
             
+            // Récupération des statistiques globales
             let hiScore = localStorage.getItem('slimeDashHiScore') || 0;
             const hiScoreElem = document.getElementById('hi-score');
             if (hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
@@ -253,12 +256,17 @@
             const deathElem = document.getElementById('death-count');
             if (deathElem) deathElem.innerText = deaths;
 
+            let totalFireflies = parseInt(localStorage.getItem('slimeDashFireflies')) || 0;
+            const firefliesElem = document.getElementById('fireflies-count');
+            if (firefliesElem) firefliesElem.innerText = totalFireflies;
+
             let particles = [];
             let shakeTimer = 0, shakeIntensity = 0;
 
             let levelData = []; 
             let endlessLevelData = []; 
             let nextEndlessSpawnX = 0; 
+            let consecutiveObstacles = 0;
 
             let defaultLevel = [
                 {x: 10, y: 0, type: 'block'}, {x: 11, y: 0, type: 'block'}, {x: 12, y: 1, type: 'block'},
@@ -374,6 +382,7 @@
                 if (mode === 'PLAYING_ENDLESS') {
                     gameSpeed = 300; 
                     endlessLevelData = [];
+                    consecutiveObstacles = 0;
                     nextEndlessSpawnX = Math.floor(width / GRID_SIZE) + 10;
                     statusText.innerText = "COURSE INFINIE";
                     statusText.style.color = "var(--neon-pink)";
@@ -552,6 +561,16 @@
                 if (hoverGridY < 0 && currentTool !== 'hole') return; 
                 if (currentTool === 'flag') levelData = levelData.filter(o => o.type !== 'flag'); 
 
+                // --- Limite de 20 Lucioles ---
+                if (currentTool === 'coin') {
+                    const currentCoins = levelData.filter(o => o.type === 'coin').length;
+                    const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
+                    
+                    if (existingIndex === -1 || levelData[existingIndex].type !== 'coin') {
+                        if (currentCoins >= 20) return; // Stoppe le placement de la luciole
+                    }
+                }
+
                 const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
                 if (currentTool === 'eraser') {
                     if (existingIndex !== -1) levelData.splice(existingIndex, 1);
@@ -592,7 +611,6 @@
                 if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; isHovering = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
             });
 
-            // --- 11. GENERATEUR INFINI (SÉCURISÉ CONTRE LES IMPASSES) ---
             function updateEndlessGeneration() {
                 const currentGridX = Math.floor(cameraX / GRID_SIZE);
                 const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 6; 
@@ -601,26 +619,19 @@
                     const r = Math.random();
                     let type = 'coin';
                     let y = 0;
-                    let gap = 2; // Espacement de sécurité par défaut
+                    let gap = 2; 
 
-                    // Empêche strictement d'enchaîner des pièges mortels rapprochés
-                    if (r > 0.85) { 
-                        type = 'hole'; 
-                        gap = 3; // Gros trou bien espacé
-                    } else if (r > 0.65) { 
-                        type = 'spike'; 
-                        gap = 3; // Pic isolé avec de l'espace autour
-                    } else if (r > 0.4) { 
-                        type = 'block'; 
-                        y = Math.random() > 0.5 ? 1 : 0; 
-                        gap = 2; 
-                    } else if (r > 0.25) { 
-                        type = 'pad'; // Le jumper totalement inoffensif
-                        gap = 2; 
-                    } else { 
-                        type = 'coin'; 
-                        y = 1; 
-                        gap = 2; 
+                    if (consecutiveObstacles >= 2) {
+                        type = 'coin';
+                        y = 1;
+                        gap = 2;
+                        consecutiveObstacles = 0;
+                    } else {
+                        if (r > 0.85) { type = 'hole'; gap = 3; consecutiveObstacles++; }
+                        else if (r > 0.65) { type = 'spike'; gap = 3; consecutiveObstacles++; }
+                        else if (r > 0.4) { type = 'block'; y = Math.random() > 0.5 ? 1 : 0; gap = 2; consecutiveObstacles++; }
+                        else if (r > 0.25) { type = 'pad'; gap = 2; consecutiveObstacles = 0; }
+                        else { type = 'coin'; y = 1; gap = 2; consecutiveObstacles = 0; }
                     }
 
                     endlessLevelData.push({x: nextEndlessSpawnX, y: type === 'hole' ? 0 : y, type: type, collected: false});
@@ -663,7 +674,7 @@
 
                 const playerWorldX = player.x + cameraX;
                 const playerCenterGridX = Math.floor((playerWorldX + player.size/2) / GRID_SIZE);
-                const holeUnder = activeLevelData.find(o => o.type === 'hole' && o.x === playerCenterGridX);
+                const holeUnder = activeLevelData.some(o => o.type === 'hole' && o.x === playerCenterGridX);
                 const currentGroundLevel = holeUnder ? 9999 : (height - GROUND_HEIGHT - player.size);
 
                 if (player.y >= currentGroundLevel) {
@@ -693,20 +704,27 @@
                     const tolX = 12, tolY = 12;
                     const hitX = (player.x + tolX < obsScreenX + obsSize) && (player.x + player.size - tolX > obsScreenX);
                     
+                    // --- COLLISION DES LUCIOLES ---
                     if (obs.type === 'coin') {
                         const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
                         if (hitX && hitY) {
-                            obs.collected = true; score += 500;
-                            spawnParticles(obsScreenX + obsSize/2, obsScreenY + obsSize/2, 'var(--neon-yellow)', 20);
+                            obs.collected = true; 
+                            score += 500;
+                            
+                            // MàJ du compteur de lucioles
+                            totalFireflies++;
+                            localStorage.setItem('slimeDashFireflies', totalFireflies);
+                            if(firefliesElem) firefliesElem.innerText = totalFireflies;
+
+                            spawnParticles(obsScreenX + obsSize/2, obsScreenY + obsSize/2, '#ccff00', 20);
                         }
                         continue; 
                     }
 
-                    // --- LE JUMPER (PAD) SÉCURISÉ : NE PEUT PLUS TUER, FAIT SAUTER ---
                     if (obs.type === 'pad') {
                         const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
                         if (hitX && hitY) {
-                            player.vy = JUMP_FORCE * 1.5; // Super rebond automatique
+                            player.vy = JUMP_FORCE * 1.5; 
                             player.isGrounded = false; 
                             setAnimState('JUMP');
                             spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 20);
@@ -835,7 +853,6 @@
                     ctx.shadowBlur = 10; ctx.shadowColor = '#00f0ff'; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.shadowBlur=0;
                 } 
                 else if (type === 'pad') {
-                    // Jumper sécurisé en cyan
                     ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
                     ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                     ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)'; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.shadowBlur=0;
@@ -846,13 +863,15 @@
                     ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.setLineDash([]);
                 }
                 else if (type === 'coin') {
-                    const floatY = screenY + Math.sin(performance.now()/200) * 5;
-                    ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-yellow)'; ctx.fillStyle = 'var(--neon-yellow)';
-                    ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, floatY + GRID_SIZE/4);
-                    ctx.lineTo(screenX + GRID_SIZE*0.75, floatY + GRID_SIZE/2);
-                    ctx.lineTo(screenX + GRID_SIZE/2, floatY + GRID_SIZE*0.75);
-                    ctx.lineTo(screenX + GRID_SIZE/4, floatY + GRID_SIZE/2);
-                    ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
+                    // --- NOUVELLE APPARENCE LUCIOLE ---
+                    const floatY = screenY + Math.sin(performance.now()/150) * 8; 
+                    ctx.shadowBlur = 20; ctx.shadowColor = '#ccff00'; ctx.fillStyle = '#eaff80';
+                    ctx.beginPath(); 
+                    ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2);
+                    ctx.fill(); 
+                    ctx.shadowBlur=0;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath(); ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 3, 0, Math.PI*2); ctx.fill();
                 }
                 else if (type === 'spike') {
                     ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
