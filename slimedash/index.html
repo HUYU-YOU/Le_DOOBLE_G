@@ -243,7 +243,6 @@
             let gameState = 'START'; 
             let currentActiveMode = 'PLAYING_ENDLESS'; 
             
-            // --- GRILLE ET JOUEUR AGRANDIS ---
             const GRID_SIZE = 60; 
             const GROUND_HEIGHT = 90;
             let gameSpeed = 300; 
@@ -341,7 +340,7 @@
             rebonImg.src = 'img/rebon.png';       
 
             const player = {
-                x: 150, y: 0, prevY: 0, size: 60, vy: 0, isGrounded: false, // Joueur à 60
+                x: 150, y: 0, prevY: 0, size: 60, vy: 0, isGrounded: false,
                 animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1
             };
 
@@ -894,11 +893,12 @@
                 }
             }
 
+            // --- FONCTION D'AFFICHAGE DES OBSTACLES RÉVISÉE ---
             function drawEditorObject(type, screenX, screenY, alpha = 1) {
                 ctx.globalAlpha = alpha;
                 
-                // FACTEUR D'ÉCHELLE POUR COMPENSER LES MARGES TRANSPARENTES
-                const VISUAL_SCALE = 1.6;
+                // NOUVEAU FACTEUR D'ÉCHELLE POUR COMPENSER LES MARGES TRANSPARENTES
+                const VISUAL_SCALE = 1.25; 
                 const drawW = GRID_SIZE * VISUAL_SCALE;
                 const drawH = GRID_SIZE * VISUAL_SCALE;
                 const drawX = screenX - (drawW - GRID_SIZE) / 2;
@@ -907,7 +907,7 @@
                 // --- 1. BLOC (carre.png) ---
                 if (type === 'block') {
                     if (carreImg.complete && carreImg.naturalWidth > 0) {
-                        ctx.drawImage(carreImg, drawX, drawY, drawW, drawH);
+                        ctx.drawImage(carreImg, drawX, drawY + 6, drawW, drawH); // +6 pour coller au sol
                     } else {
                         ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                         ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -916,7 +916,7 @@
                 // --- 2. PROPULSEUR (rebon.png) ---
                 else if (type === 'pad') {
                     if (rebonImg.complete && rebonImg.naturalWidth > 0) {
-                        ctx.drawImage(rebonImg, drawX, drawY, drawW, drawH);
+                        ctx.drawImage(rebonImg, drawX, drawY + 10, drawW, drawH); // +10 pour l'ancrer au sol
                     } else {
                         ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
                         ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -942,7 +942,7 @@
                 // --- 4. PIC (triangle.png) ---
                 else if (type === 'spike') {
                     if (triangleImg.complete && triangleImg.naturalWidth > 0) {
-                        ctx.drawImage(triangleImg, drawX, drawY, drawW, drawH);
+                        ctx.drawImage(triangleImg, drawX, drawY + 16, drawW, drawH); // +16 pour l'écraser au sol
                     } else {
                         ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
                         ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
