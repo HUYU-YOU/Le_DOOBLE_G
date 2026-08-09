@@ -38,7 +38,6 @@
             border-color: rgba(255, 255, 255, 0.5);
         }
 
-        /* NOUVEAU BOUTON MUTE EN HAUT A DROITE */
         #btn-mute {
             position: fixed; top: 20px; right: 20px; z-index: 9999;
             background-color: rgba(0, 0, 0, 0.5);
@@ -50,6 +49,22 @@
         #btn-mute:hover {
             background-color: rgba(0, 240, 255, 0.1);
             box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        /* NOUVEAU: BOUTON STOP TEST */
+        #btn-stop-test {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;
+            background-color: rgba(255, 0, 127, 0.8);
+            border: 2px solid var(--neon-pink);
+            color: #fff; padding: 10px 20px; font-family: inherit;
+            font-size: 16px; border-radius: 5px; cursor: pointer;
+            font-weight: bold; transition: 0.2s ease; text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
+            display: none;
+        }
+        #btn-stop-test:hover {
+            background-color: var(--neon-pink);
+            color: #000;
         }
 
         #game-container {
@@ -155,8 +170,8 @@
         &#11013; Retour au Hub
     </a>
 
-    <!-- BOUTON SON -->
     <button id="btn-mute">🔊 SON: ON</button>
+    <button id="btn-stop-test">🛑 STOP TEST</button>
 
     <div id="yt-player" style="display: none;"></div>
 
@@ -199,6 +214,7 @@
         <div id="gameover-screen">
             <h2 id="go-title" style="color: var(--neon-pink); font-size: 2.2rem; margin-top: 0; text-transform: uppercase;">CRASH CRITIQUE</h2>
             <p id="go-desc" style="color: #fff; margin-bottom: 25px; font-size: 1.2rem;">Score : <span id="go-score" style="color: var(--neon-green);">0</span></p>
+            <p style="font-size: 0.9rem; color: gray; margin-top: -15px;">Appuyez sur ESPACE pour rejouer</p>
             <div class="btn-group" style="margin-bottom: 0;">
                 <button id="btn-replay" class="action-btn-main btn-play" style="max-width: 100%;">REJOUER</button>
                 <button id="btn-back-menu" class="action-btn-main btn-edit" style="max-width: 100%;">RETOUR MENU</button>
@@ -258,7 +274,6 @@
                 }
             }
 
-            // GESTION DU BOUTON MUTE
             const btnMute = document.getElementById('btn-mute');
             btnMute.addEventListener('click', () => {
                 isMuted = !isMuted;
@@ -284,10 +299,12 @@
             const gameOverScreen = document.getElementById('gameover-screen');
             const editorPanel = document.getElementById('editor-panel');
             const statusText = document.getElementById('status-text');
+            const stopTestBtn = document.getElementById('btn-stop-test');
 
             let width, height;
             let gameState = 'START'; 
             let currentActiveMode = 'PLAYING_ENDLESS'; 
+            let currentIsTest = false; 
             
             const GRID_SIZE = 60; 
             const GROUND_HEIGHT = 90;
@@ -379,7 +396,7 @@
                 img.src = `img/img${i}.jpg`;
                 bgImages.push(img);
             }
-            platformImg.src = 'img/platform.png';
+            platformImg.src = 'img/base.png'; // CHANGEMENT BASE.PNG
             lucioleImg.src = 'img/luciole.png';
             carreImg.src = 'img/carre.png';       
             triangleImg.src = 'img/triangle.png'; 
@@ -427,7 +444,7 @@
 
             document.getElementById('btn-play-endless').addEventListener('click', () => {
                 currentEndlessSeed = Math.floor(Math.random() * 10000000);
-                startGame('PLAYING_ENDLESS');
+                startGame('PLAYING_ENDLESS', false);
             });
 
             document.getElementById('btn-create-map').addEventListener('click', () => startEditor());
@@ -437,24 +454,43 @@
                 sec.style.display = sec.style.display === 'flex' ? 'none' : 'flex';
             });
 
+            document.getElementById('test-btn').addEventListener('click', () => startGame('PLAYING_CUSTOM', true));
+
             document.getElementById('btn-replay').addEventListener('click', () => {
                 gameOverScreen.style.display = 'none';
-                startGame(currentActiveMode);
+                startGame(currentActiveMode, currentIsTest);
             });
 
             document.getElementById('btn-back-menu').addEventListener('click', () => {
                 gameOverScreen.style.display = 'none';
-                showMenu("Slime-Dash", "var(--neon-cyan)");
+                if (currentIsTest) {
+                    startEditor();
+                } else {
+                    showMenu("Slime-Dash", "var(--neon-cyan)");
+                }
             });
 
-            function startGame(mode) {
+            // ANNULATION DU TEST MAP
+            stopTestBtn.addEventListener('click', () => {
+                stopTestBtn.style.display = 'none';
+                startEditor();
+            });
+
+            function startGame(mode, isTest = false) {
                 initAudio();
                 currentActiveMode = mode; 
+                currentIsTest = isTest;
                 gameState = mode;
                 menuScreen.style.display = 'none';
                 gameOverScreen.style.display = 'none';
                 editorPanel.style.display = 'none';
                 document.getElementById('completion-text').style.display = 'none';
+                
+                if (isTest) {
+                    stopTestBtn.style.display = 'block';
+                } else {
+                    stopTestBtn.style.display = 'none';
+                }
                 
                 player.y = height - GROUND_HEIGHT - player.size;
                 player.prevY = player.y;
@@ -477,7 +513,7 @@
                     statusText.style.color = "var(--neon-pink)";
                 } else {
                     gameSpeed = 350; 
-                    statusText.innerText = mode === 'PLAYING_CUSTOM' ? "TEST DE MAP" : "MAP PARTAGÉE";
+                    statusText.innerText = isTest ? "TEST DE MAP" : "MAP PARTAGÉE";
                     statusText.style.color = "var(--neon-green)";
                 }
             }
@@ -487,6 +523,7 @@
                 gameState = 'EDITOR';
                 menuScreen.style.display = 'none';
                 gameOverScreen.style.display = 'none';
+                stopTestBtn.style.display = 'none';
                 
                 editorPanel.style.transform = 'translateX(-50%)';
                 editorPanel.style.left = '50%';
@@ -509,7 +546,10 @@
             function gameOver(isVictory = false) {
                 triggerShake(0.4, 15);
                 setAnimState('IDLE');
+                stopTestBtn.style.display = 'none'; // Cacher le stop test
                 
+                document.getElementById('btn-back-menu').innerText = currentIsTest ? "RETOUR ÉDITEUR" : "RETOUR MENU";
+
                 if (isVictory) {
                     gameState = 'VICTORY';
                     spawnParticles(player.x + player.size/2, player.y, 'var(--neon-yellow)', 50);
@@ -545,6 +585,7 @@
                 menuScreen.style.display = 'block';
                 gameOverScreen.style.display = 'none';
                 editorPanel.style.display = 'none';
+                stopTestBtn.style.display = 'none';
                 document.getElementById('code-section').style.display = 'none';
                 const mTitle = document.getElementById('menu-title');
                 mTitle.innerText = title; mTitle.style.color = color; mTitle.style.textShadow = `0 0 15px ${color}`;
@@ -612,7 +653,6 @@
                 }
             }, { passive: false });
 
-            document.getElementById('test-btn').addEventListener('click', () => startGame('PLAYING_CUSTOM'));
             document.getElementById('exit-btn').addEventListener('click', () => {
                 localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); 
                 showMenu("Slime-Dash", "var(--neon-cyan)");
@@ -635,7 +675,7 @@
                         if (!Array.isArray(newLevel) || newLevel.length === 0) throw new Error();
                         levelData = newLevel;
                         document.getElementById('map-code-input').value = "";
-                        startGame('PLAYING_CUSTOM'); 
+                        startGame('PLAYING_CUSTOM', false); 
                     } catch (e) { alert("Erreur : Code Invalide."); }
                 } else { alert("Veuillez coller un code."); }
             });
@@ -756,11 +796,16 @@
                 }
             }
 
+            // GESTION TOUCHE ESPACE (Saut + Rejouer)
             window.addEventListener('keydown', (e) => {
                 if (e.code === 'Space' || e.code === 'ArrowUp') {
                     if (gameState.startsWith('PLAYING')) {
                         e.preventDefault();
                         triggerJump();
+                    } else if (gameState === 'GAMEOVER' || gameState === 'VICTORY') {
+                        e.preventDefault();
+                        gameOverScreen.style.display = 'none';
+                        startGame(currentActiveMode, currentIsTest);
                     }
                 }
             });
@@ -939,7 +984,6 @@
                 }
             }
 
-            // --- GESTION DES TAILLES ET POSITIONS VISUELLES ---
             function drawEditorObject(type, screenX, screenY, alpha = 1) {
                 ctx.globalAlpha = alpha;
                 
@@ -948,13 +992,19 @@
                 const drawH = GRID_SIZE * VISUAL_SCALE;
                 const drawX = screenX - (drawW - GRID_SIZE) / 2;
                 
-                // Alignement parfait par le bas + décalage vers le bas pour enfoncer dans le sol
+                // --- TAILLE SPECIALE POUR LES BLOCS (+10% DONC 1.65) ---
+                const BLOCK_SCALE = 1.65;
+                const blockW = GRID_SIZE * BLOCK_SCALE;
+                const blockH = GRID_SIZE * BLOCK_SCALE;
+                const blockX = screenX - (blockW - GRID_SIZE) / 2;
+                const blockAlignBottomY = screenY + GRID_SIZE - blockH;
+
                 const alignBottomY = screenY + GRID_SIZE - drawH;
 
                 // --- 1. BLOC (carre.png) ---
                 if (type === 'block') {
                     if (carreImg.complete && carreImg.naturalWidth > 0) {
-                        ctx.drawImage(carreImg, drawX, alignBottomY + 18, drawW, drawH); 
+                        ctx.drawImage(carreImg, blockX, blockAlignBottomY + 27, blockW, blockH); 
                     } else {
                         ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                         ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
