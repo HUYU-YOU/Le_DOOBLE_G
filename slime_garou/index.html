@@ -176,7 +176,8 @@
 
     <!-- MEDIA DYNAMIQUE -->
     <video id="bg-video" autoplay loop muted playsinline>
-        <source id="bg-video-source" src="backgroundnight.mp4" type="video/mp4">
+        <!-- FIX 1 : Ajout de "img/" au chemin du fichier -->
+        <source id="bg-video-source" src="img/backgroundnight.mp4" type="video/mp4">
     </video>
     <div id="yt-player" style="display: none;"></div>
 
@@ -241,7 +242,6 @@
                     <div class="checkbox-group"><label class="ui-text" data-key="roleHunter">Chasseur</label><input type="checkbox" id="cfg-hunter"></div>
                 </div>
                 
-                <!-- Ajout du texte préventif -->
                 <p id="min-players-msg" style="color: var(--neon-yellow); font-size: 0.9rem;">(En attente d'au moins 3 joueurs)</p>
                 <button id="btn-start" class="btn-solid btn-pink ui-text" data-key="btnStart" style="display:none;">Lancer la partie</button>
             </div>
@@ -311,10 +311,12 @@
             video.style.opacity = 0;
             setTimeout(() => {
                 if (type === 'day') {
-                    vidSource.src = 'backgroundday.mp4';
+                    // FIX 2 : Ajout de "img/" au chemin du fichier
+                    vidSource.src = 'img/backgroundday.mp4';
                     if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_DAY});
                 } else {
-                    vidSource.src = 'backgroundnight.mp4';
+                    // FIX 2 : Ajout de "img/" au chemin du fichier
+                    vidSource.src = 'img/backgroundnight.mp4';
                     if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_NIGHT});
                 }
                 video.load(); video.play(); video.style.opacity = 0.2; 
@@ -322,17 +324,18 @@
         }
 
         // ==========================================
-        // 🌍 DICTIONNAIRE MULTILINGUE
+        // 🌍 DICTIONNAIRE MULTILINGUE (CHEMINS REVISES)
         // ==========================================
         const i18n = {
             fr: {
                 roles: {
-                    werewolf: { name: "Slime-Garou", desc: "Dévore un joueur chaque nuit.", img: "garou.png", color: "var(--neon-pink)" },
-                    seer: { name: "Voyante", desc: "Scanne l'identité d'un joueur la nuit.", img: "voyante.png", color: "var(--neon-cyan)" },
-                    witch: { name: "Sorcière", desc: "Possède une potion de soin et une de poison.", img: "sorciere.png", color: "var(--neon-purple)" },
-                    hunter: { name: "Chasseur", desc: "Si tu meurs, tu tires sur un joueur.", img: "chasseur.png", color: "var(--neon-yellow)" },
-                    cupid: { name: "Cupidon", desc: "Désigne deux amoureux la première nuit.", img: "cupidon.png", color: "#ff69b4" },
-                    villager: { name: "Slime Civil", desc: "Trouve et élimine les infectés le jour.", img: "slime.png", color: "var(--neon-green)" }
+                    // FIX 3 : Ajout de "img/" devant toutes les images
+                    werewolf: { name: "Slime-Garou", desc: "Dévore un joueur chaque nuit.", img: "img/garou.png", color: "var(--neon-pink)" },
+                    seer: { name: "Voyante", desc: "Scanne l'identité d'un joueur la nuit.", img: "img/voyante.png", color: "var(--neon-cyan)" },
+                    witch: { name: "Sorcière", desc: "Possède une potion de soin et une de poison.", img: "img/sorciere.png", color: "var(--neon-purple)" },
+                    hunter: { name: "Chasseur", desc: "Si tu meurs, tu tires sur un joueur.", img: "img/chasseur.png", color: "var(--neon-yellow)" },
+                    cupid: { name: "Cupidon", desc: "Désigne deux amoureux la première nuit.", img: "img/cupidon.png", color: "#ff69b4" },
+                    villager: { name: "Slime Civil", desc: "Trouve et élimine les infectés le jour.", img: "img/slime.png", color: "var(--neon-green)" }
                 },
                 ui: {
                     menuTitle: "Connexion", btnCreate: "Créer une partie", btnJoin: "Rejoindre",
@@ -348,12 +351,13 @@
             },
             en: {
                 roles: {
-                    werewolf: { name: "Werewolf", desc: "Devour a player every night.", img: "werewolf.png", color: "var(--neon-pink)" },
-                    seer: { name: "Seer", desc: "Scan a player's identity at night.", img: "seer.png", color: "var(--neon-cyan)" },
-                    witch: { name: "Witch", desc: "Has one heal and one poison potion.", img: "witch.png", color: "var(--neon-purple)" },
-                    hunter: { name: "Hunter", desc: "If you die, you shoot a player.", img: "hunter.png", color: "var(--neon-yellow)" },
-                    cupid: { name: "Cupid", desc: "Link two lovers on the first night.", img: "cupid.png", color: "#ff69b4" },
-                    villager: { name: "Villager", desc: "Find and eliminate the infected by day.", img: "villager.png", color: "var(--neon-green)" }
+                    // FIX 3 : Ajout de "img/"
+                    werewolf: { name: "Werewolf", desc: "Devour a player every night.", img: "img/werewolf.png", color: "var(--neon-pink)" },
+                    seer: { name: "Seer", desc: "Scan a player's identity at night.", img: "img/seer.png", color: "var(--neon-cyan)" },
+                    witch: { name: "Witch", desc: "Has one heal and one poison potion.", img: "img/witch.png", color: "var(--neon-purple)" },
+                    hunter: { name: "Hunter", desc: "If you die, you shoot a player.", img: "img/hunter.png", color: "var(--neon-yellow)" },
+                    cupid: { name: "Cupid", desc: "Link two lovers on the first night.", img: "img/cupid.png", color: "#ff69b4" },
+                    villager: { name: "Villager", desc: "Find and eliminate the infected by day.", img: "img/villager.png", color: "var(--neon-green)" }
                 },
                 ui: {
                     menuTitle: "Connection", btnCreate: "Create Game", btnJoin: "Join",
@@ -389,6 +393,8 @@
         // ==========================================
         let peer = null;
         let connections = []; 
+        let clientPlayers = []; // FIX 4 : Garde trace de l'état vital des autres joueurs pour le client
+        let wolfPartners = []; // FIX 5 : Liste des alliés loups-garous reçue par le client
         let isHost = false;
         let myName = "Hôte";
         let myRole = "";
@@ -408,7 +414,6 @@
 
         // INIT PEER AVEC IDENTIFIANT CUSTOM
         function initPeer(callback, customId = null) {
-            // Si l'hôte fournit un ID custom, on l'utilise
             peer = customId ? new Peer(customId) : new Peer();
             
             peer.on('open', (id) => { 
@@ -425,6 +430,10 @@
         }
 
         function broadcast(data) {
+            // FIX 6 : Le client a besoin de l'état des joueurs à chaque phase pour pouvoir cibler
+            if (data.type === 'phase_change') {
+                data.players = connections.map(c => ({ name: c.name, isAlive: c.isAlive }));
+            }
             connections.forEach(c => { if(!c.isHost && c.conn && c.conn.open) c.conn.send(data); });
         }
 
@@ -435,18 +444,15 @@
             initAudio(); 
             isHost = true;
 
-            // CORRECTION 1 : On récupère le VRAI pseudo de l'Hôte
             myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
 
             menuDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
             document.getElementById('host-config').style.display = 'block';
             
-            // On injecte le vrai nom de l'hôte au lieu de "Host"
             connections.push({ isHost: true, name: myName, role: null, isAlive: true, id: 'host' });
             updatePlayerListUI();
 
-            // Génération de l'identifiant GARxxxx
             const roomId = 'GAR' + Math.floor(1000 + Math.random() * 9000);
 
             initPeer((id) => { 
@@ -460,7 +466,6 @@
                         updatePlayerListUI();
                         broadcast({ type: 'lobby_update', count: connections.length, list: connections.map(c => c.name) });
                         
-                        // Fait apparaître le bouton quand il y a 3 joueurs
                         if (connections.length >= 3) {
                             document.getElementById('btn-start').style.display = 'block';
                             document.getElementById('min-players-msg').style.display = 'none';
@@ -489,7 +494,7 @@
             menuDiv.style.display = 'none';
             lobbyDiv.style.display = 'block';
             document.getElementById('waiting-host-msg').style.display = 'block'; 
-            document.getElementById('my-id').innerText = hostId; // Montre le code qu'il a rejoint
+            document.getElementById('my-id').innerText = hostId;
 
             initPeer(() => {
                 const conn = peer.connect(hostId);
@@ -501,16 +506,27 @@
                 conn.on('data', (data) => {
                     if (data.type === 'lobby_update') {
                         generatePlayerBadges(data.list);
+                        // On initialise la liste locale
+                        clientPlayers = data.list.map(n => ({ name: n, isAlive: true }));
                     }
                     else if (data.type === 'game_start') {
                         lobbyDiv.style.display = 'none';
                         gameArea.style.display = 'block';
+                        // Récupération des alliés (Loups)
+                        if (data.extra && data.extra.wolves) wolfPartners = data.extra.wolves;
                         setupRoleUI(data.role);
                         addLog("Game Initialized.");
                     }
                     else if (data.type === 'phase_change') {
                         addLog(data.message);
+                        // Synchronisation de l'état des joueurs envoyé par l'Hôte
+                        if (data.players) clientPlayers = data.players;
                         updateClientUI(data.phase, data.message, data.extra);
+                    }
+                    // FIX 7 : La Voyante a besoin d'un retour du serveur
+                    else if (data.type === 'seer_result') {
+                        addLog(`[VISION] ${data.result}`);
+                        document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan)">${data.result}</p>`;
                     }
                     else if (data.type === 'lovers_linked') {
                         const loveInfo = document.getElementById('lovers-info');
@@ -543,32 +559,26 @@
             
             let roles = [];
             
-            // CORRECTION 2 : On s'assure de toujours placer les Garous en premier (priorité absolue)
             for(let i=0; i<nbWolves; i++) {
                 if (roles.length < numPlayers) roles.push('werewolf');
             }
             
-            // On prépare les rôles spéciaux
             let specialRoles = [];
             if (document.getElementById('cfg-seer').checked) specialRoles.push('seer');
             if (document.getElementById('cfg-witch').checked) specialRoles.push('witch');
             if (document.getElementById('cfg-cupid').checked) specialRoles.push('cupid');
             if (document.getElementById('cfg-hunter').checked) specialRoles.push('hunter');
             
-            // Mélanger les rôles spéciaux pour que si on manque de place, l'exclusion soit aléatoire
             specialRoles.sort(() => Math.random() - 0.5);
 
-            // On ajoute les rôles spéciaux SEULEMENT s'il reste de la place
             for (let role of specialRoles) {
                 if (roles.length < numPlayers) roles.push(role);
             }
             
-            // On comble les éventuels trous restants par des villageois (civils)
             while(roles.length < numPlayers) {
                 roles.push('villager');
             }
             
-            // On mélange le deck complet pour distribuer
             roles.sort(() => Math.random() - 0.5);
 
             connections.forEach((c, index) => {
@@ -578,7 +588,12 @@
                     gameArea.style.display = 'block';
                     setupRoleUI(c.role);
                 } else {
-                    c.conn.send({ type: 'game_start', role: c.role });
+                    // L'hôte informe les loups de leurs partenaires
+                    let extraData = {};
+                    if (c.role === 'werewolf') {
+                        extraData.wolves = connections.filter(w => w.role === 'werewolf').map(w => w.name);
+                    }
+                    c.conn.send({ type: 'game_start', role: c.role, extra: extraData });
                 }
             });
 
@@ -645,10 +660,11 @@
             }
         }
 
+        // FIX 8 : Ordre de la nuit corrigé (Cupidon -> Voyante -> Garous -> Sorcière)
         function startNightPhase() {
             gameState.votes = {};
             if(firstNight && connections.find(c => c.role === 'cupid' && c.isAlive)) startCupidPhase();
-            else startWolvesPhase();
+            else startSeerPhase();
         }
 
         function startCupidPhase() {
@@ -657,22 +673,22 @@
             updateClientUI('night_cupid', "[Night] Cupidon se réveille.");
         }
 
+        function startSeerPhase() {
+            gameState.phase = 'night_seer';
+            broadcast({ type: 'phase_change', phase: 'night_seer', message: "[Night] Voyante..." });
+            updateClientUI('night_seer', "[Night] Voyante...");
+            if (!connections.find(c => c.role === 'seer' && c.isAlive)) setTimeout(() => startWolvesPhase(), 3000);
+        }
+
         function startWolvesPhase() {
             gameState.phase = 'night_wolves'; gameState.votes = {};
             broadcast({ type: 'phase_change', phase: 'night_wolves', message: "[Night] Garous..." });
             updateClientUI('night_wolves', "[Night] Garous...");
         }
 
-        function startSeerPhase() {
-            gameState.phase = 'night_seer';
-            broadcast({ type: 'phase_change', phase: 'night_seer', message: "[Night] Voyante..." });
-            updateClientUI('night_seer', "[Night] Voyante...");
-            if (!connections.find(c => c.role === 'seer' && c.isAlive)) setTimeout(() => startWitchPhase(), 3000);
-        }
-
         function startWitchPhase() {
             gameState.phase = 'night_witch';
-            const extraData = { dead: gameState.deadTonight[0] };
+            const extraData = { dead: gameState.deadTonight[0] }; // La victime principale
             broadcast({ type: 'phase_change', phase: 'night_witch', message: "[Night] Sorcière...", extra: extraData });
             updateClientUI('night_witch', "[Night] Sorcière...", extraData);
             if (!connections.find(c => c.role === 'witch' && c.isAlive)) setTimeout(() => endNightPhase(), 3000);
@@ -710,26 +726,30 @@
                         else { c.conn.send({ type: 'lovers_linked', partner: data.target1 }); }
                     }
                 });
-                setTimeout(() => startWolvesPhase(), 2000);
+                setTimeout(() => startSeerPhase(), 2000); // Suite après Cupidon
+            }
+            else if (gameState.phase === 'night_seer' && data.role === 'seer') {
+                const targetInfo = connections.find(c => c.name === data.target);
+                if(targetInfo) {
+                    const resultMsg = `${targetInfo.name} est ${i18n[currentLang].roles[targetInfo.role].name}`;
+                    if(sender.isHost) addLog(`[VISION] ${resultMsg}`);
+                    else sender.conn.send({ type: 'seer_result', result: resultMsg });
+                }
+                setTimeout(() => startWolvesPhase(), 1500); // Suite après Voyante
             }
             else if (gameState.phase === 'night_wolves' && data.role === 'werewolf') {
                 gameState.votes[sender.name] = data.target;
                 const aliveWolves = connections.filter(c => c.role === 'werewolf' && c.isAlive);
                 if (Object.keys(gameState.votes).length === aliveWolves.length) {
                     killPlayer(Object.values(gameState.votes)[0]);
-                    setTimeout(() => startSeerPhase(), 1500);
+                    setTimeout(() => startWitchPhase(), 1500); // Suite après Garous
                 }
-            }
-            else if (gameState.phase === 'night_seer' && data.role === 'seer') {
-                const targetInfo = connections.find(c => c.name === data.target);
-                if(targetInfo) addLog(`[SCAN HOTE] Cible est ${targetInfo.role}`); 
-                setTimeout(() => startWitchPhase(), 1500);
             }
             else if (gameState.phase === 'night_witch' && data.role === 'witch') {
                 if (data.action === 'heal' && gameState.deadTonight.includes(data.target)) {
                     gameState.deadTonight = gameState.deadTonight.filter(n => n !== data.target); 
                 } else if (data.action === 'poison') { killPlayer(data.target); }
-                setTimeout(() => endNightPhase(), 1500);
+                setTimeout(() => endNightPhase(), 1500); // Fin de la nuit
             }
             else if (gameState.phase === 'day_vote') {
                 gameState.votes[sender.name] = data.target;
@@ -767,9 +787,11 @@
             if (phase.includes('day')) setMediaEnvironment('day');
             else if (phase.includes('night')) setMediaEnvironment('night');
 
-            const alivePlayers = connections.filter(c => c.isAlive && c.name !== myName);
-            const allAlivePlayers = connections.filter(c => c.isAlive); 
-            const myStatus = connections.find(c => c.name === myName);
+            // FIX 9 : On utilise la liste appropriée selon si on est Hôte ou Client
+            const playerList = isHost ? connections : clientPlayers;
+            const alivePlayers = playerList.filter(c => c.isAlive && c.name !== myName);
+            const allAlivePlayers = playerList.filter(c => c.isAlive); 
+            const myStatus = playerList.find(c => c.name === myName);
 
             if (phase === 'day_hunter') {
                 if (myName === extra.hunter) {
@@ -795,14 +817,19 @@
                     panel.appendChild(btn);
                 });
             }
-            else if (phase === 'night_wolves' && myRole === 'werewolf') {
-                panel.innerHTML = `<p style="color:var(--neon-pink);">${langUI.selectTarget}</p>`;
-                alivePlayers.forEach(c => { if(c.role !== 'werewolf') panel.appendChild(createBtn(c.name, 'var(--neon-pink)', () => sendActionToServer({type:'action', role:'werewolf', target: c.name}))); });
-            } 
             else if (phase === 'night_seer' && myRole === 'seer') {
                 panel.innerHTML = `<p style="color:var(--neon-cyan);">${langUI.selectTarget}</p>`;
                 alivePlayers.forEach(c => { panel.appendChild(createBtn(c.name, 'var(--neon-cyan)', () => sendActionToServer({type:'action', role:'seer', target: c.name}))); });
             }
+            else if (phase === 'night_wolves' && myRole === 'werewolf') {
+                panel.innerHTML = `<p style="color:var(--neon-pink);">${langUI.selectTarget}</p>`;
+                alivePlayers.forEach(c => { 
+                    // Le Loup voit tout le monde sauf ses alliés
+                    if(!wolfPartners.includes(c.name)) {
+                        panel.appendChild(createBtn(c.name, 'var(--neon-pink)', () => sendActionToServer({type:'action', role:'werewolf', target: c.name}))); 
+                    }
+                });
+            } 
             else if (phase === 'night_witch' && myRole === 'witch') {
                 let html = `<p style="color:var(--neon-purple);">Victime: ${extra.dead || 'Personne'}</p>`;
                 if (extra.dead && witchPotions.heal > 0) {
@@ -836,6 +863,7 @@
             const rData = i18n[currentLang].roles[role] || i18n[currentLang].roles['villager'];
             document.getElementById('role-name').innerText = rData.name;
             document.getElementById('role-desc').innerText = rData.desc;
+            // L'image s'affiche maintenant correctement avec le fix de chemin i18n
             document.getElementById('role-image').src = rData.img; 
             const card = document.getElementById('my-role-card');
             card.style.borderColor = rData.color;
