@@ -135,19 +135,19 @@
         #editor-panel {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(11, 12, 16, 0.95); border: 2px solid var(--neon-yellow);
-            padding: 15px 20px; border-radius: 10px; display: none; gap: 15px; pointer-events: auto;
+            padding: 15px 20px; border-radius: 10px; display: none; gap: 10px; pointer-events: auto;
             box-shadow: 0 0 15px var(--neon-yellow); z-index: 20; align-items: center; flex-wrap: nowrap; 
             cursor: grab;
         }
         #editor-panel:active { cursor: grabbing; }
 
         .tool-btn { 
-            padding: 10px; font-size: 1.4rem; border-color: gray; color: gray; min-width: 50px; 
+            padding: 10px; font-size: 1.3rem; border-color: gray; color: gray; min-width: 45px; 
             background: #000; cursor: pointer; border-radius: 5px; border-style: solid; border-width: 2px;
         }
         .tool-btn.active { border-color: var(--neon-yellow); color: var(--neon-yellow); box-shadow: 0 0 10px var(--neon-yellow); }
-        .divider { width: 2px; height: 40px; background: gray; margin: 0 10px; }
-        .action-btn { padding: 10px 20px; font-size: 1.1rem; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; background: #000; font-family: inherit; }
+        .divider { width: 2px; height: 40px; background: gray; margin: 0 5px; }
+        .action-btn { padding: 10px 15px; font-size: 1rem; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; background: #000; font-family: inherit; }
         .action-tester { border: 2px solid var(--neon-green); color: var(--neon-green); }
         .action-exporter { border: 2px solid var(--neon-cyan); color: var(--neon-cyan); }
         .action-quitter { border: 2px solid var(--neon-pink); color: var(--neon-pink); }
@@ -226,6 +226,7 @@
             <button class="tool-btn" data-tool="pad" title="Propulseur (Rebon)">🚀</button>
             <button class="tool-btn" data-tool="holo" title="Hologramme (Fake)">👻</button>
             <button class="tool-btn" data-tool="coin" title="Luciole (Bonus Max 20)">✨</button>
+            <button class="tool-btn" data-tool="start_flag" title="Point de Départ (Un seul)">🟢</button>
             <button class="tool-btn" data-tool="flag" title="Fin du niveau">🏁</button>
             <button class="tool-btn" data-tool="eraser" title="Gomme">❌</button>
             
@@ -365,8 +366,9 @@
                 levelData = JSON.parse(JSON.stringify(defaultLevel));
             }
 
-            const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7 };
-            const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin' };
+            // AJOUT DU START_FLAG AU DICTIONNAIRE
+            const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7, 'start_flag': 8 };
+            const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin', 8: 'start_flag' };
 
             const sprites = { idle: [], run: [], jump: [], land: [] };
             const bgImages = []; 
@@ -489,12 +491,9 @@
                     stopTestBtn.style.display = 'none';
                 }
                 
-                player.y = height - GROUND_HEIGHT - player.size;
-                player.prevY = player.y;
                 player.vy = 0; jumpBufferTimer = 0;
                 setAnimState('RUN');
-                
-                cameraX = 0; score = 0; particles = []; shakeTimer = 0;
+                score = 0; particles = []; shakeTimer = 0;
                 
                 if (levelData && Array.isArray(levelData)) {
                     levelData.forEach(obs => obs.collected = false);
@@ -508,10 +507,24 @@
                     resetSeed(currentEndlessSeed); 
                     statusText.innerText = "COURSE INFINIE";
                     statusText.style.color = "var(--neon-pink)";
+                    cameraX = 0;
+                    player.y = height - GROUND_HEIGHT - player.size;
+                    player.prevY = player.y;
                 } else {
                     gameSpeed = 350; 
                     statusText.innerText = isTest ? "TEST DE MAP" : "MAP PARTAGÉE";
                     statusText.style.color = "var(--neon-green)";
+
+                    // GESTION DU POINT DE DÉPART (START FLAG)
+                    const startPoint = levelData.find(o => o.type === 'start_flag');
+                    if (startPoint) {
+                        cameraX = (startPoint.x * GRID_SIZE) - player.x;
+                        player.y = height - GROUND_HEIGHT - player.size - (startPoint.y * GRID_SIZE);
+                    } else {
+                        cameraX = 0;
+                        player.y = height - GROUND_HEIGHT - player.size;
+                    }
+                    player.prevY = player.y;
                 }
             }
 
@@ -535,9 +548,18 @@
                 
                 player.y = height - GROUND_HEIGHT - player.size;
                 setAnimState('IDLE');
-                cameraX = 0; editorCamTarget = 0;
                 statusText.innerText = "MODE ÉDITEUR";
                 statusText.style.color = "var(--neon-yellow)";
+
+                // Focus la caméra sur le point de départ s'il existe
+                const startPoint = levelData.find(o => o.type === 'start_flag');
+                if (startPoint) {
+                    cameraX = (startPoint.x * GRID_SIZE) - 150; 
+                    editorCamTarget = cameraX;
+                } else {
+                    cameraX = 0; 
+                    editorCamTarget = 0;
+                }
             }
 
             function gameOver(isVictory = false) {
@@ -693,7 +715,11 @@
 
             function placeBlockAtCursor() {
                 if (hoverGridY < 0 && currentTool !== 'hole') return; 
+                
+                // UN SEUL DRAPEAU DE FIN
                 if (currentTool === 'flag') levelData = levelData.filter(o => o.type !== 'flag'); 
+                // UN SEUL DRAPEAU DE DÉPART
+                if (currentTool === 'start_flag') levelData = levelData.filter(o => o.type !== 'start_flag'); 
 
                 if (currentTool === 'coin') {
                     const currentCoins = levelData.filter(o => o.type === 'coin').length;
@@ -832,7 +858,7 @@
                 const nearbyObjects = activeLevelData.filter(o => o.type !== 'hole' && Math.abs((o.x * GRID_SIZE) - playerWorldX) < 200);
                 
                 for (let obs of nearbyObjects) {
-                    if(obs.collected || obs.type === 'holo') continue; 
+                    if(obs.collected || obs.type === 'holo' || obs.type === 'start_flag') continue; 
 
                     const obsScreenX = (obs.x * GRID_SIZE) - cameraX;
                     const obsScreenY = height - GROUND_HEIGHT - ((obs.y + 1) * GRID_SIZE);
@@ -882,16 +908,13 @@
                             gameOver(false); return;
                         }
                     } 
-                    // --- COLLISION CONTEXTUELLE DU PIC (INVERSÉ OU NORMAL) ---
                     else if (obs.type === 'spike') {
                         let inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
                         let hitY = false;
                         
                         if (inverted) {
-                            // Pic au plafond : zone mortelle sur la partie HAUTE de la case
                             hitY = (player.y + tolY < obsScreenY + obsSize * 0.6) && (player.y + player.size - tolY > obsScreenY);
                         } else {
-                            // Pic au sol : zone mortelle sur la partie BASSE de la case
                             hitY = (player.y + player.size - tolY > obsScreenY + obsSize * 0.4) && (player.y + tolY < obsScreenY + obsSize);
                         }
                         
@@ -991,7 +1014,6 @@
                 }
             }
 
-            // --- FONCTION DE DESSIN CONTEXTUELLE ---
             function drawEditorObject(type, screenX, screenY, alpha = 1, isInverted = false) {
                 ctx.globalAlpha = alpha;
                 
@@ -1041,10 +1063,8 @@
                         ctx.beginPath(); ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
                     }
                 }
-                // --- DESSIN DU PIC (AVEC INVERSION SI NÉCESSAIRE) ---
                 else if (type === 'spike') {
                     if (isInverted) {
-                        // Magie mathématique : on retourne tout l'espace de dessin autour du centre de la case
                         ctx.save();
                         ctx.translate(screenX + GRID_SIZE/2, screenY + GRID_SIZE/2);
                         ctx.scale(1, -1);
@@ -1065,6 +1085,13 @@
                 }
                 else if (type === 'flag') {
                     ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-yellow)'; ctx.fillStyle = 'var(--neon-yellow)';
+                    ctx.fillRect(screenX + GRID_SIZE/2 - 2, screenY - GRID_SIZE, 4, GRID_SIZE * 2); 
+                    ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE); ctx.lineTo(screenX + GRID_SIZE, screenY - GRID_SIZE + 20);
+                    ctx.lineTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE + 40); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
+                }
+                // --- DESSIN DU DRAPEAU DE DÉPART ---
+                else if (type === 'start_flag') {
+                    ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-green)'; ctx.fillStyle = 'var(--neon-green)';
                     ctx.fillRect(screenX + GRID_SIZE/2 - 2, screenY - GRID_SIZE, 4, GRID_SIZE * 2); 
                     ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE); ctx.lineTo(screenX + GRID_SIZE, screenY - GRID_SIZE + 20);
                     ctx.lineTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE + 40); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
@@ -1122,7 +1149,6 @@
                         const screenY = groundY - ((obs.y + 1) * GRID_SIZE);
                         if(screenX + GRID_SIZE < 0 || screenX > width) return;
                         
-                        // Détection contextuelle pour l'inversion du pic
                         let inverted = false;
                         if (obs.type === 'spike') {
                             inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
