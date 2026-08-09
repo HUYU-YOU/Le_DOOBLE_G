@@ -51,7 +51,7 @@
             box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
         }
 
-        /* NOUVEAU: BOUTON STOP TEST */
+        /* --- BOUTON STOP TEST --- */
         #btn-stop-test {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;
             background-color: rgba(255, 0, 127, 0.8);
@@ -63,8 +63,7 @@
             display: none;
         }
         #btn-stop-test:hover {
-            background-color: var(--neon-pink);
-            color: #000;
+            background-color: var(--neon-pink); color: #000;
         }
 
         #game-container {
@@ -396,7 +395,8 @@
                 img.src = `img/img${i}.jpg`;
                 bgImages.push(img);
             }
-            platformImg.src = 'img/base.png'; // CHANGEMENT BASE.PNG
+            
+            platformImg.src = 'img/base.png'; // Le nouveau sol
             lucioleImg.src = 'img/luciole.png';
             carreImg.src = 'img/carre.png';       
             triangleImg.src = 'img/triangle.png'; 
@@ -470,7 +470,6 @@
                 }
             });
 
-            // ANNULATION DU TEST MAP
             stopTestBtn.addEventListener('click', () => {
                 stopTestBtn.style.display = 'none';
                 startEditor();
@@ -546,7 +545,7 @@
             function gameOver(isVictory = false) {
                 triggerShake(0.4, 15);
                 setAnimState('IDLE');
-                stopTestBtn.style.display = 'none'; // Cacher le stop test
+                stopTestBtn.style.display = 'none'; 
                 
                 document.getElementById('btn-back-menu').innerText = currentIsTest ? "RETOUR ÉDITEUR" : "RETOUR MENU";
 
@@ -796,7 +795,7 @@
                 }
             }
 
-            // GESTION TOUCHE ESPACE (Saut + Rejouer)
+            // REJOUER AVEC ESPACE / FLÈCHE HAUT
             window.addEventListener('keydown', (e) => {
                 if (e.code === 'Space' || e.code === 'ArrowUp') {
                     if (gameState.startsWith('PLAYING')) {
@@ -988,32 +987,29 @@
                 ctx.globalAlpha = alpha;
                 
                 const VISUAL_SCALE = 1.5; 
-                const drawW = GRID_SIZE * VISUAL_SCALE;
-                const drawH = GRID_SIZE * VISUAL_SCALE;
-                const drawX = screenX - (drawW - GRID_SIZE) / 2;
-                
-                // --- TAILLE SPECIALE POUR LES BLOCS (+10% DONC 1.65) ---
+                const drawW = Math.floor(GRID_SIZE * VISUAL_SCALE);
+                const drawH = Math.floor(GRID_SIZE * VISUAL_SCALE);
+                const drawX = Math.floor(screenX - (drawW - GRID_SIZE) / 2);
+                const drawY = Math.floor(screenY - (drawH - GRID_SIZE) / 2);
+
+                // Echelle à +10% spécifique au CARRE (1.65)
                 const BLOCK_SCALE = 1.65;
-                const blockW = GRID_SIZE * BLOCK_SCALE;
-                const blockH = GRID_SIZE * BLOCK_SCALE;
-                const blockX = screenX - (blockW - GRID_SIZE) / 2;
-                const blockAlignBottomY = screenY + GRID_SIZE - blockH;
+                const blockW = Math.floor(GRID_SIZE * BLOCK_SCALE);
+                const blockH = Math.floor(GRID_SIZE * BLOCK_SCALE);
+                const blockX = Math.floor(screenX - (blockW - GRID_SIZE) / 2);
+                const blockY = Math.floor(screenY - (blockH - GRID_SIZE) / 2);
 
-                const alignBottomY = screenY + GRID_SIZE - drawH;
-
-                // --- 1. BLOC (carre.png) ---
                 if (type === 'block') {
                     if (carreImg.complete && carreImg.naturalWidth > 0) {
-                        ctx.drawImage(carreImg, blockX, blockAlignBottomY + 27, blockW, blockH); 
+                        ctx.drawImage(carreImg, blockX, blockY, blockW, blockH); 
                     } else {
                         ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                         ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                     }
                 } 
-                // --- 2. PROPULSEUR (rebon.png) ---
                 else if (type === 'pad') {
                     if (rebonImg.complete && rebonImg.naturalWidth > 0) {
-                        ctx.drawImage(rebonImg, drawX, alignBottomY + 20, drawW, drawH); 
+                        ctx.drawImage(rebonImg, drawX, drawY, drawW, drawH); 
                     } else {
                         ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
                         ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -1024,10 +1020,9 @@
                     ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
                     ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.setLineDash([]);
                 }
-                // --- 3. LUCIOLE (luciole.png) ---
                 else if (type === 'coin') {
-                    const floatY = screenY + Math.sin(performance.now()/150) * 8; 
-                    const coinY = floatY - (drawH - GRID_SIZE) / 2;
+                    const floatY = Math.floor(screenY + Math.sin(performance.now()/150) * 8); 
+                    const coinY = Math.floor(floatY - (drawH - GRID_SIZE) / 2);
                     if (lucioleImg.complete && lucioleImg.naturalWidth > 0) {
                         ctx.shadowBlur = 15; ctx.shadowColor = '#ccff00';
                         ctx.drawImage(lucioleImg, drawX, coinY, drawW, drawH);
@@ -1037,10 +1032,9 @@
                         ctx.beginPath(); ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
                     }
                 }
-                // --- 4. PIC (triangle.png) ---
                 else if (type === 'spike') {
                     if (triangleImg.complete && triangleImg.naturalWidth > 0) {
-                        ctx.drawImage(triangleImg, drawX, alignBottomY + 25, drawW, drawH); 
+                        ctx.drawImage(triangleImg, drawX, drawY, drawW, drawH); 
                     } else {
                         ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
                         ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
@@ -1073,10 +1067,11 @@
 
                 const groundY = height - GROUND_HEIGHT;
 
+                // --- GESTION DU DÉFILEMENT DE BASE.PNG SANS DÉFAUT ---
                 if (platformImg.complete && platformImg.naturalWidth > 0) {
                     const scale = GROUND_HEIGHT / platformImg.naturalHeight;
-                    const pWidth = platformImg.naturalWidth * scale;
-                    let scrollX = cameraX % pWidth;
+                    const pWidth = Math.ceil(platformImg.naturalWidth * scale); // Math.ceil évite les micro-coupures entre images
+                    let scrollX = Math.floor(cameraX) % pWidth;
                     for (let i = -scrollX; i < width; i += pWidth) {
                         ctx.drawImage(platformImg, i, groundY, pWidth, GROUND_HEIGHT);
                     }
@@ -1128,11 +1123,11 @@
 
                 if (activeImg && activeImg.complete && activeImg.naturalWidth > 0) {
                     ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)';
-                    ctx.drawImage(activeImg, player.x, player.y, player.size, player.size);
+                    ctx.drawImage(activeImg, Math.floor(player.x), Math.floor(player.y), player.size, player.size);
                     ctx.shadowBlur = 0;
                 } else {
-                    ctx.fillStyle = '#0b0c10'; ctx.fillRect(player.x, player.y, player.size, player.size);
-                    ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 3; ctx.strokeRect(player.x, player.y, player.size, player.size);
+                    ctx.fillStyle = '#0b0c10'; ctx.fillRect(Math.floor(player.x), Math.floor(player.y), player.size, player.size);
+                    ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 3; ctx.strokeRect(Math.floor(player.x), Math.floor(player.y), player.size, player.size);
                 }
 
                 particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.alpha); ctx.fillRect(p.x, p.y, p.size, p.size); });
