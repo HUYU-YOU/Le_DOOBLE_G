@@ -196,10 +196,10 @@
 
         <!-- PANNEAU ÉDITEUR -->
         <div id="editor-panel">
-            <button class="tool-btn active" data-tool="block" title="Bloc">🟦</button>
-            <button class="tool-btn" data-tool="spike" title="Pic">🔺</button>
+            <button class="tool-btn active" data-tool="block" title="Bloc (Carre)">🟦</button>
+            <button class="tool-btn" data-tool="spike" title="Pic (Triangle)">🔺</button>
             <button class="tool-btn" data-tool="hole" title="Trou">🕳️</button>
-            <button class="tool-btn" data-tool="pad" title="Propulseur">🚀</button>
+            <button class="tool-btn" data-tool="pad" title="Propulseur (Rebon)">🚀</button>
             <button class="tool-btn" data-tool="holo" title="Hologramme (Fake)">👻</button>
             <button class="tool-btn" data-tool="coin" title="Luciole (Bonus Max 20)">✨</button>
             <button class="tool-btn" data-tool="flag" title="Fin du niveau">🏁</button>
@@ -320,7 +320,10 @@
             const sprites = { idle: [], run: [], jump: [], land: [] };
             const bgImages = []; 
             const platformImg = new Image();
-            const lucioleImg = new Image(); // SKIN DE LUCIOLE
+            const lucioleImg = new Image(); 
+            const carreImg = new Image();     // CARRÉ (Bloc)
+            const triangleImg = new Image();  // TRIANGLE (Pic)
+            const rebonImg = new Image();     // REBON (Propulseur)
             
             function loadFrames(category, filenames) {
                 filenames.forEach(file => { 
@@ -341,7 +344,10 @@
                 bgImages.push(img);
             }
             platformImg.src = 'img/platform.png';
-            lucioleImg.src = 'img/luciole.png'; // Chargement de l'image luciole.png
+            lucioleImg.src = 'img/luciole.png';
+            carreImg.src = 'img/carre.png';       // Chargement carre.png
+            triangleImg.src = 'img/triangle.png'; // Chargement triangle.png
+            rebonImg.src = 'img/rebon.png';       // Chargement rebon.png
 
             const player = {
                 x: 150, y: 0, prevY: 0, size: 50, vy: 0, isGrounded: false,
@@ -899,41 +905,51 @@
 
             function drawEditorObject(type, screenX, screenY, alpha = 1) {
                 ctx.globalAlpha = alpha;
+                
+                // --- 1. BLOC (CARRÉ -> carre.png) ---
                 if (type === 'block') {
-                    ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
-                    ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
-                    ctx.shadowBlur = 10; ctx.shadowColor = '#00f0ff'; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.shadowBlur=0;
+                    if (carreImg.complete && carreImg.naturalWidth > 0) {
+                        ctx.drawImage(carreImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
+                    } else {
+                        ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+                        ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+                    }
                 } 
+                // --- 2. PROPULSEUR (REBON -> rebon.png) ---
                 else if (type === 'pad') {
-                    ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
-                    ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
-                    ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)'; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.shadowBlur=0;
+                    if (rebonImg.complete && rebonImg.naturalWidth > 0) {
+                        ctx.drawImage(rebonImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
+                    } else {
+                        ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
+                        ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+                    }
                 }
                 else if (type === 'holo') {
                     ctx.fillStyle = 'rgba(0, 240, 255, 0.15)'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                     ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
                     ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.setLineDash([]);
                 }
+                // --- 3. LUCIOLE (coin -> luciole.png) ---
                 else if (type === 'coin') {
-                    // --- RENDU DE LA LUCIOLE VIA LUCIOLE.PNG AVEC EFFET FLOTTANT ---
                     const floatY = screenY + Math.sin(performance.now()/150) * 8; 
                     if (lucioleImg.complete && lucioleImg.naturalWidth > 0) {
                         ctx.shadowBlur = 15; ctx.shadowColor = '#ccff00';
                         ctx.drawImage(lucioleImg, screenX, floatY, GRID_SIZE, GRID_SIZE);
                         ctx.shadowBlur = 0;
                     } else {
-                        // Fallback si l'image luciole.png n'est pas encore chargée
                         ctx.shadowBlur = 20; ctx.shadowColor = '#ccff00'; ctx.fillStyle = '#eaff80';
-                        ctx.beginPath(); 
-                        ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2);
-                        ctx.fill(); 
-                        ctx.shadowBlur=0;
+                        ctx.beginPath(); ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
                     }
                 }
+                // --- 4. PIC (SPIKE -> triangle.png) ---
                 else if (type === 'spike') {
-                    ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
-                    ctx.lineTo(screenX, screenY + GRID_SIZE); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+                    if (triangleImg.complete && triangleImg.naturalWidth > 0) {
+                        ctx.drawImage(triangleImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
+                    } else {
+                        ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
+                        ctx.lineTo(screenX, screenY + GRID_SIZE); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+                    }
                 }
                 else if (type === 'flag') {
                     ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-yellow)'; ctx.fillStyle = 'var(--neon-yellow)';
