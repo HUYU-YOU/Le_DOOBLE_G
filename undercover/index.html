@@ -292,7 +292,7 @@
         const GAME_PHASES = { LOBBY: 1, ROLE_REVEAL: 2, DESCRIPTION: 3, VOTING: 4, GLITCH_GUESS: 5, END: 6 };
 
         let peer = null;
-        let myId = null; // FIX : ID local PeerJS synchronisé
+        let myId = null; // Enregistrement Global de l'ID PeerJS
         let myPseudo = "Anonyme";
         let hostId = null;
         let isHost = false;
@@ -324,7 +324,6 @@
             document.getElementById(screenId).classList.add('active-screen');
         }
 
-        // Met à jour la boîte d'action en bas
         function setActionUI(title, msg, activeModule = null, blink = false) {
             actionTitle.innerText = title;
             gameStatus.innerText = msg;
@@ -363,7 +362,7 @@
             peer = customId ? new Peer(customId) : new Peer();
 
             peer.on('open', (id) => {
-                myId = id; // IMPORTANT : Sauvegarde de l'ID réseau
+                myId = id; // IMPORTANT : Sauvegarde de l'ID réseau localement
                 loginErr.innerText = "";
                 callback(id);
             });
@@ -448,7 +447,7 @@
                     break;
 
                 case 's_game_setup':
-                    players = data.playerList; // FIX: Contient maintenant peerId !
+                    players = data.playerList;
                     gameLogic.turnOrder = data.turnOrder;
                     showScreen('screen-game');
                     setupGameUI();
@@ -461,6 +460,8 @@
                     break;
 
                 case 's_start_descriptions':
+                    // FIX MAJEUR: Le Client reçoit et synchronise la nouvelle turnOrder
+                    gameLogic.turnOrder = data.turnOrder; 
                     addChatMsg("SYSTÈME", `--- TOUR ${data.round} ---`, 'system');
                     gameLogic.phase = GAME_PHASES.DESCRIPTION;
                     gameLogic.turnIndex = 0;
@@ -587,7 +588,6 @@
         }
 
         function sendLobbyUpdate() {
-            // FIX : Envoi de peerId pour la reco client !
             const lightList = players.map(p => ({ id: p.id, peerId: p.peerId, pseudo: p.pseudo, isHost: p.id === 0 }));
             updateLobbyUI(lightList);
             broadcast({ type: 's_lobby_update', playerList: lightList });
@@ -651,6 +651,7 @@
                 p.isAlive = true;
             });
 
+            // Génération de l'ordre initial
             gameLogic.turnOrder = players.map(p => p.id);
             for (let i = gameLogic.turnOrder.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -659,7 +660,6 @@
 
             gameLogic.phase = GAME_PHASES.ROLE_REVEAL;
 
-            // FIX : Ajout massif de peerId !
             const cleanPlayerList = players.map(p => ({ id: p.id, peerId: p.peerId, pseudo: p.pseudo, isAlive: true }));
             broadcast({ type: 's_game_setup', playerList: cleanPlayerList, turnOrder: gameLogic.turnOrder });
 
@@ -736,9 +736,15 @@
             gameLogic.phase = GAME_PHASES.DESCRIPTION;
             gameLogic.roundNumber++;
             gameLogic.turnIndex = 0;
-            gameLogic.turnOrder = players.filter(p => p.isAlive).map(p => p.id);
+            
+            // FIX MAJEUR : Filtrer les morts en conservant l'ordre de jeu défini au début
+            gameLogic.turnOrder = gameLogic.turnOrder.filter(id => {
+                const p = players.find(player => player.id === id);
+                return p && p.isAlive;
+            });
 
-            broadcast({ type: 's_start_descriptions', round: gameLogic.roundNumber });
+            // L'Hôte envoie obligatoirement le nouvel ordre recalculé aux Clients
+            broadcast({ type: 's_start_descriptions', round: gameLogic.roundNumber, turnOrder: gameLogic.turnOrder });
             
             addChatMsg("SYSTÈME", `--- TOUR ${gameLogic.roundNumber} ---`, 'system');
             updateGamePlayersListUI();
@@ -749,12 +755,14 @@
             if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
             
             const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
-            // FIX MAJEUR : Le client vérifie bien son peerId !
             const myPlayerObj = players.find(p => p.peerId === myId);
 
             if (myPlayerObj && currentSpeakerId === myPlayerObj.id) {
                 setActionUI("À VOTRE TOUR", "C'est à vous de jouer, écrivez votre mot indice !", "chat");
-                document.getElementById('chat-input').focus();
+                setTimeout(() => {
+                    const input = document.getElementById('chat-input');
+                    if(input) input.focus();
+                }, 100);
             } else {
                 const speaker = players.find(p => p.id === currentSpeakerId);
                 setActionUI("PHASE DE JEU", `En attente du mot de : ${speaker ? speaker.pseudo : "?"}`, null, true);
@@ -769,7 +777,8 @@
         function submitDescription() {
             if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
             const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
-            const myPlayerObj = players.find(p => p.peerId === myId); // FIX
+            const myPlayerObj = players.find(p => p.peerId === myId);
+            
             if (!myPlayerObj || currentSpeakerId !== myPlayerObj.id) return;
 
             const input = document.getElementById('chat-input');
@@ -824,7 +833,6 @@
             gameLogic.phase = GAME_PHASES.VOTING;
             gameLogic.hasVoted = false;
 
-            // FIX
             const myPlayer = players.find(p => p.peerId === myId);
             if(!myPlayer || !myPlayer.isAlive) {
                 setActionUI("VOTE", "Vous êtes éliminé, vous ne pouvez pas voter.");
@@ -970,7 +978,7 @@
 
         function handleGlitchLastChance(glitchPlayerId) {
             gameLogic.phase = GAME_PHASES.GLITCH_GUESS;
-            const myPlayer = players.find(p => p.peerId === myId); // FIX
+            const myPlayer = players.find(p => p.peerId === myId);
 
             if (myPlayer && myPlayer.id === glitchPlayerId) {
                 setActionUI("ALERTE", "Vous êtes démasqué. Devinez le mot pour voler la victoire !", "glitch-block");
