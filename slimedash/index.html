@@ -160,7 +160,7 @@
         &#11013; Retour au Hub
     </a>
 
-    <!-- L'ancienne vidéo a été supprimée. Audio Youtube préservé. -->
+    <!-- AUDIO YOUTUBE INVISIBLE -->
     <div id="yt-player" style="display: none;"></div>
 
     <!-- JEU -->
@@ -200,7 +200,7 @@
             </div>
         </div>
 
-        <!-- PANNEAU ÉDITEUR -->
+        <!-- PANNEAU ÉDITEUR (DRAGGABLE) -->
         <div id="editor-panel">
             <button class="tool-btn active" data-tool="block" title="Bloc">🟦</button>
             <button class="tool-btn" data-tool="spike" title="Pic">🔺</button>
@@ -224,19 +224,19 @@
         </div>
     </div>
 
-    <!-- MOTEUR COMPLET ET CORRIGÉ -->
+    <!-- MOTEUR COMPLET -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // --- 1. AUDIO YOUTUBE ---
+            // --- 1. AUDIO YOUTUBE (NOUVELLE MUSIQUE) ---
             let ytPlayer;
             let audioStarted = false;
             window.onYouTubeIframeAPIReady = function() {
                 ytPlayer = new YT.Player('yt-player', {
-                    height: '0', width: '0', videoId: '3ecxZy8luDg',
+                    height: '0', width: '0', videoId: '0QjHiah9Z3I', // NOUVELLE MUSIQUE ICI
                     playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
                     events: { 
-                        'onReady': (e) => e.target.setVolume(5), 
+                        'onReady': (e) => e.target.setVolume(10), 
                         'onStateChange': (e) => { if (e.data === YT.PlayerState.ENDED) ytPlayer.playVideo(); } 
                     }
                 });
@@ -261,9 +261,9 @@
             
             const GRID_SIZE = 50; 
             const GROUND_HEIGHT = 90;
-            let gameSpeed = 500; 
+            let gameSpeed = 300; // VITESSE INITIALE RÉDUITE (était à 500)
             
-            // Physique Améliorée
+            // Physique
             const GRAVITY = 3600; 
             const JUMP_FORCE = -1050; 
             let jumpBufferTimer = 0; 
@@ -313,7 +313,7 @@
 
             // --- 4. GESTIONNAIRE DES SPRITES ET FONDS ---
             const sprites = { idle: [], run: [], jump: [], land: [] };
-            const bgImages = []; // NOOUVEAU : Tableau pour les images de fond
+            const bgImages = []; 
             
             function loadFrames(category, filenames) {
                 filenames.forEach(file => { 
@@ -328,7 +328,7 @@
             loadFrames('jump', ['slm10.png', 'slm11.png', 'slm12.png', 'slm13.png', 'slm14.png', 'slm15.png', 'slm16.png']);
             loadFrames('land', ['slm17.png', 'slm18.png', 'slm19.png', 'slm20.png']);
 
-            // Chargement de tes 5 images de fond (img1.jpg à img5.jpg)
+            // Chargement de tes 5 images de fond
             for(let i = 1; i <= 5; i++) {
                 let img = new Image();
                 img.src = `img/img${i}.jpg`;
@@ -401,13 +401,13 @@
                 }
                 
                 if (mode === 'PLAYING_ENDLESS') {
-                    gameSpeed = 500;
+                    gameSpeed = 300; // VITESSE INITIALE DOUCE
                     endlessLevelData = [];
                     nextEndlessSpawnX = Math.floor(width / GRID_SIZE) + 10;
                     statusText.innerText = "COURSE INFINIE";
                     statusText.style.color = "var(--neon-pink)";
                 } else {
-                    gameSpeed = 500; 
+                    gameSpeed = 350; 
                     statusText.innerText = "MAP CUSTOM";
                     statusText.style.color = "var(--neon-green)";
                 }
@@ -779,7 +779,6 @@
                 particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.alpha -= p.decay * dt; if (p.alpha <= 0) particles.splice(i, 1); });
                 if (shakeTimer > 0) shakeTimer -= dt;
 
-                // Fait avancer lentement la caméra même dans le menu de départ pour animer le fond !
                 if (gameState === 'START') {
                     cameraX += 30 * dt;
                 }
@@ -797,7 +796,8 @@
                     if (scoreElem) scoreElem.innerText = Math.floor(score);
 
                     if (gameState === 'PLAYING_ENDLESS') {
-                        gameSpeed += dt * 10; 
+                        // ACCÉLÉRATION PLUS DOUCE
+                        gameSpeed += dt * 8; 
                         updateEndlessGeneration();
                         checkCollisions(endlessLevelData);
                     } else {
@@ -810,12 +810,10 @@
                 }
             }
 
-            // NOUVEAU : Fonction de dessin du fond infini (Parallaxe 5 Images)
             function drawImageBackground() {
                 let seqW = 0;
                 let widths = [];
                 
-                // Calculer la largeur de la série d'images redimensionnées
                 for (let i = 0; i < bgImages.length; i++) {
                     let img = bgImages[i];
                     if (img.complete && img.naturalHeight > 0) {
@@ -827,46 +825,21 @@
                     }
                 }
 
-                if (seqW === 0) return; // Si rien n'est encore chargé, on annule
+                if (seqW === 0) return; 
 
-                // Vitesse du parallaxe (les images bougent à 15% de la vitesse du sol)
                 let scrollX = cameraX * 0.15; 
                 let startX = -(scrollX % seqW);
                 let currentX = startX;
 
-                // On boucle tant qu'on n'a pas rempli toute la largeur de l'écran
                 while (currentX < width) {
                     for (let i = 0; i < bgImages.length; i++) {
                         let img = bgImages[i];
                         let imgW = widths[i];
                         
-                        // Si l'image est visible à l'écran, on la dessine
                         if (imgW > 0 && currentX + imgW > 0 && currentX < width) {
                             ctx.drawImage(img, currentX, 0, imgW, height);
                         }
                         currentX += imgW;
-                    }
-                }
-            }
-
-            // Dessin des immeubles devant les images (légèrement transparents pour l'esthétique)
-            function drawParallaxBackground() {
-                ctx.fillStyle = 'rgba(10, 13, 20, 0.85)'; // Plus transparent pour voir les images derrière
-                const buildingWidth = 60;
-                const parallaxX = cameraX * 0.3; // Bouge un peu plus vite que les images
-                
-                const startIdx = Math.floor(parallaxX / buildingWidth);
-                const endIdx = startIdx + Math.ceil(width / buildingWidth) + 1;
-
-                for (let i = startIdx; i <= endIdx; i++) {
-                    let realX = (i * buildingWidth) - parallaxX;
-                    let h = 80 + (Math.sin(i * 13) * 50) + (Math.sin(i * 7) * 80);
-                    ctx.fillRect(realX, height - GROUND_HEIGHT - h, buildingWidth - 5, h);
-                    
-                    if (Math.sin(i*3) > 0) {
-                        ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
-                        ctx.fillRect(realX + 10, height - GROUND_HEIGHT - h + 20, 10, 10);
-                        ctx.fillStyle = 'rgba(10, 13, 20, 0.85)';
                     }
                 }
             }
@@ -921,19 +894,17 @@
                 if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
                 ctx.clearRect(0, 0, width, height);
 
-                // --- DESSIN DU FOND IMAGES ET PARALLAXE ---
-                drawImageBackground(); // Les 5 images (le plus au fond)
-                
-                if (gameState !== 'START') {
-                    drawParallaxBackground(); // Les immeubles cyberpunk au milieu
-                }
+                // --- DESSIN DU FOND IMAGES ---
+                drawImageBackground(); 
 
-                const gridAlpha = gameState === 'EDITOR' ? '0.2' : '0.05';
-                ctx.strokeStyle = `rgba(57, 255, 20, ${gridAlpha})`; ctx.lineWidth = 1; ctx.beginPath();
-                const offsetX = cameraX % GRID_SIZE;
-                for(let x = -offsetX; x < width; x += GRID_SIZE) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
-                for(let y = (height - GROUND_HEIGHT) % GRID_SIZE; y < height; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
-                ctx.stroke();
+                // --- DESSIN DE LA GRILLE UNIQUEMENT EN MODE ÉDITEUR ---
+                if (gameState === 'EDITOR') {
+                    ctx.strokeStyle = `rgba(57, 255, 20, 0.2)`; ctx.lineWidth = 1; ctx.beginPath();
+                    const offsetX = cameraX % GRID_SIZE;
+                    for(let x = -offsetX; x < width; x += GRID_SIZE) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+                    for(let y = (height - GROUND_HEIGHT) % GRID_SIZE; y < height; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+                    ctx.stroke();
+                }
 
                 const groundY = height - GROUND_HEIGHT;
                 ctx.fillStyle = '#050508'; ctx.fillRect(0, groundY, width, GROUND_HEIGHT);
