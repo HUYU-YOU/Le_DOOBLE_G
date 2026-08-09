@@ -29,7 +29,7 @@
             background-color: var(--bg-color); color: var(--text-color);
             font-family: var(--font-ui); overflow-x: hidden;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            font-size: 1.1rem; /* Base de texte plus grande */
+            font-size: 1.1rem;
         }
 
         /* Video Background */
@@ -67,12 +67,12 @@
         }
 
         /* =========================================
-           3. CONTENEUR PRINCIPAL (Agrandissement)
+           3. CONTENEUR PRINCIPAL
            ========================================= */
         .container {
             background: var(--container-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; padding: 40px; width: 95%; max-width: 800px; /* BEAUCOUP PLUS GRAND */
+            border-radius: 12px; padding: 40px; width: 95%; max-width: 800px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             margin-bottom: 40px; text-align: center;
         }
@@ -154,13 +154,13 @@
         #winner-text { font-size: 2.8rem; margin-bottom: 10px; }
         #winner-desc { font-size: 1.4rem; }
 
-        /* Chat Loup-Garou (Toujours dispo de nuit pour eux) */
+        /* Chat Loup-Garou */
         #ww-chat-container { display: none; border: 2px solid var(--neon-pink); background: rgba(255,0,127,0.05); padding: 15px; border-radius: 8px; margin-bottom: 30px;}
         #ww-chat-messages { height: 120px; overflow-y: auto; text-align: left; margin-bottom: 10px; font-size: 1rem; color: #fff; }
         #ww-chat-messages p { margin: 4px 0; }
         .ww-chat-sender { color: var(--neon-pink); font-weight: bold; }
 
-        /* Chat Global (Remplace le Sys Log) */
+        /* Chat Global */
         #global-chat-container { border: 2px solid #555; background: var(--inner-bg); padding: 15px; border-radius: 8px; margin-top: 30px; }
         #global-chat-messages { height: 180px; overflow-y: auto; text-align: left; margin-bottom: 10px; font-size: 1rem; color: #ddd; font-family: var(--font-mono); }
         #global-chat-messages p { margin: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; }
@@ -173,8 +173,9 @@
     <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
     <div id="timer-display">05:00</div>
 
+    <!-- FIX VIDEO BACKGROUND DIRECT SRC -->
     <video id="bg-video" autoplay loop muted playsinline>
-        <source id="bg-video-source" src="img/backgroundnight.mp4" type="video/mp4">
+        <source src="img/backgroundnight.mp4" type="video/mp4">
     </video>
     <div id="yt-player" style="display: none;"></div>
 
@@ -244,7 +245,7 @@
                 <p id="lovers-info" style="color: #ff69b4; font-weight: bold; display:none; font-size: 1.3rem; margin-top: 15px;"></p>
             </div>
 
-            <!-- CHAT GAROU (Nuit Seulement) -->
+            <!-- CHAT GAROU -->
             <div id="ww-chat-container">
                 <h4 class="ui-text" data-key="wwChatTitle" style="color: var(--neon-pink); margin-top:0; font-size: 1.4rem;">Canal Sécurisé : Loups-Garous</h4>
                 <div id="ww-chat-messages"></div>
@@ -257,7 +258,7 @@
             <h3 class="ui-text" data-key="actionInterface" style="color: #fff; font-size: 1.8rem;">Action</h3>
             <div id="action-panel" style="margin-bottom: 30px; min-height: 60px;"></div>
 
-            <!-- NOUVEAU CHAT GLOBAL -->
+            <!-- CHAT GLOBAL -->
             <div id="global-chat-container">
                 <h4 class="ui-text" data-key="globalChatTitle" style="color: var(--neon-cyan); margin-top:0; font-size: 1.4rem; text-align: left;">Chat Général</h4>
                 <div id="global-chat-messages"></div>
@@ -305,19 +306,19 @@
             }
         }
 
+        // FIX ROBUSTE CHARGEMENT VIDEO BACKGROUND DIRECTEMENT SUR LE NODE VIDEO
         function setMediaEnvironment(type) {
             if (currentBgm === type) return; 
             currentBgm = type;
-            const vidSource = document.getElementById('bg-video-source');
             const video = document.getElementById('bg-video');
             
             video.style.opacity = 0;
             setTimeout(() => {
                 if (type === 'day') {
-                    vidSource.src = 'img/backgroundday.mp4';
+                    video.src = 'img/backgroundday.mp4';
                     if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_DAY});
                 } else {
-                    vidSource.src = 'img/backgroundnight.mp4';
+                    video.src = 'img/backgroundnight.mp4';
                     if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_NIGHT});
                 }
                 video.load(); 
@@ -421,13 +422,12 @@
 
         let currentLang = 'fr';
 
-        // Fonction magique de traduction dynamique
         function t(category, key, ...args) {
             let text = "";
             if (i18n[currentLang] && i18n[currentLang][category] && i18n[currentLang][category][key]) {
                 text = i18n[currentLang][category][key];
             } else {
-                return key; // Fallback sécurisé
+                return key;
             }
             args.forEach((arg, i) => { text = text.replace(`{${i}}`, arg); });
             return text;
@@ -443,7 +443,6 @@
             });
             if (myRole) setupRoleUI(myRole);
             
-            // Met a jour le titre de phase actuel si le jeu est en cours
             if (gameState.phase !== 'lobby' && gameState.phase) {
                 let arg = gameState.phase === 'day_hunter' && gameState.pendingHunter ? gameState.pendingHunter : "";
                 document.getElementById('phase-title').innerText = t('phases', gameState.phase, arg);
@@ -472,7 +471,6 @@
         const gameArea = document.getElementById('game-area');
         let cupidTargets = []; 
 
-        // Remplacement de l'ancien Log par le Chat Global Système
         function addSysLog(sysKey, ...args) {
             const msg = t('sys', sysKey, ...args);
             const chatBox = document.getElementById('global-chat-messages');
@@ -613,7 +611,7 @@
         }
 
         // ==========================================
-        // 🎲 DISTRIBUTION DES RÔLES SÉCURISÉE
+        // 🎲 DISTRIBUTION DES RÔLES SÉCURISÉE & ALÉATOIRE
         // ==========================================
         document.getElementById('btn-start').addEventListener('click', () => {
             const numPlayers = connections.length;
@@ -630,10 +628,12 @@
             specialRoles.sort(() => Math.random() - 0.5);
             for (let role of specialRoles) { if (roles.length < numPlayers) roles.push(role); }
             while(roles.length < numPlayers) { roles.push('villager'); }
+            
+            // Mélange aléatoire absolu du deck de rôles
             roles.sort(() => Math.random() - 0.5);
 
-            document.getElementById('global-chat-messages').innerHTML = ""; // Clear global chat
-            document.getElementById('ww-chat-messages').innerHTML = ""; // Clear ww chat
+            document.getElementById('global-chat-messages').innerHTML = ""; 
+            document.getElementById('ww-chat-messages').innerHTML = ""; 
             
             connections.forEach((c, index) => {
                 c.role = roles[index];
@@ -794,7 +794,7 @@
             setTimeout(() => { processDeathsAndContinue(() => { startNightPhase(); }); }, 3000);
         }
 
-        // --- BOUTON REJOUER (HÔTE) ---
+        // --- BOUTON REJOUER (HÔTE & CLIENTS) ---
         document.getElementById('btn-replay').addEventListener('click', () => {
             if(!isHost) return;
             broadcast({ type: 'reset_game' });
@@ -823,16 +823,14 @@
             document.getElementById('lovers-info').style.display = 'none';
             document.getElementById('lobby').style.display = 'block';
             
-            setMediaEnvironment('night'); // Retour ambiance Lobby
+            setMediaEnvironment('night');
         }
-
 
         // --- ROUTEUR D'ACTIONS RÉSEAU ---
         function handleNetworkAction(clientId, data) {
             const sender = connections.find(c => c.id === clientId || (c.isHost && clientId === 'host'));
             if (!sender) return; 
 
-            // Chats
             if (data.type === 'ww_chat') {
                 const chatMsg = { type: 'ww_chat_recv', sender: sender.name, text: data.text };
                 connections.forEach(c => {
@@ -852,7 +850,6 @@
                 return;
             }
 
-            // Vérification de mort
             if (!sender.isAlive && !(gameState.phase === 'day_hunter' && data.role === 'hunter' && sender.name === data.extra?.hunter)) {
                 if(gameState.phase !== 'day_hunter') return;
             }
@@ -931,7 +928,7 @@
         }
 
         function updateClientUI(phase, extra = null) {
-            gameState.phase = phase; // Important for dynamic translation update
+            gameState.phase = phase; 
             let argTitle = phase === 'day_hunter' && extra ? extra.hunter : "";
             document.getElementById('phase-title').innerText = t('phases', phase, argTitle);
             
