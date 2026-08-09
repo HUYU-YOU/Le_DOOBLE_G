@@ -12,8 +12,8 @@
            ========================================= */
         :root {
             --bg-color: #0b0c10;
-            --container-bg: #1a1e24;
-            --inner-bg: #0d1117;
+            --container-bg: rgba(26, 30, 36, 0.85); /* Rendu translucide pour voir la vidéo */
+            --inner-bg: rgba(13, 17, 23, 0.8);
             --neon-cyan: #00e5ff;
             --neon-pink: #ff007f;
             --neon-green: #39ff14;
@@ -35,7 +35,7 @@
         /* Video Background */
         #bg-video {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: -100; object-fit: cover; opacity: 0.4; transition: opacity 1s ease-in-out;
+            z-index: -100; object-fit: cover; opacity: 0.5; transition: opacity 1s ease-in-out;
             pointer-events: none;
         }
 
@@ -71,6 +71,7 @@
            ========================================= */
         .container {
             background: var(--container-bg);
+            backdrop-filter: blur(6px); /* Effet verre dépoli sur la vidéo */
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px; padding: 40px; width: 95%; max-width: 800px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -173,7 +174,6 @@
     <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
     <div id="timer-display">05:00</div>
 
-    <!-- FIX VIDEO BACKGROUND DIRECT SRC -->
     <video id="bg-video" autoplay loop muted playsinline>
         <source src="img/backgroundnight.mp4" type="video/mp4">
     </video>
@@ -279,7 +279,7 @@
 
     <script>
         // ==========================================
-        // 🎵 GESTION AUDIO & VIDEO (YOUTUBE API)
+        // 🎵 GESTION AUDIO & VIDEO
         // ==========================================
         let ytPlayer;
         let currentBgm = 'night';
@@ -306,7 +306,6 @@
             }
         }
 
-        // FIX ROBUSTE CHARGEMENT VIDEO BACKGROUND DIRECTEMENT SUR LE NODE VIDEO
         function setMediaEnvironment(type) {
             if (currentBgm === type) return; 
             currentBgm = type;
@@ -324,11 +323,9 @@
                 video.load(); 
                 let playPromise = video.play();
                 if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.warn("Autoplay prevented:", error);
-                    });
+                    playPromise.catch(error => { console.warn("Autoplay prevented:", error); });
                 }
-                video.style.opacity = 0.4; 
+                video.style.opacity = 0.5; 
             }, 500); 
         }
 
@@ -426,9 +423,7 @@
             let text = "";
             if (i18n[currentLang] && i18n[currentLang][category] && i18n[currentLang][category][key]) {
                 text = i18n[currentLang][category][key];
-            } else {
-                return key;
-            }
+            } else { return key; }
             args.forEach((arg, i) => { text = text.replace(`{${i}}`, arg); });
             return text;
         }
@@ -444,7 +439,7 @@
             if (myRole) setupRoleUI(myRole);
             
             if (gameState.phase !== 'lobby' && gameState.phase) {
-                let arg = gameState.phase === 'day_hunter' && gameState.pendingHunter ? gameState.pendingHunter : "";
+                let arg = gameState.phase === 'day_hunter' && gameState.pendingHunter ? getName(gameState.pendingHunter) : "";
                 document.getElementById('phase-title').innerText = t('phases', gameState.phase, arg);
             }
         }
@@ -456,6 +451,7 @@
         // 🛠️ VARIABLES GLOBALES & RÉSEAU
         // ==========================================
         let peer = null;
+        let myId = null; // FIX : Enregistrement Global de l'ID PeerJS
         let connections = []; 
         let clientPlayers = []; 
         let wolfPartners = []; 
@@ -500,9 +496,15 @@
 
         function broadcast(data) {
             if (data.type === 'phase_change') {
-                data.players = connections.map(c => ({ name: c.name, isAlive: c.isAlive }));
+                data.players = connections.map(c => ({ id: c.id, name: c.name, isAlive: c.isAlive }));
             }
             connections.forEach(c => { if(!c.isHost && c.conn && c.conn.open) c.conn.send(data); });
+        }
+
+        function getName(id) {
+            const list = isHost ? connections : clientPlayers;
+            const p = list.find(c => c.id === id);
+            return p ? p.name : id;
         }
 
         // ==========================================
@@ -516,19 +518,22 @@
             menuDiv.style.display = 'none'; lobbyDiv.style.display = 'block';
             document.getElementById('host-config').style.display = 'block';
             
-            connections.push({ isHost: true, name: myName, role: null, isAlive: true, id: 'host' });
-            updatePlayerListUI();
-
             const roomId = 'GAR' + Math.floor(1000 + Math.random() * 9000);
 
-            initPeer((id) => { document.getElementById('my-id').innerText = id; }, roomId);
+            initPeer((id) => { 
+                myId = 'host'; 
+                connections.push({ isHost: true, name: myName, role: null, isAlive: true, id: myId });
+                updatePlayerListUI();
+                document.getElementById('my-id').innerText = id; 
+            }, roomId);
 
             peer.on('connection', (conn) => {
                 conn.on('data', (data) => {
                     if (data.type === 'join') {
                         connections.push({ conn: conn, name: data.name, role: null, isAlive: true, id: conn.peer });
                         updatePlayerListUI();
-                        broadcast({ type: 'lobby_update', count: connections.length, list: connections.map(c => c.name) });
+                        // FIX: Broadcast avec les IDs pour les clients
+                        broadcast({ type: 'lobby_update', count: connections.length, list: connections.map(c => ({id: c.id, name: c.name})) });
                         
                         if (connections.length >= 3) {
                             document.getElementById('btn-start').style.display = 'block';
@@ -556,7 +561,8 @@
             document.getElementById('waiting-host-msg').style.display = 'block'; 
             document.getElementById('my-id').innerText = hostId;
 
-            initPeer(() => {
+            initPeer((id) => {
+                myId = id; // FIX : On sauvegarde l'ID du Client !
                 const conn = peer.connect(hostId);
                 conn.on('open', () => {
                     connections.push({conn: conn}); 
@@ -565,12 +571,12 @@
 
                 conn.on('data', (data) => {
                     if (data.type === 'lobby_update') {
-                        generatePlayerBadges(data.list);
-                        clientPlayers = data.list.map(n => ({ name: n, isAlive: true }));
+                        generatePlayerBadges(data.list.map(obj => obj.name));
+                        clientPlayers = data.list.map(obj => ({ id: obj.id, name: obj.name, isAlive: true }));
                     }
                     else if (data.type === 'game_start') {
                         lobbyDiv.style.display = 'none'; gameArea.style.display = 'block';
-                        if (data.extra && data.extra.wolves) wolfPartners = data.extra.wolves;
+                        if (data.extra && data.extra.wolves) wolfPartners = data.extra.wolves; // C'est un tableau d'IDs !
                         setupRoleUI(data.role); addSysLog('gameInit');
                     }
                     else if (data.type === 'phase_change') {
@@ -582,8 +588,8 @@
                     }
                     else if (data.type === 'seer_result') {
                         const translatedRole = i18n[currentLang].roles[data.roleFound].name;
-                        const msg = t('sys', 'vision', data.target, translatedRole);
-                        addSysLog('vision', data.target, translatedRole);
+                        const msg = t('sys', 'vision', getName(data.target), translatedRole);
+                        addSysLog('vision', getName(data.target), translatedRole);
                         document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan); font-size: 1.5rem;">${msg}</p>`;
                     }
                     else if (data.type === 'lovers_linked') {
@@ -629,20 +635,22 @@
             for (let role of specialRoles) { if (roles.length < numPlayers) roles.push(role); }
             while(roles.length < numPlayers) { roles.push('villager'); }
             
-            // Mélange aléatoire absolu du deck de rôles
             roles.sort(() => Math.random() - 0.5);
 
             document.getElementById('global-chat-messages').innerHTML = ""; 
             document.getElementById('ww-chat-messages').innerHTML = ""; 
             
-            connections.forEach((c, index) => {
-                c.role = roles[index];
+            // FIX : Attribution de TOUS les rôles d'abord pour créer l'alliance des loups complète
+            connections.forEach((c, index) => { c.role = roles[index]; });
+
+            connections.forEach((c) => {
                 if(c.isHost) {
                     lobbyDiv.style.display = 'none'; gameArea.style.display = 'block';
                     setupRoleUI(c.role);
                 } else {
                     let extraData = {};
-                    if (c.role === 'werewolf') extraData.wolves = connections.filter(w => w.role === 'werewolf').map(w => w.name);
+                    // Tableau des IDs des loups
+                    if (c.role === 'werewolf') extraData.wolves = connections.filter(w => w.role === 'werewolf').map(w => w.id);
                     c.conn.send({ type: 'game_start', role: c.role, extra: extraData });
                 }
             });
@@ -655,17 +663,17 @@
         // ==========================================
         let gameState = { phase: 'lobby', votes: {}, deadTonight: [], lovers: [], pendingHunter: null, nextPhaseAfterHunter: null };
 
-        function killPlayer(targetName) {
-            if(!gameState.deadTonight.includes(targetName)) {
-                gameState.deadTonight.push(targetName);
-                const p = connections.find(c => c.name === targetName);
-                if(p && p.role === 'hunter') gameState.pendingHunter = targetName;
+        function killPlayer(targetId) {
+            if(!gameState.deadTonight.includes(targetId)) {
+                gameState.deadTonight.push(targetId);
+                const p = connections.find(c => c.id === targetId);
+                if(p && p.role === 'hunter') gameState.pendingHunter = targetId;
 
-                if(gameState.lovers.includes(targetName)) {
-                    const partner = gameState.lovers.find(l => l !== targetName);
-                    if(partner && !gameState.deadTonight.includes(partner)) {
-                        broadcastSysLog('loversDie', partner);
-                        killPlayer(partner); 
+                if(gameState.lovers.includes(targetId)) {
+                    const partnerId = gameState.lovers.find(l => l !== targetId);
+                    if(partnerId && !gameState.deadTonight.includes(partnerId)) {
+                        broadcastSysLog('loversDie', getName(partnerId));
+                        killPlayer(partnerId); 
                     }
                 }
             }
@@ -677,7 +685,7 @@
             const others = alive.filter(c => c.role !== 'werewolf');
             
             let winner = null, desc = "";
-            if (alive.length === 2 && gameState.lovers.includes(alive[0].name) && gameState.lovers.includes(alive[1].name)) {
+            if (alive.length === 2 && gameState.lovers.includes(alive[0].id) && gameState.lovers.includes(alive[1].id)) {
                 winner = "AMOUR TRIOMPHANT"; desc = "Seuls les amoureux ont survécu.";
             } else if (wolves.length === 0) {
                 winner = "VICTOIRE DU VILLAGE"; desc = "Tous les infectés ont été purgés.";
@@ -694,15 +702,15 @@
         }
 
         function processDeathsAndContinue(nextPhaseFunc) {
-            gameState.deadTonight.forEach(d => { let p = connections.find(c => c.name === d); if(p) p.isAlive = false; });
+            gameState.deadTonight.forEach(d => { let p = connections.find(c => c.id === d); if(p) p.isAlive = false; });
             if(checkWinCondition()) return;
 
             if(gameState.pendingHunter) {
-                const hunterName = gameState.pendingHunter;
+                const hunterId = gameState.pendingHunter;
                 gameState.pendingHunter = null; gameState.nextPhaseAfterHunter = nextPhaseFunc; 
                 gameState.phase = 'day_hunter';
-                broadcast({ type: 'phase_change', phase: 'day_hunter', extra: { hunter: hunterName } });
-                updateClientUI('day_hunter', { hunter: hunterName });
+                broadcast({ type: 'phase_change', phase: 'day_hunter', extra: { hunter: hunterId } });
+                updateClientUI('day_hunter', { hunter: hunterId });
             } else {
                 gameState.deadTonight = []; nextPhaseFunc();
             }
@@ -744,7 +752,8 @@
         function endNightPhase() {
             firstNight = false;
             if (gameState.deadTonight.length > 0) {
-                broadcastSysLog('deathList', gameState.deadTonight.join(', '));
+                const names = gameState.deadTonight.map(id => getName(id)).join(', ');
+                broadcastSysLog('deathList', names);
             } else {
                 broadcastSysLog('noDeath');
             }
@@ -788,13 +797,13 @@
                 return;
             }
 
-            const targetName = calculateVoteResult(gameState.votes);
-            killPlayer(targetName); 
-            broadcastSysLog('lynched', targetName);
+            const targetId = calculateVoteResult(gameState.votes);
+            killPlayer(targetId); 
+            broadcastSysLog('lynched', getName(targetId));
             setTimeout(() => { processDeathsAndContinue(() => { startNightPhase(); }); }, 3000);
         }
 
-        // --- BOUTON REJOUER (HÔTE & CLIENTS) ---
+        // --- BOUTON REJOUER ---
         document.getElementById('btn-replay').addEventListener('click', () => {
             if(!isHost) return;
             broadcast({ type: 'reset_game' });
@@ -850,43 +859,44 @@
                 return;
             }
 
-            if (!sender.isAlive && !(gameState.phase === 'day_hunter' && data.role === 'hunter' && sender.name === data.extra?.hunter)) {
+            if (!sender.isAlive && !(gameState.phase === 'day_hunter' && data.role === 'hunter' && sender.id === data.extra?.hunter)) {
                 if(gameState.phase !== 'day_hunter') return;
             }
 
+            // TOUS LES CIBLAGES SE FONT PAR ID MAINTENANT !
             if (gameState.phase === 'night_cupid' && data.role === 'cupid') {
                 gameState.lovers = [data.target1, data.target2];
                 connections.forEach(c => {
-                    if(c.name === data.target1) {
-                        if(c.isHost) { document.getElementById('lovers-info').style.display='block'; document.getElementById('lovers-info').innerText = `${i18n[currentLang].ui.loversLinked} ${data.target2}`; }
-                        else { c.conn.send({ type: 'lovers_linked', partner: data.target2 }); }
+                    if(c.id === data.target1) {
+                        if(c.isHost) { document.getElementById('lovers-info').style.display='block'; document.getElementById('lovers-info').innerText = `${i18n[currentLang].ui.loversLinked} ${getName(data.target2)}`; }
+                        else { c.conn.send({ type: 'lovers_linked', partner: getName(data.target2) }); }
                     }
-                    if(c.name === data.target2) {
-                        if(c.isHost) { document.getElementById('lovers-info').style.display='block'; document.getElementById('lovers-info').innerText = `${i18n[currentLang].ui.loversLinked} ${data.target1}`; }
-                        else { c.conn.send({ type: 'lovers_linked', partner: data.target1 }); }
+                    if(c.id === data.target2) {
+                        if(c.isHost) { document.getElementById('lovers-info').style.display='block'; document.getElementById('lovers-info').innerText = `${i18n[currentLang].ui.loversLinked} ${getName(data.target1)}`; }
+                        else { c.conn.send({ type: 'lovers_linked', partner: getName(data.target1) }); }
                     }
                 });
                 setTimeout(() => startSeerPhase(), 2000); 
             }
             else if (gameState.phase === 'night_seer' && data.role === 'seer') {
-                const targetInfo = connections.find(c => c.name === data.target);
+                const targetInfo = connections.find(c => c.id === data.target);
                 if(targetInfo) {
                     if(sender.isHost) { 
                         const tRole = i18n[currentLang].roles[targetInfo.role].name;
-                        const msg = t('sys', 'vision', targetInfo.name, tRole);
-                        addSysLog('vision', targetInfo.name, tRole);
+                        const msg = t('sys', 'vision', getName(targetInfo.id), tRole);
+                        addSysLog('vision', getName(targetInfo.id), tRole);
                         document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan); font-size: 1.5rem;">${msg}</p>`;
                     }
-                    else sender.conn.send({ type: 'seer_result', target: targetInfo.name, roleFound: targetInfo.role });
+                    else sender.conn.send({ type: 'seer_result', target: targetInfo.id, roleFound: targetInfo.role });
                 }
                 setTimeout(() => startWolvesPhase(), 2500); 
             }
             else if (gameState.phase === 'night_wolves' && data.role === 'werewolf') {
-                gameState.votes[sender.name] = data.target;
+                gameState.votes[sender.id] = data.target;
                 const aliveWolves = connections.filter(c => c.role === 'werewolf' && c.isAlive);
                 if (Object.keys(gameState.votes).length === aliveWolves.length) {
-                    const finalTarget = calculateVoteResult(gameState.votes);
-                    if (finalTarget) killPlayer(finalTarget);
+                    const finalTargetId = calculateVoteResult(gameState.votes);
+                    if (finalTargetId) killPlayer(finalTargetId);
                     setTimeout(() => startWitchPhase(), 1500);
                 }
             }
@@ -897,16 +907,16 @@
                 setTimeout(() => endNightPhase(), 1500);
             }
             else if (gameState.phase === 'day_vote') {
-                gameState.votes[sender.name] = data.target;
+                gameState.votes[sender.id] = data.target;
                 const alivePlayers = connections.filter(c => c.isAlive);
                 if (Object.keys(gameState.votes).length === alivePlayers.length) {
                     resolveDayVote();
                 }
             }
             else if (gameState.phase === 'day_hunter' && data.role === 'hunter') {
-                const targetName = data.target; 
-                broadcastSysLog('hunterShoot', targetName);
-                gameState.deadTonight = []; killPlayer(targetName); 
+                const targetId = data.target; 
+                broadcastSysLog('hunterShoot', getName(targetId));
+                gameState.deadTonight = []; killPlayer(targetId); 
                 setTimeout(() => { processDeathsAndContinue(gameState.nextPhaseAfterHunter); }, 2000);
             }
         }
@@ -929,7 +939,7 @@
 
         function updateClientUI(phase, extra = null) {
             gameState.phase = phase; 
-            let argTitle = phase === 'day_hunter' && extra ? extra.hunter : "";
+            let argTitle = phase === 'day_hunter' && extra ? getName(extra.hunter) : "";
             document.getElementById('phase-title').innerText = t('phases', phase, argTitle);
             
             const panel = document.getElementById('action-panel');
@@ -944,15 +954,16 @@
             else if (phase.includes('night')) { setMediaEnvironment('night'); document.getElementById('timer-display').style.display='none'; }
 
             const playerList = isHost ? connections : clientPlayers;
-            const alivePlayers = playerList.filter(c => c.isAlive && c.name !== myName);
+            // FIX : Filtrage par ID (c.id !== myId)
+            const alivePlayers = playerList.filter(c => c.isAlive && c.id !== myId);
             const allAlivePlayers = playerList.filter(c => c.isAlive); 
-            const myStatus = playerList.find(c => c.name === myName);
+            const myStatus = playerList.find(c => c.id === myId);
 
             if (phase === 'day_hunter') {
-                if (myName === extra.hunter) {
+                if (myId === extra.hunter) {
                     panel.innerHTML = `<p style="color:var(--neon-yellow); font-size: 1.4rem;">DERNIER SOUFFLE ! Choisis qui emporter :</p>`;
                     allAlivePlayers.forEach(c => { 
-                        let btn = createBtn(c.name, 'var(--neon-yellow)', function() { sendActionToServer({type:'action', role:'hunter', target: c.name, extra: {hunter: myName}}, this); });
+                        let btn = createBtn(c.name, 'var(--neon-yellow)', function() { sendActionToServer({type:'action', role:'hunter', target: c.id, extra: {hunter: myId}}, this); });
                         panel.appendChild(btn); 
                     });
                 } else { panel.innerHTML = `<p style="color:red; font-size: 1.4rem;">À couvert ! Le Chasseur s'effondre et tire...</p>`; }
@@ -966,7 +977,7 @@
                 allAlivePlayers.forEach(c => {
                     let btn = createBtn(c.name, 'var(--neon-pink)', function() {
                         this.style.background = 'var(--neon-pink)'; this.style.color = '#fff';
-                        cupidTargets.push(c.name);
+                        cupidTargets.push(c.id);
                         if(cupidTargets.length === 2) {
                             sendActionToServer({ type: 'action', role: 'cupid', target1: cupidTargets[0], target2: cupidTargets[1] });
                             cupidTargets = [];
@@ -978,24 +989,24 @@
             else if (phase === 'night_seer' && myRole === 'seer') {
                 panel.innerHTML = `<p style="color:var(--neon-cyan); font-size: 1.3rem;">${langUI.selectTarget}</p>`;
                 alivePlayers.forEach(c => { 
-                    panel.appendChild(createBtn(c.name, 'var(--neon-cyan)', function() { sendActionToServer({type:'action', role:'seer', target: c.name}, this); })); 
+                    panel.appendChild(createBtn(c.name, 'var(--neon-cyan)', function() { sendActionToServer({type:'action', role:'seer', target: c.id}, this); })); 
                 });
             }
             else if (phase === 'night_wolves' && myRole === 'werewolf') {
                 panel.innerHTML = `<p style="color:var(--neon-pink); font-size: 1.3rem;">${langUI.selectTarget}</p>`;
                 alivePlayers.forEach(c => { 
-                    if(!wolfPartners.includes(c.name)) {
-                        panel.appendChild(createBtn(c.name, 'var(--neon-pink)', function() { sendActionToServer({type:'action', role:'werewolf', target: c.name}, this); })); 
+                    if(!wolfPartners.includes(c.id)) {
+                        panel.appendChild(createBtn(c.name, 'var(--neon-pink)', function() { sendActionToServer({type:'action', role:'werewolf', target: c.id}, this); })); 
                     }
                 });
             } 
             else if (phase === 'night_witch' && myRole === 'witch') {
-                let html = `<p style="color:var(--neon-purple); font-size: 1.3rem;">Victime(s): ${gameState.deadTonight && gameState.deadTonight.length>0 ? gameState.deadTonight.join(', ') : extra.dead || 'Personne'}</p>`;
+                let html = `<p style="color:var(--neon-purple); font-size: 1.3rem;">Victime(s): ${gameState.deadTonight && gameState.deadTonight.length>0 ? gameState.deadTonight.map(id => getName(id)).join(', ') : extra.dead ? getName(extra.dead) : 'Personne'}</p>`;
                 if (extra.dead && witchPotions.heal > 0) {
                     html += `<button class="btn-outline" onclick="witchPotions.heal--; sendActionToServer({type:'action', role:'witch', action:'heal', target:'${extra.dead}'}, this);" style="border-color:#2ecc71; color:#2ecc71;">${langUI.healMsg}</button>`;
                 }
                 if (witchPotions.poison > 0) {
-                    alivePlayers.forEach(c => { html += `<button class="btn-outline" onclick="witchPotions.poison--; sendActionToServer({type:'action', role:'witch', action:'poison', target:'${c.name}'}, this);" style="border-color:#e74c3c; color:#e74c3c; margin-left:10px;">${langUI.poisonMsg} ${c.name}</button>`; });
+                    alivePlayers.forEach(c => { html += `<button class="btn-outline" onclick="witchPotions.poison--; sendActionToServer({type:'action', role:'witch', action:'poison', target:'${c.id}'}, this);" style="border-color:#e74c3c; color:#e74c3c; margin-left:10px;">${langUI.poisonMsg} ${c.name}</button>`; });
                 }
                 html += `<button class="btn-outline" onclick="sendActionToServer({type:'action', role:'witch', action:'skip'}, this)" style="border-color:gray; color:gray; margin-left:10px;">${langUI.skipMsg}</button>`;
                 panel.innerHTML = html;
@@ -1006,7 +1017,7 @@
             else if (phase === 'day_vote') {
                 panel.innerHTML = `<p style="color:var(--neon-yellow); font-size: 1.3rem;">${langUI.selectTarget}</p>`;
                 alivePlayers.forEach(c => { 
-                    panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', function() { sendActionToServer({type:'action', role:'day', target: c.name}, this); })); 
+                    panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', function() { sendActionToServer({type:'action', role:'day', target: c.id}, this); })); 
                 });
             }
         }
