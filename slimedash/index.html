@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Slime-Dash : Infinite Run & Map Editor</title>
+    <title>Slime-Dash : Infinite Run</title>
     <script src="https://www.youtube.com/iframe_api"></script>
     <style>
-        /* =========================================
-           1. VARIABLES CYBERPUNK ET RESET
-           ========================================= */
         :root {
             --bg-color: #0b0c10;
             --neon-cyan: #00f0ff;
@@ -27,9 +24,6 @@
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* =========================================
-           2. BOUTON RETOUR AU HUB
-           ========================================= */
         #btn-retour-hub {
             position: fixed; top: 20px; left: 20px; z-index: 9999;
             background-color: rgba(0, 0, 0, 0.5);
@@ -37,29 +31,21 @@
             color: #e0e0e0; padding: 8px 15px; font-family: inherit;
             font-size: 14px; border-radius: 5px; cursor: pointer;
             display: flex; align-items: center; gap: 8px;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-            text-decoration: none;
+            transition: 0.2s ease; text-decoration: none;
         }
         #btn-retour-hub:hover {
             background-color: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.5);
         }
 
-        /* =========================================
-           3. CONTENEUR PRINCIPAL DU JEU
-           ========================================= */
         #game-container {
             position: relative; width: 100%; height: 100%; max-width: 1200px; max-height: 700px;
             background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
             touch-action: none; overflow: hidden; border: 2px solid rgba(57, 255, 20, 0.3); border-radius: 8px;
-            backdrop-filter: blur(3px);
         }
 
         canvas { display: block; width: 100%; height: 100%; }
 
-        /* =========================================
-           4. INTERFACE UTILISATEUR (UI)
-           ========================================= */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
@@ -68,7 +54,7 @@
 
         .score-board {
             display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: bold;
-            color: var(--neon-green); text-shadow: 0 0 12px var(--neon-green); letter-spacing: 2px;
+            color: var(--neon-pink); text-shadow: 0 0 12px var(--neon-pink); letter-spacing: 2px;
             pointer-events: auto;
         }
 
@@ -98,14 +84,11 @@
         
         .btn-play { border-color: var(--neon-green); color: var(--neon-green); }
         .btn-play:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 20px var(--neon-green); transform: scale(1.05); }
-
         .btn-edit { border-color: var(--neon-yellow); color: var(--neon-yellow); }
         .btn-edit:hover { background: var(--neon-yellow); color: #000; box-shadow: 0 0 20px var(--neon-yellow); transform: scale(1.05); }
-
         .btn-code { border-color: var(--neon-pink); color: var(--neon-pink); }
         .btn-code:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 20px var(--neon-pink); transform: scale(1.05); }
 
-        /* Code Map Input */
         #code-section {
             border-top: 1px dashed var(--neon-pink); padding-top: 20px;
             display: none; flex-direction: column; gap: 10px; align-items: center;
@@ -114,11 +97,7 @@
             background: rgba(0,0,0,0.7); border: 1px solid var(--neon-pink); color: var(--neon-pink);
             padding: 12px; font-size: 1rem; font-family: inherit; outline: none; text-align: center; width: 100%; max-width: 300px;
         }
-        input[type="text"]:focus { box-shadow: 0 0 10px var(--neon-pink); }
 
-        /* =========================================
-           5. PANNEAU DE L'ÉDITEUR (DRAGGABLE)
-           ========================================= */
         #editor-panel {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(11, 12, 16, 0.95); border: 2px solid var(--neon-yellow);
@@ -133,14 +112,11 @@
             background: #000; cursor: pointer; border-radius: 5px; border-style: solid; border-width: 2px;
         }
         .tool-btn.active { border-color: var(--neon-yellow); color: var(--neon-yellow); box-shadow: 0 0 10px var(--neon-yellow); }
-        
         .divider { width: 2px; height: 40px; background: gray; margin: 0 10px; }
-
         .action-btn { padding: 10px 20px; font-size: 1.1rem; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; background: #000; font-family: inherit; }
         .action-tester { border: 2px solid var(--neon-green); color: var(--neon-green); }
         .action-exporter { border: 2px solid var(--neon-cyan); color: var(--neon-cyan); }
         .action-quitter { border: 2px solid var(--neon-pink); color: var(--neon-pink); }
-        
         .action-tester:hover { background: var(--neon-green); color: #000; }
         .action-exporter:hover { background: var(--neon-cyan); color: #000; }
         .action-quitter:hover { background: var(--neon-pink); color: #000; }
@@ -200,7 +176,7 @@
             </div>
         </div>
 
-        <!-- PANNEAU ÉDITEUR (DRAGGABLE) -->
+        <!-- PANNEAU ÉDITEUR -->
         <div id="editor-panel">
             <button class="tool-btn active" data-tool="block" title="Bloc">🟦</button>
             <button class="tool-btn" data-tool="spike" title="Pic">🔺</button>
@@ -233,7 +209,7 @@
             let audioStarted = false;
             window.onYouTubeIframeAPIReady = function() {
                 ytPlayer = new YT.Player('yt-player', {
-                    height: '0', width: '0', videoId: '0QjHiah9Z3I', // NOUVELLE MUSIQUE ICI
+                    height: '0', width: '0', videoId: '0QjHiah9Z3I', 
                     playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
                     events: { 
                         'onReady': (e) => e.target.setVolume(10), 
@@ -261,9 +237,8 @@
             
             const GRID_SIZE = 50; 
             const GROUND_HEIGHT = 90;
-            let gameSpeed = 300; // VITESSE INITIALE RÉDUITE (était à 500)
+            let gameSpeed = 300; 
             
-            // Physique
             const GRAVITY = 3600; 
             const JUMP_FORCE = -1050; 
             let jumpBufferTimer = 0; 
@@ -286,6 +261,7 @@
             let levelData = []; 
             let endlessLevelData = []; 
             let nextEndlessSpawnX = 0; 
+            let consecutiveObstacles = 0; // Sécurité anti-obstacles impossibles
 
             let defaultLevel = [
                 {x: 10, y: 0, type: 'block'}, {x: 11, y: 0, type: 'block'}, {x: 12, y: 1, type: 'block'},
@@ -299,12 +275,10 @@
                 let savedLvl = localStorage.getItem('slimeDashLevel');
                 if(savedLvl && savedLvl !== "null" && savedLvl !== "undefined") { 
                     levelData = JSON.parse(savedLvl);
-                    if(!Array.isArray(levelData)) throw new Error("Format invalide");
                 } else {
                     levelData = JSON.parse(JSON.stringify(defaultLevel));
                 }
             } catch (err) {
-                console.error("Erreur de restauration du niveau.");
                 levelData = JSON.parse(JSON.stringify(defaultLevel));
             }
 
@@ -314,6 +288,7 @@
             // --- 4. GESTIONNAIRE DES SPRITES ET FONDS ---
             const sprites = { idle: [], run: [], jump: [], land: [] };
             const bgImages = []; 
+            const platformImg = new Image();
             
             function loadFrames(category, filenames) {
                 filenames.forEach(file => { 
@@ -335,9 +310,12 @@
                 bgImages.push(img);
             }
 
+            // Chargement de la nouvelle image de sol
+            platformImg.src = 'img/platform.png';
+
             // --- 5. OBJET JOUEUR ---
             const player = {
-                x: 150, y: 0, size: 50, vy: 0, isGrounded: false, trail: [],
+                x: 150, y: 0, prevY: 0, size: 50, vy: 0, isGrounded: false,
                 animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1
             };
 
@@ -351,18 +329,19 @@
                 else player.animSpeed = 0.15;
             }
 
-            // --- 6. RÉSOLUTION HDPI ---
             function resize() {
                 const rect = canvas.parentElement.getBoundingClientRect();
                 width = rect.width; height = rect.height;
                 const dpr = window.devicePixelRatio || 1;
                 canvas.width = width * dpr; canvas.height = height * dpr;
                 ctx.scale(dpr, dpr);
-                if(gameState === 'START' || gameState === 'EDITOR') player.y = height - GROUND_HEIGHT - player.size;
+                if(gameState === 'START' || gameState === 'EDITOR') {
+                    player.y = height - GROUND_HEIGHT - player.size;
+                    player.prevY = player.y;
+                }
             }
             window.addEventListener('resize', resize); resize();
 
-            // --- 7. EFFETS VISUELS ---
             function spawnParticles(x, y, color, count = 10) {
                 for (let i = 0; i < count; i++) {
                     const angle = Math.random() * Math.PI * 2;
@@ -375,7 +354,6 @@
             }
             function triggerShake(duration, intensity) { shakeTimer = duration; shakeIntensity = intensity; }
 
-            // --- 8. LOGIQUE GLOBALE DES ÉTATS ET ÉCOUTEURS MENUS ---
             document.getElementById('btn-play-endless').addEventListener('click', () => startGame('PLAYING_ENDLESS'));
             document.getElementById('btn-create-map').addEventListener('click', () => startEditor());
             document.getElementById('btn-play-code').addEventListener('click', () => {
@@ -391,7 +369,8 @@
                 document.getElementById('completion-text').style.display = 'none';
                 
                 player.y = height - GROUND_HEIGHT - player.size;
-                player.vy = 0; player.trail = []; jumpBufferTimer = 0;
+                player.prevY = player.y;
+                player.vy = 0; jumpBufferTimer = 0;
                 setAnimState('RUN');
                 
                 cameraX = 0; score = 0; particles = []; shakeTimer = 0;
@@ -401,8 +380,9 @@
                 }
                 
                 if (mode === 'PLAYING_ENDLESS') {
-                    gameSpeed = 300; // VITESSE INITIALE DOUCE
+                    gameSpeed = 300; 
                     endlessLevelData = [];
+                    consecutiveObstacles = 0;
                     nextEndlessSpawnX = Math.floor(width / GRID_SIZE) + 10;
                     statusText.innerText = "COURSE INFINIE";
                     statusText.style.color = "var(--neon-pink)";
@@ -478,7 +458,7 @@
                 } catch(e) {}
             }
 
-            // --- 9. DRAG & DROP DU PANNEAU ÉDITEUR ---
+            // Drag Éditeur
             let isDraggingPanel = false;
             let panelOffsetX, panelOffsetY;
 
@@ -512,7 +492,7 @@
             }, {passive: false});
             document.addEventListener('touchend', () => { isDraggingPanel = false; });
 
-            // --- 10. GESTION DE L'ÉDITEUR AVANCÉ (OUTILS) ---
+            // Outils Éditeur
             let currentTool = 'block';
             let isBuilding = false;
             let hoverGridX = -1, hoverGridY = -1;
@@ -623,26 +603,32 @@
                 if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; isHovering = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
             });
 
-            // --- 11. GENERATEUR INFINI ---
+            // --- 11. GENERATEUR INFINI (CORRIGÉ ET SÉCURISÉ) ---
             function updateEndlessGeneration() {
                 const currentGridX = Math.floor(cameraX / GRID_SIZE);
                 const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 5; 
 
                 if (nextEndlessSpawnX < targetGridX) {
                     const r = Math.random();
-                    let type = 'block';
-                    if(r > 0.8) type = 'hole';
-                    else if(r > 0.5) type = 'spike';
-                    else if(r > 0.4) type = 'pad';
-                    else if(r > 0.3) type = 'coin';
-
+                    let type = 'coin';
                     let y = 0;
-                    if((type === 'block' || type === 'pad' || type === 'coin') && Math.random() > 0.5) y = Math.floor(Math.random() * 3);
-                    if (type === 'coin') y += 1;
+                    let gap = 1;
+
+                    if (consecutiveObstacles >= 2) {
+                        // Force un espace ou un bonus pour casser l'enchaînement mortel
+                        type = 'coin';
+                        y = 1;
+                        gap = 2;
+                        consecutiveObstacles = 0;
+                    } else {
+                        if (r > 0.85) { type = 'hole'; gap = 2; consecutiveObstacles++; }
+                        else if (r > 0.6) { type = 'spike'; gap = 2; consecutiveObstacles++; }
+                        else if (r > 0.3) { type = 'block'; y = Math.random() > 0.5 ? 1 : 0; gap = 1; consecutiveObstacles++; }
+                        else if (r > 0.2) { type = 'pad'; gap = 2; consecutiveObstacles = 0; }
+                        else { type = 'coin'; y = 1; gap = 1; consecutiveObstacles = 0; }
+                    }
 
                     endlessLevelData.push({x: nextEndlessSpawnX, y: type === 'hole' ? 0 : y, type: type, collected: false});
-                    
-                    const gap = Math.floor(Math.random() * 3) + Math.floor(gameSpeed / 150);
                     nextEndlessSpawnX += gap;
                 }
 
@@ -683,7 +669,7 @@
 
                 const playerWorldX = player.x + cameraX;
                 const playerCenterGridX = Math.floor((playerWorldX + player.size/2) / GRID_SIZE);
-                const holeUnder = activeLevelData.find(o => o.type === 'hole' && o.x === playerCenterGridX);
+                const holeUnder = activeLevelData.some(o => o.type === 'hole' && o.x === playerCenterGridX);
                 const currentGroundLevel = holeUnder ? 9999 : (height - GROUND_HEIGHT - player.size);
 
                 if (player.y >= currentGroundLevel) {
@@ -722,10 +708,12 @@
                         continue; 
                     }
 
+                    // CORRECTION DU BUG DE COLLISION "SANS RAISON" (On vérifie d'où vient le joueur)
                     if (obs.type === 'block' || obs.type === 'pad') {
                         const hitY = (player.y + tolY < obsScreenY + obsSize) && (player.y + player.size - tolY > obsScreenY);
                         if (hitX && hitY) {
-                            if (player.vy > 0 && player.y + player.size - player.vy * 0.05 <= obsScreenY + 15) {
+                            if (player.vy > 0 && player.prevY + player.size <= obsScreenY + 25) {
+                                // Atterrissage par le dessus sécurisé
                                 player.y = obsScreenY - player.size; 
                                 if (obs.type === 'pad') {
                                     player.vy = JUMP_FORCE * 1.5; player.isGrounded = false; setAnimState('JUMP');
@@ -739,6 +727,7 @@
                                 }
                                 continue; 
                             }
+                            // Si on tape sur le côté
                             gameOver(false); return;
                         }
                     } 
@@ -785,19 +774,16 @@
 
                 if (gameState.startsWith('PLAYING')) {
                     cameraX += gameSpeed * dt;
+                    player.prevY = player.y; // Sauvegarde avant d'appliquer la gravité
                     player.vy += GRAVITY * dt;
                     player.y += player.vy * dt;
-
-                    player.trail.push({x: player.x, y: player.y, state: player.animState, frame: player.frameIndex});
-                    if (player.trail.length > 8) player.trail.shift();
 
                     score += gameSpeed * dt * 0.1;
                     const scoreElem = document.getElementById('score');
                     if (scoreElem) scoreElem.innerText = Math.floor(score);
 
                     if (gameState === 'PLAYING_ENDLESS') {
-                        // ACCÉLÉRATION PLUS DOUCE
-                        gameSpeed += dt * 8; 
+                        gameSpeed += dt * 5; // Accélération plus douce
                         updateEndlessGeneration();
                         checkCollisions(endlessLevelData);
                     } else {
@@ -881,11 +867,6 @@
                     ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE); ctx.lineTo(screenX + GRID_SIZE, screenY - GRID_SIZE + 20);
                     ctx.lineTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE + 40); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
                 }
-                else if (type === 'hole') {
-                    ctx.fillStyle = '#0b0c10'; ctx.fillRect(screenX, height - GROUND_HEIGHT, GRID_SIZE, GROUND_HEIGHT);
-                    ctx.strokeStyle = 'var(--neon-pink)'; ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(screenX, height - GROUND_HEIGHT); ctx.lineTo(screenX + GRID_SIZE, height - GROUND_HEIGHT); ctx.stroke();
-                }
                 ctx.globalAlpha = 1;
             }
 
@@ -897,7 +878,7 @@
                 // --- DESSIN DU FOND IMAGES ---
                 drawImageBackground(); 
 
-                // --- DESSIN DE LA GRILLE UNIQUEMENT EN MODE ÉDITEUR ---
+                // --- DESSIN DE LA GRILLE (UNIQUEMENT ÉDITEUR) ---
                 if (gameState === 'EDITOR') {
                     ctx.strokeStyle = `rgba(57, 255, 20, 0.2)`; ctx.lineWidth = 1; ctx.beginPath();
                     const offsetX = cameraX % GRID_SIZE;
@@ -907,22 +888,34 @@
                 }
 
                 const groundY = height - GROUND_HEIGHT;
-                ctx.fillStyle = '#050508'; ctx.fillRect(0, groundY, width, GROUND_HEIGHT);
-                ctx.shadowBlur = 10; ctx.shadowColor = 'var(--neon-green)'; ctx.strokeStyle = 'var(--neon-green)'; ctx.lineWidth = 3;
-                ctx.beginPath();
-                
-                let isDrawingLine = true;
-                ctx.moveTo(0, groundY);
 
-                const activeLevelData = gameState === 'PLAYING_ENDLESS' ? endlessLevelData : levelData;
-
-                for (let screenX = 0; screenX <= width; screenX += GRID_SIZE) {
-                    const worldX = screenX + cameraX; const gridX = Math.floor(worldX / GRID_SIZE);
-                    const hasHole = activeLevelData.some(o => o.type === 'hole' && o.x === gridX);
-                    if (hasHole) { if (isDrawingLine) { ctx.lineTo(screenX, groundY); isDrawingLine = false; } ctx.moveTo(screenX + GRID_SIZE, groundY); } 
-                    else { if (!isDrawingLine) { ctx.moveTo(screenX, groundY); isDrawingLine = true; } ctx.lineTo(screenX + GRID_SIZE, groundY); }
+                // --- DESSIN DE LA PLATEFORME (SOL) ---
+                if (platformImg.complete && platformImg.naturalWidth > 0) {
+                    const scale = GROUND_HEIGHT / platformImg.naturalHeight;
+                    const pWidth = platformImg.naturalWidth * scale;
+                    let scrollX = cameraX % pWidth;
+                    for (let i = -scrollX; i < width; i += pWidth) {
+                        ctx.drawImage(platformImg, i, groundY, pWidth, GROUND_HEIGHT);
+                    }
+                } else {
+                    ctx.fillStyle = '#050508'; ctx.fillRect(0, groundY, width, GROUND_HEIGHT);
+                    ctx.shadowBlur = 10; ctx.shadowColor = 'var(--neon-green)'; ctx.strokeStyle = 'var(--neon-green)'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width, groundY); ctx.stroke(); ctx.shadowBlur = 0;
                 }
-                ctx.stroke(); ctx.shadowBlur = 0;
+
+                // GESTION VISUELLE DES TROUS
+                const activeLevelData = gameState === 'PLAYING_ENDLESS' ? endlessLevelData : levelData;
+                for (let screenX = 0; screenX <= width; screenX += GRID_SIZE) {
+                    const worldX = screenX + cameraX; 
+                    const gridX = Math.floor(worldX / GRID_SIZE);
+                    const hasHole = activeLevelData.some(o => o.type === 'hole' && o.x === gridX);
+                    if (hasHole) { 
+                        const exactScreenX = (gridX * GRID_SIZE) - cameraX;
+                        ctx.clearRect(exactScreenX, groundY, GRID_SIZE, GROUND_HEIGHT);
+                        ctx.fillStyle = '#000'; // Trou sombre
+                        ctx.fillRect(exactScreenX, groundY, GRID_SIZE, GROUND_HEIGHT);
+                    } 
+                }
 
                 if(activeLevelData && Array.isArray(activeLevelData)) {
                     activeLevelData.forEach(obs => {
@@ -941,17 +934,7 @@
                     else { drawEditorObject(currentTool, ghostScreenX, ghostScreenY, 0.5); }
                 }
 
-                if(gameState.startsWith('PLAYING')) {
-                    player.trail.forEach((pos, index) => {
-                        const alpha = (index / player.trail.length) * 0.4;
-                        const arr = sprites[pos.state.toLowerCase()] || sprites.idle;
-                        const trailImg = arr[pos.frame % arr.length];
-                        ctx.globalAlpha = alpha;
-                        if (trailImg && trailImg.complete) ctx.drawImage(trailImg, pos.x - 15, pos.y, player.size, player.size);
-                    });
-                    ctx.globalAlpha = 1.0;
-                }
-
+                // Affichage du Joueur
                 let currentArray = sprites.idle;
                 if(player.animState === 'RUN') currentArray = sprites.run;
                 else if(player.animState === 'JUMP') currentArray = sprites.jump;
@@ -963,13 +946,12 @@
                 const activeImg = currentArray[safeIndex];
 
                 if (activeImg && activeImg.complete && activeImg.naturalWidth > 0) {
-                    ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-green)';
+                    ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)';
                     ctx.drawImage(activeImg, player.x, player.y, player.size, player.size);
                     ctx.shadowBlur = 0;
                 } else {
                     ctx.fillStyle = '#0b0c10'; ctx.fillRect(player.x, player.y, player.size, player.size);
-                    ctx.strokeStyle = '#39ff14'; ctx.lineWidth = 3; ctx.strokeRect(player.x, player.y, player.size, player.size);
-                    ctx.fillStyle = '#39ff14'; ctx.font = '10px Arial'; ctx.fillText('IMG?', player.x + 5, player.y + 25);
+                    ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 3; ctx.strokeRect(player.x, player.y, player.size, player.size);
                 }
 
                 particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.alpha); ctx.fillRect(p.x, p.y, p.size, p.size); });
