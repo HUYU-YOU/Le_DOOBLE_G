@@ -321,9 +321,9 @@
             const bgImages = []; 
             const platformImg = new Image();
             const lucioleImg = new Image(); 
-            const carreImg = new Image();     // CARRÉ (Bloc)
-            const triangleImg = new Image();  // TRIANGLE (Pic)
-            const rebonImg = new Image();     // REBON (Propulseur)
+            const carreImg = new Image();     
+            const triangleImg = new Image();  
+            const rebonImg = new Image();     
             
             function loadFrames(category, filenames) {
                 filenames.forEach(file => { 
@@ -345,12 +345,13 @@
             }
             platformImg.src = 'img/platform.png';
             lucioleImg.src = 'img/luciole.png';
-            carreImg.src = 'img/carre.png';       // Chargement carre.png
-            triangleImg.src = 'img/triangle.png'; // Chargement triangle.png
-            rebonImg.src = 'img/rebon.png';       // Chargement rebon.png
+            carreImg.src = 'img/carre.png';       
+            triangleImg.src = 'img/triangle.png'; 
+            rebonImg.src = 'img/rebon.png';       
 
+            // --- TAILLE DU JOUEUR AUGMENTÉE POUR CORRESPONDRE À LA HITBOX ---
             const player = {
-                x: 150, y: 0, prevY: 0, size: 50, vy: 0, isGrounded: false,
+                x: 150, y: 0, prevY: 0, size: 60, vy: 0, isGrounded: false,
                 animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1
             };
 
@@ -906,7 +907,7 @@
             function drawEditorObject(type, screenX, screenY, alpha = 1) {
                 ctx.globalAlpha = alpha;
                 
-                // --- 1. BLOC (CARRÉ -> carre.png) ---
+                // --- 1. BLOC (carre.png) ---
                 if (type === 'block') {
                     if (carreImg.complete && carreImg.naturalWidth > 0) {
                         ctx.drawImage(carreImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -915,7 +916,7 @@
                         ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                     }
                 } 
-                // --- 2. PROPULSEUR (REBON -> rebon.png) ---
+                // --- 2. PROPULSEUR (rebon.png) ---
                 else if (type === 'pad') {
                     if (rebonImg.complete && rebonImg.naturalWidth > 0) {
                         ctx.drawImage(rebonImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -929,7 +930,7 @@
                     ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
                     ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.setLineDash([]);
                 }
-                // --- 3. LUCIOLE (coin -> luciole.png) ---
+                // --- 3. LUCIOLE (luciole.png) ---
                 else if (type === 'coin') {
                     const floatY = screenY + Math.sin(performance.now()/150) * 8; 
                     if (lucioleImg.complete && lucioleImg.naturalWidth > 0) {
@@ -941,7 +942,7 @@
                         ctx.beginPath(); ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
                     }
                 }
-                // --- 4. PIC (SPIKE -> triangle.png) ---
+                // --- 4. PIC (triangle.png) ---
                 else if (type === 'spike') {
                     if (triangleImg.complete && triangleImg.naturalWidth > 0) {
                         ctx.drawImage(triangleImg, screenX, screenY, GRID_SIZE, GRID_SIZE);
