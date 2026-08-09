@@ -292,7 +292,7 @@
         const GAME_PHASES = { LOBBY: 1, ROLE_REVEAL: 2, DESCRIPTION: 3, VOTING: 4, GLITCH_GUESS: 5, END: 6 };
 
         let peer = null;
-        let myId = null;
+        let myId = null; // FIX : ID local PeerJS synchronisé
         let myPseudo = "Anonyme";
         let hostId = null;
         let isHost = false;
@@ -363,7 +363,7 @@
             peer = customId ? new Peer(customId) : new Peer();
 
             peer.on('open', (id) => {
-                myId = id;
+                myId = id; // IMPORTANT : Sauvegarde de l'ID réseau
                 loginErr.innerText = "";
                 callback(id);
             });
@@ -448,7 +448,7 @@
                     break;
 
                 case 's_game_setup':
-                    players = data.playerList;
+                    players = data.playerList; // FIX: Contient maintenant peerId !
                     gameLogic.turnOrder = data.turnOrder;
                     showScreen('screen-game');
                     setupGameUI();
@@ -456,7 +456,6 @@
                     break;
 
                 case 's_role_data':
-                    // On injecte le mot secret en arrière-plan. Le bouton reste visible pour le joueur.
                     document.getElementById('secret-word').innerText = data.word;
                     setActionUI("ATTENTE", "Mémorisez votre mot. La partie va commencer.");
                     break;
@@ -512,7 +511,6 @@
             if(!pseudo) { loginErr.innerText = "Pseudo requis."; return; }
 
             isHost = true;
-            // Format SPY + 4 chiffres
             const roomId = 'SPY' + Math.floor(1000 + Math.random() * 9000);
 
             initPeer(pseudo, (id) => {
@@ -523,7 +521,7 @@
                 
                 players = [{
                     id: 0,
-                    peerId: id,
+                    peerId: id, // IMPORTANT : Sauvegardé
                     pseudo: pseudo,
                     conn: null,
                     role: null,
@@ -589,7 +587,8 @@
         }
 
         function sendLobbyUpdate() {
-            const lightList = players.map(p => ({ id: p.id, pseudo: p.pseudo, isHost: p.id === 0 }));
+            // FIX : Envoi de peerId pour la reco client !
+            const lightList = players.map(p => ({ id: p.id, peerId: p.peerId, pseudo: p.pseudo, isHost: p.id === 0 }));
             updateLobbyUI(lightList);
             broadcast({ type: 's_lobby_update', playerList: lightList });
             
@@ -660,7 +659,8 @@
 
             gameLogic.phase = GAME_PHASES.ROLE_REVEAL;
 
-            const cleanPlayerList = players.map(p => ({ id: p.id, pseudo: p.pseudo, isAlive: true }));
+            // FIX : Ajout massif de peerId !
+            const cleanPlayerList = players.map(p => ({ id: p.id, peerId: p.peerId, pseudo: p.pseudo, isAlive: true }));
             broadcast({ type: 's_game_setup', playerList: cleanPlayerList, turnOrder: gameLogic.turnOrder });
 
             showScreen('screen-game');
@@ -674,7 +674,6 @@
 
                 const roleData = { type: 's_role_data', word: wordToSend };
                 if (p.id === 0) {
-                    // On modifie juste le texte en arrière-plan sans cacher le bouton
                     document.getElementById('secret-word').innerText = wordToSend;
                 } else {
                     sendTo(p.id, roleData);
@@ -750,6 +749,7 @@
             if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
             
             const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
+            // FIX MAJEUR : Le client vérifie bien son peerId !
             const myPlayerObj = players.find(p => p.peerId === myId);
 
             if (myPlayerObj && currentSpeakerId === myPlayerObj.id) {
@@ -769,7 +769,7 @@
         function submitDescription() {
             if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
             const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
-            const myPlayerObj = players.find(p => p.peerId === myId);
+            const myPlayerObj = players.find(p => p.peerId === myId); // FIX
             if (!myPlayerObj || currentSpeakerId !== myPlayerObj.id) return;
 
             const input = document.getElementById('chat-input');
@@ -824,6 +824,7 @@
             gameLogic.phase = GAME_PHASES.VOTING;
             gameLogic.hasVoted = false;
 
+            // FIX
             const myPlayer = players.find(p => p.peerId === myId);
             if(!myPlayer || !myPlayer.isAlive) {
                 setActionUI("VOTE", "Vous êtes éliminé, vous ne pouvez pas voter.");
@@ -969,7 +970,7 @@
 
         function handleGlitchLastChance(glitchPlayerId) {
             gameLogic.phase = GAME_PHASES.GLITCH_GUESS;
-            const myPlayer = players.find(p => p.peerId === myId);
+            const myPlayer = players.find(p => p.peerId === myId); // FIX
 
             if (myPlayer && myPlayer.id === glitchPlayerId) {
                 setActionUI("ALERTE", "Vous êtes démasqué. Devinez le mot pour voler la victoire !", "glitch-block");
@@ -1017,19 +1018,19 @@
                 winner: type === 'civils_win' ? "VICTOIRE DES CIVILS" : type === 'undercover_win' ? "VICTOIRE DE L'ANOMALIE" : "VICTOIRE DU GLITCH", 
                 desc: reason 
             });
-            showGameOver(
-                type === 'civils_win' ? "VICTOIRE DES CIVILS" : type === 'undercover_win' ? "VICTOIRE DE L'ANOMALIE" : "VICTOIRE DU GLITCH", 
-                reason
-            );
+            handleGameOver({
+                winner: type === 'civils_win' ? "VICTOIRE DES CIVILS" : type === 'undercover_win' ? "VICTOIRE DE L'ANOMALIE" : "VICTOIRE DU GLITCH", 
+                desc: reason
+            });
         }
 
-        function showGameOver(winner, desc) {
+        function handleGameOver(data) {
             document.getElementById('action-zone-container').style.display = 'none';
 
             const goScreen = document.getElementById('game-over-screen');
             goScreen.style.display = 'block';
-            document.getElementById('winner-text').innerText = winner;
-            document.getElementById('winner-desc').innerText = desc;
+            document.getElementById('winner-text').innerText = data.winner;
+            document.getElementById('winner-desc').innerText = data.desc;
             
             if (isHost) {
                 const restartBtn = document.getElementById('btn-restart');
