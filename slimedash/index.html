@@ -51,7 +51,6 @@
             box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
         }
 
-        /* --- BOUTON STOP TEST --- */
         #btn-stop-test {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;
             background-color: rgba(255, 0, 127, 0.8);
@@ -395,8 +394,7 @@
                 img.src = `img/img${i}.jpg`;
                 bgImages.push(img);
             }
-            
-            platformImg.src = 'img/base.png'; // Le nouveau sol
+            platformImg.src = 'img/base.png'; 
             lucioleImg.src = 'img/luciole.png';
             carreImg.src = 'img/carre.png';       
             triangleImg.src = 'img/triangle.png'; 
@@ -795,7 +793,6 @@
                 }
             }
 
-            // REJOUER AVEC ESPACE / FLÈCHE HAUT
             window.addEventListener('keydown', (e) => {
                 if (e.code === 'Space' || e.code === 'ArrowUp') {
                     if (gameState.startsWith('PLAYING')) {
@@ -885,8 +882,19 @@
                             gameOver(false); return;
                         }
                     } 
+                    // --- COLLISION CONTEXTUELLE DU PIC (INVERSÉ OU NORMAL) ---
                     else if (obs.type === 'spike') {
-                        const hitY = (player.y + player.size - tolY > obsScreenY + obsSize * 0.4) && (player.y + tolY < obsScreenY + obsSize);
+                        let inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
+                        let hitY = false;
+                        
+                        if (inverted) {
+                            // Pic au plafond : zone mortelle sur la partie HAUTE de la case
+                            hitY = (player.y + tolY < obsScreenY + obsSize * 0.6) && (player.y + player.size - tolY > obsScreenY);
+                        } else {
+                            // Pic au sol : zone mortelle sur la partie BASSE de la case
+                            hitY = (player.y + player.size - tolY > obsScreenY + obsSize * 0.4) && (player.y + tolY < obsScreenY + obsSize);
+                        }
+                        
                         if (hitX && hitY) { gameOver(false); return; }
                     }
                     else if (obs.type === 'flag') {
@@ -983,25 +991,26 @@
                 }
             }
 
-            function drawEditorObject(type, screenX, screenY, alpha = 1) {
+            // --- FONCTION DE DESSIN CONTEXTUELLE ---
+            function drawEditorObject(type, screenX, screenY, alpha = 1, isInverted = false) {
                 ctx.globalAlpha = alpha;
                 
                 const VISUAL_SCALE = 1.5; 
                 const drawW = Math.floor(GRID_SIZE * VISUAL_SCALE);
                 const drawH = Math.floor(GRID_SIZE * VISUAL_SCALE);
                 const drawX = Math.floor(screenX - (drawW - GRID_SIZE) / 2);
-                const drawY = Math.floor(screenY - (drawH - GRID_SIZE) / 2);
-
-                // Echelle à +10% spécifique au CARRE (1.65)
+                
                 const BLOCK_SCALE = 1.65;
                 const blockW = Math.floor(GRID_SIZE * BLOCK_SCALE);
                 const blockH = Math.floor(GRID_SIZE * BLOCK_SCALE);
                 const blockX = Math.floor(screenX - (blockW - GRID_SIZE) / 2);
-                const blockY = Math.floor(screenY - (blockH - GRID_SIZE) / 2);
+                const blockAlignBottomY = screenY + GRID_SIZE - blockH;
+
+                const alignBottomY = screenY + GRID_SIZE - drawH;
 
                 if (type === 'block') {
                     if (carreImg.complete && carreImg.naturalWidth > 0) {
-                        ctx.drawImage(carreImg, blockX, blockY, blockW, blockH); 
+                        ctx.drawImage(carreImg, blockX, blockAlignBottomY + 27, blockW, blockH); 
                     } else {
                         ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
                         ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -1009,7 +1018,7 @@
                 } 
                 else if (type === 'pad') {
                     if (rebonImg.complete && rebonImg.naturalWidth > 0) {
-                        ctx.drawImage(rebonImg, drawX, drawY, drawW, drawH); 
+                        ctx.drawImage(rebonImg, drawX, alignBottomY + 20, drawW, drawH); 
                     } else {
                         ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
                         ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
@@ -1032,13 +1041,26 @@
                         ctx.beginPath(); ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
                     }
                 }
+                // --- DESSIN DU PIC (AVEC INVERSION SI NÉCESSAIRE) ---
                 else if (type === 'spike') {
+                    if (isInverted) {
+                        // Magie mathématique : on retourne tout l'espace de dessin autour du centre de la case
+                        ctx.save();
+                        ctx.translate(screenX + GRID_SIZE/2, screenY + GRID_SIZE/2);
+                        ctx.scale(1, -1);
+                        ctx.translate(-(screenX + GRID_SIZE/2), -(screenY + GRID_SIZE/2));
+                    }
+
                     if (triangleImg.complete && triangleImg.naturalWidth > 0) {
-                        ctx.drawImage(triangleImg, drawX, drawY, drawW, drawH); 
+                        ctx.drawImage(triangleImg, drawX, alignBottomY + 25, drawW, drawH); 
                     } else {
                         ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
                         ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
                         ctx.lineTo(screenX, screenY + GRID_SIZE); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+                    }
+
+                    if (isInverted) {
+                        ctx.restore();
                     }
                 }
                 else if (type === 'flag') {
@@ -1067,10 +1089,9 @@
 
                 const groundY = height - GROUND_HEIGHT;
 
-                // --- GESTION DU DÉFILEMENT DE BASE.PNG SANS DÉFAUT ---
                 if (platformImg.complete && platformImg.naturalWidth > 0) {
                     const scale = GROUND_HEIGHT / platformImg.naturalHeight;
-                    const pWidth = Math.ceil(platformImg.naturalWidth * scale); // Math.ceil évite les micro-coupures entre images
+                    const pWidth = Math.ceil(platformImg.naturalWidth * scale); 
                     let scrollX = Math.floor(cameraX) % pWidth;
                     for (let i = -scrollX; i < width; i += pWidth) {
                         ctx.drawImage(platformImg, i, groundY, pWidth, GROUND_HEIGHT);
@@ -1100,15 +1121,29 @@
                         const screenX = (obs.x * GRID_SIZE) - cameraX;
                         const screenY = groundY - ((obs.y + 1) * GRID_SIZE);
                         if(screenX + GRID_SIZE < 0 || screenX > width) return;
-                        drawEditorObject(obs.type, screenX, screenY);
+                        
+                        // Détection contextuelle pour l'inversion du pic
+                        let inverted = false;
+                        if (obs.type === 'spike') {
+                            inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
+                        }
+                        
+                        drawEditorObject(obs.type, screenX, screenY, 1, inverted);
                     });
                 }
 
                 if (gameState === 'EDITOR' && isHovering) {
                     const ghostScreenX = (hoverGridX * GRID_SIZE) - cameraX;
                     const ghostScreenY = currentTool === 'hole' ? groundY : groundY - ((hoverGridY + 1) * GRID_SIZE);
-                    if (currentTool === 'eraser') { ctx.fillStyle = 'rgba(255, 0, 127, 0.4)'; ctx.fillRect(ghostScreenX, ghostScreenY, GRID_SIZE, GRID_SIZE); } 
-                    else { drawEditorObject(currentTool, ghostScreenX, ghostScreenY, 0.5); }
+                    if (currentTool === 'eraser') { 
+                        ctx.fillStyle = 'rgba(255, 0, 127, 0.4)'; ctx.fillRect(ghostScreenX, ghostScreenY, GRID_SIZE, GRID_SIZE); 
+                    } else { 
+                        let inverted = false;
+                        if (currentTool === 'spike') {
+                            inverted = levelData.some(o => o.x === hoverGridX && o.y === hoverGridY + 1 && o.type === 'block');
+                        }
+                        drawEditorObject(currentTool, ghostScreenX, ghostScreenY, 0.5, inverted); 
+                    }
                 }
 
                 let currentArray = sprites.idle;
