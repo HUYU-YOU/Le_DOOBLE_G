@@ -12,15 +12,14 @@
            ========================================= */
         :root {
             --bg-color: #0b0c10;
-            --container-bg: #1a1e24; /* Couleur gris/bleu sombre du Drawer */
-            --inner-bg: #0d1117;     /* Couleur plus sombre pour les inputs/box */
+            --container-bg: #1a1e24;
+            --inner-bg: #0d1117;
             --neon-cyan: #00e5ff;
             --neon-pink: #ff007f;
             --neon-green: #39ff14;
             --neon-yellow: #fce803;
             --neon-purple: #9b59b6;
             --text-color: #e0e0e0;
-            /* Police plus moderne pour l'UI, monospace pour les logs */
             --font-ui: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             --font-mono: 'Courier New', Courier, monospace;
         }
@@ -40,7 +39,7 @@
         }
 
         /* =========================================
-           2. BOUTON RETOUR HUB
+           2. BOUTON RETOUR HUB & TIMER
            ========================================= */
         #btn-retour-hub {
             position: fixed; top: 20px; left: 20px; z-index: 9999;
@@ -53,7 +52,13 @@
         }
         #btn-retour-hub:hover { background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.5); }
 
-        /* Titre Haut de page */
+        #timer-display {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            font-size: 1.5rem; font-weight: bold; color: var(--neon-yellow);
+            text-shadow: 0 0 10px rgba(252, 232, 3, 0.8); display: none;
+            background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 8px; border: 1px solid var(--neon-yellow);
+        }
+
         .main-title {
             color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
             text-transform: uppercase; margin-top: 50px; margin-bottom: 20px;
@@ -61,7 +66,7 @@
         }
 
         /* =========================================
-           3. CONTENEUR PRINCIPAL (Style Drawer)
+           3. CONTENEUR PRINCIPAL
            ========================================= */
         .container {
             background: var(--container-bg);
@@ -72,7 +77,6 @@
         }
 
         .no-swipe { touch-action: none; }
-
         h2, h3 { color: var(--neon-cyan); margin-top: 0; margin-bottom: 15px; font-weight: 600; }
         
         /* =========================================
@@ -86,7 +90,6 @@
         }
         input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
 
-        /* Boutons Solid Neon (Style Drawer) */
         .btn-solid {
             width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px;
             font-size: 1.1rem; font-weight: bold; text-transform: uppercase;
@@ -94,55 +97,41 @@
         }
         .btn-solid:active { transform: scale(0.98); }
         
-        .btn-pink {
-            background-color: var(--neon-pink); color: #fff;
-            box-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
-        }
+        .btn-pink { background-color: var(--neon-pink); color: #fff; box-shadow: 0 0 15px rgba(255, 0, 127, 0.5); }
         .btn-pink:hover { box-shadow: 0 0 25px rgba(255, 0, 127, 0.8); }
 
-        .btn-cyan {
-            background-color: var(--neon-cyan); color: #000;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
-        }
+        .btn-cyan { background-color: var(--neon-cyan); color: #000; box-shadow: 0 0 15px rgba(0, 229, 255, 0.5); }
         .btn-cyan:hover { box-shadow: 0 0 25px rgba(0, 229, 255, 0.8); }
 
-        /* Boutons secondaires (Outlined) */
         .btn-outline {
             background: transparent; border: 2px solid gray; color: gray;
-            padding: 10px; border-radius: 6px; cursor: pointer; transition: 0.3s;
+            padding: 10px; border-radius: 6px; cursor: pointer; transition: 0.3s; margin: 5px;
         }
+        /* Selection visual pour les votes */
+        .btn-outline.selected { background-color: rgba(255,255,255,0.1); transform: scale(1.05); }
 
-        /* Lang Selector (Drapeaux/Boutons) */
         .lang-selector { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
         .lang-btn { 
             background: transparent; border: none; font-size: 2rem; 
-            cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 0;
-            filter: grayscale(100%);
+            cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 0; filter: grayscale(100%);
         }
         .lang-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 10px rgba(255,255,255,0.5)); transform: scale(1.1); }
 
         /* =========================================
-           5. ZONES SPÉCIFIQUES (LOBBY & JEU)
+           5. ZONES SPÉCIFIQUES
            ========================================= */
         .share-code-text { font-size: 1.1rem; color: #aaa; margin-bottom: 20px; }
         .share-code-val { color: var(--neon-cyan); font-weight: bold; font-size: 1.6rem; letter-spacing: 2px; user-select: all; }
 
-        /* Player Connected Box */
         .player-box {
-            background: var(--inner-bg);
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-radius: 8px; padding: 15px; margin-bottom: 20px;
-            min-height: 80px; text-align: center;
+            background: var(--inner-bg); border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 8px; padding: 15px; margin-bottom: 20px; min-height: 80px; text-align: center;
         }
         .player-box h4 { margin: 0 0 15px 0; color: #fff; font-weight: 500; }
         
         .players-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .player-badge {
-            background: transparent; border: 1px solid #555; color: #ccc;
-            padding: 6px 12px; border-radius: 4px; font-size: 0.9rem;
-        }
+        .player-badge { background: transparent; border: 1px solid #555; color: #ccc; padding: 6px 12px; border-radius: 4px; font-size: 0.9rem; }
 
-        /* Config Grid */
         .config-grid { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; 
             background: var(--inner-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;
@@ -150,7 +139,6 @@
         .checkbox-group { display: flex; align-items: center; justify-content: space-between; font-size: 0.95rem; }
         input[type="checkbox"] { accent-color: var(--neon-pink); width: 18px; height: 18px; }
 
-        /* Game Area */
         #game-area { display: none; }
         .role-card {
             border: 2px solid var(--neon-cyan); padding: 20px; margin: 20px 0;
@@ -165,24 +153,25 @@
         }
 
         #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--neon-yellow); padding: 20px; border-radius: 8px; box-shadow: 0 0 20px rgba(252, 232, 3, 0.2); background: var(--inner-bg);}
+
+        /* Chat Loup-Garou */
+        #ww-chat-container { display: none; border: 1px solid var(--neon-pink); background: rgba(255,0,127,0.05); padding: 10px; border-radius: 8px; margin-bottom: 20px;}
+        #ww-chat-messages { height: 100px; overflow-y: auto; text-align: left; margin-bottom: 10px; font-size: 0.9em; color: #fff; }
+        #ww-chat-messages p { margin: 2px 0; }
+        .ww-chat-sender { color: var(--neon-pink); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <!-- BOUTON RETOUR HUB -->
-    <a href="../index.html" id="btn-retour-hub">
-        &#11013; Retour au Hub
-    </a>
+    <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
+    <div id="timer-display">05:00</div>
 
-    <!-- MEDIA DYNAMIQUE -->
     <video id="bg-video" autoplay loop muted playsinline>
-        <!-- FIX 1 : Ajout de "img/" au chemin du fichier -->
         <source id="bg-video-source" src="img/backgroundnight.mp4" type="video/mp4">
     </video>
     <div id="yt-player" style="display: none;"></div>
 
     <script>
-        // Swipe global protection pour le Hub
         document.addEventListener('touchstart', (e) => {
             if(e.target.closest('.no-swipe')) { e.stopPropagation(); }
         }, {passive: false});
@@ -192,29 +181,21 @@
 
     <div class="container no-swipe">
         
-        <!-- MENU PRINCIPAL -->
         <div id="menu">
             <h2 class="ui-text" data-key="menuTitle" style="color: #fff;">Connexion</h2>
-            
             <button id="btn-create" class="btn-solid btn-cyan ui-text" data-key="btnCreate">Créer une partie</button>
-            
             <hr style="border-color: rgba(255,255,255,0.1); margin: 25px 0;">
-            
             <input type="text" id="join-id" placeholder="Code de la partie (ex: GAR8369)" style="text-transform: uppercase;">
             <input type="text" id="player-name" placeholder="Votre Pseudo">
             <button id="btn-join" class="btn-solid btn-pink ui-text" data-key="btnJoin">Rejoindre</button>
         </div>
 
-        <!-- LOBBY -->
         <div id="lobby" style="display: none;">
             <h2 class="ui-text" data-key="configTitle">Configuration</h2>
-            
             <p class="share-code-text">
                 <span class="ui-text" data-key="shareText">Partagez ce code aux joueurs :</span> 
                 <span id="my-id" class="share-code-val">Génération...</span>
             </p>
-            
-            <!-- Zone Joueurs -->
             <div class="player-box">
                 <h4 class="ui-text" data-key="playersConnected">Player connected :</h4>
                 <div id="players-list-container" class="players-container">
@@ -222,14 +203,12 @@
                 </div>
             </div>
 
-            <!-- Langues -->
             <p style="color: #fff; font-weight: 500; margin-bottom: 5px;" class="ui-text" data-key="dictLang">Dictionary language</p>
             <div class="lang-selector">
                 <button id="lang-fr" class="lang-btn active" title="Français">🇫🇷</button>
                 <button id="lang-en" class="lang-btn" title="English">🇬🇧</button>
             </div>
 
-            <!-- Configuration Hôte -->
             <div id="host-config" style="display: none;">
                 <div class="config-grid">
                     <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -248,7 +227,6 @@
             <p id="waiting-host-msg" style="color: gray; display:none;" class="ui-text" data-key="waitingHost">En attente de l'hôte...</p>
         </div>
 
-        <!-- ZONE DE JEU -->
         <div id="game-area" class="no-swipe">
             <h2 id="phase-title" style="color: #fff;">...</h2>
             
@@ -259,10 +237,19 @@
                 <p id="lovers-info" style="color: #ff69b4; font-weight: bold; display:none;"></p>
             </div>
 
+            <!-- CHAT GAROU (Nuit Seulement) -->
+            <div id="ww-chat-container">
+                <h4 style="color: var(--neon-pink); margin-top:0;">Canal Sécurisé : Loups-Garous</h4>
+                <div id="ww-chat-messages"></div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="ww-chat-input" placeholder="Message..." style="margin:0; flex-grow: 1; padding: 8px;">
+                    <button onclick="sendWWChat()" class="btn-solid btn-pink" style="margin:0; padding: 8px 15px; width: auto;">Go</button>
+                </div>
+            </div>
+
             <h3 class="ui-text" data-key="actionInterface" style="color: #fff; font-size: 1.2rem;">Action</h3>
             <div id="action-panel" style="margin-bottom: 20px; min-height: 50px;"></div>
 
-            <!-- ECRAN DE FIN DE JEU -->
             <div id="game-over-screen">
                 <h2 id="winner-text" style="color: var(--neon-yellow);">...</h2>
                 <p id="winner-desc" style="color: white;"></p>
@@ -272,7 +259,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT COMPLET INTACT (LOGIQUE DE JEU) -->
     <script>
         // ==========================================
         // 🎵 GESTION AUDIO & VIDEO (YOUTUBE API)
@@ -311,11 +297,9 @@
             video.style.opacity = 0;
             setTimeout(() => {
                 if (type === 'day') {
-                    // FIX 2 : Ajout de "img/" au chemin du fichier
                     vidSource.src = 'img/backgroundday.mp4';
                     if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_DAY});
                 } else {
-                    // FIX 2 : Ajout de "img/" au chemin du fichier
                     vidSource.src = 'img/backgroundnight.mp4';
                     if(ytPlayer) ytPlayer.loadVideoById({videoId: YOUTUBE_NIGHT});
                 }
@@ -324,12 +308,11 @@
         }
 
         // ==========================================
-        // 🌍 DICTIONNAIRE MULTILINGUE (CHEMINS REVISES)
+        // 🌍 DICTIONNAIRE MULTILINGUE
         // ==========================================
         const i18n = {
             fr: {
                 roles: {
-                    // FIX 3 : Ajout de "img/" devant toutes les images
                     werewolf: { name: "Slime-Garou", desc: "Dévore un joueur chaque nuit.", img: "img/garou.png", color: "var(--neon-pink)" },
                     seer: { name: "Voyante", desc: "Scanne l'identité d'un joueur la nuit.", img: "img/voyante.png", color: "var(--neon-cyan)" },
                     witch: { name: "Sorcière", desc: "Possède une potion de soin et une de poison.", img: "img/sorciere.png", color: "var(--neon-purple)" },
@@ -343,7 +326,7 @@
                     playersConnected: "Joueurs connectés :", dictLang: "Langue du jeu",
                     cfgWolves: "Nb Garous :", roleSeer: "Voyante", roleWitch: "Sorcière", roleCupid: "Cupidon", roleHunter: "Chasseur",
                     btnStart: "Lancer la partie", waitingHost: "En attente du lancement par l'hôte...",
-                    actionInterface: "Actions", waiting: "En attente des autres joueurs...", dead: "VOUS ÊTES MORT. Connexion rompue.",
+                    actionInterface: "Actions", waiting: "Vote enregistré. En attente...", dead: "VOUS ÊTES MORT. Connexion rompue.",
                     sleep: "Ferme les yeux, le village s'endort...",
                     selectTarget: "Choisissez une cible :", healMsg: "Ressusciter", poisonMsg: "Empoisonner", skipMsg: "Passer",
                     loversLinked: "Tu es secrètement lié à :"
@@ -351,7 +334,6 @@
             },
             en: {
                 roles: {
-                    // FIX 3 : Ajout de "img/"
                     werewolf: { name: "Werewolf", desc: "Devour a player every night.", img: "img/werewolf.png", color: "var(--neon-pink)" },
                     seer: { name: "Seer", desc: "Scan a player's identity at night.", img: "img/seer.png", color: "var(--neon-cyan)" },
                     witch: { name: "Witch", desc: "Has one heal and one poison potion.", img: "img/witch.png", color: "var(--neon-purple)" },
@@ -365,7 +347,7 @@
                     playersConnected: "Player connected:", dictLang: "Dictionary language",
                     cfgWolves: "Werewolves:", roleSeer: "Seer", roleWitch: "Witch", roleCupid: "Cupid", roleHunter: "Hunter",
                     btnStart: "Start Game", waitingHost: "Waiting for host to start...",
-                    actionInterface: "Action", waiting: "Waiting for other players...", dead: "YOU ARE DEAD. Connection lost.",
+                    actionInterface: "Action", waiting: "Vote saved. Waiting for others...", dead: "YOU ARE DEAD. Connection lost.",
                     sleep: "Close your eyes, the village goes to sleep...",
                     selectTarget: "Select a target:", healMsg: "Heal", poisonMsg: "Poison", skipMsg: "Skip",
                     loversLinked: "You are secretly bound to:"
@@ -393,13 +375,14 @@
         // ==========================================
         let peer = null;
         let connections = []; 
-        let clientPlayers = []; // FIX 4 : Garde trace de l'état vital des autres joueurs pour le client
-        let wolfPartners = []; // FIX 5 : Liste des alliés loups-garous reçue par le client
+        let clientPlayers = []; 
+        let wolfPartners = []; 
         let isHost = false;
         let myName = "Hôte";
         let myRole = "";
         let witchPotions = { heal: 1, poison: 1 };
         let firstNight = true; 
+        let phaseTimer = null; // Timer du Jour
 
         const menuDiv = document.getElementById('menu');
         const lobbyDiv = document.getElementById('lobby');
@@ -412,25 +395,22 @@
             logArea.scrollTop = logArea.scrollHeight;
         }
 
-        // INIT PEER AVEC IDENTIFIANT CUSTOM
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
         function initPeer(callback, customId = null) {
             peer = customId ? new Peer(customId) : new Peer();
-            
-            peer.on('open', (id) => { 
-                if(callback) callback(id); 
-            });
-            
+            peer.on('open', (id) => { if(callback) callback(id); });
             peer.on('error', (err) => { 
-                if (err.type === 'unavailable-id') {
-                    alert("Ce code serveur existe déjà ou est indisponible. Veuillez réessayer.");
-                } else {
-                    alert("Erreur Réseau : " + err); 
-                }
+                if (err.type === 'unavailable-id') alert("Ce code serveur existe déjà.");
+                else alert("Erreur Réseau : " + err); 
             });
         }
 
         function broadcast(data) {
-            // FIX 6 : Le client a besoin de l'état des joueurs à chaque phase pour pouvoir cibler
             if (data.type === 'phase_change') {
                 data.players = connections.map(c => ({ name: c.name, isAlive: c.isAlive }));
             }
@@ -438,16 +418,14 @@
         }
 
         // ==========================================
-        // 👑 HÔTE : CRÉATION & RÉCEPTION RÉSEAU
+        // 👑 HÔTE : CRÉATION & RÉCEPTION
         // ==========================================
         document.getElementById('btn-create').addEventListener('click', () => {
             initAudio(); 
             isHost = true;
-
             myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
 
-            menuDiv.style.display = 'none';
-            lobbyDiv.style.display = 'block';
+            menuDiv.style.display = 'none'; lobbyDiv.style.display = 'block';
             document.getElementById('host-config').style.display = 'block';
             
             connections.push({ isHost: true, name: myName, role: null, isAlive: true, id: 'host' });
@@ -455,9 +433,7 @@
 
             const roomId = 'GAR' + Math.floor(1000 + Math.random() * 9000);
 
-            initPeer((id) => { 
-                document.getElementById('my-id').innerText = id; 
-            }, roomId);
+            initPeer((id) => { document.getElementById('my-id').innerText = id; }, roomId);
 
             peer.on('connection', (conn) => {
                 conn.on('data', (data) => {
@@ -471,7 +447,7 @@
                             document.getElementById('min-players-msg').style.display = 'none';
                         }
                     } 
-                    else if (data.type === 'action') {
+                    else if (data.type === 'action' || data.type === 'ww_chat') {
                         handleNetworkAction(conn.peer, data);
                     }
                 });
@@ -479,20 +455,16 @@
         });
 
         // ==========================================
-        // 👾 CLIENT : CONNEXION & RÉCEPTION RÉSEAU
+        // 👾 CLIENT : CONNEXION & RÉCEPTION
         // ==========================================
         document.getElementById('btn-join').addEventListener('click', () => {
             initAudio(); 
             const hostId = document.getElementById('join-id').value.trim().toUpperCase();
             myName = document.getElementById('player-name').value.trim() || "Agent_" + Math.floor(Math.random()*100);
             
-            if(!hostId) {
-                alert("Veuillez entrer un code de partie.");
-                return;
-            }
+            if(!hostId) { alert("Veuillez entrer un code."); return; }
 
-            menuDiv.style.display = 'none';
-            lobbyDiv.style.display = 'block';
+            menuDiv.style.display = 'none'; lobbyDiv.style.display = 'block';
             document.getElementById('waiting-host-msg').style.display = 'block'; 
             document.getElementById('my-id').innerText = hostId;
 
@@ -506,48 +478,43 @@
                 conn.on('data', (data) => {
                     if (data.type === 'lobby_update') {
                         generatePlayerBadges(data.list);
-                        // On initialise la liste locale
                         clientPlayers = data.list.map(n => ({ name: n, isAlive: true }));
                     }
                     else if (data.type === 'game_start') {
-                        lobbyDiv.style.display = 'none';
-                        gameArea.style.display = 'block';
-                        // Récupération des alliés (Loups)
+                        lobbyDiv.style.display = 'none'; gameArea.style.display = 'block';
                         if (data.extra && data.extra.wolves) wolfPartners = data.extra.wolves;
-                        setupRoleUI(data.role);
-                        addLog("Game Initialized.");
+                        setupRoleUI(data.role); addLog("Game Initialized.");
                     }
                     else if (data.type === 'phase_change') {
                         addLog(data.message);
-                        // Synchronisation de l'état des joueurs envoyé par l'Hôte
                         if (data.players) clientPlayers = data.players;
                         updateClientUI(data.phase, data.message, data.extra);
                     }
-                    // FIX 7 : La Voyante a besoin d'un retour du serveur
                     else if (data.type === 'seer_result') {
                         addLog(`[VISION] ${data.result}`);
                         document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan)">${data.result}</p>`;
                     }
                     else if (data.type === 'lovers_linked') {
                         const loveInfo = document.getElementById('lovers-info');
-                        loveInfo.style.display = 'block';
-                        loveInfo.innerText = `${i18n[currentLang].ui.loversLinked} ${data.partner}`;
+                        loveInfo.style.display = 'block'; loveInfo.innerText = `${i18n[currentLang].ui.loversLinked} ${data.partner}`;
                         addLog("Tu es lié par Cupidon.");
                     }
-                    else if (data.type === 'game_over') {
-                        showGameOver(data.winner, data.desc);
-                    }
+                    else if (data.type === 'game_over') { showGameOver(data.winner, data.desc); }
+                    else if (data.type === 'timer_tick') { updateTimerUI(data.time); }
+                    else if (data.type === 'ww_chat_recv') { displayWWChat(data.sender, data.text); }
                 });
             });
         });
 
-        function updatePlayerListUI() {
-            generatePlayerBadges(connections.map(c => c.name));
-        }
-
+        function updatePlayerListUI() { generatePlayerBadges(connections.map(c => c.name)); }
         function generatePlayerBadges(namesList) {
             const container = document.getElementById('players-list-container');
             container.innerHTML = namesList.map(n => `<span class="player-badge">${n}</span>`).join('');
+        }
+        function updateTimerUI(timeLeft) {
+            const timerEl = document.getElementById('timer-display');
+            timerEl.innerText = formatTime(timeLeft);
+            timerEl.style.display = timeLeft > 0 ? 'block' : 'none';
         }
 
         // ==========================================
@@ -556,13 +523,9 @@
         document.getElementById('btn-start').addEventListener('click', () => {
             const numPlayers = connections.length;
             const nbWolves = parseInt(document.getElementById('cfg-wolves').value);
-            
             let roles = [];
             
-            for(let i=0; i<nbWolves; i++) {
-                if (roles.length < numPlayers) roles.push('werewolf');
-            }
-            
+            for(let i=0; i<nbWolves; i++) { if (roles.length < numPlayers) roles.push('werewolf'); }
             let specialRoles = [];
             if (document.getElementById('cfg-seer').checked) specialRoles.push('seer');
             if (document.getElementById('cfg-witch').checked) specialRoles.push('witch');
@@ -570,29 +533,18 @@
             if (document.getElementById('cfg-hunter').checked) specialRoles.push('hunter');
             
             specialRoles.sort(() => Math.random() - 0.5);
-
-            for (let role of specialRoles) {
-                if (roles.length < numPlayers) roles.push(role);
-            }
-            
-            while(roles.length < numPlayers) {
-                roles.push('villager');
-            }
-            
+            for (let role of specialRoles) { if (roles.length < numPlayers) roles.push(role); }
+            while(roles.length < numPlayers) { roles.push('villager'); }
             roles.sort(() => Math.random() - 0.5);
 
             connections.forEach((c, index) => {
                 c.role = roles[index];
                 if(c.isHost) {
-                    lobbyDiv.style.display = 'none';
-                    gameArea.style.display = 'block';
+                    lobbyDiv.style.display = 'none'; gameArea.style.display = 'block';
                     setupRoleUI(c.role);
                 } else {
-                    // L'hôte informe les loups de leurs partenaires
                     let extraData = {};
-                    if (c.role === 'werewolf') {
-                        extraData.wolves = connections.filter(w => w.role === 'werewolf').map(w => w.name);
-                    }
+                    if (c.role === 'werewolf') extraData.wolves = connections.filter(w => w.role === 'werewolf').map(w => w.name);
                     c.conn.send({ type: 'game_start', role: c.role, extra: extraData });
                 }
             });
@@ -611,10 +563,11 @@
                 const p = connections.find(c => c.name === targetName);
                 if(p && p.role === 'hunter') gameState.pendingHunter = targetName;
 
+                // Logique Cupidon : Partenaire meurt aussi
                 if(gameState.lovers.includes(targetName)) {
                     const partner = gameState.lovers.find(l => l !== targetName);
                     if(partner && !gameState.deadTonight.includes(partner)) {
-                        addLog(`[SYSTEM] ${partner} meurt de chagrin.`);
+                        addLog(`[SYSTEM] L'amour brise le coeur de ${partner}. Décès immédiat.`);
                         killPlayer(partner); 
                     }
                 }
@@ -636,8 +589,8 @@
             }
 
             if (winner) {
-                broadcast({ type: 'game_over', winner: winner, desc: desc });
-                showGameOver(winner, desc);
+                clearInterval(phaseTimer); broadcast({ type: 'timer_tick', time: 0 }); updateTimerUI(0);
+                broadcast({ type: 'game_over', winner: winner, desc: desc }); showGameOver(winner, desc);
                 return true; 
             }
             return false;
@@ -647,11 +600,12 @@
             gameState.deadTonight.forEach(d => { let p = connections.find(c => c.name === d); if(p) p.isAlive = false; });
             if(checkWinCondition()) return;
 
+            // Phase Chasseur si activé
             if(gameState.pendingHunter) {
                 const hunterName = gameState.pendingHunter;
                 gameState.pendingHunter = null; gameState.nextPhaseAfterHunter = nextPhaseFunc; 
                 gameState.phase = 'day_hunter';
-                const msg = `⚠️ ALERTE : Le Chasseur (${hunterName}) s'effondre...`;
+                const msg = `⚠️ ALERTE : Le Chasseur (${hunterName}) s'effondre et épaule son arme...`;
                 addLog(msg);
                 broadcast({ type: 'phase_change', phase: 'day_hunter', message: msg, extra: { hunter: hunterName } });
                 updateClientUI('day_hunter', msg, { hunter: hunterName });
@@ -660,7 +614,6 @@
             }
         }
 
-        // FIX 8 : Ordre de la nuit corrigé (Cupidon -> Voyante -> Garous -> Sorcière)
         function startNightPhase() {
             gameState.votes = {};
             if(firstNight && connections.find(c => c.role === 'cupid' && c.isAlive)) startCupidPhase();
@@ -688,7 +641,7 @@
 
         function startWitchPhase() {
             gameState.phase = 'night_witch';
-            const extraData = { dead: gameState.deadTonight[0] }; // La victime principale
+            const extraData = { dead: gameState.deadTonight[0] };
             broadcast({ type: 'phase_change', phase: 'night_witch', message: "[Night] Sorcière...", extra: extraData });
             updateClientUI('night_witch', "[Night] Sorcière...", extraData);
             if (!connections.find(c => c.role === 'witch' && c.isAlive)) setTimeout(() => endNightPhase(), 3000);
@@ -696,20 +649,74 @@
 
         function endNightPhase() {
             firstNight = false;
-            let deathMsg = gameState.deadTonight.length > 0 ? `Code mort: ${gameState.deadTonight.join(', ')}` : "Aucun mort.";
+            let deathMsg = gameState.deadTonight.length > 0 ? `Code mort: ${gameState.deadTonight.join(', ')}` : "Aucun mort ce matin.";
             addLog(`[DAY] ${deathMsg}`);
-            processDeathsAndContinue(() => {
-                gameState.phase = 'day_vote'; gameState.votes = {};
-                const msg = `[DAY] Débattez et votez.`;
-                broadcast({ type: 'phase_change', phase: 'day_vote', message: msg });
-                updateClientUI('day_vote', msg);
-            });
+            processDeathsAndContinue(() => { startDayVote(); });
+        }
+
+        function startDayVote() {
+            gameState.phase = 'day_vote'; gameState.votes = {};
+            const msg = `[DAY] Débattez et votez (5 minutes).`;
+            broadcast({ type: 'phase_change', phase: 'day_vote', message: msg });
+            updateClientUI('day_vote', msg);
+
+            // Timer 300 secondes (5 Minutes)
+            let timeLeft = 300; 
+            clearInterval(phaseTimer);
+            updateTimerUI(timeLeft); broadcast({ type: 'timer_tick', time: timeLeft });
+            
+            phaseTimer = setInterval(() => {
+                timeLeft--;
+                updateTimerUI(timeLeft); broadcast({ type: 'timer_tick', time: timeLeft });
+                if(timeLeft <= 0) resolveDayVote(); 
+            }, 1000);
+        }
+
+        function calculateVoteResult(voteDict) {
+            const counts = {};
+            Object.values(voteDict).forEach(v => counts[v] = (counts[v] || 0) + 1);
+            let max = 0; let tied = [];
+            for(let t in counts) {
+                if(counts[t] > max) { max = counts[t]; tied = [t]; }
+                else if (counts[t] === max) { tied.push(t); }
+            }
+            if (tied.length === 0) return null;
+            // Choix aléatoire si égalité 50/50
+            return tied[Math.floor(Math.random() * tied.length)];
+        }
+
+        function resolveDayVote() {
+            clearInterval(phaseTimer); updateTimerUI(0); broadcast({ type: 'timer_tick', time: 0 });
+            
+            if(Object.keys(gameState.votes).length === 0) {
+                addLog(`[VOTE] Le temps est écoulé sans vote. Pas d'exécution.`);
+                setTimeout(() => { processDeathsAndContinue(() => { startNightPhase(); }); }, 3000);
+                return;
+            }
+
+            const targetName = calculateVoteResult(gameState.votes);
+            killPlayer(targetName); addLog(`[VOTE] Le village a lynché : ${targetName}`);
+            setTimeout(() => { processDeathsAndContinue(() => { startNightPhase(); }); }, 3000);
         }
 
         // --- ROUTEUR D'ACTIONS RÉSEAU ---
         function handleNetworkAction(clientId, data) {
             const sender = connections.find(c => c.id === clientId || (c.isHost && clientId === 'host'));
             if (!sender) return; 
+
+            // Gestion du chat Garou
+            if (data.type === 'ww_chat') {
+                const chatMsg = { type: 'ww_chat_recv', sender: sender.name, text: data.text };
+                connections.forEach(c => {
+                    if (c.role === 'werewolf') {
+                        if (c.isHost) displayWWChat(sender.name, data.text);
+                        else if (c.conn && c.conn.open) c.conn.send(chatMsg);
+                    }
+                });
+                return;
+            }
+
+            // Vérification de mort
             if (!sender.isAlive && !(gameState.phase === 'day_hunter' && data.role === 'hunter' && sender.name === data.extra?.hunter)) {
                 if(gameState.phase !== 'day_hunter') return;
             }
@@ -726,45 +733,43 @@
                         else { c.conn.send({ type: 'lovers_linked', partner: data.target1 }); }
                     }
                 });
-                setTimeout(() => startSeerPhase(), 2000); // Suite après Cupidon
+                setTimeout(() => startSeerPhase(), 2000); 
             }
             else if (gameState.phase === 'night_seer' && data.role === 'seer') {
                 const targetInfo = connections.find(c => c.name === data.target);
                 if(targetInfo) {
                     const resultMsg = `${targetInfo.name} est ${i18n[currentLang].roles[targetInfo.role].name}`;
-                    if(sender.isHost) addLog(`[VISION] ${resultMsg}`);
+                    if(sender.isHost) { addLog(`[VISION] ${resultMsg}`); document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan)">${resultMsg}</p>`;}
                     else sender.conn.send({ type: 'seer_result', result: resultMsg });
                 }
-                setTimeout(() => startWolvesPhase(), 1500); // Suite après Voyante
+                setTimeout(() => startWolvesPhase(), 2500); 
             }
             else if (gameState.phase === 'night_wolves' && data.role === 'werewolf') {
                 gameState.votes[sender.name] = data.target;
                 const aliveWolves = connections.filter(c => c.role === 'werewolf' && c.isAlive);
                 if (Object.keys(gameState.votes).length === aliveWolves.length) {
-                    killPlayer(Object.values(gameState.votes)[0]);
-                    setTimeout(() => startWitchPhase(), 1500); // Suite après Garous
+                    const finalTarget = calculateVoteResult(gameState.votes);
+                    if (finalTarget) killPlayer(finalTarget);
+                    setTimeout(() => startWitchPhase(), 1500);
                 }
             }
             else if (gameState.phase === 'night_witch' && data.role === 'witch') {
                 if (data.action === 'heal' && gameState.deadTonight.includes(data.target)) {
                     gameState.deadTonight = gameState.deadTonight.filter(n => n !== data.target); 
                 } else if (data.action === 'poison') { killPlayer(data.target); }
-                setTimeout(() => endNightPhase(), 1500); // Fin de la nuit
+                setTimeout(() => endNightPhase(), 1500);
             }
             else if (gameState.phase === 'day_vote') {
                 gameState.votes[sender.name] = data.target;
                 const alivePlayers = connections.filter(c => c.isAlive);
+                // Si tous les joueurs en vie ont voté, on skip le chrono
                 if (Object.keys(gameState.votes).length === alivePlayers.length) {
-                    const voteCounts = {};
-                    Object.values(gameState.votes).forEach(v => voteCounts[v] = (voteCounts[v] || 0) + 1);
-                    const targetName = Object.keys(voteCounts).reduce((a, b) => voteCounts[a] > voteCounts[b] ? a : b);
-                    killPlayer(targetName); addLog(`Le village a déconnecté : ${targetName}`);
-                    setTimeout(() => { processDeathsAndContinue(() => { startNightPhase(); }); }, 3000);
+                    resolveDayVote();
                 }
             }
             else if (gameState.phase === 'day_hunter' && data.role === 'hunter') {
-                const targetName = data.target; addLog(`PAN ! Le Chasseur emporte ${targetName}`);
-                gameState.deadTonight = []; killPlayer(targetName);
+                const targetName = data.target; addLog(`PAN ! Le Chasseur emporte ${targetName} dans la mort.`);
+                gameState.deadTonight = []; killPlayer(targetName); // Reset dead array pour eviter loop, puis kill
                 setTimeout(() => { processDeathsAndContinue(gameState.nextPhaseAfterHunter); }, 2000);
             }
         }
@@ -772,8 +777,17 @@
         // ==========================================
         // 🖥️ INTERFACE ET ENVOI CLIENT
         // ==========================================
-        function sendActionToServer(data) {
-            document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan)">${i18n[currentLang].ui.waiting}</p>`;
+        function sendActionToServer(data, btnElement = null) {
+            // Remplace l'UI par un message d'attente (sauf pour certains votes qui demandent confirmation)
+            if (btnElement && (data.role === 'day' || data.role === 'werewolf')) {
+                document.querySelectorAll('#action-panel button').forEach(b => b.classList.remove('selected'));
+                btnElement.classList.add('selected');
+                // Optionnel : ne pas vider l'UI tout de suite pour montrer le choix, on pourrait juste désactiver les autres
+                document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan)">${i18n[currentLang].ui.waiting}</p>`;
+            } else {
+                document.getElementById('action-panel').innerHTML = `<p style="color:var(--neon-cyan)">${i18n[currentLang].ui.waiting}</p>`;
+            }
+
             if (isHost) handleNetworkAction('host', data);
             else connections[0].conn.send(data);
         }
@@ -784,10 +798,14 @@
             panel.innerHTML = ''; 
             const langUI = i18n[currentLang].ui;
 
-            if (phase.includes('day')) setMediaEnvironment('day');
-            else if (phase.includes('night')) setMediaEnvironment('night');
+            // Gestion de l'affichage du Chat Garou
+            const wwChat = document.getElementById('ww-chat-container');
+            if (myRole === 'werewolf' && phase.startsWith('night')) wwChat.style.display = 'block';
+            else wwChat.style.display = 'none';
 
-            // FIX 9 : On utilise la liste appropriée selon si on est Hôte ou Client
+            if (phase.includes('day')) { setMediaEnvironment('day'); }
+            else if (phase.includes('night')) { setMediaEnvironment('night'); document.getElementById('timer-display').style.display='none'; }
+
             const playerList = isHost ? connections : clientPlayers;
             const alivePlayers = playerList.filter(c => c.isAlive && c.name !== myName);
             const allAlivePlayers = playerList.filter(c => c.isAlive); 
@@ -796,8 +814,11 @@
             if (phase === 'day_hunter') {
                 if (myName === extra.hunter) {
                     panel.innerHTML = `<p style="color:var(--neon-yellow);">DERNIER SOUFFLE ! Choisis qui emporter :</p>`;
-                    allAlivePlayers.forEach(c => { panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', () => sendActionToServer({type:'action', role:'hunter', target: c.name, extra: {hunter: myName}}))); });
-                } else { panel.innerHTML = `<p style="color:red;">À couvert ! Le Chasseur arme son arme...</p>`; }
+                    allAlivePlayers.forEach(c => { 
+                        let btn = createBtn(c.name, 'var(--neon-yellow)', function() { sendActionToServer({type:'action', role:'hunter', target: c.name, extra: {hunter: myName}}, this); });
+                        panel.appendChild(btn); 
+                    });
+                } else { panel.innerHTML = `<p style="color:red;">À couvert ! Le Chasseur s'effondre et tire...</p>`; }
                 return; 
             }
 
@@ -806,8 +827,8 @@
             if (phase === 'night_cupid' && myRole === 'cupid') {
                 panel.innerHTML = `<p style="color:var(--neon-pink);">${langUI.selectTarget}</p>`;
                 allAlivePlayers.forEach(c => {
-                    let btn = createBtn(c.name, 'var(--neon-pink)', () => {
-                        btn.style.background = 'var(--neon-pink)'; btn.style.color = '#fff';
+                    let btn = createBtn(c.name, 'var(--neon-pink)', function() {
+                        this.style.background = 'var(--neon-pink)'; this.style.color = '#fff';
                         cupidTargets.push(c.name);
                         if(cupidTargets.length === 2) {
                             sendActionToServer({ type: 'action', role: 'cupid', target1: cupidTargets[0], target2: cupidTargets[1] });
@@ -819,26 +840,27 @@
             }
             else if (phase === 'night_seer' && myRole === 'seer') {
                 panel.innerHTML = `<p style="color:var(--neon-cyan);">${langUI.selectTarget}</p>`;
-                alivePlayers.forEach(c => { panel.appendChild(createBtn(c.name, 'var(--neon-cyan)', () => sendActionToServer({type:'action', role:'seer', target: c.name}))); });
+                alivePlayers.forEach(c => { 
+                    panel.appendChild(createBtn(c.name, 'var(--neon-cyan)', function() { sendActionToServer({type:'action', role:'seer', target: c.name}, this); })); 
+                });
             }
             else if (phase === 'night_wolves' && myRole === 'werewolf') {
                 panel.innerHTML = `<p style="color:var(--neon-pink);">${langUI.selectTarget}</p>`;
                 alivePlayers.forEach(c => { 
-                    // Le Loup voit tout le monde sauf ses alliés
                     if(!wolfPartners.includes(c.name)) {
-                        panel.appendChild(createBtn(c.name, 'var(--neon-pink)', () => sendActionToServer({type:'action', role:'werewolf', target: c.name}))); 
+                        panel.appendChild(createBtn(c.name, 'var(--neon-pink)', function() { sendActionToServer({type:'action', role:'werewolf', target: c.name}, this); })); 
                     }
                 });
             } 
             else if (phase === 'night_witch' && myRole === 'witch') {
-                let html = `<p style="color:var(--neon-purple);">Victime: ${extra.dead || 'Personne'}</p>`;
+                let html = `<p style="color:var(--neon-purple);">Victime(s): ${gameState.deadTonight && gameState.deadTonight.length>0 ? gameState.deadTonight.join(', ') : extra.dead || 'Personne'}</p>`;
                 if (extra.dead && witchPotions.heal > 0) {
-                    html += `<button class="btn-outline" onclick="witchPotions.heal--; sendActionToServer({type:'action', role:'witch', action:'heal', target:'${extra.dead}'});" style="border-color:#2ecc71; color:#2ecc71;">${langUI.healMsg}</button>`;
+                    html += `<button class="btn-outline" onclick="witchPotions.heal--; sendActionToServer({type:'action', role:'witch', action:'heal', target:'${extra.dead}'}, this);" style="border-color:#2ecc71; color:#2ecc71;">${langUI.healMsg}</button>`;
                 }
                 if (witchPotions.poison > 0) {
-                    alivePlayers.forEach(c => { html += `<button class="btn-outline" onclick="witchPotions.poison--; sendActionToServer({type:'action', role:'witch', action:'poison', target:'${c.name}'});" style="border-color:#e74c3c; color:#e74c3c; margin-left:10px;">${langUI.poisonMsg} ${c.name}</button>`; });
+                    alivePlayers.forEach(c => { html += `<button class="btn-outline" onclick="witchPotions.poison--; sendActionToServer({type:'action', role:'witch', action:'poison', target:'${c.name}'}, this);" style="border-color:#e74c3c; color:#e74c3c; margin-left:10px;">${langUI.poisonMsg} ${c.name}</button>`; });
                 }
-                html += `<button class="btn-outline" onclick="sendActionToServer({type:'action', role:'witch', action:'skip'})" style="border-color:gray; color:gray; margin-left:10px;">${langUI.skipMsg}</button>`;
+                html += `<button class="btn-outline" onclick="sendActionToServer({type:'action', role:'witch', action:'skip'}, this)" style="border-color:gray; color:gray; margin-left:10px;">${langUI.skipMsg}</button>`;
                 panel.innerHTML = html;
             }
             else if (phase.startsWith('night') && myRole !== 'werewolf' && myRole !== 'cupid') {
@@ -846,7 +868,9 @@
             }
             else if (phase === 'day_vote') {
                 panel.innerHTML = `<p style="color:var(--neon-yellow);">${langUI.selectTarget}</p>`;
-                alivePlayers.forEach(c => { panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', () => sendActionToServer({type:'action', role:'day', target: c.name}))); });
+                alivePlayers.forEach(c => { 
+                    panel.appendChild(createBtn(c.name, 'var(--neon-yellow)', function() { sendActionToServer({type:'action', role:'day', target: c.name}, this); })); 
+                });
             }
         }
 
@@ -854,7 +878,6 @@
             let btn = document.createElement('button');
             btn.className = "btn-outline";
             btn.innerText = text; btn.style.borderColor = color; btn.style.color = color;
-            btn.style.margin = "5px";
             btn.onclick = onClickCallback; return btn;
         }
 
@@ -863,7 +886,6 @@
             const rData = i18n[currentLang].roles[role] || i18n[currentLang].roles['villager'];
             document.getElementById('role-name').innerText = rData.name;
             document.getElementById('role-desc').innerText = rData.desc;
-            // L'image s'affiche maintenant correctement avec le fix de chemin i18n
             document.getElementById('role-image').src = rData.img; 
             const card = document.getElementById('my-role-card');
             card.style.borderColor = rData.color;
@@ -873,10 +895,36 @@
 
         function showGameOver(winner, desc) {
             document.getElementById('action-panel').innerHTML = "";
+            document.getElementById('ww-chat-container').style.display = 'none';
             const goScreen = document.getElementById('game-over-screen');
             goScreen.style.display = 'block';
             document.getElementById('winner-text').innerText = winner;
             document.getElementById('winner-desc').innerText = desc;
+        }
+
+        // --- GESTION DU CHAT GAROU ---
+        function sendWWChat() {
+            const input = document.getElementById('ww-chat-input');
+            const text = input.value.trim();
+            if (text === "") return;
+            
+            if (isHost) {
+                handleNetworkAction('host', { type: 'ww_chat', text: text });
+            } else {
+                connections[0].conn.send({ type: 'ww_chat', text: text });
+            }
+            input.value = "";
+        }
+        
+        // Envoi sur touche Entrée
+        document.getElementById('ww-chat-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendWWChat();
+        });
+
+        function displayWWChat(senderName, text) {
+            const chatBox = document.getElementById('ww-chat-messages');
+            chatBox.innerHTML += `<p><span class="ww-chat-sender">${senderName} :</span> ${text}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         updateLang('fr'); // Init Langue
