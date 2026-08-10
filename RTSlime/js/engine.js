@@ -13,6 +13,14 @@ const MAP_HEIGHT = 10000;
 let camera = { x: 0, y: 0 };
 let zoom = 2.0;
 
+// VARIABLES CAMERA (Pan avec Clic Droit)
+let isPanning = false;
+let isPanDragging = false;
+let panStartX = 0;
+let panStartY = 0;
+let cameraStartX = 0;
+let cameraStartY = 0;
+
 // --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
     map: 'assets/map/mapRTS.png',
@@ -28,7 +36,8 @@ const ASSETS_PATHS = {
     warrior: 'assets/skins/warrior.png',
     archer: 'assets/skins/archer.png',
     mage: 'assets/skins/mage.png',
-    wheat: 'assets/map/wheat.png'
+    wheat: 'assets/map/wheat.png',
+    farm: 'assets/bat/farm.png'
 };
 
 const images = {};
@@ -48,9 +57,9 @@ const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
 
 // ==========================================
-// PEER JS MULTIJOUEUR (LOGIQUE EXACTE DE DRAWER)
+// PEER JS MULTIJOUEUR (FIX COMPLET DE L'ECRAN)
 // ==========================================
-let peer = new Peer(); // Initialisation par défaut
+let peer = new Peer(); 
 let myId = null;
 let myPseudo = "Anonyme";
 let isHost = false;
@@ -93,12 +102,11 @@ document.getElementById('btn-host').addEventListener('click', (e) => {
     
     let code = 'RTS' + Math.floor(1000 + Math.random() * 9000);
     
-    // FORCAGE VISUEL : On cache le menu et on affiche le lobby instantanément
+    // On cache l'écran de Login DIRECTEMENT
     document.getElementById('screen-login').style.display = 'none';
     document.getElementById('screen-lobby').style.display = 'flex';
     document.getElementById('my-id').innerText = "Chargement...";
     
-    // On détruit et on recrée avec le code
     peer.destroy();
     peer = new Peer(code);
     setupPeerEvents(peer);
@@ -120,7 +128,6 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
     connToHost = peer.connect(targetId);
     
     connToHost.on('open', () => {
-        // FORCAGE VISUEL
         document.getElementById('screen-login').style.display = 'none';
         document.getElementById('screen-lobby').style.display = 'flex';
         document.getElementById('my-id').innerText = targetId;
@@ -171,6 +178,7 @@ let selectionCurrentWorld = { x: 0, y: 0 };
 let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
 let inputMode = 'mouse';
+let survivalTimer = 0; // Ajout du timer manquant dans engine.js pour l'invulnérabilité
 
 // --- UTILITAIRES ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
@@ -217,14 +225,17 @@ canvas.addEventListener('wheel', (e) => {
 });
 
 function updateCamera() {
-    const margin = 30; const speed = 25 / zoom;
-    if (mouseHoverScreen.x < margin) camera.x -= speed;
-    if (mouseHoverScreen.x > width - margin) camera.x += speed;
-    if (mouseHoverScreen.y < margin) camera.y -= speed;
-    if (mouseHoverScreen.y > height - margin) camera.y += speed;
+    // Si la caméra n'est pas en train d'être déplacée manuellement par le clic droit, on autorise le pan sur les bords
+    if (!isPanning) {
+        const margin = 30; const speed = 25 / zoom;
+        if (mouseHoverScreen.x < margin) camera.x -= speed;
+        if (mouseHoverScreen.x > width - margin) camera.x += speed;
+        if (mouseHoverScreen.y < margin) camera.y -= speed;
+        if (mouseHoverScreen.y > height - margin) camera.y += speed;
 
-    camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
-    camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height/zoom));
+        camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
+        camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height/zoom));
+    }
 }
 
 function getPointerPos(e) {
@@ -287,9 +298,10 @@ function executeCommand(data) {
         let uList = units.filter(u => data.unitIds.includes(u.id));
         let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
         
+        // CORRECTION FAMINE: Les unités peuvent se diriger vers les arbres, le blé, la ferme ou la scierie même à 0 de nourriture
         if (playerRes.food <= 0) {
-            let isFoodCmd = ent && ent.type === 'wheat';
-            if(!isFoodCmd) return; 
+            let isAllowedCmd = ent && ['wheat', 'farm', 'tree', 'sawmill'].includes(ent.type);
+            if(!isAllowedCmd) return; 
         }
 
         uList.forEach((u, i) => {
@@ -349,8 +361,8 @@ function initGame() {
     resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
     units = []; trees = []; wheats = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
     buildMode = null; moveMode = null; selectedBuilding = null;
+    survivalTimer = 0;
     
-    // Forçage de l'écran en JS
     document.getElementById('screen-lobby').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
     
@@ -360,6 +372,7 @@ function initGame() {
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
     camera.x = baseHost.x - width/2; camera.y = baseHost.y - height/2;
 
+    // FORETS
     for(let i=0; i<40; i++) { 
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -369,6 +382,7 @@ function initGame() {
         }
     }
 
+    // CHAMPS
     for(let i=0; i<40; i++) {
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -378,6 +392,7 @@ function initGame() {
         }
     }
 
+    // VIRUS
     for(let i=0; i<150; i++) {
         let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
         if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
@@ -400,6 +415,7 @@ function initGame() {
 
 function initGameClient() {
     gameState = 'PLAYING';
+    survivalTimer = 0;
     document.getElementById('screen-lobby').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
     resize();
@@ -410,7 +426,8 @@ function syncClientState(data) {
     if (!baseGuest && data.bG) {
         camera.x = data.bG.x - width/2; camera.y = data.bG.y - height/2;
     }
-
+    
+    survivalTimer = data.st; // Recupère le timer de l'hote pour l'affichage de l'invulnérabilité
     resHost = data.resH; resGuest = data.resG;
     baseHost = new Base(data.bH.x, data.bH.y, 'host'); baseHost.id = data.bH.id; baseHost.hp = data.bH.hp;
     baseGuest = new Base(data.bG.x, data.bG.y, 'guest'); baseGuest.id = data.bG.id; baseGuest.hp = data.bG.hp;
@@ -430,11 +447,23 @@ function syncClientState(data) {
     updateUI();
 }
 
-// --- INPUTS & SÉLECTION ---
+// --- INPUTS & SÉLECTION & CAMERA PANNING ---
 canvas.addEventListener('mousedown', (e) => {
     if(gameState !== 'PLAYING') return;
     const pos = getPointerPos(e);
     const wPos = { x: pos.worldX, y: pos.worldY };
+
+    // CLIC DROIT : Initialise le Pan de Caméra
+    if(e.button === 2) {
+        if(moveMode || buildMode) return; // Permet l'annulation de la construction par clic droit
+        isPanning = true;
+        isPanDragging = false;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        cameraStartX = camera.x;
+        cameraStartY = camera.y;
+        return;
+    }
 
     if(moveMode) {
         if(e.button === 0) {
@@ -442,7 +471,6 @@ canvas.addEventListener('mousedown', (e) => {
             spawnParticles(wPos.x, wPos.y, 'var(--neon-cyan)', 20);
             moveMode = null; instructions.style.display = 'none'; renderBottomUI();
         }
-        if(e.button === 2) { moveMode = null; instructions.style.display = 'none'; }
         return;
     }
 
@@ -453,7 +481,6 @@ canvas.addEventListener('mousedown', (e) => {
             else connToHost.send({ type: 'cmd', action: 'build', bType: buildMode, x: wPos.x, y: wPos.y, owner: actualId });
             setBuildMode(null);
         }
-        if(e.button === 2) setBuildMode(null);
         return;
     }
 
@@ -471,12 +498,40 @@ canvas.addEventListener('mousemove', (e) => {
     mouseHoverScreen = { x: pos.screenX, y: pos.screenY };
     mouseHoverWorld = { x: pos.worldX, y: pos.worldY };
 
+    // GLISSER LA CAMERA
+    if (isPanning) {
+        let currentX = e.clientX;
+        let currentY = e.clientY;
+        let dx = currentX - panStartX;
+        let dy = currentY - panStartY;
+        
+        // Seuil pour différencier un clic d'un glissement
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isPanDragging = true;
+        
+        camera.x = cameraStartX - dx / zoom;
+        camera.y = cameraStartY - dy / zoom;
+        
+        // Empêcher de sortir de la carte
+        camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
+        camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height/zoom));
+    }
+
     if (!isSelecting) return;
     selectionCurrentScreen = { x: pos.screenX, y: pos.screenY };
     selectionCurrentWorld = { x: pos.worldX, y: pos.worldY };
 });
 
+window.addEventListener('mouseup', (e) => {
+    // Relachement du Clic Droit
+    if (e.button === 2) {
+        isPanning = false;
+        setTimeout(() => isPanDragging = false, 50); // Laisse le temps au contextmenu de bloquer si besoin
+        return;
+    }
+});
+
 canvas.addEventListener('mouseup', (e) => {
+    if (e.button === 2) return; // Le clic droit est géré au-dessus et dans contextmenu
     if (!isSelecting || gameState !== 'PLAYING') return;
     isSelecting = false;
     
@@ -511,8 +566,21 @@ canvas.addEventListener('mouseup', (e) => {
 
 canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if(gameState !== 'PLAYING' || selectedUnits.length === 0 || buildMode || moveMode) return;
+    if(gameState !== 'PLAYING') return;
     
+    // Annulation mode construction avec Clic Droit
+    if(buildMode || moveMode) {
+        setBuildMode(null);
+        moveMode = null;
+        instructions.style.display = 'none';
+        return;
+    }
+
+    // SI LE JOUEUR A GLISSÉ LA SOURIS (Pan Camera), on n'envoie pas d'ordre de déplacement
+    if (isPanDragging) return;
+    
+    if (selectedUnits.length === 0) return;
+
     let actualId = isHost ? 'host' : 'guest';
     let myRes = isHost ? resHost : resGuest;
     
@@ -521,8 +589,8 @@ canvas.addEventListener('contextmenu', (e) => {
 
     let clickedEnt = units.find(u=>dist(wPos, u)<20) || buildings.find(b=>dist(wPos, b)<b.size) || trees.find(t=>dist(wPos, t)<20) || wheats.find(w=>dist(wPos, w)<20) || enemies.find(en=>dist(wPos, en)<20) || (dist(wPos, baseHost)<baseHost.size/2 ? baseHost : null) || (dist(wPos, baseGuest)<baseGuest.size/2 ? baseGuest : null);
     
-    if (myRes.food <= 0 && (!clickedEnt || (clickedEnt.type !== 'wheat' && clickedEnt.type !== 'farm'))) {
-        addSysLog("Famine", "Nourriture à 0 ! Les Slimes refusent d'obéir.");
+    if (myRes.food <= 0 && (!clickedEnt || !['wheat', 'farm', 'tree', 'sawmill'].includes(clickedEnt.type))) {
+        addSysLog("Famine", "Nourriture à 0 ! Les Slimes ne peuvent aller qu'aux champs ou aux forêts.");
         return;
     }
 
@@ -546,6 +614,7 @@ function setBuildMode(type) {
 function getBuildingCost(type) {
     if(type === 'house') return { g: 0, w: 10, f: 0 };
     if(type === 'sawmill') return { g: 0, w: 0, f: 50 }; 
+    if(type === 'farm') return { g: 0, w: 30, f: 0 };
     if(type === 'mine') return { g: 0, w: 50, f: 50 };
     if(['barracks', 'archery', 'mage'].includes(type)) return { g: 250, w: 250, f: 250 };
     if(type === 'tower') return { g: 100, w: 50, f: 0 };
@@ -564,6 +633,7 @@ function renderBottomUI() {
     if (selectedBuilding.type === 'hdv') {
         uiBottom.appendChild(createBtn('color-build', 'MAISON', '10🪵', () => setBuildMode('house'), null, 'btn-b-house', ASSETS_PATHS.house));
         uiBottom.appendChild(createBtn('color-build', 'SCIERIE', '50🍞', () => setBuildMode('sawmill'), null, 'btn-b-sawmill', ASSETS_PATHS.sawmill));
+        uiBottom.appendChild(createBtn('color-build', 'FERME', '30🪵', () => setBuildMode('farm'), null, 'btn-b-farm', ASSETS_PATHS.farm));
         uiBottom.appendChild(createBtn('color-build', 'MINE', '50🪵 50🍞', () => setBuildMode('mine'), null, 'btn-b-mine', ASSETS_PATHS.mine));
         uiBottom.appendChild(createDivider());
         uiBottom.appendChild(createBtn('color-build', 'CASERNE', '250💰/🪵/🍞', () => setBuildMode('barracks'), null, 'btn-b-barracks', ASSETS_PATHS.barracks));
@@ -586,7 +656,7 @@ function renderBottomUI() {
             uiBottom.appendChild(createBtn('color-recruit', '🌿 PLANTE', '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:'plant', bId:selectedBuilding.id}), 'var(--neon-green)', null, ASSETS_PATHS[uType]));
         }
     } 
-    else if (['sawmill', 'mine'].includes(selectedBuilding.type)) {
+    else if (['sawmill', 'mine', 'farm'].includes(selectedBuilding.type)) {
         let info = document.createElement('div'); info.style.color = '#aaa'; info.innerText = `Ouvriers: ${selectedBuilding.farmersInside}/5.`; uiBottom.appendChild(info);
     }
     
@@ -631,17 +701,18 @@ function updateUI() {
 // --- BOUCLE UPDATE (HÔTE UNIQUEMENT) ---
 let ecoTimer = 0;
 function hostUpdate(dt) {
+    survivalTimer += dt;
     ecoTimer += dt;
 
     if (ecoTimer >= 1) {
         ecoTimer = 0;
-        let p1Mine=0, p1Saw=0, p2Mine=0, p2Saw=0;
+        let p1Farm=0, p1Mine=0, p1Saw=0, p2Farm=0, p2Mine=0, p2Saw=0;
         buildings.forEach(b => { 
-            if(b.owner === 'host') { if(b.type === 'mine') p1Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p1Saw+=b.farmersInside*2; }
-            if(b.owner === 'guest') { if(b.type === 'mine') p2Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p2Saw+=b.farmersInside*2; }
+            if(b.owner === 'host') { if(b.type === 'mine') p1Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p1Saw+=b.farmersInside*2; if(b.type === 'farm') p1Farm+=b.farmersInside*2;}
+            if(b.owner === 'guest') { if(b.type === 'mine') p2Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p2Saw+=b.farmersInside*2; if(b.type === 'farm') p2Farm+=b.farmersInside*2;}
         });
-        resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food -= resHost.pop * 0.2; if(resHost.food < 0) resHost.food = 0;
-        resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food -= resGuest.pop * 0.2; if(resGuest.food < 0) resGuest.food = 0;
+        resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food += p1Farm; resHost.food -= resHost.pop * 0.2; if(resHost.food < 0) resHost.food = 0;
+        resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food += p2Farm; resGuest.food -= resGuest.pop * 0.2; if(resGuest.food < 0) resGuest.food = 0;
     }
 
     if (baseHost.hp <= 0 || baseGuest.hp <= 0) {
@@ -665,7 +736,7 @@ function hostUpdate(dt) {
         en: enemies.map(e => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, el: e.element, c: e.color, st: e.slowTimer })),
         bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp },
         bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
-        resH: resHost, resG: resGuest
+        resH: resHost, resG: resGuest, st: survivalTimer
     };
     if (connToGuest) connToGuest.send(pack);
 }
