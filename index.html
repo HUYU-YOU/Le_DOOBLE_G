@@ -6,26 +6,28 @@
     <title>Arcade du Bureau</title>
 
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Ajout d'un petit style pour les nouveaux titres de section si tu ne les as pas dans style.css */
+        .category-title {
+            color: #fff; /* À adapter selon ton thème d'image */
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
 </head>
 <body>
     <h1>Arcade Network</h1>
     
     <p class="subtitle">Welcome in the Google space</p>
     
+    <!-- SECTION JEUX SOLO -->
+    <h2 class="category-title">Jeux Solo</h2>
     <div class="game-grid">
         
-        <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🚀</div>
-            <div class="game-title">Slime Artillery</div>
-        </a>
-    
-        <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🥊🥊</div>
-            <div class="game-title">Cyber Smash</div>
-        </a>
-    
         <a href="2048slime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="2048slime/img/cinematic_fusion_slime.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">💧</div>
@@ -44,12 +46,19 @@
             <div class="game-title">The Prisoner</div>
         </a>
 
+        <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
+            <div class="game-icon">🥊🥊</div>
+            <div class="game-title">Cyber Smash</div>
+        </a>
+
         <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">🪖</div>
             <div class="game-title">Cyber Tanks</div>
         </a>
-             <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+
+        <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <!-- Ajout d'un ID "dash-video" pour le cibler en Javascript -->
             <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">💨</div>
@@ -73,7 +82,54 @@
             <div class="game-icon">👁️</div>
             <div class="game-title">Guess it Manga</div>
         </a>
+
+        <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
+            <div class="game-icon">🎧</div>
+            <div class="game-title">Blind Test</div>
+        </a>
+
+        <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
+            <div class="game-icon">🚀</div>
+            <div class="game-title">Slime Artillery</div>
+        </a>
+    </div> 
+
+    <!-- SECTION JEUX MULTIJOUEURS -->
+    <h2 class="category-title">Jeux Multijoueurs</h2>
+    <div class="game-grid">
         
+        <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
+            <div class="game-icon">🥊🥊</div>
+            <div class="game-title">Cyber Smash</div>
+        </a>
+
+        <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
+            <div class="game-icon">🪖</div>
+            <div class="game-title">Cyber Tanks</div>
+        </a>
+
+        <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
+            <div class="game-icon">⚔️</div>
+            <div class="game-title">War of slime</div>
+        </a>
+
+        <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
+            <div class="game-icon">🎧</div>
+            <div class="game-title">Blind Test</div>
+        </a>
+
+        <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
+            <div class="game-icon">🚀</div>
+            <div class="game-title">Slime Artillery</div>
+        </a>
+
         <a href="undercover/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="undercover/img/cinematic_undercover.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">🕵️‍♂️</div>
@@ -92,17 +148,12 @@
             <div class="game-title">The Drawer</div>
         </a>
 
-        <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🎧</div>
-            <div class="game-title">Blind Test</div>
-        </a>
-        
         <a href="poker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">🃏</div>
             <div class="game-title">Texas Poker</div>
         </a>
+
     </div> 
 
     <script>
