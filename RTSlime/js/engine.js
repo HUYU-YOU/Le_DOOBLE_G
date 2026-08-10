@@ -79,6 +79,7 @@ function setupPeerEvents(p) {
     });
 
     p.on('error', err => {
+        console.warn("PeerJS Error:", err);
         document.getElementById('login-error').innerText = "Erreur: " + err.type;
     });
 }
@@ -270,7 +271,6 @@ function executeCommand(data) {
         let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
         
         if (playerRes.food <= 0) {
-            // AUTORISATION DU HDV: On autorise l'Hôtel de ville (hdv) en cas de famine pour ramener le blé/bois
             let isAllowedCmd = ent && ['wheat', 'farm', 'tree', 'sawmill', 'hdv'].includes(ent.type);
             if(!isAllowedCmd) return; 
         }
@@ -321,7 +321,7 @@ function executeCommand(data) {
             units.forEach(u => { 
                 if(u.state === 'farming' && u.targetEntityId === b.id) {
                     u.state = 'idle'; u.targetEntityId = null;
-                    u.x = b.x; u.y = b.y; // Expulse l'ouvrier
+                    u.x = b.x; u.y = b.y; 
                 }
             });
             buildings = buildings.filter(x => x !== b);
@@ -544,7 +544,6 @@ canvas.addEventListener('contextmenu', (e) => {
     
     if (myRes.food <= 0 && (!clickedEnt || !['wheat', 'farm', 'tree', 'sawmill', 'hdv'].includes(clickedEnt.type))) {
         let now = Date.now();
-        // ANTI-SPAM FAMINE : Se déclenche max 1x toutes les 2 secondes
         if (now - lastFamineLogTime > 2000) {
             addSysLog("Famine", "Nourriture à 0 ! Ordonnez la récolte ou cliquez sur l'Hôtel de Ville.");
             lastFamineLogTime = now;
@@ -652,11 +651,9 @@ function updateUI() {
     uiFood.innerText = Math.floor(myRes.food);
     let myPop = units.filter(u=>u.owner===actualId).length;
     uiPop.innerText = myPop; 
-    
-    // CORRECTION POPULATION UI FIX (Guest)
     uiMaxPop.innerText = myRes.maxPop;
-    myRes.pop = myPop;
     
+    myRes.pop = myPop;
     if(myRes.food <= 0) uiFood.style.color = 'red'; else uiFood.style.color = 'var(--neon-green)';
 }
 
@@ -670,7 +667,6 @@ function hostUpdate(dt) {
         ecoTimer = 0;
         let p1Farm=0, p1Mine=0, p1Saw=0, p2Farm=0, p2Mine=0, p2Saw=0;
         
-        // CORRECTION POPULATION MAXIMUM (HOST)
         let p1MaxPop = 0, p2MaxPop = 0;
 
         buildings.forEach(b => { 
@@ -774,7 +770,6 @@ function loop(timestamp) {
     if(gameState === 'PLAYING') {
         updateCamera();
         
-        // CORRECTION INVENTAIRE : Le Host rafraîchit désormais son UI lui aussi à chaque frame
         if(isHost) {
             hostUpdate(dt);
             updateUI(); 
