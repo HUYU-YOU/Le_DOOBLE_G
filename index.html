@@ -52,9 +52,9 @@
     
     <!-- BOUTONS DE NAVIGATION EN IMAGES -->
     <div class="toggle-container">
-        <!-- Remplace le src par le chemin exact de tes images -->
-        <img src="img/btn_solo.png" id="btn-solo" class="toggle-img-btn active" onclick="switchCategory('solo')" alt="Jeux Solo">
-        <img src="img/btn_multi.png" id="btn-multi" class="toggle-img-btn" onclick="switchCategory('multi')" alt="Jeux Multi">
+        <!-- Chemins mis à jour avec tes fichiers exacts -->
+        <img src="img/solo.png" id="btn-solo" class="toggle-img-btn active" onclick="switchCategory('solo')" alt="Jeux Solo">
+        <img src="img/multijoueur.png" id="btn-multi" class="toggle-img-btn" onclick="switchCategory('multi')" alt="Jeux Multi">
     </div>
 
     <!-- ========================================== -->
@@ -93,6 +93,7 @@
         </a>
 
         <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+            <!-- Ajout d'un ID "dash-video" pour le cibler en Javascript -->
             <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">💨</div>
             <div class="game-title">Slime Dash</div>
