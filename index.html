@@ -8,6 +8,18 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
+        /* --- STYLE POUR LE LOGO DU HUB --- */
+        .hub-logo {
+            max-width: 90%;
+            width: 600px; /* Ajuste cette valeur si ton logo est trop grand ou trop petit */
+            height: auto;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.5)); /* Garde l'effet néon de l'ancien texte */
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         /* --- STYLE POUR LES BOUTONS IMAGES (ONGLETS) --- */
         .toggle-container {
             display: flex;
@@ -46,13 +58,14 @@
     </style>
 </head>
 <body>
-    <h1>Arcade Network</h1>
+    
+    <!-- NOUVEAU LOGO EN IMAGE -->
+    <img src="img/HUB.png" alt="Logo Arcade Network" class="hub-logo">
     
     <p class="subtitle">Welcome in the Google space</p>
     
     <!-- BOUTONS DE NAVIGATION EN IMAGES -->
     <div class="toggle-container">
-        <!-- Chemins mis à jour avec tes fichiers exacts -->
         <img src="img/solo.png" id="btn-solo" class="toggle-img-btn active" onclick="switchCategory('solo')" alt="Jeux Solo">
         <img src="img/multijoueur.png" id="btn-multi" class="toggle-img-btn" onclick="switchCategory('multi')" alt="Jeux Multi">
     </div>
@@ -192,7 +205,7 @@
         <a href="RTSlime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">🃏</div>
-            <div class="game-title">Slimilization</div>
+            <div class="game-title">Slimization</div>
         </a>
 
     </div> 
