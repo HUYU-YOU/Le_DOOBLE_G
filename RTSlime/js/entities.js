@@ -30,6 +30,7 @@ class Base {
         ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
         ctx.fillText(this.owner === 'host' ? 'P1' : 'P2', this.x, this.y - this.size/2 - 15);
 
+        // Bouclier visuel pendant les 60 premières secondes
         if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2 + 20, 0, Math.PI*2); ctx.stroke();
         }
@@ -67,6 +68,7 @@ class Building {
                 let closestEnemy = getClosest(this, targets);
                 if (closestEnemy && dist(this, closestEnemy) <= 400) {
                     if (typeof survivalTimer !== 'undefined' && survivalTimer < 60 && closestEnemy.owner !== 'virus') {
+                        // Bouclier 60s
                     } else {
                         closestEnemy.hp -= 40;
                         spawnLaser(this, closestEnemy, this.color);
@@ -136,7 +138,10 @@ class ResourceNode {
             if(this.type === 'tree') {
                 for (let i = 0; i < 6; i++) ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
             } else { ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); }
-            ctx.closePath(); ctx.fillStyle = this.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
+            ctx.closePath(); 
+            ctx.fillStyle = this.color; ctx.fill(); 
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); 
+            ctx.shadowBlur = 0;
         }
     }
 }
@@ -175,7 +180,6 @@ class Unit {
         this.targetPos = { x, y };
         this.targetEntityId = entity ? entity.id : null;
         
-        // CORRECTION MAJEURE: On vérifie strictement le type au lieu de se baser sur un instanceof qui casse en P2P
         if (!entity) {
             this.state = 'moving';
             return;
@@ -263,7 +267,6 @@ class Unit {
                 }
             }
             else if (this.state === 'moving_to_building' && targetEnt) {
-                // Zone d'entrée plus tolérante pour contrer le repoussement
                 if (dist(this, targetEnt) <= targetEnt.size/2 + 25) {
                     if(targetEnt.farmersInside < 5) {
                         this.state = 'farming'; targetEnt.farmersInside++; this.targetPos = null;
@@ -350,7 +353,6 @@ class Unit {
             ctx.strokeRect(this.x - this.drawSize/2 - 2, this.y - this.drawSize/2 - 2, this.drawSize + 4, this.drawSize + 4);
         }
 
-        // CORRECTION AURA : Cercle lumineux stylé autour de l'unité
         if (this.element !== 'normal') {
             ctx.shadowBlur = 15; ctx.shadowColor = this.elColor;
             ctx.strokeStyle = this.elColor; ctx.lineWidth = 3;
@@ -432,6 +434,7 @@ class Enemy {
                 this.y += ((target.y - this.y) / d) * currentSpeed * dt;
             } else if (this.attackCooldown <= 0) {
                 if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
+                    // Paix
                 } else {
                     target.hp -= 15;
                     this.attackCooldown = 1;
