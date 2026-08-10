@@ -13,8 +13,8 @@
             max-width: 90%;
             width: 600px; /* Ajuste cette valeur si ton logo est trop grand ou trop petit */
             height: auto;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.5)); /* Garde l'effet néon de l'ancien texte */
+            margin-bottom: 0px; /* Marge retirée pour coller aux boutons */
+            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.5));
             display: block;
             margin-left: auto;
             margin-right: auto;
@@ -25,7 +25,7 @@
             display: flex;
             justify-content: center;
             gap: 40px;
-            margin: 40px 0;
+            margin: 15px 0 40px 0; /* Espace réduit en haut (15px), espace conservé en bas (40px) */
             align-items: center;
         }
 
@@ -59,10 +59,8 @@
 </head>
 <body>
     
-    <!-- NOUVEAU LOGO EN IMAGE -->
+    <!-- LOGO DU HUB -->
     <img src="img/HUB.png" alt="Logo Arcade Network" class="hub-logo">
-    
-    <p class="subtitle">Welcome in the Google space</p>
     
     <!-- BOUTONS DE NAVIGATION EN IMAGES -->
     <div class="toggle-container">
@@ -200,12 +198,6 @@
             <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">🃏</div>
             <div class="game-title">Texas Poker</div>
-        </a>
-
-        <a href="RTSlime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🃏</div>
-            <div class="game-title">Slimization</div>
         </a>
 
     </div> 
