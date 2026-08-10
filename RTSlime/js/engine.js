@@ -12,7 +12,7 @@ const MAP_WIDTH = 2000;
 const MAP_HEIGHT = 2000;
 let camera = { x: 0, y: 0 };
 
-// --- GESTION DES ASSETS GRAPHIQUES (Chemins corrigés avec assets/) ---
+// --- GESTION DES ASSETS GRAPHIQUES ---
 const ASSETS_PATHS = {
     map: 'assets/map/mapRTS.png',
     hdv: 'assets/bat/hdv.png',
@@ -35,6 +35,10 @@ const images = {};
 for (let key in ASSETS_PATHS) {
     images[key] = new Image();
     images[key].src = ASSETS_PATHS[key];
+    // Traceur si une image ne charge pas
+    images[key].onerror = () => {
+        console.warn(`[MATRICE] Fichier introuvable : ${ASSETS_PATHS[key]}`);
+    };
 }
 
 // Éléments DOM
@@ -107,9 +111,9 @@ function drawMinimap() {
 
     trees.forEach(t => drawDot(t, 'var(--neon-orange)', 2));
     wheats.forEach(w => drawDot(w, 'var(--neon-green)', 2));
-    buildings.forEach(b => drawDot(b, b.color, 4));
-    if (base && base.hp > 0) drawDot(base, base.color, 6);
-    units.forEach(u => drawDot(u, 'var(--neon-cyan)', 2));
+    buildings.forEach(b => drawDot(b, 'var(--neon-cyan)', 4));
+    if (base && base.hp > 0) drawDot(base, 'var(--neon-cyan)', 6);
+    units.forEach(u => drawDot(u, '#c5c6c7', 2));
     enemies.forEach(e => drawDot(e, 'var(--neon-red)', 3));
 
     mmCtx.strokeStyle = 'var(--neon-cyan)'; mmCtx.lineWidth = 1;
