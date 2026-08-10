@@ -185,26 +185,17 @@ document.getElementById('btn-host').addEventListener('click', () => {
     isHost = true; myId = 'host';
     const roomId = 'RTS' + Math.floor(1000 + Math.random() * 9000);
     
-    document.getElementById('login-error').innerText = "Création du serveur sécurisé...";
+    document.getElementById('login-error').innerText = "Création du serveur...";
     document.getElementById('login-error').style.color = "var(--neon-cyan)";
 
-    // Timeout de sécurité si le WebRTC est bloqué par AdBlock/Brave
     let timeout = setTimeout(() => {
-        document.getElementById('login-error').innerText = "Délai dépassé. Désactivez votre AdBlock ou Brave Shields.";
+        document.getElementById('login-error').innerText = "Délai dépassé. Vérifiez votre connexion.";
         document.getElementById('login-error').style.color = "var(--neon-orange)";
     }, 8000);
 
     try {
-        // FORCAGE DES SECURITES POUR GITHUB PAGES
-        peer = new Peer(roomId, {
-            secure: true,
-            config: {
-                'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]
-            }
-        });
+        // Retour à la configuration par défaut (la plus stable)
+        peer = new Peer(roomId, { debug: 2 });
 
         peer.on('open', id => {
             clearTimeout(timeout);
@@ -250,20 +241,13 @@ document.getElementById('btn-join').addEventListener('click', () => {
     document.getElementById('login-error').style.color = "var(--neon-cyan)";
 
     let timeout = setTimeout(() => {
-        document.getElementById('login-error').innerText = "Impossible de se connecter. AdBlock activé ?";
+        document.getElementById('login-error').innerText = "Impossible de se connecter.";
         document.getElementById('login-error').style.color = "var(--neon-orange)";
     }, 8000);
 
     try {
-        peer = new Peer({
-            secure: true,
-            config: {
-                'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]
-            }
-        });
+        // Retour à la configuration par défaut
+        peer = new Peer({ debug: 2 });
 
         peer.on('open', id => {
             connToHost = peer.connect(targetId);
@@ -693,7 +677,7 @@ function hostUpdate(dt) {
         bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
         resH: resHost, resG: resGuest
     };
-    connToGuest.send(pack);
+    if (connToGuest) connToGuest.send(pack);
 }
 
 // --- BOUCLE DRAW ---
