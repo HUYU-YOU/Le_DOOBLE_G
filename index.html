@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* --- STYLE DE LA VIDEO DE FOND ROTATIVE --- */
+        /* --- STYLE DE LA VIDEO DE FOND (Normale, pas de rotation) --- */
         body {
             /* On rend le fond du body transparent pour voir la vidéo derrière */
             background-color: transparent !important;
@@ -17,25 +17,22 @@
 
         .hub-bg-video {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            /* On inverse VH et VW car la vidéo est tournée à 90 degrés */
-            width: 100vh;
-            height: 100vw;
-            object-fit: cover;
-            /* Centrage parfait et rotation à 90 degrés */
-            transform: translate(-50%, -50%) rotate(90deg);
+            top: 0;
+            left: 0;
+            width: 100vw; /* Reprend la largeur de l'écran */
+            height: 100vh; /* Reprend la hauteur de l'écran */
+            object-fit: cover; /* Remplit tout l'écran sans déformer */
             z-index: -2; /* Tout au fond */
             pointer-events: none; /* Empêche de cliquer sur la vidéo */
         }
 
-        /* Overlay assombri par-dessus la vidéo pour garder l'interface lisible */
+        /* Overlay assombri par-dessus la vidéo (Allégé pour mieux voir la vidéo) */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            /* On reprend ton dégradé d'origine mais en semi-transparent */
-            background: radial-gradient(circle at 50% 0%, rgba(31, 40, 51, 0.75) 0%, rgba(11, 12, 16, 0.95) 80%);
+            /* J'ai baissé l'opacité : 0.5 au centre (avant 0.75) et 0.85 sur les bords (avant 0.95) */
+            background: radial-gradient(circle at 50% 0%, rgba(31, 40, 51, 0.5) 0%, rgba(11, 12, 16, 0.85) 80%);
             z-index: -1;
             pointer-events: none;
         }
@@ -46,7 +43,7 @@
             width: 600px;
             height: auto;
             margin-bottom: 0px; 
-            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.5));
+            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); /* J'ai très légèrement monté le halo du logo pour qu'il ressorte sur la vidéo plus claire */
             display: block;
             margin-left: auto;
             margin-right: auto;
@@ -89,7 +86,7 @@
 </head>
 <body>
     
-    <!-- VIDEO DE FOND (Tournée à 90°) -->
+    <!-- VIDEO DE FOND (Format Classique) -->
     <video autoplay loop muted playsinline class="hub-bg-video">
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
@@ -114,7 +111,7 @@
             <div class="game-title">Fusion Slime</div>
         </a>
 
-        <!-- AJOUT DU SLIME CLICKER ICI -->
+        <!-- LE SLIME CLICKER -->
         <a href="slimeclicker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="slimeclicker/img/cinematic_clicker.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">👆</div>
