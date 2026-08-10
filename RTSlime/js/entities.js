@@ -30,7 +30,6 @@ class Base {
         ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
         ctx.fillText(this.owner === 'host' ? 'P1' : 'P2', this.x, this.y - this.size/2 - 15);
 
-        // Bouclier visuel pendant les 60 premières secondes
         if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2 + 20, 0, Math.PI*2); ctx.stroke();
         }
@@ -52,6 +51,7 @@ class Building {
         if(type === 'house') { this.hp = 300; }
         if(type === 'sawmill') { this.color = 'var(--neon-orange)'; this.hp = 500; }
         if(type === 'mine') { this.color = 'var(--neon-yellow)'; this.hp = 600; }
+        if(type === 'farm') { this.color = 'var(--neon-green)'; this.hp = 400; }
         if(type === 'barracks') { this.color = 'var(--neon-red)'; this.size = 80; this.hp = 800; }
         if(type === 'archery') { this.color = 'var(--neon-pink)'; this.size = 80; this.hp = 800; }
         if(type === 'mage') { this.color = 'var(--neon-purple)'; this.size = 80; this.hp = 800; }
@@ -66,9 +66,7 @@ class Building {
                 let targets = units.concat(enemies).filter(e => e.owner !== this.owner);
                 let closestEnemy = getClosest(this, targets);
                 if (closestEnemy && dist(this, closestEnemy) <= 400) {
-                    // Les tours peuvent toujours cibler, mais les dégâts dépendent de l'invulnérabilité
                     if (typeof survivalTimer !== 'undefined' && survivalTimer < 60 && closestEnemy.owner !== 'virus') {
-                        // Pas de tir sur l'ennemi P1/P2 pendant les 60s
                     } else {
                         closestEnemy.hp -= 40;
                         spawnLaser(this, closestEnemy, this.color);
@@ -92,6 +90,7 @@ class Building {
         let img = null;
         if(this.type === 'house') img = images.house;
         if(this.type === 'sawmill') img = images.sawmill;
+        if(this.type === 'farm') img = images.farm;
         if(this.type === 'mine') img = images.mine;
         if(this.type === 'barracks') img = images.barracks;
         if(this.type === 'archery') img = images.archery;
@@ -126,7 +125,6 @@ class ResourceNode {
     constructor(x, y, type) {
         this.id = entityIdCounter++; this.x = x; this.y = y; this.type = type;
         this.radius = 15; 
-        // Le bois disparait plus vite pour forcer l'exploration
         this.amount = type === 'tree' ? 300 : 1000; 
         this.color = type === 'tree' ? 'var(--neon-orange)' : 'var(--neon-green)';
     }
@@ -138,7 +136,7 @@ class ResourceNode {
             if(this.type === 'tree') {
                 for (let i = 0; i < 6; i++) ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
             } else { ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); }
-            ctx.closePath(); ctx.fillStyle = '#111'; ctx.fill(); ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0;
+            ctx.closePath(); ctx.fillStyle = this.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
         }
     }
 }
@@ -177,10 +175,27 @@ class Unit {
         this.targetPos = { x, y };
         this.targetEntityId = entity ? entity.id : null;
         
-        if (this.type === 'farmer' && entity instanceof ResourceNode) this.state = 'moving_to_res';
-        else if (this.type === 'farmer' && entity instanceof Building && ['farm','sawmill','mine'].includes(entity.type) && entity.owner === this.owner) this.state = 'moving_to_building';
-        else if (this.type !== 'farmer' && entity && entity.owner !== this.owner && entity.owner !== undefined) this.state = 'attacking';
-        else this.state = 'moving';
+        // CORRECTION MAJEURE: On vérifie strictement le type au lieu de se baser sur un instanceof qui casse en P2P
+        if (!entity) {
+            this.state = 'moving';
+            return;
+        }
+
+        if (this.type === 'farmer') {
+            if (['tree', 'wheat'].includes(entity.type)) {
+                this.state = 'moving_to_res';
+            } else if (['farm', 'sawmill', 'mine'].includes(entity.type) && entity.owner === this.owner) {
+                this.state = 'moving_to_building';
+            } else {
+                this.state = 'moving';
+            }
+        } else {
+            if (entity.owner !== this.owner && entity.hp > 0 && entity.type !== 'wheat' && entity.type !== 'tree') {
+                this.state = 'attacking';
+            } else {
+                this.state = 'moving';
+            }
+        }
     }
 
     update(dt) {
@@ -248,7 +263,8 @@ class Unit {
                 }
             }
             else if (this.state === 'moving_to_building' && targetEnt) {
-                if (dist(this, targetEnt) < targetEnt.size/2 + 5) {
+                // Zone d'entrée plus tolérante pour contrer le repoussement
+                if (dist(this, targetEnt) <= targetEnt.size/2 + 25) {
                     if(targetEnt.farmersInside < 5) {
                         this.state = 'farming'; targetEnt.farmersInside++; this.targetPos = null;
                     } else { this.state = 'idle'; }
@@ -304,9 +320,8 @@ class Unit {
     }
 
     applyDamage(target) {
-        // Bouclier de 60 secondes : aucun joueur/bâtiment ne prend de dégâts (sauf les virus qui se font tuer)
         if (typeof survivalTimer !== 'undefined' && survivalTimer < 60 && target.owner !== 'virus') {
-            return; // Invulnérabilité active
+            return; 
         }
 
         let mult = 1.0;
@@ -335,9 +350,11 @@ class Unit {
             ctx.strokeRect(this.x - this.drawSize/2 - 2, this.y - this.drawSize/2 - 2, this.drawSize + 4, this.drawSize + 4);
         }
 
+        // CORRECTION AURA : Cercle lumineux stylé autour de l'unité
         if (this.element !== 'normal') {
-            ctx.shadowBlur = 10; ctx.shadowColor = this.elColor;
-            ctx.fillStyle = this.elColor; ctx.beginPath(); ctx.arc(this.x, this.y+10, 10, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 15; ctx.shadowColor = this.elColor;
+            ctx.strokeStyle = this.elColor; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.drawSize/2 + 5, 0, Math.PI*2); ctx.stroke();
             ctx.shadowBlur = 0;
         }
 
@@ -414,9 +431,7 @@ class Enemy {
                 this.x += ((target.x - this.x) / d) * currentSpeed * dt;
                 this.y += ((target.y - this.y) / d) * currentSpeed * dt;
             } else if (this.attackCooldown <= 0) {
-                // Le virus tape dans le vide si l'invulnérabilité (60s) est active
                 if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
-                    // Paix
                 } else {
                     target.hp -= 15;
                     this.attackCooldown = 1;
