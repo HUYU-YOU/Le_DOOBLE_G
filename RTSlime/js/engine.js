@@ -8,10 +8,10 @@ const minimapCanvas = document.getElementById('minimap');
 const mmCtx = minimapCanvas.getContext('2d');
 
 let width, height;
-const MAP_WIDTH = 10000;  // IMMENSE MAP
+const MAP_WIDTH = 10000;
 const MAP_HEIGHT = 10000;
 let camera = { x: 0, y: 0 };
-let zoom = 2.0; // Zoom massif dès le début
+let zoom = 2.0;
 
 // --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
@@ -35,6 +35,7 @@ const images = {};
 for (let key in ASSETS_PATHS) {
     images[key] = new Image();
     images[key].src = ASSETS_PATHS[key];
+    images[key].onerror = () => console.warn(`[MATRICE] Asset manquant : ${ASSETS_PATHS[key]}`);
 }
 
 const uiGold = document.getElementById('val-gold');
@@ -49,6 +50,7 @@ const chatBox = document.getElementById('global-chat-messages');
 
 let peer = null;
 let myId = null;
+let myPseudo = "Anonyme";
 let hostId = null;
 let isHost = false;
 let connToHost = null;
@@ -81,20 +83,34 @@ let selectionCurrentWorld = { x: 0, y: 0 };
 
 let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
+let inputMode = 'mouse';
 
-// --- UTILITAIRES ---
+// --- UTILITAIRES (Crucial pour éviter les crashs) ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+
 function getClosest(entity, array) {
     let closest = null; let minDist = Infinity;
-    for(let o of array) { let d = dist(entity, o); if(d < minDist) { minDist = d; closest = o; } }
+    for(let o of array) { 
+        let d = dist(entity, o); 
+        if(d < minDist) { minDist = d; closest = o; } 
+    }
     return closest;
 }
+
 function spawnParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
-        particles.push({ x: x, y: y, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5 });
+        particles.push({ 
+            x: x, y: y, 
+            vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, 
+            size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5 
+        });
     }
 }
-function spawnLaser(a, b, color) { lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); }
+
+function spawnLaser(a, b, color) { 
+    lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); 
+}
+
 function addSysLog(title, msg) {
     chatBox.innerHTML += `<p><span class="sys-log-msg">> ${title}:</span> ${msg}</p>`;
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -110,7 +126,7 @@ window.addEventListener('resize', resize);
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     if (e.deltaY < 0) zoom += 0.2; else zoom -= 0.2;
-    zoom = Math.max(0.5, Math.min(zoom, 4.0)); // Zoom max très poussé
+    zoom = Math.max(0.5, Math.min(zoom, 4.0));
 });
 
 function updateCamera() {
@@ -160,14 +176,30 @@ function drawMinimap() {
 
 // --- PEER JS MULTIJOUEUR ---
 document.getElementById('btn-host').addEventListener('click', () => {
+    let pName = document.getElementById('player-name').value.trim();
+    if (!pName) {
+        document.getElementById('login-error').innerText = "Pseudo requis pour créer.";
+        return;
+    }
+    myPseudo = pName;
     isHost = true; myId = 'host';
     const roomId = 'RTS' + Math.floor(1000 + Math.random() * 9000);
     peer = new Peer(roomId);
+    
+    document.getElementById('login-error').innerText = "Création du serveur...";
+    document.getElementById('login-error').style.color = "var(--neon-cyan)";
+
     peer.on('open', id => {
         document.getElementById('screen-login').classList.remove('active-screen');
         document.getElementById('screen-lobby').classList.add('active-screen');
         document.getElementById('my-id').innerText = id;
     });
+    
+    peer.on('error', err => {
+        document.getElementById('login-error').innerText = "Erreur réseau. Réessayez.";
+        document.getElementById('login-error').style.color = "var(--neon-pink)";
+    });
+
     peer.on('connection', conn => {
         connToGuest = conn;
         conn.on('data', data => handleNetworkData(data));
@@ -177,8 +209,22 @@ document.getElementById('btn-host').addEventListener('click', () => {
 });
 
 document.getElementById('btn-join').addEventListener('click', () => {
-    isHost = false; myId = 'guest';
+    let pName = document.getElementById('player-name').value.trim();
+    if (!pName) {
+        document.getElementById('login-error').innerText = "Pseudo requis pour rejoindre.";
+        return;
+    }
     const targetId = document.getElementById('join-id').value.trim().toUpperCase();
+    if(!targetId) {
+        document.getElementById('login-error').innerText = "Code requis.";
+        return;
+    }
+    myPseudo = pName;
+    isHost = false; myId = 'guest';
+    
+    document.getElementById('login-error').innerText = "Connexion...";
+    document.getElementById('login-error').style.color = "var(--neon-cyan)";
+
     peer = new Peer();
     peer.on('open', id => {
         connToHost = peer.connect(targetId);
@@ -190,6 +236,11 @@ document.getElementById('btn-join').addEventListener('click', () => {
             document.getElementById('min-players-msg').style.display = 'none';
         });
         connToHost.on('data', data => handleNetworkData(data));
+    });
+    
+    peer.on('error', err => {
+        document.getElementById('login-error').innerText = "Hôte introuvable.";
+        document.getElementById('login-error').style.color = "var(--neon-pink)";
     });
 });
 
@@ -305,7 +356,7 @@ function initGame() {
         }
     }
 
-    // GENERATION CHAMPS DE BLE (GROS CLUSTERS DE NOURRITURE)
+    // GENERATION CHAMPS DE BLE
     for(let i=0; i<40; i++) {
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -315,7 +366,7 @@ function initGame() {
         }
     }
 
-    // GENERATION VIRUS ALEATOIRES
+    // GENERATION VIRUS
     for(let i=0; i<150; i++) {
         let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
         if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
@@ -345,7 +396,7 @@ function initGameClient() {
 }
 
 function syncClientState(data) {
-    if (!baseGuest && data.bG) { // Initial Camera setup for Guest
+    if (!baseGuest && data.bG) {
         camera.x = data.bG.x - width/2; camera.y = data.bG.y - height/2;
     }
 
@@ -451,9 +502,9 @@ canvas.addEventListener('contextmenu', (e) => {
     const pos = getPointerPos(e);
     const wPos = { x: pos.worldX, y: pos.worldY };
 
-    let clickedEnt = units.find(u=>dist(wPos, u)<20) || buildings.find(b=>dist(wPos, b)<b.size) || trees.find(t=>dist(wPos, t)<20) || wheats.find(w=>dist(wPos, w)<20) || enemies.find(en=>dist(wPos, en)<20);
+    let clickedEnt = units.find(u=>dist(wPos, u)<20) || buildings.find(b=>dist(wPos, b)<b.size) || trees.find(t=>dist(wPos, t)<20) || wheats.find(w=>dist(wPos, w)<20) || enemies.find(en=>dist(wPos, en)<20) || (dist(wPos, baseHost)<baseHost.size/2 ? baseHost : null) || (dist(wPos, baseGuest)<baseGuest.size/2 ? baseGuest : null);
     
-    if (myRes.food <= 0 && (!clickedEnt || clickedEnt.type !== 'wheat')) {
+    if (myRes.food <= 0 && (!clickedEnt || (clickedEnt.type !== 'wheat' && clickedEnt.type !== 'farm'))) {
         addSysLog("Famine", "Nourriture à 0 ! Les Slimes refusent d'obéir.");
         return;
     }
@@ -477,7 +528,7 @@ function setBuildMode(type) {
 
 function getBuildingCost(type) {
     if(type === 'house') return { g: 0, w: 10, f: 0 };
-    if(type === 'sawmill') return { g: 0, w: 0, f: 50 }; // SCIERIE = NOURRITURE
+    if(type === 'sawmill') return { g: 0, w: 0, f: 50 }; 
     if(type === 'mine') return { g: 0, w: 50, f: 50 };
     if(['barracks', 'archery', 'mage'].includes(type)) return { g: 250, w: 250, f: 250 };
     if(type === 'tower') return { g: 100, w: 50, f: 0 };
