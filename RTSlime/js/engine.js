@@ -48,41 +48,14 @@ const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
 
 // ==========================================
-// PEER JS MULTIJOUEUR (FIX COMPLET)
+// PEER JS MULTIJOUEUR (AUTO-RETRY ANTI-COLLISION)
 // ==========================================
-let peer = null; // On ne crée le serveur qu'au moment du clic
+let peer = null;
 let myId = null;
 let myPseudo = "Anonyme";
 let isHost = false;
 let connToHost = null;
 let connToGuest = null;
-
-function setupPeerEvents(p) {
-    p.on('open', id => {
-        myId = id;
-        document.getElementById('screen-login').classList.remove('active-screen');
-        document.getElementById('screen-lobby').classList.add('active-screen');
-        document.getElementById('my-id').innerText = id;
-        document.getElementById('login-error').innerText = "";
-    });
-
-    p.on('connection', conn => {
-        if(!isHost) return;
-        connToGuest = conn;
-        conn.on('data', data => handleNetworkData(data));
-        document.getElementById('min-players-msg').style.display = 'none';
-        document.getElementById('btn-start').style.display = 'block';
-    });
-
-    p.on('error', err => {
-        console.error(err);
-        let errEl = document.getElementById('login-error');
-        if(errEl) {
-            errEl.innerText = "Erreur réseau: " + err.type;
-            errEl.style.color = "var(--neon-pink)";
-        }
-    });
-}
 
 document.getElementById('btn-host').addEventListener('click', () => {
     let pName = document.getElementById('player-name').value.trim();
@@ -93,15 +66,44 @@ document.getElementById('btn-host').addEventListener('click', () => {
     myPseudo = pName;
     isHost = true;
     
-    let code = 'RTS' + Math.floor(1000 + Math.random() * 9000);
     document.getElementById('login-error').innerText = "Création du serveur...";
     document.getElementById('login-error').style.color = "var(--neon-cyan)";
 
-    // On crée la connexion uniquement maintenant
-    setTimeout(() => {
+    function createUniqueServer() {
+        let code = 'RTS' + Math.floor(1000 + Math.random() * 9000);
+        if(peer) peer.destroy();
+        
         peer = new Peer(code);
-        setupPeerEvents(peer);
-    }, 100);
+
+        peer.on('open', id => {
+            myId = id;
+            document.getElementById('screen-login').classList.remove('active-screen');
+            document.getElementById('screen-lobby').classList.add('active-screen');
+            document.getElementById('my-id').innerText = id;
+            document.getElementById('login-error').innerText = "";
+        });
+
+        peer.on('connection', conn => {
+            if(!isHost) return;
+            connToGuest = conn;
+            conn.on('data', data => handleNetworkData(data));
+            document.getElementById('min-players-msg').style.display = 'none';
+            document.getElementById('btn-start').style.display = 'block';
+        });
+
+        peer.on('error', err => {
+            console.warn("Erreur PeerJS:", err);
+            if(err.type === 'unavailable-id') {
+                // Si le code à 4 chiffres est déjà pris, on réessaie instantanément avec un autre !
+                createUniqueServer();
+            } else {
+                document.getElementById('login-error').innerText = "Erreur réseau: " + err.type;
+                document.getElementById('login-error').style.color = "var(--neon-pink)";
+            }
+        });
+    }
+
+    createUniqueServer();
 });
 
 document.getElementById('btn-join').addEventListener('click', () => {
@@ -121,32 +123,33 @@ document.getElementById('btn-join').addEventListener('click', () => {
     document.getElementById('login-error').innerText = "Connexion...";
     document.getElementById('login-error').style.color = "var(--neon-cyan)";
 
-    setTimeout(() => {
-        peer = new Peer();
-        
-        peer.on('open', id => {
-            connToHost = peer.connect(targetId);
-            
-            connToHost.on('open', () => {
-                document.getElementById('screen-login').classList.remove('active-screen');
-                document.getElementById('screen-lobby').classList.add('active-screen');
-                document.getElementById('my-id').innerText = targetId;
-                document.getElementById('waiting-host-msg').style.display = 'block';
-                document.getElementById('min-players-msg').style.display = 'none';
-                document.getElementById('login-error').innerText = "";
-            });
-            
-            connToHost.on('data', data => handleNetworkData(data));
-            
-            connToHost.on('error', err => {
-                document.getElementById('login-error').innerText = "Erreur connexion hôte.";
-            });
-        });
+    if(peer) peer.destroy();
+    peer = new Peer();
 
-        peer.on('error', err => {
-            document.getElementById('login-error').innerText = "Erreur réseau: " + err.type;
+    peer.on('open', id => {
+        connToHost = peer.connect(targetId);
+        
+        connToHost.on('open', () => {
+            document.getElementById('screen-login').classList.remove('active-screen');
+            document.getElementById('screen-lobby').classList.add('active-screen');
+            document.getElementById('my-id').innerText = targetId;
+            document.getElementById('waiting-host-msg').style.display = 'block';
+            document.getElementById('min-players-msg').style.display = 'none';
+            document.getElementById('login-error').innerText = "";
         });
-    }, 100);
+        
+        connToHost.on('data', data => handleNetworkData(data));
+        
+        connToHost.on('error', err => {
+            document.getElementById('login-error').innerText = "Hôte introuvable.";
+            document.getElementById('login-error').style.color = "var(--neon-pink)";
+        });
+    });
+
+    peer.on('error', err => {
+        document.getElementById('login-error').innerText = "Erreur réseau: " + err.type;
+        document.getElementById('login-error').style.color = "var(--neon-pink)";
+    });
 });
 
 document.getElementById('btn-start').addEventListener('click', () => {
@@ -251,6 +254,31 @@ function getPointerPos(e) {
     let screenX = cx - rect.left;
     let screenY = cy - rect.top;
     return { screenX, screenY, worldX: (screenX / zoom) + camera.x, worldY: (screenY / zoom) + camera.y };
+}
+
+// --- MINIMAP ---
+function drawMinimap() {
+    mmCtx.clearRect(0, 0, 150, 150);
+    mmCtx.fillStyle = 'rgba(0, 20, 30, 0.8)';
+    mmCtx.fillRect(0, 0, 150, 150);
+
+    const drawDot = (obj, color, size) => {
+        mmCtx.fillStyle = color;
+        mmCtx.fillRect((obj.x/MAP_WIDTH)*150 - size/2, (obj.y/MAP_HEIGHT)*150 - size/2, size, size);
+    };
+
+    trees.forEach(t => drawDot(t, 'var(--neon-orange)', 1));
+    wheats.forEach(w => drawDot(w, 'var(--neon-green)', 1));
+    buildings.forEach(b => drawDot(b, b.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 4));
+    
+    if (baseHost && baseHost.hp > 0) drawDot(baseHost, 'var(--neon-cyan)', 6);
+    if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, 'var(--neon-pink)', 6);
+    
+    units.forEach(u => drawDot(u, u.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 2));
+    enemies.forEach(e => drawDot(e, 'var(--neon-red)', 3));
+
+    mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
+    mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/(zoom*MAP_WIDTH))*150, (height/(zoom*MAP_HEIGHT))*150);
 }
 
 // --- TRAITEMENT DES DONNEES ---
@@ -667,7 +695,6 @@ function hostUpdate(dt) {
 function draw() {
     ctx.clearRect(0, 0, width, height);
     
-    // Draw Minimap (on top of canvas but needs to be rendered every frame if it's dynamic, although here it's a separate canvas)
     if (gameState === 'PLAYING') drawMinimap();
 
     ctx.save();
