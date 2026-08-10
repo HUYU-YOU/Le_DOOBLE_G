@@ -1,5 +1,5 @@
 // ==========================================
-// MOTEUR PRINCIPAL (Boucle, Inputs, Rendu)
+// MOTEUR MULTIJOUEUR (P2P + Boucle + Rendu)
 // ==========================================
 
 const canvas = document.getElementById('gameCanvas');
@@ -8,11 +8,12 @@ const minimapCanvas = document.getElementById('minimap');
 const mmCtx = minimapCanvas.getContext('2d');
 
 let width, height;
-const MAP_WIDTH = 2000;
+const MAP_WIDTH = 3000; // Plus grand pour 2 joueurs
 const MAP_HEIGHT = 2000;
 let camera = { x: 0, y: 0 };
+let zoom = 1.0; // Ajout du Zoom
 
-// --- GESTION DES ASSETS GRAPHIQUES ---
+// --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
     map: 'assets/map/mapRTS.png',
     hdv: 'assets/bat/hdv.png',
@@ -35,9 +36,6 @@ const images = {};
 for (let key in ASSETS_PATHS) {
     images[key] = new Image();
     images[key].src = ASSETS_PATHS[key];
-    images[key].onerror = () => {
-        console.warn(`[MATRICE] Fichier introuvable : ${ASSETS_PATHS[key]}`);
-    };
 }
 
 // Éléments DOM
@@ -49,60 +47,61 @@ const uiMaxPop = document.getElementById('val-maxpop');
 const gameOverScreen = document.getElementById('game-over-screen');
 const instructions = document.getElementById('build-instructions');
 const uiBottom = document.getElementById('ui-bottom');
+const chatBox = document.getElementById('global-chat-messages');
 
-// Etat du jeu
-let gameState = 'PLAYING';
-let res = { gold: 50, wood: 100, food: 100, pop: 0, maxPop: 0 };
+// Etat du jeu P2P
+let peer = null;
+let myId = null;
+let hostId = null;
+let isHost = false;
+let connToHost = null;
+let connToGuest = null;
+
+let gameState = 'LOBBY';
+let resHost = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 };
+let resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 };
+
 let buildMode = null;
 let moveMode = null; 
-let waveTimer = 0;
-let survivalTimer = 0;
 
 // Variables Globales pour Entités
-let base = null;
+let baseHost = null;
+let baseGuest = null;
 let buildings = [];
 let units = [];
-let enemies = [];
+let enemies = []; // Obsolète mais gardé pour structure
 let trees = [];
 let wheats = [];
 let particles = [];
 let lasers = [];
-let selectedUnits = [];
-let selectedBuilding = null;
+let selectedUnits = []; // Tableau d'IDs
+let selectedBuilding = null; // Objet entier
 
 let isSelecting = false;
 let selectionStartScreen = { x: 0, y: 0 };
 let selectionCurrentScreen = { x: 0, y: 0 };
 let selectionStartWorld = { x: 0, y: 0 };
 let selectionCurrentWorld = { x: 0, y: 0 };
-let inputMode = 'mouse'; 
+
 let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
 
-// --- UTILITAIRES (Le bloc que j'avais oublié !) ---
+// --- UTILITAIRES ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
-
 function getClosest(entity, array) {
     let closest = null; let minDist = Infinity;
-    for(let o of array) { 
-        let d = dist(entity, o); 
-        if(d < minDist) { minDist = d; closest = o; } 
-    }
+    for(let o of array) { let d = dist(entity, o); if(d < minDist) { minDist = d; closest = o; } }
     return closest;
 }
-
 function spawnParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
-        particles.push({
-            x: x, y: y, 
-            vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100,
-            size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5
-        });
+        particles.push({ x: x, y: y, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5 });
     }
 }
-
-function spawnLaser(a, b, color) { 
-    lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); 
+function spawnLaser(a, b, color) { lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); }
+function addSysLog(title, msg) {
+    chatBox.innerHTML += `<p><span class="sys-log-msg">> ${title}:</span> ${msg}</p>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 // --- GESTION FENETRE & CAMERA ---
@@ -112,15 +111,30 @@ function resize() {
 }
 window.addEventListener('resize', resize); 
 
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (e.deltaY < 0) zoom += 0.1; else zoom -= 0.1;
+    zoom = Math.max(0.5, Math.min(zoom, 2.0));
+});
+
 function updateCamera() {
-    const margin = 30; const speed = 15;
+    const margin = 30; const speed = 20 / zoom;
     if (mouseHoverScreen.x < margin) camera.x -= speed;
     if (mouseHoverScreen.x > width - margin) camera.x += speed;
     if (mouseHoverScreen.y < margin) camera.y -= speed;
     if (mouseHoverScreen.y > height - margin) camera.y += speed;
 
-    camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width));
-    camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height));
+    camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
+    camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height/zoom));
+}
+
+function getPointerPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    let cx = e.touches ? e.touches[0].clientX : e.clientX;
+    let cy = e.touches ? e.touches[0].clientY : e.clientY;
+    let screenX = cx - rect.left;
+    let screenY = cy - rect.top;
+    return { screenX, screenY, worldX: (screenX / zoom) + camera.x, worldY: (screenY / zoom) + camera.y };
 }
 
 // --- MINIMAP ---
@@ -136,168 +150,210 @@ function drawMinimap() {
 
     trees.forEach(t => drawDot(t, 'var(--neon-orange)', 2));
     wheats.forEach(w => drawDot(w, 'var(--neon-green)', 2));
-    buildings.forEach(b => drawDot(b, 'var(--neon-cyan)', 4));
-    if (base && base.hp > 0) drawDot(base, 'var(--neon-cyan)', 6);
-    units.forEach(u => drawDot(u, '#c5c6c7', 2));
-    enemies.forEach(e => drawDot(e, 'var(--neon-red)', 3));
+    buildings.forEach(b => drawDot(b, b.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 4));
+    
+    if (baseHost && baseHost.hp > 0) drawDot(baseHost, 'var(--neon-cyan)', 6);
+    if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, 'var(--neon-pink)', 6);
+    
+    units.forEach(u => drawDot(u, u.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 2));
 
-    mmCtx.strokeStyle = 'var(--neon-cyan)'; mmCtx.lineWidth = 1;
-    mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/MAP_WIDTH)*150, (height/MAP_HEIGHT)*150);
+    mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
+    mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/(zoom*MAP_WIDTH))*150, (height/(zoom*MAP_HEIGHT))*150);
 }
 
-// --- GESTION UI DYNAMIQUE ---
-function renderBottomUI() {
-    uiBottom.innerHTML = ""; 
-    
-    if (selectedBuilding) {
-        if (selectedBuilding.type === 'hdv') {
-            let title = document.createElement('div');
-            title.style.color = 'var(--neon-cyan)'; title.style.marginRight = '15px'; title.innerHTML = `<b>HÔTEL DE VILLE</b>`;
-            uiBottom.appendChild(title);
-            
-            uiBottom.appendChild(createBtn('color-build', 'MAISON', '10🪵 10🍞', () => setBuildMode('house'), null, 'btn-b-house'));
-            uiBottom.appendChild(createBtn('color-build', 'FERME', '30🪵 20🍞', () => setBuildMode('farm'), null, 'btn-b-farm'));
-            uiBottom.appendChild(createBtn('color-build', 'SCIERIE', '30🪵 20🍞', () => setBuildMode('sawmill'), null, 'btn-b-sawmill'));
-            uiBottom.appendChild(createBtn('color-build', 'MINE', '50🪵 50🍞', () => setBuildMode('mine'), null, 'btn-b-mine'));
-            uiBottom.appendChild(createDivider());
-            uiBottom.appendChild(createBtn('color-build', 'CASERNE', '50💰 50🪵', () => setBuildMode('barracks'), null, 'btn-b-barracks'));
-            uiBottom.appendChild(createBtn('color-build', 'STAND TIR', '50💰 50🪵', () => setBuildMode('archery'), null, 'btn-b-archery'));
-            uiBottom.appendChild(createBtn('color-build', 'T. MAGE', '50💰 50🪵', () => setBuildMode('mage'), null, 'btn-b-mage'));
-            uiBottom.appendChild(createBtn('color-build', 'TOUR DEF', '100💰 50🪵', () => setBuildMode('tower'), null, 'btn-b-tower'));
-            uiBottom.appendChild(createDivider());
-            uiBottom.appendChild(createBtn('color-recruit', 'FERMIER', '10🍞', () => buyUnit('farmer', 'normal')));
-            uiBottom.appendChild(createDivider());
-            uiBottom.appendChild(createBtn('color-build', 'FERMER', '', () => { selectedBuilding = null; renderBottomUI(); }));
+// --- PEER JS MULTIJOUEUR ---
+document.getElementById('btn-host').addEventListener('click', () => {
+    isHost = true; myId = 'host';
+    const roomId = 'RTS' + Math.floor(1000 + Math.random() * 9000);
+    peer = new Peer(roomId);
+    peer.on('open', id => {
+        document.getElementById('screen-login').classList.remove('active-screen');
+        document.getElementById('screen-lobby').classList.add('active-screen');
+        document.getElementById('my-id').innerText = id;
+    });
+    peer.on('connection', conn => {
+        connToGuest = conn;
+        conn.on('data', data => handleNetworkData(data));
+        document.getElementById('min-players-msg').style.display = 'none';
+        document.getElementById('btn-start').style.display = 'block';
+    });
+});
 
-        } else {
-            let title = document.createElement('div');
-            title.style.color = 'white'; title.style.marginRight = '15px'; title.innerHTML = `<b>${selectedBuilding.type.toUpperCase()}</b> Lv.${selectedBuilding.level}`;
-            uiBottom.appendChild(title);
+document.getElementById('btn-join').addEventListener('click', () => {
+    isHost = false; myId = 'guest';
+    const targetId = document.getElementById('join-id').value.trim().toUpperCase();
+    peer = new Peer();
+    peer.on('open', id => {
+        connToHost = peer.connect(targetId);
+        connToHost.on('open', () => {
+            document.getElementById('screen-login').classList.remove('active-screen');
+            document.getElementById('screen-lobby').classList.add('active-screen');
+            document.getElementById('my-id').innerText = targetId;
+            document.getElementById('waiting-host-msg').style.display = 'block';
+            document.getElementById('min-players-msg').style.display = 'none';
+        });
+        connToHost.on('data', data => handleNetworkData(data));
+    });
+});
 
-            if (['barracks', 'archery', 'mage'].includes(selectedBuilding.type)) {
-                if (selectedBuilding.level === 1) {
-                    let btnUp = createBtn('color-upgrade', 'AMÉLIORER', '100💰 100🪵', () => upgradeBuilding(selectedBuilding));
-                    uiBottom.appendChild(btnUp);
-                    uiBottom.appendChild(createDivider());
-                }
+document.getElementById('btn-start').addEventListener('click', () => {
+    if(isHost) {
+        initGame();
+        connToGuest.send({ type: 'start_game' });
+    }
+});
 
-                let unitType = selectedBuilding.type === 'barracks' ? 'warrior' : selectedBuilding.type === 'archery' ? 'archer' : 'mage';
-                uiBottom.appendChild(createBtn('color-recruit', 'NORMAL', '20💰 20🍞', () => buyUnit(unitType, 'normal')));
-                
-                if (selectedBuilding.level > 1) {
-                    uiBottom.appendChild(createBtn('color-recruit', '🔥 FEU', '40💰 40🍞', () => buyUnit(unitType, 'fire'), 'var(--neon-red)'));
-                    uiBottom.appendChild(createBtn('color-recruit', '💧 EAU', '40💰 40🍞', () => buyUnit(unitType, 'water'), 'var(--neon-water)'));
-                    uiBottom.appendChild(createBtn('color-recruit', '🌿 PLANTE', '40💰 40🍞', () => buyUnit(unitType, 'plant'), 'var(--neon-green)'));
-                }
-            } else if (['farm', 'sawmill', 'mine'].includes(selectedBuilding.type)) {
-                let info = document.createElement('div');
-                info.style.color = '#aaa'; info.innerText = `Ouvriers: ${selectedBuilding.farmersInside}/5.`;
-                uiBottom.appendChild(info);
-            } else if (selectedBuilding.type === 'house') {
-                let info = document.createElement('div');
-                info.style.color = '#aaa'; info.innerText = "Capacité: 4 unités.";
-                uiBottom.appendChild(info);
-            }
-
-            uiBottom.appendChild(createDivider());
-            uiBottom.appendChild(createBtn('color-build', 'DÉPLACER', '', () => startMoveBuilding(selectedBuilding), 'var(--neon-cyan)'));
-            uiBottom.appendChild(createBtn('color-destroy', 'DÉTRUIRE', 'Gains 50%', () => destroyBuilding(selectedBuilding)));
-            uiBottom.appendChild(createDivider());
-            uiBottom.appendChild(createBtn('color-build', 'FERMER', '', () => { selectedBuilding = null; renderBottomUI(); }));
-        }
-    } else {
-        let info = document.createElement('div');
-        info.style.color = '#aaa'; info.innerText = "Sélectionnez l'Hôtel de Ville ou un bâtiment.";
-        uiBottom.appendChild(info);
+function handleNetworkData(data) {
+    if (data.type === 'start_game' && !isHost) {
+        initGameClient();
+    }
+    if (data.type === 'sync' && !isHost) {
+        syncClientState(data);
+    }
+    if (data.type === 'cmd' && isHost) {
+        executeCommand(data);
     }
 }
 
-function createBtn(colorClass, title, costText, onClick, overrideColor=null, id=null) {
-    let b = document.createElement('button');
-    b.className = `build-btn ${colorClass}`;
-    if(id) b.id = id;
-    if(overrideColor) { b.style.borderColor = overrideColor; b.style.color = overrideColor; }
-    b.innerHTML = `${title} <span>${costText}</span>`;
-    b.onclick = onClick;
-    return b;
-}
-function createDivider() {
-    let d = document.createElement('div'); d.className = 'ui-divider'; return d;
-}
+function executeCommand(data) {
+    // Si c'est l'hôte, on exécute la commande de l'un ou l'autre
+    let playerRes = data.owner === 'host' ? resHost : resGuest;
+    let playerBase = data.owner === 'host' ? baseHost : baseGuest;
 
-// --- DEPLACER / DETRUIRE ---
-function startMoveBuilding(b) {
-    moveMode = b;
-    selectedBuilding = null;
-    renderBottomUI();
-    instructions.style.display = 'block';
-}
+    if(playerRes.food <= 0 && data.action !== 'move') {
+        if(data.owner === myId) addSysLog("Famine", "Nourriture à 0 ! Les slimes refusent l'ordre.");
+        return;
+    }
 
-function destroyBuilding(b) {
-    let cost = getBuildingCost(b.type);
-    res.gold += Math.floor(cost.g / 2);
-    res.wood += Math.floor(cost.w / 2);
-    res.food += Math.floor(cost.f / 2);
-    
-    if(b.type === 'house') res.maxPop -= 4;
-    
-    if(b.farmersInside > 0) {
-        units.forEach(u => {
-            if(u.state === 'farming' && u.targetEntity === b) {
-                u.state = 'idle'; u.targetEntity = null;
-            }
+    if (data.action === 'move') {
+        let uList = units.filter(u => data.unitIds.includes(u.id));
+        let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
+        
+        // Famine override
+        if (playerRes.food <= 0) {
+            let isFoodCmd = ent && (ent.type === 'wheat' || ent.type === 'farm');
+            if(!isFoodCmd) return; 
+        }
+
+        uList.forEach((u, i) => {
+            let dx = data.x + (i%3)*25 - 25; let dy = data.y + Math.floor(i/3)*25;
+            u.setCommand(ent ? ent.x : dx, ent ? ent.y : dy, ent);
         });
     }
+    
+    if (data.action === 'build') {
+        if(data.bType === 'house' && buildings.filter(b=>b.type==='house' && b.owner===data.owner).length >= 10) return;
+        let cost = getBuildingCost(data.bType);
+        if(playerRes.gold >= cost.g && playerRes.wood >= cost.w && playerRes.food >= cost.f) {
+            playerRes.gold -= cost.g; playerRes.wood -= cost.w; playerRes.food -= cost.f;
+            buildings.push(new Building(data.x, data.y, data.bType, data.owner));
+            if(data.bType === 'house') {
+                units.push(new Unit(data.x - 20, data.y + 30, 'farmer', 'normal', data.owner));
+                units.push(new Unit(data.x + 20, data.y + 30, 'farmer', 'normal', data.owner));
+            }
+        }
+    }
 
-    buildings = buildings.filter(x => x !== b);
-    spawnParticles(b.x, b.y, 'var(--neon-red)', 30);
-    selectedBuilding = null;
-    updateUI(); renderBottomUI();
+    if (data.action === 'recruit') {
+        if(playerRes.pop >= playerRes.maxPop) return;
+        let cG = data.element === 'normal' ? (data.uType==='farmer'?0:20) : 40;
+        let cF = data.element === 'normal' ? (data.uType==='farmer'?10:20) : 40;
+        if (playerRes.gold >= cG && playerRes.food >= cF) {
+            playerRes.gold -= cG; playerRes.food -= cF;
+            let b = buildings.find(b=>b.id === data.bId);
+            let sx = b ? b.x : playerBase.x; let sy = b ? b.y + 60 : playerBase.y + 70;
+            units.push(new Unit(sx, sy, data.uType, data.element, data.owner));
+        }
+    }
+
+    if (data.action === 'upgrade') {
+        let b = buildings.find(b=>b.id === data.bId);
+        if(b && playerRes.gold >= 100 && playerRes.wood >= 100) {
+            playerRes.gold -= 100; playerRes.wood -= 100; b.level = 2;
+        }
+    }
+    if (data.action === 'destroy') {
+        let b = buildings.find(b=>b.id === data.bId);
+        if(b && b.owner === data.owner) {
+            let cost = getBuildingCost(b.type);
+            playerRes.gold += Math.floor(cost.g/2); playerRes.wood += Math.floor(cost.w/2); playerRes.food += Math.floor(cost.f/2);
+            if(b.type === 'house') playerRes.maxPop -= 4;
+            units.forEach(u => { if(u.state === 'farming' && u.targetEntityId === b.id) u.setCommand(u.x, u.y); });
+            buildings = buildings.filter(x => x !== b);
+        }
+    }
 }
 
 // --- INITIALISATION ---
 function initGame() {
     gameState = 'PLAYING';
-    res = { gold: 50, wood: 50, food: 50, pop: 0, maxPop: 0 }; 
-    survivalTimer = 0; waveTimer = 20; 
-    units = []; enemies = []; trees = []; wheats = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
+    resHost = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
+    resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
+    survivalTimer = 0; 
+    units = []; trees = []; wheats = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
     buildMode = null; moveMode = null; selectedBuilding = null;
-    gameOverScreen.style.display = 'none';
-
-    resize();
-    camera.x = MAP_WIDTH/2 - width/2;
-    camera.y = MAP_HEIGHT/2 - height/2;
-
-    base = new Base(MAP_WIDTH/2, MAP_HEIGHT/2);
-
-    for(let i=0; i<30; i++) {
-        let tx = Math.random() * MAP_WIDTH; let ty = Math.random() * MAP_HEIGHT;
-        if (dist({x:tx, y:ty}, base) > 150) trees.push(new ResourceNode(tx, ty, 'tree'));
-    }
-    for(let i=0; i<20; i++) {
-        let wx = Math.random() * MAP_WIDTH; let wy = Math.random() * MAP_HEIGHT;
-        if (dist({x:wx, y:wy}, base) > 150) wheats.push(new ResourceNode(wx, wy, 'wheat'));
-    }
-
-    let startHouse = new Building(base.x - 120, base.y, 'house');
-    buildings.push(startHouse);
-    units.push(new Unit(startHouse.x - 20, startHouse.y + 40, 'farmer'));
-    units.push(new Unit(startHouse.x + 20, startHouse.y + 40, 'farmer'));
     
+    document.getElementById('screen-lobby').classList.remove('active-screen');
+    document.getElementById('game-container').classList.add('active-screen');
+    resize();
+
+    baseHost = new Base(300, MAP_HEIGHT/2, 'host');
+    baseGuest = new Base(MAP_WIDTH - 300, MAP_HEIGHT/2, 'guest');
+    camera.x = 0; camera.y = MAP_HEIGHT/2 - height/2;
+
+    for(let i=0; i<40; i++) {
+        let tx = Math.random() * MAP_WIDTH; let ty = Math.random() * MAP_HEIGHT;
+        if (dist({x:tx, y:ty}, baseHost) > 150 && dist({x:tx, y:ty}, baseGuest) > 150) trees.push(new ResourceNode(tx, ty, 'tree'));
+    }
+    for(let i=0; i<30; i++) {
+        let wx = Math.random() * MAP_WIDTH; let wy = Math.random() * MAP_HEIGHT;
+        if (dist({x:wx, y:wy}, baseHost) > 150 && dist({x:wx, y:wy}, baseGuest) > 150) wheats.push(new ResourceNode(wx, wy, 'wheat'));
+    }
+
+    // Départ Hôte
+    let hHouse = new Building(baseHost.x - 100, baseHost.y, 'house', 'host');
+    buildings.push(hHouse);
+    units.push(new Unit(hHouse.x - 20, hHouse.y + 40, 'farmer', 'normal', 'host'));
+    units.push(new Unit(hHouse.x + 20, hHouse.y + 40, 'farmer', 'normal', 'host'));
+
+    // Départ Guest
+    let gHouse = new Building(baseGuest.x + 100, baseGuest.y, 'house', 'guest');
+    buildings.push(gHouse);
+    units.push(new Unit(gHouse.x - 20, gHouse.y + 40, 'farmer', 'normal', 'guest'));
+    units.push(new Unit(gHouse.x + 20, gHouse.y + 40, 'farmer', 'normal', 'guest'));
+
+    updateUI(); renderBottomUI();
+}
+
+function initGameClient() {
+    gameState = 'PLAYING';
+    document.getElementById('screen-lobby').classList.remove('active-screen');
+    document.getElementById('game-container').classList.add('active-screen');
+    resize();
+    camera.x = MAP_WIDTH - width; camera.y = MAP_HEIGHT/2 - height/2;
+    updateUI(); renderBottomUI();
+}
+
+function syncClientState(data) {
+    resHost = data.resH; resGuest = data.resG;
+    baseHost = new Base(data.bH.x, data.bH.y, 'host'); baseHost.id = data.bH.id; baseHost.hp = data.bH.hp;
+    baseGuest = new Base(data.bG.x, data.bG.y, 'guest'); baseGuest.id = data.bG.id; baseGuest.hp = data.bG.hp;
+    
+    trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree'); r.id = t.id; r.amount = t.a; return r; });
+    wheats = data.w.map(w => { let r = new ResourceNode(w.x, w.y, 'wheat'); r.id = w.id; r.amount = w.a; return r; });
+    
+    buildings = data.b.map(b => {
+        let build = new Building(b.x, b.y, b.t, b.o); build.id = b.id; build.hp = b.hp; build.maxHp = b.mHp; build.level = b.l; build.farmersInside = b.fi; return build;
+    });
+
+    units = data.u.map(u => {
+        let un = new Unit(u.x, u.y, u.t, u.e, u.o); un.id = u.id; un.hp = u.hp; un.maxHp = u.mHp; un.state = u.s; un.payload = u.p; un.slowTimer = u.st; return un;
+    });
+
     updateUI();
-    renderBottomUI();
 }
 
-// --- INPUTS ---
-function getPointerPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    let cx = e.touches ? e.touches[0].clientX : e.clientX;
-    let cy = e.touches ? e.touches[0].clientY : e.clientY;
-    let screenX = cx - rect.left;
-    let screenY = cy - rect.top;
-    return { screenX, screenY, worldX: screenX + camera.x, worldY: screenY + camera.y };
-}
-
+// --- INPUTS & SÉLECTION ---
 canvas.addEventListener('mousedown', (e) => {
     if(gameState !== 'PLAYING') return;
     const pos = getPointerPos(e);
@@ -314,13 +370,17 @@ canvas.addEventListener('mousedown', (e) => {
     }
 
     if(buildMode) {
-        if(e.button === 0) placeBuilding(wPos);
+        if(e.button === 0) {
+            if (isHost) executeCommand({ action: 'build', bType: buildMode, x: wPos.x, y: wPos.y, owner: myId });
+            else connToHost.send({ type: 'cmd', action: 'build', bType: buildMode, x: wPos.x, y: wPos.y, owner: myId });
+            setBuildMode(null);
+        }
         if(e.button === 2) setBuildMode(null);
         return;
     }
 
     if(e.button === 0) {
-        isSelecting = true; inputMode = 'mouse';
+        isSelecting = true;
         selectionStartScreen = { x: pos.screenX, y: pos.screenY };
         selectionStartWorld = wPos;
         selectionCurrentScreen = { x: pos.screenX, y: pos.screenY };
@@ -349,25 +409,21 @@ canvas.addEventListener('mouseup', (e) => {
 
     let isClick = (maxX - minX < 10 && maxY - minY < 10);
 
-    if (isClick && inputMode === 'mouse') {
-        let clickedUnit = units.find(u => dist(selectionStartWorld, u) < u.radius + 15 && u.state !== 'farming');
+    if (isClick) {
+        let clickedUnit = units.find(u => dist(selectionStartWorld, u) < u.radius + 15 && u.owner === myId);
         if (clickedUnit) {
-            selectedUnits = [clickedUnit];
-            selectedBuilding = null;
+            selectedUnits = [clickedUnit.id]; selectedBuilding = null;
         } else {
             selectedUnits = [];
-            let clickedBuild = buildings.find(b => dist(selectionStartWorld, b) < b.size/2 + 10);
-            if(clickedBuild) {
-                selectedBuilding = clickedBuild;
-            } else if (dist(selectionStartWorld, base) < base.size/2 + 10) {
-                selectedBuilding = base;
-            } else {
-                selectedBuilding = null;
-            }
+            let clickedBuild = buildings.find(b => dist(selectionStartWorld, b) < b.size/2 + 10 && b.owner === myId);
+            let myBase = myId === 'host' ? baseHost : baseGuest;
+            if(clickedBuild) { selectedBuilding = clickedBuild; } 
+            else if (dist(selectionStartWorld, myBase) < myBase.size/2 + 10) { selectedBuilding = myBase; } 
+            else { selectedBuilding = null; }
         }
         renderBottomUI();
-    } else if (!isClick) {
-        selectedUnits = units.filter(u => u.x > minX && u.x < maxX && u.y > minY && u.y < maxY && u.state !== 'farming');
+    } else {
+        selectedUnits = units.filter(u => u.owner === myId && u.x > minX && u.x < maxX && u.y > minY && u.y < maxY).map(u=>u.id);
         selectedBuilding = null; renderBottomUI();
     }
 });
@@ -375,27 +431,25 @@ canvas.addEventListener('mouseup', (e) => {
 canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if(gameState !== 'PLAYING' || selectedUnits.length === 0 || buildMode || moveMode) return;
+    
+    let myRes = myId === 'host' ? resHost : resGuest;
     const pos = getPointerPos(e);
     const wPos = { x: pos.worldX, y: pos.worldY };
 
-    let clickedEnemy = enemies.find(en => dist(wPos, en) < en.radius + 15);
-    let clickedTree = trees.find(t => dist(wPos, t) < t.radius + 15);
-    let clickedWheat = wheats.find(w => dist(wPos, w) < w.radius + 15);
-    let clickedBuild = buildings.find(b => ['farm','sawmill','mine'].includes(b.type) && dist(wPos, b) < b.size);
+    let clickedEnt = units.find(u=>dist(wPos, u)<20) || buildings.find(b=>dist(wPos, b)<b.size) || trees.find(t=>dist(wPos, t)<20) || wheats.find(w=>dist(wPos, w)<20);
+    
+    if (myRes.food <= 0 && (!clickedEnt || (clickedEnt.type !== 'wheat' && clickedEnt.type !== 'farm'))) {
+        addSysLog("Famine", "Nourriture à 0 ! Les Slimes refusent d'obéir.");
+        return;
+    }
 
-    issueCommand(wPos.x, wPos.y, clickedEnemy || clickedTree || clickedWheat || clickedBuild);
+    if (isHost) executeCommand({ action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: myId });
+    else connToHost.send({ type: 'cmd', action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: myId });
+    
     spawnParticles(wPos.x, wPos.y, 'var(--neon-cyan)', 5);
 });
 
-function issueCommand(x, y, entity) {
-    selectedUnits.forEach((u, i) => {
-        let dx = x + (i%3)*25 - 25; 
-        let dy = y + Math.floor(i/3)*25;
-        u.setCommand(entity ? entity.x : dx, entity ? entity.y : dy, entity);
-    });
-}
-
-// --- CONSTRUCTION & RECRUTEMENT ---
+// --- UI ET ACTIONS ---
 function setBuildMode(type) {
     buildMode = buildMode === type ? null : type;
     document.querySelectorAll('.build-btn').forEach(b => b.classList.remove('active-mode'));
@@ -403,240 +457,189 @@ function setBuildMode(type) {
         let el = document.getElementById('btn-b-' + buildMode);
         if(el) el.classList.add('active-mode');
         instructions.style.display = 'block';
-    } else {
-        instructions.style.display = 'none';
-    }
+    } else { instructions.style.display = 'none'; }
 }
 
 function getBuildingCost(type) {
-    if(type === 'house') return { g: 0, w: 10, f: 10 };
+    if(type === 'house') return { g: 0, w: 10, f: 0 };
     if(type === 'sawmill') return { g: 0, w: 30, f: 20 };
-    if(type === 'farm') return { g: 0, w: 30, f: 20 };
+    if(type === 'farm') return { g: 0, w: 30, f: 0 };
     if(type === 'mine') return { g: 0, w: 50, f: 50 };
-    if(type === 'barracks' || type === 'archery' || type === 'mage') return { g: 50, w: 50, f: 0 };
+    if(['barracks', 'archery', 'mage'].includes(type)) return { g: 250, w: 250, f: 250 };
     if(type === 'tower') return { g: 100, w: 50, f: 0 };
     return {g:0,w:0,f:0};
 }
 
-function placeBuilding(pos) {
-    if(buildMode === 'house') {
-        let hc = buildings.filter(b => b.type === 'house').length;
-        if(hc >= 10) { alert("Limite de 10 maisons atteinte."); setBuildMode(null); return; }
-    }
+function renderBottomUI() {
+    uiBottom.innerHTML = ""; 
+    if (!selectedBuilding) { uiBottom.innerHTML = "<div style='color:#aaa;'>Sélectionnez votre Hôtel de Ville ou un Bâtiment.</div>"; return; }
 
-    let cost = getBuildingCost(buildMode);
-    if(res.gold >= cost.g && res.wood >= cost.w && res.food >= cost.f) {
-        res.gold -= cost.g; res.wood -= cost.w; res.food -= cost.f;
-        
-        let b = new Building(pos.x, pos.y, buildMode);
-        buildings.push(b);
-        spawnParticles(pos.x, pos.y, 'var(--neon-cyan)', 20);
-        
-        if(buildMode === 'house') {
-            units.push(new Unit(pos.x - 20, pos.y + 30, 'farmer'));
-            units.push(new Unit(pos.x + 20, pos.y + 30, 'farmer'));
+    let bTitle = selectedBuilding.type === 'hdv' ? 'HÔTEL DE VILLE' : selectedBuilding.type.toUpperCase();
+    let title = document.createElement('div');
+    title.style.color = 'white'; title.style.marginRight = '15px'; title.innerHTML = `<b>${bTitle}</b>` + (selectedBuilding.level ? ` Lv.${selectedBuilding.level}` : '');
+    uiBottom.appendChild(title);
+
+    if (selectedBuilding.type === 'hdv') {
+        uiBottom.appendChild(createBtn('color-build', 'MAISON', '10🪵', () => setBuildMode('house'), null, 'btn-b-house', ASSETS_PATHS.house));
+        uiBottom.appendChild(createBtn('color-build', 'FERME', '30🪵 20🍞', () => setBuildMode('farm'), null, 'btn-b-farm', ASSETS_PATHS.farm));
+        uiBottom.appendChild(createBtn('color-build', 'SCIERIE', '30🪵 20🍞', () => setBuildMode('sawmill'), null, 'btn-b-sawmill', ASSETS_PATHS.sawmill));
+        uiBottom.appendChild(createBtn('color-build', 'MINE', '50🪵 50🍞', () => setBuildMode('mine'), null, 'btn-b-mine', ASSETS_PATHS.mine));
+        uiBottom.appendChild(createDivider());
+        uiBottom.appendChild(createBtn('color-build', 'CASERNE', '250💰/🪵/🍞', () => setBuildMode('barracks'), null, 'btn-b-barracks', ASSETS_PATHS.barracks));
+        uiBottom.appendChild(createBtn('color-build', 'STAND TIR', '250💰/🪵/🍞', () => setBuildMode('archery'), null, 'btn-b-archery', ASSETS_PATHS.archery));
+        uiBottom.appendChild(createBtn('color-build', 'T. MAGE', '250💰/🪵/🍞', () => setBuildMode('mage'), null, 'btn-b-mage', ASSETS_PATHS.mageTower));
+        uiBottom.appendChild(createBtn('color-build', 'TOUR DEF', '100💰 50🪵', () => setBuildMode('tower'), null, 'btn-b-tower', ASSETS_PATHS.tower));
+        uiBottom.appendChild(createDivider());
+        uiBottom.appendChild(createBtn('color-recruit', 'FERMIER', '10🍞', () => sendAction('recruit', {uType:'farmer', element:'normal', bId:selectedBuilding.id}), null, null, ASSETS_PATHS.farmer));
+    } 
+    else if (['barracks', 'archery', 'mage'].includes(selectedBuilding.type)) {
+        if (selectedBuilding.level === 1) {
+            uiBottom.appendChild(createBtn('color-upgrade', 'AMÉLIORER', '100💰 100🪵', () => sendAction('upgrade', {bId:selectedBuilding.id})));
+            uiBottom.appendChild(createDivider());
         }
-        
-        setBuildMode(null); updateUI();
-    } else { alert("Ressources insuffisantes !"); setBuildMode(null); }
-}
-
-function upgradeBuilding(b) {
-    if (res.gold >= 100 && res.wood >= 100) {
-        res.gold -= 100; res.wood -= 100;
-        b.level = 2;
-        spawnParticles(b.x, b.y, 'var(--neon-yellow)', 30);
-        updateUI(); renderBottomUI();
-    } else { alert("Besoin de 100 Or et 100 Bois."); }
-}
-
-function buyUnit(type, element) {
-    if(res.pop >= res.maxPop) { alert("Population Max ! Construisez des maisons."); return; }
-    
-    let costGold = 0, costFood = 0;
-    if(type === 'farmer') { costGold = 0; costFood = 10; }
-    else {
-        costGold = element === 'normal' ? 20 : 40;
-        costFood = element === 'normal' ? 20 : 40;
+        let uType = selectedBuilding.type === 'barracks' ? 'warrior' : selectedBuilding.type === 'archery' ? 'archer' : 'mage';
+        uiBottom.appendChild(createBtn('color-recruit', 'NORMAL', '20💰 20🍞', () => sendAction('recruit', {uType:uType, element:'normal', bId:selectedBuilding.id}), null, null, ASSETS_PATHS[uType]));
+        if (selectedBuilding.level > 1) {
+            uiBottom.appendChild(createBtn('color-recruit', '🔥 FEU', '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:'fire', bId:selectedBuilding.id}), 'var(--neon-red)', null, ASSETS_PATHS[uType]));
+            uiBottom.appendChild(createBtn('color-recruit', '💧 EAU', '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:'water', bId:selectedBuilding.id}), 'var(--neon-water)', null, ASSETS_PATHS[uType]));
+            uiBottom.appendChild(createBtn('color-recruit', '🌿 PLANTE', '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:'plant', bId:selectedBuilding.id}), 'var(--neon-green)', null, ASSETS_PATHS[uType]));
+        }
+    } 
+    else if (['farm', 'sawmill', 'mine'].includes(selectedBuilding.type)) {
+        let info = document.createElement('div'); info.style.color = '#aaa'; info.innerText = `Ouvriers: ${selectedBuilding.farmersInside}/5.`; uiBottom.appendChild(info);
     }
+    
+    if(selectedBuilding.type !== 'hdv') {
+        uiBottom.appendChild(createDivider());
+        uiBottom.appendChild(createBtn('color-build', 'DÉPLACER', '', () => startMoveBuilding(selectedBuilding), 'var(--neon-cyan)'));
+        uiBottom.appendChild(createBtn('color-destroy', 'DÉTRUIRE', 'Gains 50%', () => sendAction('destroy', {bId:selectedBuilding.id})));
+    }
+    uiBottom.appendChild(createDivider());
+    uiBottom.appendChild(createBtn('color-build', 'FERMER', '', () => { selectedBuilding = null; renderBottomUI(); }));
+}
 
-    if (res.gold >= costGold && res.food >= costFood) {
-        res.gold -= costGold; res.food -= costFood;
-        let sx = selectedBuilding ? selectedBuilding.x : base.x;
-        let sy = selectedBuilding ? selectedBuilding.y + 60 : base.y + 70;
-        units.push(new Unit(sx, sy, type, element));
-        updateUI();
-    } else { alert("Ressources insuffisantes !"); }
+function createBtn(colorClass, title, costText, onClick, overrideColor=null, id=null, iconSrc=null) {
+    let b = document.createElement('button'); b.className = `build-btn ${colorClass}`;
+    if(id) b.id = id;
+    if(overrideColor) { b.style.borderColor = overrideColor; b.style.color = overrideColor; }
+    let imgHtml = iconSrc ? `<img src="${iconSrc}">` : '';
+    b.innerHTML = `${imgHtml}<div>${title}</div><span>${costText}</span>`;
+    b.onclick = onClick; return b;
+}
+
+function sendAction(action, data) {
+    data.action = action; data.owner = myId;
+    if(isHost) executeCommand(data); else connToHost.send({ type: 'cmd', ...data });
 }
 
 function updateUI() {
-    uiGold.innerText = Math.floor(res.gold);
-    uiWood.innerText = Math.floor(res.wood);
-    uiFood.innerText = Math.floor(res.food);
-    uiPop.innerText = res.pop;
-    uiMaxPop.innerText = res.maxPop;
+    let myRes = myId === 'host' ? resHost : resGuest;
+    uiGold.innerText = Math.floor(myRes.gold);
+    uiWood.innerText = Math.floor(myRes.wood);
+    uiFood.innerText = Math.floor(myRes.food);
+    let myPop = units.filter(u=>u.owner===myId).length;
+    uiPop.innerText = myPop; uiMaxPop.innerText = myRes.maxPop;
+    
+    myRes.pop = myPop;
+    if(myRes.food <= 0) uiFood.style.color = 'red'; else uiFood.style.color = 'var(--neon-green)';
 }
 
-// --- BOUCLE PRINCIPALE ---
-let lastTime = performance.now();
-let ecoTimer = 0;
-
-function update(dt) {
-    if (gameState !== 'PLAYING') return;
-    survivalTimer += dt;
-    ecoTimer += dt;
-    updateCamera();
+// --- BOUCLE UPDATE (HÔTE UNIQUEMENT) ---
+function hostUpdate(dt) {
+    survivalTimer += dt; ecoTimer += dt;
 
     if (ecoTimer >= 1) {
         ecoTimer = 0;
-        let farmOutput=0, mineOutput=0, sawOutput=0;
+        let p1Farm=0, p1Mine=0, p1Saw=0, p2Farm=0, p2Mine=0, p2Saw=0;
         buildings.forEach(b => { 
-            if(b.type === 'farm') farmOutput += b.farmersInside * 2; 
-            if(b.type === 'mine') mineOutput += b.farmersInside * 1.5; 
-            if(b.type === 'sawmill') sawOutput += b.farmersInside * 2; 
+            if(b.owner === 'host') { if(b.type === 'farm') p1Farm+=b.farmersInside*2; if(b.type === 'mine') p1Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p1Saw+=b.farmersInside*2; }
+            if(b.owner === 'guest') { if(b.type === 'farm') p2Farm+=b.farmersInside*2; if(b.type === 'mine') p2Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p2Saw+=b.farmersInside*2; }
         });
-        res.food += farmOutput; res.gold += mineOutput; res.wood += sawOutput;
-        res.food -= res.pop * 0.2; 
-        if(res.food < 0) { res.food = 0; }
-        updateUI();
+        resHost.food += p1Farm; resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food -= resHost.pop * 0.2; if(resHost.food < 0) resHost.food = 0;
+        resGuest.food += p2Farm; resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food -= resGuest.pop * 0.2; if(resGuest.food < 0) resGuest.food = 0;
     }
 
-    waveTimer -= dt;
-    if (waveTimer <= 0) {
-        let count = 1 + Math.floor(survivalTimer / 60);
-        for(let i=0; i<count; i++) {
-            let spawnX = Math.random() > 0.5 ? -100 : MAP_WIDTH + 100;
-            let spawnY = Math.random() * MAP_HEIGHT;
-            enemies.push(new Enemy(spawnX, spawnY));
-        }
-        waveTimer = 15;
+    if (baseHost.hp <= 0 || baseGuest.hp <= 0) {
+        gameState = 'GAMEOVER';
+        let winText = baseHost.hp <= 0 ? "P2 REMPORTE LA GUERRE" : "P1 REMPORTE LA GUERRE";
+        document.getElementById('winner-text').innerText = winText;
+        gameOverScreen.style.display = 'block';
     }
 
-    if (base.hp <= 0) {
-        gameState = 'GAMEOVER'; gameOverScreen.style.display = 'block';
-        spawnParticles(base.x, base.y, 'var(--neon-red)', 50);
-    }
+    buildings.forEach((b, i) => { b.update(dt); if (b.hp <= 0) { buildings.splice(i, 1); }});
+    units.forEach((u, i) => { u.update(dt); if (u.hp <= 0) { units.splice(i, 1); }});
+    trees = trees.filter(t => t.amount > 0); wheats = wheats.filter(w => w.amount > 0);
 
-    for (let i = buildings.length - 1; i >= 0; i--) {
-        buildings[i].update(dt);
-        if (buildings[i].hp <= 0) {
-            spawnParticles(buildings[i].x, buildings[i].y, 'var(--neon-red)', 30);
-            if(selectedBuilding === buildings[i]) { selectedBuilding = null; renderBottomUI(); }
-            buildings.splice(i, 1);
-        }
-    }
-
-    for (let i = units.length - 1; i >= 0; i--) {
-        units[i].update(dt);
-        if (units[i].hp <= 0) {
-            spawnParticles(units[i].x, units[i].y, units[i].color, 15);
-            if(selectedUnits.includes(units[i])) selectedUnits.splice(selectedUnits.indexOf(units[i]), 1);
-            units.splice(i, 1);
-            res.pop--; updateUI();
-        }
-    }
-
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        enemies[i].update(dt);
-        if (enemies[i].hp <= 0) {
-            spawnParticles(enemies[i].x, enemies[i].y, enemies[i].color, 15);
-            res.gold += 5; updateUI();
-            enemies.splice(i, 1);
-        }
-    }
-
-    for (let i = trees.length - 1; i >= 0; i--) { if (trees[i].amount <= 0) trees.splice(i, 1); }
-    for (let i = wheats.length - 1; i >= 0; i--) { if (wheats[i].amount <= 0) wheats.splice(i, 1); }
-
-    particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; if(p.life <= 0) particles.splice(i, 1); });
-    lasers.forEach((l, i) => { l.life -= dt; if(l.life <= 0) lasers.splice(i, 1); });
+    // Sync clients
+    let pack = {
+        type: 'sync',
+        u: units.map(u => ({ id: u.id, x: u.x, y: u.y, t: u.type, e: u.element, o: u.owner, hp: u.hp, mHp: u.maxHp, s: u.state, p: u.payload, st: u.slowTimer })),
+        b: buildings.map(b => ({ id: b.id, x: b.x, y: b.y, t: b.type, o: b.owner, hp: b.hp, mHp: b.maxHp, l: b.level, fi: b.farmersInside })),
+        t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount })),
+        w: wheats.map(w => ({ id: w.id, x: w.x, y: w.y, a: w.amount })),
+        bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp },
+        bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
+        resH: resHost, resG: resGuest
+    };
+    connToGuest.send(pack);
 }
 
+// --- BOUCLE DRAW ---
 function draw() {
     ctx.clearRect(0, 0, width, height);
-
     ctx.save();
+    ctx.scale(zoom, zoom);
     ctx.translate(-camera.x, -camera.y);
 
-    ctx.fillStyle = '#0a0d14';
-    ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-
-    if (images.map.complete && images.map.naturalWidth > 0) {
-        ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT);
-    } else {
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
-        ctx.lineWidth = 2;
-        for(let x=0; x<MAP_WIDTH; x+=100) {
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_HEIGHT); ctx.stroke();
-        }
-        for(let y=0; y<MAP_HEIGHT; y+=100) {
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_WIDTH, y); ctx.stroke();
-        }
-    }
+    ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    if (images.map.complete && images.map.naturalWidth > 0) { ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT); } 
 
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
-        trees.forEach(t => t.draw(ctx, images));
-        wheats.forEach(w => w.draw(ctx, images));
+        trees.forEach(t => t.draw(ctx, images)); wheats.forEach(w => w.draw(ctx, images));
         buildings.forEach(b => b.draw(ctx, images));
-        if (base.hp > 0) base.draw(ctx, images);
-
+        if (baseHost && baseHost.hp > 0) baseHost.draw(ctx, images);
+        if (baseGuest && baseGuest.hp > 0) baseGuest.draw(ctx, images);
         units.forEach(u => u.draw(ctx, images));
-        enemies.forEach(e => e.draw(ctx));
 
         lasers.forEach(l => {
             ctx.strokeStyle = l.color; ctx.lineWidth = 3; ctx.shadowBlur = 10; ctx.shadowColor = l.color;
             ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke(); ctx.shadowBlur = 0;
         });
 
-        particles.forEach(p => {
-            ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
-            ctx.fillRect(p.x, p.y, p.size, p.size);
-        });
+        particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.size, p.size); });
         ctx.globalAlpha = 1;
 
         if (isSelecting && inputMode === 'mouse') {
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.lineWidth = 1; ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
-            let w = selectionCurrentWorld.x - selectionStartWorld.x; 
-            let h = selectionCurrentWorld.y - selectionStartWorld.y;
+            let w = selectionCurrentWorld.x - selectionStartWorld.x; let h = selectionCurrentWorld.y - selectionStartWorld.y;
             ctx.fillRect(selectionStartWorld.x, selectionStartWorld.y, w, h); ctx.strokeRect(selectionStartWorld.x, selectionStartWorld.y, w, h);
         }
 
         let activeGhost = buildMode || (moveMode ? moveMode.type : null);
         if (activeGhost) {
-            let img = null;
-            if(activeGhost === 'house') img = images.house;
-            if(activeGhost === 'farm') img = images.farm;
-            if(activeGhost === 'sawmill') img = images.sawmill;
-            if(activeGhost === 'mine') img = images.mine;
-            if(activeGhost === 'barracks') img = images.barracks;
-            if(activeGhost === 'archery') img = images.archery;
-            if(activeGhost === 'mage') img = images.mageTower;
-            if(activeGhost === 'tower') img = images.tower;
-
+            let img = images[activeGhost==='mageTower'?'mage':activeGhost];
             let size = (activeGhost === 'barracks' || activeGhost === 'archery' || activeGhost === 'mage') ? 80 : 64;
             if(activeGhost === 'tower') size = 50;
-
             ctx.globalAlpha = 0.5;
-            if (img && img.complete && img.naturalWidth > 0) {
-                ctx.drawImage(img, mouseHoverWorld.x - size/2, mouseHoverWorld.y - size/2, size, size);
-            } else {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; ctx.fillRect(mouseHoverWorld.x - size/2, mouseHoverWorld.y - size/2, size, size);
-            }
+            if (img && img.complete) ctx.drawImage(img, mouseHoverWorld.x - size/2, mouseHoverWorld.y - size/2, size, size);
             ctx.globalAlpha = 1.0;
         }
     }
 
     ctx.restore();
-
     if (gameState === 'PLAYING') drawMinimap();
 }
 
+let lastTime = performance.now();
 function loop(timestamp) {
-    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
-    lastTime = timestamp;
-    update(dt); draw();
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1); lastTime = timestamp;
+    if(gameState === 'PLAYING') {
+        updateCamera();
+        if(isHost) hostUpdate(dt);
+        particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; if(p.life <= 0) particles.splice(i, 1); });
+        lasers.forEach((l, i) => { l.life -= dt; if(l.life <= 0) lasers.splice(i, 1); });
+    }
+    draw();
     requestAnimationFrame(loop);
 }
-
-initGame();
 requestAnimationFrame(loop);
