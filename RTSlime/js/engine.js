@@ -48,9 +48,9 @@ const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
 
 // ==========================================
-// PEER JS MULTIJOUEUR (Logique type Drawer)
+// PEER JS MULTIJOUEUR (FIX COMPLET)
 // ==========================================
-let peer = new Peer(); // Initialisation "à chaud"
+let peer = null; // On ne crée le serveur qu'au moment du clic
 let myId = null;
 let myPseudo = "Anonyme";
 let isHost = false;
@@ -60,16 +60,10 @@ let connToGuest = null;
 function setupPeerEvents(p) {
     p.on('open', id => {
         myId = id;
-        let loginScreen = document.getElementById('screen-login');
-        let lobbyScreen = document.getElementById('screen-lobby');
-        
-        // Si on vient de créer la partie (isHost = true) et qu'on est sur l'écran login
-        if (loginScreen && loginScreen.classList.contains('active-screen') && isHost) {
-            loginScreen.classList.remove('active-screen');
-            lobbyScreen.classList.add('active-screen');
-            document.getElementById('my-id').innerText = id;
-            document.getElementById('login-error').innerText = "";
-        }
+        document.getElementById('screen-login').classList.remove('active-screen');
+        document.getElementById('screen-lobby').classList.add('active-screen');
+        document.getElementById('my-id').innerText = id;
+        document.getElementById('login-error').innerText = "";
     });
 
     p.on('connection', conn => {
@@ -90,8 +84,6 @@ function setupPeerEvents(p) {
     });
 }
 
-setupPeerEvents(peer); // Attachement des events au peer par défaut
-
 document.getElementById('btn-host').addEventListener('click', () => {
     let pName = document.getElementById('player-name').value.trim();
     if (!pName) {
@@ -105,10 +97,11 @@ document.getElementById('btn-host').addEventListener('click', () => {
     document.getElementById('login-error').innerText = "Création du serveur...";
     document.getElementById('login-error').style.color = "var(--neon-cyan)";
 
-    // Destruction du peer de base et création avec le code RTS
-    peer.destroy();
-    peer = new Peer(code);
-    setupPeerEvents(peer);
+    // On crée la connexion uniquement maintenant
+    setTimeout(() => {
+        peer = new Peer(code);
+        setupPeerEvents(peer);
+    }, 100);
 });
 
 document.getElementById('btn-join').addEventListener('click', () => {
@@ -128,18 +121,32 @@ document.getElementById('btn-join').addEventListener('click', () => {
     document.getElementById('login-error').innerText = "Connexion...";
     document.getElementById('login-error').style.color = "var(--neon-cyan)";
 
-    connToHost = peer.connect(targetId);
-    
-    connToHost.on('open', () => {
-        document.getElementById('screen-login').classList.remove('active-screen');
-        document.getElementById('screen-lobby').classList.add('active-screen');
-        document.getElementById('my-id').innerText = targetId;
-        document.getElementById('waiting-host-msg').style.display = 'block';
-        document.getElementById('min-players-msg').style.display = 'none';
-        document.getElementById('login-error').innerText = "";
-    });
-    
-    connToHost.on('data', data => handleNetworkData(data));
+    setTimeout(() => {
+        peer = new Peer();
+        
+        peer.on('open', id => {
+            connToHost = peer.connect(targetId);
+            
+            connToHost.on('open', () => {
+                document.getElementById('screen-login').classList.remove('active-screen');
+                document.getElementById('screen-lobby').classList.add('active-screen');
+                document.getElementById('my-id').innerText = targetId;
+                document.getElementById('waiting-host-msg').style.display = 'block';
+                document.getElementById('min-players-msg').style.display = 'none';
+                document.getElementById('login-error').innerText = "";
+            });
+            
+            connToHost.on('data', data => handleNetworkData(data));
+            
+            connToHost.on('error', err => {
+                document.getElementById('login-error').innerText = "Erreur connexion hôte.";
+            });
+        });
+
+        peer.on('error', err => {
+            document.getElementById('login-error').innerText = "Erreur réseau: " + err.type;
+        });
+    }, 100);
 });
 
 document.getElementById('btn-start').addEventListener('click', () => {
@@ -244,31 +251,6 @@ function getPointerPos(e) {
     let screenX = cx - rect.left;
     let screenY = cy - rect.top;
     return { screenX, screenY, worldX: (screenX / zoom) + camera.x, worldY: (screenY / zoom) + camera.y };
-}
-
-// --- MINIMAP ---
-function drawMinimap() {
-    mmCtx.clearRect(0, 0, 150, 150);
-    mmCtx.fillStyle = 'rgba(0, 20, 30, 0.8)';
-    mmCtx.fillRect(0, 0, 150, 150);
-
-    const drawDot = (obj, color, size) => {
-        mmCtx.fillStyle = color;
-        mmCtx.fillRect((obj.x/MAP_WIDTH)*150 - size/2, (obj.y/MAP_HEIGHT)*150 - size/2, size, size);
-    };
-
-    trees.forEach(t => drawDot(t, 'var(--neon-orange)', 1));
-    wheats.forEach(w => drawDot(w, 'var(--neon-green)', 1));
-    buildings.forEach(b => drawDot(b, b.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 4));
-    
-    if (baseHost && baseHost.hp > 0) drawDot(baseHost, 'var(--neon-cyan)', 6);
-    if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, 'var(--neon-pink)', 6);
-    
-    units.forEach(u => drawDot(u, u.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 2));
-    enemies.forEach(e => drawDot(e, 'var(--neon-red)', 3));
-
-    mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
-    mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/(zoom*MAP_WIDTH))*150, (height/(zoom*MAP_HEIGHT))*150);
 }
 
 // --- TRAITEMENT DES DONNEES ---
@@ -684,6 +666,10 @@ function hostUpdate(dt) {
 // --- BOUCLE DRAW ---
 function draw() {
     ctx.clearRect(0, 0, width, height);
+    
+    // Draw Minimap (on top of canvas but needs to be rendered every frame if it's dynamic, although here it's a separate canvas)
+    if (gameState === 'PLAYING') drawMinimap();
+
     ctx.save();
     ctx.scale(zoom, zoom);
     ctx.translate(-camera.x, -camera.y);
@@ -725,7 +711,6 @@ function draw() {
     }
 
     ctx.restore();
-    if (gameState === 'PLAYING') drawMinimap();
 }
 
 let lastTime = performance.now();
