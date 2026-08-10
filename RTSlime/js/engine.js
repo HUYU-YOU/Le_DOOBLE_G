@@ -14,26 +14,31 @@ let camera = { x: 0, y: 0 };
 
 // --- GESTION DES ASSETS GRAPHIQUES ---
 const ASSETS_PATHS = {
-    map: 'map/mapRTS.png',
-    hdv: 'bat/hdv.png',
-    house: 'bat/home.png',
-    farm: 'bat/farm.png',
-    sawmill: 'bat/scierie.png',
-    mine: 'bat/mine.png',
-    barracks: 'bat/warriorlearn.png',
-    archery: 'bat/shootlearn.png',
-    mageTower: 'bat/magicallearn.png',
-    tower: 'bat/tower.png',
-    farmer: 'skins/farmer.png',
-    warrior: 'skins/warrior.png',
-    archer: 'skins/archer.png',
-    mage: 'skins/mage.png',
-    wheat: 'map/wheat.png'
+    map: 'assets/map/mapRTS.png',
+    hdv: 'assets/bat/hdv.png',
+    house: 'assets/bat/home.png',
+    farm: 'assets/bat/farm.png',
+    sawmill: 'assets/bat/scierie.png',
+    mine: 'assets/bat/mine.png',
+    barracks: 'assets/bat/warriorlearn.png',
+    archery: 'assets/bat/shootlearn.png',
+    mageTower: 'assets/bat/magicallearn.png',
+    tower: 'assets/bat/tower.png',
+    farmer: 'assets/skins/farmer.png',
+    warrior: 'assets/skins/warrior.png',
+    archer: 'assets/skins/archer.png',
+    mage: 'assets/skins/mage.png',
+    wheat: 'assets/map/wheat.png'
 };
+
 const images = {};
 for (let key in ASSETS_PATHS) {
     images[key] = new Image();
     images[key].src = ASSETS_PATHS[key];
+    // Traqueur d'erreur si un skin ne charge pas (problème de serveur local / chemin)
+    images[key].onerror = () => {
+        console.warn(`[MATRICE] Échec du chargement de l'asset : ${ASSETS_PATHS[key]}. Vérifie ton serveur local !`);
+    };
 }
 
 // Éléments DOM
@@ -54,7 +59,7 @@ let moveMode = null;
 let waveTimer = 0;
 let survivalTimer = 0;
 
-// Variables Globales pour Entités (Accessibles par entities.js)
+// Variables Globales pour Entités
 let base = null;
 let buildings = [];
 let units = [];
@@ -74,23 +79,6 @@ let selectionCurrentWorld = { x: 0, y: 0 };
 let inputMode = 'mouse'; 
 let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
-
-// --- UTILITAIRES POUR LES CLASSES ---
-function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
-function getClosest(entity, array) {
-    let closest = null; let minDist = Infinity;
-    for(let o of array) { let d = dist(entity, o); if(d < minDist) { minDist = d; closest = o; } }
-    return closest;
-}
-function spawnParticles(x, y, color, count) {
-    for (let i = 0; i < count; i++) {
-        particles.push({
-            x: x, y: y, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100,
-            size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5
-        });
-    }
-}
-function spawnLaser(a, b, color) { lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); }
 
 // --- GESTION FENETRE & CAMERA ---
 function resize() {
@@ -113,7 +101,7 @@ function updateCamera() {
 // --- MINIMAP ---
 function drawMinimap() {
     mmCtx.clearRect(0, 0, 150, 150);
-    mmCtx.fillStyle = 'rgba(0, 20, 30, 0.5)';
+    mmCtx.fillStyle = 'rgba(0, 20, 30, 0.8)';
     mmCtx.fillRect(0, 0, 150, 150);
 
     const drawDot = (obj, color, size) => {
@@ -121,15 +109,14 @@ function drawMinimap() {
         mmCtx.fillRect((obj.x/MAP_WIDTH)*150 - size/2, (obj.y/MAP_HEIGHT)*150 - size/2, size, size);
     };
 
-    trees.forEach(t => drawDot(t, 'var(--neon-orange)', 2));
-    wheats.forEach(w => drawDot(w, 'var(--neon-green)', 2));
-    buildings.forEach(b => drawDot(b, b.color, 4));
-    if (base && base.hp > 0) drawDot(base, base.color, 6);
-    units.forEach(u => drawDot(u, 'var(--neon-cyan)', 2));
-    enemies.forEach(e => drawDot(e, 'var(--neon-red)', 3));
+    trees.forEach(t => drawDot(t, '#ff8c00', 2));
+    wheats.forEach(w => drawDot(w, '#39ff14', 2));
+    buildings.forEach(b => drawDot(b, '#00f0ff', 4));
+    if (base && base.hp > 0) drawDot(base, '#00f0ff', 6);
+    units.forEach(u => drawDot(u, '#c5c6c7', 2));
+    enemies.forEach(e => drawDot(e, '#ff3333', 3));
 
-    // Viewport Camera
-    mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
+    mmCtx.strokeStyle = '#00f0ff'; mmCtx.lineWidth = 1;
     mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/MAP_WIDTH)*150, (height/MAP_HEIGHT)*150);
 }
 
@@ -258,7 +245,6 @@ function initGame() {
 
     base = new Base(MAP_WIDTH/2, MAP_HEIGHT/2);
 
-    // Map Génération (Arbres & Blé)
     for(let i=0; i<30; i++) {
         let tx = Math.random() * MAP_WIDTH; let ty = Math.random() * MAP_HEIGHT;
         if (dist({x:tx, y:ty}, base) > 150) trees.push(new ResourceNode(tx, ty, 'tree'));
@@ -268,7 +254,6 @@ function initGame() {
         if (dist({x:wx, y:wy}, base) > 150) wheats.push(new ResourceNode(wx, wy, 'wheat'));
     }
 
-    // MAISON & FERMIERS DE DEPART
     let startHouse = new Building(base.x - 120, base.y, 'house');
     buildings.push(startHouse);
     units.push(new Unit(startHouse.x - 20, startHouse.y + 40, 'farmer'));
@@ -278,7 +263,7 @@ function initGame() {
     renderBottomUI();
 }
 
-// --- INPUTS (AVEC CAMERA) ---
+// --- INPUTS ---
 function getPointerPos(e) {
     const rect = canvas.getBoundingClientRect();
     let cx = e.touches ? e.touches[0].clientX : e.clientX;
@@ -477,7 +462,6 @@ function update(dt) {
     ecoTimer += dt;
     updateCamera();
 
-    // ÉCONOMIE PASSIVE AUTOMATISÉE
     if (ecoTimer >= 1) {
         ecoTimer = 0;
         let farmOutput=0, mineOutput=0, sawOutput=0;
@@ -492,7 +476,6 @@ function update(dt) {
         updateUI();
     }
 
-    // Vagues d'ennemis
     waveTimer -= dt;
     if (waveTimer <= 0) {
         let count = 1 + Math.floor(survivalTimer / 60);
@@ -509,7 +492,6 @@ function update(dt) {
         spawnParticles(base.x, base.y, 'var(--neon-red)', 50);
     }
 
-    // Destruction bâtiments
     for (let i = buildings.length - 1; i >= 0; i--) {
         buildings[i].update(dt);
         if (buildings[i].hp <= 0) {
@@ -551,7 +533,23 @@ function draw() {
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
 
-    if (images.map.complete && images.map.naturalWidth > 0) ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT);
+    // Dessin du fond de carte (avec couleur de secours si l'image met du temps ou échoue)
+    ctx.fillStyle = '#0a0d14';
+    ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+
+    if (images.map.complete && images.map.naturalWidth > 0) {
+        ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT);
+    } else {
+        // Fallback visuel de grille si la map ne charge pas
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
+        ctx.lineWidth = 2;
+        for(let x=0; x<MAP_WIDTH; x+=100) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_HEIGHT); ctx.stroke();
+        }
+        for(let y=0; y<MAP_HEIGHT; y+=100) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_WIDTH, y); ctx.stroke();
+        }
+    }
 
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
         trees.forEach(t => t.draw(ctx, images));
@@ -580,7 +578,6 @@ function draw() {
             ctx.fillRect(selectionStartWorld.x, selectionStartWorld.y, w, h); ctx.strokeRect(selectionStartWorld.x, selectionStartWorld.y, w, h);
         }
 
-        // Fantôme de construction & Déplacement
         let activeGhost = buildMode || (moveMode ? moveMode.type : null);
         if (activeGhost) {
             let img = null;
@@ -602,13 +599,12 @@ function draw() {
             } else {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; ctx.fillRect(mouseHoverWorld.x - size/2, mouseHoverWorld.y - size/2, size, size);
             }
-            ctx.globalAlpha = 1.0;
+            ctx.globalAlpha.value = 1.0;
         }
     }
 
     ctx.restore();
 
-    // Rendu UI fixée à l'écran
     if (gameState === 'PLAYING') drawMinimap();
 }
 
