@@ -92,7 +92,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .res-food { color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
 .res-pop { color: var(--text-color); }
 
-/* CORRECTION : flex-wrap permet d'afficher les boutons sur plusieurs lignes s'ils manquent de place */
+/* CORRECTION : L'UI s'adapte sur plusieurs lignes si besoin, rien ne disparait ! */
 #ui-bottom {
     position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
     background: rgba(0,0,0,0.85); border: 2px solid var(--neon-cyan); padding: 10px; border-radius: 12px; 
