@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber-Command : Micro RTS</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <!-- CDN Sécurisé Cloudflare pour éviter les blocages de serveurs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
 </head>
 <body>
 
@@ -26,7 +27,7 @@
             <hr>
             <input type="text" id="join-id" placeholder="Code (ex: RTS5945)" style="text-transform: uppercase;">
             <button class="btn-solid btn-pink" id="btn-join">Rejoindre</button>
-            <p id="login-error" style="color:var(--neon-pink); margin-top:10px;"></p>
+            <p id="login-error" style="color:var(--neon-pink); margin-top:10px; font-weight:bold;"></p>
         </div>
         <a href="../index.html" class="btn-solid" style="margin-top:20px; width:auto; border:1px solid gray; color:gray; text-decoration:none;">&#11013; Retour au Hub</a>
     </div>
