@@ -48,16 +48,41 @@ const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
 
 // ==========================================
-// PEER JS MULTIJOUEUR (AUTO-RETRY ANTI-COLLISION)
+// PEER JS MULTIJOUEUR (LOGIQUE EXACTE DE DRAWER)
 // ==========================================
-let peer = null;
+let peer = new Peer(); // Initialisation par défaut
 let myId = null;
 let myPseudo = "Anonyme";
 let isHost = false;
 let connToHost = null;
 let connToGuest = null;
 
-document.getElementById('btn-host').addEventListener('click', () => {
+function setupPeerEvents(p) {
+    p.on('open', id => {
+        myId = id;
+        let idDisplay = document.getElementById('my-id');
+        if(idDisplay) idDisplay.innerText = id;
+        document.getElementById('login-error').innerText = "";
+    });
+
+    p.on('connection', conn => {
+        if(!isHost) return;
+        connToGuest = conn;
+        conn.on('data', data => handleNetworkData(data));
+        document.getElementById('min-players-msg').style.display = 'none';
+        document.getElementById('btn-start').style.display = 'block';
+    });
+
+    p.on('error', err => {
+        console.warn("PeerJS Error:", err);
+        document.getElementById('login-error').innerText = "Erreur: " + err.type;
+    });
+}
+
+setupPeerEvents(peer);
+
+document.getElementById('btn-host').addEventListener('click', (e) => {
+    e.preventDefault();
     let pName = document.getElementById('player-name').value.trim();
     if (!pName) {
         document.getElementById('login-error').innerText = "Pseudo requis pour créer.";
@@ -66,90 +91,45 @@ document.getElementById('btn-host').addEventListener('click', () => {
     myPseudo = pName;
     isHost = true;
     
-    document.getElementById('login-error').innerText = "Création du serveur...";
-    document.getElementById('login-error').style.color = "var(--neon-cyan)";
-
-    function createUniqueServer() {
-        let code = 'RTS' + Math.floor(1000 + Math.random() * 9000);
-        if(peer) peer.destroy();
-        
-        peer = new Peer(code);
-
-        peer.on('open', id => {
-            myId = id;
-            document.getElementById('screen-login').classList.remove('active-screen');
-            document.getElementById('screen-lobby').classList.add('active-screen');
-            document.getElementById('my-id').innerText = id;
-            document.getElementById('login-error').innerText = "";
-        });
-
-        peer.on('connection', conn => {
-            if(!isHost) return;
-            connToGuest = conn;
-            conn.on('data', data => handleNetworkData(data));
-            document.getElementById('min-players-msg').style.display = 'none';
-            document.getElementById('btn-start').style.display = 'block';
-        });
-
-        peer.on('error', err => {
-            console.warn("Erreur PeerJS:", err);
-            if(err.type === 'unavailable-id') {
-                // Si le code à 4 chiffres est déjà pris, on réessaie instantanément avec un autre !
-                createUniqueServer();
-            } else {
-                document.getElementById('login-error').innerText = "Erreur réseau: " + err.type;
-                document.getElementById('login-error').style.color = "var(--neon-pink)";
-            }
-        });
-    }
-
-    createUniqueServer();
+    let code = 'RTS' + Math.floor(1000 + Math.random() * 9000);
+    
+    // FORCAGE VISUEL : On cache le menu et on affiche le lobby instantanément
+    document.getElementById('screen-login').style.display = 'none';
+    document.getElementById('screen-lobby').style.display = 'flex';
+    document.getElementById('my-id').innerText = "Chargement...";
+    
+    // On détruit et on recrée avec le code
+    peer.destroy();
+    peer = new Peer(code);
+    setupPeerEvents(peer);
 });
 
-document.getElementById('btn-join').addEventListener('click', () => {
+document.getElementById('btn-join').addEventListener('click', (e) => {
+    e.preventDefault();
     let pName = document.getElementById('player-name').value.trim();
-    if (!pName) {
-        document.getElementById('login-error').innerText = "Pseudo requis pour rejoindre.";
-        return;
-    }
     const targetId = document.getElementById('join-id').value.toUpperCase().trim();
-    if(!targetId) {
-        document.getElementById('login-error').innerText = "Code requis.";
+    if (!pName || !targetId) {
+        document.getElementById('login-error').innerText = "Pseudo et Code requis.";
         return;
     }
     myPseudo = pName;
     isHost = false;
     
     document.getElementById('login-error').innerText = "Connexion...";
-    document.getElementById('login-error').style.color = "var(--neon-cyan)";
-
-    if(peer) peer.destroy();
-    peer = new Peer();
-
-    peer.on('open', id => {
-        connToHost = peer.connect(targetId);
-        
-        connToHost.on('open', () => {
-            document.getElementById('screen-login').classList.remove('active-screen');
-            document.getElementById('screen-lobby').classList.add('active-screen');
-            document.getElementById('my-id').innerText = targetId;
-            document.getElementById('waiting-host-msg').style.display = 'block';
-            document.getElementById('min-players-msg').style.display = 'none';
-            document.getElementById('login-error').innerText = "";
-        });
-        
-        connToHost.on('data', data => handleNetworkData(data));
-        
-        connToHost.on('error', err => {
-            document.getElementById('login-error').innerText = "Hôte introuvable.";
-            document.getElementById('login-error').style.color = "var(--neon-pink)";
-        });
+    
+    connToHost = peer.connect(targetId);
+    
+    connToHost.on('open', () => {
+        // FORCAGE VISUEL
+        document.getElementById('screen-login').style.display = 'none';
+        document.getElementById('screen-lobby').style.display = 'flex';
+        document.getElementById('my-id').innerText = targetId;
+        document.getElementById('waiting-host-msg').style.display = 'block';
+        document.getElementById('min-players-msg').style.display = 'none';
+        document.getElementById('login-error').innerText = "";
     });
-
-    peer.on('error', err => {
-        document.getElementById('login-error').innerText = "Erreur réseau: " + err.type;
-        document.getElementById('login-error').style.color = "var(--neon-pink)";
-    });
+    
+    connToHost.on('data', data => handleNetworkData(data));
 });
 
 document.getElementById('btn-start').addEventListener('click', () => {
@@ -370,15 +350,16 @@ function initGame() {
     units = []; trees = []; wheats = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
     buildMode = null; moveMode = null; selectedBuilding = null;
     
-    document.getElementById('screen-lobby').classList.remove('active-screen');
-    document.getElementById('game-container').classList.add('active-screen');
+    // Forçage de l'écran en JS
+    document.getElementById('screen-lobby').style.display = 'none';
+    document.getElementById('game-container').style.display = 'block';
+    
     resize();
 
     baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
     camera.x = baseHost.x - width/2; camera.y = baseHost.y - height/2;
 
-    // FORETS
     for(let i=0; i<40; i++) { 
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -388,7 +369,6 @@ function initGame() {
         }
     }
 
-    // CHAMPS
     for(let i=0; i<40; i++) {
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -398,7 +378,6 @@ function initGame() {
         }
     }
 
-    // VIRUS
     for(let i=0; i<150; i++) {
         let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
         if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
@@ -421,8 +400,8 @@ function initGame() {
 
 function initGameClient() {
     gameState = 'PLAYING';
-    document.getElementById('screen-lobby').classList.remove('active-screen');
-    document.getElementById('game-container').classList.add('active-screen');
+    document.getElementById('screen-lobby').style.display = 'none';
+    document.getElementById('game-container').style.display = 'block';
     resize();
     updateUI(); renderBottomUI();
 }
