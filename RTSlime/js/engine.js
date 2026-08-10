@@ -35,7 +35,6 @@ const images = {};
 for (let key in ASSETS_PATHS) {
     images[key] = new Image();
     images[key].src = ASSETS_PATHS[key];
-    // Traceur si une image ne charge pas
     images[key].onerror = () => {
         console.warn(`[MATRICE] Fichier introuvable : ${ASSETS_PATHS[key]}`);
     };
@@ -79,6 +78,32 @@ let selectionCurrentWorld = { x: 0, y: 0 };
 let inputMode = 'mouse'; 
 let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
+
+// --- UTILITAIRES (Le bloc que j'avais oublié !) ---
+function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+
+function getClosest(entity, array) {
+    let closest = null; let minDist = Infinity;
+    for(let o of array) { 
+        let d = dist(entity, o); 
+        if(d < minDist) { minDist = d; closest = o; } 
+    }
+    return closest;
+}
+
+function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x: x, y: y, 
+            vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100,
+            size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5
+        });
+    }
+}
+
+function spawnLaser(a, b, color) { 
+    lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); 
+}
 
 // --- GESTION FENETRE & CAMERA ---
 function resize() {
@@ -533,14 +558,12 @@ function draw() {
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
 
-    // Dessin du fond de carte (avec couleur de secours)
     ctx.fillStyle = '#0a0d14';
     ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
 
     if (images.map.complete && images.map.naturalWidth > 0) {
         ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     } else {
-        // Fallback visuel de grille si la map ne charge pas encore
         ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
         ctx.lineWidth = 2;
         for(let x=0; x<MAP_WIDTH; x+=100) {
