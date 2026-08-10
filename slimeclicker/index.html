@@ -3,75 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber-Command : Micro RTS</title>
-    <link rel="stylesheet" href="css/style.css">
-    <!-- On utilise le même script robuste que ton jeu Drawer -->
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <title>Slime Clicker</title>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --panel-bg: rgba(31, 40, 51, 0.8);
+            --neon-cyan: #00f0ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --text-color: #e0e0e0;
+            --font-main: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: var(--font-main); overflow-x: hidden;
+            display: flex; flex-direction: column;
+            user-select: none; /* Empêche de surligner le texte en spammant les clics */
+        }
+
+        /* --- HEADER & BOUTON RETOUR --- */
+        header {
+            text-align: center; padding: 20px;
+            background: linear-gradient(180deg, rgba(0,240,255,0.1) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(0,240,255,0.2);
+        }
+        h1 { margin: 0; color: var(--neon-cyan); text-shadow: 0 0 15px var(--neon-cyan); text-transform: uppercase; letter-spacing: 3px; }
+
+        #btn-retour-hub {
+            position: absolute; top: 20px; left: 20px;
+            background-color: rgba(0, 0, 0, 0.5); border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan); padding: 8px 15px; border-radius: 5px; cursor: pointer;
+            text-decoration: none; font-weight: bold; transition: 0.3s; z-index: 100;
+        }
+        #btn-retour-hub:hover { background: rgba(0, 240, 255, 0.1); box-shadow: 0 0 10px rgba(0,240,255,0.5); }
+
+        /* --- LAYOUT PRINCIPAL --- */
+        #game-container {
+            display: flex; flex-wrap: wrap; flex: 1; padding: 20px; gap: 30px;
+            max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
+            align-items: stretch;
+        }
+
+        /* --- PANNEAU GAUCHE (La star : Le Slime) --- */
+        #click-area {
+            flex: 1.5; min-width: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle at center, rgba(57, 255, 20, 0.1) 0%, var(--panel-bg) 70%);
+            border-radius: 15px; border: 1px solid rgba(57, 255, 20, 0.3);
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8); position: relative; padding: 40px 20px;
+            overflow: hidden;
+        }
+
+        #score-display { 
+            font-size: 3.5rem; font-weight: bold; color: var(--neon-green); 
+            text-shadow: 0 0 20px rgba(57, 255, 20, 0.6); margin-bottom: 5px; z-index: 10;
+        }
+        #sps-display { 
+            font-size: 1.2rem; color: #aaa; margin-bottom: 40px; z-index: 10;
+            background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px;
+        }
+
+        /* L'Image du Slime Dynamique */
+        #slime-image {
+            width: 250px; height: auto; cursor: pointer;
+            filter: drop-shadow(0 15px 25px rgba(57, 255, 20, 0.5));
+            transition: transform 0.05s ease-out, filter 0.2s;
+            z-index: 10;
+            /* Empêche le comportement natif du navigateur sur les images (glisser-déposer) */
+            -webkit-user-drag: none;
+        }
+        #slime-image:hover { filter: drop-shadow(0 15px 35px rgba(57, 255, 20, 0.8)); }
+
+        /* Particules de clic (+1) */
+        .floating-number {
+            position: absolute; color: #fff; font-size: 2rem; font-weight: bold;
+            pointer-events: none; animation: floatUp 0.8s ease-out forwards; 
+            text-shadow: 0 0 10px var(--neon-green), 0 0 2px #000; z-index: 20;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+        }
+
+        /* --- PANNEAU DROIT (Boutique Simplifiée) --- */
+        #shop-area {
+            flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 10px;
+            background: var(--panel-bg); border-radius: 15px; border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 20px; overflow-y: auto; max-height: 75vh;
+        }
+        
+        #shop-area h2 { margin-top: 0; color: var(--neon-cyan); border-bottom: 1px dashed var(--neon-cyan); padding-bottom: 10px; }
+
+        .shop-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 8px;
+            padding: 15px; cursor: pointer; transition: 0.2s;
+        }
+        .shop-item:hover { border-color: var(--neon-cyan); background: rgba(0, 240, 255, 0.1); }
+        .shop-item.disabled { opacity: 0.5; filter: grayscale(100%); cursor: not-allowed; }
+        .shop-item.disabled:hover { border-color: #333; background: rgba(0,0,0,0.5); }
+
+        .item-info { display: flex; align-items: center; gap: 15px; }
+        .item-icon { font-size: 2.2rem; }
+        .item-details h3 { margin: 0; color: #fff; font-size: 1.1rem; }
+        .item-details p { margin: 3px 0 0 0; color: #aaa; font-size: 0.85rem; }
+        .item-cost { color: var(--neon-pink); font-weight: bold; font-size: 1rem; margin-top: 5px; }
+        
+        .item-count { font-size: 1.8rem; font-weight: bold; color: rgba(255,255,255,0.1); }
+
+    </style>
 </head>
 <body>
 
-    <script>
-        document.addEventListener('touchstart', (e) => { 
-            if(e.target.closest('.no-swipe')) e.stopPropagation(); 
-        }, { passive: false });
-        document.addEventListener('contextmenu', event => event.preventDefault());
-    </script>
-
-    <!-- BOUTON HUB (Fixé en haut à gauche) -->
     <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
 
-    <!-- ÉCRAN DE CONNEXION -->
-    <div id="screen-login" class="screen active-screen flex-center">
-        <h1 class="main-title">CYBER-COMMAND</h1>
-        <div class="panel">
-            <h2>Connexion Réseau</h2>
-            <input type="text" id="player-name" placeholder="Votre Pseudo" maxlength="12">
-            <button class="btn-solid btn-cyan" id="btn-host">Créer une partie</button>
-            <hr>
-            <input type="text" id="join-id" placeholder="Code (ex: RTS5945)" style="text-transform: uppercase;">
-            <button class="btn-solid btn-pink" id="btn-join">Rejoindre</button>
-            <p id="login-error" style="color:var(--neon-pink); margin-top:15px; font-weight:bold;"></p>
+    <header>
+        <h1>Slime Clicker</h1>
+    </header>
+
+    <div id="game-container">
+        
+        <!-- ZONE DE JEU -->
+        <div id="click-area">
+            <div id="score-display">0 Slimes</div>
+            <div id="sps-display">0 / sec</div>
+            
+            <!-- TES IMAGES SONT GÉRÉES ICI -->
+            <img id="slime-image" src="img/slm1.png" alt="Big Slime" draggable="false">
         </div>
+
+        <!-- BOUTIQUE -->
+        <div id="shop-area">
+            <h2>Laboratoire</h2>
+            <div id="shop-list">
+                <!-- Généré par JavaScript -->
+            </div>
+        </div>
+
     </div>
 
-    <!-- ÉCRAN DU LOBBY -->
-    <div id="screen-lobby" class="screen flex-center">
-        <h1 class="main-title">SALLE D'ATTENTE</h1>
-        <div class="panel">
-            <p class="share-code-text">Partagez ce code : <br><span id="my-id" class="share-code-val">...</span></p>
-            <div id="players-list-container" class="players-container"></div>
-            <p id="min-players-msg" style="color:var(--neon-yellow); margin-top:15px;">En attente de l'adversaire...</p>
-            <button id="btn-start" class="btn-solid btn-green" style="display:none; margin-top:20px;">Lancer la partie</button>
-            <p id="waiting-host-msg" style="display:none; color:gray;">En attente de l'hôte...</p>
-        </div>
-    </div>
+    <script>
+        // ==========================================
+        // 💾 DONNÉES DU JEU & SAUVEGARDE
+        // ==========================================
+        let game = {
+            slimes: 0,
+            totalSlimes: 0,
+            clickPower: 1,
+            lastSaveTime: Date.now()
+        };
 
-    <!-- ÉCRAN DE JEU -->
-    <div id="game-container" class="screen no-swipe">
-        <canvas id="gameCanvas"></canvas>
+        const buildings = [
+            { id: 'b1', name: "Dopage Manuel", desc: "+1 par Clic", baseCost: 15, sps: 0, clickBonus: 1, count: 0, icon: "🖱️" },
+            { id: 'b2', name: "Slime Autonome", desc: "+1 slime / sec", baseCost: 50, sps: 1, clickBonus: 0, count: 0, icon: "🦠" },
+            { id: 'b3', name: "Extracteur", desc: "+5 slimes / sec", baseCost: 250, sps: 5, clickBonus: 0, count: 0, icon: "💉" },
+            { id: 'b4', name: "Clonage Rapide", desc: "+25 slimes / sec", baseCost: 1500, sps: 25, clickBonus: 0, count: 0, icon: "🧬" },
+            { id: 'b5', name: "Usine d'Infection", desc: "+150 slimes / sec", baseCost: 10000, sps: 150, clickBonus: 0, count: 0, icon: "🏭" },
+            { id: 'b6', name: "Matrice Slime", desc: "+1000 slimes / sec", baseCost: 100000, sps: 1000, clickBonus: 0, count: 0, icon: "💻" }
+        ];
 
-        <div id="minimap-container"><canvas id="minimap" width="150" height="150"></canvas></div>
+        function loadGame() {
+            const savedGame = localStorage.getItem('slimeClickerSave');
+            if (savedGame) {
+                const parsed = JSON.parse(savedGame);
+                game.slimes = parsed.slimes || 0;
+                game.totalSlimes = parsed.totalSlimes || 0;
+                game.clickPower = parsed.clickPower || 1;
+                
+                if (parsed.buildings) {
+                    parsed.buildings.forEach((savedB, index) => {
+                        if (buildings[index]) buildings[index].count = savedB.count;
+                    });
+                }
 
-        <div id="ui-top">
-            <span class="res-gold">💰 <span id="val-gold">0</span></span>
-            <span class="res-wood">🪵 <span id="val-wood">0</span></span>
-            <span class="res-food">🍞 <span id="val-food">0</span></span>
-            <span class="res-pop">👥 <span id="val-pop">0</span>/<span id="val-maxpop">0</span></span>
-        </div>
+                if (parsed.lastSaveTime) {
+                    const now = Date.now();
+                    const secondsOffline = (now - parsed.lastSaveTime) / 1000;
+                    if (secondsOffline > 60) {
+                        const offlineGains = getSPS() * secondsOffline;
+                        game.slimes += offlineGains;
+                        game.totalSlimes += offlineGains;
+                    }
+                }
+            }
+        }
 
-        <div id="global-chat-container"><div id="global-chat-messages"></div></div>
+        function saveGame() {
+            game.lastSaveTime = Date.now();
+            const saveObj = {
+                slimes: game.slimes,
+                totalSlimes: game.totalSlimes,
+                clickPower: game.clickPower,
+                lastSaveTime: game.lastSaveTime,
+                buildings: buildings.map(b => ({ count: b.count }))
+            };
+            localStorage.setItem('slimeClickerSave', JSON.stringify(saveObj));
+        }
 
-        <div id="build-instructions">Clic Gauche pour Placer - Clic Droit pour Annuler</div>
-        <div id="ui-bottom"></div>
+        // ==========================================
+        // 🧮 LOGIQUE DU JEU
+        // ==========================================
+        function getSPS() {
+            let total = 0;
+            buildings.forEach(b => { total += b.sps * b.count; });
+            return total;
+        }
 
-        <div id="game-over-screen">
-            <h1 id="winner-text">MATRICE DÉTRUITE</h1>
-            <p id="winner-desc"></p>
-            <button class="restart-btn" id="btn-replay" style="display:none;">Retour au Lobby</button>
-        </div>
-    </div>
+        function getClickPower() {
+            let power = 1;
+            buildings.forEach(b => { power += b.clickBonus * b.count; });
+            return power;
+        }
 
-    <script src="js/entities.js"></script>
-    <script src="js/engine.js"></script>
+        function getCost(building) {
+            return Math.floor(building.baseCost * Math.pow(1.15, building.count));
+        }
+
+        function formatNum(num) {
+            return Math.floor(num).toLocaleString('fr-FR');
+        }
+
+        // ==========================================
+        // 🖱️ GESTION DU CLIC SUR L'IMAGE
+        // ==========================================
+        const slimeImg = document.getElementById('slime-image');
+        const clickArea = document.getElementById('click-area');
+
+        function handleSlimePress(e) {
+            if (e.cancelable) e.preventDefault(); // Empêche les bugs sur mobile
+
+            // 1. Changement d'image et effet d'écrasement
+            slimeImg.src = 'img/slm17.png';
+            slimeImg.style.transform = 'scale(0.9) translateY(15px)';
+
+            // 2. Ajout du score
+            const power = getClickPower();
+            game.slimes += power;
+            game.totalSlimes += power;
+            updateUI();
+
+            // 3. Apparition du texte flottant
+            const rect = clickArea.getBoundingClientRect();
+            let x, y;
+            if (e.touches && e.touches.length > 0) {
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+
+            const floatingNum = document.createElement('div');
+            floatingNum.className = 'floating-number';
+            floatingNum.innerText = `+${formatNum(power)}`;
+            floatingNum.style.left = `${x - 20}px`; // Centrage approximatif
+            floatingNum.style.top = `${y - 20}px`;
+            
+            // Randomisation légère
+            const randomOffset = (Math.random() - 0.5) * 60;
+            floatingNum.style.transform = `translateX(${randomOffset}px)`;
+
+            clickArea.appendChild(floatingNum);
+            setTimeout(() => floatingNum.remove(), 800);
+        }
+
+        function handleSlimeRelease() {
+            // Retour à l'image normale
+            slimeImg.src = 'img/slm1.png';
+            slimeImg.style.transform = 'scale(1) translateY(0)';
+        }
+
+        // Événements Souris (PC)
+        slimeImg.addEventListener('mousedown', handleSlimePress);
+        slimeImg.addEventListener('mouseup', handleSlimeRelease);
+        slimeImg.addEventListener('mouseleave', handleSlimeRelease);
+        
+        // Événements Tactiles (Mobile)
+        slimeImg.addEventListener('touchstart', handleSlimePress, {passive: false});
+        slimeImg.addEventListener('touchend', handleSlimeRelease);
+        slimeImg.addEventListener('touchcancel', handleSlimeRelease);
+
+        // ==========================================
+        // 🛒 BOUTIQUE & UI
+        // ==========================================
+        function buyBuilding(index) {
+            const b = buildings[index];
+            const cost = getCost(b);
+            
+            if (game.slimes >= cost) {
+                game.slimes -= cost;
+                b.count++;
+                renderShop(); 
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('score-display').innerText = `${formatNum(game.slimes)}`;
+            document.getElementById('sps-display').innerText = `${formatNum(getSPS())} / sec (Clic: ${formatNum(getClickPower())})`;
+
+            buildings.forEach((b, index) => {
+                const el = document.getElementById(`shop-item-${index}`);
+                if (el) {
+                    if (game.slimes >= getCost(b)) el.classList.remove('disabled');
+                    else el.classList.add('disabled');
+                }
+            });
+        }
+
+        function renderShop() {
+            const shopList = document.getElementById('shop-list');
+            shopList.innerHTML = '';
+
+            buildings.forEach((b, index) => {
+                const cost = getCost(b);
+                const isAffordable = game.slimes >= cost;
+
+                shopList.innerHTML += `
+                    <div id="shop-item-${index}" class="shop-item ${isAffordable ? '' : 'disabled'}" onclick="buyBuilding(${index})">
+                        <div class="item-info">
+                            <div class="item-icon">${b.icon}</div>
+                            <div class="item-details">
+                                <h3>${b.name}</h3>
+                                <p>${b.desc}</p>
+                                <div class="item-cost">🩸 ${formatNum(cost)}</div>
+                            </div>
+                        </div>
+                        <div class="item-count">${b.count}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // ==========================================
+        // 🔄 GAME LOOP
+        // ==========================================
+        loadGame();
+        renderShop();
+        updateUI();
+
+        setInterval(() => {
+            const sps = getSPS();
+            if (sps > 0) {
+                game.slimes += sps / 10;
+                game.totalSlimes += sps / 10;
+                updateUI();
+            }
+        }, 100);
+
+        setInterval(saveGame, 5000);
+
+    </script>
 </body>
 </html>
