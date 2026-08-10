@@ -62,12 +62,23 @@ input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,229,25
 .share-code-val { color: var(--neon-cyan); font-weight: bold; font-size: 2rem; letter-spacing: 2px; display: block; margin-top:10px; user-select: all;}
 .player-badge { background: #111; border: 1px solid #555; color: #ccc; padding: 8px 15px; border-radius: 4px; font-size: 1.1rem; margin: 5px; display: inline-block;}
 
+/* --- BOUTON HUB --- */
+#btn-retour-hub {
+    position: fixed; top: 15px; left: 15px; z-index: 9999;
+    background-color: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255,255,255,0.3);
+    color: #ccc; padding: 8px 15px; font-weight: bold;
+    font-size: 14px; border-radius: 6px; cursor: pointer;
+    text-decoration: none; transition: 0.3s ease; text-transform: uppercase;
+}
+#btn-retour-hub:hover { background-color: var(--neon-cyan); border-color: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+
 /* --- GAME UI --- */
 #game-container { position: relative; }
 canvas { display: block; width: 100%; height: 100%; }
 
 #minimap-container {
-    position: absolute; top: 15px; left: 15px; width: 150px; height: 150px;
+    position: absolute; top: 60px; /* Décalé pour ne pas superposer le bouton Hub */
+    left: 15px; width: 150px; height: 150px;
     background: rgba(0,0,0,0.8); border: 2px solid var(--neon-cyan);
     z-index: 10; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); overflow: hidden;
 }
@@ -119,7 +130,7 @@ canvas { display: block; width: 100%; height: 100%; }
 }
 
 #global-chat-container {
-    position: absolute; top: 180px; left: 15px; width: 250px; z-index: 10; pointer-events: none;
+    position: absolute; top: 220px; left: 15px; width: 250px; z-index: 10; pointer-events: none;
 }
 #global-chat-messages p { margin: 4px 0; font-size: 0.9rem; color: #fff; text-shadow: 0 0 5px #000; }
 .sys-log-msg { color: var(--neon-yellow); font-weight: bold; }
