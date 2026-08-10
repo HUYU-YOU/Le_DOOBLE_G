@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber-Command : Micro RTS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- On utilise le même script robuste que ton jeu Drawer -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+    <script>
+        document.addEventListener('touchstart', (e) => { 
+            if(e.target.closest('.no-swipe')) e.stopPropagation(); 
+        }, { passive: false });
+        document.addEventListener('contextmenu', event => event.preventDefault());
+    </script>
+
+    <!-- BOUTON HUB (Fixé en haut à gauche) -->
+    <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
+
+    <!-- ÉCRAN DE CONNEXION -->
+    <div id="screen-login" class="screen active-screen flex-center">
+        <h1 class="main-title">CYBER-COMMAND</h1>
+        <div class="panel">
+            <h2>Connexion Réseau</h2>
+            <input type="text" id="player-name" placeholder="Votre Pseudo" maxlength="12">
+            <button class="btn-solid btn-cyan" id="btn-host">Créer une partie</button>
+            <hr>
+            <input type="text" id="join-id" placeholder="Code (ex: RTS5945)" style="text-transform: uppercase;">
+            <button class="btn-solid btn-pink" id="btn-join">Rejoindre</button>
+            <p id="login-error" style="color:var(--neon-pink); margin-top:15px; font-weight:bold;"></p>
+        </div>
+    </div>
+
+    <!-- ÉCRAN DU LOBBY -->
+    <div id="screen-lobby" class="screen flex-center">
+        <h1 class="main-title">SALLE D'ATTENTE</h1>
+        <div class="panel">
+            <p class="share-code-text">Partagez ce code : <br><span id="my-id" class="share-code-val">...</span></p>
+            <div id="players-list-container" class="players-container"></div>
+            <p id="min-players-msg" style="color:var(--neon-yellow); margin-top:15px;">En attente de l'adversaire...</p>
+            <button id="btn-start" class="btn-solid btn-green" style="display:none; margin-top:20px;">Lancer la partie</button>
+            <p id="waiting-host-msg" style="display:none; color:gray;">En attente de l'hôte...</p>
+        </div>
+    </div>
+
+    <!-- ÉCRAN DE JEU -->
+    <div id="game-container" class="screen no-swipe">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="minimap-container"><canvas id="minimap" width="150" height="150"></canvas></div>
+
+        <div id="ui-top">
+            <span class="res-gold">💰 <span id="val-gold">0</span></span>
+            <span class="res-wood">🪵 <span id="val-wood">0</span></span>
+            <span class="res-food">🍞 <span id="val-food">0</span></span>
+            <span class="res-pop">👥 <span id="val-pop">0</span>/<span id="val-maxpop">0</span></span>
+        </div>
+
+        <div id="global-chat-container"><div id="global-chat-messages"></div></div>
+
+        <div id="build-instructions">Clic Gauche pour Placer - Clic Droit pour Annuler</div>
+        <div id="ui-bottom"></div>
+
+        <div id="game-over-screen">
+            <h1 id="winner-text">MATRICE DÉTRUITE</h1>
+            <p id="winner-desc"></p>
+            <button class="restart-btn" id="btn-replay" style="display:none;">Retour au Lobby</button>
+        </div>
+    </div>
+
+    <script src="js/entities.js"></script>
+    <script src="js/engine.js"></script>
+</body>
+</html>
