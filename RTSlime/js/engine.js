@@ -85,7 +85,7 @@ let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
 let inputMode = 'mouse';
 
-// --- UTILITAIRES (Crucial pour éviter les crashs) ---
+// --- UTILITAIRES ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
 
 function getClosest(entity, array) {
@@ -184,28 +184,52 @@ document.getElementById('btn-host').addEventListener('click', () => {
     myPseudo = pName;
     isHost = true; myId = 'host';
     const roomId = 'RTS' + Math.floor(1000 + Math.random() * 9000);
-    peer = new Peer(roomId);
     
-    document.getElementById('login-error').innerText = "Création du serveur...";
+    document.getElementById('login-error').innerText = "Création du serveur sécurisé...";
     document.getElementById('login-error').style.color = "var(--neon-cyan)";
 
-    peer.on('open', id => {
-        document.getElementById('screen-login').classList.remove('active-screen');
-        document.getElementById('screen-lobby').classList.add('active-screen');
-        document.getElementById('my-id').innerText = id;
-    });
-    
-    peer.on('error', err => {
-        document.getElementById('login-error').innerText = "Erreur réseau. Réessayez.";
-        document.getElementById('login-error').style.color = "var(--neon-pink)";
-    });
+    // Timeout de sécurité si le WebRTC est bloqué par AdBlock/Brave
+    let timeout = setTimeout(() => {
+        document.getElementById('login-error').innerText = "Délai dépassé. Désactivez votre AdBlock ou Brave Shields.";
+        document.getElementById('login-error').style.color = "var(--neon-orange)";
+    }, 8000);
 
-    peer.on('connection', conn => {
-        connToGuest = conn;
-        conn.on('data', data => handleNetworkData(data));
-        document.getElementById('min-players-msg').style.display = 'none';
-        document.getElementById('btn-start').style.display = 'block';
-    });
+    try {
+        // FORCAGE DES SECURITES POUR GITHUB PAGES
+        peer = new Peer(roomId, {
+            secure: true,
+            config: {
+                'iceServers': [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ]
+            }
+        });
+
+        peer.on('open', id => {
+            clearTimeout(timeout);
+            document.getElementById('screen-login').classList.remove('active-screen');
+            document.getElementById('screen-lobby').classList.add('active-screen');
+            document.getElementById('my-id').innerText = id;
+        });
+        
+        peer.on('error', err => {
+            clearTimeout(timeout);
+            console.error(err);
+            document.getElementById('login-error').innerText = "Erreur serveur: " + err.type;
+            document.getElementById('login-error').style.color = "var(--neon-pink)";
+        });
+
+        peer.on('connection', conn => {
+            connToGuest = conn;
+            conn.on('data', data => handleNetworkData(data));
+            document.getElementById('min-players-msg').style.display = 'none';
+            document.getElementById('btn-start').style.display = 'block';
+        });
+    } catch(e) {
+        clearTimeout(timeout);
+        document.getElementById('login-error').innerText = "Erreur fatale JS.";
+    }
 });
 
 document.getElementById('btn-join').addEventListener('click', () => {
@@ -222,26 +246,47 @@ document.getElementById('btn-join').addEventListener('click', () => {
     myPseudo = pName;
     isHost = false; myId = 'guest';
     
-    document.getElementById('login-error').innerText = "Connexion...";
+    document.getElementById('login-error').innerText = "Recherche de la partie...";
     document.getElementById('login-error').style.color = "var(--neon-cyan)";
 
-    peer = new Peer();
-    peer.on('open', id => {
-        connToHost = peer.connect(targetId);
-        connToHost.on('open', () => {
-            document.getElementById('screen-login').classList.remove('active-screen');
-            document.getElementById('screen-lobby').classList.add('active-screen');
-            document.getElementById('my-id').innerText = targetId;
-            document.getElementById('waiting-host-msg').style.display = 'block';
-            document.getElementById('min-players-msg').style.display = 'none';
+    let timeout = setTimeout(() => {
+        document.getElementById('login-error').innerText = "Impossible de se connecter. AdBlock activé ?";
+        document.getElementById('login-error').style.color = "var(--neon-orange)";
+    }, 8000);
+
+    try {
+        peer = new Peer({
+            secure: true,
+            config: {
+                'iceServers': [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ]
+            }
         });
-        connToHost.on('data', data => handleNetworkData(data));
-    });
-    
-    peer.on('error', err => {
-        document.getElementById('login-error').innerText = "Hôte introuvable.";
-        document.getElementById('login-error').style.color = "var(--neon-pink)";
-    });
+
+        peer.on('open', id => {
+            connToHost = peer.connect(targetId);
+            connToHost.on('open', () => {
+                clearTimeout(timeout);
+                document.getElementById('screen-login').classList.remove('active-screen');
+                document.getElementById('screen-lobby').classList.add('active-screen');
+                document.getElementById('my-id').innerText = targetId;
+                document.getElementById('waiting-host-msg').style.display = 'block';
+                document.getElementById('min-players-msg').style.display = 'none';
+            });
+            connToHost.on('data', data => handleNetworkData(data));
+        });
+        
+        peer.on('error', err => {
+            clearTimeout(timeout);
+            document.getElementById('login-error').innerText = "Hôte introuvable ou injoignable.";
+            document.getElementById('login-error').style.color = "var(--neon-pink)";
+        });
+    } catch(e) {
+        clearTimeout(timeout);
+        document.getElementById('login-error').innerText = "Erreur fatale JS.";
+    }
 });
 
 document.getElementById('btn-start').addEventListener('click', () => {
