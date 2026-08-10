@@ -13,7 +13,6 @@ const MAP_HEIGHT = 10000;
 let camera = { x: 0, y: 0 };
 let zoom = 2.0;
 
-// VARIABLES CAMERA (Pan avec Clic Droit)
 let isPanning = false;
 let isPanDragging = false;
 let panStartX = 0;
@@ -56,9 +55,6 @@ const instructions = document.getElementById('build-instructions');
 const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
 
-// ==========================================
-// PEER JS MULTIJOUEUR (FIX COMPLET DE L'ECRAN)
-// ==========================================
 let peer = new Peer(); 
 let myId = null;
 let myPseudo = "Anonyme";
@@ -83,7 +79,6 @@ function setupPeerEvents(p) {
     });
 
     p.on('error', err => {
-        console.warn("PeerJS Error:", err);
         document.getElementById('login-error').innerText = "Erreur: " + err.type;
     });
 }
@@ -93,16 +88,11 @@ setupPeerEvents(peer);
 document.getElementById('btn-host').addEventListener('click', (e) => {
     e.preventDefault();
     let pName = document.getElementById('player-name').value.trim();
-    if (!pName) {
-        document.getElementById('login-error').innerText = "Pseudo requis pour créer.";
-        return;
-    }
+    if (!pName) { document.getElementById('login-error').innerText = "Pseudo requis pour créer."; return; }
     myPseudo = pName;
     isHost = true;
     
     let code = 'RTS' + Math.floor(1000 + Math.random() * 9000);
-    
-    // On cache l'écran de Login DIRECTEMENT
     document.getElementById('screen-login').style.display = 'none';
     document.getElementById('screen-lobby').style.display = 'flex';
     document.getElementById('my-id').innerText = "Chargement...";
@@ -116,15 +106,11 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
     e.preventDefault();
     let pName = document.getElementById('player-name').value.trim();
     const targetId = document.getElementById('join-id').value.toUpperCase().trim();
-    if (!pName || !targetId) {
-        document.getElementById('login-error').innerText = "Pseudo et Code requis.";
-        return;
-    }
+    if (!pName || !targetId) { document.getElementById('login-error').innerText = "Pseudo et Code requis."; return; }
     myPseudo = pName;
     isHost = false;
     
     document.getElementById('login-error').innerText = "Connexion...";
-    
     connToHost = peer.connect(targetId);
     
     connToHost.on('open', () => {
@@ -178,33 +164,25 @@ let selectionCurrentWorld = { x: 0, y: 0 };
 let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
 let inputMode = 'mouse';
-let survivalTimer = 0; // Ajout du timer manquant dans engine.js pour l'invulnérabilité
+let survivalTimer = 0; 
+let lastFamineLogTime = 0; 
 
 // --- UTILITAIRES ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
 
 function getClosest(entity, array) {
     let closest = null; let minDist = Infinity;
-    for(let o of array) { 
-        let d = dist(entity, o); 
-        if(d < minDist) { minDist = d; closest = o; } 
-    }
+    for(let o of array) { let d = dist(entity, o); if(d < minDist) { minDist = d; closest = o; } }
     return closest;
 }
 
 function spawnParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
-        particles.push({ 
-            x: x, y: y, 
-            vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, 
-            size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5 
-        });
+        particles.push({ x: x, y: y, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5 });
     }
 }
 
-function spawnLaser(a, b, color) { 
-    lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); 
-}
+function spawnLaser(a, b, color) { lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); }
 
 function addSysLog(title, msg) {
     chatBox.innerHTML += `<p><span class="sys-log-msg">> ${title}:</span> ${msg}</p>`;
@@ -225,7 +203,6 @@ canvas.addEventListener('wheel', (e) => {
 });
 
 function updateCamera() {
-    // Si la caméra n'est pas en train d'être déplacée manuellement par le clic droit, on autorise le pan sur les bords
     if (!isPanning) {
         const margin = 30; const speed = 25 / zoom;
         if (mouseHoverScreen.x < margin) camera.x -= speed;
@@ -274,15 +251,9 @@ function drawMinimap() {
 
 // --- TRAITEMENT DES DONNEES ---
 function handleNetworkData(data) {
-    if (data.type === 'start_game' && !isHost) {
-        initGameClient();
-    }
-    if (data.type === 'sync' && !isHost) {
-        syncClientState(data);
-    }
-    if (data.type === 'cmd' && isHost) {
-        executeCommand(data);
-    }
+    if (data.type === 'start_game' && !isHost) initGameClient();
+    if (data.type === 'sync' && !isHost) syncClientState(data);
+    if (data.type === 'cmd' && isHost) executeCommand(data);
 }
 
 function executeCommand(data) {
@@ -298,9 +269,9 @@ function executeCommand(data) {
         let uList = units.filter(u => data.unitIds.includes(u.id));
         let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
         
-        // CORRECTION FAMINE: Les unités peuvent se diriger vers les arbres, le blé, la ferme ou la scierie même à 0 de nourriture
         if (playerRes.food <= 0) {
-            let isAllowedCmd = ent && ['wheat', 'farm', 'tree', 'sawmill'].includes(ent.type);
+            // AUTORISATION DU HDV: On autorise l'Hôtel de ville (hdv) en cas de famine pour ramener le blé/bois
+            let isAllowedCmd = ent && ['wheat', 'farm', 'tree', 'sawmill', 'hdv'].includes(ent.type);
             if(!isAllowedCmd) return; 
         }
 
@@ -347,8 +318,12 @@ function executeCommand(data) {
         if(b && b.owner === data.owner) {
             let cost = getBuildingCost(b.type);
             playerRes.gold += Math.floor(cost.g/2); playerRes.wood += Math.floor(cost.w/2); playerRes.food += Math.floor(cost.f/2);
-            if(b.type === 'house') playerRes.maxPop -= 4;
-            units.forEach(u => { if(u.state === 'farming' && u.targetEntityId === b.id) u.setCommand(u.x, u.y); });
+            units.forEach(u => { 
+                if(u.state === 'farming' && u.targetEntityId === b.id) {
+                    u.state = 'idle'; u.targetEntityId = null;
+                    u.x = b.x; u.y = b.y; // Expulse l'ouvrier
+                }
+            });
             buildings = buildings.filter(x => x !== b);
         }
     }
@@ -372,7 +347,6 @@ function initGame() {
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
     camera.x = baseHost.x - width/2; camera.y = baseHost.y - height/2;
 
-    // FORETS
     for(let i=0; i<40; i++) { 
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -382,7 +356,6 @@ function initGame() {
         }
     }
 
-    // CHAMPS
     for(let i=0; i<40; i++) {
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -392,7 +365,6 @@ function initGame() {
         }
     }
 
-    // VIRUS
     for(let i=0; i<150; i++) {
         let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
         if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
@@ -427,7 +399,7 @@ function syncClientState(data) {
         camera.x = data.bG.x - width/2; camera.y = data.bG.y - height/2;
     }
     
-    survivalTimer = data.st; // Recupère le timer de l'hote pour l'affichage de l'invulnérabilité
+    survivalTimer = data.st; 
     resHost = data.resH; resGuest = data.resG;
     baseHost = new Base(data.bH.x, data.bH.y, 'host'); baseHost.id = data.bH.id; baseHost.hp = data.bH.hp;
     baseGuest = new Base(data.bG.x, data.bG.y, 'guest'); baseGuest.id = data.bG.id; baseGuest.hp = data.bG.hp;
@@ -453,15 +425,11 @@ canvas.addEventListener('mousedown', (e) => {
     const pos = getPointerPos(e);
     const wPos = { x: pos.worldX, y: pos.worldY };
 
-    // CLIC DROIT : Initialise le Pan de Caméra
     if(e.button === 2) {
-        if(moveMode || buildMode) return; // Permet l'annulation de la construction par clic droit
-        isPanning = true;
-        isPanDragging = false;
-        panStartX = e.clientX;
-        panStartY = e.clientY;
-        cameraStartX = camera.x;
-        cameraStartY = camera.y;
+        if(moveMode || buildMode) return; 
+        isPanning = true; isPanDragging = false;
+        panStartX = e.clientX; panStartY = e.clientY;
+        cameraStartX = camera.x; cameraStartY = camera.y;
         return;
     }
 
@@ -498,20 +466,12 @@ canvas.addEventListener('mousemove', (e) => {
     mouseHoverScreen = { x: pos.screenX, y: pos.screenY };
     mouseHoverWorld = { x: pos.worldX, y: pos.worldY };
 
-    // GLISSER LA CAMERA
     if (isPanning) {
-        let currentX = e.clientX;
-        let currentY = e.clientY;
-        let dx = currentX - panStartX;
-        let dy = currentY - panStartY;
-        
-        // Seuil pour différencier un clic d'un glissement
+        let currentX = e.clientX; let currentY = e.clientY;
+        let dx = currentX - panStartX; let dy = currentY - panStartY;
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isPanDragging = true;
-        
         camera.x = cameraStartX - dx / zoom;
         camera.y = cameraStartY - dy / zoom;
-        
-        // Empêcher de sortir de la carte
         camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
         camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height/zoom));
     }
@@ -522,21 +482,18 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 window.addEventListener('mouseup', (e) => {
-    // Relachement du Clic Droit
     if (e.button === 2) {
-        isPanning = false;
-        setTimeout(() => isPanDragging = false, 50); // Laisse le temps au contextmenu de bloquer si besoin
+        isPanning = false; setTimeout(() => isPanDragging = false, 50); 
         return;
     }
 });
 
 canvas.addEventListener('mouseup', (e) => {
-    if (e.button === 2) return; // Le clic droit est géré au-dessus et dans contextmenu
+    if (e.button === 2) return; 
     if (!isSelecting || gameState !== 'PLAYING') return;
     isSelecting = false;
     
     let actualId = isHost ? 'host' : 'guest';
-
     let minX = Math.min(selectionStartWorld.x, selectionCurrentWorld.x);
     let maxX = Math.max(selectionStartWorld.x, selectionCurrentWorld.x);
     let minY = Math.min(selectionStartWorld.y, selectionCurrentWorld.y);
@@ -552,7 +509,6 @@ canvas.addEventListener('mouseup', (e) => {
             selectedUnits = [];
             let clickedBuild = buildings.find(b => dist(selectionStartWorld, b) < b.size/2 + 10 && b.owner === actualId);
             let myBase = isHost ? baseHost : baseGuest;
-            
             if(clickedBuild) { selectedBuilding = clickedBuild; } 
             else if (dist(selectionStartWorld, myBase) < myBase.size/2 + 10) { selectedBuilding = myBase; } 
             else { selectedBuilding = null; }
@@ -568,17 +524,8 @@ canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if(gameState !== 'PLAYING') return;
     
-    // Annulation mode construction avec Clic Droit
-    if(buildMode || moveMode) {
-        setBuildMode(null);
-        moveMode = null;
-        instructions.style.display = 'none';
-        return;
-    }
-
-    // SI LE JOUEUR A GLISSÉ LA SOURIS (Pan Camera), on n'envoie pas d'ordre de déplacement
+    if(buildMode || moveMode) { setBuildMode(null); moveMode = null; instructions.style.display = 'none'; return; }
     if (isPanDragging) return;
-    
     if (selectedUnits.length === 0) return;
 
     let actualId = isHost ? 'host' : 'guest';
@@ -587,10 +534,21 @@ canvas.addEventListener('contextmenu', (e) => {
     const pos = getPointerPos(e);
     const wPos = { x: pos.worldX, y: pos.worldY };
 
-    let clickedEnt = units.find(u=>dist(wPos, u)<20) || buildings.find(b=>dist(wPos, b)<b.size) || trees.find(t=>dist(wPos, t)<20) || wheats.find(w=>dist(wPos, w)<20) || enemies.find(en=>dist(wPos, en)<20) || (dist(wPos, baseHost)<baseHost.size/2 ? baseHost : null) || (dist(wPos, baseGuest)<baseGuest.size/2 ? baseGuest : null);
+    let clickedEnt = units.find(u=>dist(wPos, u)<25) 
+        || buildings.find(b=>dist(wPos, b)<b.size) 
+        || trees.find(t=>dist(wPos, t)<40) 
+        || wheats.find(w=>dist(wPos, w)<40) 
+        || enemies.find(en=>dist(wPos, en)<25) 
+        || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
+        || (dist(wPos, baseGuest)<baseGuest.size/2 + 20 ? baseGuest : null);
     
-    if (myRes.food <= 0 && (!clickedEnt || !['wheat', 'farm', 'tree', 'sawmill'].includes(clickedEnt.type))) {
-        addSysLog("Famine", "Nourriture à 0 ! Les Slimes ne peuvent aller qu'aux champs ou aux forêts.");
+    if (myRes.food <= 0 && (!clickedEnt || !['wheat', 'farm', 'tree', 'sawmill', 'hdv'].includes(clickedEnt.type))) {
+        let now = Date.now();
+        // ANTI-SPAM FAMINE : Se déclenche max 1x toutes les 2 secondes
+        if (now - lastFamineLogTime > 2000) {
+            addSysLog("Famine", "Nourriture à 0 ! Ordonnez la récolte ou cliquez sur l'Hôtel de Ville.");
+            lastFamineLogTime = now;
+        }
         return;
     }
 
@@ -688,13 +646,17 @@ function sendAction(action, data) {
 function updateUI() {
     let myRes = isHost ? resHost : resGuest;
     let actualId = isHost ? 'host' : 'guest';
+    
     uiGold.innerText = Math.floor(myRes.gold);
     uiWood.innerText = Math.floor(myRes.wood);
     uiFood.innerText = Math.floor(myRes.food);
     let myPop = units.filter(u=>u.owner===actualId).length;
-    uiPop.innerText = myPop; uiMaxPop.innerText = myRes.maxPop;
+    uiPop.innerText = myPop; 
     
+    // CORRECTION POPULATION UI FIX (Guest)
+    uiMaxPop.innerText = myRes.maxPop;
     myRes.pop = myPop;
+    
     if(myRes.food <= 0) uiFood.style.color = 'red'; else uiFood.style.color = 'var(--neon-green)';
 }
 
@@ -707,10 +669,26 @@ function hostUpdate(dt) {
     if (ecoTimer >= 1) {
         ecoTimer = 0;
         let p1Farm=0, p1Mine=0, p1Saw=0, p2Farm=0, p2Mine=0, p2Saw=0;
+        
+        // CORRECTION POPULATION MAXIMUM (HOST)
+        let p1MaxPop = 0, p2MaxPop = 0;
+
         buildings.forEach(b => { 
-            if(b.owner === 'host') { if(b.type === 'mine') p1Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p1Saw+=b.farmersInside*2; if(b.type === 'farm') p1Farm+=b.farmersInside*2;}
-            if(b.owner === 'guest') { if(b.type === 'mine') p2Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p2Saw+=b.farmersInside*2; if(b.type === 'farm') p2Farm+=b.farmersInside*2;}
+            if(b.owner === 'host') { 
+                if(b.type === 'mine') p1Mine+=b.farmersInside*1.5; 
+                if(b.type === 'sawmill') p1Saw+=b.farmersInside*2; 
+                if(b.type === 'farm') p1Farm+=b.farmersInside*2;
+                if(b.type === 'house') p1MaxPop+=4;
+            }
+            if(b.owner === 'guest') { 
+                if(b.type === 'mine') p2Mine+=b.farmersInside*1.5; 
+                if(b.type === 'sawmill') p2Saw+=b.farmersInside*2; 
+                if(b.type === 'farm') p2Farm+=b.farmersInside*2;
+                if(b.type === 'house') p2MaxPop+=4;
+            }
         });
+        
+        resHost.maxPop = p1MaxPop; resGuest.maxPop = p2MaxPop;
         resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food += p1Farm; resHost.food -= resHost.pop * 0.2; if(resHost.food < 0) resHost.food = 0;
         resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food += p2Farm; resGuest.food -= resGuest.pop * 0.2; if(resGuest.food < 0) resGuest.food = 0;
     }
@@ -795,7 +773,13 @@ function loop(timestamp) {
     const dt = Math.min((timestamp - lastTime) / 1000, 0.1); lastTime = timestamp;
     if(gameState === 'PLAYING') {
         updateCamera();
-        if(isHost) hostUpdate(dt);
+        
+        // CORRECTION INVENTAIRE : Le Host rafraîchit désormais son UI lui aussi à chaque frame
+        if(isHost) {
+            hostUpdate(dt);
+            updateUI(); 
+        }
+        
         particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; if(p.life <= 0) particles.splice(i, 1); });
         lasers.forEach((l, i) => { l.life -= dt; if(l.life <= 0) lasers.splice(i, 1); });
     }
