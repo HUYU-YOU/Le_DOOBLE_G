@@ -8,12 +8,44 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
+        /* --- STYLE DE LA VIDEO DE FOND ROTATIVE --- */
+        body {
+            /* On rend le fond du body transparent pour voir la vidéo derrière */
+            background-color: transparent !important;
+            background-image: none !important;
+        }
+
+        .hub-bg-video {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            /* On inverse VH et VW car la vidéo est tournée à 90 degrés */
+            width: 100vh;
+            height: 100vw;
+            object-fit: cover;
+            /* Centrage parfait et rotation à 90 degrés */
+            transform: translate(-50%, -50%) rotate(90deg);
+            z-index: -2; /* Tout au fond */
+            pointer-events: none; /* Empêche de cliquer sur la vidéo */
+        }
+
+        /* Overlay assombri par-dessus la vidéo pour garder l'interface lisible */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* On reprend ton dégradé d'origine mais en semi-transparent */
+            background: radial-gradient(circle at 50% 0%, rgba(31, 40, 51, 0.75) 0%, rgba(11, 12, 16, 0.95) 80%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
         /* --- STYLE POUR LE LOGO DU HUB --- */
         .hub-logo {
             max-width: 90%;
-            width: 600px; /* Ajuste cette valeur si ton logo est trop grand ou trop petit */
+            width: 600px;
             height: auto;
-            margin-bottom: 0px; /* Marge retirée pour coller aux boutons */
+            margin-bottom: 0px; 
             filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.5));
             display: block;
             margin-left: auto;
@@ -25,16 +57,16 @@
             display: flex;
             justify-content: center;
             gap: 40px;
-            margin: 15px 0 40px 0; /* Espace réduit en haut (15px), espace conservé en bas (40px) */
+            margin: 15px 0 40px 0; 
             align-items: center;
         }
 
         .toggle-img-btn {
-            width: 220px; /* Ajuste cette taille selon la taille de tes images */
+            width: 220px; 
             height: auto;
             cursor: pointer;
-            opacity: 0.4; /* L'image non sélectionnée est un peu transparente */
-            filter: grayscale(80%); /* Et un peu grisée */
+            opacity: 0.4; 
+            filter: grayscale(80%); 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
@@ -44,14 +76,12 @@
             transform: scale(1.05);
         }
 
-        /* Quand l'image est la catégorie active */
         .toggle-img-btn.active {
             opacity: 1;
             filter: grayscale(0%) drop-shadow(0 0 15px var(--cyan));
             transform: scale(1.1);
         }
 
-        /* Classe pour cacher la grille non sélectionnée */
         .hidden {
             display: none !important;
         }
@@ -59,6 +89,11 @@
 </head>
 <body>
     
+    <!-- VIDEO DE FOND (Tournée à 90°) -->
+    <video autoplay loop muted playsinline class="hub-bg-video">
+        <source src="img/backgroundhub.mp4" type="video/mp4">
+    </video>
+
     <!-- LOGO DU HUB -->
     <img src="img/HUB.png" alt="Logo Arcade Network" class="hub-logo">
     
@@ -104,7 +139,6 @@
         </a>
 
         <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <!-- Ajout d'un ID "dash-video" pour le cibler en Javascript -->
             <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">💨</div>
             <div class="game-title">Slime Dash</div>
@@ -195,12 +229,6 @@
         </a>
 
         <a href="poker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🃏</div>
-            <div class="game-title">Texas Poker</div>
-        </a>
-        
-        <a href="RTSlime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">🃏</div>
             <div class="game-title">Texas Poker</div>
