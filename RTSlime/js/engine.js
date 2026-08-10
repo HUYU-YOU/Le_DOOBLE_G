@@ -35,7 +35,6 @@ const images = {};
 for (let key in ASSETS_PATHS) {
     images[key] = new Image();
     images[key].src = ASSETS_PATHS[key];
-    images[key].onerror = () => console.warn(`[MATRICE] Asset manquant : ${ASSETS_PATHS[key]}`);
 }
 
 const uiGold = document.getElementById('val-gold');
@@ -48,13 +47,111 @@ const instructions = document.getElementById('build-instructions');
 const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
 
-let peer = null;
+// ==========================================
+// PEER JS MULTIJOUEUR (Logique type Drawer)
+// ==========================================
+let peer = new Peer(); // Initialisation "à chaud"
 let myId = null;
 let myPseudo = "Anonyme";
-let hostId = null;
 let isHost = false;
 let connToHost = null;
 let connToGuest = null;
+
+function setupPeerEvents(p) {
+    p.on('open', id => {
+        myId = id;
+        let loginScreen = document.getElementById('screen-login');
+        let lobbyScreen = document.getElementById('screen-lobby');
+        
+        // Si on vient de créer la partie (isHost = true) et qu'on est sur l'écran login
+        if (loginScreen && loginScreen.classList.contains('active-screen') && isHost) {
+            loginScreen.classList.remove('active-screen');
+            lobbyScreen.classList.add('active-screen');
+            document.getElementById('my-id').innerText = id;
+            document.getElementById('login-error').innerText = "";
+        }
+    });
+
+    p.on('connection', conn => {
+        if(!isHost) return;
+        connToGuest = conn;
+        conn.on('data', data => handleNetworkData(data));
+        document.getElementById('min-players-msg').style.display = 'none';
+        document.getElementById('btn-start').style.display = 'block';
+    });
+
+    p.on('error', err => {
+        console.error(err);
+        let errEl = document.getElementById('login-error');
+        if(errEl) {
+            errEl.innerText = "Erreur réseau: " + err.type;
+            errEl.style.color = "var(--neon-pink)";
+        }
+    });
+}
+
+setupPeerEvents(peer); // Attachement des events au peer par défaut
+
+document.getElementById('btn-host').addEventListener('click', () => {
+    let pName = document.getElementById('player-name').value.trim();
+    if (!pName) {
+        document.getElementById('login-error').innerText = "Pseudo requis pour créer.";
+        return;
+    }
+    myPseudo = pName;
+    isHost = true;
+    
+    let code = 'RTS' + Math.floor(1000 + Math.random() * 9000);
+    document.getElementById('login-error').innerText = "Création du serveur...";
+    document.getElementById('login-error').style.color = "var(--neon-cyan)";
+
+    // Destruction du peer de base et création avec le code RTS
+    peer.destroy();
+    peer = new Peer(code);
+    setupPeerEvents(peer);
+});
+
+document.getElementById('btn-join').addEventListener('click', () => {
+    let pName = document.getElementById('player-name').value.trim();
+    if (!pName) {
+        document.getElementById('login-error').innerText = "Pseudo requis pour rejoindre.";
+        return;
+    }
+    const targetId = document.getElementById('join-id').value.toUpperCase().trim();
+    if(!targetId) {
+        document.getElementById('login-error').innerText = "Code requis.";
+        return;
+    }
+    myPseudo = pName;
+    isHost = false;
+    
+    document.getElementById('login-error').innerText = "Connexion...";
+    document.getElementById('login-error').style.color = "var(--neon-cyan)";
+
+    connToHost = peer.connect(targetId);
+    
+    connToHost.on('open', () => {
+        document.getElementById('screen-login').classList.remove('active-screen');
+        document.getElementById('screen-lobby').classList.add('active-screen');
+        document.getElementById('my-id').innerText = targetId;
+        document.getElementById('waiting-host-msg').style.display = 'block';
+        document.getElementById('min-players-msg').style.display = 'none';
+        document.getElementById('login-error').innerText = "";
+    });
+    
+    connToHost.on('data', data => handleNetworkData(data));
+});
+
+document.getElementById('btn-start').addEventListener('click', () => {
+    if(isHost) {
+        initGame();
+        connToGuest.send({ type: 'start_game' });
+    }
+});
+
+// ==========================================
+// ETAT DU JEU & VARIABLES
+// ==========================================
 
 let gameState = 'LOBBY';
 let resHost = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 };
@@ -174,112 +271,7 @@ function drawMinimap() {
     mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/(zoom*MAP_WIDTH))*150, (height/(zoom*MAP_HEIGHT))*150);
 }
 
-// --- PEER JS MULTIJOUEUR ---
-document.getElementById('btn-host').addEventListener('click', () => {
-    let pName = document.getElementById('player-name').value.trim();
-    if (!pName) {
-        document.getElementById('login-error').innerText = "Pseudo requis pour créer.";
-        return;
-    }
-    myPseudo = pName;
-    isHost = true; myId = 'host';
-    const roomId = 'RTS' + Math.floor(1000 + Math.random() * 9000);
-    
-    document.getElementById('login-error').innerText = "Création du serveur...";
-    document.getElementById('login-error').style.color = "var(--neon-cyan)";
-
-    let timeout = setTimeout(() => {
-        document.getElementById('login-error').innerText = "Délai dépassé. Vérifiez votre connexion.";
-        document.getElementById('login-error').style.color = "var(--neon-orange)";
-    }, 8000);
-
-    try {
-        // Retour à la configuration par défaut (la plus stable)
-        peer = new Peer(roomId, { debug: 2 });
-
-        peer.on('open', id => {
-            clearTimeout(timeout);
-            document.getElementById('screen-login').classList.remove('active-screen');
-            document.getElementById('screen-lobby').classList.add('active-screen');
-            document.getElementById('my-id').innerText = id;
-        });
-        
-        peer.on('error', err => {
-            clearTimeout(timeout);
-            console.error(err);
-            document.getElementById('login-error').innerText = "Erreur serveur: " + err.type;
-            document.getElementById('login-error').style.color = "var(--neon-pink)";
-        });
-
-        peer.on('connection', conn => {
-            connToGuest = conn;
-            conn.on('data', data => handleNetworkData(data));
-            document.getElementById('min-players-msg').style.display = 'none';
-            document.getElementById('btn-start').style.display = 'block';
-        });
-    } catch(e) {
-        clearTimeout(timeout);
-        document.getElementById('login-error').innerText = "Erreur fatale JS.";
-    }
-});
-
-document.getElementById('btn-join').addEventListener('click', () => {
-    let pName = document.getElementById('player-name').value.trim();
-    if (!pName) {
-        document.getElementById('login-error').innerText = "Pseudo requis pour rejoindre.";
-        return;
-    }
-    const targetId = document.getElementById('join-id').value.trim().toUpperCase();
-    if(!targetId) {
-        document.getElementById('login-error').innerText = "Code requis.";
-        return;
-    }
-    myPseudo = pName;
-    isHost = false; myId = 'guest';
-    
-    document.getElementById('login-error').innerText = "Recherche de la partie...";
-    document.getElementById('login-error').style.color = "var(--neon-cyan)";
-
-    let timeout = setTimeout(() => {
-        document.getElementById('login-error').innerText = "Impossible de se connecter.";
-        document.getElementById('login-error').style.color = "var(--neon-orange)";
-    }, 8000);
-
-    try {
-        // Retour à la configuration par défaut
-        peer = new Peer({ debug: 2 });
-
-        peer.on('open', id => {
-            connToHost = peer.connect(targetId);
-            connToHost.on('open', () => {
-                clearTimeout(timeout);
-                document.getElementById('screen-login').classList.remove('active-screen');
-                document.getElementById('screen-lobby').classList.add('active-screen');
-                document.getElementById('my-id').innerText = targetId;
-                document.getElementById('waiting-host-msg').style.display = 'block';
-                document.getElementById('min-players-msg').style.display = 'none';
-            });
-            connToHost.on('data', data => handleNetworkData(data));
-        });
-        
-        peer.on('error', err => {
-            clearTimeout(timeout);
-            document.getElementById('login-error').innerText = "Hôte introuvable ou injoignable.";
-            document.getElementById('login-error').style.color = "var(--neon-pink)";
-        });
-    } catch(e) {
-        clearTimeout(timeout);
-        document.getElementById('login-error').innerText = "Erreur fatale JS.";
-    }
-});
-
-document.getElementById('btn-start').addEventListener('click', () => {
-    if(isHost) {
-        initGame();
-        connToGuest.send({ type: 'start_game' });
-    }
-});
-
+// --- TRAITEMENT DES DONNEES ---
 function handleNetworkData(data) {
     if (data.type === 'start_game' && !isHost) {
         initGameClient();
@@ -297,7 +289,7 @@ function executeCommand(data) {
     let playerBase = data.owner === 'host' ? baseHost : baseGuest;
 
     if(playerRes.food <= 0 && data.action !== 'move') {
-        if(data.owner === myId) addSysLog("Famine", "Nourriture à 0 ! Les slimes refusent l'ordre.");
+        if(data.owner === (isHost ? 'host' : 'guest')) addSysLog("Famine", "Nourriture à 0 ! Les slimes refusent l'ordre.");
         return;
     }
 
@@ -347,6 +339,7 @@ function executeCommand(data) {
             playerRes.gold -= 100; playerRes.wood -= 100; b.level = 2;
         }
     }
+    
     if (data.action === 'destroy') {
         let b = buildings.find(b=>b.id === data.bId);
         if(b && b.owner === data.owner) {
@@ -375,7 +368,7 @@ function initGame() {
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
     camera.x = baseHost.x - width/2; camera.y = baseHost.y - height/2;
 
-    // GENERATION FORETS (GROS CLUSTERS DE BOIS)
+    // FORETS
     for(let i=0; i<40; i++) { 
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -385,7 +378,7 @@ function initGame() {
         }
     }
 
-    // GENERATION CHAMPS DE BLE
+    // CHAMPS
     for(let i=0; i<40; i++) {
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -395,7 +388,7 @@ function initGame() {
         }
     }
 
-    // GENERATION VIRUS
+    // VIRUS
     for(let i=0; i<150; i++) {
         let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
         if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
@@ -466,8 +459,9 @@ canvas.addEventListener('mousedown', (e) => {
 
     if(buildMode) {
         if(e.button === 0) {
-            if (isHost) executeCommand({ action: 'build', bType: buildMode, x: wPos.x, y: wPos.y, owner: myId });
-            else connToHost.send({ type: 'cmd', action: 'build', bType: buildMode, x: wPos.x, y: wPos.y, owner: myId });
+            let actualId = isHost ? 'host' : 'guest';
+            if (isHost) executeCommand({ action: 'build', bType: buildMode, x: wPos.x, y: wPos.y, owner: actualId });
+            else connToHost.send({ type: 'cmd', action: 'build', bType: buildMode, x: wPos.x, y: wPos.y, owner: actualId });
             setBuildMode(null);
         }
         if(e.button === 2) setBuildMode(null);
@@ -496,6 +490,8 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mouseup', (e) => {
     if (!isSelecting || gameState !== 'PLAYING') return;
     isSelecting = false;
+    
+    let actualId = isHost ? 'host' : 'guest';
 
     let minX = Math.min(selectionStartWorld.x, selectionCurrentWorld.x);
     let maxX = Math.max(selectionStartWorld.x, selectionCurrentWorld.x);
@@ -505,20 +501,21 @@ canvas.addEventListener('mouseup', (e) => {
     let isClick = (maxX - minX < 10 && maxY - minY < 10);
 
     if (isClick) {
-        let clickedUnit = units.find(u => dist(selectionStartWorld, u) < u.radius + 15 && u.owner === myId);
+        let clickedUnit = units.find(u => dist(selectionStartWorld, u) < u.radius + 15 && u.owner === actualId);
         if (clickedUnit) {
             selectedUnits = [clickedUnit.id]; selectedBuilding = null;
         } else {
             selectedUnits = [];
-            let clickedBuild = buildings.find(b => dist(selectionStartWorld, b) < b.size/2 + 10 && b.owner === myId);
-            let myBase = myId === 'host' ? baseHost : baseGuest;
+            let clickedBuild = buildings.find(b => dist(selectionStartWorld, b) < b.size/2 + 10 && b.owner === actualId);
+            let myBase = isHost ? baseHost : baseGuest;
+            
             if(clickedBuild) { selectedBuilding = clickedBuild; } 
             else if (dist(selectionStartWorld, myBase) < myBase.size/2 + 10) { selectedBuilding = myBase; } 
             else { selectedBuilding = null; }
         }
         renderBottomUI();
     } else {
-        selectedUnits = units.filter(u => u.owner === myId && u.x > minX && u.x < maxX && u.y > minY && u.y < maxY).map(u=>u.id);
+        selectedUnits = units.filter(u => u.owner === actualId && u.x > minX && u.x < maxX && u.y > minY && u.y < maxY).map(u=>u.id);
         selectedBuilding = null; renderBottomUI();
     }
 });
@@ -527,7 +524,9 @@ canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if(gameState !== 'PLAYING' || selectedUnits.length === 0 || buildMode || moveMode) return;
     
-    let myRes = myId === 'host' ? resHost : resGuest;
+    let actualId = isHost ? 'host' : 'guest';
+    let myRes = isHost ? resHost : resGuest;
+    
     const pos = getPointerPos(e);
     const wPos = { x: pos.worldX, y: pos.worldY };
 
@@ -538,8 +537,8 @@ canvas.addEventListener('contextmenu', (e) => {
         return;
     }
 
-    if (isHost) executeCommand({ action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: myId });
-    else connToHost.send({ type: 'cmd', action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: myId });
+    if (isHost) executeCommand({ action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
+    else connToHost.send({ type: 'cmd', action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
     
     spawnParticles(wPos.x, wPos.y, 'var(--neon-cyan)', 5);
 });
@@ -621,16 +620,19 @@ function createBtn(colorClass, title, costText, onClick, overrideColor=null, id=
 }
 
 function sendAction(action, data) {
-    data.action = action; data.owner = myId;
+    data.action = action; 
+    let actualId = isHost ? 'host' : 'guest';
+    data.owner = actualId;
     if(isHost) executeCommand(data); else connToHost.send({ type: 'cmd', ...data });
 }
 
 function updateUI() {
-    let myRes = myId === 'host' ? resHost : resGuest;
+    let myRes = isHost ? resHost : resGuest;
+    let actualId = isHost ? 'host' : 'guest';
     uiGold.innerText = Math.floor(myRes.gold);
     uiWood.innerText = Math.floor(myRes.wood);
     uiFood.innerText = Math.floor(myRes.food);
-    let myPop = units.filter(u=>u.owner===myId).length;
+    let myPop = units.filter(u=>u.owner===actualId).length;
     uiPop.innerText = myPop; uiMaxPop.innerText = myRes.maxPop;
     
     myRes.pop = myPop;
@@ -665,7 +667,6 @@ function hostUpdate(dt) {
     enemies.forEach((e, i) => { e.update(dt); if (e.hp <= 0) { enemies.splice(i, 1); }});
     trees = trees.filter(t => t.amount > 0); wheats = wheats.filter(w => w.amount > 0);
 
-    // Sync clients
     let pack = {
         type: 'sync',
         u: units.map(u => ({ id: u.id, x: u.x, y: u.y, t: u.type, e: u.element, o: u.owner, hp: u.hp, mHp: u.maxHp, s: u.state, p: u.payload, st: u.slowTimer })),
