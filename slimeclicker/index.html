@@ -7,7 +7,7 @@
     <style>
         :root {
             --bg-color: #0b0c10;
-            --panel-bg: rgba(31, 40, 51, 0.85); /* Un poil plus opaque pour lisibilité sur le fond */
+            --panel-bg: rgba(31, 40, 51, 0.85);
             --neon-cyan: #00f0ff;
             --neon-pink: #ff007f;
             --neon-green: #39ff14;
@@ -22,9 +22,8 @@
             font-family: var(--font-main); overflow-x: hidden;
             display: flex; flex-direction: column;
             user-select: none;
-            /* La transition permet un changement fluide entre le jour et la nuit */
             transition: background-image 2s ease-in-out;
-            background-color: var(--bg-color); /* Fallback si l'image charge pas */
+            background-color: var(--bg-color);
         }
 
         /* --- HEADER & BOUTON RETOUR --- */
@@ -85,9 +84,9 @@
             100% { box-shadow: 0 0 10px rgba(252,232,3,0.2); }
         }
 
-        /* L'Image du Slime Dynamique */
+        /* L'Image du Slime grandement agrandie (420px) */
         #slime-image {
-            width: 250px; height: auto; cursor: pointer;
+            width: 420px; height: auto; cursor: pointer;
             filter: drop-shadow(0 15px 25px rgba(57, 255, 20, 0.5));
             transition: transform 0.05s ease-out, filter 0.2s;
             z-index: 10; -webkit-user-drag: none;
@@ -96,7 +95,7 @@
 
         /* Le Slime Doré (Événement) */
         #golden-slime {
-            display: none; position: fixed; width: 100px; height: auto;
+            display: none; position: fixed; width: 120px; height: auto;
             cursor: pointer; z-index: 999; -webkit-user-drag: none;
             filter: drop-shadow(0 0 30px var(--neon-gold));
             animation: floatSlime 3s ease-in-out infinite, pulseGold 1s infinite;
@@ -150,7 +149,7 @@
 </head>
 <body>
 
-    <!-- Le fameux Slime Doré -->
+    <!-- Le Slime Doré -->
     <img id="golden-slime" src="img/goldenslime.png" alt="Golden Slime" draggable="false" onclick="activateGoldenBuff(event)">
 
     <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
@@ -187,12 +186,10 @@
         // 🌍 GESTION DU BACKGROUND JOUR/NUIT
         // ==========================================
         function updateBackground() {
-            // Récupère l'heure exacte de Lisbonne (Portugal)
             const ptTime = new Date().toLocaleString("en-US", {timeZone: "Europe/Lisbon"});
             const hour = new Date(ptTime).getHours();
             const body = document.body;
 
-            // De 8h (inclus) à 19h (exclu) = Jour, sinon Nuit
             if (hour >= 8 && hour < 19) {
                 body.style.backgroundImage = "url('img/backday.png')";
             } else {
@@ -203,8 +200,8 @@
             body.style.backgroundAttachment = "fixed";
         }
         
-        updateBackground(); // Met à jour tout de suite
-        setInterval(updateBackground, 60000); // Vérifie toutes les minutes
+        updateBackground();
+        setInterval(updateBackground, 60000);
 
         // ==========================================
         // 💾 DONNÉES DU JEU & VARIABLES
@@ -216,9 +213,8 @@
             lastSaveTime: Date.now()
         };
 
-        // Variables du Buff Doré
         let goldenMultiplier = 1;
-        let goldenTimerRemaining = 0; // en secondes
+        let goldenTimerRemaining = 0;
         let goldenTimeout;
 
         const buildings = [
@@ -228,8 +224,11 @@
             { id: 'b4', name: "Lucas", desc: "Expert (+120 slimes/s)", baseCost: 5000, sps: 120, clickBonus: 0, count: 0, icon: "🤠" },
             { id: 'b5', name: "Antoine", desc: "Maître (+1 500 slimes/s)", baseCost: 50000, sps: 1500, clickBonus: 0, count: 0, icon: "🧙‍♂️" },
             { id: 'b6', name: "Romain", desc: "Gourou (+15 000 slimes/s)", baseCost: 1000000, sps: 15000, clickBonus: 0, count: 0, icon: "🦸‍♂️" },
-            { id: 'b7', name: "Emre", desc: "Dieu des Slimes (+100 000/s)", baseCost: 50000000, sps: 100000, clickBonus: 0, count: 0, icon: "👑" },
-            { id: 'b7', name: "MARC", desc: "Dieu des Slimes (+500 000/s)", baseCost: 500000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
+            { id: 'b7', name: "Emre", desc: "Seigneur (+100 000 slimes/s)", baseCost: 50000000, sps: 100000, clickBonus: 0, count: 0, icon: "👑" },
+            { id: 'b8', name: "MARC", desc: "Dieu des Slimes (+500 000/s)", baseCost: 500000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
+            { id: 'b9', name: "MARC", desc: "Dieu des Slimes (+5000 000/s)", baseCost: 5000000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
+            { id: 'b10', name: "MARC", desc: "Dieu des Slimes (+50000 000/s)", baseCost: 5000000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
+            { id: 'b11', name: "MARC", desc: "Dieu des Slimes (+500000 000/s)", baseCost: 50000000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
         ];
 
         function loadGame() {
@@ -260,7 +259,7 @@
         }
 
         // ==========================================
-        // 🧮 LOGIQUE DU JEU (Avec Multiplicateurs)
+        // 🧮 LOGIQUE DU JEU
         // ==========================================
         function getBaseSPS() {
             let total = 0;
@@ -280,7 +279,6 @@
         function getCost(building) { return Math.floor(building.baseCost * Math.pow(1.15, building.count)); }
         function formatNum(num) { return Math.floor(num).toLocaleString('fr-FR'); }
 
-        // Formater le temps pour le buff (03:00)
         function formatTime(seconds) {
             const m = Math.floor(seconds / 60).toString().padStart(2, '0');
             const s = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -291,25 +289,21 @@
         // 🌟 GESTION DU SLIME DORÉ
         // ==========================================
         function scheduleGoldenSlime() {
-            // Apparaît aléatoirement entre 2 et 5 minutes
             const delay = (Math.random() * 180000) + 120000;
             setTimeout(spawnGoldenSlime, delay);
         }
 
         function spawnGoldenSlime() {
-            // Ne fait pas spawner si le buff est déjà actif
             if (goldenMultiplier > 1) {
                 scheduleGoldenSlime();
                 return;
             }
 
             const gs = document.getElementById('golden-slime');
-            // Position aléatoire sur l'écran (10% à 80% pour éviter qu'il sorte de l'écran)
             gs.style.left = (10 + Math.random() * 70) + 'vw';
             gs.style.top = (10 + Math.random() * 70) + 'vh';
             gs.style.display = 'block';
 
-            // Il disparaît si on ne clique pas dessus dans les 8 secondes
             goldenTimeout = setTimeout(() => {
                 gs.style.display = 'none';
                 scheduleGoldenSlime();
@@ -321,23 +315,19 @@
             gs.style.display = 'none';
             clearTimeout(goldenTimeout);
 
-            // Activation du buff !
             goldenMultiplier = 2;
-            goldenTimerRemaining = 180; // 3 minutes = 180 secondes
+            goldenTimerRemaining = 180;
             document.getElementById('golden-buff-ui').style.display = 'block';
             updateUI();
 
-            // Effet visuel
             spawnFloatingText(e.clientX, e.clientY, "PRODUCTION X2 !!", "var(--neon-gold)");
-            
-            scheduleGoldenSlime(); // Programme le prochain
+            scheduleGoldenSlime();
         }
 
-        // Lancer la loterie du Slime Doré
         scheduleGoldenSlime();
 
         // ==========================================
-        // 🖱️ GESTION DU CLIC ET PARTICULES
+        // 🖱️ GESTION DU CLIC
         // ==========================================
         const slimeImg = document.getElementById('slime-image');
         const clickArea = document.getElementById('click-area');
@@ -449,26 +439,24 @@
         }
 
         // ==========================================
-        // 🔄 GAME LOOP (Avec Delta Time pour Tab Inactive)
+        // 🔄 GAME LOOP
         // ==========================================
         loadGame();
         renderShop();
         updateUI();
 
-        // On utilise la date pour calculer le vrai temps passé, même si le navigateur réduit la vitesse du setInterval
         let lastTickTime = Date.now();
 
         setInterval(() => {
             const now = Date.now();
-            const deltaSec = (now - lastTickTime) / 1000; // Temps écoulé en secondes depuis la dernière frame
+            const deltaSec = (now - lastTickTime) / 1000;
             lastTickTime = now;
 
-            // Gestion du timer du Slime Doré
             if (goldenTimerRemaining > 0) {
                 goldenTimerRemaining -= deltaSec;
                 if (goldenTimerRemaining <= 0) {
                     goldenTimerRemaining = 0;
-                    goldenMultiplier = 1; // Fin du buff
+                    goldenMultiplier = 1;
                     document.getElementById('golden-buff-ui').style.display = 'none';
                     updateUI();
                 } else {
@@ -478,14 +466,12 @@
 
             const sps = getSPS();
             if (sps > 0) {
-                // Grâce à deltaSec, si l'onglet est inactif 10 secondes, le jeu ajoutera directement 10x le SPS
                 game.slimes += sps * deltaSec;
                 game.totalSlimes += sps * deltaSec;
                 updateUI();
             }
         }, 100);
 
-        // Sauvegarde auto
         setInterval(saveGame, 5000);
 
     </script>
