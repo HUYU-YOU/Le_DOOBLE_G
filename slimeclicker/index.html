@@ -12,24 +12,22 @@
             --neon-pink: #ff007f;
             --neon-green: #39ff14;
             --neon-gold: #fce803;
+            --neon-purple: #9b59b6;
             --text-color: #e0e0e0;
             --font-main: 'Segoe UI', system-ui, sans-serif;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            color: var(--text-color);
-            font-family: var(--font-main); overflow-x: hidden;
-            display: flex; flex-direction: column;
-            user-select: none;
-            transition: background-image 2s ease-in-out;
-            background-color: var(--bg-color);
+            color: var(--text-color); font-family: var(--font-main); overflow-x: hidden;
+            display: flex; flex-direction: column; user-select: none;
+            transition: background-image 2s ease-in-out; background-color: var(--bg-color);
         }
 
-        /* --- HEADER & BOUTON RETOUR --- */
         header {
             text-align: center; padding: 20px;
             background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+            position: relative;
         }
         h1 { margin: 0; color: var(--neon-cyan); text-shadow: 0 0 15px var(--neon-cyan), 0 0 5px #000; text-transform: uppercase; letter-spacing: 3px; }
 
@@ -41,98 +39,74 @@
         }
         #btn-retour-hub:hover { background: rgba(0, 240, 255, 0.2); box-shadow: 0 0 10px rgba(0,240,255,0.5); }
 
-        /* --- LAYOUT PRINCIPAL --- */
+        #crystals-display {
+            position: absolute; top: 20px; right: 20px;
+            color: var(--neon-purple); font-weight: bold; font-size: 1.2rem;
+            text-shadow: 0 0 10px var(--neon-purple); background: rgba(0,0,0,0.5);
+            padding: 8px 15px; border-radius: 8px; border: 1px solid var(--neon-purple);
+            display: none;
+        }
+
         #game-container {
             display: flex; flex-wrap: wrap; flex: 1; padding: 20px; gap: 30px;
-            max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
-            align-items: stretch;
+            max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; align-items: stretch;
         }
 
-        /* --- PANNEAU GAUCHE (La star : Le Slime) --- */
+        /* --- PANNEAU GAUCHE --- */
         #click-area {
             flex: 1.5; min-width: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: var(--panel-bg);
-            border-radius: 15px; border: 1px solid rgba(57, 255, 20, 0.4);
+            background: var(--panel-bg); border-radius: 15px; border: 1px solid rgba(57, 255, 20, 0.4);
             box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5); 
-            position: relative; padding: 40px 20px;
-            overflow: hidden; backdrop-filter: blur(5px);
+            position: relative; padding: 40px 20px; overflow: hidden; backdrop-filter: blur(5px);
         }
 
-        #score-display { 
-            font-size: 3.5rem; font-weight: bold; color: var(--neon-green); 
-            text-shadow: 0 0 20px rgba(57, 255, 20, 0.6), 0 0 5px #000; margin-bottom: 5px; z-index: 10;
-        }
-        #sps-display { 
-            font-size: 1.2rem; color: #ccc; margin-bottom: 20px; z-index: 10;
-            background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
+        #score-display { font-size: 3.5rem; font-weight: bold; color: var(--neon-green); text-shadow: 0 0 20px rgba(57, 255, 20, 0.6), 0 0 5px #000; margin-bottom: 5px; z-index: 10; text-align: center; }
+        #sps-display { font-size: 1.2rem; color: #ccc; margin-bottom: 20px; z-index: 10; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: center;}
 
-        /* Indicateur du Buff Doré */
         #golden-buff-ui {
-            display: none;
-            font-size: 1.3rem; font-weight: bold; color: var(--neon-gold);
+            display: none; font-size: 1.3rem; font-weight: bold; color: var(--neon-gold);
             background: rgba(252, 232, 3, 0.1); border: 1px solid var(--neon-gold);
-            padding: 8px 20px; border-radius: 8px; margin-bottom: 20px; z-index: 10;
-            text-shadow: 0 0 10px var(--neon-gold);
+            padding: 8px 20px; border-radius: 8px; margin-bottom: 20px; z-index: 10; text-shadow: 0 0 10px var(--neon-gold);
             animation: pulseGold 1.5s infinite;
         }
 
-        @keyframes pulseGold {
-            0% { box-shadow: 0 0 10px rgba(252,232,3,0.2); }
-            50% { box-shadow: 0 0 25px rgba(252,232,3,0.6); }
-            100% { box-shadow: 0 0 10px rgba(252,232,3,0.2); }
-        }
+        @keyframes pulseGold { 0% { box-shadow: 0 0 10px rgba(252,232,3,0.2); } 50% { box-shadow: 0 0 25px rgba(252,232,3,0.6); } 100% { box-shadow: 0 0 10px rgba(252,232,3,0.2); } }
 
-        /* L'Image du Slime grandement agrandie (420px) */
-        #slime-image {
-            width: 420px; height: auto; cursor: pointer;
-            filter: drop-shadow(0 15px 25px rgba(57, 255, 20, 0.5));
-            transition: transform 0.05s ease-out, filter 0.2s;
-            z-index: 10; -webkit-user-drag: none;
-        }
+        #slime-image { width: 420px; height: auto; cursor: pointer; filter: drop-shadow(0 15px 25px rgba(57, 255, 20, 0.5)); transition: transform 0.05s ease-out, filter 0.2s; z-index: 10; -webkit-user-drag: none; }
         #slime-image:hover { filter: drop-shadow(0 15px 35px rgba(57, 255, 20, 0.8)); }
 
-        /* Le Slime Doré (Événement) */
         #golden-slime {
-            display: none; position: fixed; width: 120px; height: auto;
-            cursor: pointer; z-index: 999; -webkit-user-drag: none;
-            filter: drop-shadow(0 0 30px var(--neon-gold));
-            animation: floatSlime 3s ease-in-out infinite, pulseGold 1s infinite;
+            display: none; position: fixed; width: 120px; height: auto; cursor: pointer; z-index: 999; -webkit-user-drag: none;
+            filter: drop-shadow(0 0 30px var(--neon-gold)); animation: floatSlime 3s ease-in-out infinite, pulseGold 1s infinite;
         }
 
-        @keyframes floatSlime {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-            100% { transform: translateY(0); }
-        }
+        @keyframes floatSlime { 0% { transform: translateY(0); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0); } }
 
-        /* Particules de clic (+1) */
         .floating-number {
-            position: absolute; color: #fff; font-size: 2rem; font-weight: bold;
-            pointer-events: none; animation: floatUp 0.8s ease-out forwards; 
+            position: absolute; color: #fff; font-size: 2rem; font-weight: bold; pointer-events: none; animation: floatUp 0.8s ease-out forwards; 
             text-shadow: 0 0 10px var(--neon-green), 0 0 2px #000; z-index: 20;
         }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
-        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-80px) scale(1.3); } }
 
-        /* --- PANNEAU DROIT (Boutique Dresseurs) --- */
+        /* --- PANNEAU DROIT & ONGLETS --- */
         #shop-area {
-            flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 10px;
+            flex: 1; min-width: 320px; display: flex; flex-direction: column;
             background: var(--panel-bg); border-radius: 15px; border: 1px solid rgba(0, 240, 255, 0.4);
-            padding: 20px; overflow-y: auto; max-height: 75vh;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+            padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
         }
-        
-        #shop-area h2 { margin-top: 0; color: var(--neon-cyan); border-bottom: 1px dashed var(--neon-cyan); padding-bottom: 10px; text-shadow: 0 0 5px #000;}
 
-        .shop-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.6); border: 1px solid #333; border-radius: 8px;
-            padding: 15px; cursor: pointer; transition: 0.2s;
-        }
+        .shop-tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; background: rgba(0,0,0,0.5); color: #888; border: 1px solid #444; padding: 10px 5px; cursor: pointer; border-radius: 5px; text-align: center; font-weight: bold; transition: 0.3s; font-size: 0.95rem;}
+        .tab-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .tab-btn.active[data-tab="dresseurs"] { background: rgba(0,240,255,0.15); color: var(--neon-cyan); border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,240,255,0.3); }
+        .tab-btn.active[data-tab="labo"] { background: rgba(155,89,182,0.15); color: var(--neon-purple); border-color: var(--neon-purple); box-shadow: 0 0 10px rgba(155,89,182,0.3); }
+        .tab-btn.active[data-tab="prestige"] { background: rgba(252,232,3,0.15); color: var(--neon-gold); border-color: var(--neon-gold); box-shadow: 0 0 10px rgba(252,232,3,0.3); }
+
+        .tab-content { display: none; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 60vh; padding-right: 5px; }
+        .tab-content.active { display: flex; }
+
+        /* Dresseurs */
+        .shop-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); border: 1px solid #333; border-radius: 8px; padding: 15px; cursor: pointer; transition: 0.2s; }
         .shop-item:hover { border-color: var(--neon-cyan); background: rgba(0, 240, 255, 0.15); }
         .shop-item.disabled { opacity: 0.5; filter: grayscale(100%); cursor: not-allowed; }
         .shop-item.disabled:hover { border-color: #333; background: rgba(0,0,0,0.6); }
@@ -142,17 +116,40 @@
         .item-details h3 { margin: 0; color: #fff; font-size: 1.1rem; }
         .item-details p { margin: 3px 0 0 0; color: #aaa; font-size: 0.85rem; }
         .item-cost { color: var(--neon-pink); font-weight: bold; font-size: 1rem; margin-top: 5px; text-shadow: 0 0 5px #000;}
-        
         .item-count { font-size: 1.8rem; font-weight: bold; color: rgba(255,255,255,0.3); }
 
+        /* Upgrades (Labo) */
+        .upgrades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        .upg-item { background: rgba(0,0,0,0.6); border: 1px solid #444; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 5px;}
+        .upg-item:hover { border-color: var(--neon-purple); background: rgba(155, 89, 182, 0.15); box-shadow: 0 0 10px rgba(155, 89, 182, 0.4); }
+        .upg-item.disabled { opacity: 0.4; filter: grayscale(100%); pointer-events: none; }
+        .upg-item.bought { border-color: var(--neon-green); background: rgba(57, 255, 20, 0.1); opacity: 0.6; pointer-events: none; }
+        .upg-icon { font-size: 2rem; }
+        .upg-name { color: #fff; font-size: 0.9rem; font-weight: bold; line-height: 1.2; }
+        .upg-desc { color: #aaa; font-size: 0.75rem; }
+        .upg-cost { color: var(--neon-pink); font-size: 0.85rem; font-weight: bold; }
+
+        /* Prestige */
+        #prestige-content { text-align: center; padding: 20px 10px; }
+        .crystal-icon { font-size: 4rem; filter: drop-shadow(0 0 20px var(--neon-purple)); margin-bottom: 10px; }
+        #prestige-btn { background: var(--bg-color); border: 2px solid var(--neon-gold); color: var(--neon-gold); padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 20px; transition: 0.3s; text-transform: uppercase; font-family: inherit;}
+        #prestige-btn:hover { background: var(--neon-gold); color: #000; box-shadow: 0 0 20px var(--neon-gold); }
+        #prestige-btn.disabled { opacity: 0.5; pointer-events: none; border-color: gray; color: gray; }
+
+        /* Scrollbar custom */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px;}
+        ::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.4); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
     </style>
 </head>
 <body>
 
-    <!-- Le Slime Doré -->
     <img id="golden-slime" src="img/goldenslime.png" alt="Golden Slime" draggable="false" onclick="activateGoldenBuff(event)">
 
     <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
+    
+    <div id="crystals-display">🌌 0 Cristaux</div>
 
     <header>
         <h1>Slime Clicker</h1>
@@ -164,19 +161,52 @@
         <div id="click-area">
             <div id="score-display">0 Slimes</div>
             <div id="sps-display">0 / sec</div>
-
-            <!-- Indicateur x2 -->
             <div id="golden-buff-ui">🔥 PRODUCTION X2 (<span id="golden-time">00:00</span>) 🔥</div>
-            
             <img id="slime-image" src="img/slm1.png" alt="Big Slime" draggable="false">
         </div>
 
-        <!-- BOUTIQUE DES DRESSEURS -->
+        <!-- ZONE DE GESTION (Onglets) -->
         <div id="shop-area">
-            <h2>Dresseurs de Slimes</h2>
-            <div id="shop-list">
-                <!-- Généré par JavaScript -->
+            
+            <div class="shop-tabs">
+                <div class="tab-btn active" data-tab="dresseurs" onclick="switchTab('dresseurs')">Dresseurs</div>
+                <div class="tab-btn" data-tab="labo" onclick="switchTab('labo')">Labo 🧬</div>
+                <div class="tab-btn" data-tab="prestige" onclick="switchTab('prestige')">Ascension 🌌</div>
             </div>
+
+            <!-- Contenu Dresseurs -->
+            <div id="content-dresseurs" class="tab-content active">
+                <div id="shop-list"></div>
+            </div>
+
+            <!-- Contenu Labo -->
+            <div id="content-labo" class="tab-content">
+                <div class="upgrades-grid" id="upgrades-list"></div>
+            </div>
+
+            <!-- Contenu Prestige -->
+            <div id="content-prestige" class="tab-content">
+                <div id="prestige-content">
+                    <div class="crystal-icon">🌌</div>
+                    <h2 style="color: var(--neon-purple); border: none;">Cristaux Quantiques</h2>
+                    <p style="color: #aaa; margin-bottom: 20px;">Chaque Cristal offre un bonus <strong>permanent de +5%</strong> sur votre production et vos clics.</p>
+                    
+                    <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid #444;">
+                        <p style="margin: 0; font-size: 1.1rem;">Cristaux actuels : <strong style="color: var(--neon-purple);" id="current-crystals">0</strong></p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--neon-green);">Bonus actif : <strong id="crystal-bonus">0%</strong></p>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <p style="margin: 0; color: #fff;">Cristaux à gagner en réinitialisant :</p>
+                        <h1 style="margin: 5px 0; color: var(--neon-gold); font-size: 2.5rem;">+<span id="crystals-to-gain">0</span></h1>
+                        <p style="margin: 0; font-size: 0.8rem; color: gray;">(Basé sur le total de Slimes générés depuis le début)</p>
+                    </div>
+
+                    <button id="prestige-btn" class="disabled" onclick="doPrestige()">Mutation Quantique</button>
+                    <p style="font-size: 0.8rem; color: #ff3333; margin-top: 10px;">⚠️ Attention : Réinitialise vos Slimes, Dresseurs et Améliorations !</p>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -199,7 +229,6 @@
             body.style.backgroundPosition = "center";
             body.style.backgroundAttachment = "fixed";
         }
-        
         updateBackground();
         setInterval(updateBackground, 60000);
 
@@ -208,8 +237,10 @@
         // ==========================================
         let game = {
             slimes: 0,
-            totalSlimes: 0,
+            totalSlimes: 0, 
             clickPower: 1,
+            cristaux: 0,
+            upgradesBought: [],
             lastSaveTime: Date.now()
         };
 
@@ -217,6 +248,7 @@
         let goldenTimerRemaining = 0;
         let goldenTimeout;
 
+        // VRAIES VALEURS SPS MISES À JOUR
         const buildings = [
             { id: 'b1', name: "Clic Musclé", desc: "+1 par clic (Toi)", baseCost: 15, sps: 0, clickBonus: 1, count: 0, icon: "👆" },
             { id: 'b2', name: "Nathan", desc: "Apprenti (+1 slime/s)", baseCost: 50, sps: 1, clickBonus: 0, count: 0, icon: "👦" },
@@ -224,11 +256,28 @@
             { id: 'b4', name: "Lucas", desc: "Expert (+120 slimes/s)", baseCost: 5000, sps: 120, clickBonus: 0, count: 0, icon: "🤠" },
             { id: 'b5', name: "Antoine", desc: "Maître (+1 500 slimes/s)", baseCost: 50000, sps: 1500, clickBonus: 0, count: 0, icon: "🧙‍♂️" },
             { id: 'b6', name: "Romain", desc: "Gourou (+15 000 slimes/s)", baseCost: 1000000, sps: 15000, clickBonus: 0, count: 0, icon: "🦸‍♂️" },
-            { id: 'b7', name: "Emre", desc: "Seigneur (+100 000 slimes/s)", baseCost: 50000000, sps: 100000, clickBonus: 0, count: 0, icon: "👑" },
+            { id: 'b7', name: "Emre", desc: "Seigneur (+100 000/s)", baseCost: 50000000, sps: 100000, clickBonus: 0, count: 0, icon: "👑" },
             { id: 'b8', name: "MARC", desc: "Dieu des Slimes (+500 000/s)", baseCost: 500000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
-            { id: 'b9', name: "Nathan et la norvegienne", desc: "Dieu des Slimes (+5000 000/s)", baseCost: 50000000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
-            { id: 'b10', name: "Dylan la peufra", desc: "Dieu des Slimes (+50000 000/s)", baseCost: 50000000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
-            { id: 'b11', name: "Lucas le chevalier floppeur", desc: "Dieu des Slimes (+500000 000/s)", baseCost: 500000000000, sps: 500000, clickBonus: 0, count: 0, icon: "👑" },
+            { id: 'b9', name: "Nathan & Norvégienne", desc: "Mythe (+5 000 000/s)", baseCost: 50000000000, sps: 5000000, clickBonus: 0, count: 0, icon: "👩‍❤️‍👨" },
+            { id: 'b10', name: "Dylan la Peufra", desc: "Légende (+50 000 000/s)", baseCost: 500000000000, sps: 50000000, clickBonus: 0, count: 0, icon: "🔥" },
+            { id: 'b11', name: "Lucas le Floppeur", desc: "Chevalier (+500 000 000/s)", baseCost: 5000000000000, sps: 500000000, clickBonus: 0, count: 0, icon: "⚔️" }
+        ];
+
+        // NOUVEAUX UPGRADES POUR LES NOUVEAUX DRESSEURS
+        const upgradesDef = [
+            { id: 'u1', name: "Doigt Bionique", desc: "Clic x2", cost: 500, target: 'b1', mult: 2, icon: "🦾" },
+            { id: 'u2', name: "Red Bull", desc: "Nathan x2", cost: 1000, target: 'b2', mult: 2, icon: "🥫" },
+            { id: 'u3', name: "Livre Magique", desc: "Dylan x2", cost: 10000, target: 'b3', mult: 2, icon: "📘" },
+            { id: 'u4', name: "Clic Auto", desc: "Clic x2", cost: 50000, target: 'b1', mult: 2, icon: "⚙️" },
+            { id: 'u5', name: "Chapeau Cowboy", desc: "Lucas x2", cost: 100000, target: 'b4', mult: 2, icon: "🤠" },
+            { id: 'u6', name: "Baguette Magique", desc: "Antoine x2", cost: 1000000, target: 'b5', mult: 2, icon: "🪄" },
+            { id: 'u7', name: "Clic Quantique", desc: "Clic x2", cost: 5000000, target: 'b1', mult: 2, icon: "🌌" },
+            { id: 'u8', name: "Cape Héroïque", desc: "Romain x2", cost: 20000000, target: 'b6', mult: 2, icon: "🦸‍♂️" },
+            { id: 'u9', name: "Trône Doré", desc: "Emre x2", cost: 1000000000, target: 'b7', mult: 2, icon: "🪑" },
+            { id: 'u10', name: "Pouvoir Absolu", desc: "MARC x2", cost: 10000000000, target: 'b8', mult: 2, icon: "🔱" },
+            { id: 'u11', name: "Billet d'avion", desc: "Norvégienne x2", cost: 500000000000, target: 'b9', mult: 2, icon: "✈️" },
+            { id: 'u12', name: "Abo à la Salle", desc: "Peufra x2", cost: 5000000000000, target: 'b10', mult: 2, icon: "🏋️" },
+            { id: 'u13', name: "Armure Carton", desc: "Floppeur x2", cost: 50000000000000, target: 'b11', mult: 2, icon: "📦" }
         ];
 
         function loadGame() {
@@ -238,12 +287,16 @@
                 game.slimes = parsed.slimes || 0;
                 game.totalSlimes = parsed.totalSlimes || 0;
                 game.clickPower = parsed.clickPower || 1;
+                game.cristaux = parsed.cristaux || 0;
+                game.upgradesBought = parsed.upgradesBought || [];
                 
                 if (parsed.buildings) {
                     parsed.buildings.forEach((savedB, index) => {
                         if (buildings[index]) buildings[index].count = savedB.count || 0;
                     });
                 }
+                
+                if (game.cristaux > 0) document.getElementById('crystals-display').style.display = 'block';
             }
         }
 
@@ -253,6 +306,8 @@
                 slimes: game.slimes,
                 totalSlimes: game.totalSlimes,
                 clickPower: game.clickPower,
+                cristaux: game.cristaux,
+                upgradesBought: game.upgradesBought,
                 buildings: buildings.map(b => ({ count: b.count }))
             };
             localStorage.setItem('slimeClickerSave', JSON.stringify(saveObj));
@@ -261,28 +316,65 @@
         // ==========================================
         // 🧮 LOGIQUE DU JEU
         // ==========================================
+        function getBuildingMultiplier(b_id) {
+            let m = 1;
+            upgradesDef.forEach(u => {
+                if (u.target === b_id && game.upgradesBought.includes(u.id)) m *= u.mult;
+            });
+            return m;
+        }
+
         function getBaseSPS() {
             let total = 0;
-            buildings.forEach(b => { total += b.sps * b.count; });
+            buildings.forEach(b => { if(b.id !== 'b1') total += b.sps * b.count * getBuildingMultiplier(b.id); });
             return total;
         }
 
         function getBaseClick() {
             let power = 1;
-            buildings.forEach(b => { power += b.clickBonus * b.count; });
+            buildings.forEach(b => { if(b.id === 'b1') power += b.clickBonus * b.count * getBuildingMultiplier(b.id); });
             return power;
         }
 
-        function getSPS() { return getBaseSPS() * goldenMultiplier; }
-        function getClickPower() { return getBaseClick() * goldenMultiplier; }
+        function getSPS() { return getBaseSPS() * goldenMultiplier * (1 + (game.cristaux * 0.05)); }
+        function getClickPower() { return getBaseClick() * goldenMultiplier * (1 + (game.cristaux * 0.05)); }
 
         function getCost(building) { return Math.floor(building.baseCost * Math.pow(1.15, building.count)); }
         function formatNum(num) { return Math.floor(num).toLocaleString('fr-FR'); }
-
         function formatTime(seconds) {
             const m = Math.floor(seconds / 60).toString().padStart(2, '0');
             const s = Math.floor(seconds % 60).toString().padStart(2, '0');
             return `${m}:${s}`;
+        }
+
+        // ==========================================
+        // 🌌 LE PRESTIGE (ASCENSION)
+        // ==========================================
+        function getCrystalsToGain() {
+            if (game.totalSlimes < 100000) return 0;
+            let totalLifetimeCrystals = Math.floor(Math.cbrt(game.totalSlimes / 100000));
+            let toGain = totalLifetimeCrystals - game.cristaux;
+            return toGain > 0 ? toGain : 0;
+        }
+
+        function doPrestige() {
+            const toGain = getCrystalsToGain();
+            if (toGain <= 0) return;
+
+            if (confirm(`Êtes-vous sûr de vouloir muter ?\nVous perdrez vos Slimes, Dresseurs et Améliorations, mais gagnerez ${toGain} Cristaux (+${toGain*5}% bonus permanent).`)) {
+                game.cristaux += toGain;
+                game.slimes = 0;
+                game.upgradesBought = [];
+                buildings.forEach(b => b.count = 0);
+                
+                document.getElementById('crystals-display').style.display = 'block';
+                
+                saveGame();
+                renderShop();
+                renderUpgrades();
+                updateUI();
+                switchTab('dresseurs');
+            }
         }
 
         // ==========================================
@@ -294,31 +386,21 @@
         }
 
         function spawnGoldenSlime() {
-            if (goldenMultiplier > 1) {
-                scheduleGoldenSlime();
-                return;
-            }
-
+            if (goldenMultiplier > 1) { scheduleGoldenSlime(); return; }
             const gs = document.getElementById('golden-slime');
             gs.style.left = (10 + Math.random() * 70) + 'vw';
             gs.style.top = (10 + Math.random() * 70) + 'vh';
             gs.style.display = 'block';
 
-            goldenTimeout = setTimeout(() => {
-                gs.style.display = 'none';
-                scheduleGoldenSlime();
-            }, 8000);
+            goldenTimeout = setTimeout(() => { gs.style.display = 'none'; scheduleGoldenSlime(); }, 8000);
         }
 
         function activateGoldenBuff(e) {
             const gs = document.getElementById('golden-slime');
-            gs.style.display = 'none';
-            clearTimeout(goldenTimeout);
+            gs.style.display = 'none'; clearTimeout(goldenTimeout);
 
-            goldenMultiplier = 2;
-            goldenTimerRemaining = 180;
-            document.getElementById('golden-buff-ui').style.display = 'block';
-            updateUI();
+            goldenMultiplier = 2; goldenTimerRemaining = 180;
+            document.getElementById('golden-buff-ui').style.display = 'block'; updateUI();
 
             spawnFloatingText(e.clientX, e.clientY, "PRODUCTION X2 !!", "var(--neon-gold)");
             scheduleGoldenSlime();
@@ -338,8 +420,7 @@
             floatingEl.innerText = text;
             floatingEl.style.color = color;
             floatingEl.style.textShadow = `0 0 10px ${color}, 0 0 2px #000`;
-            floatingEl.style.left = `${x - 30}px`; 
-            floatingEl.style.top = `${y - 30}px`;
+            floatingEl.style.left = `${x - 30}px`; floatingEl.style.top = `${y - 30}px`;
             
             const randomOffset = (Math.random() - 0.5) * 60;
             floatingEl.style.transform = `translateX(${randomOffset}px)`;
@@ -350,30 +431,20 @@
 
         function handleSlimePress(e) {
             if (e.cancelable) e.preventDefault();
-
-            slimeImg.src = 'img/slm17.png';
-            slimeImg.style.transform = 'scale(0.9) translateY(15px)';
+            slimeImg.src = 'img/slm17.png'; slimeImg.style.transform = 'scale(0.9) translateY(15px)';
 
             const power = getClickPower();
-            game.slimes += power;
-            game.totalSlimes += power;
-            updateUI();
+            game.slimes += power; game.totalSlimes += power; updateUI();
 
             let x, y;
-            if (e.touches && e.touches.length > 0) {
-                x = e.touches[0].clientX;
-                y = e.touches[0].clientY;
-            } else {
-                x = e.clientX;
-                y = e.clientY;
-            }
+            if (e.touches && e.touches.length > 0) { x = e.touches[0].clientX; y = e.touches[0].clientY; } 
+            else { x = e.clientX; y = e.clientY; }
 
             spawnFloatingText(x, y, `+${formatNum(power)}`, "var(--neon-green)");
         }
 
         function handleSlimeRelease() {
-            slimeImg.src = 'img/slm1.png';
-            slimeImg.style.transform = 'scale(1) translateY(0)';
+            slimeImg.src = 'img/slm1.png'; slimeImg.style.transform = 'scale(1) translateY(0)';
         }
 
         slimeImg.addEventListener('mousedown', handleSlimePress);
@@ -384,26 +455,43 @@
         slimeImg.addEventListener('touchcancel', handleSlimeRelease);
 
         // ==========================================
-        // 🛒 BOUTIQUE & UI
+        // 🎨 GESTION ONGLETS & UI
         // ==========================================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`content-${tabName}`).classList.add('active');
+            
+            if (tabName === 'labo') renderUpgrades();
+            if (tabName === 'prestige') updatePrestigeUI();
+        }
+
         function buyBuilding(index) {
             const b = buildings[index];
             const cost = getCost(b);
-            
             if (game.slimes >= cost) {
-                game.slimes -= cost;
-                b.count++;
-                renderShop(); 
-                updateUI();
+                game.slimes -= cost; b.count++;
+                renderShop(); updateUI();
+            }
+        }
+
+        function buyUpgrade(u_id) {
+            const u = upgradesDef.find(x => x.id === u_id);
+            if (game.slimes >= u.cost && !game.upgradesBought.includes(u_id)) {
+                game.slimes -= u.cost;
+                game.upgradesBought.push(u_id);
+                renderUpgrades(); updateUI();
             }
         }
 
         function updateUI() {
             document.getElementById('score-display').innerText = `${formatNum(game.slimes)}`;
-            
             let spsText = `${formatNum(getSPS())} / sec`;
             if (goldenMultiplier > 1) spsText += ` (x2 ACTIF)`;
             document.getElementById('sps-display').innerText = spsText;
+            document.getElementById('crystals-display').innerText = `🌌 ${formatNum(game.cristaux)} Cristaux`;
 
             buildings.forEach((b, index) => {
                 const el = document.getElementById(`shop-item-${index}`);
@@ -412,30 +500,61 @@
                     else el.classList.add('disabled');
                 }
             });
+
+            upgradesDef.forEach((u) => {
+                const el = document.getElementById(`upg-${u.id}`);
+                if (el && !game.upgradesBought.includes(u.id)) {
+                    if (game.slimes >= u.cost) el.classList.remove('disabled');
+                    else el.classList.add('disabled');
+                }
+            });
+            
+            updatePrestigeUI();
         }
 
         function renderShop() {
             const shopList = document.getElementById('shop-list');
             shopList.innerHTML = '';
-
             buildings.forEach((b, index) => {
                 const cost = getCost(b);
                 const isAffordable = game.slimes >= cost;
-
                 shopList.innerHTML += `
                     <div id="shop-item-${index}" class="shop-item ${isAffordable ? '' : 'disabled'}" onclick="buyBuilding(${index})">
-                        <div class="item-info">
-                            <div class="item-icon">${b.icon}</div>
-                            <div class="item-details">
-                                <h3>${b.name}</h3>
-                                <p>${b.desc}</p>
-                                <div class="item-cost">🩸 ${formatNum(cost)}</div>
-                            </div>
-                        </div>
+                        <div class="item-info"><div class="item-icon">${b.icon}</div>
+                        <div class="item-details"><h3>${b.name}</h3><p>${b.desc}</p><div class="item-cost">🩸 ${formatNum(cost)}</div></div></div>
                         <div class="item-count">${b.count}</div>
-                    </div>
-                `;
+                    </div>`;
             });
+        }
+
+        function renderUpgrades() {
+            const upgList = document.getElementById('upgrades-list');
+            upgList.innerHTML = '';
+            upgradesDef.forEach((u) => {
+                const isBought = game.upgradesBought.includes(u.id);
+                const isAffordable = game.slimes >= u.cost;
+                const stateClass = isBought ? 'bought' : (isAffordable ? '' : 'disabled');
+                
+                upgList.innerHTML += `
+                    <div id="upg-${u.id}" class="upg-item ${stateClass}" onclick="buyUpgrade('${u.id}')">
+                        <div class="upg-icon">${u.icon}</div>
+                        <div class="upg-name">${u.name}</div>
+                        <div class="upg-desc">${u.desc}</div>
+                        ${isBought ? `<div style="color:var(--neon-green); font-weight:bold; font-size:0.85rem; margin-top:5px;">ACQUIS ✔️</div>` : `<div class="upg-cost">🩸 ${formatNum(u.cost)}</div>`}
+                    </div>`;
+            });
+        }
+
+        function updatePrestigeUI() {
+            document.getElementById('current-crystals').innerText = formatNum(game.cristaux);
+            document.getElementById('crystal-bonus').innerText = `+${formatNum(game.cristaux * 5)}%`;
+            
+            const toGain = getCrystalsToGain();
+            document.getElementById('crystals-to-gain').innerText = formatNum(toGain);
+            
+            const btn = document.getElementById('prestige-btn');
+            if (toGain > 0) btn.classList.remove('disabled');
+            else btn.classList.add('disabled');
         }
 
         // ==========================================
@@ -443,6 +562,7 @@
         // ==========================================
         loadGame();
         renderShop();
+        renderUpgrades();
         updateUI();
 
         let lastTickTime = Date.now();
@@ -455,10 +575,8 @@
             if (goldenTimerRemaining > 0) {
                 goldenTimerRemaining -= deltaSec;
                 if (goldenTimerRemaining <= 0) {
-                    goldenTimerRemaining = 0;
-                    goldenMultiplier = 1;
-                    document.getElementById('golden-buff-ui').style.display = 'none';
-                    updateUI();
+                    goldenTimerRemaining = 0; goldenMultiplier = 1;
+                    document.getElementById('golden-buff-ui').style.display = 'none'; updateUI();
                 } else {
                     document.getElementById('golden-time').innerText = formatTime(goldenTimerRemaining);
                 }
