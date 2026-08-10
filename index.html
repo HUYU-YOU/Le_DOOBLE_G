@@ -6,43 +6,40 @@
     <title>Arcade du Bureau</title>
 
     <link rel="stylesheet" href="style.css">
+    
     <style>
-        /* --- STYLE POUR LE MENU DE NAVIGATION (ONGLETS) --- */
+        /* --- STYLE POUR LES BOUTONS IMAGES (ONGLETS) --- */
         .toggle-container {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            margin: 30px 0;
+            gap: 40px;
+            margin: 40px 0;
+            align-items: center;
         }
 
-        .toggle-btn {
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid #333;
-            color: #888;
-            padding: 12px 30px;
-            font-size: 1.2rem;
+        .toggle-img-btn {
+            width: 220px; /* Ajuste cette taille selon la taille de tes images */
+            height: auto;
             cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            font-weight: bold;
-            letter-spacing: 1px;
-            font-family: inherit;
+            opacity: 0.4; /* L'image non sélectionnée est un peu transparente */
+            filter: grayscale(80%); /* Et un peu grisée */
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        .toggle-btn:hover {
-            border-color: #00f0ff;
-            color: #fff;
+        .toggle-img-btn:hover {
+            opacity: 0.8;
+            filter: grayscale(0%);
+            transform: scale(1.05);
         }
 
-        .toggle-btn.active {
-            border-color: #00f0ff;
-            color: #00f0ff;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-            background: rgba(0, 240, 255, 0.1);
+        /* Quand l'image est la catégorie active */
+        .toggle-img-btn.active {
+            opacity: 1;
+            filter: grayscale(0%) drop-shadow(0 0 15px var(--cyan));
+            transform: scale(1.1);
         }
 
-        /* Classe utilitaire pour cacher la grille non sélectionnée */
+        /* Classe pour cacher la grille non sélectionnée */
         .hidden {
             display: none !important;
         }
@@ -53,10 +50,11 @@
     
     <p class="subtitle">Welcome in the Google space</p>
     
-    <!-- BOUTONS DE NAVIGATION -->
+    <!-- BOUTONS DE NAVIGATION EN IMAGES -->
     <div class="toggle-container">
-        <button id="btn-solo" class="toggle-btn active" onclick="switchCategory('solo')">👤 Jeux Solo</button>
-        <button id="btn-multi" class="toggle-btn" onclick="switchCategory('multi')">🌐 Jeux Multi</button>
+        <!-- Remplace le src par le chemin exact de tes images -->
+        <img src="img/btn_solo.png" id="btn-solo" class="toggle-img-btn active" onclick="switchCategory('solo')" alt="Jeux Solo">
+        <img src="img/btn_multi.png" id="btn-multi" class="toggle-img-btn" onclick="switchCategory('multi')" alt="Jeux Multi">
     </div>
 
     <!-- ========================================== -->
@@ -189,17 +187,11 @@
             <div class="game-icon">🃏</div>
             <div class="game-title">Texas Poker</div>
         </a>
-        
-        <a href="RTSlime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🃏</div>
-            <div class="game-title">Slimilization</div>
-        </a>
 
     </div> 
 
     <script>
-        // --- GESTION DES ONGLETS SOLO / MULTI ---
+        // --- GESTION DES ONGLETS IMAGES SOLO / MULTI ---
         function switchCategory(category) {
             const gridSolo = document.getElementById('grid-solo');
             const gridMulti = document.getElementById('grid-multi');
@@ -207,29 +199,23 @@
             const btnMulti = document.getElementById('btn-multi');
 
             if (category === 'solo') {
-                // Affiche Solo, cache Multi
                 gridSolo.classList.remove('hidden');
                 gridMulti.classList.add('hidden');
-                // Met à jour les boutons
                 btnSolo.classList.add('active');
                 btnMulti.classList.remove('active');
             } else if (category === 'multi') {
-                // Affiche Multi, cache Solo
                 gridMulti.classList.remove('hidden');
                 gridSolo.classList.add('hidden');
-                // Met à jour les boutons
                 btnMulti.classList.add('active');
                 btnSolo.classList.remove('active');
             }
         }
 
-        // Dès que la page est chargée, on tire au sort la cinématique de Slime Dash
+        // --- GESTION DES VIDEOS DE HOVER ---
         document.addEventListener("DOMContentLoaded", () => {
             const dashVideo = document.getElementById("dash-video");
             if (dashVideo) {
-                // Tire au sort 1 ou 2
                 const randomNum = Math.floor(Math.random() * 2) + 1;
-                // Assigne la source en fonction du tirage
                 dashVideo.src = `slimedash/img/cinematic_dash${randomNum}.mp4`;
             }
         });
