@@ -45,13 +45,12 @@ class Building {
         this.color = owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)';
 
         if(type === 'house') { this.hp = 300; }
-        if(type === 'farm') { this.hp = 400; }
-        if(type === 'sawmill') { this.hp = 500; }
-        if(type === 'mine') { this.hp = 600; }
-        if(type === 'barracks') { this.size = 80; this.hp = 800; }
-        if(type === 'archery') { this.size = 80; this.hp = 800; }
-        if(type === 'mage') { this.size = 80; this.hp = 800; }
-        if(type === 'tower') { this.size = 50; this.hp = 1000; }
+        if(type === 'sawmill') { this.color = 'var(--neon-orange)'; this.hp = 500; }
+        if(type === 'mine') { this.color = 'var(--neon-yellow)'; this.hp = 600; }
+        if(type === 'barracks') { this.color = 'var(--neon-red)'; this.size = 80; this.hp = 800; }
+        if(type === 'archery') { this.color = 'var(--neon-pink)'; this.size = 80; this.hp = 800; }
+        if(type === 'mage') { this.color = 'var(--neon-purple)'; this.size = 80; this.hp = 800; }
+        if(type === 'tower') { this.color = 'var(--neon-cyan)'; this.size = 50; this.hp = 1000; }
         this.maxHp = this.hp;
     }
     
@@ -59,10 +58,9 @@ class Building {
         if (this.type === 'tower') {
             if (this.attackCooldown > 0) this.attackCooldown -= dt;
             if (this.attackCooldown <= 0) {
-                // Tour attaque les unités ennemies
-                let targets = units.filter(u => u.owner !== this.owner);
+                let targets = units.concat(enemies).filter(e => e.owner !== this.owner);
                 let closestEnemy = getClosest(this, targets);
-                if (closestEnemy && dist(this, closestEnemy) <= 300) {
+                if (closestEnemy && dist(this, closestEnemy) <= 400) {
                     closestEnemy.hp -= 40;
                     spawnLaser(this, closestEnemy, this.color);
                     this.attackCooldown = 1.2; 
@@ -83,7 +81,6 @@ class Building {
 
         let img = null;
         if(this.type === 'house') img = images.house;
-        if(this.type === 'farm') img = images.farm;
         if(this.type === 'sawmill') img = images.sawmill;
         if(this.type === 'mine') img = images.mine;
         if(this.type === 'barracks') img = images.barracks;
@@ -98,13 +95,12 @@ class Building {
             ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.strokeRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
         }
         
-        // Halo coloré pour reconnaitre le propriétaire (P1 ou P2)
         ctx.strokeStyle = this.color; ctx.lineWidth = 1; ctx.strokeRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
 
         if (this.level > 1) {
             ctx.fillStyle = 'var(--neon-yellow)'; ctx.font = '16px Arial'; ctx.fillText('★', this.x + this.size/2 - 10, this.y - this.size/2 + 15);
         }
-        if (this.type === 'farm' || this.type === 'sawmill' || this.type === 'mine') {
+        if (this.type === 'sawmill' || this.type === 'mine') {
             ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
             ctx.fillText(`${this.farmersInside}/5 🧑‍🌾`, this.x, this.y - this.size/2 - 5);
         }
@@ -140,7 +136,12 @@ class Unit {
         this.id = entityIdCounter++; this.owner = owner;
         this.x = x; this.y = y; this.type = type; this.element = element;
         this.targetPos = null; this.targetEntityId = null;
-        this.state = 'idle'; this.radius = 10; this.drawSize = 36; 
+        this.state = 'idle'; 
+        
+        // --- REDUCTION DE LA TAILLE DES SLIMES ---
+        this.radius = 6; 
+        this.drawSize = 20; 
+        
         this.payload = 0; this.payloadType = null;
         this.slowTimer = 0;
 
@@ -168,7 +169,7 @@ class Unit {
         this.targetEntityId = entity ? entity.id : null;
         
         if (this.type === 'farmer' && entity instanceof ResourceNode) this.state = 'moving_to_res';
-        else if (this.type === 'farmer' && entity instanceof Building && ['farm','sawmill','mine'].includes(entity.type) && entity.owner === this.owner) this.state = 'moving_to_building';
+        else if (this.type === 'farmer' && entity instanceof Building && ['sawmill','mine'].includes(entity.type) && entity.owner === this.owner) this.state = 'moving_to_building';
         else if (this.type !== 'farmer' && entity && entity.owner !== this.owner && entity.owner !== undefined) this.state = 'attacking';
         else this.state = 'moving';
     }
@@ -179,7 +180,6 @@ class Unit {
 
         let currentSpeed = this.slowTimer > 0 ? this.speed * 0.5 : this.speed;
 
-        // Anti-Stacking (Séparation)
         units.forEach(other => {
             if(other.id !== this.id && other.state !== 'farming' && this.state !== 'farming') {
                 let d = dist(this, other);
@@ -196,9 +196,9 @@ class Unit {
         if (this.targetEntityId) {
             targetEnt = units.find(u => u.id === this.targetEntityId) || buildings.find(b => b.id === this.targetEntityId) || baseHost.id === this.targetEntityId ? baseHost : (baseGuest.id === this.targetEntityId ? baseGuest : null);
             if(!targetEnt) targetEnt = trees.find(t=>t.id===this.targetEntityId) || wheats.find(w=>w.id===this.targetEntityId);
+            if(!targetEnt) targetEnt = enemies.find(e=>e.id===this.targetEntityId);
         }
 
-        // --- FERMIER ---
         if (this.type === 'farmer') {
             if (this.state === 'moving_to_res' && targetEnt) {
                 if (dist(this, targetEnt) < this.radius + targetEnt.radius + 5) {
@@ -240,7 +240,6 @@ class Unit {
                 }
             }
         } 
-        // --- COMBATTANTS ---
         else {
             if (this.state === 'attacking' && targetEnt) {
                 if(targetEnt.hp <= 0) {
@@ -255,9 +254,8 @@ class Unit {
                     this.targetPos = { x: targetEnt.x, y: targetEnt.y }; 
                 }
             } else if (this.state === 'idle') {
-                // Auto-Attack nearest enemy
-                let possibleTargets = [].concat(units).concat(buildings).concat([baseHost, baseGuest]);
-                let enemy = getClosest(this, possibleTargets.filter(e => e.owner && e.owner !== this.owner && e.hp > 0));
+                let possibleTargets = [].concat(units).concat(buildings).concat(enemies).concat([baseHost, baseGuest]);
+                let enemy = getClosest(this, possibleTargets.filter(e => e.owner !== this.owner && e.hp > 0));
                 if (enemy && dist(this, enemy) <= this.range + 50) {
                     this.setCommand(enemy.x, enemy.y, enemy);
                 }
@@ -280,9 +278,9 @@ class Unit {
         spawnLaser(this, primaryTarget, colorFX);
 
         if (this.type === 'warrior') {
-            let possibleTargets = [].concat(units).concat(buildings).concat([baseHost, baseGuest]);
+            let possibleTargets = [].concat(units).concat(buildings).concat(enemies).concat([baseHost, baseGuest]);
             possibleTargets.forEach(e => {
-                if(e.owner && e.owner !== this.owner && dist(this, e) <= this.range + 10) this.applyDamage(e);
+                if(e.owner !== this.owner && dist(this, e) <= this.range + 10) this.applyDamage(e);
             });
         } else {
             this.applyDamage(primaryTarget);
@@ -296,7 +294,6 @@ class Unit {
             if (this.element === 'fire' && target.element === 'plant') mult *= 1.5;
             if (this.element === 'plant' && target.element === 'water') mult *= 1.5;
             if (this.element === 'water' && target.element === 'fire') mult *= 1.5;
-
             if (this.element === 'fire' && target.element === 'water') mult *= 0.5;
             if (this.element === 'plant' && target.element === 'fire') mult *= 0.5;
             if (this.element === 'water' && target.element === 'plant') mult *= 0.5;
@@ -320,7 +317,7 @@ class Unit {
 
         if (this.element !== 'normal') {
             ctx.shadowBlur = 10; ctx.shadowColor = this.elColor;
-            ctx.fillStyle = this.elColor; ctx.beginPath(); ctx.arc(this.x, this.y+10, 15, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = this.elColor; ctx.beginPath(); ctx.arc(this.x, this.y+10, 10, 0, Math.PI*2); ctx.fill();
             ctx.shadowBlur = 0;
         }
 
@@ -336,20 +333,96 @@ class Unit {
             ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.stroke();
         }
 
-        // Halo proprio
-        ctx.strokeStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 12, 0, Math.PI*2); ctx.stroke();
+        ctx.strokeStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 8, 0, Math.PI*2); ctx.stroke();
 
         if(this.slowTimer > 0) { 
-            ctx.strokeStyle = 'var(--neon-purple)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+16, 0, Math.PI*2); ctx.stroke();
+            ctx.strokeStyle = 'var(--neon-purple)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+12, 0, Math.PI*2); ctx.stroke();
         }
 
         if(this.type !== 'farmer' && this.hp < this.maxHp) {
-            ctx.fillStyle = 'red'; ctx.fillRect(this.x - 10, this.y - this.drawSize/2 - 6, 20, 3);
-            ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - 10, this.y - this.drawSize/2 - 6, 20 * (this.hp/this.maxHp), 3);
+            ctx.fillStyle = 'red'; ctx.fillRect(this.x - 8, this.y - this.drawSize/2 - 6, 16, 3);
+            ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - 8, this.y - this.drawSize/2 - 6, 16 * (this.hp/this.maxHp), 3);
         }
         if(this.payload > 0) {
             ctx.fillStyle = this.payloadType === 'wood' ? 'var(--neon-orange)' : 'var(--neon-green)';
             ctx.fillRect(this.x - 5, this.y - this.drawSize/2 - 6, 10 * (this.payload/20), 3);
+        }
+    }
+}
+
+class Enemy {
+    constructor(x, y) {
+        this.id = entityIdCounter++;
+        this.x = x; this.y = y; this.owner = 'virus';
+        this.radius = 12;
+        this.baseSpeed = 40 + Math.random() * 30;
+        this.hp = 100; 
+        this.maxHp = this.hp;
+        this.attackCooldown = 0;
+        this.slowTimer = 0;
+        
+        const els = ['normal', 'fire', 'water', 'plant'];
+        this.element = els[Math.floor(Math.random() * els.length)];
+        if(this.element === 'normal') this.color = 'var(--neon-red)';
+        if(this.element === 'fire') this.color = '#ff5500';
+        if(this.element === 'water') this.color = 'var(--neon-water)';
+        if(this.element === 'plant') this.color = 'var(--neon-green)';
+    }
+
+    update(dt) {
+        if(this.attackCooldown > 0) this.attackCooldown -= dt;
+        if(this.slowTimer > 0) this.slowTimer -= dt;
+
+        let currentSpeed = this.slowTimer > 0 ? this.baseSpeed * 0.5 : this.baseSpeed;
+
+        // AGGRO LOGIC (500px radius)
+        let target = null;
+        let minDist = 500; 
+
+        let possibleTargets = [].concat(units).concat(buildings).concat([baseHost, baseGuest]);
+        for(let e of possibleTargets) {
+            if(e && e.hp > 0 && e.state !== 'farming') {
+                let d = dist(this, e);
+                if(d < minDist) { minDist = d; target = e; }
+            }
+        }
+
+        if (target) {
+            let d = dist(this, target);
+            let range = (target.size ? target.size/2 : target.radius) + this.radius;
+
+            if (d > range + 5) {
+                this.x += ((target.x - this.x) / d) * currentSpeed * dt;
+                this.y += ((target.y - this.y) / d) * currentSpeed * dt;
+            } else if (this.attackCooldown <= 0) {
+                target.hp -= 15;
+                this.attackCooldown = 1;
+                spawnParticles(target.x, target.y, this.color, 5);
+            }
+        } else {
+            // Wander
+            this.x += (Math.random() - 0.5) * 20 * dt;
+            this.y += (Math.random() - 0.5) * 20 * dt;
+        }
+    }
+
+    draw(ctx) {
+        ctx.shadowBlur = 10; ctx.shadowColor = this.color;
+        ctx.fillStyle = '#111'; ctx.strokeStyle = this.color; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        
+        ctx.beginPath(); ctx.moveTo(this.x-5, this.y-5); ctx.lineTo(this.x+5, this.y+5);
+        ctx.moveTo(this.x+5, this.y-5); ctx.lineTo(this.x-5, this.y+5); ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        if(this.slowTimer > 0) { 
+            ctx.strokeStyle = 'var(--neon-purple)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+4, 0, Math.PI*2); ctx.stroke();
+        }
+
+        if(this.hp < this.maxHp) {
+            ctx.fillStyle = 'red'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20, 3);
+            ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20 * (this.hp/this.maxHp), 3);
         }
     }
 }
