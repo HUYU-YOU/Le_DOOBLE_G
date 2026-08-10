@@ -30,6 +30,11 @@ class Base {
         ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
         ctx.fillText(this.owner === 'host' ? 'P1' : 'P2', this.x, this.y - this.size/2 - 15);
 
+        // Bouclier visuel pendant les 60 premières secondes
+        if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2 + 20, 0, Math.PI*2); ctx.stroke();
+        }
+
         if (this.hp < this.maxHp) {
             ctx.fillStyle = 'red'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 10, this.size, 5);
             ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 10, this.size * (this.hp / this.maxHp), 5);
@@ -61,9 +66,14 @@ class Building {
                 let targets = units.concat(enemies).filter(e => e.owner !== this.owner);
                 let closestEnemy = getClosest(this, targets);
                 if (closestEnemy && dist(this, closestEnemy) <= 400) {
-                    closestEnemy.hp -= 40;
-                    spawnLaser(this, closestEnemy, this.color);
-                    this.attackCooldown = 1.2; 
+                    // Les tours peuvent toujours cibler, mais les dégâts dépendent de l'invulnérabilité
+                    if (typeof survivalTimer !== 'undefined' && survivalTimer < 60 && closestEnemy.owner !== 'virus') {
+                        // Pas de tir sur l'ennemi P1/P2 pendant les 60s
+                    } else {
+                        closestEnemy.hp -= 40;
+                        spawnLaser(this, closestEnemy, this.color);
+                        this.attackCooldown = 1.2; 
+                    }
                 }
             }
         }
@@ -100,7 +110,7 @@ class Building {
         if (this.level > 1) {
             ctx.fillStyle = 'var(--neon-yellow)'; ctx.font = '16px Arial'; ctx.fillText('★', this.x + this.size/2 - 10, this.y - this.size/2 + 15);
         }
-        if (this.type === 'sawmill' || this.type === 'mine') {
+        if (this.type === 'sawmill' || this.type === 'mine' || this.type === 'farm') {
             ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
             ctx.fillText(`${this.farmersInside}/5 🧑‍🌾`, this.x, this.y - this.size/2 - 5);
         }
@@ -115,7 +125,9 @@ class Building {
 class ResourceNode {
     constructor(x, y, type) {
         this.id = entityIdCounter++; this.x = x; this.y = y; this.type = type;
-        this.radius = 15; this.amount = 1000; 
+        this.radius = 15; 
+        // Le bois disparait plus vite pour forcer l'exploration
+        this.amount = type === 'tree' ? 300 : 1000; 
         this.color = type === 'tree' ? 'var(--neon-orange)' : 'var(--neon-green)';
     }
     draw(ctx, images) {
@@ -137,11 +149,8 @@ class Unit {
         this.x = x; this.y = y; this.type = type; this.element = element;
         this.targetPos = null; this.targetEntityId = null;
         this.state = 'idle'; 
-        
-        // --- REDUCTION DE LA TAILLE DES SLIMES ---
         this.radius = 6; 
         this.drawSize = 20; 
-        
         this.payload = 0; this.payloadType = null;
         this.slowTimer = 0;
 
@@ -169,7 +178,7 @@ class Unit {
         this.targetEntityId = entity ? entity.id : null;
         
         if (this.type === 'farmer' && entity instanceof ResourceNode) this.state = 'moving_to_res';
-        else if (this.type === 'farmer' && entity instanceof Building && ['sawmill','mine'].includes(entity.type) && entity.owner === this.owner) this.state = 'moving_to_building';
+        else if (this.type === 'farmer' && entity instanceof Building && ['farm','sawmill','mine'].includes(entity.type) && entity.owner === this.owner) this.state = 'moving_to_building';
         else if (this.type !== 'farmer' && entity && entity.owner !== this.owner && entity.owner !== undefined) this.state = 'attacking';
         else this.state = 'moving';
     }
@@ -208,13 +217,19 @@ class Unit {
             } 
             else if (this.state === 'gathering') {
                 if(targetEnt && targetEnt.amount > 0) {
-                    this.payload += 15 * dt; 
-                    targetEnt.amount -= 15 * dt;
-                    if (this.payload >= 20) {
-                        this.payload = 20;
-                        let myBase = this.owner === 'host' ? baseHost : baseGuest;
-                        this.targetEntityId = myBase.id;
-                        this.targetPos = { x: myBase.x, y: myBase.y }; this.state = 'returning';
+                    let gatherAmount = Math.min(15 * dt, targetEnt.amount);
+                    this.payload += gatherAmount; 
+                    targetEnt.amount -= gatherAmount;
+                    
+                    if (this.payload >= 20 || targetEnt.amount <= 0) {
+                        if (this.payload > 0) {
+                            let myBase = this.owner === 'host' ? baseHost : baseGuest;
+                            this.targetEntityId = myBase.id;
+                            this.targetPos = { x: myBase.x, y: myBase.y }; 
+                            this.state = 'returning';
+                        } else {
+                            this.state = 'idle';
+                        }
                     }
                 } else { this.state = 'idle'; }
             }
@@ -289,6 +304,11 @@ class Unit {
     }
 
     applyDamage(target) {
+        // Bouclier de 60 secondes : aucun joueur/bâtiment ne prend de dégâts (sauf les virus qui se font tuer)
+        if (typeof survivalTimer !== 'undefined' && survivalTimer < 60 && target.owner !== 'virus') {
+            return; // Invulnérabilité active
+        }
+
         let mult = 1.0;
         if (target.element) {
             if (this.element === 'fire' && target.element === 'plant') mult *= 1.5;
@@ -375,7 +395,6 @@ class Enemy {
 
         let currentSpeed = this.slowTimer > 0 ? this.baseSpeed * 0.5 : this.baseSpeed;
 
-        // AGGRO LOGIC (500px radius)
         let target = null;
         let minDist = 500; 
 
@@ -395,12 +414,16 @@ class Enemy {
                 this.x += ((target.x - this.x) / d) * currentSpeed * dt;
                 this.y += ((target.y - this.y) / d) * currentSpeed * dt;
             } else if (this.attackCooldown <= 0) {
-                target.hp -= 15;
-                this.attackCooldown = 1;
-                spawnParticles(target.x, target.y, this.color, 5);
+                // Le virus tape dans le vide si l'invulnérabilité (60s) est active
+                if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
+                    // Paix
+                } else {
+                    target.hp -= 15;
+                    this.attackCooldown = 1;
+                    spawnParticles(target.x, target.y, this.color, 5);
+                }
             }
         } else {
-            // Wander
             this.x += (Math.random() - 0.5) * 20 * dt;
             this.y += (Math.random() - 0.5) * 20 * dt;
         }
