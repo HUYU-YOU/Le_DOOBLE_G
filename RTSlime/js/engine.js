@@ -8,17 +8,16 @@ const minimapCanvas = document.getElementById('minimap');
 const mmCtx = minimapCanvas.getContext('2d');
 
 let width, height;
-const MAP_WIDTH = 3000; // Plus grand pour 2 joueurs
-const MAP_HEIGHT = 2000;
+const MAP_WIDTH = 10000;  // IMMENSE MAP
+const MAP_HEIGHT = 10000;
 let camera = { x: 0, y: 0 };
-let zoom = 1.0; // Ajout du Zoom
+let zoom = 2.0; // Zoom massif dès le début
 
 // --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
     map: 'assets/map/mapRTS.png',
     hdv: 'assets/bat/hdv.png',
     house: 'assets/bat/home.png',
-    farm: 'assets/bat/farm.png',
     sawmill: 'assets/bat/scierie.png',
     mine: 'assets/bat/mine.png',
     barracks: 'assets/bat/warriorlearn.png',
@@ -38,7 +37,6 @@ for (let key in ASSETS_PATHS) {
     images[key].src = ASSETS_PATHS[key];
 }
 
-// Éléments DOM
 const uiGold = document.getElementById('val-gold');
 const uiWood = document.getElementById('val-wood');
 const uiFood = document.getElementById('val-food');
@@ -49,7 +47,6 @@ const instructions = document.getElementById('build-instructions');
 const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
 
-// Etat du jeu P2P
 let peer = null;
 let myId = null;
 let hostId = null;
@@ -64,18 +61,17 @@ let resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 };
 let buildMode = null;
 let moveMode = null; 
 
-// Variables Globales pour Entités
 let baseHost = null;
 let baseGuest = null;
 let buildings = [];
 let units = [];
-let enemies = []; // Obsolète mais gardé pour structure
+let enemies = []; 
 let trees = [];
 let wheats = [];
 let particles = [];
 let lasers = [];
-let selectedUnits = []; // Tableau d'IDs
-let selectedBuilding = null; // Objet entier
+let selectedUnits = []; 
+let selectedBuilding = null; 
 
 let isSelecting = false;
 let selectionStartScreen = { x: 0, y: 0 };
@@ -113,12 +109,12 @@ window.addEventListener('resize', resize);
 
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    if (e.deltaY < 0) zoom += 0.1; else zoom -= 0.1;
-    zoom = Math.max(0.5, Math.min(zoom, 2.0));
+    if (e.deltaY < 0) zoom += 0.2; else zoom -= 0.2;
+    zoom = Math.max(0.5, Math.min(zoom, 4.0)); // Zoom max très poussé
 });
 
 function updateCamera() {
-    const margin = 30; const speed = 20 / zoom;
+    const margin = 30; const speed = 25 / zoom;
     if (mouseHoverScreen.x < margin) camera.x -= speed;
     if (mouseHoverScreen.x > width - margin) camera.x += speed;
     if (mouseHoverScreen.y < margin) camera.y -= speed;
@@ -148,14 +144,15 @@ function drawMinimap() {
         mmCtx.fillRect((obj.x/MAP_WIDTH)*150 - size/2, (obj.y/MAP_HEIGHT)*150 - size/2, size, size);
     };
 
-    trees.forEach(t => drawDot(t, 'var(--neon-orange)', 2));
-    wheats.forEach(w => drawDot(w, 'var(--neon-green)', 2));
+    trees.forEach(t => drawDot(t, 'var(--neon-orange)', 1));
+    wheats.forEach(w => drawDot(w, 'var(--neon-green)', 1));
     buildings.forEach(b => drawDot(b, b.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 4));
     
     if (baseHost && baseHost.hp > 0) drawDot(baseHost, 'var(--neon-cyan)', 6);
     if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, 'var(--neon-pink)', 6);
     
     units.forEach(u => drawDot(u, u.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 2));
+    enemies.forEach(e => drawDot(e, 'var(--neon-red)', 3));
 
     mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
     mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/(zoom*MAP_WIDTH))*150, (height/(zoom*MAP_HEIGHT))*150);
@@ -216,7 +213,6 @@ function handleNetworkData(data) {
 }
 
 function executeCommand(data) {
-    // Si c'est l'hôte, on exécute la commande de l'un ou l'autre
     let playerRes = data.owner === 'host' ? resHost : resGuest;
     let playerBase = data.owner === 'host' ? baseHost : baseGuest;
 
@@ -227,16 +223,15 @@ function executeCommand(data) {
 
     if (data.action === 'move') {
         let uList = units.filter(u => data.unitIds.includes(u.id));
-        let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
+        let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
         
-        // Famine override
         if (playerRes.food <= 0) {
-            let isFoodCmd = ent && (ent.type === 'wheat' || ent.type === 'farm');
+            let isFoodCmd = ent && ent.type === 'wheat';
             if(!isFoodCmd) return; 
         }
 
         uList.forEach((u, i) => {
-            let dx = data.x + (i%3)*25 - 25; let dy = data.y + Math.floor(i/3)*25;
+            let dx = data.x + (i%3)*20 - 20; let dy = data.y + Math.floor(i/3)*20;
             u.setCommand(ent ? ent.x : dx, ent ? ent.y : dy, ent);
         });
     }
@@ -289,7 +284,6 @@ function initGame() {
     gameState = 'PLAYING';
     resHost = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
     resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
-    survivalTimer = 0; 
     units = []; trees = []; wheats = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
     buildMode = null; moveMode = null; selectedBuilding = null;
     
@@ -297,27 +291,44 @@ function initGame() {
     document.getElementById('game-container').classList.add('active-screen');
     resize();
 
-    baseHost = new Base(300, MAP_HEIGHT/2, 'host');
-    baseGuest = new Base(MAP_WIDTH - 300, MAP_HEIGHT/2, 'guest');
-    camera.x = 0; camera.y = MAP_HEIGHT/2 - height/2;
+    baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
+    baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
+    camera.x = baseHost.x - width/2; camera.y = baseHost.y - height/2;
 
+    // GENERATION FORETS (GROS CLUSTERS DE BOIS)
+    for(let i=0; i<40; i++) { 
+        let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
+        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
+        for(let j=0; j<25; j++) { 
+            let tx = cx + (Math.random()-0.5)*300; let ty = cy + (Math.random()-0.5)*300;
+            trees.push(new ResourceNode(tx, ty, 'tree'));
+        }
+    }
+
+    // GENERATION CHAMPS DE BLE (GROS CLUSTERS DE NOURRITURE)
     for(let i=0; i<40; i++) {
-        let tx = Math.random() * MAP_WIDTH; let ty = Math.random() * MAP_HEIGHT;
-        if (dist({x:tx, y:ty}, baseHost) > 150 && dist({x:tx, y:ty}, baseGuest) > 150) trees.push(new ResourceNode(tx, ty, 'tree'));
-    }
-    for(let i=0; i<30; i++) {
-        let wx = Math.random() * MAP_WIDTH; let wy = Math.random() * MAP_HEIGHT;
-        if (dist({x:wx, y:wy}, baseHost) > 150 && dist({x:wx, y:wy}, baseGuest) > 150) wheats.push(new ResourceNode(wx, wy, 'wheat'));
+        let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
+        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
+        for(let j=0; j<25; j++) { 
+            let wx = cx + (Math.random()-0.5)*300; let wy = cy + (Math.random()-0.5)*300;
+            wheats.push(new ResourceNode(wx, wy, 'wheat'));
+        }
     }
 
-    // Départ Hôte
-    let hHouse = new Building(baseHost.x - 100, baseHost.y, 'house', 'host');
+    // GENERATION VIRUS ALEATOIRES
+    for(let i=0; i<150; i++) {
+        let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
+        if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
+            enemies.push(new Enemy(ex, ey));
+        }
+    }
+
+    let hHouse = new Building(baseHost.x - 150, baseHost.y, 'house', 'host');
     buildings.push(hHouse);
     units.push(new Unit(hHouse.x - 20, hHouse.y + 40, 'farmer', 'normal', 'host'));
     units.push(new Unit(hHouse.x + 20, hHouse.y + 40, 'farmer', 'normal', 'host'));
 
-    // Départ Guest
-    let gHouse = new Building(baseGuest.x + 100, baseGuest.y, 'house', 'guest');
+    let gHouse = new Building(baseGuest.x + 150, baseGuest.y, 'house', 'guest');
     buildings.push(gHouse);
     units.push(new Unit(gHouse.x - 20, gHouse.y + 40, 'farmer', 'normal', 'guest'));
     units.push(new Unit(gHouse.x + 20, gHouse.y + 40, 'farmer', 'normal', 'guest'));
@@ -330,17 +341,21 @@ function initGameClient() {
     document.getElementById('screen-lobby').classList.remove('active-screen');
     document.getElementById('game-container').classList.add('active-screen');
     resize();
-    camera.x = MAP_WIDTH - width; camera.y = MAP_HEIGHT/2 - height/2;
     updateUI(); renderBottomUI();
 }
 
 function syncClientState(data) {
+    if (!baseGuest && data.bG) { // Initial Camera setup for Guest
+        camera.x = data.bG.x - width/2; camera.y = data.bG.y - height/2;
+    }
+
     resHost = data.resH; resGuest = data.resG;
     baseHost = new Base(data.bH.x, data.bH.y, 'host'); baseHost.id = data.bH.id; baseHost.hp = data.bH.hp;
     baseGuest = new Base(data.bG.x, data.bG.y, 'guest'); baseGuest.id = data.bG.id; baseGuest.hp = data.bG.hp;
     
     trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree'); r.id = t.id; r.amount = t.a; return r; });
     wheats = data.w.map(w => { let r = new ResourceNode(w.x, w.y, 'wheat'); r.id = w.id; r.amount = w.a; return r; });
+    enemies = data.en.map(e => { let en = new Enemy(e.x, e.y); en.id=e.id; en.hp=e.hp; en.element=e.el; en.color=e.c; en.slowTimer=e.st; return en; });
     
     buildings = data.b.map(b => {
         let build = new Building(b.x, b.y, b.t, b.o); build.id = b.id; build.hp = b.hp; build.maxHp = b.mHp; build.level = b.l; build.farmersInside = b.fi; return build;
@@ -436,9 +451,9 @@ canvas.addEventListener('contextmenu', (e) => {
     const pos = getPointerPos(e);
     const wPos = { x: pos.worldX, y: pos.worldY };
 
-    let clickedEnt = units.find(u=>dist(wPos, u)<20) || buildings.find(b=>dist(wPos, b)<b.size) || trees.find(t=>dist(wPos, t)<20) || wheats.find(w=>dist(wPos, w)<20);
+    let clickedEnt = units.find(u=>dist(wPos, u)<20) || buildings.find(b=>dist(wPos, b)<b.size) || trees.find(t=>dist(wPos, t)<20) || wheats.find(w=>dist(wPos, w)<20) || enemies.find(en=>dist(wPos, en)<20);
     
-    if (myRes.food <= 0 && (!clickedEnt || (clickedEnt.type !== 'wheat' && clickedEnt.type !== 'farm'))) {
+    if (myRes.food <= 0 && (!clickedEnt || clickedEnt.type !== 'wheat')) {
         addSysLog("Famine", "Nourriture à 0 ! Les Slimes refusent d'obéir.");
         return;
     }
@@ -462,8 +477,7 @@ function setBuildMode(type) {
 
 function getBuildingCost(type) {
     if(type === 'house') return { g: 0, w: 10, f: 0 };
-    if(type === 'sawmill') return { g: 0, w: 30, f: 20 };
-    if(type === 'farm') return { g: 0, w: 30, f: 0 };
+    if(type === 'sawmill') return { g: 0, w: 0, f: 50 }; // SCIERIE = NOURRITURE
     if(type === 'mine') return { g: 0, w: 50, f: 50 };
     if(['barracks', 'archery', 'mage'].includes(type)) return { g: 250, w: 250, f: 250 };
     if(type === 'tower') return { g: 100, w: 50, f: 0 };
@@ -481,8 +495,7 @@ function renderBottomUI() {
 
     if (selectedBuilding.type === 'hdv') {
         uiBottom.appendChild(createBtn('color-build', 'MAISON', '10🪵', () => setBuildMode('house'), null, 'btn-b-house', ASSETS_PATHS.house));
-        uiBottom.appendChild(createBtn('color-build', 'FERME', '30🪵 20🍞', () => setBuildMode('farm'), null, 'btn-b-farm', ASSETS_PATHS.farm));
-        uiBottom.appendChild(createBtn('color-build', 'SCIERIE', '30🪵 20🍞', () => setBuildMode('sawmill'), null, 'btn-b-sawmill', ASSETS_PATHS.sawmill));
+        uiBottom.appendChild(createBtn('color-build', 'SCIERIE', '50🍞', () => setBuildMode('sawmill'), null, 'btn-b-sawmill', ASSETS_PATHS.sawmill));
         uiBottom.appendChild(createBtn('color-build', 'MINE', '50🪵 50🍞', () => setBuildMode('mine'), null, 'btn-b-mine', ASSETS_PATHS.mine));
         uiBottom.appendChild(createDivider());
         uiBottom.appendChild(createBtn('color-build', 'CASERNE', '250💰/🪵/🍞', () => setBuildMode('barracks'), null, 'btn-b-barracks', ASSETS_PATHS.barracks));
@@ -505,7 +518,7 @@ function renderBottomUI() {
             uiBottom.appendChild(createBtn('color-recruit', '🌿 PLANTE', '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:'plant', bId:selectedBuilding.id}), 'var(--neon-green)', null, ASSETS_PATHS[uType]));
         }
     } 
-    else if (['farm', 'sawmill', 'mine'].includes(selectedBuilding.type)) {
+    else if (['sawmill', 'mine'].includes(selectedBuilding.type)) {
         let info = document.createElement('div'); info.style.color = '#aaa'; info.innerText = `Ouvriers: ${selectedBuilding.farmersInside}/5.`; uiBottom.appendChild(info);
     }
     
@@ -545,18 +558,19 @@ function updateUI() {
 }
 
 // --- BOUCLE UPDATE (HÔTE UNIQUEMENT) ---
+let ecoTimer = 0;
 function hostUpdate(dt) {
-    survivalTimer += dt; ecoTimer += dt;
+    ecoTimer += dt;
 
     if (ecoTimer >= 1) {
         ecoTimer = 0;
-        let p1Farm=0, p1Mine=0, p1Saw=0, p2Farm=0, p2Mine=0, p2Saw=0;
+        let p1Mine=0, p1Saw=0, p2Mine=0, p2Saw=0;
         buildings.forEach(b => { 
-            if(b.owner === 'host') { if(b.type === 'farm') p1Farm+=b.farmersInside*2; if(b.type === 'mine') p1Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p1Saw+=b.farmersInside*2; }
-            if(b.owner === 'guest') { if(b.type === 'farm') p2Farm+=b.farmersInside*2; if(b.type === 'mine') p2Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p2Saw+=b.farmersInside*2; }
+            if(b.owner === 'host') { if(b.type === 'mine') p1Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p1Saw+=b.farmersInside*2; }
+            if(b.owner === 'guest') { if(b.type === 'mine') p2Mine+=b.farmersInside*1.5; if(b.type === 'sawmill') p2Saw+=b.farmersInside*2; }
         });
-        resHost.food += p1Farm; resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food -= resHost.pop * 0.2; if(resHost.food < 0) resHost.food = 0;
-        resGuest.food += p2Farm; resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food -= resGuest.pop * 0.2; if(resGuest.food < 0) resGuest.food = 0;
+        resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food -= resHost.pop * 0.2; if(resHost.food < 0) resHost.food = 0;
+        resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food -= resGuest.pop * 0.2; if(resGuest.food < 0) resGuest.food = 0;
     }
 
     if (baseHost.hp <= 0 || baseGuest.hp <= 0) {
@@ -568,6 +582,7 @@ function hostUpdate(dt) {
 
     buildings.forEach((b, i) => { b.update(dt); if (b.hp <= 0) { buildings.splice(i, 1); }});
     units.forEach((u, i) => { u.update(dt); if (u.hp <= 0) { units.splice(i, 1); }});
+    enemies.forEach((e, i) => { e.update(dt); if (e.hp <= 0) { enemies.splice(i, 1); }});
     trees = trees.filter(t => t.amount > 0); wheats = wheats.filter(w => w.amount > 0);
 
     // Sync clients
@@ -577,6 +592,7 @@ function hostUpdate(dt) {
         b: buildings.map(b => ({ id: b.id, x: b.x, y: b.y, t: b.type, o: b.owner, hp: b.hp, mHp: b.maxHp, l: b.level, fi: b.farmersInside })),
         t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount })),
         w: wheats.map(w => ({ id: w.id, x: w.x, y: w.y, a: w.amount })),
+        en: enemies.map(e => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, el: e.element, c: e.color, st: e.slowTimer })),
         bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp },
         bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
         resH: resHost, resG: resGuest
@@ -600,6 +616,7 @@ function draw() {
         if (baseHost && baseHost.hp > 0) baseHost.draw(ctx, images);
         if (baseGuest && baseGuest.hp > 0) baseGuest.draw(ctx, images);
         units.forEach(u => u.draw(ctx, images));
+        enemies.forEach(e => e.draw(ctx));
 
         lasers.forEach(l => {
             ctx.strokeStyle = l.color; ctx.lineWidth = 3; ctx.shadowBlur = 10; ctx.shadowColor = l.color;
