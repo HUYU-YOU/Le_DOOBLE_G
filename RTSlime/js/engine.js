@@ -12,7 +12,7 @@ const MAP_WIDTH = 2000;
 const MAP_HEIGHT = 2000;
 let camera = { x: 0, y: 0 };
 
-// --- GESTION DES ASSETS GRAPHIQUES ---
+// --- GESTION DES ASSETS GRAPHIQUES (Chemins corrigés avec assets/) ---
 const ASSETS_PATHS = {
     map: 'assets/map/mapRTS.png',
     hdv: 'assets/bat/hdv.png',
@@ -35,10 +35,6 @@ const images = {};
 for (let key in ASSETS_PATHS) {
     images[key] = new Image();
     images[key].src = ASSETS_PATHS[key];
-    // Traqueur d'erreur si un skin ne charge pas (problème de serveur local / chemin)
-    images[key].onerror = () => {
-        console.warn(`[MATRICE] Échec du chargement de l'asset : ${ASSETS_PATHS[key]}. Vérifie ton serveur local !`);
-    };
 }
 
 // Éléments DOM
@@ -109,14 +105,14 @@ function drawMinimap() {
         mmCtx.fillRect((obj.x/MAP_WIDTH)*150 - size/2, (obj.y/MAP_HEIGHT)*150 - size/2, size, size);
     };
 
-    trees.forEach(t => drawDot(t, '#ff8c00', 2));
-    wheats.forEach(w => drawDot(w, '#39ff14', 2));
-    buildings.forEach(b => drawDot(b, '#00f0ff', 4));
-    if (base && base.hp > 0) drawDot(base, '#00f0ff', 6);
-    units.forEach(u => drawDot(u, '#c5c6c7', 2));
-    enemies.forEach(e => drawDot(e, '#ff3333', 3));
+    trees.forEach(t => drawDot(t, 'var(--neon-orange)', 2));
+    wheats.forEach(w => drawDot(w, 'var(--neon-green)', 2));
+    buildings.forEach(b => drawDot(b, b.color, 4));
+    if (base && base.hp > 0) drawDot(base, base.color, 6);
+    units.forEach(u => drawDot(u, 'var(--neon-cyan)', 2));
+    enemies.forEach(e => drawDot(e, 'var(--neon-red)', 3));
 
-    mmCtx.strokeStyle = '#00f0ff'; mmCtx.lineWidth = 1;
+    mmCtx.strokeStyle = 'var(--neon-cyan)'; mmCtx.lineWidth = 1;
     mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/MAP_WIDTH)*150, (height/MAP_HEIGHT)*150);
 }
 
@@ -533,14 +529,14 @@ function draw() {
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
 
-    // Dessin du fond de carte (avec couleur de secours si l'image met du temps ou échoue)
+    // Dessin du fond de carte (avec couleur de secours)
     ctx.fillStyle = '#0a0d14';
     ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
 
     if (images.map.complete && images.map.naturalWidth > 0) {
         ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     } else {
-        // Fallback visuel de grille si la map ne charge pas
+        // Fallback visuel de grille si la map ne charge pas encore
         ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
         ctx.lineWidth = 2;
         for(let x=0; x<MAP_WIDTH; x+=100) {
@@ -599,7 +595,7 @@ function draw() {
             } else {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; ctx.fillRect(mouseHoverWorld.x - size/2, mouseHoverWorld.y - size/2, size, size);
             }
-            ctx.globalAlpha.value = 1.0;
+            ctx.globalAlpha = 1.0;
         }
     }
 
