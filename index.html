@@ -7,15 +7,44 @@
 
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Ajout d'un petit style pour les nouveaux titres de section si tu ne les as pas dans style.css */
-        .category-title {
-            color: #fff; /* À adapter selon ton thème d'image */
-            text-align: center;
-            margin-top: 40px;
-            margin-bottom: 20px;
-            font-size: 2em;
+        /* --- STYLE POUR LE MENU DE NAVIGATION (ONGLETS) --- */
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .toggle-btn {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #333;
+            color: #888;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            font-family: inherit;
+        }
+
+        .toggle-btn:hover {
+            border-color: #00f0ff;
+            color: #fff;
+        }
+
+        .toggle-btn.active {
+            border-color: #00f0ff;
+            color: #00f0ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            background: rgba(0, 240, 255, 0.1);
+        }
+
+        /* Classe utilitaire pour cacher la grille non sélectionnée */
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
@@ -24,9 +53,16 @@
     
     <p class="subtitle">Welcome in the Google space</p>
     
-    <!-- SECTION JEUX SOLO -->
-    <h2 class="category-title">Jeux Solo</h2>
-    <div class="game-grid">
+    <!-- BOUTONS DE NAVIGATION -->
+    <div class="toggle-container">
+        <button id="btn-solo" class="toggle-btn active" onclick="switchCategory('solo')">👤 Jeux Solo</button>
+        <button id="btn-multi" class="toggle-btn" onclick="switchCategory('multi')">🌐 Jeux Multi</button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SECTION JEUX SOLO                          -->
+    <!-- ========================================== -->
+    <div id="grid-solo" class="game-grid">
         
         <a href="2048slime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="2048slime/img/cinematic_fusion_slime.mp4" loop muted playsinline class="bg-video"></video>
@@ -59,7 +95,6 @@
         </a>
 
         <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <!-- Ajout d'un ID "dash-video" pour le cibler en Javascript -->
             <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
             <div class="game-icon">💨</div>
             <div class="game-title">Slime Dash</div>
@@ -96,9 +131,10 @@
         </a>
     </div> 
 
-    <!-- SECTION JEUX MULTIJOUEURS -->
-    <h2 class="category-title">Jeux Multijoueurs</h2>
-    <div class="game-grid">
+    <!-- ========================================== -->
+    <!-- SECTION JEUX MULTIJOUEURS                  -->
+    <!-- ========================================== -->
+    <div id="grid-multi" class="game-grid hidden">
         
         <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
@@ -159,10 +195,34 @@
             <div class="game-icon">🃏</div>
             <div class="game-title">Slimilization</div>
         </a>
-        
+
     </div> 
 
     <script>
+        // --- GESTION DES ONGLETS SOLO / MULTI ---
+        function switchCategory(category) {
+            const gridSolo = document.getElementById('grid-solo');
+            const gridMulti = document.getElementById('grid-multi');
+            const btnSolo = document.getElementById('btn-solo');
+            const btnMulti = document.getElementById('btn-multi');
+
+            if (category === 'solo') {
+                // Affiche Solo, cache Multi
+                gridSolo.classList.remove('hidden');
+                gridMulti.classList.add('hidden');
+                // Met à jour les boutons
+                btnSolo.classList.add('active');
+                btnMulti.classList.remove('active');
+            } else if (category === 'multi') {
+                // Affiche Multi, cache Solo
+                gridMulti.classList.remove('hidden');
+                gridSolo.classList.add('hidden');
+                // Met à jour les boutons
+                btnMulti.classList.add('active');
+                btnSolo.classList.remove('active');
+            }
+        }
+
         // Dès que la page est chargée, on tire au sort la cinématique de Slime Dash
         document.addEventListener("DOMContentLoaded", () => {
             const dashVideo = document.getElementById("dash-video");
