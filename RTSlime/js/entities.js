@@ -16,12 +16,12 @@ class Decoration {
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - this.size/2, this.y - this.size/2, this.size, this.size);
         } else {
-            // Couleurs de secours en Hexadécimal (plus de points noirs !)
-            ctx.globalAlpha = 0.4;
+            // Secours visuel discret si l'image plante
+            ctx.globalAlpha = 0.3;
             if (this.skin.includes('herb')) {
-                ctx.fillStyle = '#39ff14'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#228b22'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2); ctx.fill();
             } else if (this.skin.includes('fleur')) {
-                ctx.fillStyle = '#ff007f'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#ff69b4'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2); ctx.fill();
             }
             ctx.globalAlpha = 1.0;
         }
@@ -42,11 +42,9 @@ class River {
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - this.radius, this.y - this.radius, this.radius*2, this.radius*2);
         } else {
-            ctx.shadowBlur = 15; ctx.shadowColor = '#3388ff';
-            ctx.fillStyle = 'rgba(51, 136, 255, 0.3)';
+            ctx.shadowBlur = 10; ctx.shadowColor = '#3388ff';
+            ctx.fillStyle = 'rgba(51, 136, 255, 0.4)';
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius - 5, 0, Math.PI*2); ctx.stroke();
             ctx.shadowBlur = 0;
         }
     }
@@ -175,7 +173,8 @@ class ResourceNode {
         this.radius = 12; 
         this.amount = type === 'tree' ? 300 : 1000; 
         this.skin = skin; 
-        this.color = type === 'tree' ? '#ff8c00' : '#39ff14';
+        // Nouvelles couleurs de secours plus naturelles
+        this.color = type === 'tree' ? '#4da037' : '#ffd700'; 
     }
     draw(ctx, images) {
         let img = this.skin ? images[this.skin] : (this.type === 'wheat' ? images.wheat : null);
@@ -183,11 +182,14 @@ class ResourceNode {
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - 20, this.y - 20, 40, 40);
         } else {
-            ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.beginPath();
+            // Rendu de secours si pas d'image
+            ctx.shadowBlur = 5; ctx.shadowColor = this.color; ctx.beginPath();
             if(this.type === 'tree') {
                 for (let i = 0; i < 6; i++) ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
-            } else { ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); }
-            ctx.closePath(); ctx.fillStyle = this.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
+            } else { 
+                ctx.rect(this.x - 10, this.y - 10, 20, 20); // Carré doré pour le blé
+            }
+            ctx.closePath(); ctx.fillStyle = this.color; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
         }
     }
 }
