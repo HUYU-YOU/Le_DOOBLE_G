@@ -4,7 +4,6 @@
 
 let entityIdCounter = 1;
 
-// --- DÉCORATIONS PUREMENT VISUELLES ---
 class Decoration {
     constructor(x, y, skin, size) {
         this.x = x; this.y = y; 
@@ -16,7 +15,6 @@ class Decoration {
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - this.size/2, this.y - this.size/2, this.size, this.size);
         } else {
-            // Secours visuel discret si l'image plante
             ctx.globalAlpha = 0.3;
             if (this.skin.includes('herb')) {
                 ctx.fillStyle = '#228b22'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2); ctx.fill();
@@ -28,7 +26,6 @@ class Decoration {
     }
 }
 
-// --- RIVIERE CURATIVE ---
 class River {
     constructor(x, y, variant) {
         this.id = entityIdCounter++;
@@ -76,8 +73,12 @@ class Base {
         ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
         ctx.fillText(this.owner === 'host' ? 'P1' : 'P2', this.x, this.y - this.size/2 - 15);
 
-        if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
+        // CORRECTION : Bouclier visuel et timer texte pendant 180s (3 minutes)
+        if (typeof survivalTimer !== 'undefined' && survivalTimer < 180) {
+            let timeLeft = 180 - Math.floor(survivalTimer);
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2 + 20, 0, Math.PI*2); ctx.stroke();
+            ctx.fillStyle = '#00f0ff'; ctx.font = 'bold 16px Arial'; 
+            ctx.fillText("PAIX: " + timeLeft + "s", this.x, this.y + this.size/2 + 35);
         }
 
         if (this.hp < this.maxHp) {
@@ -112,7 +113,8 @@ class Building {
                 let targets = units.concat(enemies).filter(e => e.owner !== this.owner);
                 let closestEnemy = getClosest(this, targets);
                 if (closestEnemy && dist(this, closestEnemy) <= 400) {
-                    if (typeof survivalTimer !== 'undefined' && survivalTimer < 60 && closestEnemy.owner !== 'virus') {
+                    // CORRECTION : Les tours ne tirent pas pendant les 180s de paix (sauf sur les virus)
+                    if (typeof survivalTimer !== 'undefined' && survivalTimer < 180 && closestEnemy.owner !== 'virus') {
                     } else {
                         closestEnemy.hp -= 40;
                         spawnLaser(this, closestEnemy, this.color);
@@ -173,7 +175,6 @@ class ResourceNode {
         this.radius = 12; 
         this.amount = type === 'tree' ? 300 : 1000; 
         this.skin = skin; 
-        // Nouvelles couleurs de secours plus naturelles
         this.color = type === 'tree' ? '#4da037' : '#ffd700'; 
     }
     draw(ctx, images) {
@@ -182,12 +183,11 @@ class ResourceNode {
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - 20, this.y - 20, 40, 40);
         } else {
-            // Rendu de secours si pas d'image
             ctx.shadowBlur = 5; ctx.shadowColor = this.color; ctx.beginPath();
             if(this.type === 'tree') {
                 for (let i = 0; i < 6; i++) ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
             } else { 
-                ctx.rect(this.x - 10, this.y - 10, 20, 20); // Carré doré pour le blé
+                ctx.rect(this.x - 10, this.y - 10, 20, 20);
             }
             ctx.closePath(); ctx.fillStyle = this.color; ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
         }
@@ -262,6 +262,9 @@ class Unit {
         }
 
         units.forEach(other => {
+            // CORRECTION FERME BLOQUEE : On désactive la collision quand l'unité veut entrer
+            if (this.state === 'moving_to_building') return;
+
             if(other.id !== this.id && other.state !== 'farming' && this.state !== 'farming') {
                 let d = dist(this, other);
                 let minDist = this.radius + other.radius + 5;
@@ -321,7 +324,8 @@ class Unit {
                 }
             }
             else if (this.state === 'moving_to_building' && targetEnt) {
-                if (dist(this, targetEnt) <= targetEnt.size/2 + 25) {
+                // CORRECTION FERME BLOQUEE : Tolérance d'entrée énorme (+40px)
+                if (dist(this, targetEnt) <= targetEnt.size/2 + 40) {
                     if(targetEnt.farmersInside < 5) {
                         this.state = 'farming'; targetEnt.farmersInside++; this.targetPos = null;
                     } else { this.state = 'idle'; }
@@ -377,7 +381,8 @@ class Unit {
     }
 
     applyDamage(target) {
-        if (typeof survivalTimer !== 'undefined' && survivalTimer < 60 && target.owner !== 'virus') {
+        // CORRECTION PAIX : 180s
+        if (typeof survivalTimer !== 'undefined' && survivalTimer < 180 && target.owner !== 'virus') {
             return; 
         }
 
@@ -495,7 +500,8 @@ class Enemy {
                 this.x += ((target.x - this.x) / d) * currentSpeed * dt;
                 this.y += ((target.y - this.y) / d) * currentSpeed * dt;
             } else if (this.attackCooldown <= 0) {
-                if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
+                // CORRECTION PAIX : Les virus ne tapent pas pendant 180s
+                if (typeof survivalTimer !== 'undefined' && survivalTimer < 180) {
                 } else {
                     target.hp -= 15;
                     this.attackCooldown = 1;
