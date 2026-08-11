@@ -42,7 +42,6 @@ const ASSETS_PATHS = {
     river3: 'assets/decoration/river3.png'
 };
 
-// Chargement des 50+ Nouveaux Skins d'Environnement depuis le dossier "decoration"
 for(let i=1; i<=4; i++) ASSETS_PATHS['sapin'+i] = `assets/decoration/sapin${i}.png`;
 for(let i=1; i<=6; i++) ASSETS_PATHS['three'+i] = `assets/decoration/three${i}.png`;
 for(let i=1; i<=6; i++) ASSETS_PATHS['bouleau'+i] = `assets/decoration/bouleau${i}.png`;
@@ -91,10 +90,6 @@ function setupPeerEvents(p) {
         document.getElementById('min-players-msg').style.display = 'none';
         document.getElementById('btn-start').style.display = 'block';
     });
-
-    p.on('error', err => {
-        document.getElementById('login-error').innerText = "Erreur: " + err.type;
-    });
 }
 
 setupPeerEvents(peer);
@@ -102,7 +97,7 @@ setupPeerEvents(peer);
 document.getElementById('btn-host').addEventListener('click', (e) => {
     e.preventDefault();
     let pName = document.getElementById('player-name').value.trim();
-    if (!pName) { document.getElementById('login-error').innerText = "Pseudo requis pour créer."; return; }
+    if (!pName) return;
     myPseudo = pName;
     isHost = true;
     
@@ -120,11 +115,10 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
     e.preventDefault();
     let pName = document.getElementById('player-name').value.trim();
     const targetId = document.getElementById('join-id').value.toUpperCase().trim();
-    if (!pName || !targetId) { document.getElementById('login-error').innerText = "Pseudo et Code requis."; return; }
+    if (!pName || !targetId) return;
     myPseudo = pName;
     isHost = false;
     
-    document.getElementById('login-error').innerText = "Connexion...";
     connToHost = peer.connect(targetId);
     
     connToHost.on('open', () => {
@@ -133,7 +127,6 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
         document.getElementById('my-id').innerText = targetId;
         document.getElementById('waiting-host-msg').style.display = 'block';
         document.getElementById('min-players-msg').style.display = 'none';
-        document.getElementById('login-error').innerText = "";
     });
     
     connToHost.on('data', data => handleNetworkData(data));
@@ -152,8 +145,9 @@ document.getElementById('btn-start').addEventListener('click', () => {
 // ==========================================
 
 let gameState = 'LOBBY';
-let resHost = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 };
-let resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 };
+// CORRECTION : Début avec 10 de Nourriture
+let resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
+let resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
 
 let buildMode = null;
 let moveMode = null; 
@@ -186,27 +180,22 @@ let lastFamineLogTime = 0;
 
 // --- UTILITAIRES ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
-
 function getClosest(entity, array) {
     let closest = null; let minDist = Infinity;
     for(let o of array) { let d = dist(entity, o); if(d < minDist) { minDist = d; closest = o; } }
     return closest;
 }
-
 function spawnParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
         particles.push({ x: x, y: y, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, size: Math.random()*3+1, color: color, life: 0.5 + Math.random()*0.5 });
     }
 }
-
 function spawnLaser(a, b, color) { lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y, color:color, life:0.15 }); }
-
 function addSysLog(title, msg) {
     chatBox.innerHTML += `<p><span class="sys-log-msg">> ${title}:</span> ${msg}</p>`;
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// --- GENERATEUR DETERMINISTE ---
 let mapSeed = 1;
 function seededRandom() {
     mapSeed = (mapSeed * 9301 + 49297) % 233280;
@@ -227,7 +216,7 @@ canvas.addEventListener('wheel', (e) => {
 });
 
 function updateCamera() {
-    if (!isPanning) {
+    if (!isPanning && !isMinimapDragging) {
         const margin = 30; const speed = 25 / zoom;
         if (mouseHoverScreen.x < margin) camera.x -= speed;
         if (mouseHoverScreen.x > width - margin) camera.x += speed;
@@ -248,6 +237,48 @@ function getPointerPos(e) {
     return { screenX, screenY, worldX: (screenX / zoom) + camera.x, worldY: (screenY / zoom) + camera.y };
 }
 
+// ==========================================
+// SYSTEME DE DEPLACEMENT VIA MINIMAP
+// ==========================================
+let isMinimapDragging = false;
+
+minimapCanvas.addEventListener('mousedown', (e) => {
+    if(gameState !== 'PLAYING') return;
+    e.stopPropagation(); 
+    isMinimapDragging = true;
+    moveCameraFromMinimap(e);
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (isMinimapDragging) {
+        moveCameraFromMinimap(e);
+    }
+});
+
+window.addEventListener('mouseup', () => {
+    if (isMinimapDragging) {
+        isMinimapDragging = false;
+    }
+});
+
+function moveCameraFromMinimap(e) {
+    const rect = minimapCanvas.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
+
+    x = Math.max(0, Math.min(x, rect.width));
+    y = Math.max(0, Math.min(y, rect.height));
+
+    let worldX = (x / rect.width) * MAP_WIDTH;
+    let worldY = (y / rect.height) * MAP_HEIGHT;
+
+    camera.x = worldX - (width / zoom) / 2;
+    camera.y = worldY - (height / zoom) / 2;
+    
+    camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
+    camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height/zoom));
+}
+
 // --- MINIMAP ---
 function drawMinimap() {
     mmCtx.clearRect(0, 0, 150, 150);
@@ -259,16 +290,16 @@ function drawMinimap() {
         mmCtx.fillRect((obj.x/MAP_WIDTH)*150 - size/2, (obj.y/MAP_HEIGHT)*150 - size/2, size, size);
     };
 
-    rivers.forEach(r => drawDot(r, 'var(--neon-water)', 3));
-    trees.forEach(t => drawDot(t, 'var(--neon-orange)', 1));
-    wheats.forEach(w => drawDot(w, 'var(--neon-green)', 1));
-    buildings.forEach(b => drawDot(b, b.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 4));
+    rivers.forEach(r => drawDot(r, '#3388ff', 3));
+    trees.forEach(t => drawDot(t, '#ff8c00', 1));
+    wheats.forEach(w => drawDot(w, '#39ff14', 1));
+    buildings.forEach(b => drawDot(b, b.owner === 'host' ? '#00f0ff' : '#ff007f', 4));
     
-    if (baseHost && baseHost.hp > 0) drawDot(baseHost, 'var(--neon-cyan)', 6);
-    if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, 'var(--neon-pink)', 6);
+    if (baseHost && baseHost.hp > 0) drawDot(baseHost, '#00f0ff', 6);
+    if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, '#ff007f', 6);
     
-    units.forEach(u => drawDot(u, u.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 2));
-    enemies.forEach(e => drawDot(e, 'var(--neon-red)', 3));
+    units.forEach(u => drawDot(u, u.owner === 'host' ? '#00f0ff' : '#ff007f', 2));
+    enemies.forEach(e => drawDot(e, '#ff3333', 3));
 
     mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
     mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/(zoom*MAP_WIDTH))*150, (height/(zoom*MAP_HEIGHT))*150);
@@ -285,6 +316,7 @@ function executeCommand(data) {
     let playerRes = data.owner === 'host' ? resHost : resGuest;
     let playerBase = data.owner === 'host' ? baseHost : baseGuest;
 
+    // CORRECTION FAMINE : On ne bloque que les actions de construction / recrutement quand food = 0
     if(playerRes.food <= 0 && data.action !== 'move') {
         if(data.owner === (isHost ? 'host' : 'guest')) addSysLog("Famine", "Nourriture à 0 ! Les slimes refusent l'ordre.");
         return;
@@ -294,9 +326,10 @@ function executeCommand(data) {
         let uList = units.filter(u => data.unitIds.includes(u.id));
         let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || rivers.find(r=>r.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
         
+        // CORRECTION FAMINE : Ils ont le droit de bouger sur du sol vide (!ent) ou vers les points de récolte/soin
         if (playerRes.food <= 0) {
-            let isAllowedCmd = ent && ['wheat', 'farm', 'tree', 'sawmill', 'hdv', 'river'].includes(ent.type);
-            if(!isAllowedCmd) return; 
+            let isForbiddenCmd = ent && !['wheat', 'farm', 'tree', 'sawmill', 'hdv', 'river'].includes(ent.type);
+            if(isForbiddenCmd) return; 
         }
 
         uList.forEach((u, i) => {
@@ -358,7 +391,6 @@ function buildMapElements(seed) {
     mapSeed = seed;
     trees = []; wheats = []; rivers = []; decorations = [];
 
-    // RIVIERES
     for(let i=0; i<40; i++) {
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -369,35 +401,32 @@ function buildMapElements(seed) {
         }
     }
 
-    // FORETS (Clusters homogènes)
     const treeFamilies = [
         ['sapin1', 'sapin2', 'sapin3', 'sapin4'],
         ['three1', 'three2', 'three3', 'three4', 'three5', 'three6'],
         ['bouleau1', 'bouleau2', 'bouleau3', 'bouleau4', 'bouleau5', 'bouleau6']
     ];
-    for(let i=0; i<80; i++) { 
+    for(let i=0; i<120; i++) { 
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1200 || dist({x:cx,y:cy}, baseGuest) < 1200) continue;
         
         let family = treeFamilies[Math.floor(seededRandom() * treeFamilies.length)];
-        for(let j=0; j<15; j++) { 
-            let tx = cx + (seededRandom()-0.5)*200; let ty = cy + (seededRandom()-0.5)*200;
+        for(let j=0; j<35; j++) { 
+            let tx = cx + (seededRandom()-0.5)*180; let ty = cy + (seededRandom()-0.5)*180;
             let skin = family[Math.floor(seededRandom() * family.length)];
             trees.push(new ResourceNode(tx, ty, 'tree', skin));
         }
     }
 
-    // CHAMPS DE BLE (Clusters)
-    for(let i=0; i<60; i++) {
+    for(let i=0; i<100; i++) {
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
-        for(let j=0; j<15; j++) { 
-            let wx = cx + (seededRandom()-0.5)*200; let wy = cy + (seededRandom()-0.5)*200;
+        for(let j=0; j<30; j++) { 
+            let wx = cx + (seededRandom()-0.5)*180; let wy = cy + (seededRandom()-0.5)*180;
             wheats.push(new ResourceNode(wx, wy, 'wheat'));
         }
     }
 
-    // DECORATIONS PURS (Fleurs, Herbes, Buissons...)
     const decoFamilies = [
         ['wood1', 'wood2', 'wood3', 'wood4', 'wood5', 'wood6', 'wood7', 'wood8'],
         ['buisson1', 'buisson2', 'buisson3', 'buisson4', 'buisson5', 'buisson6', 'buisson7', 'buisson8', 'buisson9', 'buisson10'],
@@ -406,15 +435,15 @@ function buildMapElements(seed) {
         ['farmDeco1', 'farmDeco2', 'farmDeco3'],
         ['shroom1', 'shroom2']
     ];
-    for(let i=0; i<300; i++) { 
+    for(let i=0; i<600; i++) { 
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         let family = decoFamilies[Math.floor(seededRandom() * decoFamilies.length)];
-        let count = Math.floor(seededRandom() * 8) + 3; 
+        let count = Math.floor(seededRandom() * 10) + 5; 
         
         for(let j=0; j<count; j++) {
-            let dx = cx + (seededRandom()-0.5)*200; let dy = cy + (seededRandom()-0.5)*200;
+            let dx = cx + (seededRandom()-0.5)*100; let dy = cy + (seededRandom()-0.5)*100;
             let skin = family[Math.floor(seededRandom() * family.length)];
-            let size = seededRandom() * 30 + 40; 
+            let size = seededRandom() * 15 + 15; 
             decorations.push(new Decoration(dx, dy, skin, size));
         }
     }
@@ -423,8 +452,8 @@ function buildMapElements(seed) {
 // --- INITIALISATION ---
 function initGame(seed) {
     gameState = 'PLAYING';
-    resHost = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
-    resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
+    resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
+    resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
     units = []; buildings = []; enemies = []; particles = []; lasers = []; selectedUnits = [];
     buildMode = null; moveMode = null; selectedBuilding = null;
     survivalTimer = 0;
@@ -437,7 +466,6 @@ function initGame(seed) {
     baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
     
-    // CENTRAGE PARFAIT DE LA CAMERA SUR LE HDV POUR L'HOTE
     camera.x = baseHost.x - (width / zoom) / 2;
     camera.y = baseHost.y - (height / zoom) / 2;
     camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
@@ -445,7 +473,6 @@ function initGame(seed) {
 
     buildMapElements(seed);
 
-    // VIRUS (Seulement générés par l'hôte)
     for(let i=0; i<150; i++) {
         let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
         if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
@@ -469,6 +496,9 @@ function initGame(seed) {
 function initGameClient(seed) {
     gameState = 'PLAYING';
     survivalTimer = 0;
+    resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
+    resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
+    
     document.getElementById('screen-lobby').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
     
@@ -483,7 +513,6 @@ function initGameClient(seed) {
 
 function syncClientState(data) {
     if (!baseGuest && data.bG) {
-        // CENTRAGE PARFAIT DE LA CAMERA SUR LE HDV POUR LE GUEST
         camera.x = data.bG.x - (width / zoom) / 2;
         camera.y = data.bG.y - (height / zoom) / 2;
         camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
@@ -527,7 +556,7 @@ canvas.addEventListener('mousedown', (e) => {
     if(moveMode) {
         if(e.button === 0) {
             moveMode.x = wPos.x; moveMode.y = wPos.y;
-            spawnParticles(wPos.x, wPos.y, 'var(--neon-cyan)', 20);
+            spawnParticles(wPos.x, wPos.y, '#00f0ff', 20);
             moveMode = null; instructions.style.display = 'none'; renderBottomUI();
         }
         return;
@@ -634,10 +663,11 @@ canvas.addEventListener('contextmenu', (e) => {
         || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
         || (dist(wPos, baseGuest)<baseGuest.size/2 + 20 ? baseGuest : null);
     
-    if (myRes.food <= 0 && (!clickedEnt || !['wheat', 'farm', 'tree', 'sawmill', 'hdv', 'river'].includes(clickedEnt.type))) {
+    // CORRECTION FAMINE : Si on clique sur le sol vide (!clickedEnt), on a le droit de bouger
+    if (myRes.food <= 0 && clickedEnt && !['wheat', 'farm', 'tree', 'sawmill', 'hdv', 'river'].includes(clickedEnt.type)) {
         let now = Date.now();
         if (now - lastFamineLogTime > 2000) {
-            addSysLog("Famine", "Nourriture à 0 ! Ordonnez la récolte, le soin (Rivière) ou le retour à la Base.");
+            addSysLog("Famine", "Nourriture à 0 ! Seuls la récolte, le soin et le retour à la Base sont possibles.");
             lastFamineLogTime = now;
         }
         return;
@@ -646,7 +676,7 @@ canvas.addEventListener('contextmenu', (e) => {
     if (isHost) executeCommand({ action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
     else connToHost.send({ type: 'cmd', action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
     
-    spawnParticles(wPos.x, wPos.y, 'var(--neon-cyan)', 5);
+    spawnParticles(wPos.x, wPos.y, '#00f0ff', 5);
 });
 
 // --- UI ET ACTIONS ---
