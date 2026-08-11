@@ -4,31 +4,18 @@
 
 let entityIdCounter = 1;
 
-// --- ELEMENTS DE DECORATION (Purement visuel) ---
+// --- DÉCORATIONS PUREMENT VISUELLES ---
 class Decoration {
-    constructor(x, y) {
-        this.x = x; this.y = y;
-        let rand = Math.random();
-        this.type = rand > 0.7 ? 'rock' : (rand > 0.4 ? 'flower' : 'grass');
-        this.size = Math.random() * 4 + 2;
-        this.angle = Math.random() * Math.PI * 2;
+    constructor(x, y, skin, size) {
+        this.x = x; this.y = y; 
+        this.skin = skin; 
+        this.size = size;
     }
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-        ctx.globalAlpha = 0.4;
-        if (this.type === 'grass') {
-            ctx.fillStyle = 'var(--neon-green)';
-            ctx.beginPath(); ctx.moveTo(0, -this.size*1.5); ctx.lineTo(this.size, this.size); ctx.lineTo(-this.size, this.size); ctx.fill();
-        } else if (this.type === 'flower') {
-            ctx.fillStyle = 'var(--neon-pink)';
-            ctx.beginPath(); ctx.arc(0, 0, this.size/1.5, 0, Math.PI*2); ctx.fill();
-        } else {
-            ctx.fillStyle = '#444';
-            ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI); ctx.fill();
+    draw(ctx, images) {
+        let img = images[this.skin];
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, this.x - this.size/2, this.y - this.size/2, this.size, this.size);
         }
-        ctx.restore();
     }
 }
 
@@ -38,19 +25,17 @@ class River {
         this.id = entityIdCounter++;
         this.x = x; this.y = y;
         this.type = 'river';
-        this.variant = variant; // 1, 2 ou 3
-        this.radius = 45; // Assez large pour que les unités se baignent
+        this.variant = variant; 
+        this.radius = 45; 
     }
     draw(ctx, images) {
         let img = images['river' + this.variant];
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - this.radius, this.y - this.radius, this.radius*2, this.radius*2);
         } else {
-            // Rendu de secours holographique liquide
             ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-water)';
             ctx.fillStyle = 'rgba(51, 136, 255, 0.3)';
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
-            
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius - 5, 0, Math.PI*2); ctx.stroke();
             ctx.shadowBlur = 0;
@@ -176,21 +161,25 @@ class Building {
 }
 
 class ResourceNode {
-    constructor(x, y, type) {
+    constructor(x, y, type, skin = null) {
         this.id = entityIdCounter++; this.x = x; this.y = y; this.type = type;
-        this.radius = 15; 
+        this.radius = 20; 
         this.amount = type === 'tree' ? 300 : 1000; 
-        this.color = type === 'tree' ? 'var(--neon-orange)' : 'var(--neon-green)';
+        this.skin = skin; // Skin dynamique (sapin1, bouleau3...)
     }
     draw(ctx, images) {
-        if (this.type === 'wheat' && images.wheat.complete && images.wheat.naturalWidth > 0) {
-            ctx.drawImage(images.wheat, this.x - 20, this.y - 20, 40, 40);
+        let img = this.skin ? images[this.skin] : (this.type === 'wheat' ? images.wheat : null);
+
+        if (img && img.complete && img.naturalWidth > 0) {
+            // Dessine l'arbre/blé plus grand
+            ctx.drawImage(img, this.x - 40, this.y - 40, 80, 80);
         } else {
-            ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.beginPath();
+            let color = this.type === 'tree' ? 'var(--neon-orange)' : 'var(--neon-green)';
+            ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.beginPath();
             if(this.type === 'tree') {
                 for (let i = 0; i < 6; i++) ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
             } else { ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); }
-            ctx.closePath(); ctx.fillStyle = this.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
+            ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
         }
     }
 }
@@ -257,10 +246,9 @@ class Unit {
 
         let currentSpeed = this.slowTimer > 0 ? this.speed * 0.5 : this.speed;
 
-        // HEALING MECHANIC (Seulement calculé par le Host)
-        let nearRiver = rivers.find(r => dist(this, r) < this.radius + r.radius);
+        let nearRiver = typeof rivers !== 'undefined' ? rivers.find(r => dist(this, r) < this.radius + r.radius) : null;
         if (nearRiver && this.hp < this.maxHp) {
-            this.hp = Math.min(this.maxHp, this.hp + 20 * dt); // Soin de 20 HP / sec
+            this.hp = Math.min(this.maxHp, this.hp + 20 * dt); 
         }
 
         units.forEach(other => {
@@ -409,7 +397,6 @@ class Unit {
             ctx.strokeRect(this.x - this.drawSize/2 - 2, this.y - this.drawSize/2 - 2, this.drawSize + 4, this.drawSize + 4);
         }
 
-        // AURA ÉLÉMENTAIRE
         if (this.element !== 'normal') {
             ctx.shadowBlur = 15; ctx.shadowColor = this.elColor;
             ctx.strokeStyle = this.elColor; ctx.lineWidth = 3;
@@ -417,7 +404,6 @@ class Unit {
             ctx.shadowBlur = 0;
         }
 
-        // AURA DE SOIN (Si près d'une rivière et blessé)
         let nearRiver = typeof rivers !== 'undefined' ? rivers.find(r => dist(this, r) < this.radius + r.radius) : null;
         if (nearRiver && this.hp < this.maxHp) {
             ctx.shadowBlur = 20; ctx.shadowColor = '#39ff14';
@@ -500,7 +486,6 @@ class Enemy {
                 this.y += ((target.y - this.y) / d) * currentSpeed * dt;
             } else if (this.attackCooldown <= 0) {
                 if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
-                    // Paix
                 } else {
                     target.hp -= 15;
                     this.attackCooldown = 1;
