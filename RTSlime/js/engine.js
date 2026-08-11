@@ -145,7 +145,6 @@ document.getElementById('btn-start').addEventListener('click', () => {
 // ==========================================
 
 let gameState = 'LOBBY';
-// La Famine est supprimée, la nourriture est juste de l'argent.
 let resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
 let resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
 
@@ -176,6 +175,7 @@ let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
 let inputMode = 'mouse';
 let survivalTimer = 0; 
+let lastFamineLogTime = 0; 
 
 // --- UTILITAIRES ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
@@ -389,7 +389,6 @@ function buildMapElements(seed) {
     mapSeed = seed;
     trees = []; wheats = []; rivers = []; decorations = [];
 
-    // RIVIERES (Moins denses, posées une par une)
     for(let i=0; i<15; i++) {
         let placed = false;
         let attempts = 0;
@@ -404,7 +403,6 @@ function buildMapElements(seed) {
         }
     }
 
-    // FORETS (Moins nombreuses et écartées)
     const treeFamilies = [
         ['sapin1', 'sapin2', 'sapin3', 'sapin4'],
         ['three1', 'three2', 'three3', 'three4', 'three5', 'three6'],
@@ -424,7 +422,6 @@ function buildMapElements(seed) {
         }
     }
 
-    // CHAMPS DE BLE
     for(let i=0; i<30; i++) {
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
@@ -436,7 +433,6 @@ function buildMapElements(seed) {
         }
     }
 
-    // DECORATIONS (Moins nombreuses pour éviter le lag)
     const decoFamilies = [
         ['wood1', 'wood2', 'wood3', 'wood4', 'wood5', 'wood6', 'wood7', 'wood8'],
         ['buisson1', 'buisson2', 'buisson3', 'buisson4', 'buisson5', 'buisson6', 'buisson7', 'buisson8', 'buisson9', 'buisson10'],
@@ -673,7 +669,7 @@ canvas.addEventListener('contextmenu', (e) => {
         || enemies.find(en=>dist(wPos, en)<25) 
         || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
         || (dist(wPos, baseGuest)<baseGuest.size/2 + 20 ? baseGuest : null);
-
+    
     if (isHost) executeCommand({ action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
     else connToHost.send({ type: 'cmd', action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
     
@@ -777,7 +773,6 @@ function updateUI() {
     uiMaxPop.innerText = myRes.maxPop;
     
     myRes.pop = myPop;
-    if(myRes.food <= 0) uiFood.style.color = 'red'; else uiFood.style.color = '#39ff14';
 }
 
 // --- BOUCLE UPDATE (HÔTE UNIQUEMENT) ---
@@ -807,7 +802,6 @@ function hostUpdate(dt) {
             }
         });
         
-        // LA NOURRITURE N'EST PLUS CONSOMMÉE
         resHost.maxPop = p1MaxPop; resGuest.maxPop = p2MaxPop;
         resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food += p1Farm; 
         resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food += p2Farm; 
