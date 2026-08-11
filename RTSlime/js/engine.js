@@ -19,10 +19,14 @@ let panStartX = 0;
 let panStartY = 0;
 let cameraStartX = 0;
 let cameraStartY = 0;
+let isDarkMode = false; // DARK MODE
 
 // --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
-    map: 'assets/map/mapRTS.png',
+    mapHG: 'assets/map/MAPHG.png',
+    mapHD: 'assets/map/MAPHD.png',
+    mapBG: 'assets/map/MAPBG.png',
+    mapBD: 'assets/map/MAPBD.png',
     hdv: 'assets/bat/hdv.png',
     house: 'assets/bat/home.png',
     sawmill: 'assets/bat/scierie.png',
@@ -67,6 +71,14 @@ const gameOverScreen = document.getElementById('game-over-screen');
 const instructions = document.getElementById('build-instructions');
 const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
+
+// GESTION DU BOUTON SETTINGS (DARK MODE)
+const btnSettings = document.getElementById('btn-settings');
+if (btnSettings) {
+    btnSettings.addEventListener('click', () => {
+        isDarkMode = !isDarkMode;
+    });
+}
 
 let peer = new Peer(); 
 let myId = null;
@@ -669,7 +681,7 @@ canvas.addEventListener('contextmenu', (e) => {
         || enemies.find(en=>dist(wPos, en)<25) 
         || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
         || (dist(wPos, baseGuest)<baseGuest.size/2 + 20 ? baseGuest : null);
-    
+
     if (isHost) executeCommand({ action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
     else connToHost.send({ type: 'cmd', action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
     
@@ -845,9 +857,14 @@ function draw() {
     ctx.translate(-camera.x, -camera.y);
 
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    if (images.map.complete && images.map.naturalWidth > 0) { 
-        ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT); 
-    } 
+    
+    // GESTION DES 4 CARTES ET DU DARK MODE
+    if (!isDarkMode) {
+        if (images.mapHG && images.mapHG.complete && images.mapHG.naturalWidth > 0) ctx.drawImage(images.mapHG, 0, 0, MAP_WIDTH/2, MAP_HEIGHT/2);
+        if (images.mapHD && images.mapHD.complete && images.mapHD.naturalWidth > 0) ctx.drawImage(images.mapHD, MAP_WIDTH/2, 0, MAP_WIDTH/2, MAP_HEIGHT/2);
+        if (images.mapBG && images.mapBG.complete && images.mapBG.naturalWidth > 0) ctx.drawImage(images.mapBG, 0, MAP_HEIGHT/2, MAP_WIDTH/2, MAP_HEIGHT/2);
+        if (images.mapBD && images.mapBD.complete && images.mapBD.naturalWidth > 0) ctx.drawImage(images.mapBD, MAP_WIDTH/2, MAP_HEIGHT/2, MAP_WIDTH/2, MAP_HEIGHT/2);
+    }
 
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
         decorations.forEach(d => d.draw(ctx, images)); 
