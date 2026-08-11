@@ -42,6 +42,17 @@ const ASSETS_PATHS = {
     river3: 'assets/map/river3.png'
 };
 
+// Chargement de tes 50+ Nouveaux Skins d'Environnement
+for(let i=1; i<=4; i++) ASSETS_PATHS['sapin'+i] = `assets/map/sapin${i}.png`;
+for(let i=1; i<=6; i++) ASSETS_PATHS['three'+i] = `assets/map/three${i}.png`;
+for(let i=1; i<=6; i++) ASSETS_PATHS['bouleau'+i] = `assets/map/bouleau${i}.png`;
+for(let i=1; i<=8; i++) ASSETS_PATHS['wood'+i] = `assets/map/wood${i}.png`;
+for(let i=1; i<=10; i++) ASSETS_PATHS['buisson'+i] = `assets/map/buisson${i}.png`;
+for(let i=1; i<=4; i++) ASSETS_PATHS['herb'+i] = `assets/map/herb${i}.png`;
+for(let i=1; i<=6; i++) ASSETS_PATHS['fleur'+i] = `assets/map/fleur${i}.png`;
+for(let i=1; i<=3; i++) ASSETS_PATHS['farmDeco'+i] = `assets/map/farm${i}.png`; 
+for(let i=1; i<=2; i++) ASSETS_PATHS['shroom'+i] = `assets/map/shroom${i}.png`;
+
 const images = {};
 for (let key in ASSETS_PATHS) {
     images[key] = new Image();
@@ -130,8 +141,9 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
 
 document.getElementById('btn-start').addEventListener('click', () => {
     if(isHost) {
-        initGame();
-        connToGuest.send({ type: 'start_game' });
+        let gameSeed = Math.floor(Math.random() * 1000000); // Graine de génération parfaite
+        initGame(gameSeed);
+        connToGuest.send({ type: 'start_game', seed: gameSeed });
     }
 });
 
@@ -153,8 +165,8 @@ let units = [];
 let enemies = []; 
 let trees = [];
 let wheats = [];
-let rivers = []; // Rivières qui soignent
-let decorations = []; // Elements purement visuels
+let rivers = [];
+let decorations = []; // Pour les fleurs, herbes, buissons
 let particles = [];
 let lasers = [];
 let selectedUnits = []; 
@@ -194,11 +206,11 @@ function addSysLog(title, msg) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function initDecorations() {
-    decorations = [];
-    for(let i=0; i<500; i++) {
-        decorations.push(new Decoration(Math.random() * MAP_WIDTH, Math.random() * MAP_HEIGHT));
-    }
+// --- GENERATEUR DETERMINISTE ---
+let mapSeed = 1;
+function seededRandom() {
+    mapSeed = (mapSeed * 9301 + 49297) % 233280;
+    return mapSeed / 233280;
 }
 
 // --- GESTION FENETRE & CAMERA ---
@@ -264,7 +276,7 @@ function drawMinimap() {
 
 // --- TRAITEMENT DES DONNEES ---
 function handleNetworkData(data) {
-    if (data.type === 'start_game' && !isHost) initGameClient();
+    if (data.type === 'start_game' && !isHost) initGameClient(data.seed);
     if (data.type === 'sync' && !isHost) syncClientState(data);
     if (data.type === 'cmd' && isHost) executeCommand(data);
 }
@@ -341,12 +353,79 @@ function executeCommand(data) {
     }
 }
 
+// --- GENERATION DE LA CARTE ---
+function buildMapElements(seed) {
+    mapSeed = seed;
+    trees = []; wheats = []; rivers = []; decorations = [];
+
+    // RIVIERES
+    for(let i=0; i<40; i++) {
+        let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
+        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
+        for(let j=0; j<3; j++) {
+            let rx = cx + (seededRandom()-0.5)*150; let ry = cy + (seededRandom()-0.5)*150;
+            let variant = Math.floor(seededRandom() * 3) + 1; 
+            rivers.push(new River(rx, ry, variant));
+        }
+    }
+
+    // FORETS (Clusters homogènes)
+    const treeFamilies = [
+        ['sapin1', 'sapin2', 'sapin3', 'sapin4'],
+        ['three1', 'three2', 'three3', 'three4', 'three5', 'three6'],
+        ['bouleau1', 'bouleau2', 'bouleau3', 'bouleau4', 'bouleau5', 'bouleau6']
+    ];
+    for(let i=0; i<80; i++) { 
+        let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
+        if(dist({x:cx,y:cy}, baseHost) < 1200 || dist({x:cx,y:cy}, baseGuest) < 1200) continue;
+        
+        let family = treeFamilies[Math.floor(seededRandom() * treeFamilies.length)];
+        for(let j=0; j<15; j++) { 
+            let tx = cx + (seededRandom()-0.5)*200; let ty = cy + (seededRandom()-0.5)*200;
+            let skin = family[Math.floor(seededRandom() * family.length)];
+            trees.push(new ResourceNode(tx, ty, 'tree', skin));
+        }
+    }
+
+    // CHAMPS DE BLE (Clusters)
+    for(let i=0; i<60; i++) {
+        let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
+        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
+        for(let j=0; j<15; j++) { 
+            let wx = cx + (seededRandom()-0.5)*200; let wy = cy + (seededRandom()-0.5)*200;
+            wheats.push(new ResourceNode(wx, wy, 'wheat'));
+        }
+    }
+
+    // DECORATIONS PURS (Fleurs, Herbes, Buissons...)
+    const decoFamilies = [
+        ['wood1', 'wood2', 'wood3', 'wood4', 'wood5', 'wood6', 'wood7', 'wood8'],
+        ['buisson1', 'buisson2', 'buisson3', 'buisson4', 'buisson5', 'buisson6', 'buisson7', 'buisson8', 'buisson9', 'buisson10'],
+        ['herb1', 'herb2', 'herb3', 'herb4'],
+        ['fleur1', 'fleur2', 'fleur3', 'fleur4', 'fleur5', 'fleur6'],
+        ['farmDeco1', 'farmDeco2', 'farmDeco3'],
+        ['shroom1', 'shroom2']
+    ];
+    for(let i=0; i<300; i++) { 
+        let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
+        let family = decoFamilies[Math.floor(seededRandom() * decoFamilies.length)];
+        let count = Math.floor(seededRandom() * 8) + 3; 
+        
+        for(let j=0; j<count; j++) {
+            let dx = cx + (seededRandom()-0.5)*200; let dy = cy + (seededRandom()-0.5)*200;
+            let skin = family[Math.floor(seededRandom() * family.length)];
+            let size = seededRandom() * 30 + 40; 
+            decorations.push(new Decoration(dx, dy, skin, size));
+        }
+    }
+}
+
 // --- INITIALISATION ---
-function initGame() {
+function initGame(seed) {
     gameState = 'PLAYING';
     resHost = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
     resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
-    units = []; trees = []; wheats = []; rivers = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
+    units = []; buildings = []; enemies = []; particles = []; lasers = []; selectedUnits = [];
     buildMode = null; moveMode = null; selectedBuilding = null;
     survivalTimer = 0;
     
@@ -354,41 +433,14 @@ function initGame() {
     document.getElementById('game-container').style.display = 'block';
     
     resize();
-    initDecorations(); // Rendu visuel aléatoire
 
     baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
     camera.x = baseHost.x - width/2; camera.y = baseHost.y - height/2;
 
-    // RIVIERES (Génération de points d'eau)
-    for(let i=0; i<30; i++) {
-        let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
-        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
-        for(let j=0; j<3; j++) {
-            let rx = cx + (Math.random()-0.5)*150; let ry = cy + (Math.random()-0.5)*150;
-            let variant = Math.floor(Math.random() * 3) + 1; // 1, 2 ou 3
-            rivers.push(new River(rx, ry, variant));
-        }
-    }
+    buildMapElements(seed);
 
-    for(let i=0; i<40; i++) { 
-        let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
-        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
-        for(let j=0; j<25; j++) { 
-            let tx = cx + (Math.random()-0.5)*300; let ty = cy + (Math.random()-0.5)*300;
-            trees.push(new ResourceNode(tx, ty, 'tree'));
-        }
-    }
-
-    for(let i=0; i<40; i++) {
-        let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
-        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
-        for(let j=0; j<25; j++) { 
-            let wx = cx + (Math.random()-0.5)*300; let wy = cy + (Math.random()-0.5)*300;
-            wheats.push(new ResourceNode(wx, wy, 'wheat'));
-        }
-    }
-
+    // VIRUS (Seulement générés par l'hôte)
     for(let i=0; i<150; i++) {
         let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
         if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
@@ -409,13 +461,19 @@ function initGame() {
     updateUI(); renderBottomUI();
 }
 
-function initGameClient() {
+function initGameClient(seed) {
     gameState = 'PLAYING';
     survivalTimer = 0;
     document.getElementById('screen-lobby').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
+    
     resize();
-    initDecorations(); // Le Guest a aussi ses décorations visuelles
+    
+    // Le Guest génère les mêmes décors sans charger le réseau !
+    baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
+    baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
+    buildMapElements(seed);
+    
     updateUI(); renderBottomUI();
 }
 
@@ -426,11 +484,11 @@ function syncClientState(data) {
     
     survivalTimer = data.st; 
     resHost = data.resH; resGuest = data.resG;
-    baseHost = new Base(data.bH.x, data.bH.y, 'host'); baseHost.id = data.bH.id; baseHost.hp = data.bH.hp;
-    baseGuest = new Base(data.bG.x, data.bG.y, 'guest'); baseGuest.id = data.bG.id; baseGuest.hp = data.bG.hp;
+    baseHost.hp = data.bH.hp;
+    baseGuest.hp = data.bG.hp;
     
-    rivers = data.rv.map(r => { let riv = new River(r.x, r.y, r.v); riv.id = r.id; return riv; });
-    trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree'); r.id = t.id; r.amount = t.a; return r; });
+    // Synchronise l'état des arbres (ceux qui sont détruits)
+    trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree', t.s); r.id = t.id; r.amount = t.a; return r; });
     wheats = data.w.map(w => { let r = new ResourceNode(w.x, w.y, 'wheat'); r.id = w.id; r.amount = w.a; return r; });
     enemies = data.en.map(e => { let en = new Enemy(e.x, e.y); en.id=e.id; en.hp=e.hp; en.element=e.el; en.color=e.c; en.slowTimer=e.st; return en; });
     
@@ -564,7 +622,7 @@ canvas.addEventListener('contextmenu', (e) => {
         || buildings.find(b=>dist(wPos, b)<b.size) 
         || trees.find(t=>dist(wPos, t)<40) 
         || wheats.find(w=>dist(wPos, w)<40) 
-        || rivers.find(r=>dist(wPos, r)<r.radius) // Les rivières sont ciblables
+        || rivers.find(r=>dist(wPos, r)<r.radius) 
         || enemies.find(en=>dist(wPos, en)<25) 
         || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
         || (dist(wPos, baseGuest)<baseGuest.size/2 + 20 ? baseGuest : null);
@@ -732,10 +790,9 @@ function hostUpdate(dt) {
         type: 'sync',
         u: units.map(u => ({ id: u.id, x: u.x, y: u.y, t: u.type, e: u.element, o: u.owner, hp: u.hp, mHp: u.maxHp, s: u.state, p: u.payload, st: u.slowTimer })),
         b: buildings.map(b => ({ id: b.id, x: b.x, y: b.y, t: b.type, o: b.owner, hp: b.hp, mHp: b.maxHp, l: b.level, fi: b.farmersInside })),
-        t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount })),
+        t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount, s: t.skin })), // Skin synchronisé !
         w: wheats.map(w => ({ id: w.id, x: w.x, y: w.y, a: w.amount })),
         en: enemies.map(e => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, el: e.element, c: e.color, st: e.slowTimer })),
-        rv: rivers.map(r => ({ id: r.id, x: r.x, y: r.y, v: r.variant })),
         bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp },
         bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
         resH: resHost, resG: resGuest, st: survivalTimer
@@ -754,12 +811,10 @@ function draw() {
     ctx.translate(-camera.x, -camera.y);
 
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    if (images.map.complete && images.map.naturalWidth > 0) { 
-        ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT); 
-    } 
+    if (images.map.complete && images.map.naturalWidth > 0) { ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT); } 
 
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
-        decorations.forEach(d => d.draw(ctx)); // Dessin des décors
+        decorations.forEach(d => d.draw(ctx, images)); 
         rivers.forEach(r => r.draw(ctx, images));
         trees.forEach(t => t.draw(ctx, images)); 
         wheats.forEach(w => w.draw(ctx, images));
@@ -772,7 +827,6 @@ function draw() {
         enemies.forEach(e => e.draw(ctx));
 
         lasers.forEach(l => {
-            // Effet Laser Amélioré (Cœur blanc, Aura colorée)
             ctx.strokeStyle = l.color; ctx.lineWidth = 4; ctx.shadowBlur = 10; ctx.shadowColor = l.color;
             ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke();
             
@@ -812,7 +866,7 @@ function loop(timestamp) {
         if(isHost) {
             hostUpdate(dt);
         }
-        updateUI(); // Doit être fait par l'Hôte ET le Guest à chaque frame
+        updateUI(); 
         
         particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; if(p.life <= 0) particles.splice(i, 1); });
         lasers.forEach((l, i) => { l.life -= dt; if(l.life <= 0) lasers.splice(i, 1); });
