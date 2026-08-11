@@ -41,45 +41,45 @@
             z-index: -1; pointer-events: none;
         }
 
-        /* --- LOGO DU HUB (+20% de taille) --- */
+        /* --- LOGO DU HUB (Agrandi précédemment) --- */
         .hub-logo {
             max-width: 90%; 
-            width: 505px; /* AGRANDI : était 420px */
-            max-height: 32vh; /* AGRANDI : permet au logo de prendre plus de place en hauteur */
+            width: 505px; 
+            max-height: 32vh; 
             object-fit: contain;
             margin: 0; 
             filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); 
         }
 
-        /* --- BOUTONS IMAGES ONGLETS (+20% de taille) --- */
+        /* --- BOUTONS IMAGES ONGLETS (Agrandis précédemment) --- */
         .toggle-container {
-            display: flex; justify-content: center; gap: 35px; /* Écart légèrement augmenté */
+            display: flex; justify-content: center; gap: 35px; 
             margin: 2vh 0 3vh 0; 
             align-items: center;
         }
         .toggle-img-btn {
-            width: 205px; /* AGRANDI : était 170px */
+            width: 205px; 
             height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .toggle-img-btn:hover { opacity: 0.8; filter: grayscale(0%); transform: scale(1.05); }
         .toggle-img-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 15px var(--cyan, #00e5ff)); transform: scale(1.1); }
 
-        /* --- CONTENEUR GLOBAL CAROUSEL --- */
+        /* --- CONTENEUR GLOBAL CAROUSEL (-10% DE TAILLE ICI) --- */
         .carousel-wrapper {
             display: flex;
             align-items: stretch;
             justify-content: center;
             gap: 15px;
             width: 100%;
-            max-width: 1050px; 
+            max-width: 945px; /* RÉDUIT DE ~10% (était 1050px) */
             padding: 0 15px;
             box-sizing: border-box;
         }
 
         /* --- LES BARRES DE NAVIGATION LATÉRALES --- */
         .nav-bar {
-            width: 45px;
+            width: 40px; /* Légèrement affiné pour suivre la baisse de 10% */
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(0, 229, 255, 0.2);
             border-radius: 12px;
@@ -117,7 +117,7 @@
         .game-grid {
             display: grid !important;
             grid-template-columns: repeat(3, 1fr) !important;
-            gap: 20px !important;
+            gap: 18px !important; /* Espacement ajusté pour la réduction */
             width: 100%;
         }
 
@@ -172,7 +172,7 @@
         <img src="img/multijoueur.png" id="btn-multi" class="toggle-img-btn" onclick="switchCategory('multi')" alt="Jeux Multi">
     </div>
 
-    <!-- WRAPPER CAROUSEL AVEC BARRES LATÉRALES -->
+    <!-- WRAPPER CAROUSEL AVEC BARRES LATÉRALES (-10%) -->
     <div class="carousel-wrapper">
         
         <!-- Barre Latérale Précédent -->
