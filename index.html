@@ -29,12 +29,14 @@
             box-sizing: border-box;
         }
 
-        /* La vidéo pure sans filtre noir */
+        /* La vidéo pure SANS AUCUN FILTRE PAR DESSUS */
         .hub-bg-video {
             position: absolute; 
             top: 0; left: 0; width: 100vw; height: 100vh; 
             object-fit: cover; z-index: -2; pointer-events: none; 
         }
+
+        /* (Le body::before avec le filtre noir a été totalement supprimé) */
 
         /* --- LOGO DU HUB --- */
         .hub-logo {
@@ -43,7 +45,7 @@
             max-height: 32vh; 
             object-fit: contain;
             margin: 0; 
-            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); 
+            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.8)); /* Légèrement renforcé pour compenser l'absence de filtre noir */
         }
 
         /* --- BOUTONS IMAGES ONGLETS (+10%) --- */
@@ -60,7 +62,7 @@
         .toggle-img-btn:hover { opacity: 0.8; filter: grayscale(0%); transform: scale(1.05); }
         .toggle-img-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 15px var(--cyan, #00e5ff)); transform: scale(1.1); }
 
-        /* --- CONTENEUR GLOBAL CAROUSEL --- */
+        /* --- CONTENEUR GLOBAL CAROUSEL (+10%) --- */
         .carousel-wrapper {
             display: flex;
             align-items: stretch;
@@ -75,7 +77,7 @@
         /* --- LES BARRES DE NAVIGATION LATÉRALES --- */
         .nav-bar {
             width: 45px; 
-            background: rgba(0, 0, 0, 0.6); 
+            background: rgba(0, 0, 0, 0.6); /* Fond sombre pour qu'elles se voient bien sur la vidéo claire */
             border: 1px solid rgba(0, 229, 255, 0.3);
             border-radius: 12px;
             display: flex;
@@ -121,7 +123,7 @@
             position: relative; overflow: hidden;
             aspect-ratio: 16 / 9;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; background: rgba(0, 0, 0, 0.6); 
+            border-radius: 12px; background: rgba(0, 0, 0, 0.6); /* Fond assombri pour faire ressortir les jeux sur la vidéo brillante */
             box-shadow: 0 8px 20px rgba(0,0,0,0.5); transition: transform 0.3s ease;
         }
         
