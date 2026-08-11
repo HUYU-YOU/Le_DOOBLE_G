@@ -145,7 +145,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
 // ==========================================
 
 let gameState = 'LOBBY';
-// CORRECTION : Début avec 10 de Nourriture
+// La Famine est supprimée, la nourriture est juste de l'argent.
 let resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
 let resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
 
@@ -176,7 +176,6 @@ let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
 let inputMode = 'mouse';
 let survivalTimer = 0; 
-let lastFamineLogTime = 0; 
 
 // --- UTILITAIRES ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
@@ -200,6 +199,17 @@ let mapSeed = 1;
 function seededRandom() {
     mapSeed = (mapSeed * 9301 + 49297) % 233280;
     return mapSeed / 233280;
+}
+
+// --- FONCTION ANTI-SUPERPOSITION ---
+function isPositionFree(x, y, minDistance) {
+    for(let r of rivers) if(dist({x,y}, r) < minDistance + r.radius) return false;
+    for(let t of trees) if(dist({x,y}, t) < minDistance + 20) return false;
+    for(let w of wheats) if(dist({x,y}, w) < minDistance + 20) return false;
+    for(let d of decorations) if(dist({x,y}, d) < minDistance + d.size/2) return false;
+    if(baseHost && dist({x,y}, baseHost) < minDistance + baseHost.size/2 + 50) return false;
+    if(baseGuest && dist({x,y}, baseGuest) < minDistance + baseGuest.size/2 + 50) return false;
+    return true;
 }
 
 // --- GESTION FENETRE & CAMERA ---
@@ -316,22 +326,10 @@ function executeCommand(data) {
     let playerRes = data.owner === 'host' ? resHost : resGuest;
     let playerBase = data.owner === 'host' ? baseHost : baseGuest;
 
-    // CORRECTION FAMINE : On ne bloque que les actions de construction / recrutement quand food = 0
-    if(playerRes.food <= 0 && data.action !== 'move') {
-        if(data.owner === (isHost ? 'host' : 'guest')) addSysLog("Famine", "Nourriture à 0 ! Les slimes refusent l'ordre.");
-        return;
-    }
-
     if (data.action === 'move') {
         let uList = units.filter(u => data.unitIds.includes(u.id));
         let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || rivers.find(r=>r.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
         
-        // CORRECTION FAMINE : Ils ont le droit de bouger sur du sol vide (!ent) ou vers les points de récolte/soin
-        if (playerRes.food <= 0) {
-            let isForbiddenCmd = ent && !['wheat', 'farm', 'tree', 'sawmill', 'hdv', 'river'].includes(ent.type);
-            if(isForbiddenCmd) return; 
-        }
-
         uList.forEach((u, i) => {
             let dx = data.x + (i%3)*20 - 20; let dy = data.y + Math.floor(i/3)*20;
             u.setCommand(ent ? ent.x : dx, ent ? ent.y : dy, ent);
@@ -391,42 +389,54 @@ function buildMapElements(seed) {
     mapSeed = seed;
     trees = []; wheats = []; rivers = []; decorations = [];
 
-    for(let i=0; i<40; i++) {
-        let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
-        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
-        for(let j=0; j<3; j++) {
-            let rx = cx + (seededRandom()-0.5)*150; let ry = cy + (seededRandom()-0.5)*150;
-            let variant = Math.floor(seededRandom() * 3) + 1; 
-            rivers.push(new River(rx, ry, variant));
+    // RIVIERES (Moins denses, posées une par une)
+    for(let i=0; i<15; i++) {
+        let placed = false;
+        let attempts = 0;
+        while(!placed && attempts < 10) {
+            let rx = seededRandom() * MAP_WIDTH; let ry = seededRandom() * MAP_HEIGHT;
+            if (isPositionFree(rx, ry, 50)) {
+                let variant = Math.floor(seededRandom() * 3) + 1; 
+                rivers.push(new River(rx, ry, variant));
+                placed = true;
+            }
+            attempts++;
         }
     }
 
+    // FORETS (Moins nombreuses et écartées)
     const treeFamilies = [
         ['sapin1', 'sapin2', 'sapin3', 'sapin4'],
         ['three1', 'three2', 'three3', 'three4', 'three5', 'three6'],
         ['bouleau1', 'bouleau2', 'bouleau3', 'bouleau4', 'bouleau5', 'bouleau6']
     ];
-    for(let i=0; i<120; i++) { 
+    for(let i=0; i<40; i++) { 
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1200 || dist({x:cx,y:cy}, baseGuest) < 1200) continue;
         
         let family = treeFamilies[Math.floor(seededRandom() * treeFamilies.length)];
-        for(let j=0; j<35; j++) { 
-            let tx = cx + (seededRandom()-0.5)*180; let ty = cy + (seededRandom()-0.5)*180;
-            let skin = family[Math.floor(seededRandom() * family.length)];
-            trees.push(new ResourceNode(tx, ty, 'tree', skin));
+        for(let j=0; j<8; j++) { 
+            let tx = cx + (seededRandom()-0.5)*150; let ty = cy + (seededRandom()-0.5)*150;
+            if (isPositionFree(tx, ty, 20)) {
+                let skin = family[Math.floor(seededRandom() * family.length)];
+                trees.push(new ResourceNode(tx, ty, 'tree', skin));
+            }
         }
     }
 
-    for(let i=0; i<100; i++) {
+    // CHAMPS DE BLE
+    for(let i=0; i<30; i++) {
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
-        for(let j=0; j<30; j++) { 
-            let wx = cx + (seededRandom()-0.5)*180; let wy = cy + (seededRandom()-0.5)*180;
-            wheats.push(new ResourceNode(wx, wy, 'wheat'));
+        for(let j=0; j<8; j++) { 
+            let wx = cx + (seededRandom()-0.5)*150; let wy = cy + (seededRandom()-0.5)*150;
+            if (isPositionFree(wx, wy, 20)) {
+                wheats.push(new ResourceNode(wx, wy, 'wheat'));
+            }
         }
     }
 
+    // DECORATIONS (Moins nombreuses pour éviter le lag)
     const decoFamilies = [
         ['wood1', 'wood2', 'wood3', 'wood4', 'wood5', 'wood6', 'wood7', 'wood8'],
         ['buisson1', 'buisson2', 'buisson3', 'buisson4', 'buisson5', 'buisson6', 'buisson7', 'buisson8', 'buisson9', 'buisson10'],
@@ -435,16 +445,18 @@ function buildMapElements(seed) {
         ['farmDeco1', 'farmDeco2', 'farmDeco3'],
         ['shroom1', 'shroom2']
     ];
-    for(let i=0; i<600; i++) { 
+    for(let i=0; i<100; i++) { 
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         let family = decoFamilies[Math.floor(seededRandom() * decoFamilies.length)];
-        let count = Math.floor(seededRandom() * 10) + 5; 
+        let count = Math.floor(seededRandom() * 3) + 1; 
         
         for(let j=0; j<count; j++) {
-            let dx = cx + (seededRandom()-0.5)*100; let dy = cy + (seededRandom()-0.5)*100;
-            let skin = family[Math.floor(seededRandom() * family.length)];
-            let size = seededRandom() * 15 + 15; 
-            decorations.push(new Decoration(dx, dy, skin, size));
+            let dx = cx + (seededRandom()-0.5)*80; let dy = cy + (seededRandom()-0.5)*80;
+            let size = seededRandom() * 10 + 15; 
+            if (isPositionFree(dx, dy, size)) {
+                let skin = family[Math.floor(seededRandom() * family.length)];
+                decorations.push(new Decoration(dx, dy, skin, size));
+            }
         }
     }
 }
@@ -649,7 +661,6 @@ canvas.addEventListener('contextmenu', (e) => {
     if (selectedUnits.length === 0) return;
 
     let actualId = isHost ? 'host' : 'guest';
-    let myRes = isHost ? resHost : resGuest;
     
     const pos = getPointerPos(e);
     const wPos = { x: pos.worldX, y: pos.worldY };
@@ -662,16 +673,6 @@ canvas.addEventListener('contextmenu', (e) => {
         || enemies.find(en=>dist(wPos, en)<25) 
         || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
         || (dist(wPos, baseGuest)<baseGuest.size/2 + 20 ? baseGuest : null);
-    
-    // CORRECTION FAMINE : Si on clique sur le sol vide (!clickedEnt), on a le droit de bouger
-    if (myRes.food <= 0 && clickedEnt && !['wheat', 'farm', 'tree', 'sawmill', 'hdv', 'river'].includes(clickedEnt.type)) {
-        let now = Date.now();
-        if (now - lastFamineLogTime > 2000) {
-            addSysLog("Famine", "Nourriture à 0 ! Seuls la récolte, le soin et le retour à la Base sont possibles.");
-            lastFamineLogTime = now;
-        }
-        return;
-    }
 
     if (isHost) executeCommand({ action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
     else connToHost.send({ type: 'cmd', action: 'move', unitIds: selectedUnits, x: wPos.x, y: wPos.y, targetId: clickedEnt?clickedEnt.id:null, owner: actualId });
@@ -776,7 +777,7 @@ function updateUI() {
     uiMaxPop.innerText = myRes.maxPop;
     
     myRes.pop = myPop;
-    if(myRes.food <= 0) uiFood.style.color = 'red'; else uiFood.style.color = 'var(--neon-green)';
+    if(myRes.food <= 0) uiFood.style.color = 'red'; else uiFood.style.color = '#39ff14';
 }
 
 // --- BOUCLE UPDATE (HÔTE UNIQUEMENT) ---
@@ -806,9 +807,10 @@ function hostUpdate(dt) {
             }
         });
         
+        // LA NOURRITURE N'EST PLUS CONSOMMÉE
         resHost.maxPop = p1MaxPop; resGuest.maxPop = p2MaxPop;
-        resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food += p1Farm; resHost.food -= resHost.pop * 0.2; if(resHost.food < 0) resHost.food = 0;
-        resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food += p2Farm; resGuest.food -= resGuest.pop * 0.2; if(resGuest.food < 0) resGuest.food = 0;
+        resHost.gold += p1Mine; resHost.wood += p1Saw; resHost.food += p1Farm; 
+        resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food += p2Farm; 
     }
 
     if (baseHost.hp <= 0 || baseGuest.hp <= 0) {
