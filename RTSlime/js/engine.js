@@ -37,21 +37,21 @@ const ASSETS_PATHS = {
     mage: 'assets/skins/mage.png',
     wheat: 'assets/map/wheat.png',
     farm: 'assets/bat/farm.png',
-    river1: 'assets/map/river1.png',
-    river2: 'assets/map/river2.png',
-    river3: 'assets/map/river3.png'
+    river1: 'assets/decoration/river1.png',
+    river2: 'assets/decoration/river2.png',
+    river3: 'assets/decoration/river3.png'
 };
 
-// Chargement de tes 50+ Nouveaux Skins d'Environnement
-for(let i=1; i<=4; i++) ASSETS_PATHS['sapin'+i] = `assets/map/sapin${i}.png`;
-for(let i=1; i<=6; i++) ASSETS_PATHS['three'+i] = `assets/map/three${i}.png`;
-for(let i=1; i<=6; i++) ASSETS_PATHS['bouleau'+i] = `assets/map/bouleau${i}.png`;
-for(let i=1; i<=8; i++) ASSETS_PATHS['wood'+i] = `assets/map/wood${i}.png`;
-for(let i=1; i<=10; i++) ASSETS_PATHS['buisson'+i] = `assets/map/buisson${i}.png`;
-for(let i=1; i<=4; i++) ASSETS_PATHS['herb'+i] = `assets/map/herb${i}.png`;
-for(let i=1; i<=6; i++) ASSETS_PATHS['fleur'+i] = `assets/map/fleur${i}.png`;
-for(let i=1; i<=3; i++) ASSETS_PATHS['farmDeco'+i] = `assets/map/farm${i}.png`; 
-for(let i=1; i<=2; i++) ASSETS_PATHS['shroom'+i] = `assets/map/shroom${i}.png`;
+// Chargement des 50+ Nouveaux Skins d'Environnement depuis le dossier "decoration"
+for(let i=1; i<=4; i++) ASSETS_PATHS['sapin'+i] = `assets/decoration/sapin${i}.png`;
+for(let i=1; i<=6; i++) ASSETS_PATHS['three'+i] = `assets/decoration/three${i}.png`;
+for(let i=1; i<=6; i++) ASSETS_PATHS['bouleau'+i] = `assets/decoration/bouleau${i}.png`;
+for(let i=1; i<=8; i++) ASSETS_PATHS['wood'+i] = `assets/decoration/wood${i}.png`;
+for(let i=1; i<=10; i++) ASSETS_PATHS['buisson'+i] = `assets/decoration/buisson${i}.png`;
+for(let i=1; i<=4; i++) ASSETS_PATHS['herb'+i] = `assets/decoration/herb${i}.png`;
+for(let i=1; i<=6; i++) ASSETS_PATHS['fleur'+i] = `assets/decoration/fleur${i}.png`;
+for(let i=1; i<=3; i++) ASSETS_PATHS['farmDeco'+i] = `assets/decoration/farm${i}.png`; 
+for(let i=1; i<=2; i++) ASSETS_PATHS['shroom'+i] = `assets/decoration/shroom${i}.png`;
 
 const images = {};
 for (let key in ASSETS_PATHS) {
@@ -141,7 +141,7 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
 
 document.getElementById('btn-start').addEventListener('click', () => {
     if(isHost) {
-        let gameSeed = Math.floor(Math.random() * 1000000); // Graine de génération parfaite
+        let gameSeed = Math.floor(Math.random() * 1000000); 
         initGame(gameSeed);
         connToGuest.send({ type: 'start_game', seed: gameSeed });
     }
@@ -166,7 +166,7 @@ let enemies = [];
 let trees = [];
 let wheats = [];
 let rivers = [];
-let decorations = []; // Pour les fleurs, herbes, buissons
+let decorations = []; 
 let particles = [];
 let lasers = [];
 let selectedUnits = []; 
@@ -436,7 +436,12 @@ function initGame(seed) {
 
     baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
-    camera.x = baseHost.x - width/2; camera.y = baseHost.y - height/2;
+    
+    // CENTRAGE PARFAIT DE LA CAMERA SUR LE HDV POUR L'HOTE
+    camera.x = baseHost.x - (width / zoom) / 2;
+    camera.y = baseHost.y - (height / zoom) / 2;
+    camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
+    camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height/zoom));
 
     buildMapElements(seed);
 
@@ -469,7 +474,6 @@ function initGameClient(seed) {
     
     resize();
     
-    // Le Guest génère les mêmes décors sans charger le réseau !
     baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
     buildMapElements(seed);
@@ -479,7 +483,11 @@ function initGameClient(seed) {
 
 function syncClientState(data) {
     if (!baseGuest && data.bG) {
-        camera.x = data.bG.x - width/2; camera.y = data.bG.y - height/2;
+        // CENTRAGE PARFAIT DE LA CAMERA SUR LE HDV POUR LE GUEST
+        camera.x = data.bG.x - (width / zoom) / 2;
+        camera.y = data.bG.y - (height / zoom) / 2;
+        camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
+        camera.y = Math.max(0, Math.min(camera.y, MAP_HEIGHT - height/zoom));
     }
     
     survivalTimer = data.st; 
@@ -487,7 +495,6 @@ function syncClientState(data) {
     baseHost.hp = data.bH.hp;
     baseGuest.hp = data.bG.hp;
     
-    // Synchronise l'état des arbres (ceux qui sont détruits)
     trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree', t.s); r.id = t.id; r.amount = t.a; return r; });
     wheats = data.w.map(w => { let r = new ResourceNode(w.x, w.y, 'wheat'); r.id = w.id; r.amount = w.a; return r; });
     enemies = data.en.map(e => { let en = new Enemy(e.x, e.y); en.id=e.id; en.hp=e.hp; en.element=e.el; en.color=e.c; en.slowTimer=e.st; return en; });
@@ -790,9 +797,10 @@ function hostUpdate(dt) {
         type: 'sync',
         u: units.map(u => ({ id: u.id, x: u.x, y: u.y, t: u.type, e: u.element, o: u.owner, hp: u.hp, mHp: u.maxHp, s: u.state, p: u.payload, st: u.slowTimer })),
         b: buildings.map(b => ({ id: b.id, x: b.x, y: b.y, t: b.type, o: b.owner, hp: b.hp, mHp: b.maxHp, l: b.level, fi: b.farmersInside })),
-        t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount, s: t.skin })), // Skin synchronisé !
+        t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount, s: t.skin })), 
         w: wheats.map(w => ({ id: w.id, x: w.x, y: w.y, a: w.amount })),
         en: enemies.map(e => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, el: e.element, c: e.color, st: e.slowTimer })),
+        rv: rivers.map(r => ({ id: r.id, x: r.x, y: r.y, v: r.variant })),
         bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp },
         bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
         resH: resHost, resG: resGuest, st: survivalTimer
@@ -811,7 +819,9 @@ function draw() {
     ctx.translate(-camera.x, -camera.y);
 
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    if (images.map.complete && images.map.naturalWidth > 0) { ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT); } 
+    if (images.map.complete && images.map.naturalWidth > 0) { 
+        ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT); 
+    } 
 
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
         decorations.forEach(d => d.draw(ctx, images)); 
