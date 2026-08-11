@@ -9,12 +9,21 @@ class Decoration {
     constructor(x, y, skin, size) {
         this.x = x; this.y = y; 
         this.skin = skin; 
-        this.size = size;
+        this.size = size; 
     }
     draw(ctx, images) {
         let img = images[this.skin];
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+        } else {
+            // Couleurs de secours en Hexadécimal (plus de points noirs !)
+            ctx.globalAlpha = 0.4;
+            if (this.skin.includes('herb')) {
+                ctx.fillStyle = '#39ff14'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2); ctx.fill();
+            } else if (this.skin.includes('fleur')) {
+                ctx.fillStyle = '#ff007f'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
         }
     }
 }
@@ -33,7 +42,7 @@ class River {
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - this.radius, this.y - this.radius, this.radius*2, this.radius*2);
         } else {
-            ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-water)';
+            ctx.shadowBlur = 15; ctx.shadowColor = '#3388ff';
             ctx.fillStyle = 'rgba(51, 136, 255, 0.3)';
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2;
@@ -49,7 +58,7 @@ class Base {
         this.x = x; this.y = y; this.type = 'hdv';
         this.size = 120; 
         this.hp = 2500; this.maxHp = 2500;
-        this.color = owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)';
+        this.color = owner === 'host' ? '#00f0ff' : '#ff007f';
     }
     draw(ctx, images) {
         if (selectedBuilding && selectedBuilding.id === this.id) {
@@ -75,7 +84,7 @@ class Base {
 
         if (this.hp < this.maxHp) {
             ctx.fillStyle = 'red'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 10, this.size, 5);
-            ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 10, this.size * (this.hp / this.maxHp), 5);
+            ctx.fillStyle = '#39ff14'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 10, this.size * (this.hp / this.maxHp), 5);
         }
     }
 }
@@ -85,16 +94,16 @@ class Building {
         this.id = entityIdCounter++; this.owner = owner;
         this.x = x; this.y = y; this.type = type;
         this.size = 64; this.farmersInside = 0; this.level = 1; this.attackCooldown = 0; 
-        this.color = owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)';
+        this.color = owner === 'host' ? '#00f0ff' : '#ff007f';
 
         if(type === 'house') { this.hp = 300; }
-        if(type === 'sawmill') { this.color = 'var(--neon-orange)'; this.hp = 500; }
-        if(type === 'mine') { this.color = 'var(--neon-yellow)'; this.hp = 600; }
-        if(type === 'farm') { this.color = 'var(--neon-green)'; this.hp = 400; }
-        if(type === 'barracks') { this.color = 'var(--neon-red)'; this.size = 80; this.hp = 800; }
-        if(type === 'archery') { this.color = 'var(--neon-pink)'; this.size = 80; this.hp = 800; }
-        if(type === 'mage') { this.color = 'var(--neon-purple)'; this.size = 80; this.hp = 800; }
-        if(type === 'tower') { this.color = 'var(--neon-cyan)'; this.size = 50; this.hp = 1000; }
+        if(type === 'sawmill') { this.color = '#ff8c00'; this.hp = 500; }
+        if(type === 'mine') { this.color = '#fce803'; this.hp = 600; }
+        if(type === 'farm') { this.color = '#39ff14'; this.hp = 400; }
+        if(type === 'barracks') { this.color = '#ff3333'; this.size = 80; this.hp = 800; }
+        if(type === 'archery') { this.color = '#ff007f'; this.size = 80; this.hp = 800; }
+        if(type === 'mage') { this.color = '#b000ff'; this.size = 80; this.hp = 800; }
+        if(type === 'tower') { this.color = '#00f0ff'; this.size = 50; this.hp = 1000; }
         this.maxHp = this.hp;
     }
     
@@ -146,7 +155,7 @@ class Building {
         ctx.strokeStyle = this.color; ctx.lineWidth = 1; ctx.strokeRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
 
         if (this.level > 1) {
-            ctx.fillStyle = 'var(--neon-yellow)'; ctx.font = '16px Arial'; ctx.fillText('★', this.x + this.size/2 - 10, this.y - this.size/2 + 15);
+            ctx.fillStyle = '#fce803'; ctx.font = '16px Arial'; ctx.fillText('★', this.x + this.size/2 - 10, this.y - this.size/2 + 15);
         }
         if (this.type === 'sawmill' || this.type === 'mine' || this.type === 'farm') {
             ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
@@ -155,7 +164,7 @@ class Building {
 
         if (this.hp < this.maxHp) {
             ctx.fillStyle = 'red'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 10, this.size, 4);
-            ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 10, this.size * (this.hp / this.maxHp), 4);
+            ctx.fillStyle = '#39ff14'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2 - 10, this.size * (this.hp / this.maxHp), 4);
         }
     }
 }
@@ -163,23 +172,22 @@ class Building {
 class ResourceNode {
     constructor(x, y, type, skin = null) {
         this.id = entityIdCounter++; this.x = x; this.y = y; this.type = type;
-        this.radius = 20; 
+        this.radius = 12; 
         this.amount = type === 'tree' ? 300 : 1000; 
-        this.skin = skin; // Skin dynamique (sapin1, bouleau3...)
+        this.skin = skin; 
+        this.color = type === 'tree' ? '#ff8c00' : '#39ff14';
     }
     draw(ctx, images) {
         let img = this.skin ? images[this.skin] : (this.type === 'wheat' ? images.wheat : null);
 
         if (img && img.complete && img.naturalWidth > 0) {
-            // Dessine l'arbre/blé plus grand
-            ctx.drawImage(img, this.x - 40, this.y - 40, 80, 80);
+            ctx.drawImage(img, this.x - 20, this.y - 20, 40, 40);
         } else {
-            let color = this.type === 'tree' ? 'var(--neon-orange)' : 'var(--neon-green)';
-            ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.beginPath();
+            ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.beginPath();
             if(this.type === 'tree') {
                 for (let i = 0; i < 6; i++) ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
             } else { ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); }
-            ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
+            ctx.closePath(); ctx.fillStyle = this.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
         }
     }
 }
@@ -195,11 +203,11 @@ class Unit {
         this.payload = 0; this.payloadType = null;
         this.slowTimer = 0;
 
-        this.color = owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)';
-        this.elColor = '#fff';
-        if(element === 'fire') this.elColor = 'var(--neon-red)';
-        if(element === 'water') this.elColor = 'var(--neon-water)';
-        if(element === 'plant') this.elColor = 'var(--neon-green)';
+        this.color = owner === 'host' ? '#00f0ff' : '#ff007f';
+        this.elColor = '#ffffff';
+        if(element === 'fire') this.elColor = '#ff3333';
+        if(element === 'water') this.elColor = '#3388ff';
+        if(element === 'plant') this.elColor = '#39ff14';
 
         if (type === 'farmer') { this.speed = 100; this.hp = 30; }
         if (type === 'warrior') { this.speed = 90; this.hp = 150; this.damage = 15; this.range = 35; this.cooldown = 1.0; }
@@ -427,15 +435,15 @@ class Unit {
         ctx.strokeStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 8, 0, Math.PI*2); ctx.stroke();
 
         if(this.slowTimer > 0) { 
-            ctx.strokeStyle = 'var(--neon-purple)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+12, 0, Math.PI*2); ctx.stroke();
+            ctx.strokeStyle = '#b000ff'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+12, 0, Math.PI*2); ctx.stroke();
         }
 
         if(this.type !== 'farmer' && this.hp < this.maxHp) {
             ctx.fillStyle = 'red'; ctx.fillRect(this.x - 8, this.y - this.drawSize/2 - 6, 16, 3);
-            ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - 8, this.y - this.drawSize/2 - 6, 16 * (this.hp/this.maxHp), 3);
+            ctx.fillStyle = '#39ff14'; ctx.fillRect(this.x - 8, this.y - this.drawSize/2 - 6, 16 * (this.hp/this.maxHp), 3);
         }
         if(this.payload > 0) {
-            ctx.fillStyle = this.payloadType === 'wood' ? 'var(--neon-orange)' : 'var(--neon-green)';
+            ctx.fillStyle = this.payloadType === 'wood' ? '#ff8c00' : '#39ff14';
             ctx.fillRect(this.x - 5, this.y - this.drawSize/2 - 6, 10 * (this.payload/20), 3);
         }
     }
@@ -454,10 +462,10 @@ class Enemy {
         
         const els = ['normal', 'fire', 'water', 'plant'];
         this.element = els[Math.floor(Math.random() * els.length)];
-        if(this.element === 'normal') this.color = 'var(--neon-red)';
+        if(this.element === 'normal') this.color = '#ff3333';
         if(this.element === 'fire') this.color = '#ff5500';
-        if(this.element === 'water') this.color = 'var(--neon-water)';
-        if(this.element === 'plant') this.color = 'var(--neon-green)';
+        if(this.element === 'water') this.color = '#3388ff';
+        if(this.element === 'plant') this.color = '#39ff14';
     }
 
     update(dt) {
@@ -509,12 +517,12 @@ class Enemy {
         ctx.shadowBlur = 0;
 
         if(this.slowTimer > 0) { 
-            ctx.strokeStyle = 'var(--neon-purple)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+4, 0, Math.PI*2); ctx.stroke();
+            ctx.strokeStyle = '#b000ff'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+4, 0, Math.PI*2); ctx.stroke();
         }
 
         if(this.hp < this.maxHp) {
             ctx.fillStyle = 'red'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20, 3);
-            ctx.fillStyle = 'var(--neon-green)'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20 * (this.hp/this.maxHp), 3);
+            ctx.fillStyle = '#39ff14'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20 * (this.hp/this.maxHp), 3);
         }
     }
 }
