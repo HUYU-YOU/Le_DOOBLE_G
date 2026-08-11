@@ -36,7 +36,10 @@ const ASSETS_PATHS = {
     archer: 'assets/skins/archer.png',
     mage: 'assets/skins/mage.png',
     wheat: 'assets/map/wheat.png',
-    farm: 'assets/bat/farm.png'
+    farm: 'assets/bat/farm.png',
+    river1: 'assets/map/river1.png',
+    river2: 'assets/map/river2.png',
+    river3: 'assets/map/river3.png'
 };
 
 const images = {};
@@ -79,7 +82,6 @@ function setupPeerEvents(p) {
     });
 
     p.on('error', err => {
-        console.warn("PeerJS Error:", err);
         document.getElementById('login-error').innerText = "Erreur: " + err.type;
     });
 }
@@ -151,6 +153,8 @@ let units = [];
 let enemies = []; 
 let trees = [];
 let wheats = [];
+let rivers = []; // Rivières qui soignent
+let decorations = []; // Elements purement visuels
 let particles = [];
 let lasers = [];
 let selectedUnits = []; 
@@ -188,6 +192,13 @@ function spawnLaser(a, b, color) { lasers.push({ x1:a.x, y1:a.y, x2:b.x, y2:b.y,
 function addSysLog(title, msg) {
     chatBox.innerHTML += `<p><span class="sys-log-msg">> ${title}:</span> ${msg}</p>`;
     chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function initDecorations() {
+    decorations = [];
+    for(let i=0; i<500; i++) {
+        decorations.push(new Decoration(Math.random() * MAP_WIDTH, Math.random() * MAP_HEIGHT));
+    }
 }
 
 // --- GESTION FENETRE & CAMERA ---
@@ -236,6 +247,7 @@ function drawMinimap() {
         mmCtx.fillRect((obj.x/MAP_WIDTH)*150 - size/2, (obj.y/MAP_HEIGHT)*150 - size/2, size, size);
     };
 
+    rivers.forEach(r => drawDot(r, 'var(--neon-water)', 3));
     trees.forEach(t => drawDot(t, 'var(--neon-orange)', 1));
     wheats.forEach(w => drawDot(w, 'var(--neon-green)', 1));
     buildings.forEach(b => drawDot(b, b.owner === 'host' ? 'var(--neon-cyan)' : 'var(--neon-pink)', 4));
@@ -268,10 +280,10 @@ function executeCommand(data) {
 
     if (data.action === 'move') {
         let uList = units.filter(u => data.unitIds.includes(u.id));
-        let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
+        let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || rivers.find(r=>r.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
         
         if (playerRes.food <= 0) {
-            let isAllowedCmd = ent && ['wheat', 'farm', 'tree', 'sawmill', 'hdv'].includes(ent.type);
+            let isAllowedCmd = ent && ['wheat', 'farm', 'tree', 'sawmill', 'hdv', 'river'].includes(ent.type);
             if(!isAllowedCmd) return; 
         }
 
@@ -334,7 +346,7 @@ function initGame() {
     gameState = 'PLAYING';
     resHost = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
     resGuest = { gold: 0, wood: 0, food: 0, pop: 0, maxPop: 0 }; 
-    units = []; trees = []; wheats = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
+    units = []; trees = []; wheats = []; rivers = []; buildings = []; particles = []; lasers = []; selectedUnits = [];
     buildMode = null; moveMode = null; selectedBuilding = null;
     survivalTimer = 0;
     
@@ -342,10 +354,22 @@ function initGame() {
     document.getElementById('game-container').style.display = 'block';
     
     resize();
+    initDecorations(); // Rendu visuel aléatoire
 
     baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
     baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
     camera.x = baseHost.x - width/2; camera.y = baseHost.y - height/2;
+
+    // RIVIERES (Génération de points d'eau)
+    for(let i=0; i<30; i++) {
+        let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
+        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
+        for(let j=0; j<3; j++) {
+            let rx = cx + (Math.random()-0.5)*150; let ry = cy + (Math.random()-0.5)*150;
+            let variant = Math.floor(Math.random() * 3) + 1; // 1, 2 ou 3
+            rivers.push(new River(rx, ry, variant));
+        }
+    }
 
     for(let i=0; i<40; i++) { 
         let cx = Math.random() * MAP_WIDTH; let cy = Math.random() * MAP_HEIGHT;
@@ -391,6 +415,7 @@ function initGameClient() {
     document.getElementById('screen-lobby').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
     resize();
+    initDecorations(); // Le Guest a aussi ses décorations visuelles
     updateUI(); renderBottomUI();
 }
 
@@ -404,6 +429,7 @@ function syncClientState(data) {
     baseHost = new Base(data.bH.x, data.bH.y, 'host'); baseHost.id = data.bH.id; baseHost.hp = data.bH.hp;
     baseGuest = new Base(data.bG.x, data.bG.y, 'guest'); baseGuest.id = data.bG.id; baseGuest.hp = data.bG.hp;
     
+    rivers = data.rv.map(r => { let riv = new River(r.x, r.y, r.v); riv.id = r.id; return riv; });
     trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree'); r.id = t.id; r.amount = t.a; return r; });
     wheats = data.w.map(w => { let r = new ResourceNode(w.x, w.y, 'wheat'); r.id = w.id; r.amount = w.a; return r; });
     enemies = data.en.map(e => { let en = new Enemy(e.x, e.y); en.id=e.id; en.hp=e.hp; en.element=e.el; en.color=e.c; en.slowTimer=e.st; return en; });
@@ -538,14 +564,15 @@ canvas.addEventListener('contextmenu', (e) => {
         || buildings.find(b=>dist(wPos, b)<b.size) 
         || trees.find(t=>dist(wPos, t)<40) 
         || wheats.find(w=>dist(wPos, w)<40) 
+        || rivers.find(r=>dist(wPos, r)<r.radius) // Les rivières sont ciblables
         || enemies.find(en=>dist(wPos, en)<25) 
         || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
         || (dist(wPos, baseGuest)<baseGuest.size/2 + 20 ? baseGuest : null);
     
-    if (myRes.food <= 0 && (!clickedEnt || !['wheat', 'farm', 'tree', 'sawmill', 'hdv'].includes(clickedEnt.type))) {
+    if (myRes.food <= 0 && (!clickedEnt || !['wheat', 'farm', 'tree', 'sawmill', 'hdv', 'river'].includes(clickedEnt.type))) {
         let now = Date.now();
         if (now - lastFamineLogTime > 2000) {
-            addSysLog("Famine", "Nourriture à 0 ! Ordonnez la récolte ou cliquez sur l'Hôtel de Ville.");
+            addSysLog("Famine", "Nourriture à 0 ! Ordonnez la récolte, le soin (Rivière) ou le retour à la Base.");
             lastFamineLogTime = now;
         }
         return;
@@ -708,6 +735,7 @@ function hostUpdate(dt) {
         t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount })),
         w: wheats.map(w => ({ id: w.id, x: w.x, y: w.y, a: w.amount })),
         en: enemies.map(e => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, el: e.element, c: e.color, st: e.slowTimer })),
+        rv: rivers.map(r => ({ id: r.id, x: r.x, y: r.y, v: r.variant })),
         bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp },
         bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
         resH: resHost, resG: resGuest, st: survivalTimer
@@ -726,19 +754,30 @@ function draw() {
     ctx.translate(-camera.x, -camera.y);
 
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    if (images.map.complete && images.map.naturalWidth > 0) { ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT); } 
+    if (images.map.complete && images.map.naturalWidth > 0) { 
+        ctx.drawImage(images.map, 0, 0, MAP_WIDTH, MAP_HEIGHT); 
+    } 
 
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
-        trees.forEach(t => t.draw(ctx, images)); wheats.forEach(w => w.draw(ctx, images));
+        decorations.forEach(d => d.draw(ctx)); // Dessin des décors
+        rivers.forEach(r => r.draw(ctx, images));
+        trees.forEach(t => t.draw(ctx, images)); 
+        wheats.forEach(w => w.draw(ctx, images));
         buildings.forEach(b => b.draw(ctx, images));
+        
         if (baseHost && baseHost.hp > 0) baseHost.draw(ctx, images);
         if (baseGuest && baseGuest.hp > 0) baseGuest.draw(ctx, images);
+        
         units.forEach(u => u.draw(ctx, images));
         enemies.forEach(e => e.draw(ctx));
 
         lasers.forEach(l => {
-            ctx.strokeStyle = l.color; ctx.lineWidth = 3; ctx.shadowBlur = 10; ctx.shadowColor = l.color;
-            ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke(); ctx.shadowBlur = 0;
+            // Effet Laser Amélioré (Cœur blanc, Aura colorée)
+            ctx.strokeStyle = l.color; ctx.lineWidth = 4; ctx.shadowBlur = 10; ctx.shadowColor = l.color;
+            ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke();
+            
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke();
         });
 
         particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.size, p.size); });
@@ -772,8 +811,8 @@ function loop(timestamp) {
         
         if(isHost) {
             hostUpdate(dt);
-            updateUI(); 
         }
+        updateUI(); // Doit être fait par l'Hôte ET le Guest à chaque frame
         
         particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; if(p.life <= 0) particles.splice(i, 1); });
         lasers.forEach((l, i) => { l.life -= dt; if(l.life <= 0) lasers.splice(i, 1); });
