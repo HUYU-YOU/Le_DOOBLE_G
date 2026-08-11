@@ -24,13 +24,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* Tire tout le contenu vers le haut */
-            padding-top: 2vh; /* Juste un tout petit espace de 2% pour ne pas coller l'écran */
+            justify-content: flex-start; 
+            padding-top: 2vh; 
             box-sizing: border-box;
         }
 
         .hub-bg-video {
-            position: absolute; /* Absolute au lieu de fixed évite les bugs avec hidden */
+            position: absolute; 
             top: 0; left: 0; width: 100vw; height: 100vh; 
             object-fit: cover; z-index: -2; pointer-events: none; 
         }
@@ -41,24 +41,25 @@
             z-index: -1; pointer-events: none;
         }
 
-        /* --- LOGO DU HUB (Remonté et adaptatif) --- */
+        /* --- LOGO DU HUB (+20% de taille) --- */
         .hub-logo {
             max-width: 90%; 
-            width: 420px; /* Légèrement compacté pour sécuriser la vue 90% */
-            max-height: 25vh; /* Assure que le logo rétrécit si l'écran est petit */
+            width: 505px; /* AGRANDI : était 420px */
+            max-height: 32vh; /* AGRANDI : permet au logo de prendre plus de place en hauteur */
             object-fit: contain;
-            margin: 0; /* Les marges sont gérées automatiquement par Flexbox maintenant */
+            margin: 0; 
             filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); 
         }
 
-        /* --- BOUTONS IMAGES ONGLETS --- */
+        /* --- BOUTONS IMAGES ONGLETS (+20% de taille) --- */
         .toggle-container {
-            display: flex; justify-content: center; gap: 30px; 
-            margin: 2vh 0 3vh 0; /* Marges fluides en % de la hauteur de l'écran */
+            display: flex; justify-content: center; gap: 35px; /* Écart légèrement augmenté */
+            margin: 2vh 0 3vh 0; 
             align-items: center;
         }
         .toggle-img-btn {
-            width: 170px; height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
+            width: 205px; /* AGRANDI : était 170px */
+            height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .toggle-img-btn:hover { opacity: 0.8; filter: grayscale(0%); transform: scale(1.05); }
@@ -149,7 +150,7 @@
         }
 
         .game-logo { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-        .bg-video { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; } /* Sécurité vidéo */
+        .bg-video { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
         .game-card:hover .game-icon { opacity: 0; transform: scale(1.1); }
 
         .hidden { display: none !important; }
