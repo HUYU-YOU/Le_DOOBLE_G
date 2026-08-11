@@ -10,7 +10,6 @@
     <style>
         /* --- STYLE DE LA VIDEO DE FOND (Normale, pas de rotation) --- */
         body {
-            /* On rend le fond du body transparent pour voir la vidéo derrière */
             background-color: transparent !important;
             background-image: none !important;
         }
@@ -19,19 +18,17 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw; /* Reprend la largeur de l'écran */
-            height: 100vh; /* Reprend la hauteur de l'écran */
-            object-fit: cover; /* Remplit tout l'écran sans déformer */
-            z-index: -2; /* Tout au fond */
-            pointer-events: none; /* Empêche de cliquer sur la vidéo */
+            width: 100vw; 
+            height: 100vh; 
+            object-fit: cover; 
+            z-index: -2; 
+            pointer-events: none; 
         }
 
-        /* Overlay assombri par-dessus la vidéo (Allégé pour mieux voir la vidéo) */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            /* J'ai baissé l'opacité : 0.5 au centre (avant 0.75) et 0.85 sur les bords (avant 0.95) */
             background: radial-gradient(circle at 50% 0%, rgba(31, 40, 51, 0.5) 0%, rgba(11, 12, 16, 0.85) 80%);
             z-index: -1;
             pointer-events: none;
@@ -43,7 +40,7 @@
             width: 600px;
             height: auto;
             margin-bottom: 0px; 
-            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); /* J'ai très légèrement monté le halo du logo pour qu'il ressorte sur la vidéo plus claire */
+            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); 
             display: block;
             margin-left: auto;
             margin-right: auto;
@@ -79,6 +76,21 @@
             transform: scale(1.1);
         }
 
+        /* --- STYLE DES LOGOS PERSONNALISÉS DANS LES CARTES --- */
+        .game-logo {
+            width: 75px; /* Taille fixe pour toutes tes images */
+            height: 75px;
+            object-fit: contain; /* Garde les proportions de l'image */
+            border-radius: 12px; /* Arrondit les bords des JPG */
+            filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5)); /* Ombre portée */
+            transition: transform 0.3s ease;
+        }
+
+        /* Animation de zoom du logo au survol de la carte */
+        .game-card:hover .game-logo {
+            transform: scale(1.15) translateY(-5px);
+        }
+
         .hidden {
             display: none !important;
         }
@@ -86,7 +98,7 @@
 </head>
 <body>
     
-    <!-- VIDEO DE FOND (Format Classique) -->
+    <!-- VIDEO DE FOND -->
     <video autoplay loop muted playsinline class="hub-bg-video">
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
@@ -107,14 +119,14 @@
         
         <a href="2048slime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="2048slime/img/cinematic_fusion_slime.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">💧</div>
+            <div class="game-icon"><img src="img/logofuslime.png" class="game-logo" alt="Fusion Slime"></div>
             <div class="game-title">Fusion Slime</div>
         </a>
 
         <!-- LE SLIME CLICKER -->
         <a href="slimeclicker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="slimeclicker/img/cinematic_clicker.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">👆</div>
+            <div class="game-icon"><img src="img/logoclic.png" class="game-logo" alt="Slime Clicker"></div>
             <div class="game-title">Slime Clicker</div>
         </a>
     
@@ -132,25 +144,25 @@
 
         <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🥊🥊</div>
+            <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
             <div class="game-title">Cyber Smash</div>
         </a>
 
         <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🪖</div>
+            <div class="game-icon"><img src="img/logotank.png" class="game-logo" alt="Cyber Tanks"></div>
             <div class="game-title">Cyber Tanks</div>
         </a>
 
         <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">💨</div>
+            <div class="game-icon"><img src="img/logoroller.png" class="game-logo" alt="Slime Dash"></div>
             <div class="game-title">Slime Dash</div>
         </a>  
 
         <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">⚔️</div>
+            <div class="game-icon"><img src="img/guesswarofslime.png" class="game-logo" alt="War of slime"></div>
             <div class="game-title">War of slime</div>
         </a>
 
@@ -162,19 +174,19 @@
         
         <a href="guessit/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="guessit/img/cinematic_guessit.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">👁️</div>
+            <div class="game-icon"><img src="img/logoguess.png" class="game-logo" alt="Guess it Manga"></div>
             <div class="game-title">Guess it Manga</div>
         </a>
 
         <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🎧</div>
+            <div class="game-icon"><img src="img/logoblind.jpg" class="game-logo" alt="Blind Test"></div>
             <div class="game-title">Blind Test</div>
         </a>
 
         <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🚀</div>
+            <div class="game-icon"><img src="img/logoartillerie.png" class="game-logo" alt="Slime Artillery"></div>
             <div class="game-title">Slime Artillery</div>
         </a>
     </div> 
@@ -186,37 +198,37 @@
         
         <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🥊🥊</div>
+            <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
             <div class="game-title">Cyber Smash</div>
         </a>
 
         <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🪖</div>
+            <div class="game-icon"><img src="img/logotank.png" class="game-logo" alt="Cyber Tanks"></div>
             <div class="game-title">Cyber Tanks</div>
         </a>
 
         <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">⚔️</div>
+            <div class="game-icon"><img src="img/guesswarofslime.png" class="game-logo" alt="War of slime"></div>
             <div class="game-title">War of slime</div>
         </a>
 
         <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🎧</div>
+            <div class="game-icon"><img src="img/logoblind.jpg" class="game-logo" alt="Blind Test"></div>
             <div class="game-title">Blind Test</div>
         </a>
 
         <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🚀</div>
+            <div class="game-icon"><img src="img/logoartillerie.png" class="game-logo" alt="Slime Artillery"></div>
             <div class="game-title">Slime Artillery</div>
         </a>
 
         <a href="undercover/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="undercover/img/cinematic_undercover.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🕵️‍♂️</div>
+            <div class="game-icon"><img src="img/logospy.jpg" class="game-logo" alt="Cyber-Spy"></div>
             <div class="game-title">Cyber-Spy</div>
         </a>
 
@@ -228,7 +240,7 @@
 
          <a href="drawer/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
             <video src="drawer/img/cinematic_drawer.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🎨</div>
+            <div class="game-icon"><img src="img/logodrawer.jpg" class="game-logo" alt="The Drawer"></div>
             <div class="game-title">The Drawer</div>
         </a>
 
