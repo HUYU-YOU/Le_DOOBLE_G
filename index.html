@@ -13,8 +13,9 @@
             margin: 0;
             padding: 0;
             width: 100vw;
-            height: 100vh; /* Prend exactement 100% de l'écran */
-            overflow: hidden !important; /* Coupe toute possibilité de scroller */
+            height: 100vh;
+            overflow: hidden !important; 
+            transition: background-color 0.5s ease;
         }
 
         /* --- STYLE DE LA PAGE ET DE LA VIDEO DE FOND --- */
@@ -29,136 +30,194 @@
             box-sizing: border-box;
         }
 
-        /* La vidéo pure SANS AUCUN FILTRE PAR DESSUS */
+        /* La vidéo pure SANS AUCUN FILTRE PAR DESSUS par défaut */
         .hub-bg-video {
             position: absolute; 
             top: 0; left: 0; width: 100vw; height: 100vh; 
             object-fit: cover; z-index: -2; pointer-events: none; 
         }
 
-        /* (Le body::before avec le filtre noir a été totalement supprimé) */
+        /* --- MODE LUMINEUX (S'active via les paramètres) --- */
+        /* Ajoute un voile blanc lumineux par-dessus la vidéo de fond */
+        body.light-mode::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255, 255, 255, 0.75);
+            z-index: -1; pointer-events: none;
+        }
+        body.light-mode .game-card {
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        body.light-mode .nav-bar {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #00e5ff;
+        }
+        body.light-mode .nav-icon {
+            color: #333; text-shadow: none;
+        }
+
+        /* --- BOUTON PARAMÈTRES (En haut à droite) --- */
+        .settings-btn {
+            position: absolute;
+            top: 20px; right: 25px;
+            font-size: 2.2rem;
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.4s ease;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
+        }
+        .settings-btn:hover { transform: rotate(90deg) scale(1.15); }
+
+        /* --- MENU MODAL PARAMÈTRES --- */
+        #settings-modal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85); z-index: 999;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        
+        .settings-content {
+            background: rgba(15, 20, 30, 0.95);
+            border: 2px solid #00e5ff; border-radius: 15px;
+            padding: 30px 40px; color: white; text-align: center;
+            box-shadow: 0 0 30px rgba(0,229,255,0.4);
+            min-width: 320px; font-family: sans-serif;
+            transition: all 0.3s ease;
+        }
+        body.light-mode .settings-content {
+            background: rgba(240, 245, 255, 0.95);
+            color: #222; border-color: #0077ff; box-shadow: 0 0 30px rgba(0,119,255,0.4);
+        }
+        
+        .settings-content h2 { margin-top: 0; color: #00e5ff; text-transform: uppercase; letter-spacing: 2px; }
+        body.light-mode .settings-content h2 { color: #0077ff; }
+
+        .setting-item {
+            display: flex; justify-content: space-between; align-items: center;
+            margin: 25px 0; font-size: 1.2rem; font-weight: bold;
+        }
+
+        /* Joli switch (bouton on/off) */
+        .switch { position: relative; display: inline-block; width: 54px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #00e5ff; box-shadow: 0 0 10px #00e5ff; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .close-btn {
+            margin-top: 15px; background: #00e5ff; color: #000; border: none;
+            padding: 10px 25px; font-size: 1.1rem; font-weight: bold;
+            border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase;
+        }
+        .close-btn:hover { box-shadow: 0 0 20px #00e5ff; transform: scale(1.05); }
 
         /* --- LOGO DU HUB --- */
         .hub-logo {
-            max-width: 90%; 
-            width: 505px; 
-            max-height: 32vh; 
-            object-fit: contain;
-            margin: 0; 
-            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.8)); /* Légèrement renforcé pour compenser l'absence de filtre noir */
+            max-width: 90%; width: 505px; max-height: 32vh; 
+            object-fit: contain; margin: 0; 
+            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.8)); 
         }
 
         /* --- BOUTONS IMAGES ONGLETS (+10%) --- */
         .toggle-container {
-            display: flex; justify-content: center; gap: 40px; 
-            margin: 2vh 0 3vh 0; 
-            align-items: center;
+            display: flex; justify-content: center; gap: 40px; margin: 2vh 0 3vh 0; align-items: center;
         }
         .toggle-img-btn {
-            width: 225px; 
-            height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
+            width: 225px; height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .toggle-img-btn:hover { opacity: 0.8; filter: grayscale(0%); transform: scale(1.05); }
         .toggle-img-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 15px var(--cyan, #00e5ff)); transform: scale(1.1); }
 
-        /* --- CONTENEUR GLOBAL CAROUSEL (+10%) --- */
+        /* --- CONTENEUR GLOBAL CAROUSEL --- */
         .carousel-wrapper {
-            display: flex;
-            align-items: stretch;
-            justify-content: center;
-            gap: 15px;
-            width: 100%;
-            max-width: 1040px; 
-            padding: 0 15px;
-            box-sizing: border-box;
+            display: flex; align-items: stretch; justify-content: center; gap: 15px;
+            width: 100%; max-width: 1040px; padding: 0 15px; box-sizing: border-box;
         }
 
         /* --- LES BARRES DE NAVIGATION LATÉRALES --- */
         .nav-bar {
-            width: 45px; 
-            background: rgba(0, 0, 0, 0.6); /* Fond sombre pour qu'elles se voient bien sur la vidéo claire */
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            width: 45px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             user-select: none; 
         }
-
-        .nav-bar:hover {
-            background: rgba(0, 229, 255, 0.25);
-            border-color: #00e5ff;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
-        }
-
+        .nav-bar:hover { background: rgba(0, 229, 255, 0.25); border-color: #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); }
         .nav-bar:active { transform: scale(0.95); }
-
-        .nav-icon {
-            color: #fff; font-size: 1.5rem; font-weight: bold;
-            text-shadow: 0 0 10px #00e5ff; transition: transform 0.3s ease;
-        }
-
+        .nav-icon { color: #fff; font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px #00e5ff; transition: transform 0.3s ease; }
         .prev-bar:hover .nav-icon { transform: translateX(-3px); }
         .next-bar:hover .nav-icon { transform: translateX(3px); }
 
-        .grid-container {
-            flex-grow: 1;
-            width: 100%; 
-        }
+        .grid-container { flex-grow: 1; width: 100%; }
 
         /* --- GRILLE 3x2 --- */
-        .game-grid {
-            display: grid !important;
-            grid-template-columns: repeat(3, 1fr) !important;
-            gap: 20px !important; 
-            width: 100%;
-        }
+        .game-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; width: 100%; }
 
         /* --- STYLE DES CARTES --- */
         .game-card {
-            position: relative; overflow: hidden;
-            aspect-ratio: 16 / 9;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; background: rgba(0, 0, 0, 0.6); /* Fond assombri pour faire ressortir les jeux sur la vidéo brillante */
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5); transition: transform 0.3s ease;
+            position: relative; overflow: hidden; aspect-ratio: 16 / 9;
+            display: flex; align-items: center; justify-content: center; border-radius: 12px; 
+            background: rgba(0, 0, 0, 0.6); box-shadow: 0 8px 20px rgba(0,0,0,0.5); transition: transform 0.3s ease;
         }
-        
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .game-card:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(0, 229, 255, 0.5); border: 1px solid rgba(0, 229, 255, 0.6); z-index: 10; }
 
-        .game-card:hover {
-            transform: scale(1.05); 
-            box-shadow: 0 10px 30px rgba(0, 229, 255, 0.5);
-            border: 1px solid rgba(0, 229, 255, 0.6);
-            z-index: 10; 
-        }
-
-        .game-icon {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center; font-size: 4rem;
-            z-index: 2; transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-
+        .game-icon { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 4rem; z-index: 2; transition: opacity 0.4s ease, transform 0.4s ease; }
         .game-logo { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
         .bg-video { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
         .game-card:hover .game-icon { opacity: 0; transform: scale(1.1); }
-
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
     
+    <!-- LECTEUR YOUTUBE INVISIBLE POUR LA MUSIQUE -->
+    <div id="youtube-audio" style="display:none;"></div>
+
     <!-- VIDEO DE FOND BRUTE -->
     <video autoplay loop muted playsinline class="hub-bg-video">
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
+
+    <!-- BOUTON PARAMETRES -->
+    <div class="settings-btn" onclick="toggleSettings()">⚙️</div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2>Paramètres</h2>
+            
+            <div class="setting-item">
+                <span>Mode Lumineux ☀️</span>
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <span>Plein Écran 🖥️</span>
+                <label class="switch">
+                    <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <span>Musique (ON/OFF) 🎵</span>
+                <label class="switch">
+                    <input type="checkbox" id="music-toggle" onchange="toggleMusic()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
 
     <!-- LOGO DU HUB -->
     <img src="img/HUB.png" alt="Logo Arcade Network" class="hub-logo">
@@ -172,17 +231,13 @@
     <!-- WRAPPER CAROUSEL AVEC BARRES LATÉRALES -->
     <div class="carousel-wrapper">
         
-        <!-- Barre Latérale Précédent -->
         <div id="prev-bar" class="nav-bar prev-bar" onclick="prevPage()">
             <span class="nav-icon">❮</span>
         </div>
 
-        <!-- Conteneur des Grilles -->
         <div class="grid-container">
 
-            <!-- ========================================== -->
-            <!-- SECTION JEUX SOLO                          -->
-            <!-- ========================================== -->
+            <!-- SECTION JEUX SOLO -->
             <div id="grid-solo" class="game-grid">
                 <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
@@ -234,9 +289,7 @@
                 </a>
             </div> 
 
-            <!-- ========================================== -->
-            <!-- SECTION JEUX MULTIJOUEURS                  -->
-            <!-- ========================================== -->
+            <!-- SECTION JEUX MULTIJOUEURS -->
             <div id="grid-multi" class="game-grid hidden">
                 <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
@@ -282,14 +335,66 @@
 
         </div> <!-- Fin de la grid-container -->
         
-        <!-- Barre Latérale Suivant -->
         <div id="next-bar" class="nav-bar next-bar" onclick="nextPage()">
             <span class="nav-icon">❯</span>
         </div>
 
     </div> <!-- Fin du Wrapper Carousel -->
 
+    <!-- IMPORT DE L'API YOUTUBE -->
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
+        // --- 1. GESTION DES PARAMETRES (SETTINGS) ---
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('show');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+        
+        // Synchroniser le bouton si on quitte le plein écran avec Echap
+        document.addEventListener('fullscreenchange', () => {
+            document.getElementById('fs-toggle').checked = !!document.fullscreenElement;
+        });
+
+        // --- 2. GESTION DE LA MUSIQUE DE FOND (YOUTUBE API) ---
+        let ytPlayer;
+        function onYouTubeIframeAPIReady() {
+            ytPlayer = new YT.Player('youtube-audio', {
+                height: '0',
+                width: '0',
+                videoId: '4RaguYU_SQI', // ID de la vidéo demandée
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0,
+                    'showinfo': 0,
+                    'autohide': 1,
+                    'loop': 1,
+                    'playlist': '4RaguYU_SQI' // Nécessaire pour la boucle
+                }
+            });
+        }
+
+        function toggleMusic() {
+            const isChecked = document.getElementById('music-toggle').checked;
+            if (isChecked && ytPlayer && ytPlayer.playVideo) {
+                ytPlayer.playVideo();
+            } else if (!isChecked && ytPlayer && ytPlayer.pauseVideo) {
+                ytPlayer.pauseVideo();
+            }
+        }
+
+        // --- 3. GESTION DU CAROUSEL (NETFLIX STYLE) ---
         const ITEMS_PER_PAGE = 6;
         let activeCategory = 'solo';
         let currentPage = { solo: 0, multi: 0 };
@@ -387,6 +492,7 @@
             updatePagination();
         });
 
+        // --- 4. GESTION DES VIDEOS AU SURVOL ---
         function playVid(card) {
             let vid = card.querySelector('.bg-video');
             if(vid) vid.play();
