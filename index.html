@@ -30,41 +30,36 @@
             box-sizing: border-box;
         }
 
-        /* La vidéo pure SANS AUCUN FILTRE PAR DESSUS par défaut */
+        /* La vidéo pure SANS AUCUN FILTRE PAR DESSUS par défaut (Mode Normal) */
         .hub-bg-video {
             position: absolute; 
             top: 0; left: 0; width: 100vw; height: 100vh; 
             object-fit: cover; z-index: -2; pointer-events: none; 
         }
 
-        /* --- MODE LUMINEUX (S'active via les paramètres) --- */
-        /* Ajoute un voile blanc lumineux par-dessus la vidéo de fond */
-        body.light-mode::before {
+        /* --- MODE SOMBRE (S'active via les paramètres) --- */
+        /* Remet le fameux filtre noir par-dessus la vidéo */
+        body.dark-mode::before {
             content: ""; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(255, 255, 255, 0.75);
+            background: radial-gradient(circle at 50% 0%, rgba(31, 40, 51, 0.5) 0%, rgba(11, 12, 16, 0.85) 80%);
             z-index: -1; pointer-events: none;
         }
-        body.light-mode .game-card {
-            background: rgba(255, 255, 255, 0.85);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
-        body.light-mode .nav-bar {
-            background: rgba(255, 255, 255, 0.9);
-            border-color: #00e5ff;
-        }
-        body.light-mode .nav-icon {
-            color: #333; text-shadow: none;
+        
+        /* Assombrit très légèrement les cartes en mode sombre pour l'harmonie */
+        body.dark-mode .game-card {
+            background: rgba(0, 0, 0, 0.8);
         }
 
-        /* --- BOUTON PARAMÈTRES (En haut à droite) --- */
+        /* --- BOUTON PARAMÈTRES AVEC TON IMAGE --- */
         .settings-btn {
             position: absolute;
             top: 20px; right: 25px;
-            font-size: 2.2rem;
+            width: 45px; /* Taille de ton icône setting.png */
+            height: auto;
             cursor: pointer;
             z-index: 100;
             transition: transform 0.4s ease;
-            text-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
         }
         .settings-btn:hover { transform: rotate(90deg) scale(1.15); }
 
@@ -86,13 +81,8 @@
             min-width: 320px; font-family: sans-serif;
             transition: all 0.3s ease;
         }
-        body.light-mode .settings-content {
-            background: rgba(240, 245, 255, 0.95);
-            color: #222; border-color: #0077ff; box-shadow: 0 0 30px rgba(0,119,255,0.4);
-        }
         
         .settings-content h2 { margin-top: 0; color: #00e5ff; text-transform: uppercase; letter-spacing: 2px; }
-        body.light-mode .settings-content h2 { color: #0077ff; }
 
         .setting-item {
             display: flex; justify-content: space-between; align-items: center;
@@ -121,7 +111,7 @@
             filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.8)); 
         }
 
-        /* --- BOUTONS IMAGES ONGLETS (+10%) --- */
+        /* --- BOUTONS IMAGES ONGLETS --- */
         .toggle-container {
             display: flex; justify-content: center; gap: 40px; margin: 2vh 0 3vh 0; align-items: center;
         }
@@ -183,8 +173,8 @@
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
 
-    <!-- BOUTON PARAMETRES -->
-    <div class="settings-btn" onclick="toggleSettings()">⚙️</div>
+    <!-- BOUTON PARAMETRES (AVEC TON IMAGE setting.png) -->
+    <img src="img/setting.png" alt="Paramètres" class="settings-btn" onclick="toggleSettings()">
 
     <!-- MODAL PARAMETRES -->
     <div id="settings-modal">
@@ -192,7 +182,7 @@
             <h2>Paramètres</h2>
             
             <div class="setting-item">
-                <span>Mode Lumineux ☀️</span>
+                <span>Mode Sombre 🌙</span>
                 <label class="switch">
                     <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
                     <span class="slider"></span>
@@ -351,7 +341,8 @@
         }
 
         function toggleTheme() {
-            document.body.classList.toggle('light-mode');
+            // Bascule la classe dark-mode sur le body (qui rajoute le filtre noir)
+            document.body.classList.toggle('dark-mode');
         }
 
         function toggleFullscreen() {
@@ -373,14 +364,14 @@
             ytPlayer = new YT.Player('youtube-audio', {
                 height: '0',
                 width: '0',
-                videoId: '4RaguYU_SQI', // ID de la vidéo demandée
+                videoId: '4RaguYU_SQI',
                 playerVars: {
                     'autoplay': 0,
                     'controls': 0,
                     'showinfo': 0,
                     'autohide': 1,
                     'loop': 1,
-                    'playlist': '4RaguYU_SQI' // Nécessaire pour la boucle
+                    'playlist': '4RaguYU_SQI'
                 }
             });
         }
