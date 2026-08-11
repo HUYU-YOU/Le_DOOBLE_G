@@ -35,30 +35,26 @@
             object-fit: cover; z-index: -2; pointer-events: none; 
         }
 
-        body::before {
-            content: ""; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at 50% 0%, rgba(31, 40, 51, 0.5) 0%, rgba(11, 12, 16, 0.85) 80%);
-            z-index: -1; pointer-events: none;
-        }
+        /* LE FILTRE NOIR A ÉTÉ COMPLÈTEMENT SUPPRIMÉ ICI */
 
-        /* --- LOGO DU HUB (+20% de taille) --- */
+        /* --- LOGO DU HUB --- */
         .hub-logo {
             max-width: 90%; 
-            width: 505px; /* AGRANDI : était 420px */
-            max-height: 32vh; /* AGRANDI : permet au logo de prendre plus de place en hauteur */
+            width: 505px; 
+            max-height: 32vh; 
             object-fit: contain;
             margin: 0; 
-            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); 
+            filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.8)); /* J'ai légèrement forcé l'ombre cyan pour compenser le retrait du filtre noir */
         }
 
-        /* --- BOUTONS IMAGES ONGLETS (+20% de taille) --- */
+        /* --- BOUTONS IMAGES ONGLETS --- */
         .toggle-container {
-            display: flex; justify-content: center; gap: 35px; /* Écart légèrement augmenté */
+            display: flex; justify-content: center; gap: 35px; 
             margin: 2vh 0 3vh 0; 
             align-items: center;
         }
         .toggle-img-btn {
-            width: 205px; /* AGRANDI : était 170px */
+            width: 205px; 
             height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
@@ -72,16 +68,16 @@
             justify-content: center;
             gap: 15px;
             width: 100%;
-            max-width: 1050px; 
+            max-width: 945px;
             padding: 0 15px;
             box-sizing: border-box;
         }
 
         /* --- LES BARRES DE NAVIGATION LATÉRALES --- */
         .nav-bar {
-            width: 45px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(0, 229, 255, 0.2);
+            width: 40px; 
+            background: rgba(0, 0, 0, 0.6); /* J'ai mis un peu plus d'opacité ici pour qu'elles se voient bien sur la vidéo claire */
+            border: 1px solid rgba(0, 229, 255, 0.3);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -93,9 +89,9 @@
         }
 
         .nav-bar:hover {
-            background: rgba(0, 229, 255, 0.15);
+            background: rgba(0, 229, 255, 0.25);
             border-color: #00e5ff;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
         }
 
         .nav-bar:active { transform: scale(0.95); }
@@ -117,7 +113,7 @@
         .game-grid {
             display: grid !important;
             grid-template-columns: repeat(3, 1fr) !important;
-            gap: 20px !important;
+            gap: 18px !important; 
             width: 100%;
         }
 
@@ -126,7 +122,7 @@
             position: relative; overflow: hidden;
             aspect-ratio: 16 / 9;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px; background: rgba(0, 0, 0, 0.6); /* Fond très légèrement plus sombre pour bien détacher l'image de la vidéo de fond */
             box-shadow: 0 8px 20px rgba(0,0,0,0.5); transition: transform 0.3s ease;
         }
         
@@ -138,8 +134,8 @@
 
         .game-card:hover {
             transform: scale(1.05); 
-            box-shadow: 0 10px 30px rgba(0, 229, 255, 0.3);
-            border: 1px solid rgba(0, 229, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 229, 255, 0.5);
+            border: 1px solid rgba(0, 229, 255, 0.6);
             z-index: 10; 
         }
 
@@ -158,7 +154,7 @@
 </head>
 <body>
     
-    <!-- VIDEO DE FOND -->
+    <!-- VIDEO DE FOND BRUTE (sans filtre) -->
     <video autoplay loop muted playsinline class="hub-bg-video">
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
