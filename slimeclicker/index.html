@@ -311,17 +311,17 @@
 
         const upgradesDef = [
             { id: 'u1', name: "Doigt qui pue", desc: "Clic x2", cost: 500, target: 'b1', mult: 2, icon: "🦾" },
-            { id: 'u2', name: "Un tarpe de norvegienne bien gechar", desc: "Nathan x2", cost: 1000, target: 'b2', mult: 2, icon: "🥫" },
-            { id: 'u3', name: "Les yeux rouges de la mort tu coco", desc: "Dylan x2", cost: 10000, target: 'b3', mult: 2, icon: "📘" },
+            { id: 'u2', name: "Tarpe chargé", desc: "Nathan x2", cost: 1000, target: 'b2', mult: 2, icon: "🥫" },
+            { id: 'u3', name: "Yeux rouges", desc: "Dylan x2", cost: 10000, target: 'b3', mult: 2, icon: "📘" },
             { id: 'u4', name: "Le clic esclave", desc: "Clic x2", cost: 50000, target: 'b1', mult: 2, icon: "⚙️" },
-            { id: 'u5', name: "Puanteur medieval", desc: "Lucas x2", cost: 100000, target: 'b4', mult: 2, icon: "🤠" },
-            { id: 'u6', name: "Stickos magic Magique", desc: "Antoine x2", cost: 1000000, target: 'b5', mult: 2, icon: "🪄" },
+            { id: 'u5', name: "Puanteur médiéval", desc: "Lucas x2", cost: 100000, target: 'b4', mult: 2, icon: "🤠" },
+            { id: 'u6', name: "Stickos Magique", desc: "Antoine x2", cost: 1000000, target: 'b5', mult: 2, icon: "🪄" },
             { id: 'u7', name: "Clic Quantique", desc: "Clic x2", cost: 5000000, target: 'b1', mult: 2, icon: "🌌" },
-            { id: 'u8', name: "Mode GMK active", desc: "Romain x2", cost: 20000000, target: 'b6', mult: 2, icon: "🦸‍♂️" },
+            { id: 'u8', name: "Mode GMK", desc: "Romain x2", cost: 20000000, target: 'b6', mult: 2, icon: "🦸‍♂️" },
             { id: 'u9', name: "Trône Doré", desc: "Emre x2", cost: 1000000000, target: 'b7', mult: 2, icon: "🪑" },
             { id: 'u10', name: "Godé du cul", desc: "MARC x2", cost: 10000000000, target: 'b8', mult: 2, icon: "🔱" },
-            { id: 'u11', name: "Mouchoirs bien rempli dans la bellepou", desc: "Norvégienne x2", cost: 500000000000, target: 'b9', mult: 2, icon: "✈️" },
-            { id: 'u12', name: "Triple filtre tu connais", desc: "Peufra x2", cost: 5000000000000, target: 'b10', mult: 2, icon: "🏋️" },
+            { id: 'u11', name: "Mouchoirs Bellepou", desc: "Norvégienne x2", cost: 500000000000, target: 'b9', mult: 2, icon: "✈️" },
+            { id: 'u12', name: "Triple filtre", desc: "Peufra x2", cost: 5000000000000, target: 'b10', mult: 2, icon: "🏋️" },
             { id: 'u13', name: "Vla les tals--!", desc: "Floppeur x2", cost: 50000000000000, target: 'b11', mult: 2, icon: "📦" }
         ];
 
@@ -332,7 +332,7 @@
             { id: 'a4', name: "Armée de Nathans", desc: "Acheter 50 Nathans", icon: "👦", req: () => buildings.find(b=>b.id==='b2').count >= 50 },
             { id: 'a5', name: "Syndicat", desc: "Acheter 100 bâtiments", icon: "🏗️", req: () => buildings.reduce((sum, b) => sum + b.count, 0) >= 100 },
             { id: 'a6', name: "Scientifique Fou", desc: "Acheter 5 améliorations", icon: "🧪", req: () => game.upgradesBought.length >= 5 },
-            { id: 'a7', name: "Coup de Chance", desc: "Cliquer sur un Slime Doré", icon: "🌟", req: () => false }, // Géré manuellement
+            { id: 'a7', name: "Coup de Chance", desc: "Cliquer sur un Slime Doré", icon: "🌟", req: () => false },
             { id: 'a8', name: "L'Éveil", desc: "Faire une Ascension", icon: "🌌", req: () => game.cristaux > 0 }
         ];
 
@@ -343,6 +343,29 @@
             "Science : Les Slimes produiraient une énergie infinie.",
             "Scandale : Lucas aurait encore floppé lors d'un tournoi."
         ];
+
+        // --- LE NOUVEAU FORMATEUR DE NOMBRES INTELLIGENT (M, B, T...) ---
+        function formatNum(num) {
+            if (num < 1000000) return Math.floor(num).toLocaleString('fr-FR');
+            
+            const suffixes = ["", "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+            const tier = Math.floor(Math.log10(num) / 3);
+            
+            // Si on dépasse les décillions, on passe en notation scientifique
+            if (tier >= suffixes.length) return num.toExponential(2).replace('.', ',');
+            
+            const scale = Math.pow(10, tier * 3);
+            const scaled = num / scale;
+            
+            // Affiche 2 décimales avec la virgule française (ex: 1,50 M)
+            return scaled.toFixed(2).replace('.', ',') + " " + suffixes[tier];
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
 
         function loadGame() {
             const savedGame = localStorage.getItem('slimeClickerSave');
@@ -414,8 +437,6 @@
             for(let i=0; i<amount; i++) cost += Math.floor(building.baseCost * Math.pow(1.15, building.count + i));
             return cost;
         }
-        function formatNum(num) { return Math.floor(num).toLocaleString('fr-FR'); }
-        function formatTime(seconds) { const m = Math.floor(seconds / 60).toString().padStart(2, '0'); const s = Math.floor(seconds % 60).toString().padStart(2, '0'); return `${m}:${s}`; }
 
         // ==========================================
         // 🌌 PRESTIGE
@@ -451,7 +472,7 @@
             const gs = document.getElementById('golden-slime'); gs.style.display = 'none'; clearTimeout(goldenTimeout);
             goldenMultiplier = 2; goldenTimerRemaining = 180; document.getElementById('golden-buff-ui').style.display = 'block'; updateUI();
             spawnFloatingText(e.clientX, e.clientY, "PRODUCTION X2 !!", "var(--neon-gold)");
-            unlockAchievement('a7'); // Succès Coup de Chance
+            unlockAchievement('a7');
             scheduleGoldenSlime();
         }
         scheduleGoldenSlime();
