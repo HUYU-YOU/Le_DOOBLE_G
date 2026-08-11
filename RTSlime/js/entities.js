@@ -4,6 +4,60 @@
 
 let entityIdCounter = 1;
 
+// --- ELEMENTS DE DECORATION (Purement visuel) ---
+class Decoration {
+    constructor(x, y) {
+        this.x = x; this.y = y;
+        let rand = Math.random();
+        this.type = rand > 0.7 ? 'rock' : (rand > 0.4 ? 'flower' : 'grass');
+        this.size = Math.random() * 4 + 2;
+        this.angle = Math.random() * Math.PI * 2;
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.globalAlpha = 0.4;
+        if (this.type === 'grass') {
+            ctx.fillStyle = 'var(--neon-green)';
+            ctx.beginPath(); ctx.moveTo(0, -this.size*1.5); ctx.lineTo(this.size, this.size); ctx.lineTo(-this.size, this.size); ctx.fill();
+        } else if (this.type === 'flower') {
+            ctx.fillStyle = 'var(--neon-pink)';
+            ctx.beginPath(); ctx.arc(0, 0, this.size/1.5, 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.fillStyle = '#444';
+            ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI); ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+// --- RIVIERE CURATIVE ---
+class River {
+    constructor(x, y, variant) {
+        this.id = entityIdCounter++;
+        this.x = x; this.y = y;
+        this.type = 'river';
+        this.variant = variant; // 1, 2 ou 3
+        this.radius = 45; // Assez large pour que les unités se baignent
+    }
+    draw(ctx, images) {
+        let img = images['river' + this.variant];
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, this.x - this.radius, this.y - this.radius, this.radius*2, this.radius*2);
+        } else {
+            // Rendu de secours holographique liquide
+            ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-water)';
+            ctx.fillStyle = 'rgba(51, 136, 255, 0.3)';
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius - 5, 0, Math.PI*2); ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+    }
+}
+
 class Base {
     constructor(x, y, owner) {
         this.id = entityIdCounter++; this.owner = owner;
@@ -30,7 +84,6 @@ class Base {
         ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
         ctx.fillText(this.owner === 'host' ? 'P1' : 'P2', this.x, this.y - this.size/2 - 15);
 
-        // Bouclier visuel pendant les 60 premières secondes
         if (typeof survivalTimer !== 'undefined' && survivalTimer < 60) {
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2 + 20, 0, Math.PI*2); ctx.stroke();
         }
@@ -68,7 +121,6 @@ class Building {
                 let closestEnemy = getClosest(this, targets);
                 if (closestEnemy && dist(this, closestEnemy) <= 400) {
                     if (typeof survivalTimer !== 'undefined' && survivalTimer < 60 && closestEnemy.owner !== 'virus') {
-                        // Bouclier 60s
                     } else {
                         closestEnemy.hp -= 40;
                         spawnLaser(this, closestEnemy, this.color);
@@ -138,10 +190,7 @@ class ResourceNode {
             if(this.type === 'tree') {
                 for (let i = 0; i < 6; i++) ctx.lineTo(this.x + this.radius * Math.cos(i * Math.PI / 3), this.y + this.radius * Math.sin(i * Math.PI / 3));
             } else { ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); }
-            ctx.closePath(); 
-            ctx.fillStyle = this.color; ctx.fill(); 
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); 
-            ctx.shadowBlur = 0;
+            ctx.closePath(); ctx.fillStyle = this.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.shadowBlur = 0;
         }
     }
 }
@@ -194,7 +243,7 @@ class Unit {
                 this.state = 'moving';
             }
         } else {
-            if (entity.owner !== this.owner && entity.hp > 0 && entity.type !== 'wheat' && entity.type !== 'tree') {
+            if (entity.owner !== this.owner && entity.hp > 0 && !['wheat', 'tree', 'river'].includes(entity.type)) {
                 this.state = 'attacking';
             } else {
                 this.state = 'moving';
@@ -207,6 +256,12 @@ class Unit {
         if (this.slowTimer > 0) this.slowTimer -= dt;
 
         let currentSpeed = this.slowTimer > 0 ? this.speed * 0.5 : this.speed;
+
+        // HEALING MECHANIC (Seulement calculé par le Host)
+        let nearRiver = rivers.find(r => dist(this, r) < this.radius + r.radius);
+        if (nearRiver && this.hp < this.maxHp) {
+            this.hp = Math.min(this.maxHp, this.hp + 20 * dt); // Soin de 20 HP / sec
+        }
 
         units.forEach(other => {
             if(other.id !== this.id && other.state !== 'farming' && this.state !== 'farming') {
@@ -225,6 +280,7 @@ class Unit {
             targetEnt = units.find(u => u.id === this.targetEntityId) || buildings.find(b => b.id === this.targetEntityId) || baseHost.id === this.targetEntityId ? baseHost : (baseGuest.id === this.targetEntityId ? baseGuest : null);
             if(!targetEnt) targetEnt = trees.find(t=>t.id===this.targetEntityId) || wheats.find(w=>w.id===this.targetEntityId);
             if(!targetEnt) targetEnt = enemies.find(e=>e.id===this.targetEntityId);
+            if(!targetEnt) targetEnt = rivers.find(r=>r.id===this.targetEntityId);
         }
 
         if (this.type === 'farmer') {
@@ -275,7 +331,7 @@ class Unit {
             }
         } 
         else {
-            if (this.state === 'attacking' && targetEnt) {
+            if (this.state === 'attacking' && targetEnt && targetEnt.type !== 'river') {
                 if(targetEnt.hp <= 0) {
                     this.targetEntityId = null; this.state = 'idle';
                 } else if (dist(this, targetEnt) <= this.range) {
@@ -353,10 +409,20 @@ class Unit {
             ctx.strokeRect(this.x - this.drawSize/2 - 2, this.y - this.drawSize/2 - 2, this.drawSize + 4, this.drawSize + 4);
         }
 
+        // AURA ÉLÉMENTAIRE
         if (this.element !== 'normal') {
             ctx.shadowBlur = 15; ctx.shadowColor = this.elColor;
             ctx.strokeStyle = this.elColor; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.arc(this.x, this.y, this.drawSize/2 + 5, 0, Math.PI*2); ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // AURA DE SOIN (Si près d'une rivière et blessé)
+        let nearRiver = typeof rivers !== 'undefined' ? rivers.find(r => dist(this, r) < this.radius + r.radius) : null;
+        if (nearRiver && this.hp < this.maxHp) {
+            ctx.shadowBlur = 20; ctx.shadowColor = '#39ff14';
+            ctx.strokeStyle = '#39ff14'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.drawSize/2 + 8, 0, Math.PI*2); ctx.stroke();
             ctx.shadowBlur = 0;
         }
 
