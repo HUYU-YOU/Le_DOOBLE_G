@@ -29,16 +29,11 @@
             box-sizing: border-box;
         }
 
+        /* La vidéo pure sans filtre noir */
         .hub-bg-video {
             position: absolute; 
             top: 0; left: 0; width: 100vw; height: 100vh; 
             object-fit: cover; z-index: -2; pointer-events: none; 
-        }
-
-        body::before {
-            content: ""; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at 50% 0%, rgba(31, 40, 51, 0.5) 0%, rgba(11, 12, 16, 0.85) 80%);
-            z-index: -1; pointer-events: none;
         }
 
         /* --- LOGO DU HUB --- */
@@ -51,35 +46,35 @@
             filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); 
         }
 
-        /* --- BOUTONS IMAGES ONGLETS (+10% ICI) --- */
+        /* --- BOUTONS IMAGES ONGLETS (+10%) --- */
         .toggle-container {
             display: flex; justify-content: center; gap: 40px; 
             margin: 2vh 0 3vh 0; 
             align-items: center;
         }
         .toggle-img-btn {
-            width: 225px; /* AGRANDI (+10%) : était 205px */
+            width: 225px; 
             height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .toggle-img-btn:hover { opacity: 0.8; filter: grayscale(0%); transform: scale(1.05); }
         .toggle-img-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 15px var(--cyan, #00e5ff)); transform: scale(1.1); }
 
-        /* --- CONTENEUR GLOBAL CAROUSEL (+10% ICI) --- */
+        /* --- CONTENEUR GLOBAL CAROUSEL --- */
         .carousel-wrapper {
             display: flex;
             align-items: stretch;
             justify-content: center;
             gap: 15px;
             width: 100%;
-            max-width: 1040px; /* AGRANDI (+10%) : était 945px */
+            max-width: 1040px; 
             padding: 0 15px;
             box-sizing: border-box;
         }
 
         /* --- LES BARRES DE NAVIGATION LATÉRALES --- */
         .nav-bar {
-            width: 45px; /* Réajusté à la hausse */
+            width: 45px; 
             background: rgba(0, 0, 0, 0.6); 
             border: 1px solid rgba(0, 229, 255, 0.3);
             border-radius: 12px;
@@ -117,7 +112,7 @@
         .game-grid {
             display: grid !important;
             grid-template-columns: repeat(3, 1fr) !important;
-            gap: 20px !important; /* Espacement réajusté */
+            gap: 20px !important; 
             width: 100%;
         }
 
