@@ -28,50 +28,109 @@
 
         /* --- LOGO DU HUB --- */
         .hub-logo {
-            max-width: 90%; width: 600px; height: auto; margin-bottom: 0px; 
+            max-width: 90%; width: 500px; height: auto; margin-bottom: 0px; 
             filter: drop-shadow(0 0 20px rgba(102, 252, 241, 0.6)); display: block; margin: 0 auto;
         }
 
         /* --- BOUTONS IMAGES (ONGLETS) --- */
         .toggle-container {
-            display: flex; justify-content: center; gap: 40px; margin: 15px 0 40px 0; align-items: center;
+            display: flex; justify-content: center; gap: 40px; margin: 15px 0 30px 0; align-items: center;
         }
         .toggle-img-btn {
-            width: 220px; height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
+            width: 200px; height: auto; cursor: pointer; opacity: 0.4; filter: grayscale(80%); 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .toggle-img-btn:hover { opacity: 0.8; filter: grayscale(0%); transform: scale(1.05); }
-        .toggle-img-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 15px var(--cyan)); transform: scale(1.1); }
+        .toggle-img-btn.active { opacity: 1; filter: grayscale(0%) drop-shadow(0 0 15px var(--cyan, #00e5ff)); transform: scale(1.1); }
 
-        /* --- NOUVEAU STYLE DES CARTES FULL IMAGE --- */
+        /* --- NOUVEAU: CONTENEUR CAROUSEL (STYLE NETFLIX) --- */
+        .carousel-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 60px; /* Place pour les flèches */
+            box-sizing: border-box;
+        }
+
+        /* Flèches de navigation */
+        .nav-btn {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #00e5ff; /* Cyan néon par défaut */
+            color: white;
+            font-size: 2rem;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+        .nav-btn:hover {
+            background: #00e5ff;
+            color: black;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.8);
+        }
+        .prev-btn { left: 5px; }
+        .next-btn { right: 5px; }
+
+        /* --- NOUVEAU: GRILLE 3x2 --- */
+        .game-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            /* La hauteur s'adapte automatiquement grâce à l'aspect-ratio des cartes */
+            gap: 25px !important;
+            width: 100%;
+        }
+
+        /* --- STYLE DES CARTES --- */
         .game-card {
             position: relative;
             overflow: hidden;
-            /* Force les cartes à garder une belle forme rectangulaire (façon miniature YouTube) même sans texte */
-            aspect-ratio: 16 / 9; 
-            min-height: 140px;
+            aspect-ratio: 16 / 9; /* Format rectangulaire parfait */
             display: flex; align-items: center; justify-content: center;
             border-radius: 12px;
-            background: rgba(0, 0, 0, 0.4); /* Fond de secours */
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+        }
+        /* Animation d'apparition quand on change de page */
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .game-card:hover {
+            transform: scale(1.05); /* Léger pop de toute la carte */
+            box-shadow: 0 10px 30px rgba(0, 229, 255, 0.3);
+            border: 1px solid rgba(0, 229, 255, 0.5);
         }
 
         .game-icon {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 4rem; /* Taille pour les emojis restants */
-            z-index: 2; /* Assure que l'image est au-dessus de la vidéo à l'état de repos */
+            font-size: 4rem;
+            z-index: 2;
             transition: opacity 0.4s ease, transform 0.4s ease;
         }
 
         .game-logo {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Remplit TOUTE la carte sans la déformer */
+            object-fit: cover;
             border-radius: inherit;
         }
 
-        /* ANIMATION MAGIQUE AU SURVOL */
-        /* Quand la souris passe sur la carte, l'image disparaît en zoomant pour laisser la cinématique vidéo prendre le relais */
         .game-card:hover .game-icon {
             opacity: 0;
             transform: scale(1.1);
@@ -96,138 +155,215 @@
         <img src="img/multijoueur.png" id="btn-multi" class="toggle-img-btn" onclick="switchCategory('multi')" alt="Jeux Multi">
     </div>
 
-    <!-- ========================================== -->
-    <!-- SECTION JEUX SOLO                          -->
-    <!-- ========================================== -->
-    <div id="grid-solo" class="game-grid">
-
-        <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logoroller.png" class="game-logo" alt="Slime Dash"></div>
-        </a>  
+    <!-- WRAPPER CAROUSEL (Contient les flèches et les grilles) -->
+    <div class="carousel-wrapper">
         
-        <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
-        </a>
+        <!-- Flèche Précédent -->
+        <button id="prev-btn" class="nav-btn prev-btn" onclick="prevPage()">&#10094;</button>
+
+        <!-- ========================================== -->
+        <!-- SECTION JEUX SOLO                          -->
+        <!-- ========================================== -->
+        <div id="grid-solo" class="game-grid">
+
+            <a href="slimedash/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logoroller.png" class="game-logo" alt="Slime Dash"></div>
+            </a>  
+            
+            <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
+            </a>
+            
+            <a href="2048slime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="2048slime/img/cinematic_fusion_slime.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logofuslime.png" class="game-logo" alt="Fusion Slime"></div>
+            </a>
+            
+            <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logoartillerie.png" class="game-logo" alt="Slime Artillery"></div>
+            </a>
+
+            <a href="slimeclicker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="slimeclicker/img/cinematic_clicker.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logoclic.png" class="game-logo" alt="Slime Clicker"></div>
+            </a>
+
+            <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logotank.png" class="game-logo" alt="Cyber Tanks"></div>
+            </a>
+
+            <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/guesswarofslime.png" class="game-logo" alt="War of slime"></div>
+            </a>
+            
+            <a href="guessit/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="guessit/img/cinematic_guessit.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logoguess.png" class="game-logo" alt="Guess it Manga"></div>
+            </a>
+
+            <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logoblind.jpg" class="game-logo" alt="Blind Test"></div>
+            </a>
+                    
+            <a href="tower_defense/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="tower_defense/img/cinematic_towerdef.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logotower.jpg" class="game-logo" alt="Tower Defense"></div>
+            </a>
+
+            <a href="https://huyu-you.github.io/Go-FAST/" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="img/gofast_cinematic.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon">🏎️</div>
+            </a>
         
-        <a href="2048slime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="2048slime/img/cinematic_fusion_slime.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logofuslime.png" class="game-logo" alt="Fusion Slime"></div>
-        </a>
+            <a href="https://huyu-you.github.io/The-Prisonner/" style="border-color: #FF0000;" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="img/prisoner_cinematic.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon">⛓️</div>
+            </a>
+        </div> 
+
+        <!-- ========================================== -->
+        <!-- SECTION JEUX MULTIJOUEURS                  -->
+        <!-- ========================================== -->
+        <div id="grid-multi" class="game-grid hidden">
+            
+            <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
+            </a>
+
+            <a href="RTSlime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logoRTS.jpg" class="game-logo" alt="Slimilization"></div>
+            </a>
+
+            <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logoartillerie.png" class="game-logo" alt="Slime Artillery"></div>
+            </a>
+            
+            <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logotank.png" class="game-logo" alt="Cyber Tanks"></div>
+            </a>
+
+            <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/guesswarofslime.png" class="game-logo" alt="War of slime"></div>
+            </a>
+
+            <a href="undercover/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="undercover/img/cinematic_undercover.mp4" loop loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logospy.jpg" class="game-logo" alt="Cyber-Spy"></div>
+            </a>
+
+            <a href="slime_garou/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="slime_garou/img/cinematic_garou.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logogarou.jpg" class="game-logo" alt="Slime Garou"></div>
+            </a>
+
+             <a href="drawer/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="drawer/img/cinematic_drawer.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logodrawer.jpg" class="game-logo" alt="The Drawer"></div>
+            </a>
+
+            <a href="poker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon">🃏</div>
+            </a>
+
+            <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
+                <div class="game-icon"><img src="img/logoblind.jpg" class="game-logo" alt="Blind Test"></div>
+            </a>
+
+        </div> 
         
-        <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logoartillerie.png" class="game-logo" alt="Slime Artillery"></div>
-        </a>
+        <!-- Flèche Suivant -->
+        <button id="next-btn" class="nav-btn next-btn" onclick="nextPage()">&#10095;</button>
 
-        <a href="slimeclicker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="slimeclicker/img/cinematic_clicker.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logoclic.png" class="game-logo" alt="Slime Clicker"></div>
-        </a>
-
-        <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logotank.png" class="game-logo" alt="Cyber Tanks"></div>
-        </a>
-
-        <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/guesswarofslime.png" class="game-logo" alt="War of slime"></div>
-        </a>
-        
-        <a href="guessit/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="guessit/img/cinematic_guessit.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logoguess.png" class="game-logo" alt="Guess it Manga"></div>
-        </a>
-
-        <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logoblind.jpg" class="game-logo" alt="Blind Test"></div>
-        </a>
-                
-        <!-- TOWER DEFENSE AVEC NOUVEAU LOGO -->
-        <a href="tower_defense/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="tower_defense/img/cinematic_towerdef.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logotower.jpg" class="game-logo" alt="Tower Defense"></div>
-        </a>
-
-        <a href="https://huyu-you.github.io/Go-FAST/" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="img/gofast_cinematic.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🏎️</div>
-        </a>
-    
-        <a href="https://huyu-you.github.io/The-Prisonner/" style="border-color: #FF0000;" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="img/prisoner_cinematic.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">⛓️</div>
-        </a>
-    </div> 
-
-    <!-- ========================================== -->
-    <!-- SECTION JEUX MULTIJOUEURS                  -->
-    <!-- ========================================== -->
-    <div id="grid-multi" class="game-grid hidden">
-        
-        <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
-        </a>
-
-        <!-- SLIMILIZATION (RTS) AVEC NOUVEAU LOGO -->
-        <a href="RTSlime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logoRTS.jpg" class="game-logo" alt="Slimilization"></div>
-        </a>
-
-        <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logoartillerie.png" class="game-logo" alt="Slime Artillery"></div>
-        </a>
-        
-        <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logotank.png" class="game-logo" alt="Cyber Tanks"></div>
-        </a>
-
-        <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/guesswarofslime.png" class="game-logo" alt="War of slime"></div>
-        </a>
-
-        <a href="undercover/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="undercover/img/cinematic_undercover.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logospy.jpg" class="game-logo" alt="Cyber-Spy"></div>
-        </a>
-
-        <!-- SLIME GAROU AVEC NOUVEAU LOGO -->
-        <a href="slime_garou/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="slime_garou/img/cinematic_garou.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logogarou.jpg" class="game-logo" alt="Slime Garou"></div>
-        </a>
-
-         <a href="drawer/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="drawer/img/cinematic_drawer.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logodrawer.jpg" class="game-logo" alt="The Drawer"></div>
-        </a>
-
-        <a href="blindtest/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="blindtest/img/cinematic_blindtest.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon"><img src="img/logoblind.jpg" class="game-logo" alt="Blind Test"></div>
-        </a>
-        
-        <a href="poker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-            <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
-            <div class="game-icon">🃏</div>
-        </a>
-
-    </div> 
+    </div> <!-- Fin du Wrapper Carousel -->
 
     <script>
+        // --- VARIABLES DE PAGINATION ---
+        const ITEMS_PER_PAGE = 6;
+        let activeCategory = 'solo';
+        let currentPage = { solo: 0, multi: 0 };
+
+        // --- GESTION DE LA PAGINATION ---
+        function updatePagination() {
+            const grid = document.getElementById(`grid-${activeCategory}`);
+            const cards = grid.querySelectorAll('.game-card');
+            const totalPages = Math.ceil(cards.length / ITEMS_PER_PAGE);
+
+            // Parcourt toutes les cartes de la catégorie active
+            cards.forEach((card, index) => {
+                const startIndex = currentPage[activeCategory] * ITEMS_PER_PAGE;
+                const endIndex = startIndex + ITEMS_PER_PAGE;
+
+                if (index >= startIndex && index < endIndex) {
+                    card.style.display = 'flex';
+                    // Relance l'animation d'apparition
+                    card.classList.remove('fade-in');
+                    void card.offsetWidth; // Trigger reflow
+                    card.classList.add('fade-in');
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Affiche ou cache les flèches
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+
+            if (currentPage[activeCategory] > 0) {
+                prevBtn.style.visibility = 'visible';
+                prevBtn.style.opacity = '1';
+            } else {
+                prevBtn.style.visibility = 'hidden';
+                prevBtn.style.opacity = '0';
+            }
+
+            if (currentPage[activeCategory] < totalPages - 1) {
+                nextBtn.style.visibility = 'visible';
+                nextBtn.style.opacity = '1';
+            } else {
+                nextBtn.style.visibility = 'hidden';
+                nextBtn.style.opacity = '0';
+            }
+        }
+
+        function nextPage() {
+            const grid = document.getElementById(`grid-${activeCategory}`);
+            const cards = grid.querySelectorAll('.game-card');
+            const totalPages = Math.ceil(cards.length / ITEMS_PER_PAGE);
+
+            if (currentPage[activeCategory] < totalPages - 1) {
+                currentPage[activeCategory]++;
+                updatePagination();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage[activeCategory] > 0) {
+                currentPage[activeCategory]--;
+                updatePagination();
+            }
+        }
+
+        // --- GESTION DES ONGLETS IMAGES SOLO / MULTI ---
         function switchCategory(category) {
             const gridSolo = document.getElementById('grid-solo');
             const gridMulti = document.getElementById('grid-multi');
             const btnSolo = document.getElementById('btn-solo');
             const btnMulti = document.getElementById('btn-multi');
+
+            activeCategory = category;
 
             if (category === 'solo') {
                 gridSolo.classList.remove('hidden');
@@ -240,14 +376,21 @@
                 btnMulti.classList.add('active');
                 btnSolo.classList.remove('active');
             }
+            
+            // Met à jour la page dès qu'on change d'onglet
+            updatePagination();
         }
 
+        // --- INIT & GESTION DES VIDEOS DE HOVER ---
         document.addEventListener("DOMContentLoaded", () => {
             const dashVideo = document.getElementById("dash-video");
             if (dashVideo) {
                 const randomNum = Math.floor(Math.random() * 2) + 1;
                 dashVideo.src = `slimedash/img/cinematic_dash${randomNum}.mp4`;
             }
+            
+            // Initialise la pagination au démarrage
+            updatePagination();
         });
 
         function playVid(card) {
