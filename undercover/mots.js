@@ -9,50 +9,103 @@
 // Chaque ligne est une paire : [ "Mot Civil", "Mot Undercover" ]
 const wordPairs = [
     // --- LES DEMANDES DU BOSS ---
-    ["Picasso (Peintre)", "Matisse (Peintre)"],
-    ["Nikola Tesla (Inventeur)", "Elon Musk (Milliardaire)"],
-    ["Freezer (Manga)", "Frigo (Électroménager)"], // Le piège parfait !
-    ["Naruto (Héros)", "Feunard (Pokémon)"], // Renard à 9 queues !
+    ["Picasso", "Matisse"],
+    ["Nikola Tesla", "Elon Musk"],
+    ["Freezer", "Frigo"], // Le piège parfait !
+    ["Naruto", "Feunard"], // Renard à 9 queues !
 
     // --- MANGAS & ANIMÉS ---
-    ["Goku (Saiyan)", "Superman (Héros)"], // Extraterrestres surpuissants
-    ["Kira (Death Note)", "L (Enquêteur)"],
-    ["Luffy (Pirate)", "Jack Sparrow (Pirate)"],
-    ["Titans (SNK)", "Géants (Créatures)"],
-    ["Saitama (One Punch Man)", "Krilin (Chauve)"],
-    ["Tortue Géniale (DBZ)", "Jiraiya (Naruto)"], // Les vieux maîtres pervers
-    ["Eren Jäger (SNK)", "Godzilla (Monstre)"],
-    ["Pikachu (Pokémon)", "Évoli (Pokémon)"],
+    ["Goku", "Superman"],
+    ["Kira", "L"],
+    ["Luffy", "Jack Sparrow"],
+    ["Titans", "Géants"],
+    ["Saitama", "Krilin"],
+    ["Tortue Géniale", "Jiraiya"],
+    ["Eren Jäger", "Godzilla"],
+    ["Pikachu", "Évoli"],
+    ["Guts", "Jon Snow"],
 
     // --- POP CULTURE & FILMS ---
-    ["Dumbledore (Sorcier)", "Gandalf (Mage)"],
-    ["Batman (DC)", "Iron Man (Marvel)"], // Milliardaires sans pouvoirs
-    ["Néo (Matrix)", "John Wick (Film)"], // Keanu Reeves !
-    ["Dark Vador (Sith)", "Kylo Ren (Sith)"],
-    ["Mario (Nintendo)", "Luigi (Nintendo)"],
-    ["Gollum (Seigneur des anneaux)", "Dobby (Harry Potter)"],
-    ["Dracula (Vampire)", "Edward Cullen (Twilight)"],
-    ["Terminator (Robot)", "Cyborg (Robot)"],
+    ["Dumbledore", "Gandalf"],
+    ["Batman", "Iron Man"],
+    ["Néo", "John Wick"],
+    ["Dark Vador", "Kylo Ren"],
+    ["Mario", "Luigi"],
+    ["Gollum", "Dobby"],
+    ["Dracula", "Edward Cullen"],
+    ["Terminator", "Cyborg"],
+    ["Sauron", "Voldemort"],
+    ["Joker", "Bouffon Vert"],
+    ["Sonic", "Flash"],
+    ["Poudlard", "Narnia"],
 
     // --- HISTOIRE & PERSONNALITÉS ---
-    ["Albert Einstein (Génie)", "Isaac Newton (Génie)"],
-    ["Léonard de Vinci (Peintre)", "Donatello (Tortue Ninja)"], // Piège sur le nom
-    ["Mozart (Compositeur)", "Beethoven (Compositeur)"],
-    ["Steve Jobs (Apple)", "Pomme (Fruit)"], // Petit piège vicieux
-    ["Zuckerberg (Facebook)", "Lézard (Animal)"], // La fameuse blague d'internet
+    ["Albert Einstein", "Isaac Newton"],
+    ["Léonard de Vinci", "Donatello"],
+    ["Mozart", "Beethoven"],
+    ["Steve Jobs", "Pomme"],
+    ["Zuckerberg", "Lézard"],
+    ["Napoléon", "Jules César"],
+    ["Cléopâtre", "Nefertiti"],
 
-    // --- JEUX VIDÉO & TECH ---
-    ["PlayStation (Console)", "Xbox (Console)"],
-    ["Minecraft (Jeu)", "Lego (Jouet)"],
-    ["Zelda (Princesse)", "Peach (Princesse)"],
-    ["Spotify (Musique)", "Deezer (Musique)"],
-    ["Twitch (Stream)", "YouTube (Vidéo)"],
+    // --- JEUX VIDÉO, TECH & WEB ---
+    ["PlayStation", "Xbox"],
+    ["Minecraft", "Lego"],
+    ["Zelda", "Peach"],
+    ["Spotify", "Deezer"],
+    ["Twitch", "YouTube"],
+    ["Google", "Wikipedia"],
+    ["Discord", "Skype"],
+    ["TikTok", "Instagram"],
+    ["Clavier", "Manette"],
+    ["Netflix", "Prime Video"],
+
+    // --- NOURRITURE & BOISSONS ---
+    ["Pizza", "Quiche"],
+    ["Coca-Cola", "Pepsi"],
+    ["Café", "Thé"],
+    ["Croissant", "Chocolatine"],
+    ["Kebab", "Tacos"],
+    ["Sushi", "Maki"],
+    ["Ketchup", "Mayonnaise"],
+    ["Bière", "Cidre"],
+    ["Hamburger", "Cheeseburger"],
+    ["Beurre", "Margarine"],
+
+    // --- ANIMAUX & NATURE ---
+    ["Tigre", "Lion"],
+    ["Loup", "Chien"],
+    ["Aigle", "Faucon"],
+    ["Pigeon", "Mouette"],
+    ["Araignée", "Scorpion"],
+    ["Crocodile", "Alligator"],
+    ["Océan", "Mer"],
+    ["Montagne", "Colline"],
+    ["Neige", "Glace"],
+    ["Glace", "Sorbet"],
+
+    // --- OBJETS DU QUOTIDIEN ---
+    ["Guitare", "Basse"],
+    ["Piano", "Synthétiseur"],
+    ["Avion", "Hélicoptère"],
+    ["Moto", "Scooter"],
+    ["Montre", "Horloge"],
+    ["Stylo", "Crayon"],
+    ["Chaussette", "Gant"],
+    ["Lit", "Canapé"],
+    ["Savon", "Gel Douche"],
+    ["Brosse à dents", "Cure-dents"],
 
     // --- PIÈGES ABSURDES & DÉCALÉS ---
-    ["Baguette (Pain)", "Sabre Laser (Arme)"], // "C'est long et ça se tient à la main"
-    ["Chien (Animal)", "Loup-Garou (Monstre)"],
-    ["Zombie (Mort-vivant)", "Momie (Créature)"],
-    ["Cthulhu (Monstre)", "Kraken (Monstre)"]
+    ["Baguette", "Sabre Laser"], // C'est long et ça se tient à la main
+    ["Chien", "Loup-Garou"],
+    ["Zombie", "Momie"],
+    ["Cthulhu", "Kraken"],
+    ["Vampire", "Moustique"], // Ça suce le sang !
+    ["Sorcier", "Magicien"],
+    ["Avocat", "Juge"],
+    ["Dentiste", "Médecin"],
+    ["Père Noël", "Voleur"] // Les deux rentrent par effraction la nuit
 ];
 
 // Message console pour confirmer le chargement
