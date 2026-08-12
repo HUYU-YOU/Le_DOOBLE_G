@@ -154,6 +154,12 @@
 </head>
 <body>
 
+    <!-- LECTURE DE L'URL EN AMONT POUR CACHER LES MENUS A LA VOLEE -->
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const forceMode = urlParams.get('mode');
+    </script>
+
     <!-- BOUTONS FLOTTANTS (Hors du wrapper pour survivre au zoom/scale) -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
@@ -236,6 +242,14 @@
             </div>
         </div>
 
+        <!-- Masquage conditionnel des boutons Solo/Multi à la volée -->
+        <script>
+            if (forceMode === 'solo') {
+                document.getElementById('net-button').style.display = 'none';
+                document.getElementById('menu-separator').style.display = 'none';
+            }
+        </script>
+
         <!-- MENU MULTIJOUEUR -->
         <div id="online-menu" class="menu-overlay hidden">
             <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR</h2>
@@ -279,23 +293,9 @@
         </div>
     </div>
 
-    <!-- SCRIPT GESTION URL, ECRAN & PARAMETRES -->
+    <!-- SCRIPT GESTION ECRAN & PARAMETRES -->
     <script>
-        // 1. Lire l'URL pour cacher les mauvais boutons
-        window.addEventListener('DOMContentLoaded', () => {
-            const params = new URLSearchParams(window.location.search);
-            const mode = params.get('mode');
-
-            if (mode === 'solo') {
-                document.getElementById('net-button').style.display = 'none';
-                document.getElementById('menu-separator').style.display = 'none';
-            } else if (mode === 'multi') {
-                document.getElementById('local-buttons').style.display = 'none';
-                document.getElementById('menu-separator').style.display = 'none';
-            }
-        });
-
-        // 2. Gestion du Plein écran & Tailles
+        // Gestion du Plein écran & Tailles
         function autoFullscreen() {
             if (!document.getElementById('game-wrapper').classList.contains('size-full')) {
                 setGameSize('wide');
@@ -334,7 +334,7 @@
             }
         });
 
-        // 3. Animation du Bouton Settings
+        // Animation du Bouton Settings
         const settingsBtnImg = document.getElementById('settings-btn-img');
         const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
         let hoverInterval; let currentFrame = 0;
@@ -539,6 +539,12 @@
             if (peer) { peer.destroy(); peer = null; }
             document.getElementById('conn-status').innerText = ""; 
             document.getElementById('lobby-code-display').innerText = "...";
+            
+            if (forceMode === 'multi') {
+                window.location.href = '../index.html';
+            } else {
+                document.getElementById('main-menu').classList.remove('hidden');
+            }
         }
 
         function hostGame() {
@@ -692,6 +698,12 @@
                 document.getElementById('loading-text').classList.add('hidden'); 
                 document.getElementById('menu-buttons').classList.remove('hidden'); 
                 mapImage = sprites['map' + selectedMapId] || sprites['map1']; 
+                
+                // Si on a forcé le mode multi depuis l'URL, on saute le menu principal
+                if (forceMode === 'multi') {
+                    document.getElementById('main-menu').classList.add('hidden');
+                    document.getElementById('online-menu').classList.remove('hidden');
+                }
             }
         }
 
@@ -753,6 +765,7 @@
             ctxOffTerrain.globalCompositeOperation = 'source-over';
         }
 
+        // Recherche d'un spawn parfait (Sans buguer dans le plafond)
         function getValidSpawn(x, position = 'top') {
             if (position === 'top') {
                 for (let y = 10; y < WORLD_HEIGHT - 30; y++) {
@@ -767,7 +780,7 @@
                     }
                 }
             }
-            return 100;
+            return 100; // Fallback
         }
 
         // --- CLASSES DU JEU ---
@@ -776,6 +789,7 @@
                 this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
                 this.team = team; this.name = name; this.isBot = isBot;
                 
+                // TAILLE DE BASE AJUSTEE POUR ETRE PARFAITE (Ni trop gros, ni trop petit)
                 this.scale = 1; this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
@@ -891,7 +905,6 @@
                 }
 
                 let targetScale = 1; 
-
                 if (isSolid(this.x, this.y - 12)) {
                     targetScale = 0.35; 
                 } 
@@ -1074,7 +1087,7 @@
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = life; this.maxLife = life; 
             }
             update() { this.x += this.vx; this.y += this.vy; this.life--; }
-            draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = Math.max(0, this.life / this.maxLife); ctxEnt.fillRect(this.x, this.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
+            draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife; ctxEnt.fillRect(this.x, this.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
         }
 
         // --- GESTION DES JOUEURS & UI ---
