@@ -5,89 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Slimes Artillery (Worms-like)</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    
+    <!-- Police Rajdhani pour le look Cyber/Arcade -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
     <style>
         :root { 
-            --bg: #090a0f; 
+            --bg: #050811; 
             --p1: #00f0ff; /* Cyan */
             --p2: #ff007f; /* Rose */
             --p3: #ffea00; /* Or */
             --p4: #39ff14; /* Vert */
-            --sys: #39ff14; 
-            --weapon-bg: rgba(20, 25, 40, 0.85);
+            --sys: #00e5ff; 
+            --weapon-bg: rgba(10, 15, 28, 0.85);
+            --panel: rgba(10, 15, 28, 0.85);
         }
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            background-color: var(--bg); 
-            color: #fff; 
-            margin: 0; padding: 0; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; overflow: hidden; 
-            touch-action: none; user-select: none; 
+
+        body, html { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: var(--bg); color: #fff; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; user-select: none; overflow: hidden;
+            touch-action: none;
         }
         
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px);}
-        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); }
+        /* --- CONTENEUR PRINCIPAL DU JEU --- */
+        #game-wrapper { 
+            position: relative; width: 100%; max-width: 800px; height: 600px; 
+            border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            border: 2px solid rgba(0, 240, 255, 0.2); overflow: hidden; background: #000; cursor: crosshair; 
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
 
-        /* HEADER UI DYNAMIQUE */
-        #ui-layer { position: absolute; top: 10px; width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 20px; box-sizing: border-box; z-index: 100; pointer-events: none; }
-        .team-container { display: flex; flex-direction: column; gap: 10px; }
-        .player-info { background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 8px; border: 1px solid #333; text-align: center; backdrop-filter: blur(4px); }
-        .hp-bar-bg { width: 130px; height: 12px; background: #222; border-radius: 10px; margin-top: 5px; overflow: hidden; border: 1px solid #555; }
+        /* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
+        .size-classic { width: 800px; height: 600px; }
+        
+        /* Le jeu se lance de base en Full Screen Web (Wide) */
+        #game-wrapper.size-wide, #game-wrapper.size-full {
+            position: fixed !important; top: 0; left: 0; 
+            width: 100vw !important; height: 100vh !important;
+            max-width: none; max-height: none; border-radius: 0; border: none; padding: 0; 
+            z-index: 50; background: var(--bg); 
+        }
+
+        #bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; transition: opacity 0.5s; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #game-wrapper.size-wide canvas, #game-wrapper.size-full canvas { object-fit: fill; }
+        
+        #canvas-terrain { z-index: 2; } 
+        #canvas-entities { z-index: 3; }
+
+        /* --- BOUTON RETOUR AU HUB --- */
+        .hub-link { 
+            position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem;
+            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
+            transition: all 0.3s ease; z-index: 100;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
+
+        /* --- BOUTON SETTINGS & ORBITE --- */
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--p4); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--p4), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- MODAL PARAMETRES & TAILLE D'ÉCRAN --- */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+        .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+        /* --- OVERLAYS MENUS (Glassmorphism) --- */
+        .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,20,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); }
+        .menu-overlay h1, .menu-overlay h2 { font-size: 3.5rem; margin-bottom: 20px; text-transform: uppercase; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--sys); letter-spacing: 5px; text-align: center;}
+        .menu-title { font-size: 1.8em; margin-bottom: 15px; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--p1);}
+        
+        .selection-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
+        .map-card { background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); text-align: center; transition: all 0.3s ease; width: 140px; }
+        .map-card:hover, .map-card.selected { background: rgba(0, 240, 255, 0.15); transform: translateY(-5px); border-color: var(--p1); box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
+        .map-card img { width: 120px; height: 70px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
+
+        /* BOUTONS D'ACTION (Style Unifié) */
+        .btn { 
+            background: rgba(0,0,0,0.5); color: #fff; border: 2px solid var(--p1); padding: 12px 30px; 
+            font-size: 1.3em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); margin: 8px; width: 80%; max-width: 400px; text-align: center; font-family: 'Rajdhani', sans-serif; 
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); position: relative; overflow: hidden;
+        }
+        .btn::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: 0.5s; }
+        .btn:hover::after { left: 150%; }
+        .btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-4px); }
+        
+        .btn-pink { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
+        .btn-pink:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); color: #fff;}
+
+        .btn-gold { border-color: var(--p3); box-shadow: 0 0 15px rgba(255, 234, 0, 0.2); }
+        .btn-gold:hover { background: var(--p3); color: #000; box-shadow: 0 0 25px var(--p3); }
+
+        .loader { font-size: 1.2em; color: var(--sys); margin-bottom: 20px; animation: pulse 1.5s infinite; font-weight: bold;}
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .hidden { display: none !important; }
+        
+        #conn-status { margin-top: 20px; font-weight: bold; font-size: 1.2em; transition: 0.3s; text-align: center;}
+
+        /* HEADER UI DYNAMIQUE IN-GAME */
+        #ui-layer { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 20px; box-sizing: border-box; z-index: 100; pointer-events: none; }
+        .team-container { display: flex; flex-direction: column; gap: 10px; width: 20%;}
+        .player-info { background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); text-align: center; backdrop-filter: blur(8px); box-shadow: 0 5px 15px rgba(0,0,0,0.5);}
+        .player-info b { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+        .hp-bar-bg { width: 100%; height: 12px; background: #222; border-radius: 10px; margin-top: 8px; overflow: hidden; border: 1px solid #555; }
         .hp-bar { height: 100%; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        #turn-indicator { font-size: 1.3em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; border: 2px solid #fff; transition: 0.3s; text-align: center; backdrop-filter: blur(4px); }
+        #turn-indicator { font-size: 1.3em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.8); padding: 10px 25px; border-radius: 20px; border: 2px solid #fff; transition: 0.3s; text-align: center; backdrop-filter: blur(8px); }
         
         /* TIMER UI */
-        #turn-timer { font-size: 1.8em; font-family: monospace; font-weight: bold; margin-top: 5px; text-shadow: 0 0 5px #fff; transition: color 0.2s; }
+        #turn-timer { font-size: 2em; font-family: monospace; font-weight: bold; margin-top: 5px; text-shadow: 0 0 5px #fff; transition: color 0.2s; text-align: center;}
         @keyframes pulse-timer { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
         .timer-danger { color: #ff0000 !important; text-shadow: 0 0 15px #ff0000 !important; animation: pulse-timer 0.5s infinite; }
         .timer-aim { color: #ffea00 !important; text-shadow: 0 0 15px #ffea00 !important; }
 
         /* PANNEAU D'ARMES */
-        #weapon-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: var(--weapon-bg); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--p1); z-index: 100; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); backdrop-filter: blur(8px); transition: 0.3s; }
-        .weapon-btn { background: rgba(0,0,0,0.5); border: 2px solid #444; color: #fff; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto;}
-        .weapon-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff;}
-        .weapon-btn.active { background: rgba(0, 240, 255, 0.2); border-color: var(--p1); color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);}
-        .w-icon { font-size: 1.5em; margin-bottom: 5px; }
-
-        /* GAME CONTAINER */
-        #game-wrapper { position: relative; width: 100%; max-width: 800px; height: 600px; border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.15); border: 2px solid rgba(255,255,255,0.1); overflow: hidden; background: #000; cursor: crosshair; }
-        #bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.6; transition: opacity 0.5s; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        #canvas-terrain { z-index: 2; } 
-        #canvas-entities { z-index: 3; }
-
-        /* MENUS */
-        .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,20,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(8px); }
-        .menu-overlay h1, .menu-overlay h2 { font-size: 3em; margin-bottom: 20px; text-transform: uppercase; color: var(--sys); text-shadow: 0 0 15px var(--sys); letter-spacing: 2px; text-align: center;}
-        
-        .selection-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
-        .map-card { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; text-align: center; transition: 0.2s; width: 140px; }
-        .map-card:hover, .map-card.selected { background: rgba(255,255,255,0.2); transform: translateY(-3px); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
-        .map-card img { width: 120px; height: 70px; object-fit: cover; border-radius: 5px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
-
-        .btn { background: rgba(0, 240, 255, 0.1); color: var(--p1); border: 2px solid var(--p1); padding: 12px 25px; font-size: 1.1em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease-in-out; margin: 8px; min-width: 250px; text-align: center; font-family: inherit; }
-        .btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); transform: translateY(-2px); }
-        
-        .btn-pink { color: var(--p2); border-color: var(--p2); background: rgba(255, 0, 127, 0.1); }
-        .btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 15px var(--p2); }
-
-        .btn-gold { color: var(--p3); border-color: var(--p3); background: rgba(255, 234, 0, 0.1); }
-        .btn-gold:hover { background: var(--p3); color: #000; box-shadow: 0 0 15px var(--p3); }
-
-        .loader { font-size: 1.2em; color: var(--sys); margin-bottom: 20px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .hidden { display: none !important; }
-        
-        #conn-status { margin-top: 20px; font-weight: bold; font-size: 1.1em; transition: 0.3s; text-align: center;}
+        #weapon-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: var(--weapon-bg); padding: 15px 25px; border-radius: 20px; border: 1px solid var(--p1); z-index: 100; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); backdrop-filter: blur(12px); transition: 0.3s; }
+        .weapon-btn { background: rgba(0,0,0,0.5); border: 2px solid #444; color: #fff; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-size: 1.1em; font-family: 'Rajdhani', sans-serif; font-weight: bold; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; min-width: 90px;}
+        .weapon-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; transform: translateY(-3px);}
+        .weapon-btn.active { background: rgba(0, 240, 255, 0.2); border-color: var(--p1); color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); transform: translateY(-5px);}
+        .w-icon { font-size: 1.8em; margin-bottom: 5px; }
 
         @media (max-width: 800px) {
-            #game-wrapper { height: 70vh; border-radius: 0; border: none; }
-            .hp-bar-bg { width: 90px; }
+            #ui-layer { padding: 0 10px; }
+            .team-container { width: 30%; }
             #turn-indicator { font-size: 1em; padding: 6px 12px; }
-            .btn { min-width: 200px; font-size: 1em; padding: 10px 15px;}
-            #weapon-panel { transform: translateX(-50%) scale(0.85); bottom: 5px; }
-            .weapon-btn { padding: 5px 10px; }
+            .btn { min-width: 200px; font-size: 1.1em; padding: 10px 15px;}
+            #weapon-panel { transform: translateX(-50%) scale(0.85); bottom: 5px; padding: 10px;}
+            .weapon-btn { padding: 5px 10px; min-width: 70px;}
             .selection-grid { gap: 10px; }
             .map-card { width: 100px; padding: 5px; }
             .map-card img { width: 90px; height: 50px; }
@@ -95,9 +153,35 @@
     </style>
 </head>
 <body>
+
+    <!-- BOUTONS FLOTTANTS (Hors du wrapper pour survivre au zoom/scale) -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
-    <div id="game-wrapper">
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <!-- GAME WRAPPER (S'ajuste dynamiquement) -->
+    <div id="game-wrapper" class="size-wide">
         <video id="bg-video" autoplay loop muted playsinline>
             <source src="img/background.mp4" type="video/mp4">
         </video>
@@ -117,10 +201,11 @@
         <!-- MENU PRINCIPAL -->
         <div id="main-menu" class="menu-overlay">
             <h1>Cyber Slimes</h1>
-            <div id="loading-text" class="loader">Chargement des sprites...</div>
+            <div id="loading-text" class="loader">Chargement des armes...</div>
             
-            <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column; align-items: center;">
-                <h3 style="color: #aaa; margin-top: 0; margin-bottom: 10px; font-weight: normal; letter-spacing: 2px;">ARÈNE DE COMBAT</h3>
+            <div id="menu-buttons" class="hidden" style="display:flex; flex-direction:column; align-items: center; width: 100%;">
+                <h3 class="menu-title" style="font-size: 1.4em;">ARÈNE DE COMBAT</h3>
+                
                 <div class="selection-grid" id="map-select">
                     <div class="map-card selected" onclick="selectSlimeMap(1, this)">
                         <img src="img/map1.png" alt="Map 1"><b>Arène Bleue</b>
@@ -136,12 +221,18 @@
                     </div>
                 </div>
 
-                <button class="btn" onclick="startGame('local_1v1')">🕹️ 1 VS 1 (Local)</button>
-                <button class="btn btn-gold" onclick="startGame('local_2v2')">🛡️ 2 VS 2 (Équipes)</button>
-                <button class="btn btn-pink" onclick="startGame('local_ffa')">⚔️ 4 Joueurs (Chacun pour soi)</button>
-                <hr style="width: 80%; border-color: rgba(255,255,255,0.2); margin: 10px 0;">
-                <button class="btn" onclick="startGame('ai')" style="border-color:#fff; color:#fff;">🤖 Contre l'IA</button>
-                <button class="btn" onclick="showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multijoueur (En Ligne)</button>
+                <div id="local-buttons" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                    <button class="btn" onclick="autoFullscreen(); startGame('local_1v1')">🕹️ 1 VS 1 (Local)</button>
+                    <button class="btn btn-gold" onclick="autoFullscreen(); startGame('local_2v2')">🛡️ 2 VS 2 (Équipes)</button>
+                    <button class="btn btn-pink" onclick="autoFullscreen(); startGame('local_ffa')">⚔️ 4 Joueurs (Chacun pour soi)</button>
+                    <button class="btn" onclick="autoFullscreen(); startGame('ai')" style="border-color:#fff; color:#fff;">🤖 Contre l'IA</button>
+                </div>
+                
+                <hr id="menu-separator" style="width: 80%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+                
+                <div id="net-button" style="width: 100%; display: flex; justify-content: center;">
+                    <button class="btn" onclick="autoFullscreen(); showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multijoueur (En Ligne)</button>
+                </div>
             </div>
         </div>
 
@@ -149,44 +240,133 @@
         <div id="online-menu" class="menu-overlay hidden">
             <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR</h2>
             
-            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 440px;">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em; text-transform: uppercase;">Créer une partie</h3>
-                <h4 style="color: var(--p1); margin-bottom: 10px; font-size: 0.9em; letter-spacing: 1px;">CHOIX DE L'ARÈNE</h4>
-                <div class="selection-grid" style="margin-bottom: 15px; gap: 10px;">
-                    <div class="map-card selected" onclick="selectSlimeMap(1, this)" style="width: 90px; padding: 5px;">
-                        <img src="img/map1.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Bleue</b>
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 15px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 90%; max-width: 500px; backdrop-filter: blur(10px);">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; text-transform: uppercase;">Créer une partie</h3>
+                <h4 style="color: var(--p1); margin-bottom: 15px; font-size: 1.1em; letter-spacing: 1px;">CHOIX DE L'ARÈNE</h4>
+                
+                <div class="selection-grid" style="margin-bottom: 20px; gap: 10px;">
+                    <div class="map-card selected" onclick="selectSlimeMap(1, this)" style="width: 95px; padding: 5px;">
+                        <img src="img/map1.png" style="width: 85px; height: 50px; margin-bottom: 5px;"><b>Arène Bleue</b>
                     </div>
-                    <div class="map-card" onclick="selectSlimeMap(2, this)" style="width: 90px; padding: 5px;">
-                        <img src="img/map2.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Rouge</b>
+                    <div class="map-card" onclick="selectSlimeMap(2, this)" style="width: 95px; padding: 5px;">
+                        <img src="img/map2.png" style="width: 85px; height: 50px; margin-bottom: 5px;"><b>Arène Rouge</b>
                     </div>
-                    <div class="map-card" onclick="selectSlimeMap(3, this)" style="width: 90px; padding: 5px;">
-                        <img src="img/map3.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène Géante</b>
+                    <div class="map-card" onclick="selectSlimeMap(3, this)" style="width: 95px; padding: 5px;">
+                        <img src="img/map3.png" style="width: 85px; height: 50px; margin-bottom: 5px;"><b>Arène Géante</b>
                     </div>
-                    <div class="map-card" onclick="selectSlimeMap(4, this)" style="width: 90px; padding: 5px;">
-                        <img src="img/map4.png" style="width: 80px; height: 50px; margin-bottom: 5px;"><b>Arène 4</b>
+                    <div class="map-card" onclick="selectSlimeMap(4, this)" style="width: 95px; padding: 5px;">
+                        <img src="img/map4.png" style="width: 85px; height: 50px; margin-bottom: 5px;"><b>Arène 4</b>
                     </div>
                 </div>
-                <button class="btn" style="min-width: 200px; padding: 10px;" onclick="hostGame()">Héberger</button>
-                <p style="margin-top: 15px; margin-bottom: 0;">Code Hôte : <br><b id="lobby-code-display" style="color: var(--p1); font-size:2em; letter-spacing:4px;">...</b></p>
+                <button class="btn" style="width: 80%; padding: 12px;" onclick="hostGame()">Héberger</button>
+                <p style="margin-top: 15px; margin-bottom: 0; font-size: 1.2em;">Code Hôte : <br><b id="lobby-code-display" style="color: var(--p1); font-size:2em; letter-spacing:4px; text-shadow: 0 0 10px var(--p1);">...</b></p>
             </div>
             
-            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 10px; border: 1px solid var(--p2); text-align: center; width: 440px;">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.2em; text-transform: uppercase;">Rejoindre une partie</h3>
-                <input type="text" id="join-code-input" placeholder="Code de l'hôte..." style="padding: 12px; font-size: 1.2em; border-radius: 5px; border: none; outline:none; text-align:center; width: 100%; box-sizing: border-box; text-transform: uppercase;">
-                <button class="btn btn-pink" style="min-width: 200px; padding: 10px; margin-top: 15px;" onclick="joinGame()">Rejoindre</button>
+            <div style="background: rgba(0,0,0,0.6); padding: 25px; border-radius: 15px; border: 1px solid var(--p2); text-align: center; width: 90%; max-width: 500px; backdrop-filter: blur(10px);">
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; text-transform: uppercase;">Rejoindre une partie</h3>
+                <input type="text" id="join-code-input" placeholder="Code de l'hôte..." style="padding: 15px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 8px; border: 1px solid var(--p2); background: rgba(0,0,0,0.8); color: #fff; outline:none; text-align:center; width: 80%; box-sizing: border-box; text-transform: uppercase;">
+                <button class="btn btn-pink" style="width: 80%; padding: 12px; margin-top: 15px;" onclick="joinGame()">Rejoindre</button>
             </div>
             
             <div id="conn-status"></div>
-            <button class="btn" style="border-color:#555; color:#aaa; margin-top: 30px; background: transparent;" onclick="hideOnlineMenu()">Retour</button>
+            <button class="btn" style="border-color:#555; color:#aaa; margin-top: 30px; background: transparent; box-shadow: none;" onclick="hideOnlineMenu()">Retour</button>
         </div>
 
         <!-- MENU FIN -->
         <div id="game-over" class="menu-overlay hidden">
-            <h2 id="winner-text">VICTOIRE</h2>
+            <h2 id="winner-text" style="font-size: 4rem;">VICTOIRE</h2>
             <button class="btn" onclick="location.reload()">Retour au menu</button>
         </div>
     </div>
 
+    <!-- SCRIPT GESTION URL, ECRAN & PARAMETRES -->
+    <script>
+        // 1. Lire l'URL pour cacher les mauvais boutons
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const mode = params.get('mode');
+
+            if (mode === 'solo') {
+                document.getElementById('net-button').style.display = 'none';
+                document.getElementById('menu-separator').style.display = 'none';
+            } else if (mode === 'multi') {
+                document.getElementById('local-buttons').style.display = 'none';
+                document.getElementById('menu-separator').style.display = 'none';
+            }
+        });
+
+        // 2. Gestion du Plein écran & Tailles
+        function autoFullscreen() {
+            if (!document.getElementById('game-wrapper').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        }
+
+        function setGameSize(size) {
+            const container = document.getElementById('game-wrapper');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                container.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'wide') {
+                container.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'full') {
+                container.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('game-wrapper').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        });
+
+        // 3. Animation du Bouton Settings
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png';
+            toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-modal').classList.toggle('show');
+        }
+    </script>
+
+    <!-- MOTEUR DE JEU JAVASCRIPT (INCHANGÉ) -->
     <script>
         // --- CONSTANTES DU MONDE (DYNAMIQUES) ---
         const WIDTH = 800; 
@@ -206,7 +386,6 @@
         bgmPlayer.loop = true;
         bgmPlayer.volume = 0.25;
 
-        // --- DEVERROUILLAGE GLOBAL DU SON ---
         function forceAudioUnlock() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             document.removeEventListener('click', forceAudioUnlock);
@@ -285,7 +464,6 @@
             }
         }
 
-        // Initialisation Canvas
         const canvasTerrain = document.getElementById('canvas-terrain');
         const ctxTerrain = canvasTerrain.getContext('2d'); 
         
@@ -297,12 +475,11 @@
         const canvasEnt = document.getElementById('canvas-entities');
         const ctxEnt = canvasEnt.getContext('2d');
 
-        // Variables de jeu & TIMER
         let gameState = 'menu'; 
         let gameMode = 'local_1v1';
         let currentPlayer = 1; 
         let retreatFrames = 0; 
-        let turnFrames = 480; // 8 secondes (60 fps)
+        let turnFrames = 480; 
         let mapImage = new Image();
         let selectedMapId = 1;
 
@@ -324,7 +501,6 @@
             }
         }
 
-        // --- SELECTION DYNAMIQUE DE LA MAP ---
         function selectSlimeMap(id, el) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             selectedMapId = id;
@@ -339,13 +515,12 @@
             videoElement.style.opacity = 0;
             
             setTimeout(() => {
-                // MISE A JOUR DES VIDEOS EN FONCTION DE LA DEMANDE
                 if(id === 1) videoElement.src = 'img/background.mp4';
                 else if(id === 2) videoElement.src = 'img/background2.mp4';
-                else if(id === 3) videoElement.src = 'img/background4.mp4'; // Map 3 utilise video 4
-                else if(id === 4) videoElement.src = 'img/background3.mp4'; // Map 4 utilise video 3
+                else if(id === 3) videoElement.src = 'img/background4.mp4';
+                else if(id === 4) videoElement.src = 'img/background3.mp4';
                 
-                videoElement.load(); // CRUCIAL : Force le navigateur à charger la nouvelle source mp4
+                videoElement.load(); 
                 videoElement.play().catch(e => console.log(e));
                 videoElement.style.opacity = 0.6;
             }, 500);
@@ -578,7 +753,6 @@
             ctxOffTerrain.globalCompositeOperation = 'source-over';
         }
 
-        // Recherche d'un spawn parfait (Sans buguer dans le plafond)
         function getValidSpawn(x, position = 'top') {
             if (position === 'top') {
                 for (let y = 10; y < WORLD_HEIGHT - 30; y++) {
@@ -593,7 +767,7 @@
                     }
                 }
             }
-            return 100; // Fallback
+            return 100;
         }
 
         // --- CLASSES DU JEU ---
@@ -602,7 +776,6 @@
                 this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
                 this.team = team; this.name = name; this.isBot = isBot;
                 
-                // TAILLE DE BASE AJUSTEE POUR ETRE PARFAITE (Ni trop gros, ni trop petit)
                 this.scale = 1; this.radius = 12; this.vx = 0; this.vy = 0; this.hp = 100; this.isDead = false;
                 this.facing = id % 2 !== 0 ? 'r' : 'l'; 
                 this.state = 'idle'; this.animFrame = 1; this.animTimer = 0; this.landTimer = 0; this.isOnGround = false;
@@ -717,24 +890,15 @@
                     this.state = 'air'; 
                 }
 
-                // --- NOUVELLE LOGIQUE D'ÉLASTICITÉ AU PLAFOND ---
-                let targetScale = 1; // Par défaut, taille normale
+                let targetScale = 1; 
 
-                // 1. Détection d'impact physique immédiat
-                // On vérifie si le haut de sa "tête normale" (virtuelle à scale 1) touche un solide.
-                // Le radius de base est 12.
                 if (isSolid(this.x, this.y - 12)) {
-                    // Contact détecté ! On force la cible de rétrécissement.
                     targetScale = 0.35; 
                 } 
-                // Note : J'ai supprimé la logique de proximity-scan qui rétrécissait 
-                // le slime quand il était posé au sol (détecté à tort comme un tunnel).
-                // Désormais, il ne rétrécit QU'EN CAS D'IMPACT au plafond.
 
-                // Appliquer l'interpolation (transition douce) vers la cible
                 if (!this.scale) this.scale = 1;
                 this.scale += (targetScale - this.scale) * 0.15;
-                this.radius = 12 * this.scale; // Le radius de collision et dessin suit la taille visuelle
+                this.radius = 12 * this.scale; 
 
                 // Animations
                 if (this.state === 'walk') {
@@ -807,7 +971,6 @@
                 ctxEnt.translate(renderX, renderY);
                 ctxEnt.scale(this.scale, this.scale);
 
-                // REDESSIN EN 40x40 (Taille optimale)
                 if (img && img.complete && img.naturalWidth > 0) {
                     ctxEnt.drawImage(img, -20, -25, 40, 40);
                 } else { 
@@ -815,8 +978,7 @@
                 }
                 ctxEnt.restore();
 
-                // Noms & Flèche replacés avec la bonne échelle
-                ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Segoe UI'"; ctxEnt.textAlign = "center";
+                ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Rajdhani'"; ctxEnt.textAlign = "center";
                 ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 30 * this.scale); ctxEnt.shadowBlur = 0;
 
                 if (currentPlayer === this.id && gameState !== 'end') {
@@ -912,7 +1074,7 @@
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = life; this.maxLife = life; 
             }
             update() { this.x += this.vx; this.y += this.vy; this.life--; }
-            draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife; ctxEnt.fillRect(this.x, this.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
+            draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = Math.max(0, this.life / this.maxLife); ctxEnt.fillRect(this.x, this.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
         }
 
         // --- GESTION DES JOUEURS & UI ---
@@ -935,7 +1097,6 @@
             `;
             let left = document.getElementById('ui-left'); let right = document.getElementById('ui-right');
             
-            // Regroupe par Team
             worms.forEach(w => {
                 let container = (w.team === 'A' || w.team === 'C') ? left : right;
                 let card = document.createElement('div'); card.className = 'player-info';
@@ -956,12 +1117,11 @@
             generateTerrain();
             
             if (selectedMapId === 3 && mode !== 'local_ffa') {
-                // Map GÉANTE : FORCER LA PRÉSENCE DE 4 SLIMES POUR REMPLIR (TEAM BLEU vs TEAM ROSE)
                 let s1_x = 300, s2_x = WORLD_WIDTH - 300, s3_x = 500, s4_x = WORLD_WIDTH - 500;
                 let s1_y = getValidSpawn(s1_x, 'top');
-                let s3_y = getValidSpawn(s3_x, 'bottom'); // Spawn Bleu En Bas à Gauche
+                let s3_y = getValidSpawn(s3_x, 'bottom');
                 let s2_y = getValidSpawn(s2_x, 'top');
-                let s4_y = getValidSpawn(s4_x, 'bottom'); // Spawn Rose En Bas à Droite
+                let s4_y = getValidSpawn(s4_x, 'bottom');
 
                 worms = [
                     new Slime(s1_x, s1_y, 1, 1, 'var(--p1)', 'A', 'Bleu (Haut)', false),
@@ -1163,7 +1323,7 @@
         const gameWrapper = document.getElementById('game-wrapper');
 
         function startAim(e) {
-            if (e.target.closest('#weapon-panel') || e.target.closest('.btn') || e.target.closest('.hub-link')) return; 
+            if (e.target.closest('#weapon-panel') || e.target.closest('.btn') || e.target.closest('.hub-link') || e.target.closest('.settings-btn-wrapper')) return; 
 
             let activeWorm = worms[currentPlayer - 1];
             if (gameState !== 'playing' || activeWorm.isBot) return; 
@@ -1414,7 +1574,7 @@
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
             if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
-            if (target.closest('#game-wrapper') || target.closest('#weapon-panel')) return true;
+            if (target.closest('#game-wrapper') || target.closest('#weapon-panel') || target.closest('#settings-modal') || target.closest('.settings-btn-wrapper')) return true;
             return false;
         }
 
