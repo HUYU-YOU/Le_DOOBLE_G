@@ -7,28 +7,98 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050811; --panel: rgba(10, 15, 28, 0.85); --primary: #00f0ff; --enemy: #ff0055; --gold: #ffd700; --xp: #b82aff; --spell: #00ffcc;}
-        body { font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; touch-action: manipulation; overflow-x: hidden;}
+        :root { 
+            --bg: #050811; 
+            --panel: rgba(10, 15, 28, 0.85); 
+            --primary: #00f0ff; 
+            --enemy: #ff0055; 
+            --gold: #ffd700; 
+            --xp: #b82aff; 
+            --spell: #00ffcc;
+            --btn-green: #39ff14;
+        }
+        
+        body, html { 
+            font-family: 'Rajdhani', sans-serif; 
+            background: var(--bg); color: white; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            min-height: 100vh; user-select: none; touch-action: manipulation; overflow-x: hidden;
+        }
+
         h1 { margin-top: 30px; color: #fff; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 15px var(--primary); font-size: 2.5em; text-align: center;}
         
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
-        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--primary); box-shadow: 0 0 15px var(--primary); }
+        /* --- CONTENEUR PRINCIPAL DU JEU --- */
+        #game-container { 
+            position: relative; background: var(--panel); padding: 20px; border-radius: 15px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            width: 100%; max-width: 950px; border: 1px solid rgba(0, 240, 255, 0.3); 
+            backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
 
-        #game-container { position: relative; background: var(--panel); padding: 20px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); width: 100%; max-width: 950px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;}
+        /* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
+        .size-classic canvas { width: 100%; }
         
-        /* Overlays Menus */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 17, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(8px); border-radius: 15px; }
-        .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--primary); padding: 15px 35px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 320px; position: relative; overflow: hidden;}
+        /* Le jeu se lance en Full Page */
+        #game-container.size-wide, #game-container.size-full {
+            position: fixed !important; top: 0; left: 0; 
+            width: 100vw !important; height: 100vh !important;
+            max-width: none; max-height: none; border-radius: 0; border: none; padding: 20px 10px; 
+            z-index: 50; background: var(--bg); justify-content: center;
+        }
+        #game-container.size-wide canvas, #game-container.size-full canvas {
+            max-height: 50vh; /* Laisse de la place pour les contrôles en bas */
+            object-fit: contain;
+        }
+
+        /* BOUTONS FLOTTANTS (Settings & Hub) */
+        .hub-link { 
+            position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; 
+            font-weight: bold; z-index: 100; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); font-size: 1.2rem;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--primary); box-shadow: 0 0 15px var(--primary); transform: translateX(-5px);}
+
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--btn-green); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--btn-green), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MODAL PARAMETRES & TAILLE D'ÉCRAN */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--primary); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--primary); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+        .close-btn { margin-top: 25px; background: var(--primary); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--primary); transform: scale(1.05); }
+
+        /* --- OVERLAYS MENUS (Glassmorphism) --- */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 15, 28, 0.85); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 15px; }
+        
+        .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--primary); padding: 15px 35px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px; position: relative; overflow: hidden;}
+        .btn-main::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: 0.5s; }
+        .btn-main:hover::after { left: 150%; }
         .btn-main:hover { background: var(--primary); color: #000; box-shadow: 0 0 25px var(--primary); transform: translateY(-3px); }
+        
         .btn-main.red { border-color: var(--enemy); box-shadow: 0 0 15px rgba(255, 0, 85, 0.2); }
-        .btn-main.red:hover { background: var(--enemy); box-shadow: 0 0 25px var(--enemy); }
+        .btn-main.red:hover { background: var(--enemy); color:#fff; box-shadow: 0 0 25px var(--enemy); }
+        
         .btn-main.purple { border-color: var(--xp); box-shadow: 0 0 15px rgba(184, 42, 255, 0.2); }
-        .btn-main.purple:hover { background: var(--xp); box-shadow: 0 0 25px var(--xp); }
+        .btn-main.purple:hover { background: var(--xp); color:#fff; box-shadow: 0 0 25px var(--xp); }
+
+        .btn-main.green { border-color: var(--btn-green); box-shadow: 0 0 15px rgba(57, 255, 20, 0.2); }
+        .btn-main.green:hover { background: var(--btn-green); color:#000; box-shadow: 0 0 25px var(--btn-green); }
         
         input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--primary); text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; font-family: 'Rajdhani';}
         input.net-input:focus { box-shadow: 0 0 15px var(--primary); border-color: #fff;}
 
-        /* HUD */
+        /* --- HUD --- */
         .hud { display: flex; justify-content: space-between; align-items: flex-end; background: rgba(0,0,0,0.5); padding: 15px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
         .base-stats { display: flex; flex-direction: column; width: 30%; position: relative;}
         .base-name { font-weight: bold; font-size: 1.3em; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
@@ -52,14 +122,8 @@
 
         canvas { border-radius: 10px; width: 100%; display: block; box-shadow: 0 0 20px #000, inset 0 0 30px rgba(0, 240, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); background: #03050a; cursor: crosshair;}
         
-        /* ALERTE ENNEMI (Le curseur TP) */
-        #enemy-alert {
-            position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 0, 85, 0.85); color: #fff; padding: 10px 15px; border-radius: 8px; border: 2px solid var(--enemy); cursor: pointer; font-weight: bold; box-shadow: 0 0 15px var(--enemy); animation: alert-pulse 1s infinite; z-index: 10; display: none; pointer-events: auto; font-family: 'Rajdhani', sans-serif; font-size: 1.2em; text-transform: uppercase; backdrop-filter: blur(5px);
-        }
-        @keyframes alert-pulse {
-            0%, 100% { transform: translateY(-50%) scale(1); box-shadow: 0 0 10px var(--enemy); }
-            50% { transform: translateY(-50%) scale(1.05); box-shadow: 0 0 20px var(--enemy); }
-        }
+        #enemy-alert { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 0, 85, 0.85); color: #fff; padding: 10px 15px; border-radius: 8px; border: 2px solid var(--enemy); cursor: pointer; font-weight: bold; box-shadow: 0 0 15px var(--enemy); animation: alert-pulse 1s infinite; z-index: 10; display: none; pointer-events: auto; font-family: 'Rajdhani', sans-serif; font-size: 1.2em; text-transform: uppercase; backdrop-filter: blur(5px); }
+        @keyframes alert-pulse { 0%, 100% { transform: translateY(-50%) scale(1); box-shadow: 0 0 10px var(--enemy); } 50% { transform: translateY(-50%) scale(1.05); box-shadow: 0 0 20px var(--enemy); } }
 
         /* CONTROLS (UNITES, SORTS, ECO) */
         .controls-container { display: flex; gap: 15px; width: 100%; justify-content: center; }
@@ -91,20 +155,71 @@
     </style>
 </head>
 <body>
-    <a href="../index.html" class="hub-link">⬅ Back to Hub</a>
-    <h1>Slime War</h1>
+
+    <!-- LECTURE DE L'URL EN AMONT POUR CACHER LES MENUS A LA VOLEE -->
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const forceMode = urlParams.get('mode');
+    </script>
+
+    <!-- BOUTONS FLOTTANTS (Hors du wrapper pour survivre au zoom/scale) -->
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
     
-    <div id="game-container">
+    <!-- GAME CONTAINER (Initialisé en size-wide) -->
+    <div id="game-container" class="size-wide">
+        
         <!-- MENUS -->
         <div class="overlay" id="main-menu">
-            <h1 style="font-size: 3.5em; margin-bottom: 40px; text-shadow: 0 0 20px var(--primary);">OPERATIONAL SYSTEM</h1>
-            <button class="btn-main" onclick="startSolo('solo')">Solo Campaign (AI)</button>
-            <button class="btn-main red" onclick="startSolo('hardcore')">Extreme Survival</button>
-            <button class="btn-main purple" onclick="startLocal()">Local Versus (Same PC)</button>
-            <button class="btn-main" onclick="showNetworkMenu()" style="border-color:#aaa; color:#ccc;">Network War (PVP)</button>
+            <h1 style="font-size: 3.5em; margin-bottom: 40px; text-shadow: 0 0 20px var(--primary);">CHOOSE YOUR BATTLE</h1>
+            <div id="solo-buttons" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+                <button class="btn-main" onclick="autoFullscreen(); startSolo('solo')">👤 Solo Campaign (AI)</button>
+                <button class="btn-main red" onclick="autoFullscreen(); startSolo('hardcore')">🔥 Extreme Survival</button>
+                <button class="btn-main purple" onclick="autoFullscreen(); startLocal()">🎮 Local Versus (Same PC)</button>
+            </div>
+            <hr id="menu-separator" style="width: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+            <div id="net-button" style="width:100%; display:flex; justify-content:center;">
+                <button class="btn-main green" onclick="autoFullscreen(); showNetworkMenu()">🌐 Network War (PVP)</button>
+            </div>
         </div>
 
+        <!-- Masquage conditionnel des boutons Solo/Multi à la volée -->
+        <script>
+            window.addEventListener('DOMContentLoaded', () => {
+                if (forceMode === 'solo') {
+                    document.getElementById('net-button').style.display = 'none';
+                    document.getElementById('menu-separator').style.display = 'none';
+                } else if (forceMode === 'multi') {
+                    document.getElementById('main-menu').style.display = 'none';
+                    showNetworkMenu();
+                }
+            });
+        </script>
+
         <div class="overlay" id="network-menu" style="display: none;">
+            <h2 style="color: var(--primary); font-size: 2.5em; margin-bottom: 20px; text-transform: uppercase;">TERMINAL RÉSEAU</h2>
             
             <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--primary); width: 85%; max-width: 380px; text-align: center; margin-bottom: 20px;">
                 <h3 style="color: #fff; margin-top: 0; font-size: 1.3em;">HOST A GAME (WEST)</h3>
@@ -119,7 +234,7 @@
             </div>
             
             <p id="status-text" style="color: #ccc; margin-top: 20px; font-weight:bold; font-size: 1.3em;"></p>
-            <button class="btn-main" style="border: none; box-shadow:none; color: #888; background:transparent;" onclick="location.reload()">Cancel</button>
+            <button class="btn-main" style="border: none; box-shadow:none; color: #888; background:transparent;" onclick="hideOnlineMenu()">Cancel</button>
         </div>
 
         <div class="overlay" id="game-over" style="display: none;">
@@ -165,6 +280,80 @@
         <div class="controls-container" id="deployment-controls"></div>
     </div>
 
+    <!-- SCRIPT GESTION ECRAN & PARAMETRES -->
+    <script>
+        // Gestion du Plein écran & Tailles
+        function autoFullscreen() {
+            if (!document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        }
+
+        function setGameSize(size) {
+            const container = document.getElementById('game-container');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                container.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'wide') {
+                container.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'full') {
+                container.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        });
+
+        // Animation du Bouton Settings
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png';
+            toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-modal').classList.toggle('show');
+        }
+    </script>
+
+    <!-- MOTEUR DE JEU -->
     <script>
         const canvas = document.getElementById('gameCanvas'); 
         const ctx = canvas.getContext('2d');
@@ -180,11 +369,7 @@
             'map1': 'img/map1.png', 'map2': 'img/map2.png',
             'map1_tech1': 'img/map1_tech1.png', 'map2_tech1': 'img/map2_tech1.png',
             'map1_tech2': 'img/map1_tech2.png', 'map2_tech2': 'img/map2_tech2.png',
-            // --- NOUVEAUX SLIMES TECH 1 (Les noms DOIVENT correspondre à tes vrais fichiers PNG) ---
-            'slimewest1': 'img/slimewest1.png',
-            'slimewest2': 'img/slimewest2.png',
-            'slimewest3': 'img/slimewest3.png',
-            // --- ANCIENS SPRITES RECYCLES ---
+            'slimewest1': 'img/slimewest1.png', 'slimewest2': 'img/slimewest2.png', 'slimewest3': 'img/slimewest3.png',
             'fantassin_est': 'img/fantassin_est.png', 'tirreur_est': 'img/tirreur_est.png',
             'drone': 'img/drone.png', 'blaster': 'img/blaster.png', 'mech': 'img/mech.png', 'sniper1': 'img/sniper1.png',
             'drone2': 'img/drone2.png', 'blaster2': 'img/blaster2.png', 'mech2': 'img/mech2.png', 'sniper2': 'img/sniper2.png', 'titan2': 'img/titan2.png'
@@ -202,8 +387,7 @@
         let gameState = {
             p1: { gold: 75, xp: 0, age: 1, renderedAge: 0, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 },
             p2: { gold: 75, xp: 0, age: 1, renderedAge: 0, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 }, 
-            units: [],
-            effects: [] 
+            units: [], effects: [] 
         };
 
         const xpToEvolve = [150, 400, 9999]; 
@@ -213,22 +397,14 @@
         };
         const floorY = 250;
         
-        // --- BASE DE DONNEES DES UNITES (Tailles augmentées + Direction Fixe) ---
-        // nativeFace: 'left' signifie que le PNG de base regarde vers la gauche (l'Ouest).
-        // Le code retournera automatiquement l'image si l'équipe doit avancer vers la droite.
         const unitStats = {
-            // TECH 1
             slime:       { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 25, h: 29,  type: 'melee', rew: 10, xp: 10, imgKey: 'slimewest1', nativeFace: 'left', tech: 1 },
             spear_slime: { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 25, h: 32,  type: 'ranged', rew: 15, xp: 15, imgKey: 'slimewest2', nativeFace: 'left', tech: 1, projectile: true },
             dino_slime:  { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 90, h: 100, type: 'melee', rew: 30, xp: 25, imgKey: 'slimewest3', nativeFace: 'left', tech: 1 },
-            
-            // TECH 2
             warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 29, h: 36,  type: 'melee', rew: 50, xp: 40, imgKey: 'drone', nativeFace: 'right', tech: 2 },
             mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 25, h: 36,  type: 'ranged', rew: 70, xp: 60, imgKey: 'blaster', nativeFace: 'right', tech: 2 },
             mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 46, h: 50,type: 'melee', rew: 120, xp: 90, imgKey: 'mech', nativeFace: 'right', tech: 2 },
             sniper_slime: { cost: 350, hp: 150, dmg: 120,spd: 0.8, rng: 350, cd: 100,w: 29, h: 38,  type: 'ranged', rew: 150, xp: 120, imgKey: 'sniper1', nativeFace: 'right', tech: 2 },
-            
-            // TECH 3
             cyber_slime:  { cost: 400, hp: 800, dmg: 110, spd: 1.3, rng: 30,  cd: 40, w: 34, h: 40,  type: 'melee', rew: 200, xp: 150, imgKey: 'drone2', nativeFace: 'right', tech: 3 },
             shooter_slime:{ cost: 500, hp: 400, dmg: 150, spd: 1.0, rng: 250, cd: 50, w: 34, h: 40,  type: 'ranged', rew: 250, xp: 180, imgKey: 'blaster2', nativeFace: 'right', tech: 3 },
             mecha_slime:  { cost: 800, hp: 1800,dmg: 250, spd: 0.8, rng: 40,  cd: 60, w: 63,h: 71, type: 'melee', rew: 350, xp: 250, imgKey: 'mech2', nativeFace: 'right', tech: 3 },
@@ -247,12 +423,9 @@
                 this.id = Math.random().toString(36).substr(2, 9);
                 this.team = team; this.type = type;
                 this.w = s.w; this.h = s.h; 
-                
                 this.x = team === 1 ? bases[1].spawnX : bases[2].spawnX - this.w; 
-                
                 const PATH_Y = 180;
                 this.y = PATH_Y - this.h; 
-                
                 this.speed = s.spd * bases[team].dir; 
                 this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; 
                 this.cdMax = s.cd; this.cd = 0; 
@@ -261,7 +434,6 @@
             }
         }
 
-        // --- GESTION DE LA CAMERA (SCROLL) ---
         canvas.addEventListener('mousemove', (e) => {
             let rect = canvas.getBoundingClientRect();
             let mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
@@ -302,12 +474,19 @@
             }
         }
 
-        // --- GESTION MENUS & PEERJS ---
         function startSolo(mode) { gameMode = mode; myTeam = 1; startGame(); }
         function startLocal() { gameMode = 'local'; myTeam = 1; startGame(); }
         function showNetworkMenu() {
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('network-menu').style.display = 'flex';
+        }
+        function hideOnlineMenu() {
+            document.getElementById('network-menu').style.display = 'none';
+            if(forceMode === 'multi') {
+                window.location.href = '../index.html';
+            } else {
+                document.getElementById('main-menu').style.display = 'flex';
+            }
         }
 
         function hostGame() {
@@ -352,7 +531,6 @@
             });
         }
 
-        // --- INTERFACE DEPLOIEMENT DYNAMIQUE (AVEC IMAGES PNG) ---
         function buildControlsContainer(team) {
             return `<div class="team-controls" id="team-controls-${team}"></div>`;
         }
@@ -371,7 +549,7 @@
             let unitBtnsHtml = availableUnits.map((uKey, i) => {
                 let u = unitStats[uKey];
                 let displayName = uKey.replace(/_/g, ' ').toUpperCase();
-                let imgSrc = imgFiles[u.imgKey]; // Cherche le bon PNG !
+                let imgSrc = imgFiles[u.imgKey]; 
                 
                 return `<button class="unit-btn" id="btn-${pre}-u${i+1}" onclick="sendAction(${team}, 'spawn', '${uKey}')">
                             <img src="${imgSrc}" style="height: 38px; max-width: 100%; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));" alt="icon">
@@ -427,7 +605,6 @@
                 renderTeamControls(1);
                 renderTeamControls(2);
             } else {
-                // Bug fix pour le client : on construit correctement le conteneur UI assigné à l'équipe
                 document.getElementById('deployment-controls').innerHTML = buildControlsContainer(myTeam);
                 let rate = myTeam === 1 ? gameState.p1.incomeRate : gameState.p2.incomeRate;
                 document.getElementById('p1-income-txt').innerText = `+${rate}/s`;
@@ -441,7 +618,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- MOTEUR & PHYSIQUE ---
         function economyTick() {
             if(!gameActive) return;
             timeElapsed++;
@@ -465,7 +641,6 @@
                 let p1RangedCount = p1Units.filter(u => unitStats[u.type].type === 'ranged').length;
                 let p1MeleeCount = p1Units.filter(u => unitStats[u.type].type === 'melee').length;
 
-                // Sorts AI
                 if (p1Count >= p2Count + 2 && ai.gold >= spellStats[1].cost[ai.age - 1]) {
                     processAction(2, 'spell', 1);
                 }
@@ -473,38 +648,28 @@
                     processAction(2, 'spell', 2);
                 }
 
-                // Logique AI de spawn - Rethink
-                // Get available units backwards for prioritizing strength
                 let availableUnits = Object.keys(unitStats).filter(k => unitStats[k].tech === ai.age);
-                
                 let chosenSpawn = null;
                 for (let idx = availableUnits.length - 1; idx >= 0; idx--) {
                     let uKey = availableUnits[idx];
                     let uData = unitStats[uKey];
 
                     if (ai.gold >= uData.cost) {
-                        // Prioritize counters.
-                        // Counter Melee if Player Ranged advantage.
                         if (p1RangedCount > p1MeleeCount + 1 && uData.type === 'melee') {
                             chosenSpawn = uKey;
                             break;
                         }
                         
-                        // Add Ranged Support if even counts or balancing needed.
                         let aiRangedCount = p2Units.filter(u => unitStats[u.type].type === 'ranged').length;
                         let aiMeleeCount = p2Units.filter(u => unitStats[u.type].type === 'melee').length;
                         
-                        // Pick Strongest Affordable matching balance preference/simple strategy.
                         if (r > 0.4 && (aiMeleeCount === aiRangedCount || (aiMeleeCount > aiRangedCount && uData.type === 'ranged') || (aiRangedCount > aiMeleeCount && uData.type === 'melee'))) {
-                            chosenSpawn = uKey; // pick strongest affordable matching simple balance.
+                            chosenSpawn = uKey; 
                             break;
                         }
-                        
-                        // If not affordable strongest unit, it defaults to the next one in loop.
                     }
                 }
                 
-                // Priority 2: severely outnumbered, default back to spamming cheapest.
                 if (!chosenSpawn && p1Count > p2Count + 1) {
                     let cheapestUnit = availableUnits[0];
                     if (ai.gold >= unitStats[cheapestUnit].cost) {
@@ -512,11 +677,9 @@
                     }
                 }
                 
-                // execute spawn.
                 if (chosenSpawn) processAction(2, 'spawn', chosenSpawn);
             }
             
-            // Spell cooldowns time base logic
             [gameState.p1, gameState.p2].forEach(p => { 
                 p.spells[1] = Math.max(0, p.spells[1] - 1); 
                 p.spells[2] = Math.max(0, p.spells[2] - 1); 
@@ -557,7 +720,6 @@
                             addEffect('orbital', 0, 0, team); screenShake = 25; dmg = 400;
                         }
 
-                        // Correction: attribuer directement les gains (Or + XP) si l'unité est tuée par l'ulti
                         for (let i = gameState.units.length - 1; i >= 0; i--) {
                             let u = gameState.units[i];
                             if (u.team !== team) {
@@ -788,16 +950,13 @@
                 screenShake *= 0.9; if(screenShake < 0.5) screenShake = 0;
             }
 
-            // 1. CIEL
             let grad = ctx.createLinearGradient(0, 0, 0, floorY);
             grad.addColorStop(0, '#020205'); grad.addColorStop(1, '#0a1025');
             ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // APPLIQUER LA CAMERA POUR LE RESTE DU MONDE
             ctx.save();
             ctx.translate(-cameraX, 0);
 
-            // 2. FOND DU MONDE
             let p1MapName = gameState.p1.age === 1 ? 'map1' : (gameState.p1.age === 2 ? 'map1_tech1' : 'map1_tech2');
             let p2MapName = gameState.p2.age === 1 ? 'map2' : (gameState.p2.age === 2 ? 'map2_tech1' : 'map2_tech2');
             
@@ -826,9 +985,6 @@
                 ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x - 50, canvas.height); ctx.stroke();
             }
 
-            // --- PLUS DE DESSIN DE BASE (SUPPRIMÉ COMPLETEMENT) ---
-
-            // 4. UNITES AVEC GESTION PARFAITE DE LA TAILLE ET DU SENS
             gameState.units.forEach(u => {
                 let color = u.team === 1 ? '#00f0ff' : '#ff0055';
                 let stat = unitStats[u.type];
@@ -848,17 +1004,12 @@
                 let img = imgs[imgName];
                 
                 if (img && img.complete && img.naturalWidth !== 0) {
-                    
                     let flip = false;
-                    // L'Equipe 1 avance vers la DROITE. Si l'image regarde vers l'OUEST (Gauche), on la retourne !
                     if (u.team === 1 && stat.nativeFace === 'left') flip = true;
-                    // L'Equipe 2 avance vers la GAUCHE. Si l'image regarde vers l'EST (Droite), on la retourne !
                     if (u.team === 2 && stat.nativeFace === 'right') flip = true;
 
                     if (flip) ctx.scale(-1, 1);
                     
-                    // --- GESTION DES PROPORTIONS (ASPECT RATIO) ---
-                    // Calcule la bonne largeur selon la hauteur choisie pour pas que ça s'écrase
                     let ratio = img.naturalWidth / img.naturalHeight;
                     let drawW = u.h * ratio;
                     
@@ -869,12 +1020,10 @@
                 
                 ctx.restore();
 
-                // Barres de vie ajustées
                 ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(u.x, u.y - 12, u.w, 4); 
                 ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x, u.y - 12, u.w * (u.hp / u.maxHp), 4);
             });
 
-            // 5. EFFETS (Sorts)
             gameState.effects.forEach(eff => {
                 let prog = eff.life / eff.maxLife;
                 let color = eff.team === 1 ? '#00f0ff' : '#ff0055';
@@ -915,7 +1064,6 @@
                 } else if (eff.type === 'spear') {
                      ctx.fillStyle = eff.team === 1 ? '#00f0ff' : '#ff0055';
                      ctx.fillRect(eff.x, eff.y, eff.w, eff.h);
-                     // Spear head
                      ctx.beginPath();
                      ctx.moveTo(eff.x + (eff.team === 1 ? eff.w : 0), eff.y - 3);
                      ctx.lineTo(eff.x + (eff.team === 1 ? eff.w + 6 : -6), eff.y + eff.h/2);
@@ -930,7 +1078,6 @@
         }
 
         function updateHUD() {
-            // Update Rendered Age (Rebuild buttons if Tech Level changed)
             if (!gameState.p1.renderedAge || gameState.p1.renderedAge !== gameState.p1.age) {
                 if (myTeam === 1 || gameMode === 'local') renderTeamControls(1);
                 gameState.p1.renderedAge = gameState.p1.age;
@@ -940,18 +1087,15 @@
                 gameState.p2.renderedAge = gameState.p2.age;
             }
 
-            // Eco
             document.getElementById('p1-gold').innerText = Math.floor(myTeam === 1 ? gameState.p1.gold : gameState.p2.gold);
             if(gameMode === 'local') {
                 document.getElementById('p1-gold').innerText = Math.floor(gameState.p1.gold);
                 document.getElementById('p2-gold').innerText = Math.floor(gameState.p2.gold);
             }
 
-            // HP
             document.getElementById('p1-hp-bar').style.width = (gameState.p1.hp / gameState.p1.maxHp * 100) + '%'; 
             document.getElementById('p2-hp-bar').style.width = (gameState.p2.hp / gameState.p2.maxHp * 100) + '%';
 
-            // XP / Age & Buttons
             [1, 2].forEach(t => {
                 let p = t === 1 ? gameState.p1 : gameState.p2;
                 let pre = t === 1 ? 'p1' : 'p2';
@@ -997,7 +1141,6 @@
                 }
             });
 
-            // GESTION DU CURSEUR D'ALERTE ENNEMI
             let alertEl = document.getElementById('enemy-alert');
             if (alertEl && gameMode !== 'local') {
                 let enemyTeam = myTeam === 1 ? 2 : 1;
@@ -1021,20 +1164,12 @@
                     if (isOffscreen) {
                         alertEl.style.display = 'block';
                         if (myTeam === 1) {
-                            alertEl.style.left = 'auto';
-                            alertEl.style.right = '15px';
-                            alertEl.innerHTML = '⚠️ ENEMIES ▶';
+                            alertEl.style.left = 'auto'; alertEl.style.right = '15px'; alertEl.innerHTML = '⚠️ ENEMIES ▶';
                         } else {
-                            alertEl.style.right = 'auto';
-                            alertEl.style.left = '15px';
-                            alertEl.innerHTML = '◀ ENEMIES ⚠️';
+                            alertEl.style.right = 'auto'; alertEl.style.left = '15px'; alertEl.innerHTML = '◀ ENEMIES ⚠️';
                         }
-                    } else {
-                        alertEl.style.display = 'none';
-                    }
-                } else {
-                    alertEl.style.display = 'none';
-                }
+                    } else { alertEl.style.display = 'none'; }
+                } else { alertEl.style.display = 'none'; }
             }
         }
 
@@ -1049,7 +1184,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL ---
         const gamesHubList = [
             "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
             "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
@@ -1081,7 +1215,7 @@
         function isExcludedElement(target) {
             const tag = target.tagName.toLowerCase();
             if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select' || target.id === 'enemy-alert') return true;
-            if (target.closest('#game-container') || target.closest('.hud') || target.closest('.controls-container')) return true;
+            if (target.closest('#game-container') || target.closest('.hud') || target.closest('.controls-container') || target.closest('#settings-modal') || target.closest('.settings-btn-wrapper')) return true;
             return false;
         }
 
