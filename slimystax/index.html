@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Slimy Stax - Tower Balance</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --bg: #050508; 
+            --panel: rgba(10, 15, 25, 0.85); 
+            --p1: #00f0ff; 
+            --p2: #ff007f; 
+            --perfect: #39ff14;
+            --gold: #ffd700;
+            --legendary: #ffffff;
+        }
+        
+        body, html { 
+            font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; 
+            user-select: none; touch-action: none; overflow: hidden; 
+            background-image: radial-gradient(circle at 50% 100%, rgba(0, 240, 255, 0.1), transparent 70%);
+        }
+
+        h1.game-title { margin-top: 15px; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 8px; text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 3rem; text-align: center;}
+        
+        #game-container { 
+            position: relative; background: var(--panel); border-radius: 15px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            width: 100%; max-width: 600px; border: 1px solid rgba(0, 240, 255, 0.3); 
+            backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* --- TAILLES D'ÉCRAN --- */
+        .size-classic canvas { width: 100%; max-width: 600px; height: 70vh; }
+        
+        #game-container.size-wide, #game-container.size-full {
+            position: fixed !important; top: 0; left: 0; 
+            width: 100vw !important; height: 100vh !important;
+            max-width: none; max-height: none; border-radius: 0; border: none; padding: 0; 
+            z-index: 50; background: var(--bg); justify-content: center;
+        }
+        #game-container.size-wide canvas, #game-container.size-full canvas {
+            height: 100vh; object-fit: contain; width: auto; max-width: 100vw;
+        }
+
+        /* BOUTONS FLOTTANTS */
+        .hub-link { 
+            position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; 
+            font-weight: bold; z-index: 100; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); font-size: 1.2rem;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--p1); box-shadow: 0 0 15px var(--p1); transform: translateX(-5px);}
+
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--perfect); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--perfect), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MODAL PARAMETRES */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+        .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+        /* Overlays Menus (Glassmorphism) */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 15, 28, 0.85); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 15px; }
+        
+        .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.5em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px; position: relative; overflow: hidden; pointer-events: auto;}
+        .btn-main::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: 0.5s; }
+        .btn-main:hover::after { left: 150%; }
+        .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
+
+        /* HUD */
+        #hud { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box; z-index: 10; pointer-events: none; }
+        .hud-box { background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 10px; border: 1px solid var(--p1); text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.2); backdrop-filter: blur(5px);}
+        .hud-title { font-size: 0.9em; color: #aaa; text-transform: uppercase; letter-spacing: 2px;}
+        .hud-val { font-size: 2em; font-weight: bold; color: #fff; text-shadow: 0 0 10px var(--p1);}
+        .hud-combo { color: var(--perfect); text-shadow: 0 0 10px var(--perfect); font-size: 1.5em; font-weight: bold; margin-top: 5px; opacity: 0; transition: opacity 0.3s;}
+        .hud-combo.show { opacity: 1; }
+
+        canvas { background: #020205; border-radius: 15px; cursor: pointer; }
+
+        @media (max-width: 800px) {
+            h1.game-title { font-size: 2em; margin-top: 50px; }
+            #game-container.size-wide canvas, #game-container.size-full canvas { max-height: 80vh; }
+            #hud { padding: 0 15px; }
+            .hud-box { padding: 5px 15px; }
+            .hud-val { font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
+    
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <h1 class="game-title">Slimy Stax</h1>
+    
+    <div id="game-container" class="size-wide">
+        
+        <div id="hud">
+            <div class="hud-box" style="border-color: var(--p2);">
+                <div class="hud-title" style="color:var(--p2)">Vies</div>
+                <div class="hud-val" id="ui-lives" style="text-shadow: 0 0 10px var(--p2);">❤️❤️❤️</div>
+            </div>
+            <div class="hud-box">
+                <div class="hud-title">Score</div>
+                <div class="hud-val" id="ui-score">0</div>
+                <div class="hud-combo" id="ui-combo">PERFECT x0</div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="500" height="700"></canvas>
+
+        <!-- MENU PRINCIPAL -->
+        <div class="overlay" id="main-menu">
+            <h1 style="font-size: 3.5em; margin-bottom: 30px; text-shadow: 0 0 20px var(--p1);">SLIMY STAX</h1>
+            <p style="font-size: 1.2em; color: #ccc; margin-bottom: 30px; max-width: 80%;">Empile les cubes en équilibre !<br>10 Parfaits = Cube Doré (x2)<br>Chance d'obtenir un Légendaire !</p>
+            <button class="btn-main" onclick="autoFullscreen(); startGame()">🚀 Démarrer</button>
+        </div>
+
+        <!-- ECRAN DE FIN -->
+        <div class="overlay" id="game-over" style="display: none;">
+            <h2 id="end-message" style="font-size: 4em; margin-bottom: 10px; color: var(--p2); text-shadow: 0 0 20px var(--p2); text-transform: uppercase;">TOUR EFFONDRÉE</h2>
+            <p style="font-size: 1.8em; color: #fff; margin-bottom: 10px;">Score Final : <span id="final-score" style="color:var(--gold)">0</span></p>
+            <p style="font-size: 1.2em; color: #aaa; margin-bottom: 30px;">Hauteur : <span id="final-height">0</span> blocs</p>
+            <button class="btn-main" onclick="startGame()">Rejouer</button>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT GESTION ECRAN & PARAMETRES -->
+    <script>
+        function autoFullscreen() {
+            if (!document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        }
+
+        function setGameSize(size) {
+            const container = document.getElementById('game-container');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                container.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } else if (size === 'wide') {
+                container.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } else if (size === 'full') {
+                container.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        });
+
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0; settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) settingsBtnImg.src = '../img/setting.png';
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png'; toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
+    </script>
+
+    <!-- MOTEUR DE JEU -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // --- SON WEB API ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isMuted = localStorage.getItem('isMuted') === 'true'; // Global Memory
+
+        function forceAudioUnlock() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            document.removeEventListener('click', forceAudioUnlock);
+            document.removeEventListener('keydown', forceAudioUnlock);
+        }
+        document.addEventListener('click', forceAudioUnlock);
+        document.addEventListener('keydown', forceAudioUnlock);
+
+        function playSound(type) {
+            if (isMuted || audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'drop') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'land') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'perfect') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            } else if (type === 'legendary') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(1500, now + 0.5);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            }
+        }
+
+        // --- ASSETS ---
+        const imgs = {};
+        const imgPaths = {
+            1: 'img/cube1.png', 2: 'img/cube2.png', 3: 'img/cube3.png', 4: 'img/cube4.png',
+            5: 'img/cube5.png', 6: 'img/cube6.png', 7: 'img/cube7.png',
+            8: 'img/cube8.png', // Golden
+            9: 'img/cube9.png'  // Legendary
+        };
+        const fallbackColors = {
+            1: '#ff0055', 2: '#00f0ff', 3: '#39ff14', 4: '#b82aff', 5: '#ffaa00', 6: '#0055ff', 7: '#ff00ff',
+            8: '#ffd700', 9: '#ffffff'
+        };
+
+        Object.keys(imgPaths).forEach(k => {
+            imgs[k] = new Image(); imgs[k].src = imgPaths[k];
+        });
+
+        // --- VARIABLES DE JEU ---
+        let gameActive = false;
+        let score = 0;
+        let lives = 3;
+        let perfectCount = 0;
+        let comboMultiplier = 1;
+        
+        const BLOCK_SIZE = 80;
+        let blocks = [];
+        let activeBlock = null;
+        
+        let cameraY = 0;
+        let targetCameraY = 0;
+        let towerSway = 0; // Oscillation visuelle de la tour
+        let totalOffset = 0; // Somme des décalages pour la difficulté
+
+        let swingAngle = 0;
+        let swingSpeed = 0.05;
+
+        let particles = [];
+
+        class Block {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type;
+                this.state = 'swinging'; // swinging, falling, landed
+                this.vy = 0;
+            }
+            draw() {
+                let drawX = this.x - BLOCK_SIZE/2;
+                let drawY = this.y - BLOCK_SIZE/2;
+                
+                // Si la tour tangue, on applique un offset proportionnel à la hauteur du bloc
+                if (this.state === 'landed') {
+                    let heightIndex = (canvas.height - 50 - this.y) / BLOCK_SIZE;
+                    drawX += Math.sin(towerSway) * heightIndex * (Math.abs(totalOffset) * 0.05);
+                }
+
+                ctx.save();
+                if (this.type === 8) { ctx.shadowBlur = 20; ctx.shadowColor = 'var(--gold)'; }
+                if (this.type === 9) { ctx.shadowBlur = 30; ctx.shadowColor = '#fff'; }
+                
+                if (imgs[this.type] && imgs[this.type].complete && imgs[this.type].naturalWidth > 0) {
+                    ctx.drawImage(imgs[this.type], drawX, drawY, BLOCK_SIZE, BLOCK_SIZE);
+                } else {
+                    ctx.fillStyle = fallbackColors[this.type];
+                    ctx.fillRect(drawX, drawY, BLOCK_SIZE, BLOCK_SIZE);
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(drawX, drawY, BLOCK_SIZE, BLOCK_SIZE);
+                }
+                ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                let angle = Math.random() * Math.PI * 2; let speed = Math.random() * 5 + 2;
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.color = color; this.life = 1.0; this.decay = Math.random() * 0.05 + 0.02;
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
+            draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fillRect(this.x, this.y, 4, 4); ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; }
+        }
+
+        function createParticles(x, y, color, count) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
+
+        function startGame() {
+            document.querySelectorAll('.overlay').forEach(e => e.style.display = 'none');
+            score = 0; lives = 3; perfectCount = 0; comboMultiplier = 1; totalOffset = 0;
+            cameraY = 0; targetCameraY = 0; towerSway = 0; swingSpeed = 0.04;
+            
+            // Bloc de base
+            blocks = [new Block(canvas.width/2, canvas.height - 50, Math.floor(Math.random()*7)+1)];
+            blocks[0].state = 'landed';
+            
+            spawnBlock();
+            updateHUD();
+            gameActive = true;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function spawnBlock() {
+            let spawnY = cameraY + 80;
+            let type = Math.floor(Math.random() * 7) + 1; // 1 à 7
+            
+            if (perfectCount >= 10) {
+                type = 8; // Golden Cube
+                perfectCount = 0; 
+                playSound('legendary');
+            } else if (Math.random() < 1/30) {
+                type = 9; // Legendary Cube
+                playSound('legendary');
+            }
+
+            activeBlock = new Block(canvas.width/2, spawnY, type);
+            swingAngle = 0;
+            // Accélère un peu à mesure que la tour monte
+            swingSpeed = 0.04 + (blocks.length * 0.001);
+            if (swingSpeed > 0.09) swingSpeed = 0.09;
+        }
+
+        function updateHUD() {
+            document.getElementById('ui-score').innerText = score;
+            let hearts = ""; for(let i=0; i<lives; i++) hearts += "❤️";
+            document.getElementById('ui-lives').innerText = hearts;
+            
+            let comboUI = document.getElementById('ui-combo');
+            if (perfectCount > 1) {
+                comboUI.innerText = `PERFECT x${perfectCount}`;
+                comboUI.classList.add('show');
+            } else {
+                comboUI.classList.remove('show');
+            }
+        }
+
+        function dropBlock() {
+            if (!gameActive || !activeBlock || activeBlock.state !== 'swinging') return;
+            activeBlock.state = 'falling';
+            activeBlock.vy = 15;
+            playSound('drop');
+        }
+
+        canvas.addEventListener('mousedown', dropBlock);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); dropBlock(); }, {passive: false});
+
+        function checkCollision() {
+            if (!activeBlock || activeBlock.state !== 'falling') return;
+
+            let topBlock = blocks[blocks.length - 1];
+            
+            // Si le bloc dépasse le bloc du dessous
+            if (activeBlock.y + BLOCK_SIZE/2 >= topBlock.y - BLOCK_SIZE/2) {
+                let diffX = activeBlock.x - topBlock.x;
+                
+                // Si le bloc est posé (Centre de gravité au dessus du bloc précédent)
+                if (Math.abs(diffX) < BLOCK_SIZE * 0.8) {
+                    activeBlock.y = topBlock.y - BLOCK_SIZE;
+                    activeBlock.state = 'landed';
+                    blocks.push(activeBlock);
+                    
+                    let points = 10;
+                    let isPerfect = false;
+
+                    // PERFECT PLACEMENT
+                    if (Math.abs(diffX) <= 5) {
+                        activeBlock.x = topBlock.x; // S'aligne parfaitement
+                        points = 50;
+                        perfectCount++;
+                        isPerfect = true;
+                        createParticles(activeBlock.x, activeBlock.y, 'var(--perfect)', 20);
+                        playSound('perfect');
+                        
+                        // Réduit le tangage si on fait un parfait
+                        totalOffset *= 0.5;
+                    } else {
+                        perfectCount = 0;
+                        totalOffset += diffX; // Augmente le déséquilibre
+                        createParticles(activeBlock.x, activeBlock.y, '#fff', 10);
+                        playSound('land');
+                    }
+
+                    // Bonus spécifiques
+                    if (activeBlock.type === 9) points = 500; // Legendary
+                    
+                    score += points * comboMultiplier;
+                    
+                    // Si on vient de poser un Doré, le prochain coup est x2
+                    if (activeBlock.type === 8) comboMultiplier = 2;
+                    else comboMultiplier = 1;
+
+                    updateHUD();
+                    
+                    // Fait monter la caméra
+                    targetCameraY -= BLOCK_SIZE;
+                    
+                    // Si le déséquilibre est trop grand, la tour s'effondre
+                    if (Math.abs(totalOffset) > BLOCK_SIZE * 3) {
+                        triggerGameOver();
+                    } else {
+                        activeBlock = null;
+                        setTimeout(spawnBlock, 200);
+                    }
+                } else {
+                    // LE BLOC TOMBE DANS LE VIDE
+                    activeBlock.state = 'dead';
+                    lives--;
+                    perfectCount = 0;
+                    comboMultiplier = 1;
+                    playSound('fail');
+                    updateHUD();
+                    
+                    if (lives <= 0) {
+                        triggerGameOver();
+                    } else {
+                        activeBlock = null;
+                        setTimeout(spawnBlock, 500);
+                    }
+                }
+            }
+        }
+
+        function triggerGameOver() {
+            gameActive = false;
+            playSound('fail');
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-height').innerText = blocks.length;
+            document.getElementById('game-over').style.display = 'flex';
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            // Logique du balancier
+            if (activeBlock && activeBlock.state === 'swinging') {
+                swingAngle += swingSpeed;
+                let amplitude = canvas.width / 2 - BLOCK_SIZE;
+                activeBlock.x = canvas.width/2 + Math.sin(swingAngle) * amplitude;
+            }
+
+            // Logique de chute
+            if (activeBlock && activeBlock.state === 'falling') {
+                activeBlock.y += activeBlock.vy;
+                checkCollision();
+            }
+
+            // Bloc mort (tombe dans le vide)
+            if (activeBlock && activeBlock.state === 'dead') {
+                activeBlock.y += 15;
+            }
+
+            // Caméra fluide
+            cameraY += (targetCameraY - cameraY) * 0.1;
+            
+            // Tangage de la tour
+            towerSway += 0.05;
+
+            // DRAW
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Fond dégradé dynamique basé sur la hauteur
+            let bgHeight = Math.min(blocks.length * 5, 200);
+            let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, `rgb(5, 5, ${8 + bgHeight})`);
+            grad.addColorStop(1, '#020205');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(0, -cameraY);
+
+            // Dessin des blocs posés
+            blocks.forEach(b => b.draw());
+            
+            // Dessin du bloc actif
+            if (activeBlock) activeBlock.draw();
+            
+            // Particules
+            for(let i=particles.length-1; i>=0; i--) {
+                particles[i].update(); particles[i].draw();
+                if(particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            ctx.restore();
+
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+    
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html", "../worms/index.html"
+        ];
+        let globalTouchStartX = 0, globalTouchStartY = 0, globalTouchEndX = 0, globalTouchEndY = 0;
+        function handleSwipeGesture() {
+            const swipeThreshold = 75; 
+            let diffX = globalTouchEndX - globalTouchStartX; let diffY = globalTouchEndY - globalTouchStartY;
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX < -swipeThreshold) navigateGames(1);       
+                else if (diffX > swipeThreshold) navigateGames(-1);  
+            } else {
+                if (diffY < -swipeThreshold) navigateGames(1);       
+                else if (diffY > swipeThreshold) navigateGames(-1);  
+            }
+        }
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => { let folderName = game.split('/')[1]; return currentPath.includes(folderName); });
+            if (currentIndex === -1) return;
+            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
+            window.location.href = gamesHubList[nextIndex];
+        }
+        function isExcludedElement(target) {
+            const tag = target.tagName.toLowerCase();
+            if (tag === 'button') return true;
+            if (target.closest('#settings-modal') || target.closest('.settings-btn-wrapper')) return true;
+            return false;
+        }
+        document.addEventListener('touchstart', e => {
+            if (isExcludedElement(e.target)) return;
+            globalTouchStartX = e.changedTouches[0].screenX; globalTouchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+        document.addEventListener('touchend', e => {
+            if (isExcludedElement(e.target)) return;
+            globalTouchEndX = e.changedTouches[0].screenX; globalTouchEndY = e.changedTouches[0].screenY;
+            handleSwipeGesture();
+        }, { passive: true });
+    </script>
+</body>
+</html>
