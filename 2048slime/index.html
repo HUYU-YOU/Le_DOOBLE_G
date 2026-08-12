@@ -4,36 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber 2048 : Slime Edition</title>
+    
+    <!-- Police Rajdhani pour le look Cyber/Arcade -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --grid-bg: #1a1a2e; --cell-bg: #2a2a40; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; touch-action: none; }
-        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px #fff; text-align: center; }
+        :root { 
+            --bg: #050811; 
+            --panel: rgba(10, 15, 28, 0.85); 
+            --p1: #00f0ff; 
+            --grid-bg: rgba(26, 26, 46, 0.8); 
+            --cell-bg: rgba(42, 42, 64, 0.6); 
+            --btn-green: #39ff14;
+        }
         
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; }
-        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); }
+        body { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: var(--bg); color: #fff; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden; touch-action: none; 
+            background-image: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05) 0%, transparent 70%);
+        }
 
-        #game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin-bottom: 20px; margin-top: 40px; }
-        .score-box { background: var(--panel); padding: 15px 25px; border-radius: 10px; border: 1px solid rgba(0, 240, 255, 0.3); text-align: center; box-shadow: 0 0 15px rgba(0, 240, 255, 0.1); }
-        .score-title { font-size: 0.8em; color: var(--p1); text-transform: uppercase; letter-spacing: 1px; }
-        .score-value { font-size: 1.8em; font-weight: bold; margin-top: 5px; }
+        /* --- WRAPPER DYNAMIQUE (Pour changer la taille) --- */
+        #main-wrapper {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* Tailles de jeu */
+        .size-classic #game-container { width: 400px; height: 400px; }
+        .size-classic #game-header { width: 400px; }
+
+        .size-wide #game-container { width: 600px; height: 600px; }
+        .size-wide #game-header { width: 600px; }
+
+        .size-full #game-container { width: 80vh; height: 80vh; max-width: 95vw; max-height: 95vw; }
+        .size-full #game-header { width: 80vh; max-width: 95vw; }
+
+        /* --- BOUTONS FLOTTANTS --- */
+        .hub-link { 
+            position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; 
+            font-weight: bold; font-size: 1.2rem; background: rgba(0,0,0,0.5); padding: 10px 20px; 
+            border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
+            transition: all 0.3s ease; z-index: 100;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
+
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--btn-green); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--btn-green), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MODAL PARAMETRES */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+        .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+        /* --- HEADER --- */
+        #game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; transition: width 0.4s ease; }
+        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin: 0; text-shadow: 0 0 15px var(--p1); font-size: 3em; }
+        .score-box { background: rgba(0,0,0,0.6); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.3); text-align: center; box-shadow: 0 5px 20px rgba(0, 240, 255, 0.15); backdrop-filter: blur(5px); }
+        .score-title { font-size: 1em; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
+        .score-value { font-size: 2.2em; font-weight: bold; margin-top: 5px; text-shadow: 0 0 10px var(--p1); }
 
         /* LE PLATEAU DE JEU */
-        #game-container { position: relative; width: 400px; height: 400px; background: var(--grid-bg); border-radius: 15px; padding: 10px; box-sizing: border-box; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); border: 2px solid rgba(255,255,255,0.1); }
+        #game-container { 
+            position: relative; background: var(--grid-bg); border-radius: 15px; padding: 10px; box-sizing: border-box; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            border: 2px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
+            transition: width 0.4s ease, height 0.4s ease;
+        }
         
-        /* LA GRILLE DE FOND (les cases vides) */
         .grid-background { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; width: 100%; height: 100%; }
         .grid-cell { background: var(--cell-bg); border-radius: 10px; }
 
         /* LES TUILES (Les Slimes) */
         #tiles-container { position: absolute; top: 10px; left: 10px; width: calc(100% - 20px); height: calc(100% - 20px); pointer-events: none; }
-        .tile { position: absolute; width: calc(25% - 7.5px); height: calc(25% - 7.5px); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 2em; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); background-size: contain; background-position: center; background-repeat: no-repeat; transition: transform 150ms ease-in-out, top 150ms ease-in-out, left 150ms ease-in-out; }
-        
-        /* ANIMATION DE FUSION (Le Pop) */
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+        .tile { 
+            position: absolute; width: calc(25% - 7.5px); height: calc(25% - 7.5px); border-radius: 10px; 
+            display: flex; justify-content: center; align-items: center; font-size: 2.5em; font-weight: bold; 
+            color: white; text-shadow: 2px 2px 5px rgba(0,0,0,0.8); background-size: contain; background-position: center; 
+            background-repeat: no-repeat; transition: transform 150ms ease-in-out, top 150ms ease-in-out, left 150ms ease-in-out; 
+            font-family: sans-serif;
         }
+        
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
         .tile-merged { animation: pop 200ms ease-in-out; }
         .tile-new { animation: pop 200ms ease-in-out; }
 
@@ -53,41 +118,155 @@
         .tile-8192 { background-color: #4acccc; box-shadow: 0 0 30px #4acccc; }
 
         /* ÉCRAN DE FIN */
-        #game-over { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; border-radius: 15px; z-index: 100; backdrop-filter: blur(4px); }
-        #game-over h2 { font-size: 3em; margin-bottom: 10px; color: var(--p1); }
-        .btn-restart { background: #fff; color: #000; border: none; padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin-top: 20px; }
-        .btn-restart:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
+        #game-over { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); 
+            display: none; flex-direction: column; align-items: center; justify-content: center; 
+            border-radius: 15px; z-index: 100; backdrop-filter: blur(8px); 
+        }
+        #game-over h2 { font-size: 4em; margin-bottom: 10px; color: var(--p1); text-shadow: 0 0 20px var(--p1); margin-top: 0;}
+        #game-over p { font-size: 1.5em; color: #fff; margin-bottom: 20px;}
+        .btn-restart { 
+            background: rgba(0,0,0,0.5); color: #fff; border: 2px solid var(--p1); padding: 15px 35px; 
+            font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 8px; 
+            cursor: pointer; text-transform: uppercase; transition: 0.3s; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); 
+        }
+        .btn-restart:hover { transform: scale(1.05); background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); }
 
-        @media (max-width: 450px) {
-            #game-container { width: 90vw; height: 90vw; }
+        @media (max-width: 650px) {
+            .size-wide #game-container, .size-classic #game-container { width: 90vw; height: 90vw; }
+            .size-wide #game-header, .size-classic #game-header { width: 90vw; flex-direction: column; gap: 15px;}
+            h1 { font-size: 2.5em; }
         }
     </style>
 </head>
 <body>
+    
+    <!-- BOUTONS FLOTTANTS -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     
-    <div id="game-header">
-        <h1>SLIME 2048</h1>
-        <div class="score-box">
-            <div class="score-title">Score</div>
-            <div class="score-value" id="score">0</div>
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Taille du Plateau 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Large</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Maximal</button>
+                </div>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <div id="game-container">
-        <!-- Grille visuelle statique -->
-        <div class="grid-background" id="grid-bg"></div>
-        <!-- Conteneur des tuiles animées -->
-        <div id="tiles-container"></div>
-        
-        <!-- Ecran de fin -->
-        <div id="game-over">
-            <h2>GAME OVER</h2>
-            <p>Les slimes sont coincés !</p>
-            <button class="btn-restart" onclick="resetGame()">Rejouer</button>
+    <!-- SCRIPT GESTION TAILLE ÉCRAN & ANIMATION SETTINGS -->
+    <script>
+        // Lancement auto en Large
+        window.addEventListener('DOMContentLoaded', () => {
+            setGameSize('wide');
+        });
+
+        function setGameSize(size) {
+            const wrapper = document.getElementById('main-wrapper');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            wrapper.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                wrapper.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'wide') {
+                wrapper.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'full') {
+                wrapper.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+            
+            // Forcer le reflow des tuiles pour qu'elles s'adaptent instantanément
+            setTimeout(updateTileElements, 50);
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('main-wrapper').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        });
+
+        // Animation du Bouton Settings
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png';
+            toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-modal').classList.toggle('show');
+        }
+    </script>
+    
+    <!-- MAIN WRAPPER -->
+    <div id="main-wrapper" class="size-wide">
+        <div id="game-header">
+            <h1>SLIME 2048</h1>
+            <div class="score-box">
+                <div class="score-title">Score</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+        </div>
+
+        <div id="game-container">
+            <!-- Grille visuelle statique -->
+            <div class="grid-background" id="grid-bg"></div>
+            <!-- Conteneur des tuiles animées -->
+            <div id="tiles-container"></div>
+            
+            <!-- Ecran de fin -->
+            <div id="game-over">
+                <h2>GAME OVER</h2>
+                <p>Les slimes sont coincés !</p>
+                <button class="btn-restart" onclick="resetGame()">Rejouer</button>
+            </div>
         </div>
     </div>
 
+    <!-- MOTEUR DE JEU JAVASCRIPT (INCHANGÉ) -->
     <script>
         // --- AUDIO : BRUITAGES PIKMIN / PLAYTEST ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -101,20 +280,18 @@
             const now = audioCtx.currentTime;
 
             if (type === 'merge') {
-                // Le fameux couinement / pop (Pikmin)
-                osc.type = 'sine'; // Son doux et arrondi
-                let baseFreq = 700 + (Math.random() * 400); // Variété de la voix de la créature
+                osc.type = 'sine'; 
+                let baseFreq = 700 + (Math.random() * 400); 
                 osc.frequency.setValueAtTime(baseFreq, now);
-                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.1); // Le pitch monte
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.1); 
                 
                 gain.gain.setValueAtTime(0.0, now);
-                gain.gain.linearRampToValueAtTime(0.15, now + 0.02); // Attaque douce
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); // Disparition rapide
+                gain.gain.linearRampToValueAtTime(0.15, now + 0.02); 
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); 
                 
                 osc.start(now);
                 osc.stop(now + 0.15);
             } else if (type === 'move') {
-                // Petit bruit de glissement mou
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(250, now);
                 osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
@@ -125,7 +302,6 @@
                 osc.start(now);
                 osc.stop(now + 0.1);
             } else if (type === 'gameover') {
-                // Soupir triste / dégonflement
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(400, now);
                 osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
@@ -258,7 +434,7 @@
         // Moteur de déplacement
         function move(direction) {
             let moved = false;
-            let moveMerged = false; // Pour savoir si un bruit de fusion a été joué
+            let moveMerged = false; 
             let merged = [[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false]];
 
             const moveTile = (r, c, dr, dc) => {
@@ -297,7 +473,6 @@
                         createTileElement(newTile);
                         document.getElementById(`tile-${newId}`).classList.add('tile-merged');
                         
-                        // Joue le bruit de fusion (Chaque fusion fait un petit couinement)
                         playSound('merge');
                         moveMerged = true;
                         moved = true;
@@ -315,7 +490,6 @@
             if (direction === 'right') { for(let r=0; r<4; r++) for(let c=2; c>=0; c--) moveTile(r,c,0,1); }
 
             if (moved) {
-                // Si ça a bougé sans fusion, on joue le petit glissement
                 if (!moveMerged) playSound('move');
                 
                 updateTileElements();
@@ -356,7 +530,7 @@
         let gameTouchX = 0, gameTouchY = 0;
 
         gameContainer.addEventListener('touchstart', e => {
-            if (audioCtx.state === 'suspended') audioCtx.resume(); // Débloque l'audio sur mobile
+            if (audioCtx.state === 'suspended') audioCtx.resume(); 
             gameTouchX = e.touches[0].clientX;
             gameTouchY = e.touches[0].clientY;
             e.stopPropagation();
@@ -383,9 +557,7 @@
         initBoard();
     </script>
     
-<!-- ========================================== -->
     <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE & SOURIS) -->
-<!-- ========================================== -->
     <script>
         const gamesHubList = [
             "../cybertank/index.html",
