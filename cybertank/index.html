@@ -14,31 +14,79 @@
             --p2: #ff007f; 
             --boss: #b82aff;
             --sys: #39ff14; 
+            --btn-green: #39ff14;
         }
         
-        body { 
-            font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh; 
+        body, html { 
+            font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; 
             user-select: none; touch-action: none; overflow: hidden; 
             background-image: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05), transparent 60%);
         }
 
-        h1 { margin-top: 20px; color: #fff; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 15px var(--p1); font-size: 2.5em; text-align: center;}
+        h1.game-title { margin-top: 15px; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 8px; text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 3rem; text-align: center;}
         
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
-        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--p1); box-shadow: 0 0 15px var(--p1); }
+        /* --- CONTENEUR PRINCIPAL DU JEU --- */
+        #game-container { 
+            position: relative; background: var(--panel); padding: 15px; border-radius: 15px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            width: 100%; max-width: 900px; border: 1px solid rgba(0, 240, 255, 0.3); 
+            backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
 
-        #game-container { position: relative; background: var(--panel); padding: 15px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); width: 100%; max-width: 900px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center;}
+        /* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
+        .size-classic canvas { width: 100%; max-width: 800px; }
         
-        /* Overlays Menus */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 5, 8, 0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(8px); border-radius: 15px; }
+        /* Le jeu se lance de base en Full Page */
+        #game-container.size-wide, #game-container.size-full {
+            position: fixed !important; top: 0; left: 0; 
+            width: 100vw !important; height: 100vh !important;
+            max-width: none; max-height: none; border-radius: 0; border: none; padding: 20px 10px; 
+            z-index: 50; background: var(--bg); justify-content: center;
+        }
+        #game-container.size-wide canvas, #game-container.size-full canvas {
+            max-height: 75vh; object-fit: contain; width: auto;
+        }
+
+        /* BOUTONS FLOTTANTS (Settings & Hub) */
+        .hub-link { 
+            position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; 
+            font-weight: bold; z-index: 100; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); font-size: 1.2rem;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--p1); box-shadow: 0 0 15px var(--p1); transform: translateX(-5px);}
+
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--btn-green); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--btn-green), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MODAL PARAMETRES & TAILLE D'ÉCRAN */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+        .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+        /* Overlays Menus (Glassmorphism) */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 15, 28, 0.85); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 15px; }
         
-        .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 320px; position: relative; overflow: hidden;}
+        .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px; position: relative; overflow: hidden; pointer-events: auto;}
+        .btn-main::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: 0.5s; }
+        .btn-main:hover::after { left: 150%; }
         .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
         .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
-        .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); }
+        .btn-main.red:hover { background: var(--p2); color:#fff; box-shadow: 0 0 25px var(--p2); }
         .btn-main.purple { border-color: var(--boss); box-shadow: 0 0 15px rgba(184, 42, 255, 0.2); }
-        .btn-main.purple:hover { background: var(--boss); box-shadow: 0 0 25px var(--boss); }
+        .btn-main.purple:hover { background: var(--boss); color:#fff; box-shadow: 0 0 25px var(--boss); }
 
         input.net-input { padding: 15px; border-radius: 8px; border: 1px solid var(--p1); text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.2em; width: 80%; max-width: 300px; text-transform: uppercase; outline: none; font-family: 'Rajdhani';}
         input.net-input:focus { box-shadow: 0 0 15px var(--p1); border-color: #fff;}
@@ -48,56 +96,106 @@
         .score-box { font-size: 1.5em; font-weight: bold; text-transform: uppercase; color: var(--p1); text-shadow: 0 0 10px var(--p1); }
         .score-box.enemy { color: var(--p2); text-shadow: 0 0 10px var(--p2); }
         .score-box.boss { color: var(--boss); text-shadow: 0 0 15px var(--boss); animation: pulse 1s infinite; }
-        
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         /* Canvas */
         canvas { background: #030408; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: auto; aspect-ratio: 4/3; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); cursor: crosshair; }
 
         /* Controles Mobiles */
-        #mobile-controls { display: none; width: 100%; justify-content: space-between; padding: 20px 40px; box-sizing: border-box; position: absolute; bottom: 10px; pointer-events: none;}
-        .joystick-zone { width: 120px; height: 120px; background: rgba(0, 240, 255, 0.1); border: 2px solid rgba(0, 240, 255, 0.3); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none;}
+        #mobile-controls { display: none; width: 100%; justify-content: space-between; padding: 20px 40px; box-sizing: border-box; position: absolute; bottom: 10px; pointer-events: none; z-index: 100;}
+        .joystick-zone { width: 120px; height: 120px; background: rgba(0, 240, 255, 0.1); border: 2px solid rgba(0, 240, 255, 0.3); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none; backdrop-filter: blur(5px);}
         .joystick-zone.right { border-color: rgba(255, 0, 127, 0.3); background: rgba(255, 0, 127, 0.1); }
         .joystick-knob { width: 50px; height: 50px; background: var(--p1); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 15px var(--p1);}
         .joystick-zone.right .joystick-knob { background: var(--p2); box-shadow: 0 0 15px var(--p2); }
 
         @media (max-width: 800px) {
-            h1 { font-size: 1.8em; margin-top: 40px; }
+            h1.game-title { font-size: 1.8em; margin-top: 40px; }
             #mobile-controls { display: flex; }
+            #game-container.size-wide canvas, #game-container.size-full canvas { max-height: 60vh; }
         }
     </style>
 </head>
 <body>
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <h1>Cyber Slime Arena</h1>
     
-    <div id="game-container">
+    <!-- LECTURE DE L'URL EN AMONT POUR CACHER LES MENUS A LA VOLEE -->
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const forceMode = urlParams.get('mode');
+    </script>
+
+    <!-- BOUTONS FLOTTANTS (Hors du wrapper pour survivre au zoom/scale) -->
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <h1 class="game-title">Cyber Slime Arena</h1>
+    
+    <div id="game-container" class="size-wide">
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
             <h1 style="font-size: 3.5em; margin-bottom: 30px; text-shadow: 0 0 20px var(--p1);">ARENA OS</h1>
-            <button class="btn-main" onclick="startMode('solo_survival')">Survie </button>
-            <button class="btn-main purple" onclick="startMode('solo_1v1')">Duel Bot </button>
-            <button class="btn-main red" onclick="showNetworkMenu()">Duel PVP </button>
+            <div id="solo-buttons" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+                <button class="btn-main" onclick="autoFullscreen(); startMode('solo_survival')">🛡️ Survie</button>
+                <button class="btn-main purple" onclick="autoFullscreen(); startMode('solo_1v1')">🤖 Duel Bot</button>
+            </div>
+            <hr id="menu-separator" style="width: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+            <div id="net-button" style="width:100%; display:flex; justify-content:center;">
+                <button class="btn-main red" onclick="autoFullscreen(); showNetworkMenu()">🌐 Duel PVP</button>
+            </div>
         </div>
+
+        <!-- Masquage conditionnel des boutons Solo/Multi à la volée -->
+        <script>
+            window.addEventListener('DOMContentLoaded', () => {
+                if (forceMode === 'solo') {
+                    document.getElementById('net-button').style.display = 'none';
+                    document.getElementById('menu-separator').style.display = 'none';
+                } else if (forceMode === 'multi') {
+                    document.getElementById('main-menu').style.display = 'none';
+                    showNetworkMenu();
+                }
+            });
+        </script>
 
         <!-- MENU RÉSEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
             <h2 style="color: var(--p1); font-size: 2.5em; margin-bottom: 20px;">LIAISON PVP</h2>
             
-            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--p1); width: 85%; max-width: 380px; text-align: center; margin-bottom: 20px;">
+            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--p1); width: 85%; max-width: 380px; text-align: center; margin-bottom: 20px; backdrop-filter: blur(5px);">
                 <h3 style="color: #fff; margin-top: 0;">CRÉER UNE ARÈNE</h3>
                 <button class="btn-main" onclick="hostGame()" style="width: 100%; padding: 12px; margin:0;">Générer Code</button>
                 <div id="my-id" style="color:var(--p1); font-weight:bold; font-size:2.5em; letter-spacing: 4px; min-height: 40px; text-shadow: 0 0 15px var(--p1); margin-top: 10px;">...</div>
             </div>
 
-            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--p2); width: 85%; max-width: 380px; text-align: center;">
+            <div style="background: rgba(0,0,0,0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--p2); width: 85%; max-width: 380px; text-align: center; backdrop-filter: blur(5px);">
                 <h3 style="color: #fff; margin-top: 0;">REJOINDRE</h3>
                 <input type="text" id="join-id" class="net-input" placeholder="Code Arène">
                 <button class="btn-main red" onclick="joinGame()" style="width: 100%; padding: 12px; margin:0;">Infiltration</button>
             </div>
             
             <p id="status-text" style="color: #ccc; margin-top: 20px; font-weight:bold; font-size: 1.2em;"></p>
-            <button class="btn-main" style="border: none; box-shadow:none; color: #888; background:transparent;" onclick="location.reload()">Annuler</button>
+            <button class="btn-main" style="border: none; box-shadow:none; color: #888; background:transparent;" onclick="hideOnlineMenu()">Annuler</button>
         </div>
 
         <!-- ECRAN DE FIN -->
@@ -124,11 +222,84 @@
         </div>
     </div>
 
+    <!-- SCRIPT GESTION ECRAN & PARAMETRES -->
+    <script>
+        // Gestion du Plein écran & Tailles
+        function autoFullscreen() {
+            if (!document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        }
+
+        function setGameSize(size) {
+            const container = document.getElementById('game-container');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                container.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'wide') {
+                container.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'full') {
+                container.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        });
+
+        // Animation du Bouton Settings
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png';
+            toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-modal').classList.toggle('show');
+        }
+    </script>
+
+    <!-- MOTEUR DE JEU (INCHANGÉ) -->
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // --- FONCTIONS MATHEMATIQUES POUR L'IA (RAYCASTING) ---
         function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
             let uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
             let uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
@@ -142,7 +313,6 @@
             return left || right || top || bottom || (x1 > rx && x1 < rx+rw && y1 > ry && y1 < ry+rh);
         }
 
-        // --- 🎵 SYSTÈME AUDIO WEB API 🎵 ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function playSound(type) {
@@ -195,7 +365,6 @@
             }
         }
 
-        // Gestion du grondement du moteur de tank
         let engineOsc = null;
         let engineGain = null;
         let isEngineRunning = false;
@@ -226,7 +395,6 @@
             }
         }
 
-        // --- CHARGEMENT DES ASSETS ---
         const imgs = {};
         const imgFiles = {
             'map': './img/maptankslime.png',
@@ -245,7 +413,6 @@
             imgs[k].src = imgFiles[k]; 
         });
 
-        // --- ETAT DU JEU ---
         let gameMode = 'solo_survival'; 
         let gameActive = false;
         let loopRunning = false;
@@ -264,7 +431,6 @@
         let jMove = { x: 0, y: 0 }; 
         let jAim = { x: 0, y: 0, firing: false };
 
-        // --- CLASSES ---
         class Tank {
             constructor(id, x, y, skin, color, team) {
                 this.id = id;
@@ -290,7 +456,6 @@
             update() {
                 if (this.cd > 0) this.cd--;
 
-                // Physique et Collisions avec les murs
                 let nextX = this.x + this.vx; let nextY = this.y + this.vy;
                 let collideX = false, collideY = false;
                 
@@ -306,11 +471,9 @@
                 if (!collideY) this.y = nextY;
                 if (this.vx !== 0 || this.vy !== 0) this.angle = Math.atan2(this.vy, this.vx);
 
-                // --- 🤖 INTELLIGENCE ARTIFICIELLE ÉVOLUTIVE ---
                 if (this.isAI && gameMode !== 'client') {
-                    let p1 = tanks.find(t => t.team !== this.team && t.hp > 0); // Trouver l'ennemi
+                    let p1 = tanks.find(t => t.team !== this.team && t.hp > 0); 
                     if(p1) {
-                        // Configuration Duel 1v1 : QI Maximum et Agressivité Totale
                         let isDuel = (gameMode === 'solo_1v1');
                         let iq = isDuel ? 2.0 : Math.min(wave / 15, 1); 
 
@@ -318,7 +481,6 @@
                         let dist = Math.hypot(dx, dy);
                         let baseAngle = Math.atan2(dy, dx);
                         
-                        // --- 1. RAYCASTING : LIGNE DE VUE (LOS) ---
                         let hasLOS = true;
                         for(let w of walls) {
                             if (lineIntersectsRect(this.x, this.y, p1.x, p1.y, w.x, w.y, w.w, w.h)) {
@@ -326,22 +488,18 @@
                             }
                         }
 
-                        // --- 2. GESTION DE LA VISÉE (AIMING) ---
                         let aimJitter = isDuel ? 0 : 0.15 - (iq * 0.1); 
                         if (hasLOS) {
                             this.turretAngle = baseAngle + (Math.random() - 0.5) * aimJitter;
                         } else if (isDuel) {
-                            // IA AVANCÉE : Sans vue, il calcule un angle pour créer un tir à Ricochet
-                            // Il décale son tir de 40 degrés par rapport au joueur pour taper un mur
                             this.turretAngle = baseAngle + (Math.random() > 0.5 ? 0.7 : -0.7);
                         } else {
                             this.turretAngle = baseAngle + (Math.random() - 0.5) * aimJitter;
                         }
 
-                        // --- 3. ESQUIVE DES BALLES (MATRIX DODGE) ---
                         let dodgeVx = 0; let dodgeVy = 0;
                         let dodging = false;
-                        let dodgeRadius = 150 + (iq * 100); // Réagit de plus en plus loin
+                        let dodgeRadius = 150 + (iq * 100); 
                         
                         for(let b of bullets) {
                             if (b.team !== this.team) {
@@ -349,20 +507,16 @@
                                 let bDist = Math.hypot(bx - this.x, by - this.y);
                                 
                                 if (bDist < dodgeRadius) {
-                                    // Prédiction de la trajectoire
                                     let bLen = Math.hypot(b.vx, b.vy);
                                     let bdx = b.vx / bLen; let bdy = b.vy / bLen;
                                     let tx = this.x - bx; let ty = this.y - by;
                                     
-                                    // Vérifie si la balle avance vers lui
                                     let dot = (tx * bdx + ty * bdy);
                                     if (dot > 0 && dot < dodgeRadius) {
                                         let projX = bx + bdx * dot; let projY = by + bdy * dot;
                                         let distToLine = Math.hypot(this.x - projX, this.y - projY);
                                         
-                                        // Si le bot est sur la trajectoire (Danger !)
                                         if (distToLine < this.w * 1.5) {
-                                            // Il trouve le meilleur côté pour esquiver
                                             let cross = (tx * bdy - ty * bdx);
                                             let dodgeDir = Math.sign(cross) || 1;
                                             
@@ -375,17 +529,14 @@
                             }
                         }
 
-                        // --- 4. GESTION DES MOUVEMENTS (CHASING & STRAFING) ---
                         let safeDist = this.isBoss ? 150 : 250;
-                        if (isDuel) safeDist = 180; // Beaucoup plus agressif en duel
+                        if (isDuel) safeDist = 180; 
 
                         if (dodging) {
-                            // Écrase les ordres pour sauver sa peau
                             this.vx = dodgeVx;
                             this.vy = dodgeVy;
                         } else {
                             if (!hasLOS && isDuel) {
-                                // S'il ne voit pas le joueur, il le rush !
                                 this.vx = Math.cos(baseAngle) * this.speed * 0.9;
                                 this.vy = Math.sin(baseAngle) * this.speed * 0.9;
                             } else if (dist > safeDist) {
@@ -395,7 +546,6 @@
                                 this.vx = -Math.cos(baseAngle) * this.speed * 0.6;
                                 this.vy = -Math.sin(baseAngle) * this.speed * 0.6;
                             } else {
-                                // Strafing : Tourne autour du joueur en mode 1v1
                                 if (isDuel) {
                                     this.vx = -Math.sin(baseAngle) * this.speed * 0.8;
                                     this.vy = Math.cos(baseAngle) * this.speed * 0.8;
@@ -405,7 +555,6 @@
                             }
                         }
                         
-                        // ANTI-CHEVAUCHEMENT DES ALLIÉS (Utile pour les vagues)
                         for(let other of tanks) {
                             if (other !== this && other.hp > 0 && other.team === this.team) {
                                 let odx = this.x - other.x; let ody = this.y - other.y;
@@ -419,7 +568,6 @@
                             }
                         }
 
-                        // --- 5. ÉVITEMENT INTELLIGENT DES MURS (GLISSADE) ---
                         let avoidVx = 0; let avoidVy = 0;
                         let margin = 25; 
                         
@@ -437,7 +585,6 @@
                                 if (distance < margin + this.w/2) {
                                     if(distance === 0) { avoidVx += (Math.random()-0.5)*5; avoidVy += (Math.random()-0.5)*5; } 
                                     else {
-                                        // Glisse le long du mur en ajoutant de la force inverse
                                         let push = (margin + this.w/2 - distance) / (margin + this.w/2);
                                         avoidVx += (distX / distance) * this.speed * push * 3.5;
                                         avoidVy += (distY / distance) * this.speed * push * 3.5;
@@ -447,7 +594,6 @@
                         }
                         this.vx += avoidVx; this.vy += avoidVy;
 
-                        // Normalisation globale de la vitesse (pour ne pas aller trop vite en combinant les forces)
                         let currentSpeed = Math.hypot(this.vx, this.vy);
                         let maxSpeed = this.isBoss ? this.speed * 0.7 : this.speed * (isDuel ? 1.05 : 0.9);
                         if (currentSpeed > maxSpeed) {
@@ -455,9 +601,8 @@
                             this.vy = (this.vy / currentSpeed) * maxSpeed;
                         }
 
-                        // --- 6. GESTION DES TIRS ---
                         let fireRate = (this.isBoss ? 0.03 : 0.015) + (iq * 0.02);
-                        if (isDuel) fireRate = 0.08; // Bot en 1v1 tire BEAUCOUP plus souvent
+                        if (isDuel) fireRate = 0.08; 
                         
                         if (this.cd === 0 && Math.random() < fireRate) shoot(this);
                     }
@@ -472,7 +617,6 @@
                 ctx.shadowBlur = this.isBoss ? 25 : 15; 
                 ctx.shadowColor = this.color;
                 
-                // Rotation compensée (-90°) car le sprite regarde vers le bas
                 ctx.rotate(this.turretAngle - Math.PI / 2);
                 
                 let img = imgs[this.skin];
@@ -486,7 +630,6 @@
                 }
                 ctx.restore();
 
-                // Laser de visée (dessiné séparément)
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.turretAngle);
@@ -495,7 +638,6 @@
                 ctx.beginPath(); ctx.moveTo(this.w/2, 0); ctx.lineTo(this.w/2 + 25, 0); ctx.stroke();
                 ctx.restore();
 
-                // Barre HP
                 ctx.fillStyle = 'rgba(255,255,255,0.2)';
                 ctx.fillRect(this.x - 20, this.y - this.h/2 - 12, 40, 5);
                 ctx.fillStyle = this.color;
@@ -584,7 +726,6 @@
             }
         }
 
-        // --- MAP & CORE ---
         function generateMap() {
             walls = [
                 {x: 350, y: 250, w: 100, h: 100, img: 'obs5', rotated: false}, 
@@ -726,8 +867,17 @@
             }
         }
 
-        // --- NETWORK (PEERJS) ---
         function showNetworkMenu() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('network-menu').style.display = 'flex'; }
+        
+        function hideOnlineMenu() { 
+            if(forceMode === 'multi') {
+                window.location.href = '../index.html';
+            } else {
+                document.getElementById('network-menu').style.display = 'none'; 
+                document.getElementById('main-menu').style.display = 'flex'; 
+                if(peer) { peer.destroy(); peer = null; }
+            }
+        }
 
         function hostGame() {
             let status = document.getElementById('status-text');
@@ -759,6 +909,7 @@
                 conn.on('open', () => { status.innerText = "Connecté ! Synchronisation..."; setTimeout(() => initGame('client'), 1000); });
                 setupConnection();
             });
+            peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = err.type === 'peer-unavailable' ? "Partie introuvable." : "Erreur : " + err.type; });
         }
 
         function setupConnection() {
@@ -790,7 +941,6 @@
             document.getElementById('end-stats').innerText = stats;
         }
 
-        // --- INPUTS ---
         window.addEventListener('keydown', e => { let k=e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true; });
         window.addEventListener('keyup', e => { let k=e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false; });
         canvas.addEventListener('mousemove', e => { let rect = canvas.getBoundingClientRect(); mouse.x = (e.clientX - rect.left) / (rect.width / canvas.width); mouse.y = (e.clientY - rect.top) / (rect.height / canvas.height); });
@@ -813,7 +963,6 @@
         joyMove.addEventListener('touchstart', e => handleJoystick(e, true)); joyMove.addEventListener('touchmove', e => handleJoystick(e, true)); joyMove.addEventListener('touchend', e => handleJoystick(e, true));
         joyAim.addEventListener('touchstart', e => handleJoystick(e, false)); joyAim.addEventListener('touchmove', e => handleJoystick(e, false)); joyAim.addEventListener('touchend', e => handleJoystick(e, false));
 
-        // --- GAME LOOP ---
         function update() {
             if(!gameActive) {
                 updateEngineSound(false);
@@ -887,7 +1036,7 @@
         function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
     </script>
     
-    <!-- SCRIPT SWIPE UNIVERSEL -->
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE UNIVERSEL -->
     <script>
         const gamesHubList = [
             "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
