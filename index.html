@@ -30,7 +30,7 @@
             box-sizing: border-box;
         }
 
-        /* La vidéo pure sans filtre par défaut */
+        /* La vidéo pure SANS AUCUN FILTRE PAR DESSUS par défaut */
         .hub-bg-video {
             position: absolute; 
             top: 0; left: 0; width: 100vw; height: 100vh; 
@@ -48,7 +48,7 @@
             background: rgba(0, 0, 0, 0.8);
         }
 
-        /* --- BOUTON PARAMÈTRES (ANIMÉ PAR IMAGES) --- */
+        /* --- BOUTON PARAMÈTRES (En haut à droite) --- */
         .settings-btn-wrapper {
             position: absolute;
             top: 20px; right: 25px;
@@ -64,10 +64,51 @@
             object-fit: contain;
             transition: transform 0.2s ease;
             filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
+            position: relative;
+            z-index: 2;
         }
 
-        .settings-btn-wrapper:hover .settings-btn { 
-            transform: scale(1.15); 
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+
+        /* --- NOUVEAU BOUTON "+" POUR LES AUTRES JEUX (En haut à gauche) --- */
+        .other-games-btn {
+            position: absolute;
+            top: 20px; left: 25px;
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #00e5ff;
+            color: #00e5ff;
+            font-size: 2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            animation: pulse-plus 2s infinite;
+        }
+
+        @keyframes pulse-plus {
+            0% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.8); text-shadow: 0 0 10px #00e5ff; }
+            100% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+        }
+
+        .other-games-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            background: rgba(0, 229, 255, 0.2);
+        }
+
+        .other-games-btn.active {
+            background: var(--cyan, #00e5ff);
+            color: #000;
+            box-shadow: 0 0 25px var(--cyan, #00e5ff);
+            animation: none;
+            transform: rotate(45deg); /* Le + devient un x pour fermer/quitter */
         }
 
         /* --- MENU MODAL PARAMÈTRES --- */
@@ -96,7 +137,6 @@
             margin: 25px 0; font-size: 1.2rem; font-weight: bold;
         }
 
-        /* Joli switch (bouton on/off) */
         .switch { position: relative; display: inline-block; width: 54px; height: 28px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
@@ -180,6 +220,9 @@
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
 
+    <!-- NOUVEAU BOUTON "+" POUR LA CATEGORIE "AUTRES JEUX" -->
+    <div id="other-games-btn" class="other-games-btn" onclick="toggleOtherGames()">+</div>
+
     <!-- BOUTON PARAMETRES (ANIMATION JAVASCRIPT) -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
@@ -250,7 +293,7 @@
                     <video src="2048slime/img/cinematic_fusion_slime.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logofuslime.png" class="game-logo" alt="Fusion Slime"></div>
                 </a>
-                <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="worms/index.html?mode=solo" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logoartillerie.png" class="game-logo" alt="Slime Artillery"></div>
                 </a>
@@ -258,11 +301,11 @@
                     <video src="slimeclicker/img/cinematic_clicker.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logoclic.png" class="game-logo" alt="Slime Clicker"></div>
                 </a>
-                <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="cybertank/index.html?mode=solo" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logotank.png" class="game-logo" alt="Cyber Tanks"></div>
                 </a>
-                <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="edgeofwar/index.html?mode=solo" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/guesswarofslime.png" class="game-logo" alt="War of slime"></div>
                 </a>
@@ -278,13 +321,8 @@
                     <video src="tower_defense/img/cinematic_towerdef.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logotower.jpg" class="game-logo" alt="Tower Defense"></div>
                 </a>
-                <a href="https://huyu-you.github.io/Go-FAST/" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-                    <video src="img/gofast_cinematic.mp4" loop muted playsinline class="bg-video"></video>
-                    <div class="game-icon">🏎️</div>
-                </a>
-                <a href="https://huyu-you.github.io/The-Prisonner/" style="border-color: #FF0000;" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-                    <video src="img/prisoner_cinematic.mp4" loop muted playsinline class="bg-video"></video>
-                    <div class="game-icon">⛓️</div>
+                <a href="slimestax/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                    <div class="game-icon" style="color: #39ff14; font-size: 2.5rem; text-shadow: 0 0 10px #39ff14; font-family: 'Rajdhani', sans-serif;">SLIMY STAX</div>
                 </a>
             </div> 
 
@@ -298,15 +336,15 @@
                     <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logoRTS.jpg" class="game-logo" alt="Slimilization"></div>
                 </a>
-                <a href="worms/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="worms/index.html?mode=multi" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="worms/img/cinematic_worms.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logoartillerie.png" class="game-logo" alt="Slime Artillery"></div>
                 </a>
-                <a href="cybertank/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="cybertank/index.html?mode=multi" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="cybertank/img/cinematic_tank.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logotank.png" class="game-logo" alt="Cyber Tanks"></div>
                 </a>
-                <a href="edgeofwar/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="edgeofwar/index.html?mode=multi" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="edgeofwar/img/cinematic_edgeofwar.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/guesswarofslime.png" class="game-logo" alt="War of slime"></div>
                 </a>
@@ -332,6 +370,22 @@
                 </a>
             </div> 
 
+            <!-- NOUVELLE SECTION : AUTRES JEUX (Ceux qui ne sont pas des slimes) -->
+            <div id="grid-other" class="game-grid hidden">
+                <a href="https://huyu-you.github.io/Go-FAST/" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                    <video src="img/gofast_cinematic.mp4" loop muted playsinline class="bg-video"></video>
+                    <div class="game-icon">🏎️</div>
+                </a>
+                <a href="https://huyu-you.github.io/The-Prisonner/" style="border-color: #FF0000;" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                    <video src="img/prisoner_cinematic.mp4" loop muted playsinline class="bg-video"></video>
+                    <div class="game-icon">⛓️</div>
+                </a>
+                <a href="poker/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                    <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
+                    <div class="game-icon">🃏</div>
+                </a>
+            </div>
+
         </div> <!-- Fin de la grid-container -->
         
         <div id="next-bar" class="nav-bar next-bar" onclick="nextPage()">
@@ -343,50 +397,16 @@
     <!-- IMPORT DE L'API YOUTUBE -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        // --- 1. GESTION DU BOUTON ANIMÉ ET DES PARAMETRES ---
-        const settingsBtnImg = document.getElementById('settings-btn-img');
-        const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
-        let hoverInterval;
-        let currentFrame = 0;
-
-        function startSettingsAnim() {
-            if (hoverInterval) return;
-            currentFrame = 0;
-            settingsBtnImg.src = animFrames[currentFrame];
-            hoverInterval = setInterval(() => {
-                currentFrame = (currentFrame + 1) % animFrames.length;
-                settingsBtnImg.src = animFrames[currentFrame];
-            }, 100); // 100ms par image (très fluide)
-        }
-
-        function stopSettingsAnim() {
-            clearInterval(hoverInterval);
-            hoverInterval = null;
-            // Ne remet l'image de base que si ce n'est pas en train d'être cliqué (settings4)
-            if (!settingsBtnImg.src.includes('settings4.png')) {
-                settingsBtnImg.src = 'img/setting.png';
-            }
-        }
-
-        function clickSettingsAnim() {
-            clearInterval(hoverInterval);
-            hoverInterval = null;
-            
-            // Image de "clic"
-            settingsBtnImg.src = 'img/settings4.png';
-            
-            // Ouvre le menu modal
-            toggleSettings();
-
-            // Reviens à l'image normale après 300ms
-            setTimeout(() => {
-                settingsBtnImg.src = 'img/setting.png';
-            }, 300);
-        }
+        // --- 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES ---
+        const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+        let currentSettingIndex = 0;
 
         function toggleSettings() {
             const modal = document.getElementById('settings-modal');
             modal.classList.toggle('show');
+
+            currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
+            document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
         }
 
         function toggleTheme() {
@@ -405,37 +425,56 @@
             document.getElementById('fs-toggle').checked = !!document.fullscreenElement;
         });
 
-        // --- 2. GESTION DE LA MUSIQUE DE FOND (YOUTUBE API) ---
+        // --- GESTION AUDIO GLOBALE ---
         let ytPlayer;
+        let isMuted = localStorage.getItem('isMuted') === 'true';
+
+        // Mise à jour de l'état du switch dans les paramètres au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            const musicToggle = document.getElementById('music-toggle');
+            if(musicToggle) musicToggle.checked = !isMuted;
+        });
+
         function onYouTubeIframeAPIReady() {
             ytPlayer = new YT.Player('youtube-audio', {
                 height: '0',
                 width: '0',
                 videoId: '4RaguYU_SQI',
                 playerVars: {
-                    'autoplay': 0,
+                    'autoplay': 1,
                     'controls': 0,
                     'showinfo': 0,
                     'autohide': 1,
                     'loop': 1,
                     'playlist': '4RaguYU_SQI'
+                },
+                events: {
+                    'onReady': (e) => {
+                        if (isMuted) e.target.mute();
+                        else e.target.unMute();
+                    }
                 }
             });
         }
 
         function toggleMusic() {
-            const isChecked = document.getElementById('music-toggle').checked;
-            if (isChecked && ytPlayer && ytPlayer.playVideo) {
-                ytPlayer.playVideo();
-            } else if (!isChecked && ytPlayer && ytPlayer.pauseVideo) {
-                ytPlayer.pauseVideo();
+            isMuted = !document.getElementById('music-toggle').checked;
+            localStorage.setItem('isMuted', isMuted);
+            
+            if (isMuted) {
+                if (ytPlayer && ytPlayer.mute) ytPlayer.mute();
+            } else {
+                if (ytPlayer && ytPlayer.unMute) {
+                    ytPlayer.unMute();
+                    ytPlayer.playVideo();
+                }
             }
         }
 
-        // --- 3. GESTION DU CAROUSEL (NETFLIX STYLE) ---
+        // --- 3. GESTION DU CAROUSEL ET DES CATEGORIES ---
         const ITEMS_PER_PAGE = 6;
         let activeCategory = 'solo';
-        let currentPage = { solo: 0, multi: 0 };
+        let currentPage = { solo: 0, multi: 0, other: 0 };
 
         function updatePagination() {
             const grid = document.getElementById(`grid-${activeCategory}`);
@@ -460,23 +499,15 @@
             const nextBar = document.getElementById('next-bar');
 
             if (currentPage[activeCategory] > 0) {
-                prevBar.style.visibility = 'visible';
-                prevBar.style.opacity = '1';
-                prevBar.style.pointerEvents = 'auto';
+                prevBar.style.visibility = 'visible'; prevBar.style.opacity = '1'; prevBar.style.pointerEvents = 'auto';
             } else {
-                prevBar.style.visibility = 'hidden';
-                prevBar.style.opacity = '0';
-                prevBar.style.pointerEvents = 'none';
+                prevBar.style.visibility = 'hidden'; prevBar.style.opacity = '0'; prevBar.style.pointerEvents = 'none';
             }
 
             if (currentPage[activeCategory] < totalPages - 1) {
-                nextBar.style.visibility = 'visible';
-                nextBar.style.opacity = '1';
-                nextBar.style.pointerEvents = 'auto';
+                nextBar.style.visibility = 'visible'; nextBar.style.opacity = '1'; nextBar.style.pointerEvents = 'auto';
             } else {
-                nextBar.style.visibility = 'hidden';
-                nextBar.style.opacity = '0';
-                nextBar.style.pointerEvents = 'none';
+                nextBar.style.visibility = 'hidden'; nextBar.style.opacity = '0'; nextBar.style.pointerEvents = 'none';
             }
         }
 
@@ -499,26 +530,46 @@
         }
 
         function switchCategory(category) {
-            const gridSolo = document.getElementById('grid-solo');
-            const gridMulti = document.getElementById('grid-multi');
-            const btnSolo = document.getElementById('btn-solo');
-            const btnMulti = document.getElementById('btn-multi');
+            // Si on clique sur un bouton principal (Solo/Multi), on désactive le mode "Other" (le +)
+            if (category !== 'other') {
+                document.getElementById('other-games-btn').classList.remove('active');
+            }
+
+            const grids = ['solo', 'multi', 'other'];
+            const btns = ['btn-solo', 'btn-multi'];
 
             activeCategory = category;
 
-            if (category === 'solo') {
-                gridSolo.classList.remove('hidden');
-                gridMulti.classList.add('hidden');
-                btnSolo.classList.add('active');
-                btnMulti.classList.remove('active');
-            } else if (category === 'multi') {
-                gridMulti.classList.remove('hidden');
-                gridSolo.classList.add('hidden');
-                btnMulti.classList.add('active');
-                btnSolo.classList.remove('active');
-            }
+            // Masque toutes les grilles
+            grids.forEach(g => document.getElementById(`grid-${g}`).classList.add('hidden'));
+            
+            // Grise les boutons du haut
+            btns.forEach(b => {
+                let btn = document.getElementById(b);
+                if (btn) btn.classList.remove('active');
+            });
+
+            // Affiche la bonne grille
+            document.getElementById(`grid-${category}`).classList.remove('hidden');
+
+            // Active le bon bouton (si c'est solo ou multi)
+            if (category === 'solo') document.getElementById('btn-solo').classList.add('active');
+            if (category === 'multi') document.getElementById('btn-multi').classList.add('active');
             
             updatePagination();
+        }
+
+        function toggleOtherGames() {
+            const btn = document.getElementById('other-games-btn');
+            if (activeCategory === 'other') {
+                // S'il était déjà actif, on le ferme et on retourne au solo
+                btn.classList.remove('active');
+                switchCategory('solo');
+            } else {
+                // Sinon on l'active
+                btn.classList.add('active');
+                switchCategory('other');
+            }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
