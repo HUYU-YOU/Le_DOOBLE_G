@@ -48,12 +48,12 @@
             background: rgba(0, 0, 0, 0.8);
         }
 
-        /* --- BOUTON PARAMÈTRES (En haut à droite) --- */
+        /* --- BOUTON PARAMÈTRES (En bas à gauche) --- */
         .settings-btn-wrapper {
             position: absolute;
-            top: 20px; right: 25px;
-            width: 45px; 
-            height: 45px;
+            bottom: 20px; left: 25px;
+            width: 55px; 
+            height: 55px;
             cursor: pointer;
             z-index: 100;
         }
@@ -70,12 +70,12 @@
 
         .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-        /* --- BOUTON "+" IMAGE POUR LES AUTRES JEUX (En haut à gauche) --- */
+        /* --- BOUTON "+" IMAGE POUR LES AUTRES JEUX (En bas à droite) --- */
         .other-games-btn-wrapper {
             position: absolute;
-            top: 20px; left: 25px;
-            width: 55px;
-            height: 55px;
+            bottom: 20px; right: 25px;
+            width: 65px; 
+            height: 65px;
             cursor: pointer;
             z-index: 100;
             display: flex;
@@ -104,6 +104,7 @@
             transform: scale(1.15);
         }
 
+        /* Quand on a cliqué sur le bouton (il tourne à 45 degrés pour faire un X) */
         .other-games-btn-wrapper.active {
             animation: none;
         }
@@ -222,12 +223,12 @@
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
 
-    <!-- NOUVEAU BOUTON "+" (AVEC IMAGE) POUR LA CATEGORIE "AUTRES JEUX" -->
+    <!-- NOUVEAU BOUTON "+" (AVEC IMAGE) POUR LA CATEGORIE "AUTRES JEUX" (En bas à droite) -->
     <div id="other-games-btn" class="other-games-btn-wrapper" onclick="toggleOtherGames()">
         <img src="img/butplus.png" class="other-games-img" alt="Autres Jeux">
     </div>
 
-    <!-- BOUTON PARAMETRES (ANIMATION JAVASCRIPT) -->
+    <!-- BOUTON PARAMETRES (ANIMATION JAVASCRIPT) (En bas à gauche) -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
@@ -376,11 +377,11 @@
 
             <!-- NOUVELLE SECTION : AUTRES JEUX (Ceux qui ne sont pas des slimes) -->
             <div id="grid-other" class="game-grid hidden">
-                <a href="https://huyu-you.github.io/Go-FAST/" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="[https://huyu-you.github.io/Go-FAST/](https://huyu-you.github.io/Go-FAST/)" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="img/gofast_cinematic.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon">🏎️</div>
                 </a>
-                <a href="https://huyu-you.github.io/The-Prisonner/" style="border-color: #FF0000;" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="[https://huyu-you.github.io/The-Prisonner/](https://huyu-you.github.io/The-Prisonner/)" style="border-color: #FF0000;" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="img/prisoner_cinematic.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon">⛓️</div>
                 </a>
@@ -399,7 +400,7 @@
     </div> <!-- Fin du Wrapper Carousel -->
 
     <!-- IMPORT DE L'API YOUTUBE -->
-    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="[https://www.youtube.com/iframe_api](https://www.youtube.com/iframe_api)"></script>
     <script>
         // --- 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES ---
         const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
@@ -582,8 +583,46 @@
                 const randomNum = Math.floor(Math.random() * 2) + 1;
                 dashVideo.src = `slimedash/img/cinematic_dash${randomNum}.mp4`;
             }
+            
+            // ANIMATION DES PARAMETRES AU CHARGEMENT (Fix)
+            const settingsBtnImg = document.getElementById('settings-btn-img');
+            settingsBtnImg.src = 'img/setting.png';
+            
             updatePagination();
         });
+
+        // ANIMATION DES PARAMETRES (Fix : séparé de window.onload pour éviter les conflits)
+        let hoverInterval; 
+        let currentFrame = 0;
+        const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            const settingsBtnImg = document.getElementById('settings-btn-img');
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            const settingsBtnImg = document.getElementById('settings-btn-img');
+            if (!settingsBtnImg.src.includes('settings4.png')) { 
+                settingsBtnImg.src = 'img/setting.png'; 
+            }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            const settingsBtnImg = document.getElementById('settings-btn-img');
+            settingsBtnImg.src = 'img/settings4.png';
+            toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = 'img/setting.png'; }, 300);
+        }
+
 
         // --- 4. GESTION DES VIDEOS AU SURVOL ---
         function playVid(card) {
