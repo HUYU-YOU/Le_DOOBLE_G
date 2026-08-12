@@ -48,7 +48,7 @@
             background: rgba(0, 0, 0, 0.8);
         }
 
-        /* --- BOUTON PARAMÈTRES AVEC SLIME EN ORBITE --- */
+        /* --- BOUTON PARAMÈTRES (ANIMÉ PAR IMAGES) --- */
         .settings-btn-wrapper {
             position: absolute;
             top: 20px; right: 25px;
@@ -62,47 +62,12 @@
             width: 100%; 
             height: 100%;
             object-fit: contain;
-            transition: transform 0.4s ease;
+            transition: transform 0.2s ease;
             filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
-            position: relative;
-            z-index: 2;
         }
 
-        /* Le tracé circulaire invisible autour du bouton */
-        .orbit-container {
-            position: absolute;
-            top: -15px; left: -15px; right: -15px; bottom: -15px;
-            border-radius: 50%;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 1;
-        }
-
-        /* Le petit slime vert conçu en CSS */
-        .orbit-slime {
-            position: absolute;
-            top: 0; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 16px; height: 14px;
-            background: #39ff14;
-            /* Forme légèrement aplatie façon goutte/slime */
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            box-shadow: 0 0 15px #39ff14, 0 0 5px #ffffff;
-        }
-
-        /* ANIMATIONS AU SURVOL */
         .settings-btn-wrapper:hover .settings-btn { 
-            transform: scale(1.15); /* Le bouton zoome mais ne tourne plus */
-        }
-        .settings-btn-wrapper:hover .orbit-container {
-            opacity: 1;
-            animation: spinOrbit 1.2s linear infinite; /* Le slime se met à tourner */
-        }
-        
-        @keyframes spinOrbit {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            transform: scale(1.15); 
         }
 
         /* --- MENU MODAL PARAMÈTRES --- */
@@ -215,11 +180,8 @@
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
 
-    <!-- BOUTON PARAMETRES AVEC ANIMATION D'ORBITE -->
-    <div class="settings-btn-wrapper" onclick="toggleSettings()">
-        <div class="orbit-container">
-            <div class="orbit-slime"></div>
-        </div>
+    <!-- BOUTON PARAMETRES (ANIMATION JAVASCRIPT) -->
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
@@ -280,7 +242,7 @@
                     <video id="dash-video" src="slimedash/img/cinematic_dash1.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logoroller.png" class="game-logo" alt="Slime Dash"></div>
                 </a>  
-                <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="brawl/index.html?mode=solo" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
                 </a>
@@ -328,7 +290,7 @@
 
             <!-- SECTION JEUX MULTIJOUEURS -->
             <div id="grid-multi" class="game-grid hidden">
-                <a href="brawl/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
+                <a href="brawl/index.html?mode=multi" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="brawl/img/cinematic_brawl.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
                 </a>
@@ -381,17 +343,50 @@
     <!-- IMPORT DE L'API YOUTUBE -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        // --- 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES ---
-        const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings4.png'];
-        let currentSettingIndex = 0;
+        // --- 1. GESTION DU BOUTON ANIMÉ ET DES PARAMETRES ---
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+        let hoverInterval;
+        let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); // 100ms par image (très fluide)
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval);
+            hoverInterval = null;
+            // Ne remet l'image de base que si ce n'est pas en train d'être cliqué (settings4)
+            if (!settingsBtnImg.src.includes('settings4.png')) {
+                settingsBtnImg.src = 'img/setting.png';
+            }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval);
+            hoverInterval = null;
+            
+            // Image de "clic"
+            settingsBtnImg.src = 'img/settings4.png';
+            
+            // Ouvre le menu modal
+            toggleSettings();
+
+            // Reviens à l'image normale après 300ms
+            setTimeout(() => {
+                settingsBtnImg.src = 'img/setting.png';
+            }, 300);
+        }
 
         function toggleSettings() {
             const modal = document.getElementById('settings-modal');
             modal.classList.toggle('show');
-
-            // Change l'image du bouton à chaque fois qu'on clique
-            currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
-            document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
         }
 
         function toggleTheme() {
