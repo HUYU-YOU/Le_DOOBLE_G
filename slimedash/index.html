@@ -369,7 +369,40 @@
 
             let ytPlayer;
             let audioStarted = false;
-            let isMuted = false;
+            
+            // LOGIQUE DE SAUVEGARDE DU SON GLOBALE
+            let isMuted = localStorage.getItem('isMuted') === 'true';
+            
+            const btnMute = document.getElementById('btn-mute');
+            
+            function updateMuteButton() {
+                if (isMuted) {
+                    btnMute.innerText = "🔇 SON: OFF";
+                    btnMute.style.color = "var(--neon-pink)";
+                    btnMute.style.borderColor = "var(--neon-pink)";
+                } else {
+                    btnMute.innerText = "🔊 SON: ON";
+                    btnMute.style.color = "var(--neon-cyan)";
+                    btnMute.style.borderColor = "var(--neon-cyan)";
+                }
+            }
+            
+            updateMuteButton();
+
+            btnMute.addEventListener('click', () => {
+                isMuted = !isMuted;
+                localStorage.setItem('isMuted', isMuted);
+                updateMuteButton();
+                
+                if (isMuted) {
+                    if (ytPlayer && typeof ytPlayer.mute === 'function') ytPlayer.mute();
+                } else {
+                    if (ytPlayer && typeof ytPlayer.unMute === 'function') {
+                        ytPlayer.unMute();
+                        ytPlayer.setVolume(10);
+                    }
+                }
+            });
 
             window.onYouTubeIframeAPIReady = function() {
                 ytPlayer = new YT.Player('yt-player', {
@@ -395,25 +428,6 @@
                     catch(e) { console.warn("Erreur Audio Youtube :", e); }
                 }
             }
-
-            const btnMute = document.getElementById('btn-mute');
-            btnMute.addEventListener('click', () => {
-                isMuted = !isMuted;
-                if (isMuted) {
-                    if (ytPlayer && typeof ytPlayer.mute === 'function') ytPlayer.mute();
-                    btnMute.innerText = "🔇 SON: OFF";
-                    btnMute.style.color = "var(--neon-pink)";
-                    btnMute.style.borderColor = "var(--neon-pink)";
-                } else {
-                    if (ytPlayer && typeof ytPlayer.unMute === 'function') {
-                        ytPlayer.unMute();
-                        ytPlayer.setVolume(10);
-                    }
-                    btnMute.innerText = "🔊 SON: ON";
-                    btnMute.style.color = "var(--neon-cyan)";
-                    btnMute.style.borderColor = "var(--neon-cyan)";
-                }
-            });
 
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -852,14 +866,24 @@
                     }
                 }
 
-                const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
-                if (currentTool === 'eraser') {
-                    if (existingIndex !== -1) levelData.splice(existingIndex, 1);
+                if (currentTool === 'hole') {
+                    // EFFACE ET PLACE DEUX TROUS EN MODE EDITEUR AUSSI
+                    const existingIndex1 = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === 0);
+                    if (existingIndex1 !== -1) levelData.splice(existingIndex1, 1);
+                    const existingIndex2 = levelData.findIndex(obj => obj.x === hoverGridX + 1 && obj.y === 0);
+                    if (existingIndex2 !== -1) levelData.splice(existingIndex2, 1);
+                    
+                    levelData.push({x: hoverGridX, y: 0, type: 'hole'});
+                    levelData.push({x: hoverGridX + 1, y: 0, type: 'hole'});
                 } else {
-                    if (existingIndex !== -1 && levelData[existingIndex].type === currentTool) return;
-                    if (existingIndex !== -1) levelData.splice(existingIndex, 1);
-                    let finalY = currentTool === 'hole' ? 0 : hoverGridY;
-                    levelData.push({x: hoverGridX, y: finalY, type: currentTool});
+                    const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
+                    if (currentTool === 'eraser') {
+                        if (existingIndex !== -1) levelData.splice(existingIndex, 1);
+                    } else {
+                        if (existingIndex !== -1 && levelData[existingIndex].type === currentTool) return;
+                        if (existingIndex !== -1) levelData.splice(existingIndex, 1);
+                        levelData.push({x: hoverGridX, y: hoverGridY, type: currentTool});
+                    }
                 }
             }
 
@@ -937,7 +961,7 @@
                 player.vy = JUMP_FORCE; 
                 player.isGrounded = false;
                 setAnimState('JUMP');
-                spawnParticles(player.x + player.size/2, player.y + player.size, 'var(--neon-green)', 15);
+                if(!isMuted) spawnParticles(player.x + player.size/2, player.y + player.size, 'var(--neon-green)', 15);
             }
 
             function triggerJump() {
@@ -968,14 +992,21 @@
 
                 const playerWorldX = player.x + cameraX;
                 const playerCenterGridX = Math.floor((playerWorldX + player.size/2) / GRID_SIZE);
+                
+                // MOURIR SUR LES TROUS (Correction)
                 const holeUnder = activeLevelData.find(o => o.type === 'hole' && o.x === playerCenterGridX);
                 const currentGroundLevel = holeUnder ? 9999 : (height - GROUND_HEIGHT - player.size);
+
+                if (holeUnder && player.y >= (height - GROUND_HEIGHT - player.size)) {
+                    gameOver(false);
+                    return;
+                }
 
                 if (player.y >= currentGroundLevel) {
                     player.y = currentGroundLevel; player.vy = 0;
                     if (!player.isGrounded) {
                         player.isGrounded = true; setAnimState('LAND');
-                        spawnParticles(player.x + player.size/2, player.y + player.size, 'rgba(57, 255, 20, 0.7)', 8);
+                        if(!isMuted) spawnParticles(player.x + player.size/2, player.y + player.size, 'rgba(57, 255, 20, 0.7)', 8);
                         
                         if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
                     }
@@ -1008,7 +1039,7 @@
                             localStorage.setItem('slimeDashFireflies', totalFireflies);
                             if(firefliesElem) firefliesElem.innerText = totalFireflies;
 
-                            spawnParticles(obsScreenX + obsSize/2, obsScreenY + obsSize/2, '#ccff00', 20);
+                            if(!isMuted) spawnParticles(obsScreenX + obsSize/2, obsScreenY + obsSize/2, '#ccff00', 20);
                         }
                         continue; 
                     }
@@ -1019,7 +1050,7 @@
                             player.vy = JUMP_FORCE * 1.5; 
                             player.isGrounded = false; 
                             setAnimState('JUMP');
-                            spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 20);
+                            if(!isMuted) spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 20);
                             continue;
                         }
                     }
