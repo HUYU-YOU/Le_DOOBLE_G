@@ -2,37 +2,62 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Smash - Definitive Edition</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    
+    <!-- Police Rajdhani pour le look Cyber/Arcade -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; --sys: #39ff14; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; }
-        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin-top: 0; text-shadow: 0 0 10px #fff; }
+        :root { --bg: #050811; --panel: rgba(10, 15, 28, 0.85); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; --sys: #00e5ff; }
         
-        /* MODIFIÉ : Le background dégradé par défaut est maintenant sur le game-container */
-        #game-container { position: relative; background: var(--panel) radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%); border-radius: 15px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); padding: 20px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; transition: background-image 0.3s ease; }
+        body, html { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: var(--bg); color: #fff; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; user-select: none; overflow: hidden;
+        }
         
-        /* MODIFIÉ : Le canvas est transparent pour laisser voir le background du conteneur en dessous */
-        canvas { background: transparent; border-radius: 10px; border: 2px solid #333; display: block; box-shadow: inset 0 0 50px #000; cursor: crosshair; }
+        h1.game-title { 
+            color: #fff; text-transform: uppercase; letter-spacing: 8px; margin-top: 15px; margin-bottom: 15px; 
+            text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 3rem; 
+        }
         
-        /* MODIFIÉ : Opacité rgba ajustée de 0.85 à 0.70 pour mieux voir la map au travers */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.70); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
-        .menu-title { font-size: 1.8em; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+        #game-container { 
+            position: relative; background: var(--panel) radial-gradient(circle at center, rgba(0, 240, 255, 0.05) 0%, transparent 100%); 
+            border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            padding: 20px; border: 1px solid rgba(0, 240, 255, 0.2); overflow: hidden; transition: background-image 0.3s ease; 
+            backdrop-filter: blur(10px);
+        }
+        
+        canvas { 
+            background: transparent; border-radius: 10px; border: 2px solid #333; display: block; 
+            box-shadow: inset 0 0 50px #000; cursor: crosshair; 
+        }
+        
+        /* OVERLAYS EN GLASSMORPHISM */
+        .overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(5, 8, 17, 0.85); border-radius: 15px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; 
+            box-sizing: border-box; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .menu-title { font-size: 2.2em; margin-bottom: 20px; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
         
         /* GRILLES DE SELECTION */
         .selection-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; max-width: 750px; }
-        
-        /* Grille spécifique 3x2 pour les personnages */
         #char-select, #net-char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 550px; margin: 0 auto 20px auto; }
         
         /* DESIGN DE BASE DES CARTES */
-        .card { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; text-align: center; transition: all 0.3s ease; width: 120px; }
-        .card:hover, .card.selected { background: rgba(255,255,255,0.2); transform: translateY(-5px); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+        .card { background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); text-align: center; transition: all 0.3s ease; width: 120px; }
+        .card:hover, .card.selected { background: rgba(0, 240, 255, 0.15); transform: translateY(-5px); border-color: var(--p1); box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
         
         /* EFFET AGRANDISSEMENT APRES 3 SECONDES */
         .card.char-card.video-expanded { transform: scale(1.25) translateY(-5px); z-index: 50; box-shadow: 0 0 35px var(--p1); background: rgba(0, 0, 0, 0.9); }
         
-        /* Design Géant des Cartes Personnages avec Vidéo Full Screen */
+        /* Cartes Personnages avec Vidéo */
         .char-card { position: relative; width: 160px; height: 160px; padding: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .char-card img { width: 90px; height: 90px; object-fit: contain; z-index: 1; margin-bottom: 15px; transition: 0.2s; }
         .char-card video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none; z-index: 0; border-radius: 10px; }
@@ -41,14 +66,31 @@
         /* Cartes des Maps */
         .card.map-card img { width: 100px; height: 60px; object-fit: cover; border-radius: 5px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
 
-        .btn-main { background: #fff; color: #000; border: none; padding: 12px 30px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s; margin: 10px; }
-        .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 20px #fff; }
-        input { padding: 10px; border-radius: 5px; border: none; font-weight: bold; text-align: center; margin: 10px; background: #333; color: #fff; }
+        /* BOUTONS MODERNISÉS */
+        .btn-main { 
+            background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 12px 30px; 
+            font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 8px; 
+            cursor: pointer; text-transform: uppercase; transition: 0.3s; margin: 10px; 
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); width: 80%; max-width: 400px; 
+        }
+        .btn-main:hover { background: var(--p1); color: #000; transform: scale(1.05); box-shadow: 0 0 25px var(--p1); }
+        .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
+        .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); color: #000;}
+        .btn-main.green { border-color: var(--p3); box-shadow: 0 0 15px rgba(57, 255, 20, 0.2); }
+        .btn-main.green:hover { background: var(--p3); color:#000; box-shadow: 0 0 25px var(--p3); }
+        .btn-main.gold { border-color: var(--p4); box-shadow: 0 0 15px rgba(255, 191, 0, 0.2); }
+        .btn-main.gold:hover { background: var(--p4); color:#000; box-shadow: 0 0 25px var(--p4); }
+        
+        input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
+        input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
+        /* HUD IN-GAME */
         #hud { position: absolute; bottom: 20px; left: 20px; right: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; pointer-events: none; }
-        .player-hud { background: rgba(0,0,0,0.75); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid; display: none; }
-        #h1 { border-color: var(--p1); color: var(--p1); } #h2 { border-color: var(--p2); color: var(--p2); }
-        #h3 { border-color: var(--p3); color: var(--p3); } #h4 { border-color: var(--p4); color: var(--p4); }
+        .player-hud { background: rgba(0,0,0,0.75); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid; display: none; backdrop-filter: blur(5px); }
+        #h1 { border-color: var(--p1); color: var(--p1); box-shadow: 0 0 10px rgba(0,240,255,0.3); } 
+        #h2 { border-color: var(--p2); color: var(--p2); box-shadow: 0 0 10px rgba(255,0,127,0.3); }
+        #h3 { border-color: var(--p3); color: var(--p3); box-shadow: 0 0 10px rgba(57,255,20,0.3); } 
+        #h4 { border-color: var(--p4); color: var(--p4); box-shadow: 0 0 10px rgba(255,191,0,0.3); }
         .percent { font-size: 2em; font-weight: 900; }
         .super-bar-container { width: 100%; height: 8px; background: #222; margin-top: 5px; border-radius: 4px; overflow: hidden; border: 1px solid #444; }
         .super-bar { height: 100%; background: #f1c40f; width: 0%; transition: width 0.2s; }
@@ -56,14 +98,65 @@
         
         .controls-info { font-size: 1.1em; color: #fff; margin-top: 15px; line-height: 1.8; text-align: left; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; border: 1px solid var(--p1); }
         
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
-        .hub-link:hover { color: #fff; background: rgba(0, 136, 255, 0.8); border-color: #fff; transform: scale(1.05); }
+        /* --- BOUTON RETOUR HUB --- */
+        .hub-link { 
+            position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem;
+            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
+            transition: all 0.3s ease; z-index: 100;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
+
+        /* --- BOUTON SETTINGS & ORBITE --- */
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.4s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2; }
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1; }
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: #39ff14; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px #39ff14, 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- MODAL PARAMETRES --- */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 320px; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; margin: 25px 0; font-size: 1.2rem; font-weight: bold;}
+        .switch { position: relative; display: inline-block; width: 54px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--p1); box-shadow: 0 0 10px var(--p1); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .close-btn { margin-top: 15px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
     </style>
 </head>
 <body>
+    
+    <!-- BOUTON RETOUR HUB -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     
-    <h1>Cyber Smash</h1>
+    <!-- BOUTON PARAMETRES -->
+    <div class="settings-btn-wrapper" onclick="toggleSettings()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <div class="setting-item">
+                <span>Plein Écran 🖥️</span>
+                <label class="switch">
+                    <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <h1 class="game-title">Cyber Smash</h1>
     
     <div id="game-container">
         <canvas id="gameCanvas" width="800" height="500"></canvas>
@@ -75,19 +168,23 @@
             <div class="player-hud" id="h4"><div style="font-weight:bold" id="n4">J4</div><div class="percent" id="p4-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p4-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p4-super"></div></div></div>
         </div>
 
+        <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <div class="menu-title" style="font-size: 3em; margin-bottom: 20px; color: var(--p1);">CHOOSE YOUR BATTLE</div>
-            <button class="btn-main" onclick="openMenu('local')" style="background:var(--p1); font-size: 1.2em; padding: 15px 30px;">🎮 Mode Local (1v1 ou IA)</button>
-            <hr style="width: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
-            <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px; color: #aaa;">Arènes Multijoueurs</div>
-            <button class="btn-main" onclick="prepareNetwork('1v1')" style="background:var(--p2); font-size: 1.2em;">🌐 Réseau (1 VS 1)</button>
-            <button class="btn-main" onclick="prepareNetwork('2v2')" style="background:var(--p3); color:#000; font-size: 1.2em;">🛡️ Réseau (2 VS 2 Équipes)</button>
-            <button class="btn-main" onclick="prepareNetwork('ffa')" style="background:var(--p4); color:#000; font-size: 1.2em;">⚔️ Réseau (4 Chacun Pour Soi)</button>
+            <div class="menu-title">CHOOSE YOUR BATTLE</div>
+            <button class="btn-main" id="btn-local-mode" onclick="autoFullscreen(); openMenu('local');">🎮 Mode Local (1v1 ou IA)</button>
+            
+            <hr id="menu-separator" style="width: 60%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+            
+            <div class="menu-title" id="multi-title" style="font-size: 1.2em; margin-bottom: 10px; color: #aaa;">Arènes Multijoueurs</div>
+            <button class="btn-main red" id="btn-net-1" onclick="autoFullscreen(); prepareNetwork('1v1');">🌐 Réseau (1 VS 1)</button>
+            <button class="btn-main green" id="btn-net-2" onclick="autoFullscreen(); prepareNetwork('2v2');">🛡️ Réseau (2 VS 2 Équipes)</button>
+            <button class="btn-main gold" id="btn-net-4" onclick="autoFullscreen(); prepareNetwork('ffa');">⚔️ Réseau (4 Chacun Pour Soi)</button>
         </div>
 
+        <!-- MENU LOCAL -->
         <div class="overlay" id="local-menu" style="display: none;">
             <div class="menu-title" id="instruction-title">Select player 1</div>
-            <button class="btn-main" id="bot-toggle-btn" onclick="toggleBot()" style="background:#555; color:#fff; font-size:1em; padding:8px 20px; margin-bottom:15px; border:2px solid #333;">👤 Contrôlé par : Humain</button>
+            <button class="btn-main" id="bot-toggle-btn" onclick="toggleBot()" style="background:#555; color:#fff; font-size:1em; padding:8px 20px; margin-bottom:15px; border:2px solid #333; box-shadow: none;">👤 Contrôlé par : Humain</button>
             
             <div id="char-select">
                 <div class="card char-card" onclick="chooseChar('ninja')"><img src="img/NINJA.png" alt="Ninja"><video src="img/NINJA.mp4" loop muted playsinline></video><b>Ninja</b></div>
@@ -107,16 +204,17 @@
                 </div>
             </div>
             
-            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="startLocalGame()">FIGHT !</button>
+            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">FIGHT !</button>
             
             <div>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1);" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
+                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
+                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border: none; box-shadow: none;" onclick="location.reload()">Retour</button>
             </div>
         </div>
 
+        <!-- MENU RESEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <h2 id="net-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px;">Terminal Réseau</h2>
+            <h2 id="net-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Terminal Réseau</h2>
             <div style="margin-bottom: 20px;">
                 <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Slime</span></div>
                 <div id="net-char-grid">
@@ -130,15 +228,15 @@
             </div>
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
             <button class="btn-main" id="host-btn" onclick="hostGame()">Créer (Héberger)</button>
-            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="startNetworkGameHost()">Lancer le combat !</button>
-            <p style="margin: 10px 0;">OU</p>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startNetworkGameHost()">Lancer le combat !</button>
+            <p style="margin: 10px 0; color: #888;">OU</p>
             <input type="text" id="join-id" placeholder="Coller l'ID de l'Hôte">
-            <button class="btn-main" id="join-btn" onclick="joinGame()" style="background:var(--p2);color:#fff;">Rejoindre</button>
+            <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
             <p id="status-text" style="color: #aaa; margin-top: 10px; font-weight: bold;"></p>
             
             <div>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1);" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff;" onclick="location.reload()">Retour</button>
+                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
+                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border:none; box-shadow:none;" onclick="location.reload()">Retour</button>
             </div>
         </div>
 
@@ -165,7 +263,7 @@
                 - <b>Mage :</b> Frappe au corps-à-corps avec son livre magique.<br>
                 - <b>Pathkiller :</b> Frappe Lourde au corps-à-corps.<br>
             </div>
-            <button class="btn-main" style="margin-top:20px; background: var(--p2); color: #fff;" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
+            <button class="btn-main" style="margin-top:20px; background: var(--p2); color: #fff; border-color: var(--p2);" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
         </div>
 
         <div class="overlay" id="game-over-overlay" style="display: none;">
@@ -174,6 +272,118 @@
         </div>
     </div>
 
+    <!-- SCRIPT DE GESTION DE L'URL, FULLSCREEN ET SETTINGS -->
+    <script>
+        // 1. Lire l'URL pour cacher les mauvais boutons
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const mode = params.get('mode');
+
+            if (mode === 'solo') {
+                document.getElementById('btn-net-1').style.display = 'none';
+                document.getElementById('btn-net-2').style.display = 'none';
+                document.getElementById('btn-net-4').style.display = 'none';
+                document.getElementById('menu-separator').style.display = 'none';
+                document.getElementById('multi-title').style.display = 'none';
+            } else if (mode === 'multi') {
+                document.getElementById('btn-local-mode').style.display = 'none';
+                document.getElementById('menu-separator').style.display = 'none';
+            }
+        });
+
+        // 2. Gestion du Plein écran
+        function autoFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+                let toggle = document.getElementById('fs-toggle');
+                if (toggle) toggle.checked = true;
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+        
+        document.addEventListener('fullscreenchange', () => {
+            let toggle = document.getElementById('fs-toggle');
+            if(toggle) toggle.checked = !!document.fullscreenElement;
+        });
+
+        // 3. Gestion du Menu Paramètres
+        const settingImages = ['../img/setting.png', '../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png'];
+        let currentSettingIndex = 0;
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('show');
+
+            currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
+            document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
+        }
+    </script>
+
+    <!-- SCRIPT DES ANIMATIONS VIDÉO AU SURVOL -->
+    <script>
+        document.querySelectorAll('.char-card').forEach(card => {
+            let expandTimeout; 
+            card.addEventListener('mouseenter', () => {
+                const vid = card.querySelector('video');
+                const img = card.querySelector('img');
+                if(vid && img) {
+                    img.style.opacity = '0';
+                    vid.style.display = 'block';
+                    vid.play().catch(e => console.warn("Auto-play bloqué", e));
+                    
+                    expandTimeout = setTimeout(() => { card.classList.add('video-expanded'); }, 3000);
+                }
+            });
+            card.addEventListener('mouseleave', () => {
+                clearTimeout(expandTimeout);
+                card.classList.remove('video-expanded');
+                const vid = card.querySelector('video');
+                const img = card.querySelector('img');
+                if(vid && img) {
+                    vid.pause(); vid.currentTime = 0; 
+                    vid.style.display = 'none'; img.style.opacity = '1';
+                }
+            });
+        });
+    </script>
+    
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+            "../worms/index.html"
+        ];
+
+        let touchstartX = 0; let touchendX = 0; let mouseX = 0; let endMouseX = 0;
+        function handleSwipeGesture(start, end) {
+            const swipeThreshold = 75; 
+            if (end < start - swipeThreshold) navigateGames(1);
+            if (end > start + swipeThreshold) navigateGames(-1);
+        }
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
+            if (currentIndex === -1) return;
+            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
+        }
+        function isProtectedElement(e) { return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input'; }
+
+        document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
+        document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
+        document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; mouseX = e.screenX; });
+        document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endMouseX = e.screenX; handleSwipeGesture(mouseX, endMouseX); });
+    </script>
+    
+    <!-- LE MOTEUR DE JEU JAVASCRIPT COMPLET DE SLMASH -->
     <script>
         const canvas = document.getElementById('gameCanvas'); 
         const ctx = canvas.getContext('2d');
@@ -1320,79 +1530,6 @@
             });
             ctx.restore();
         }
-    </script>
-
-    <!-- GESTION DES PREVIEWS VIDEOS (HOVER) ET AGRANDISSEMENT -->
-    <script>
-        document.querySelectorAll('.char-card').forEach(card => {
-            let expandTimeout; // Variable pour stocker le minuteur
-            
-            card.addEventListener('mouseenter', () => {
-                const vid = card.querySelector('video');
-                const img = card.querySelector('img');
-                if(vid && img) {
-                    img.style.opacity = '0';
-                    vid.style.display = 'block';
-                    vid.play().catch(e => console.warn("L'auto-play vidéo a été bloqué par le navigateur.", e));
-                    
-                    // NOUVEAU: Lance le minuteur de 3 secondes (3000 ms)
-                    expandTimeout = setTimeout(() => {
-                        card.classList.add('video-expanded');
-                    }, 3000);
-                }
-            });
-            
-            card.addEventListener('mouseleave', () => {
-                // NOUVEAU: Annule le minuteur et retire l'agrandissement
-                clearTimeout(expandTimeout);
-                card.classList.remove('video-expanded');
-                
-                const vid = card.querySelector('video');
-                const img = card.querySelector('img');
-                if(vid && img) {
-                    vid.pause();
-                    vid.currentTime = 0; // Remet la vidéo au début
-                    vid.style.display = 'none';
-                    img.style.opacity = '1';
-                }
-            });
-        });
-    </script>
-    
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE & SOURIS) -->
-    <script>
-        const gamesHubList = [
-            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
-            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
-            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
-            "../worms/index.html"
-        ];
-
-        let touchstartX = 0; let touchendX = 0;
-        let mouseX = 0; let endMouseX = 0;
-        
-        function handleSwipeGesture(start, end) {
-            const swipeThreshold = 75; 
-            if (end < start - swipeThreshold) navigateGames(1);
-            if (end > start + swipeThreshold) navigateGames(-1);
-        }
-
-        function navigateGames(direction) {
-            const currentPath = window.location.pathname;
-            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
-            if (currentIndex === -1) return;
-            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
-        }
-
-        function isProtectedElement(e) {
-            return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input';
-        }
-
-        document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
-        document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
-        
-        document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; mouseX = e.screenX; });
-        document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endMouseX = e.screenX; handleSwipeGesture(mouseX, endMouseX); });
     </script>
 </body>
 </html>
