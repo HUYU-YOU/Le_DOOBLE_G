@@ -48,18 +48,62 @@
             background: rgba(0, 0, 0, 0.8);
         }
 
-        /* --- BOUTON PARAMÈTRES (AVEC CHANGEMENT DE SKIN DYNAMIQUE) --- */
-        .settings-btn {
+        /* --- BOUTON PARAMÈTRES AVEC SLIME EN ORBITE --- */
+        .settings-btn-wrapper {
             position: absolute;
             top: 20px; right: 25px;
             width: 45px; 
-            height: auto;
+            height: 45px;
             cursor: pointer;
             z-index: 100;
+        }
+
+        .settings-btn {
+            width: 100%; 
+            height: 100%;
+            object-fit: contain;
             transition: transform 0.4s ease;
             filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
+            position: relative;
+            z-index: 2;
         }
-        .settings-btn:hover { transform: rotate(90deg) scale(1.15); }
+
+        /* Le tracé circulaire invisible autour du bouton */
+        .orbit-container {
+            position: absolute;
+            top: -15px; left: -15px; right: -15px; bottom: -15px;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+
+        /* Le petit slime vert conçu en CSS */
+        .orbit-slime {
+            position: absolute;
+            top: 0; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px; height: 14px;
+            background: #39ff14;
+            /* Forme légèrement aplatie façon goutte/slime */
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 0 0 15px #39ff14, 0 0 5px #ffffff;
+        }
+
+        /* ANIMATIONS AU SURVOL */
+        .settings-btn-wrapper:hover .settings-btn { 
+            transform: scale(1.15); /* Le bouton zoome mais ne tourne plus */
+        }
+        .settings-btn-wrapper:hover .orbit-container {
+            opacity: 1;
+            animation: spinOrbit 1.2s linear infinite; /* Le slime se met à tourner */
+        }
+        
+        @keyframes spinOrbit {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
         /* --- MENU MODAL PARAMÈTRES --- */
         #settings-modal {
@@ -171,8 +215,13 @@
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
 
-    <!-- BOUTON PARAMETRES (CYCLE DE SETTING.PNG A SETTINGS4.PNG) -->
-    <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn" onclick="toggleSettings()">
+    <!-- BOUTON PARAMETRES AVEC ANIMATION D'ORBITE -->
+    <div class="settings-btn-wrapper" onclick="toggleSettings()">
+        <div class="orbit-container">
+            <div class="orbit-slime"></div>
+        </div>
+        <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
 
     <!-- MODAL PARAMETRES -->
     <div id="settings-modal">
@@ -332,7 +381,7 @@
     <!-- IMPORT DE L'API YOUTUBE -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        // --- 1. GESTION DES PARAMETRES (SETTINGS & CYCLE DE SKINS) ---
+        // --- 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES ---
         const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings4.png'];
         let currentSettingIndex = 0;
 
@@ -340,13 +389,12 @@
             const modal = document.getElementById('settings-modal');
             modal.classList.toggle('show');
 
-            // Change l'image du bouton à chaque appui en boucle
+            // Change l'image du bouton à chaque fois qu'on clique
             currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
             document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
         }
 
         function toggleTheme() {
-            // Bascule le mode sombre (qui remet le fond noir)
             document.body.classList.toggle('dark-mode');
         }
 
