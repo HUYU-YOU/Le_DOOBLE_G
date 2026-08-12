@@ -50,6 +50,16 @@ input[type="text"] {
 }
 input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
 
+/* --- SELECTEUR DE MAP --- */
+.cyber-select {
+    background: rgba(13, 17, 23, 0.85); border: 1px solid var(--neon-cyan);
+    color: #fff; padding: 12px; margin-top: 5px; width: 100%; box-sizing: border-box; 
+    font-family: inherit; font-size: 1.1rem; border-radius: 6px; outline: none; cursor: pointer; text-align: center;
+    box-shadow: 0 0 10px rgba(0,229,255,0.2); transition: 0.2s;
+}
+.cyber-select:hover { box-shadow: 0 0 15px rgba(0,229,255,0.4); }
+.cyber-select option { background: #111; color: #fff; }
+
 .btn-solid {
     width: 100%; padding: 14px; margin: 10px 0; border: none; border-radius: 8px;
     font-size: 1.1rem; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.2s;
@@ -82,8 +92,25 @@ canvas { display: block; width: 100%; height: 100%; }
     z-index: 10; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); overflow: hidden;
 }
 
+/* --- BOUTON SETTINGS (DARK MODE) --- */
+.btn-settings {
+    position: absolute; top: 15px; right: 15px; z-index: 100;
+    background: rgba(0,0,0,0.8); border: 1px solid #333;
+    border-radius: 8px; width: 44px; height: 44px;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; transition: 0.2s; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+.btn-settings:hover {
+    background: var(--neon-cyan); border-color: var(--neon-cyan);
+    box-shadow: 0 0 15px var(--neon-cyan);
+}
+.btn-settings img {
+    width: 24px; height: 24px; object-fit: contain; filter: invert(1);
+}
+.btn-settings:hover img { filter: invert(0); }
+
 #ui-top {
-    position: absolute; top: 15px; right: 20px; z-index: 10;
+    position: absolute; top: 15px; right: 75px; z-index: 10;
     background: rgba(0,0,0,0.8); border: 1px solid #333; padding: 10px 20px; 
     border-radius: 8px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); font-size: 1.1rem; font-weight: bold; display: flex; gap: 20px;
 }
@@ -92,19 +119,17 @@ canvas { display: block; width: 100%; height: 100%; }
 .res-food { color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
 .res-pop { color: var(--text-color); }
 
-/* CORRECTION UI : Forcer le menu sur UNE LIGNE avec un Scroll Horizontal ! */
 #ui-bottom {
     position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
     background: rgba(0,0,0,0.85); border: 2px solid var(--neon-cyan); padding: 10px; border-radius: 12px; 
-    display: flex; gap: 10px; align-items: center; 
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; align-items: center; 
     box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); backdrop-filter: blur(5px); 
     width: 90vw; max-width: 900px;
-    overflow-x: auto; /* Active le scroll */
-    white-space: nowrap; /* Empêche le retour à la ligne */
+    overflow-x: auto; 
+    white-space: nowrap; 
     flex-wrap: nowrap;
 }
 
-/* Personnalisation de la barre de scroll pour qu'elle soit stylée */
 #ui-bottom::-webkit-scrollbar { height: 8px; }
 #ui-bottom::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); border-radius: 4px; }
 #ui-bottom::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 4px; }
