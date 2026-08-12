@@ -39,19 +39,17 @@
             box-shadow: inset 0 0 50px #000; cursor: crosshair; transition: all 0.4s ease;
         }
 
-        /* --- LES 3 TAILLES D'ÉCRAN --- */
+        /* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
         .size-classic canvas { width: 800px; height: 500px; }
-        
-        .size-wide canvas { 
-            width: 85vw; height: 47.8vw; /* Ratio 16:9 mathématique */
-            max-height: 80vh; max-width: calc(80vh * 16 / 9);
-        }
 
-        #game-container.size-full {
-            position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important;
-            max-width: none; border-radius: 0; border: none; padding: 0; z-index: 9999;
+        /* Le "Plein Page" (Wide) et "Plein Ecran" (Full) suppriment les bords et prennent 100% */
+        #game-container.size-wide, #game-container.size-full {
+            position: fixed !important; top: 0; left: 0; 
+            width: 100vw !important; height: 100vh !important;
+            max-width: none; border-radius: 0; border: none; padding: 0; 
+            z-index: 999; background: var(--bg); 
         }
-        #game-container.size-full canvas {
+        #game-container.size-wide canvas, #game-container.size-full canvas {
             width: 100vw; height: 100vh; border-radius: 0; border: none; object-fit: fill;
         }
         
@@ -129,7 +127,7 @@
         /* MODAL PARAMETRES & TAILLE D'ÉCRAN */
         #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
         #settings-modal.show { opacity: 1; pointer-events: auto; }
-        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 420px; }
         
         .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
         .btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
@@ -146,7 +144,7 @@
     
     <div id="game-container" class="size-classic">
         
-        <!-- BOUTONS DANS LE CONTAINER (Restent visibles en plein écran) -->
+        <!-- BOUTONS DANS LE CONTAINER (S'adaptent à toutes les tailles d'écran) -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
@@ -165,30 +163,33 @@
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
             <div class="menu-title">CHOOSE YOUR BATTLE</div>
-            <button class="btn-main" id="btn-local-mode" onclick="openMenu('local');">🎮 Mode Local (1v1 ou IA)</button>
+            <button class="btn-main" id="btn-local-mode" onclick="autoFullscreen(); openMenu('local');">🎮 Mode Local (1v1 ou IA)</button>
             
             <hr id="menu-separator" style="width: 60%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
             
             <div class="menu-title" id="multi-title" style="font-size: 1.2em; margin-bottom: 10px; color: #aaa;">Arènes Multijoueurs</div>
-            <button class="btn-main red" id="btn-net-1" onclick="prepareNetwork('1v1');">🌐 Réseau (1 VS 1)</button>
-            <button class="btn-main green" id="btn-net-2" onclick="prepareNetwork('2v2');">🛡️ Réseau (2 VS 2 Équipes)</button>
-            <button class="btn-main gold" id="btn-net-4" onclick="prepareNetwork('ffa');">⚔️ Réseau (4 Chacun Pour Soi)</button>
+            <button class="btn-main red" id="btn-net-1" onclick="autoFullscreen(); prepareNetwork('1v1');">🌐 Réseau (1 VS 1)</button>
+            <button class="btn-main green" id="btn-net-2" onclick="autoFullscreen(); prepareNetwork('2v2');">🛡️ Réseau (2 VS 2 Équipes)</button>
+            <button class="btn-main gold" id="btn-net-4" onclick="autoFullscreen(); prepareNetwork('ffa');">⚔️ Réseau (4 Chacun Pour Soi)</button>
         </div>
-        
-        <!-- SCRIPT IMMÉDIAT POUR L'URL (Garantit que le menu s'adapte sans scintillement) -->
+
+        <!-- SCRIPT IMMÉDIAT POUR L'URL (Gère la disparition instantanée des menus) -->
         <script>
             const params = new URLSearchParams(window.location.search);
             const forceMode = params.get('mode');
-            if (forceMode === 'solo') {
-                document.getElementById('btn-net-1').style.display = 'none';
-                document.getElementById('btn-net-2').style.display = 'none';
-                document.getElementById('btn-net-4').style.display = 'none';
-                document.getElementById('menu-separator').style.display = 'none';
-                document.getElementById('multi-title').style.display = 'none';
-            } else if (forceMode === 'multi') {
-                document.getElementById('btn-local-mode').style.display = 'none';
-                document.getElementById('menu-separator').style.display = 'none';
-            }
+            
+            window.addEventListener('DOMContentLoaded', () => {
+                if (forceMode === 'solo') {
+                    // Saute complètement le menu de base et va directement au local
+                    document.getElementById('main-menu').style.display = 'none';
+                    document.getElementById('local-menu').style.display = 'flex';
+                    window.gameMode = 'local'; // Sécurité
+                } else if (forceMode === 'multi') {
+                    // Cache uniquement les éléments liés au solo
+                    document.getElementById('btn-local-mode').style.display = 'none';
+                    document.getElementById('menu-separator').style.display = 'none';
+                }
+            });
         </script>
 
         <!-- MENU LOCAL -->
@@ -214,7 +215,7 @@
                 </div>
             </div>
             
-            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="startLocalGame()">FIGHT !</button>
+            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">FIGHT !</button>
             
             <div>
                 <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
@@ -238,10 +239,10 @@
             </div>
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
             <button class="btn-main" id="host-btn" onclick="hostGame()">Créer (Héberger)</button>
-            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="startNetworkGameHost()">Lancer le combat !</button>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startNetworkGameHost()">Lancer le combat !</button>
             <p style="margin: 10px 0; color: #888;">OU</p>
             <input type="text" id="join-id" placeholder="Coller l'ID de l'Hôte">
-            <button class="btn-main red" id="join-btn" onclick="joinGame()">Rejoindre</button>
+            <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
             <p id="status-text" style="color: #aaa; margin-top: 10px; font-weight: bold;"></p>
             
             <div>
@@ -282,7 +283,7 @@
         </div>
     </div> <!-- FIN DU GAME CONTAINER -->
 
-    <!-- MODAL PARAMETRES (Hors du container pour toujours s'afficher au centre propre) -->
+    <!-- MODAL PARAMETRES (Hors du container pour toujours s'afficher au centre) -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
@@ -290,8 +291,8 @@
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
-                    <button id="btn-sz-classic" class="btn-size active" onclick="setGameSize('classic')">Classique</button>
-                    <button id="btn-sz-wide" class="btn-size" onclick="setGameSize('wide')">16:9 Large</button>
+                    <button id="btn-sz-classic" class="btn-size active" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size" onclick="setGameSize('wide')">Plein Page</button>
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
                 </div>
             </div>
@@ -354,14 +355,19 @@
             else if (size === 'full') {
                 container.classList.add('size-full');
                 document.getElementById('btn-sz-full').classList.add('active');
-                // Active le vrai mode plein écran du navigateur pour parfaire l'immersion
                 if (!document.fullscreenElement) {
                     document.documentElement.requestFullscreen().catch(e => console.log(e));
                 }
             }
         }
+
+        function autoFullscreen() {
+            // Passe en Plein Page automatiquement sans forcer l'OS
+            if (!document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        }
         
-        // Si le joueur appuie sur Echap pour quitter le plein écran, on repasse en mode 16:9 large par sécurité
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
                 setGameSize('wide');
@@ -828,6 +834,7 @@
         
         function startLocalGame() {
             if(gameActive) return; 
+            autoFullscreen(); // Adapte l'écran
             if (locMapChoice === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; } LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM; LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM;
             document.getElementById('local-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; platforms = mapData[locMapChoice];
             players = locSelections.map((selection, i) => { document.getElementById(`h${i + 1}`).style.display = 'block'; let p = new Player(i + 1, i===0 ? 150 : (LOGICAL_WIDTH - 150), selection.char); p.isBot = selection.bot; return p; });
@@ -871,7 +878,7 @@
                 c.on('open', () => { c.send({type: 'join', char: netSelectedChar}); });
                 c.on('data', data => {
                     if (data.type === 'welcome') { myPlayerId = data.id; document.getElementById('status-text').innerText = "Connecté! L'Hôte va lancer la partie..."; }
-                    if (data.type === 'start') { document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; projectiles = []; particles = []; currentMapIdx = data.mapIdx || 0; if (currentMapIdx === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; } LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM; LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM; playBGM('battle', currentMapIdx); }
+                    if (data.type === 'start') { autoFullscreen(); document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; projectiles = []; particles = []; currentMapIdx = data.mapIdx || 0; if (currentMapIdx === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; } LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM; LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM; playBGM('battle', currentMapIdx); }
                     if (data.type === 'state') { platforms = data.state.platforms; projectiles = data.state.projectiles; items = data.state.items; if (players.length !== data.state.players.length) { let tMap = { 'sumo': 'tank', 'ninja': 'ninja', 'gunner': 'gunner', 'mage': 'mage', 'pathkiller': 'pathkiller', 'slime': 'slime' }; players = data.state.players.map(p => new Player(p.id, p.x, tMap[p.skinKey])); players.forEach(p => { document.getElementById(`h${p.id}`).style.display = 'block'; document.getElementById(`n${p.id}`).innerText = `J${p.id}`; }); } data.state.players.forEach((pState, idx) => { Object.assign(players[idx], pState); }); drawClientGame(); updateHUD(); c.send({type: 'inputs', keys: getCtrl(myPlayerId)}); }
                     if (data.type === 'return_to_lobby') { document.getElementById('game-over-overlay').style.display = 'none'; document.getElementById('hud').style.display = 'none'; document.getElementById('network-menu').style.display = 'flex'; gameActive = false; document.getElementById('status-text').innerText = "L'Hôte va relancer..."; playBGM('select'); }
                 });
@@ -879,6 +886,7 @@
         }
 
         function startNetworkGameHost() {
+            autoFullscreen();
             if (currentMapIdx === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; } LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM; LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM;
             document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; platforms = mapData[0]; currentMapIdx = 0; projectiles = []; particles = [];
             players = [new Player(1, 150, netSelectedChar)]; netPlayersData.forEach((np, i) => { let spawnX = 150 + (np.id * 150); if(maxNetPlayers === 2) spawnX = LOGICAL_WIDTH - 150; players.push(new Player(np.id, spawnX, np.char)); });
