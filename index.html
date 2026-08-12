@@ -70,45 +70,47 @@
 
         .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-        /* --- NOUVEAU BOUTON "+" POUR LES AUTRES JEUX (En haut à gauche) --- */
-        .other-games-btn {
+        /* --- BOUTON "+" IMAGE POUR LES AUTRES JEUX (En haut à gauche) --- */
+        .other-games-btn-wrapper {
             position: absolute;
             top: 20px; left: 25px;
-            width: 45px; height: 45px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid #00e5ff;
-            color: #00e5ff;
-            font-size: 2rem;
-            font-weight: bold;
+            width: 55px;
+            height: 55px;
+            cursor: pointer;
+            z-index: 100;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            z-index: 100;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             animation: pulse-plus 2s infinite;
         }
 
+        .other-games-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.5));
+        }
+
         @keyframes pulse-plus {
-            0% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.8); text-shadow: 0 0 10px #00e5ff; }
-            100% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+            0% { filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.3)); }
+            50% { filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.8)); }
+            100% { filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.3)); }
         }
 
-        .other-games-btn:hover {
-            transform: scale(1.1) rotate(90deg);
-            background: rgba(0, 229, 255, 0.2);
+        .other-games-btn-wrapper:hover {
+            transform: scale(1.15);
         }
 
-        .other-games-btn.active {
-            background: var(--cyan, #00e5ff);
-            color: #000;
-            box-shadow: 0 0 25px var(--cyan, #00e5ff);
+        .other-games-btn-wrapper.active {
             animation: none;
-            transform: rotate(45deg); /* Le + devient un x pour fermer/quitter */
+        }
+        
+        .other-games-btn-wrapper.active .other-games-img {
+            transform: rotate(45deg);
+            filter: drop-shadow(0 0 20px #00e5ff) brightness(1.2);
         }
 
         /* --- MENU MODAL PARAMÈTRES --- */
@@ -220,8 +222,10 @@
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
 
-    <!-- NOUVEAU BOUTON "+" POUR LA CATEGORIE "AUTRES JEUX" -->
-    <div id="other-games-btn" class="other-games-btn" onclick="toggleOtherGames()">+</div>
+    <!-- NOUVEAU BOUTON "+" (AVEC IMAGE) POUR LA CATEGORIE "AUTRES JEUX" -->
+    <div id="other-games-btn" class="other-games-btn-wrapper" onclick="toggleOtherGames()">
+        <img src="img/butplus.png" class="other-games-img" alt="Autres Jeux">
+    </div>
 
     <!-- BOUTON PARAMETRES (ANIMATION JAVASCRIPT) -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
@@ -322,7 +326,7 @@
                     <div class="game-icon"><img src="img/logotower.jpg" class="game-logo" alt="Tower Defense"></div>
                 </a>
                 <a href="slimestax/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-                    <div class="game-icon" style="color: #39ff14; font-size: 2.5rem; text-shadow: 0 0 10px #39ff14; font-family: 'Rajdhani', sans-serif;">SLIMY STAX</div>
+                    <div class="game-icon"><img src="img/logoslimystax.png" class="game-logo" alt="Slimy Stax"></div>
                 </a>
             </div> 
 
@@ -333,7 +337,7 @@
                     <div class="game-icon"><img src="img/logosmash.png" class="game-logo" alt="Cyber Smash"></div>
                 </a>
                 <a href="RTSlime/index.html" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
-                    <video src="poker/img/cinematic_RTSLIME.mp4" loop muted playsinline class="bg-video"></video>
+                    <video src="poker/img/cinematic_poker.mp4" loop muted playsinline class="bg-video"></video>
                     <div class="game-icon"><img src="img/logoRTS.jpg" class="game-logo" alt="Slimilization"></div>
                 </a>
                 <a href="worms/index.html?mode=multi" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
