@@ -8,8 +8,11 @@ const minimapCanvas = document.getElementById('minimap');
 const mmCtx = minimapCanvas.getContext('2d');
 
 let width, height;
-const MAP_WIDTH = 10000;
-const MAP_HEIGHT = 10000;
+
+// Dimensions Titanesques (4 images 8K)
+const MAP_WIDTH = 15360;
+const MAP_HEIGHT = 8640;
+
 let camera = { x: 0, y: 0 };
 let zoom = 2.0;
 
@@ -19,7 +22,10 @@ let panStartX = 0;
 let panStartY = 0;
 let cameraStartX = 0;
 let cameraStartY = 0;
-let isDarkMode = false; // DARK MODE
+let isDarkMode = false; 
+
+// CHOIX DU BIOME EN COURS (classic ou hell)
+let currentMapTheme = 'classic';
 
 // --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
@@ -27,6 +33,10 @@ const ASSETS_PATHS = {
     mapHD: 'assets/map/MAPHD.png',
     mapBG: 'assets/map/MAPBG.png',
     mapBD: 'assets/map/MAPBD.png',
+    hellHG: 'assets/map/HELLHG.png',
+    hellHD: 'assets/map/HELLHD.png',
+    hellBG: 'assets/map/HELLBG.png',
+    hellBD: 'assets/map/HELLBD.png',
     hdv: 'assets/bat/hdv.png',
     house: 'assets/bat/home.png',
     sawmill: 'assets/bat/scierie.png',
@@ -72,7 +82,6 @@ const instructions = document.getElementById('build-instructions');
 const uiBottom = document.getElementById('ui-bottom');
 const chatBox = document.getElementById('global-chat-messages');
 
-// GESTION DU BOUTON SETTINGS (DARK MODE)
 const btnSettings = document.getElementById('btn-settings');
 if (btnSettings) {
     btnSettings.addEventListener('click', () => {
@@ -102,6 +111,10 @@ function setupPeerEvents(p) {
         document.getElementById('min-players-msg').style.display = 'none';
         document.getElementById('btn-start').style.display = 'block';
     });
+
+    p.on('error', err => {
+        document.getElementById('login-error').innerText = "Erreur: " + err.type;
+    });
 }
 
 setupPeerEvents(peer);
@@ -118,6 +131,9 @@ document.getElementById('btn-host').addEventListener('click', (e) => {
     document.getElementById('screen-lobby').style.display = 'flex';
     document.getElementById('my-id').innerText = "Chargement...";
     
+    // Affiche le sélecteur de map uniquement pour l'hôte
+    document.getElementById('host-options').style.display = 'block';
+    
     peer.destroy();
     peer = new Peer(code);
     setupPeerEvents(peer);
@@ -131,6 +147,7 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
     myPseudo = pName;
     isHost = false;
     
+    document.getElementById('login-error').innerText = "Connexion...";
     connToHost = peer.connect(targetId);
     
     connToHost.on('open', () => {
@@ -139,6 +156,7 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
         document.getElementById('my-id').innerText = targetId;
         document.getElementById('waiting-host-msg').style.display = 'block';
         document.getElementById('min-players-msg').style.display = 'none';
+        document.getElementById('login-error').innerText = "";
     });
     
     connToHost.on('data', data => handleNetworkData(data));
@@ -147,8 +165,10 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
 document.getElementById('btn-start').addEventListener('click', () => {
     if(isHost) {
         let gameSeed = Math.floor(Math.random() * 1000000); 
-        initGame(gameSeed);
-        connToGuest.send({ type: 'start_game', seed: gameSeed });
+        let mapChoice = document.getElementById('map-choice').value; // Récupère le choix de la map
+        initGame(gameSeed, mapChoice);
+        // On envoie le choix au Guest !
+        connToGuest.send({ type: 'start_game', seed: gameSeed, mapTheme: mapChoice });
     }
 });
 
@@ -213,7 +233,6 @@ function seededRandom() {
     return mapSeed / 233280;
 }
 
-// --- FONCTION ANTI-SUPERPOSITION ---
 function isPositionFree(x, y, minDistance) {
     for(let r of rivers) if(dist({x,y}, r) < minDistance + r.radius) return false;
     for(let t of trees) if(dist({x,y}, t) < minDistance + 20) return false;
@@ -304,7 +323,8 @@ function moveCameraFromMinimap(e) {
 // --- MINIMAP ---
 function drawMinimap() {
     mmCtx.clearRect(0, 0, 150, 150);
-    mmCtx.fillStyle = 'rgba(0, 20, 30, 0.8)';
+    // Teinte rougeatre si Hell, bleue nuit sinon
+    mmCtx.fillStyle = currentMapTheme === 'hell' ? 'rgba(40, 10, 10, 0.8)' : 'rgba(0, 20, 30, 0.8)';
     mmCtx.fillRect(0, 0, 150, 150);
 
     const drawDot = (obj, color, size) => {
@@ -329,7 +349,7 @@ function drawMinimap() {
 
 // --- TRAITEMENT DES DONNEES ---
 function handleNetworkData(data) {
-    if (data.type === 'start_game' && !isHost) initGameClient(data.seed);
+    if (data.type === 'start_game' && !isHost) initGameClient(data.seed, data.mapTheme);
     if (data.type === 'sync' && !isHost) syncClientState(data);
     if (data.type === 'cmd' && isHost) executeCommand(data);
 }
@@ -470,8 +490,10 @@ function buildMapElements(seed) {
 }
 
 // --- INITIALISATION ---
-function initGame(seed) {
+function initGame(seed, mapTheme) {
     gameState = 'PLAYING';
+    currentMapTheme = mapTheme; // "classic" ou "hell"
+    
     resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
     resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
     units = []; buildings = []; enemies = []; particles = []; lasers = []; selectedUnits = [];
@@ -513,8 +535,9 @@ function initGame(seed) {
     updateUI(); renderBottomUI();
 }
 
-function initGameClient(seed) {
+function initGameClient(seed, mapTheme) {
     gameState = 'PLAYING';
+    currentMapTheme = mapTheme;
     survivalTimer = 0;
     resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
     resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
@@ -860,10 +883,11 @@ function draw() {
     
     // GESTION DES 4 CARTES ET DU DARK MODE
     if (!isDarkMode) {
-        if (images.mapHG && images.mapHG.complete && images.mapHG.naturalWidth > 0) ctx.drawImage(images.mapHG, 0, 0, MAP_WIDTH/2, MAP_HEIGHT/2);
-        if (images.mapHD && images.mapHD.complete && images.mapHD.naturalWidth > 0) ctx.drawImage(images.mapHD, MAP_WIDTH/2, 0, MAP_WIDTH/2, MAP_HEIGHT/2);
-        if (images.mapBG && images.mapBG.complete && images.mapBG.naturalWidth > 0) ctx.drawImage(images.mapBG, 0, MAP_HEIGHT/2, MAP_WIDTH/2, MAP_HEIGHT/2);
-        if (images.mapBD && images.mapBD.complete && images.mapBD.naturalWidth > 0) ctx.drawImage(images.mapBD, MAP_WIDTH/2, MAP_HEIGHT/2, MAP_WIDTH/2, MAP_HEIGHT/2);
+        let prefix = currentMapTheme === 'hell' ? 'hell' : 'map';
+        if (images[prefix+'HG'] && images[prefix+'HG'].complete && images[prefix+'HG'].naturalWidth > 0) ctx.drawImage(images[prefix+'HG'], 0, 0, MAP_WIDTH/2, MAP_HEIGHT/2);
+        if (images[prefix+'HD'] && images[prefix+'HD'].complete && images[prefix+'HD'].naturalWidth > 0) ctx.drawImage(images[prefix+'HD'], MAP_WIDTH/2, 0, MAP_WIDTH/2, MAP_HEIGHT/2);
+        if (images[prefix+'BG'] && images[prefix+'BG'].complete && images[prefix+'BG'].naturalWidth > 0) ctx.drawImage(images[prefix+'BG'], 0, MAP_HEIGHT/2, MAP_WIDTH/2, MAP_HEIGHT/2);
+        if (images[prefix+'BD'] && images[prefix+'BD'].complete && images[prefix+'BD'].naturalWidth > 0) ctx.drawImage(images[prefix+'BD'], MAP_WIDTH/2, MAP_HEIGHT/2, MAP_WIDTH/2, MAP_HEIGHT/2);
     }
 
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
