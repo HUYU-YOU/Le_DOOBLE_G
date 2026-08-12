@@ -70,12 +70,12 @@
 
         .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-        /* --- BOUTON "+" IMAGE POUR LES AUTRES JEUX (En haut à gauche) --- */
+        /* --- BOUTON "+" IMAGE POUR LES AUTRES JEUX (En bas à droite) --- */
         .other-games-btn-wrapper {
             position: absolute;
-            top: 20px; left: 25px;
-            width: 55px; 
-            height: 55px;
+            bottom: 20px; right: 25px; /* LA CORRECTION EST ICI */
+            width: 65px; 
+            height: 65px;
             cursor: pointer;
             z-index: 100;
             display: flex;
@@ -223,7 +223,7 @@
         <source src="img/backgroundhub.mp4" type="video/mp4">
     </video>
 
-    <!-- BOUTON "+" (AVEC TON IMAGE) POUR LA CATEGORIE "AUTRES JEUX" (En haut à gauche) -->
+    <!-- NOUVEAU BOUTON "+" (AVEC TON IMAGE) POUR LA CATEGORIE "AUTRES JEUX" (En bas à droite) -->
     <div id="other-games-btn" class="other-games-btn-wrapper" onclick="toggleOtherGames()">
         <img src="img/butplus.png" class="other-games-img" alt="Autres Jeux">
     </div>
@@ -375,7 +375,7 @@
                 </a>
             </div> 
 
-            <!-- SECTION AUTRES JEUX (Ceux qui ne sont pas des slimes) -->
+            <!-- NOUVELLE SECTION : AUTRES JEUX (Ceux qui ne sont pas des slimes) -->
             <div id="grid-other" class="game-grid hidden">
                 <a href="https://huyu-you.github.io/Go-FAST/" target="_blank" class="game-card" onmouseenter="playVid(this)" onmouseleave="pauseVid(this)">
                     <video src="img/gofast_cinematic.mp4" loop muted playsinline class="bg-video"></video>
@@ -618,7 +618,6 @@
             toggleSettings();
             setTimeout(() => { settingsBtnImg.src = 'img/setting.png'; }, 300);
         }
-
 
         // --- 4. GESTION DES VIDEOS AU SURVOL ---
         function playVid(card) {
