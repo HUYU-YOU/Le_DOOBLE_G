@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber-Spy (Undercover)</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -25,28 +26,55 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* BOUTON RETOUR HUB */
+        /* --- BOUTON RETOUR HUB --- */
         .hub-link { 
-            position: fixed; top: 15px; left: 15px; 
-            color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; 
+            position: absolute; top: 15px; left: 15px; 
+            color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; font-size: 1.2rem;
             background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; 
-            border: 1px solid rgba(255,255,255,0.2); z-index: 9999; 
-            transition: 0.2s; backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 240, 255, 0.3); z-index: 9999; 
+            transition: 0.3s; backdrop-filter: blur(10px);
         }
-        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); transform: translateX(-5px); }
+
+        /* --- BOUTON SETTINGS & ORBITE --- */
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 9999; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--pink); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--pink), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- MODAL PARAMETRES --- */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--cyan); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--cyan); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--cyan); color: #000; box-shadow: 0 0 15px var(--cyan); }
+        .close-btn { margin-top: 25px; background: var(--cyan); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--cyan); transform: scale(1.05); }
+
+        /* --- CONTENEUR PRINCIPAL DU JEU --- */
+        #game-container {
+            background: var(--panel);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 15px; padding: 30px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.05);
+            margin-bottom: 40px; text-align: center; box-sizing: border-box;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column; justify-content: center;
+        }
+
+        .size-classic { width: 90%; max-width: 550px; }
+        .size-wide { width: 95vw !important; max-width: 1000px !important; min-height: 85vh; }
+        .size-full { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; max-width: none !important; border-radius: 0 !important; border: none !important; z-index: 999; }
 
         .main-title {
             color: var(--cyan); text-transform: uppercase; letter-spacing: 4px;
-            margin-top: 20px; margin-bottom: 20px; font-size: 2.5em; font-weight: 700;
-            text-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
-        }
-
-        .container {
-            background: var(--panel);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            border-radius: 15px; padding: 30px; width: 90%; max-width: 550px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-            margin-bottom: 40px; text-align: center; box-sizing: border-box;
+            margin-top: 20px; margin-bottom: 20px; font-size: 3em; font-weight: 700;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.8);
         }
 
         .no-swipe { touch-action: none; }
@@ -56,14 +84,14 @@
         input[type="text"], input[type="number"] {
             background: var(--inner-bg); border: 1px solid var(--teal);
             color: #fff; padding: 15px; margin: 10px 0; width: 100%;
-            box-sizing: border-box; font-family: inherit; font-size: 1.1em;
-            border-radius: 8px; outline: none; transition: 0.3s; text-align: center; font-weight: bold;
+            box-sizing: border-box; font-family: inherit; font-size: 1.2em;
+            border-radius: 8px; outline: none; transition: 0.3s; text-align: center; font-weight: bold; text-transform: uppercase;
         }
         input:focus { border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
 
         .btn {
             width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px;
-            font-size: 1.1em; font-weight: bold; text-transform: uppercase;
+            font-size: 1.2em; font-weight: bold; text-transform: uppercase;
             cursor: pointer; transition: 0.2s; font-family: inherit;
             background: var(--cyan); color: #000; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
             letter-spacing: 1px;
@@ -76,25 +104,26 @@
         .btn-green { background: var(--teal); color: #000; box-shadow: 0 0 10px rgba(69, 162, 158, 0.3); }
         .btn-green:hover { background: #fff; box-shadow: 0 0 20px var(--teal); }
 
-        .screen { display: none; }
+        .screen { display: none; width: 100%; }
         .active-screen { display: block; }
 
         /* Configuration Lobby */
-        .share-code-text { font-size: 1.1em; color: #aaa; margin-bottom: 20px; }
-        .share-code-val { color: var(--cyan); font-weight: bold; font-size: 1.5em; letter-spacing: 2px; user-select: all; background: #111; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; border: 1px dashed var(--teal);}
+        .share-code-text { font-size: 1.2em; color: #aaa; margin-bottom: 20px; }
+        .share-code-val { color: var(--cyan); font-weight: bold; font-size: 2em; letter-spacing: 4px; user-select: all; background: rgba(0,0,0,0.8); padding: 15px 30px; border-radius: 8px; display: inline-block; margin-top: 10px; border: 1px dashed var(--teal); text-shadow: 0 0 10px var(--cyan);}
 
         .player-box {
             background: var(--inner-bg);
             border: 1px solid var(--teal);
-            border-radius: 8px; padding: 15px; margin-bottom: 20px;
+            border-radius: 8px; padding: 20px; margin-bottom: 20px;
             text-align: center;
         }
-        .player-box h4 { margin: 0 0 15px 0; color: #fff; font-weight: 500; font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px;}
+        .player-box h4 { margin: 0 0 15px 0; color: #fff; font-weight: 500; font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px;}
         
         .players-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
         .player-badge {
-            background: #222; border: 1px solid var(--teal); color: #fff;
-            padding: 8px 15px; border-radius: 6px; font-size: 1em; font-weight: bold;
+            background: rgba(0, 240, 255, 0.1); border: 1px solid var(--cyan); color: #fff;
+            padding: 10px 20px; border-radius: 6px; font-size: 1.1em; font-weight: bold;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
         }
 
         /* Zone de Jeu */
@@ -103,7 +132,7 @@
         .panel-header {
             background: #111; padding: 15px; border-radius: 8px; 
             border: 1px solid var(--teal); margin-bottom: 20px;
-            font-size: 1.2em; font-weight: bold; color: var(--cyan);
+            font-size: 1.3em; font-weight: bold; color: var(--cyan);
             text-transform: uppercase; letter-spacing: 2px;
         }
 
@@ -113,56 +142,56 @@
             border-radius: 8px; padding: 20px; margin-bottom: 20px;
         }
         .word-display {
-            font-size: 2em; letter-spacing: 2px; font-weight: bold;
+            font-size: 2.5em; letter-spacing: 2px; font-weight: bold;
             color: var(--pink); text-align: center;
-            text-shadow: 0 0 10px rgba(255, 0, 127, 0.4);
+            text-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
             margin-top: 10px; text-transform: uppercase;
         }
 
         /* Layout central (Joueurs + Historique) */
         .game-layout {
             display: flex; gap: 15px; margin-bottom: 20px;
-            flex-direction: column; /* Stack sur mobile */
+            flex-direction: column; 
         }
         @media (min-width: 600px) {
             .game-layout { flex-direction: row; }
             .list-section { flex: 1; }
-            .history-section { flex: 1; }
+            .history-section { flex: 2; }
         }
 
         .list-section, .history-section {
-            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px; padding: 10px; text-align: left;
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; padding: 15px; text-align: left;
         }
-        .section-title { font-size: 1em; color: var(--teal); border-bottom: 1px solid var(--teal); padding-bottom: 5px; margin-top:0; text-transform: uppercase;}
+        .section-title { font-size: 1.1em; color: var(--teal); border-bottom: 1px solid var(--teal); padding-bottom: 5px; margin-top:0; text-transform: uppercase;}
 
-        .player-list { list-style: none; padding: 0; margin: 0; max-height: 160px; overflow-y: auto;}
+        .player-list { list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto;}
         .player-item {
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 6px;
-            margin-bottom: 5px; font-size: 1em;
+            background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 6px;
+            margin-bottom: 5px; font-size: 1.1em;
         }
         .player-name { color: #fff; font-weight: bold; }
-        .player-status { font-size: 0.85em; }
+        .player-status { font-size: 0.9em; }
         .status-eliminated { color: #555; text-decoration: line-through; }
-        .status-speaking { color: var(--pink); font-weight: bold; }
+        .status-speaking { color: var(--pink); font-weight: bold; text-shadow: 0 0 5px var(--pink);}
 
         /* Historique des mots */
         #chat-area {
-            height: 160px; overflow-y: auto;
-            font-size: 1em; display: flex; flex-direction: column-reverse;
+            height: 200px; overflow-y: auto;
+            font-size: 1.1em; display: flex; flex-direction: column-reverse;
         }
-        .chat-msg { margin-bottom: 6px; line-height: 1.3; }
-        .chat-system { color: var(--pink); font-weight: bold; font-size: 0.9em; display: block; margin: 8px 0; text-align: center;}
+        .chat-msg { margin-bottom: 8px; line-height: 1.4; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 5px;}
+        .chat-system { color: var(--pink); font-weight: bold; font-size: 1em; display: block; margin: 8px 0; text-align: center; text-transform: uppercase;}
         .chat-player { color: var(--cyan); font-weight: bold; }
 
         /* Bloc d'Action */
         .action-zone {
             background: var(--inner-bg); border: 2px solid var(--neon-yellow);
-            border-radius: 8px; padding: 20px; box-shadow: 0 0 15px rgba(252, 232, 3, 0.1);
+            border-radius: 8px; padding: 25px; box-shadow: 0 0 20px rgba(252, 232, 3, 0.15);
         }
-        .action-zone h3 { color: var(--neon-yellow); margin-top: 0; font-size: 1.3em;}
-        .game-status-text { color: #aaa; font-style: italic; margin-bottom: 15px; font-size: 1.1em;}
+        .action-zone h3 { color: var(--neon-yellow); margin-top: 0; font-size: 1.5em;}
+        .game-status-text { color: #aaa; font-style: italic; margin-bottom: 15px; font-size: 1.2em;}
 
         .action-module { display: none; }
         
@@ -172,22 +201,58 @@
 
         .vote-btn {
             background: #222; border: 1px solid var(--cyan); color: var(--cyan);
-            margin: 5px; padding: 12px; font-size: 1.1em; border-radius: 6px;
+            margin: 5px; padding: 15px; font-size: 1.2em; border-radius: 6px;
             cursor: pointer; font-family: var(--font-main); font-weight: bold; transition: 0.2s;
-            width: calc(50% - 10px); box-sizing: border-box;
+            width: calc(50% - 10px); box-sizing: border-box; text-transform: uppercase;
         }
-        .vote-btn:hover { background: var(--cyan); color: #000; box-shadow: 0 0 15px var(--cyan); }
+        .vote-btn:hover { background: var(--cyan); color: #000; box-shadow: 0 0 20px var(--cyan); transform: scale(1.05);}
 
-        #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--neon-yellow); padding: 20px; border-radius: 8px; background: var(--inner-bg);}
+        #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--cyan); padding: 30px; border-radius: 8px; background: rgba(0, 240, 255, 0.1); box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);}
         hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0; }
     </style>
 </head>
 <body>
 
+    <!-- LECTEUR YOUTUBE INVISIBLE POUR LA MUSIQUE -->
+    <div id="youtube-audio" style="display:none;"></div>
+
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+    <!-- BOUTON PARAMETRES -->
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--cyan); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Classique</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <span>Musique (ON/OFF) 🎵</span>
+                <label class="switch">
+                    <input type="checkbox" id="music-toggle" onchange="toggleMusic()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
     <h1 class="main-title">Cyber-Spy</h1>
 
-    <div class="container no-swipe">
+    <div id="game-container" class="size-wide no-swipe">
         
         <!-- 1. Screen: Login -->
         <div id="screen-login" class="screen active-screen">
@@ -197,7 +262,7 @@
             <hr>
             <input type="text" id="join-id" placeholder="Code de la partie (ex: SPY5945)" style="text-transform: uppercase;">
             <button class="btn btn-pink" id="btn-join">Rejoindre</button>
-            <p class="status-msg" id="login-error" style="color: var(--pink); font-size: 1em; margin-top: 15px;"></p>
+            <p class="status-msg" id="login-error" style="color: var(--pink); font-size: 1.2em; margin-top: 15px; font-weight:bold;"></p>
         </div>
 
         <!-- 2. Screen: Lobby -->
@@ -216,10 +281,10 @@
             </div>
 
             <div id="host-config" style="display: none;">
-                <p id="min-players-msg" style="color: var(--pink); font-size: 1.1em; font-weight:bold;">(En attente d'au moins 3 joueurs)</p>
-                <button id="btn-start" class="btn btn-green" style="display:none;">Démarrer la partie</button>
+                <p id="min-players-msg" style="color: var(--pink); font-size: 1.2em; font-weight:bold;">(En attente d'au moins 3 joueurs)</p>
+                <button id="btn-start" class="btn btn-green" style="display:none; padding:20px; font-size:1.4em;">Démarrer la partie</button>
             </div>
-            <p id="waiting-host-msg" style="color: gray; display:none; font-style: italic;">En attente du lancement par l'hôte...</p>
+            <p id="waiting-host-msg" style="color: #aaa; display:none; font-style: italic; font-size:1.2em;">En attente du lancement par l'hôte...</p>
         </div>
 
         <!-- 3. Screen: Game -->
@@ -232,9 +297,9 @@
             
             <!-- Bloc Rôle -->
             <div id="role-container">
-                <button class="btn btn-pink" id="btn-reveal-role" style="margin:0;">Découvrir mon rôle secret</button>
+                <button class="btn btn-pink" id="btn-reveal-role" style="margin:0; padding:20px; font-size:1.3em;">Découvrir mon rôle secret</button>
                 <div id="role-display" style="display:none;">
-                    <p style="margin:0; color:#aaa; text-transform: uppercase; font-size: 0.9em;">Votre mot secret est :</p>
+                    <p style="margin:0; color:#aaa; text-transform: uppercase; font-size: 1em;">Votre mot secret est :</p>
                     <div id="secret-word" class="word-display">...</div>
                 </div>
             </div>
@@ -276,9 +341,11 @@
 
             <!-- Écran de Fin -->
             <div id="game-over-screen">
-                <h2 id="winner-text" style="color: var(--cyan); font-size: 2.2em; margin-bottom: 10px;">...</h2>
-                <p id="winner-desc" style="color: white; font-size: 1.2em;"></p>
-                <button class="btn btn-pink" id="btn-restart" style="display:none; margin-top:20px;">Relancer une partie</button>
+                <h2 id="winner-text" style="color: var(--cyan); font-size: 2.5em; margin-bottom: 10px;">...</h2>
+                <p id="winner-desc" style="color: white; font-size: 1.3em; margin-bottom: 20px;"></p>
+                <!-- Bouton Rejouer pour l'hôte -->
+                <button class="btn btn-pink" id="btn-restart" style="display:none; padding:20px; font-size:1.3em;">Relancer une partie avec ce groupe</button>
+                <p id="waiting-restart-msg" style="color: #aaa; display:none; font-style: italic; font-size:1.2em; text-align:center;">En attente du choix de l'hôte...</p>
             </div>
 
         </div>
@@ -287,12 +354,103 @@
     <!-- Chargement du dictionnaire de mots externe -->
     <script src="mots.js"></script>
 
+    <!-- GESTION UI (Paramètres, Audio, Fullscreen) -->
+    <script>
+        function autoFullscreen() {
+            if (!document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        }
+
+        function setGameSize(size) {
+            const container = document.getElementById('game-container');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                container.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } else if (size === 'wide') {
+                container.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } else if (size === 'full') {
+                container.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        });
+
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0; settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) settingsBtnImg.src = '../img/setting.png';
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png'; toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
+
+        // Audio Management
+        let ytPlayer;
+        let isMuted = localStorage.getItem('isMuted') === 'true';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const musicToggle = document.getElementById('music-toggle');
+            if(musicToggle) musicToggle.checked = !isMuted;
+            setGameSize('wide');
+        });
+
+        function onYouTubeIframeAPIReady() {
+            ytPlayer = new YT.Player('youtube-audio', {
+                height: '0', width: '0', videoId: '4RaguYU_SQI',
+                playerVars: { 'autoplay': 1, 'controls': 0, 'showinfo': 0, 'autohide': 1, 'loop': 1, 'playlist': '4RaguYU_SQI' },
+                events: { 'onReady': (e) => { if (isMuted) e.target.mute(); else e.target.unMute(); } }
+            });
+        }
+
+        function toggleMusic() {
+            isMuted = !document.getElementById('music-toggle').checked;
+            localStorage.setItem('isMuted', isMuted);
+            if (isMuted) { if (ytPlayer && ytPlayer.mute) ytPlayer.mute(); } 
+            else { if (ytPlayer && ytPlayer.unMute) { ytPlayer.unMute(); ytPlayer.playVideo(); } }
+        }
+    </script>
+
+    <!-- MOTEUR DE JEU (PeerJS & Logique Undercover) -->
     <script>
         const ROLES = { CIVIL: 'Civil', UNDERCOVER: 'Undercover', GLITCH: 'Glitch' };
         const GAME_PHASES = { LOBBY: 1, ROLE_REVEAL: 2, DESCRIPTION: 3, VOTING: 4, GLITCH_GUESS: 5, END: 6 };
 
         let peer = null;
-        let myId = null; // Enregistrement Global de l'ID PeerJS
+        let myId = null; 
         let myPseudo = "Anonyme";
         let hostId = null;
         let isHost = false;
@@ -304,15 +462,16 @@
             turnOrder: [],
             turnIndex: 0,
             civilWord: "",
-            roundNumber: 0,
-            hasVoted: false
+            roundNumber: 0,   // Nombre de votes / éliminations
+            descRound: 1,     // Compteur pour forcer 2 tours de mots avant vote
+            hasVoted: false,
+            votesCast: 0
         };
 
         const screens = document.querySelectorAll('.screen');
         const loginErr = document.getElementById('login-error');
         const chatArea = document.getElementById('chat-area');
         
-        // UI Action Elements
         const actionTitle = document.getElementById('action-title');
         const gameStatus = document.getElementById('game-status');
         const chatInputArea = document.getElementById('chat-input-area');
@@ -322,6 +481,7 @@
         function showScreen(screenId) {
             screens.forEach(s => s.classList.remove('active-screen'));
             document.getElementById(screenId).classList.add('active-screen');
+            if (screenId === 'screen-game') autoFullscreen();
         }
 
         function setActionUI(title, msg, activeModule = null, blink = false) {
@@ -345,7 +505,7 @@
             if (type === 'system') {
                 msgEl.innerHTML = `<span class="chat-system">${msg}</span>`;
             } else if (type === 'eliminated') {
-                msgEl.innerHTML = `<span class="chat-eliminated">[ÉLIMINÉ] ${senderStr} : ${msg}</span>`;
+                msgEl.innerHTML = `<span class="chat-eliminated" style="color: gray; text-decoration: line-through;">[ÉLIMINÉ] ${senderStr} : ${msg}</span>`;
             } else {
                 msgEl.innerHTML = `<span class="chat-player">${senderStr} :</span> <span class="chat-text">${msg}</span>`;
             }
@@ -362,7 +522,7 @@
             peer = customId ? new Peer(customId) : new Peer();
 
             peer.on('open', (id) => {
-                myId = id; // IMPORTANT : Sauvegarde de l'ID réseau localement
+                myId = id; 
                 loginErr.innerText = "";
                 callback(id);
             });
@@ -412,7 +572,7 @@
                 loginErr.innerText = "Accès à la salle...";
                 loginErr.style.color = "var(--teal)";
 
-                const conn = peer.connect(targetId);
+                const conn = peer.connect(targetId, { reliable: true });
                 setupClientConnectionEvents(conn);
             }); 
         });
@@ -460,12 +620,19 @@
                     break;
 
                 case 's_start_descriptions':
-                    // FIX MAJEUR: Le Client reçoit et synchronise la nouvelle turnOrder
                     gameLogic.turnOrder = data.turnOrder; 
-                    addChatMsg("SYSTÈME", `--- TOUR ${data.round} ---`, 'system');
+                    addChatMsg("SYSTÈME", `--- PHASE D'ENQUÊTE ${data.round} ---`, 'system');
                     gameLogic.phase = GAME_PHASES.DESCRIPTION;
                     gameLogic.turnIndex = 0;
+                    gameLogic.descRound = 1;
                     updateGamePlayersListUI();
+                    checkIfMyTurnDesc();
+                    break;
+
+                case 's_next_desc_round':
+                    gameLogic.turnIndex = 0;
+                    gameLogic.descRound = data.round;
+                    addChatMsg("SYSTÈME", `--- DEUXIÈME MOT ---`, 'system');
                     checkIfMyTurnDesc();
                     break;
 
@@ -499,6 +666,10 @@
                     handleGameOver(data);
                     break;
 
+                case 's_restart_game':
+                    resetToLobby();
+                    break;
+
                 case 's_error':
                     alert("Erreur: " + data.message);
                     location.reload();
@@ -522,7 +693,7 @@
                 
                 players = [{
                     id: 0,
-                    peerId: id, // IMPORTANT : Sauvegardé
+                    peerId: id,
                     pseudo: pseudo,
                     conn: null,
                     role: null,
@@ -535,12 +706,12 @@
         });
 
         function handleHostIncomingConnection(conn) {
-            if (players.length >= 6) {
-                conn.on('open', () => conn.send({ type: 's_error', message: 'La partie est pleine (Max 6).' }));
+            if (players.length >= 8) { // Augmenté à 8 pour plus de fun
+                conn.on('open', () => conn.send({ type: 's_error', message: 'La partie est pleine (Max 8).' }));
                 setTimeout(() => conn.close(), 1000);
                 return;
             }
-            if (gameLogic.phase && gameLogic.phase !== GAME_PHASES.LOBBY) {
+            if (gameLogic.phase && gameLogic.phase !== GAME_PHASES.LOBBY && gameLogic.phase !== GAME_PHASES.END) {
                  conn.on('open', () => conn.send({ type: 's_error', message: 'La partie a déjà commencé.' }));
                  setTimeout(() => conn.close(), 1000);
                  return;
@@ -736,17 +907,17 @@
             gameLogic.phase = GAME_PHASES.DESCRIPTION;
             gameLogic.roundNumber++;
             gameLogic.turnIndex = 0;
+            gameLogic.descRound = 1; // NOUVEAUTÉ : Initialise les 2 tours
             
-            // FIX MAJEUR : Filtrer les morts en conservant l'ordre de jeu défini au début
+            // Filtrer les morts en conservant l'ordre de jeu défini au début
             gameLogic.turnOrder = gameLogic.turnOrder.filter(id => {
                 const p = players.find(player => player.id === id);
                 return p && p.isAlive;
             });
 
-            // L'Hôte envoie obligatoirement le nouvel ordre recalculé aux Clients
             broadcast({ type: 's_start_descriptions', round: gameLogic.roundNumber, turnOrder: gameLogic.turnOrder });
             
-            addChatMsg("SYSTÈME", `--- TOUR ${gameLogic.roundNumber} ---`, 'system');
+            addChatMsg("SYSTÈME", `--- PHASE D'ENQUÊTE ${gameLogic.roundNumber} ---`, 'system');
             updateGamePlayersListUI();
             checkIfMyTurnDesc();
         }
@@ -812,8 +983,17 @@
             updateGamePlayersListUI();
 
             if (gameLogic.turnIndex >= gameLogic.turnOrder.length) {
-                gameLogic.phase = GAME_PHASES.VOTING;
-                setTimeout(hostStartVotingPhase, 2000);
+                // MODIFICATION : 2 TOURS DE MOTS
+                gameLogic.descRound++;
+                if (gameLogic.descRound > 2) {
+                    gameLogic.phase = GAME_PHASES.VOTING;
+                    setTimeout(hostStartVotingPhase, 2000);
+                } else {
+                    gameLogic.turnIndex = 0;
+                    broadcast({ type: 's_next_desc_round', round: gameLogic.descRound });
+                    addChatMsg("SYSTÈME", `--- DEUXIÈME MOT ---`, 'system');
+                    checkIfMyTurnDesc();
+                }
             } else {
                 checkIfMyTurnDesc();
             }
@@ -1040,10 +1220,42 @@
             document.getElementById('winner-text').innerText = data.winner;
             document.getElementById('winner-desc').innerText = data.desc;
             
+            const restartBtn = document.getElementById('btn-restart');
+            const waitingMsg = document.getElementById('waiting-restart-msg');
+            
             if (isHost) {
-                const restartBtn = document.getElementById('btn-restart');
-                restartBtn.style.display = 'block';
-                restartBtn.onclick = () => location.reload();
+                restartBtn.style.display = 'inline-block';
+                waitingMsg.style.display = 'none';
+                restartBtn.onclick = () => {
+                    broadcast({ type: 's_restart_game' });
+                    resetToLobby();
+                };
+            } else {
+                restartBtn.style.display = 'none';
+                waitingMsg.style.display = 'block';
+            }
+        }
+
+        function resetToLobby() {
+            // Réinitialisation de la logique pour un nouveau match
+            gameLogic = {
+                phase: GAME_PHASES.LOBBY, currentPair: [], turnOrder: [], turnIndex: 0, civilWord: "", roundNumber: 0, descRound: 1, hasVoted: false, votesCast: 0
+            };
+            
+            players.forEach(p => {
+                p.isAlive = true;
+                p.role = null;
+                p.votesReceived = 0;
+            });
+            
+            chatArea.innerHTML = "";
+            document.getElementById('secret-word').innerText = "...";
+            showScreen('screen-lobby');
+            
+            if (isHost) {
+                sendLobbyUpdate();
+            } else {
+                document.getElementById('waiting-host-msg').style.display = 'block';
             }
         }
     </script>
