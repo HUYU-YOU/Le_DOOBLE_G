@@ -5,138 +5,174 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Slime-Dash : Infinite Run</title>
     <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <!-- Ajout de la police Rajdhani commune à tous les jeux -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --bg-color: #0b0c10;
+            --bg-color: #050811;
             --neon-cyan: #00f0ff;
             --neon-pink: #ff007f;
             --neon-green: #39ff14;
             --neon-yellow: #fce803;
             --neon-red: #ff3333;
             --text-color: #e0e0e0;
-            --font-main: 'Courier New', Courier, monospace;
+            --font-main: 'Rajdhani', sans-serif;
+            --panel: rgba(10, 15, 28, 0.85);
         }
 
         body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
+            margin: 0; padding: 0; width: 100vw; height: 100vh;
             background-color: var(--bg-color); color: var(--text-color);
             font-family: var(--font-main); overflow: hidden;
             display: flex; justify-content: center; align-items: center;
         }
 
-        #btn-retour-hub {
-            position: fixed; top: 20px; left: 20px; z-index: 9999;
-            background-color: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #e0e0e0; padding: 8px 15px; font-family: inherit;
-            font-size: 14px; border-radius: 5px; cursor: pointer;
-            display: flex; align-items: center; gap: 8px;
-            transition: 0.2s ease; text-decoration: none;
-        }
-        #btn-retour-hub:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-
-        #btn-mute {
-            position: fixed; top: 20px; right: 20px; z-index: 9999;
-            background-color: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan); padding: 8px 15px; font-family: inherit;
-            font-size: 14px; border-radius: 5px; cursor: pointer;
-            font-weight: bold; transition: 0.2s ease;
-        }
-        #btn-mute:hover {
-            background-color: rgba(0, 240, 255, 0.1);
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-        }
-
-        #btn-stop-test {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;
-            background-color: rgba(255, 0, 127, 0.8);
-            border: 2px solid var(--neon-pink);
-            color: #fff; padding: 10px 20px; font-family: inherit;
-            font-size: 16px; border-radius: 5px; cursor: pointer;
-            font-weight: bold; transition: 0.2s ease; text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(255, 0, 127, 0.5);
-            display: none;
-        }
-        #btn-stop-test:hover {
-            background-color: var(--neon-pink); color: #000;
-        }
-
+        /* --- CONTENEUR PRINCIPAL DU JEU --- */
         #game-container {
             position: relative; width: 100%; height: 100%; max-width: 1200px; max-height: 700px;
-            background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
-            touch-action: none; overflow: hidden; border: 2px solid rgba(57, 255, 20, 0.3); border-radius: 8px;
+            background: var(--panel); box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
+            touch-action: none; overflow: hidden; border: 2px solid rgba(57, 255, 20, 0.3); border-radius: 15px;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            backdrop-filter: blur(10px);
         }
 
-        canvas { display: block; width: 100%; height: 100%; }
+        canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
+
+        /* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
+        .size-classic canvas { width: 100%; height: 100%; }
+        
+        /* Le jeu se lance de base en Full Screen Web */
+        #game-container.size-wide, #game-container.size-full {
+            position: fixed !important; top: 0; left: 0; 
+            width: 100vw !important; height: 100vh !important;
+            max-width: none; max-height: none; border-radius: 0; border: none; padding: 0; 
+            z-index: 999; background: var(--bg-color); 
+        }
+        #game-container.size-wide canvas, #game-container.size-full canvas {
+            width: 100vw; height: 100vh; border-radius: 0; border: none; object-fit: fill;
+        }
+
+        /* --- BOUTON RETOUR AU HUB --- */
+        #btn-retour-hub {
+            position: fixed; top: 20px; left: 20px; z-index: 9999;
+            color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem;
+            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
+            transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; font-family: 'Rajdhani', sans-serif;
+        }
+        #btn-retour-hub:hover {
+            color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px);
+        }
+
+        /* --- BOUTONS OPTIONS FLOTTANTS --- */
+        .floating-controls {
+            position: absolute; top: 20px; right: 80px; z-index: 1000;
+            display: flex; gap: 15px;
+        }
+
+        #btn-mute, #btn-stop-test {
+            background-color: rgba(0, 0, 0, 0.5); border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan); padding: 8px 15px; font-family: inherit; font-size: 1.1rem; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; transition: 0.2s ease; backdrop-filter: blur(5px);
+        }
+        #btn-mute:hover, #btn-stop-test:hover { background-color: rgba(0, 240, 255, 0.15); box-shadow: 0 0 15px rgba(0, 240, 255, 0.5); color: #fff;}
+        #btn-stop-test { border-color: var(--neon-pink); color: var(--neon-pink); display: none; }
+        #btn-stop-test:hover { background-color: rgba(255, 0, 127, 0.15); box-shadow: 0 0 15px rgba(255, 0, 127, 0.5); color: #fff; }
+
+        /* --- BOUTON SETTINGS & ORBITE --- */
+        .settings-btn-wrapper { position: fixed; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 9999; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--neon-green); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--neon-green), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- MODAL PARAMETRES & TAILLE D'ÉCRAN --- */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--neon-cyan); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--neon-cyan); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+        .close-btn { margin-top: 25px; background: var(--neon-cyan); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--neon-cyan); transform: scale(1.05); }
 
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
             justify-content: space-between; padding: 25px; box-sizing: border-box;
+            z-index: 50;
         }
 
         .score-board {
             display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: bold;
             color: var(--neon-pink); text-shadow: 0 0 12px var(--neon-pink); letter-spacing: 2px;
-            pointer-events: auto;
+            pointer-events: auto; padding-top: 60px; /* Evite de passer sous les boutons */
         }
 
-        #menu-screen {
+        /* --- MENUS EN GLASSMORPHISM (Look Cyber Smash) --- */
+        #menu-screen, #gameover-screen {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; pointer-events: auto; background: rgba(11, 12, 16, 0.95);
-            padding: 40px; border: 2px solid var(--neon-cyan); box-shadow: 0 0 25px var(--neon-cyan);
-            border-radius: 12px; z-index: 10; width: 90%; max-width: 600px;
+            text-align: center; pointer-events: auto; 
+            background: rgba(10, 15, 28, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 40px 60px; border: 1px solid rgba(0, 240, 255, 0.2); 
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0, 240, 255, 0.05);
+            border-radius: 20px; z-index: 100; width: 90%; max-width: 600px;
         }
 
-        #gameover-screen {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; pointer-events: auto; background: rgba(11, 12, 16, 0.95);
-            padding: 40px; border: 2px solid var(--neon-pink); box-shadow: 0 0 25px var(--neon-pink);
-            border-radius: 12px; z-index: 30; width: 90%; max-width: 450px; display: none;
-        }
+        #gameover-screen { border-color: rgba(255, 0, 127, 0.3); box-shadow: 0 15px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 0, 127, 0.1); display: none; }
 
-        h1 {
-            margin-top: 0; color: var(--neon-cyan); text-shadow: 0 0 15px var(--neon-cyan);
-            text-transform: uppercase; font-size: 3.5rem; letter-spacing: 3px;
-        }
+        h1 { margin-top: 0; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--neon-cyan); text-transform: uppercase; font-size: 3.5rem; letter-spacing: 5px; }
 
-        p { color: var(--text-color); margin-bottom: 25px; font-size: 1.1rem; line-height: 1.5; }
+        p { color: #ccc; margin-bottom: 25px; font-size: 1.2rem; line-height: 1.5; font-weight: bold;}
 
         .btn-group { display: flex; flex-direction: column; gap: 15px; justify-content: center; align-items: center; margin-bottom: 20px;}
         .btn-row { display: flex; gap: 15px; justify-content: center; width: 100%; }
 
+        /* BOUTONS D'ACTION (Style Cyber Smash) */
         .action-btn-main {
-            background: rgba(0,0,0,0.8); border: 2px solid var(--neon-cyan); color: var(--neon-cyan);
-            padding: 15px 30px; font-size: 1.2rem; font-family: inherit; text-transform: uppercase;
-            font-weight: bold; cursor: pointer; transition: all 0.3s ease; outline: none; border-radius: 4px;
-            width: 100%; max-width: 250px; pointer-events: auto;
+            width: 100%; max-width: 400px; padding: 15px; margin: 5px 0;
+            font-size: 1.3rem; font-family: 'Rajdhani', sans-serif; font-weight: bold;
+            color: #fff; text-transform: uppercase; letter-spacing: 1px;
+            background: rgba(0,0,0,0.5); border: 2px solid transparent; border-radius: 10px; 
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative; overflow: hidden; pointer-events: auto;
         }
+        .action-btn-main::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: 0.5s;
+        }
+        .action-btn-main:hover::after { left: 150%; }
+        .action-btn-main:hover { transform: translateY(-4px); color: #000;}
+
+        .btn-play { border-color: var(--neon-green); box-shadow: 0 0 15px rgba(57, 255, 20, 0.2); }
+        .btn-play:hover { background: var(--neon-green); box-shadow: 0 10px 30px rgba(57, 255, 20, 0.6); }
         
-        .btn-play { border-color: var(--neon-green); color: var(--neon-green); }
-        .btn-play:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 20px var(--neon-green); transform: scale(1.05); }
-        .btn-edit { border-color: var(--neon-yellow); color: var(--neon-yellow); }
-        .btn-edit:hover { background: var(--neon-yellow); color: #000; box-shadow: 0 0 20px var(--neon-yellow); transform: scale(1.05); }
-        .btn-code { border-color: var(--neon-pink); color: var(--neon-pink); }
-        .btn-code:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 20px var(--neon-pink); transform: scale(1.05); }
+        .btn-edit { border-color: var(--neon-yellow); box-shadow: 0 0 15px rgba(252, 232, 3, 0.2); }
+        .btn-edit:hover { background: var(--neon-yellow); box-shadow: 0 10px 30px rgba(252, 232, 3, 0.6); }
+        
+        .btn-code { border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
+        .btn-code:hover { background: var(--neon-pink); box-shadow: 0 10px 30px rgba(255, 0, 127, 0.6); }
 
         #code-section {
-            border-top: 1px dashed var(--neon-pink); padding-top: 20px;
-            display: none; flex-direction: column; gap: 10px; align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.1); padding-top: 25px; margin-top: 15px;
+            display: none; flex-direction: column; gap: 15px; align-items: center; width: 100%;
         }
         input[type="text"] {
-            background: rgba(0,0,0,0.7); border: 1px solid var(--neon-pink); color: var(--neon-pink);
-            padding: 12px; font-size: 1rem; font-family: inherit; outline: none; text-align: center; width: 100%; max-width: 300px;
+            background: rgba(0,0,0,0.8); border: 1px solid var(--neon-pink); color: #fff;
+            padding: 15px; font-size: 1.2rem; font-family: inherit; font-weight: bold; outline: none; 
+            text-align: center; width: 80%; border-radius: 8px;
         }
+        input[type="text"]:focus { box-shadow: 0 0 15px var(--neon-pink); }
 
         #editor-panel {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(11, 12, 16, 0.95); border: 2px solid var(--neon-yellow);
             padding: 15px 20px; border-radius: 10px; display: none; gap: 10px; pointer-events: auto;
-            box-shadow: 0 0 15px var(--neon-yellow); z-index: 20; align-items: center; flex-wrap: nowrap; 
+            box-shadow: 0 0 15px var(--neon-yellow); z-index: 100; align-items: center; flex-wrap: nowrap; 
             cursor: grab;
         }
         #editor-panel:active { cursor: grabbing; }
@@ -164,16 +200,110 @@
         }, { passive: false });
     </script>
 
-    <a href="../index.html" id="btn-retour-hub" title="Retour au Hub Global">
-        &#11013; Retour au Hub
-    </a>
+    <!-- BOUTONS FLOTTANTS (Hors Container pour le Settings) -->
+    <a href="../index.html" id="btn-retour-hub" title="Retour au Hub Global">⬅ Retour au Hub</a>
 
-    <button id="btn-mute">🔊 SON: ON</button>
-    <button id="btn-stop-test">🛑 STOP TEST</button>
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <!-- SCRIPT GESTION TAILLE ÉCRAN & ANIMATION SETTINGS -->
+    <script>
+        // ANIMATION DU BOUTON SETTINGS
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png';
+            toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-modal').classList.toggle('show');
+        }
+
+        // GESTION DE LA TAILLE DU JEU (Se lance en WIDE de base)
+        function setGameSize(size) {
+            const container = document.getElementById('game-container');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                container.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'wide') {
+                container.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'full') {
+                container.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+        
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        });
+    </script>
+
 
     <div id="yt-player" style="display: none;"></div>
 
-    <div id="game-container" class="no-swipe">
+    <!-- CONTAINER DU JEU (Initialisé en size-wide) -->
+    <div id="game-container" class="no-swipe size-wide">
+        
+        <div class="floating-controls">
+            <button id="btn-stop-test">🛑 STOP TEST</button>
+            <button id="btn-mute">🔊 SON: ON</button>
+        </div>
+
         <canvas id="gameCanvas"></canvas>
         
         <div id="ui-layer">
@@ -196,26 +326,27 @@
             <p id="menu-desc">Échappe à l'infection ou crée ton propre enfer quantique.</p>
             
             <div class="btn-group">
-                <button id="btn-play-endless" class="action-btn-main btn-play">JOUER (Infini)</button>
+                <button id="btn-play-endless" class="action-btn-main btn-play">▶ JOUER (Infini)</button>
                 <div class="btn-row">
-                    <button id="btn-create-map" class="action-btn-main btn-edit">CRÉER UNE MAP</button>
-                    <button id="btn-play-code" class="action-btn-main btn-code">JOUER UN CODE</button>
+                    <button id="btn-create-map" class="action-btn-main btn-edit">🛠️ CRÉER UNE MAP</button>
+                    <button id="btn-play-code" class="action-btn-main btn-code">📋 JOUER UN CODE</button>
                 </div>
             </div>
 
             <div id="code-section">
                 <input type="text" id="map-code-input" placeholder="Coller le code ici...">
-                <button id="load-code-btn" class="action-btn-main btn-code" style="width: auto;">LANCER LA MAP</button>
+                <button id="load-code-btn" class="action-btn-main btn-code" style="width: auto; padding: 10px 40px;">LANCER LA MAP</button>
             </div>
         </div>
 
         <div id="gameover-screen">
-            <h2 id="go-title" style="color: var(--neon-pink); font-size: 2.2rem; margin-top: 0; text-transform: uppercase;">CRASH CRITIQUE</h2>
-            <p id="go-desc" style="color: #fff; margin-bottom: 25px; font-size: 1.2rem;">Score : <span id="go-score" style="color: var(--neon-green);">0</span></p>
-            <p style="font-size: 0.9rem; color: gray; margin-top: -15px;">Appuyez sur ESPACE pour rejouer</p>
-            <div class="btn-group" style="margin-bottom: 0;">
-                <button id="btn-replay" class="action-btn-main btn-play" style="max-width: 100%;">REJOUER</button>
-                <button id="btn-back-menu" class="action-btn-main btn-edit" style="max-width: 100%;">RETOUR MENU</button>
+            <h2 id="go-title">CRASH CRITIQUE</h2>
+            <p id="go-desc">Score : <span id="go-score" style="color: var(--neon-green); font-size: 1.5em; text-shadow: 0 0 10px var(--neon-green);">0</span></p>
+            <p style="font-size: 0.9rem; color: #aaa; margin-top: -15px;">Appuyez sur ESPACE pour rejouer</p>
+            
+            <div class="btn-group" style="margin-bottom: 0; width: 100%;">
+                <button id="btn-replay" class="action-btn-main btn-play">REJOUER</button>
+                <button id="btn-back-menu" class="action-btn-main btn-edit">RETOUR MENU</button>
             </div>
         </div>
 
@@ -241,6 +372,7 @@
         </div>
     </div>
 
+    <!-- TON SCRIPT MOTEUR DE JEU -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -366,7 +498,6 @@
                 levelData = JSON.parse(JSON.stringify(defaultLevel));
             }
 
-            // AJOUT DU START_FLAG AU DICTIONNAIRE
             const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7, 'start_flag': 8 };
             const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin', 8: 'start_flag' };
 
@@ -551,7 +682,6 @@
                 statusText.innerText = "MODE ÉDITEUR";
                 statusText.style.color = "var(--neon-yellow)";
 
-                // Focus la caméra sur le point de départ s'il existe
                 const startPoint = levelData.find(o => o.type === 'start_flag');
                 if (startPoint) {
                     cameraX = (startPoint.x * GRID_SIZE) - 150; 
@@ -577,6 +707,8 @@
                     document.getElementById('go-title').innerText = "NIVEAU ACCOMPLI !";
                     document.getElementById('go-title').style.color = "var(--neon-yellow)";
                     document.getElementById('go-score').innerText = Math.floor(score);
+                    gameOverScreen.style.border = "2px solid var(--neon-yellow)";
+                    gameOverScreen.style.boxShadow = "0 0 25px var(--neon-yellow)";
                     gameOverScreen.style.display = 'block';
                 } else {
                     gameState = 'GAMEOVER';
@@ -595,6 +727,8 @@
                     document.getElementById('go-title').innerText = "CRASH CRITIQUE";
                     document.getElementById('go-title').style.color = "var(--neon-pink)";
                     document.getElementById('go-score').innerText = Math.floor(score);
+                    gameOverScreen.style.border = "2px solid var(--neon-pink)";
+                    gameOverScreen.style.boxShadow = "0 0 25px var(--neon-pink)";
                     gameOverScreen.style.display = 'block';
                 }
             }
@@ -716,9 +850,7 @@
             function placeBlockAtCursor() {
                 if (hoverGridY < 0 && currentTool !== 'hole') return; 
                 
-                // UN SEUL DRAPEAU DE FIN
                 if (currentTool === 'flag') levelData = levelData.filter(o => o.type !== 'flag'); 
-                // UN SEUL DRAPEAU DE DÉPART
                 if (currentTool === 'start_flag') levelData = levelData.filter(o => o.type !== 'start_flag'); 
 
                 if (currentTool === 'coin') {
@@ -1089,7 +1221,6 @@
                     ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE); ctx.lineTo(screenX + GRID_SIZE, screenY - GRID_SIZE + 20);
                     ctx.lineTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE + 40); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
                 }
-                // --- DESSIN DU DRAPEAU DE DÉPART ---
                 else if (type === 'start_flag') {
                     ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-green)'; ctx.fillStyle = 'var(--neon-green)';
                     ctx.fillRect(screenX + GRID_SIZE/2 - 2, screenY - GRID_SIZE, 4, GRID_SIZE * 2); 
