@@ -6,15 +6,15 @@
    pour se fondre dans la masse.
 */
 
-// Chaque ligne est une paire : [ "Mot Civil", "Mot Undercover" ]
-const wordPairs = [
-    // --- LES DEMANDES DU BOSS ---
+// ==========================================
+// 📦 LISTE 1 : LA BASE (81 Paires)
+// ==========================================
+const liste1 = [
+    // MANGAS & ANIMÉS
     ["Picasso", "Matisse"],
     ["Nikola Tesla", "Elon Musk"],
-    ["Freezer", "Frigo"], // Le piège parfait !
-    ["Naruto", "Feunard"], // Renard à 9 queues !
-
-    // --- MANGAS & ANIMÉS ---
+    ["Freezer", "Frigo"],
+    ["Naruto", "Feunard"],
     ["Goku", "Superman"],
     ["Kira", "L"],
     ["Luffy", "Jack Sparrow"],
@@ -25,7 +25,7 @@ const wordPairs = [
     ["Pikachu", "Évoli"],
     ["Guts", "Jon Snow"],
 
-    // --- POP CULTURE & FILMS ---
+    // POP CULTURE & FILMS
     ["Dumbledore", "Gandalf"],
     ["Batman", "Iron Man"],
     ["Néo", "John Wick"],
@@ -39,7 +39,7 @@ const wordPairs = [
     ["Sonic", "Flash"],
     ["Poudlard", "Narnia"],
 
-    // --- HISTOIRE & PERSONNALITÉS ---
+    // HISTOIRE & PERSONNALITÉS
     ["Albert Einstein", "Isaac Newton"],
     ["Léonard de Vinci", "Donatello"],
     ["Mozart", "Beethoven"],
@@ -48,7 +48,7 @@ const wordPairs = [
     ["Napoléon", "Jules César"],
     ["Cléopâtre", "Nefertiti"],
 
-    // --- JEUX VIDÉO, TECH & WEB ---
+    // JEUX VIDÉO, TECH & WEB
     ["PlayStation", "Xbox"],
     ["Minecraft", "Lego"],
     ["Zelda", "Peach"],
@@ -60,7 +60,7 @@ const wordPairs = [
     ["Clavier", "Manette"],
     ["Netflix", "Prime Video"],
 
-    // --- NOURRITURE & BOISSONS ---
+    // NOURRITURE & BOISSONS
     ["Pizza", "Quiche"],
     ["Coca-Cola", "Pepsi"],
     ["Café", "Thé"],
@@ -72,7 +72,7 @@ const wordPairs = [
     ["Hamburger", "Cheeseburger"],
     ["Beurre", "Margarine"],
 
-    // --- ANIMAUX & NATURE ---
+    // ANIMAUX & NATURE
     ["Tigre", "Lion"],
     ["Loup", "Chien"],
     ["Aigle", "Faucon"],
@@ -84,7 +84,7 @@ const wordPairs = [
     ["Neige", "Glace"],
     ["Glace", "Sorbet"],
 
-    // --- OBJETS DU QUOTIDIEN ---
+    // OBJETS DU QUOTIDIEN
     ["Guitare", "Basse"],
     ["Piano", "Synthétiseur"],
     ["Avion", "Hélicoptère"],
@@ -96,17 +96,125 @@ const wordPairs = [
     ["Savon", "Gel Douche"],
     ["Brosse à dents", "Cure-dents"],
 
-    // --- PIÈGES ABSURDES & DÉCALÉS ---
-    ["Baguette", "Sabre Laser"], // C'est long et ça se tient à la main
+    // PIÈGES ABSURDES & DÉCALÉS
+    ["Baguette", "Sabre Laser"],
     ["Chien", "Loup-Garou"],
     ["Zombie", "Momie"],
     ["Cthulhu", "Kraken"],
-    ["Vampire", "Moustique"], // Ça suce le sang !
+    ["Vampire", "Moustique"],
     ["Sorcier", "Magicien"],
     ["Avocat", "Juge"],
     ["Dentiste", "Médecin"],
-    ["Père Noël", "Voleur"] // Les deux rentrent par effraction la nuit
+    ["Père Noël", "Voleur"]
 ];
 
+
+// ==========================================
+// 📦 LISTE 2 : LA NOUVELLE SÉLECTION (81 Paires)
+// ==========================================
+const liste2 = [
+    // MANGAS & ANIMÉS 
+    ["Vegeta", "Sasuke"],
+    ["Totoro", "Mickey"],
+    ["Katana", "Épée"],
+    ["Sharingan", "Byakugan"],
+    ["Ninja", "Samouraï"],
+    ["Hunter x Hunter", "One Piece"],
+    ["Manga", "Comics"],
+    ["Cosplay", "Déguisement"],
+    ["Kamehameha", "Rasengan"],
+
+    // POP CULTURE & FILMS
+    ["Spider-Man", "Venom"],
+    ["Luke Skywalker", "Harry Potter"],
+    ["Homer Simpson", "Peter Griffin"],
+    ["Avengers", "Justice League"],
+    ["Groot", "Chewbacca"],
+    ["Thanos", "Palpatine"],
+    ["James Bond", "Ethan Hunt"],
+    ["Indiana Jones", "Lara Croft"],
+    ["Sherlock Holmes", "Hercule Poirot"],
+    ["Disney", "Pixar"],
+    ["Matrix", "Inception"],
+    ["King Kong", "Jurassic Park"],
+
+    // MÉTIERS & HISTOIRE
+    ["Pompier", "Policier"],
+    ["Astronaute", "Pilote"],
+    ["Espion", "Détective"],
+    ["Pirate", "Corsaire"],
+    ["Pharaon", "Empereur"],
+    ["Boulanger", "Cuisinier"],
+    ["Gladiateur", "Mousquetaire"],
+
+    // JEUX VIDÉO & TECH
+    ["PC", "Mac"],
+    ["Android", "iOS"],
+    ["Mario Kart", "Crash Team Racing"],
+    ["GTA", "Red Dead Redemption"],
+    ["Pokemon", "Digimon"],
+    ["Souris", "Trackpad"],
+    ["Clé USB", "Disque Dur"],
+    ["Pac-Man", "Tetris"],
+    ["Nintendo", "Sega"],
+    ["Wifi", "Bluetooth"],
+
+    // NOURRITURE & BOISSONS
+    ["Pâtes", "Riz"],
+    ["Crêpe", "Gaufre"],
+    ["Frite", "Chips"],
+    ["Chocolat", "Nutella"],
+    ["Moutarde", "Sauce Tomate"],
+    ["Lait", "Lait d'Amande"],
+    ["Pomme", "Poire"],
+    ["Burger", "Hot-Dog"],
+    ["Bonbon", "Sucre d'orge"],
+    ["Kebab", "Shawarma"],
+
+    // ANIMAUX & NATURE
+    ["Ours", "Panda"],
+    ["Cheval", "Âne"],
+    ["Serpent", "Lézard"],
+    ["Aigle", "Corbeau"],
+    ["Requin", "Dauphin"],
+    ["Singe", "Gorille"],
+    ["Soleil", "Étoile"],
+    ["Pluie", "Vent"],
+    ["Forêt", "Jungle"],
+    ["Désert", "Plage"],
+
+    // OBJETS DU QUOTIDIEN
+    ["Verre", "Tasse"],
+    ["Botte", "Sandale"],
+    ["Manteau", "Pull"],
+    ["Porte", "Fenêtre"],
+    ["Télévision", "Cinéma"],
+    ["Shampoing", "Après-shampoing"],
+    ["Serviette", "Peignoir"],
+    ["Brosse", "Peigne"],
+    ["Livre", "Magazine"],
+    ["Voiture", "Camion"],
+
+    // PIÈGES ABSURDES & DÉCALÉS
+    ["Tracteur", "Tank"],
+    ["Baignoire", "Piscine"],
+    ["Fantôme", "Draps"], 
+    ["Micro-onde", "Four"],
+    ["Balai", "Aspirateur"],
+    ["Oignon", "Ail"],
+    ["Moustique", "Mouche"],
+    ["Toilette", "Urinoir"],
+    ["Clown", "Mime"],
+    ["Cactus", "Hérisson"], 
+    ["Saucisse", "Merguez"],
+    ["T-Rex", "Vélociraptor"],
+    ["Extraterrestre", "Astronaute"] 
+];
+
+// ==========================================
+// 🚀 FUSION AUTOMATIQUE DES LISTES
+// ==========================================
+const wordPairs = [...liste1, ...liste2];
+
 // Message console pour confirmer le chargement
-console.log("Dictionnaire 'mots.js' chargé (" + wordPairs.length + " paires).");
+console.log(`Dictionnaire 'mots.js' chargé avec succès : ${wordPairs.length} paires de mots au total (Liste 1 + Liste 2).`);
