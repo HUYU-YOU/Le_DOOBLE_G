@@ -22,7 +22,6 @@
             font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; 
             user-select: none; touch-action: none; overflow: hidden; 
-            background-image: radial-gradient(circle at 50% 100%, rgba(0, 240, 255, 0.1), transparent 70%);
         }
 
         h1.game-title { margin-top: 15px; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 8px; text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 3rem; text-align: center;}
@@ -146,7 +145,7 @@
 
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <h1 style="font-size: 3.5em; margin-bottom: 30px; text-shadow: 0 0 20px var(--p1);">SLIMY STAX</h1>
+            <img src="../img/logoslimystax.png" alt="Slimy Stax" style="max-width: 80%; height: auto; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.5));">
             <p style="font-size: 1.2em; color: #ccc; margin-bottom: 30px; max-width: 80%;">Empile les cubes en équilibre !<br>10 Parfaits = Cube Doré (x2)<br>Chance d'obtenir un Légendaire !</p>
             <button class="btn-main" onclick="autoFullscreen(); startGame()">🚀 Démarrer</button>
         </div>
@@ -273,13 +272,15 @@
             }
         }
 
-        // --- ASSETS ---
+        // --- ASSETS (Avec les 2 MAPS pour le fond dynamique) ---
         const imgs = {};
         const imgPaths = {
             1: 'img/cube1.png', 2: 'img/cube2.png', 3: 'img/cube3.png', 4: 'img/cube4.png',
             5: 'img/cube5.png', 6: 'img/cube6.png', 7: 'img/cube7.png',
             8: 'img/cube8.png', // Golden
-            9: 'img/cube9.png'  // Legendary
+            9: 'img/cube9.png',  // Legendary
+            'map1': 'img/mapstax1.png', // Background de la base
+            'map2': 'img/mapstax2.png'  // Background infini au-dessus
         };
         const fallbackColors = {
             1: '#ff0055', 2: '#00f0ff', 3: '#39ff14', 4: '#b82aff', 5: '#ffaa00', 6: '#0055ff', 7: '#ff00ff',
@@ -430,14 +431,12 @@
                     blocks.push(activeBlock);
                     
                     let points = 10;
-                    let isPerfect = false;
 
                     // PERFECT PLACEMENT
                     if (Math.abs(diffX) <= 5) {
                         activeBlock.x = topBlock.x; // S'aligne parfaitement
                         points = 50;
                         perfectCount++;
-                        isPerfect = true;
                         createParticles(activeBlock.x, activeBlock.y, 'var(--perfect)', 20);
                         playSound('perfect');
                         
@@ -528,16 +527,45 @@
             // DRAW
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Fond dégradé dynamique basé sur la hauteur
-            let bgHeight = Math.min(blocks.length * 5, 200);
-            let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, `rgb(5, 5, ${8 + bgHeight})`);
-            grad.addColorStop(1, '#020205');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             ctx.save();
             ctx.translate(0, -cameraY);
+
+            // --- NOUVEAU RENDU DU FOND (MAPSTAX1 & 2) ---
+            let bg1 = imgs['map1'];
+            let bg2 = imgs['map2'];
+            
+            if (bg1 && bg1.complete && bg1.naturalWidth > 0) {
+                // On calcule l'échelle pour que l'image prenne toute la largeur du canvas
+                let scale1 = canvas.width / bg1.naturalWidth;
+                let h1 = bg1.naturalHeight * scale1;
+                let y1 = canvas.height - h1; // Position pour que le bas touche le bas du canvas
+                
+                ctx.drawImage(bg1, 0, y1, canvas.width, h1);
+                
+                // Si on a l'image 2, on l'empile à l'infini au-dessus
+                if (bg2 && bg2.complete && bg2.naturalWidth > 0) {
+                    let scale2 = canvas.width / bg2.naturalWidth;
+                    let h2 = bg2.naturalHeight * scale2;
+                    let currentY = y1 - h2;
+                    
+                    // On dessine map2 tant qu'on n'a pas dépassé le haut de la caméra
+                    while (currentY + h2 > cameraY - 500) {
+                        ctx.drawImage(bg2, 0, currentY, canvas.width, h2);
+                        currentY -= h2;
+                    }
+                }
+            } else {
+                // FALLBACK si les images ne sont pas trouvées (Garde le fond dynamique original)
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                let bgHeight = Math.min(blocks.length * 5, 200);
+                let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, `rgb(5, 5, ${8 + bgHeight})`);
+                grad.addColorStop(1, '#020205');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
 
             // Dessin des blocs posés
             blocks.forEach(b => b.draw());
