@@ -39,6 +39,16 @@
             <p class="share-code-text">Partagez ce code : <br><span id="my-id" class="share-code-val">...</span></p>
             <div id="players-list-container" class="players-container"></div>
             <p id="min-players-msg" style="color:var(--neon-yellow); margin-top:15px;">En attente de l'adversaire...</p>
+            
+            <!-- MENU DE CHOIX DE CARTE (Hôte Uniquement) -->
+            <div id="host-options" style="display:none; margin-top:20px; width: 100%;">
+                <label style="color:var(--neon-cyan); font-weight:bold; display:block; margin-bottom:5px;">Choix de la Map :</label>
+                <select id="map-choice" class="cyber-select">
+                    <option value="classic">🌍 FORÊT (Classique)</option>
+                    <option value="hell">🔥 ENFER (Lave)</option>
+                </select>
+            </div>
+
             <button id="btn-start" class="btn-solid btn-green" style="display:none; margin-top:20px;">Lancer la partie</button>
             <p id="waiting-host-msg" style="display:none; color:gray;">En attente de l'hôte...</p>
         </div>
@@ -49,6 +59,11 @@
         <canvas id="gameCanvas"></canvas>
 
         <div id="minimap-container"><canvas id="minimap" width="150" height="150"></canvas></div>
+
+        <!-- Bouton Paramètres (Dark Mode) -->
+        <button id="btn-settings" class="btn-settings" title="Mode Lumineux / Sombre">
+            <img src="assets/decoration/setting.png" alt="Settings">
+        </button>
 
         <div id="ui-top">
             <span class="res-gold">💰 <span id="val-gold">0</span></span>
