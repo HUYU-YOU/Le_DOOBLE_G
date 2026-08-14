@@ -2,61 +2,635 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TravelSlime - Jeu du Seau</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Librairie magique pour le multijoueur sur Github Pages -->
-    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <!-- Librairie PeerJS pour le multijoueur sur Github Pages -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --bg: #050811; --panel: rgba(10, 15, 28, 0.85); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; --sys: #00e5ff; }
+        
+        body, html { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: var(--bg); color: #fff; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; user-select: none; overflow: hidden;
+        }
+        
+        h1.game-title { 
+            color: #fff; text-transform: uppercase; letter-spacing: 8px; margin-top: 15px; margin-bottom: 15px; 
+            text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 3rem; 
+        }
+        
+        /* CONTENEUR PRINCIPAL DU JEU */
+        #game-container { 
+            position: relative; 
+            background: var(--panel) radial-gradient(circle at center, rgba(0, 240, 255, 0.05) 0%, transparent 100%); 
+            border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            padding: 20px; border: 1px solid rgba(0, 240, 255, 0.2); overflow: hidden; 
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            backdrop-filter: blur(10px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        
+        /* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
+        .size-classic { width: 800px; height: 500px; }
+
+        #game-container.size-wide, #game-container.size-full {
+            position: fixed !important; top: 0; left: 0; 
+            width: 100vw !important; height: 100vh !important;
+            max-width: none; border-radius: 0; border: none; padding: 0; 
+            z-index: 999; background: var(--bg); 
+            display: flex; justify-content: center; align-items: center;
+        }
+        
+        /* OVERLAYS EN GLASSMORPHISM */
+        .overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(5, 8, 17, 0.85); border-radius: inherit; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; 
+            box-sizing: border-box; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .menu-title { font-size: 2.2em; margin-bottom: 20px; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
+        
+        /* BOUTONS MODERNISÉS */
+        .btn-main { 
+            background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 12px 30px; 
+            font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 8px; 
+            cursor: pointer; text-transform: uppercase; transition: 0.3s; margin: 10px; 
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); width: 80%; max-width: 400px; 
+        }
+        .btn-main:hover { background: var(--p1); color: #000; transform: scale(1.05); box-shadow: 0 0 25px var(--p1); }
+        .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
+        .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); color: #000;}
+        
+        input, select { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
+        input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
+
+        /* BOUTONS FLOTTANTS (Dans le container pour suivre l'écran) */
+        .hub-link { 
+            position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem;
+            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
+            transition: all 0.3s ease; z-index: 100;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
+
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+
+        /* MODAL PARAMETRES & TAILLE D'ÉCRAN */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 420px; }
+        
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+
+        .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+        /* --------- UI SPECIFIQUE AU JEU DU SEAU --------- */
+        #table-area {
+            width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; z-index: 5; padding: 60px 20px 20px 20px; box-sizing: border-box;
+        }
+
+        #opponents-area { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .opponent-hud { 
+            background: rgba(0,0,0,0.7); border: 1px solid var(--p2); border-radius: 10px; 
+            padding: 10px 20px; text-align: center; box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            min-width: 100px;
+        }
+        .opponent-hud.active-turn { border-color: var(--p3); box-shadow: 0 0 20px var(--p3); }
+
+        #center-table { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .bucket-deck {
+            width: 120px; height: 170px; background: rgba(20, 20, 40, 0.9);
+            border: 3px solid var(--p1); border-radius: 10px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; font-weight: bold; font-size: 1.3rem;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); cursor: pointer; transition: 0.2s;
+        }
+        .bucket-deck:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--p1); }
+        
+        #game-log { margin-top: 20px; padding: 10px 20px; background: rgba(0,0,0,0.5); border-radius: 8px; color: var(--p3); font-weight: bold; font-size: 1.2rem; min-height: 30px;}
+
+        #action-panel { text-align: center; padding: 15px; background: rgba(0,0,0,0.8); border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 10px;}
+        #action-panel select { width: auto; max-width: 200px; margin: 0 5px; padding: 8px; font-size: 1.1rem; }
+        #action-panel button { font-size: 1.1rem; padding: 8px 20px; margin: 0; }
+
+        #my-hand { display: flex; justify-content: center; height: 200px; align-items: flex-end; }
+        .card {
+            width: 120px; height: 180px; background-color: #222; border-radius: 10px;
+            margin-left: -50px; /* Effet Uno superposé */
+            box-shadow: -5px 0 15px rgba(0,0,0,0.6); transition: transform 0.2s, margin 0.2s;
+            background-size: cover; background-position: center; border: 2px solid rgba(255,255,255,0.2);
+        }
+        .card:first-child { margin-left: 0; }
+        .card:hover { transform: translateY(-30px); z-index: 10; cursor: pointer; border-color: var(--p1); }
+        
+        /* Stats joueur */
+        #my-stats { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px; border: 1px solid var(--p1); }
+    </style>
 </head>
 <body>
-
-    <!-- Écran de connexion -->
-    <div id="login-screen">
-        <h1>🌍 TravelSlime</h1>
-        <p>Le jeu du Seau !</p>
-        <input type="text" id="pseudo" placeholder="Ton Pseudo" required>
+    
+    <h1 class="game-title">TravelSlime</h1>
+    
+    <div id="game-container" class="size-wide">
         
-        <div class="actions">
-            <button onclick="createGame()" class="btn-create">Créer une partie</button>
-            <p>OU</p>
-            <input type="text" id="room-code" placeholder="Code (ex: ABCD)">
-            <button onclick="joinGame()" class="btn-join">Rejoindre</button>
-        </div>
-        <p id="status-msg"></p>
-    </div>
-
-    <!-- Écran de jeu -->
-    <div id="game-screen" style="display: none;">
-        <div id="table-info">
-            <h2 id="room-title"></h2>
-            <p id="game-messages">En attente de joueurs...</p>
-            <button id="start-btn" onclick="startGame()" style="display:none;">Démarrer la partie</button>
+        <!-- BOUTONS DANS LE CONTAINER (Hub & Settings) -->
+        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+        
+        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+            <!-- Assure-toi que les chemins vers ../img/setting.png existent dans ton projet global -->
+            <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
 
-        <div id="opponents-area">
-            <!-- Adversaires injectés ici -->
+        <!-- MENU RÉSEAU (Rejoindre / Créer) -->
+        <div class="overlay" id="network-menu">
+            <h2 style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Le Jeu du Seau</h2>
+            <div class="menu-title" style="font-size: 1.2em; margin-bottom: 20px; color: #aaa;">Connexion Multijoueur</div>
+            
+            <input type="text" id="pseudo" placeholder="Ton Pseudo" required>
+            
+            <p style="margin-top:20px;">Code de ton salon : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Génération...</span></p>
+            <button class="btn-main" id="host-btn" onclick="autoFullscreen(); hostGame()">Héberger une partie</button>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="startGame()">Commencer à jouer !</button>
+            
+            <p style="margin: 15px 0; color: #888; font-weight: bold;">--- OU ---</p>
+            
+            <input type="text" id="join-id" placeholder="Code du salon (ex: TRA1234)" style="text-transform: uppercase;">
+            <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
+            
+            <p id="status-text" style="color: var(--p3); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
         </div>
 
-        <div id="center-table">
-            <div class="bucket-deck">
-                🪣 LE SEAU<br><span id="deck-count">0</span>
+        <!-- LA TABLE DE JEU (Cachée au début) -->
+        <div id="table-area" style="display: none;">
+            
+            <!-- Zone des adversaires -->
+            <div id="opponents-area"></div>
+
+            <!-- Centre de table : Le Seau et les infos -->
+            <div id="center-table">
+                <div class="bucket-deck">
+                    🪣 LE SEAU<br><br><span id="deck-count" style="color:var(--p1)">0</span>
+                </div>
+                <div id="game-log">En attente du lancement...</div>
+            </div>
+
+            <!-- Panel d'action (visible que quand c'est ton tour) -->
+            <div id="action-panel" style="display: none;">
+                <span style="font-weight: bold; font-size: 1.2rem; color: var(--p4)">C'EST TON TOUR !</span><br>
+                Demander la famille 
+                <select id="country-select"></select>
+                à 
+                <select id="opponent-select"></select>
+                <button class="btn-main red" style="padding: 10px; font-size: 1rem;" onclick="askCard()">Voler !</button>
+                <button class="btn-main" style="padding: 10px; font-size: 1rem;" onclick="drawFromBucket()">Piocher (Fin de tour)</button>
+            </div>
+
+            <!-- Ma main (Cartes) -->
+            <div id="my-hand"></div>
+            
+            <!-- Mes statistiques -->
+            <div id="my-stats">
+                Joueur : <span id="my-name-display" style="color:var(--p1); font-weight:bold;">...</span><br>
+                Familles complétées : <span id="my-score-display" style="color:var(--p3); font-weight:bold;">0</span>
             </div>
         </div>
 
-        <div id="action-area" style="display: none;">
-            <h3>C'est ton tour !</h3>
-            <select id="country-select"></select>
-            <span>à</span>
-            <select id="opponent-select"></select>
-            <button onclick="askCard()">Demander</button>
-            <button onclick="drawFromBucket()" class="btn-bucket">Piocher dans le Seau</button>
+        <!-- OVERLAY FIN DE PARTIE -->
+        <div class="overlay" id="game-over-overlay" style="display: none;">
+            <div class="menu-title" id="winner-text" style="font-size: 3em;">PARTIE TERMINÉE</div>
+            <button class="btn-main" id="btn-restart" onclick="location.reload()">Retour au menu</button>
         </div>
 
-        <div id="my-hand">
-            <!-- Tes cartes injectées ici -->
+    </div> <!-- FIN DU GAME CONTAINER -->
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <script src="travelslime.js"></script>
+    <!-- SCRIPT GESTION TAILLE ÉCRAN & ANIMATION SETTINGS (Identique au Hub) -->
+    <script>
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png';
+            toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-modal').classList.toggle('show');
+        }
+
+        function setGameSize(size) {
+            const container = document.getElementById('game-container');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                container.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'wide') {
+                container.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'full') {
+                container.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+
+        function autoFullscreen() {
+            if (!document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        }
+        
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
+        });
+    </script>
+
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE (Identique au Hub) -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+            "../worms/index.html", "../travelslime/index.html"
+        ];
+        let touchstartX = 0; let touchendX = 0; let mouseX = 0; let endMouseX = 0;
+        function handleSwipeGesture(start, end) {
+            const swipeThreshold = 75; 
+            if (end < start - swipeThreshold) navigateGames(1);
+            if (end > start + swipeThreshold) navigateGames(-1);
+        }
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
+            if (currentIndex === -1) return;
+            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
+        }
+        function isProtectedElement(e) { 
+            let tag = e.target.tagName.toLowerCase();
+            return tag === 'canvas' || tag === 'button' || tag === 'input' || tag === 'select' || e.target.classList.contains('card') || e.target.classList.contains('bucket-deck'); 
+        }
+        document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
+        document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
+        document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; mouseX = e.screenX; });
+        document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endMouseX = e.screenX; handleSwipeGesture(mouseX, endMouseX); });
+    </script>
+
+    <!-- LOGIQUE DU JEU DU SEAU (Réseau P2P & Règles) -->
+    <script>
+        const countriesList = [
+            'nederland', 'france', 'belgium', 'benin', 'sverige', 'deutschland', 
+            'chile', 'brasil', 'norge', 'mexico', 'portugal', 'china', 'espana'
+        ];
+
+        let peerNet = null;
+        let connsNet = [];
+        let isHost = false;
+        let myPlayerId = '';
+        let myPseudo = '';
+        let roomCode = '';
+
+        // Génération du code façon Cyber Smash (TRA + 4 chiffres)
+        roomCode = 'TRA' + Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('my-id').innerText = roomCode;
+
+        // État global (Maître = l'Hôte)
+        let gameState = {
+            players: {}, // { id: { pseudo, hand, completedFamilies } }
+            order: [],
+            deck: [],
+            turnIndex: 0,
+            started: false,
+            log: "La partie va bientôt commencer..."
+        };
+
+        // ==========================================
+        // 1. CONNEXION RÉSEAU
+        // ==========================================
+
+        function hostGame() {
+            myPseudo = document.getElementById('pseudo').value.trim() || "Hôte";
+            myPlayerId = roomCode;
+            isHost = true;
+            
+            // Initialisation PeerJS
+            if(peerNet) peerNet.destroy();
+            peerNet = new Peer(roomCode);
+            
+            peerNet.on('open', id => {
+                document.getElementById('status-text').innerText = "Salon ouvert ! Partage ton code : " + id;
+                navigator.clipboard.writeText(id).catch(e=>{}); // Copie auto
+                
+                // On s'ajoute soi-même
+                gameState.players[myPlayerId] = { pseudo: myPseudo, hand: [], score: 0 };
+                gameState.order.push(myPlayerId);
+                
+                document.getElementById('host-btn').style.display = 'none';
+                document.getElementById('start-net-btn').style.display = 'inline-block';
+            });
+
+            peerNet.on('connection', conn => {
+                conn.on('data', data => {
+                    if (data.type === 'JOIN') {
+                        gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0 };
+                        gameState.order.push(data.id);
+                        connsNet.push(conn);
+                        
+                        document.getElementById('status-text').innerText = `${data.pseudo} a rejoint ! (${connsNet.length + 1} joueurs)`;
+                        broadcastState(); // Mise à jour pour tout le monde
+                    }
+                    if (data.type === 'ACTION' && gameState.started) {
+                        handleGameAction(data);
+                    }
+                });
+            });
+        }
+
+        function joinGame() {
+            myPseudo = document.getElementById('pseudo').value.trim() || "Joueur";
+            const targetCode = document.getElementById('join-id').value.trim().toUpperCase();
+            if (!targetCode) return alert("Il faut un code !");
+            
+            myPlayerId = 'P' + Math.floor(Math.random() * 10000); // ID client temporaire
+            document.getElementById('status-text').innerText = "Connexion à " + targetCode + "...";
+            
+            if (peerNet) peerNet.destroy();
+            peerNet = new Peer(myPlayerId);
+
+            peerNet.on('open', () => {
+                let conn = peerNet.connect(targetCode, { reliable: true });
+                conn.on('open', () => {
+                    connsNet.push(conn);
+                    conn.send({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId });
+                    document.getElementById('status-text').innerText = "Connecté ! En attente du lancement par l'Hôte.";
+                });
+                conn.on('data', data => {
+                    if (data.type === 'STATE_UPDATE') {
+                        if(data.state.started && !gameState.started) {
+                            // Bascule sur l'écran de jeu
+                            document.getElementById('network-menu').style.display = 'none';
+                            document.getElementById('table-area').style.display = 'flex';
+                            document.getElementById('my-name-display').innerText = myPseudo;
+                        }
+                        gameState = data.state;
+                        renderGameClient();
+                    }
+                });
+            });
+        }
+
+        // ==========================================
+        // 2. LOGIQUE DE JEU (HÔTE UNIQUEMENT)
+        // ==========================================
+
+        function startGame() {
+            if (!isHost) return;
+            document.getElementById('network-menu').style.display = 'none';
+            document.getElementById('table-area').style.display = 'flex';
+            document.getElementById('my-name-display').innerText = myPseudo;
+
+            gameState.started = true;
+            
+            // Création du paquet de 52 cartes
+            countriesList.forEach(c => {
+                for(let i=1; i<=4; i++) gameState.deck.push({ country: c, value: i, id: `${c}${i}` });
+            });
+            gameState.deck.sort(() => Math.random() - 0.5); // Mélange
+
+            // Distribution de 5 cartes par joueur
+            gameState.order.forEach(pId => {
+                for(let i=0; i<5; i++) {
+                    if(gameState.deck.length > 0) gameState.players[pId].hand.push(gameState.deck.pop());
+                }
+            });
+
+            gameState.log = "La partie commence ! C'est à " + gameState.players[gameState.order[0]].pseudo + " de jouer.";
+            broadcastState();
+        }
+
+        function broadcastState() {
+            if (!isHost) return;
+            
+            // On vérifie les familles complètes pour tout le monde avant d'envoyer
+            checkFamiliesCompleted();
+
+            // On envoie un état filtré à chaque client (il ne doit pas voir les mains des autres)
+            connsNet.forEach(conn => {
+                let safeState = JSON.parse(JSON.stringify(gameState)); // Copie profonde
+                Object.keys(safeState.players).forEach(pId => {
+                    // On garde un compteur de cartes, on vide le tableau 'hand' si ce n'est pas le joueur ciblé
+                    safeState.players[pId].cardCount = safeState.players[pId].hand.length;
+                    if (pId !== conn.peer) safeState.players[pId].hand = [];
+                });
+                conn.send({ type: 'STATE_UPDATE', state: safeState });
+            });
+
+            // L'hôte met à jour sa propre interface
+            renderGameClient();
+        }
+
+        function handleGameAction(data) {
+            // Reçu par l'hôte quand un joueur fait une action
+            if (data.action === 'ASK') {
+                const asker = gameState.players[data.askerId];
+                const target = gameState.players[data.targetId];
+                const country = data.country;
+
+                const cardsToSteal = target.hand.filter(c => c.country === country);
+                
+                if (cardsToSteal.length > 0) {
+                    target.hand = target.hand.filter(c => c.country !== country);
+                    asker.hand.push(...cardsToSteal);
+                    gameState.log = `⚡ ${asker.pseudo} a volé les cartes ${country.toUpperCase()} de ${target.pseudo} ! Il rejoue.`;
+                    // Ne passe pas le tour
+                } else {
+                    gameState.log = `❌ ${target.pseudo} n'a pas de ${country.toUpperCase()}. ${asker.pseudo} doit piocher.`;
+                    // Le joueur devra cliquer sur piocher
+                }
+                broadcastState();
+            }
+            
+            if (data.action === 'DRAW') {
+                const player = gameState.players[data.playerId];
+                if (gameState.deck.length > 0) {
+                    player.hand.push(gameState.deck.pop());
+                    gameState.log = `🪣 ${player.pseudo} a pioché dans le seau. Fin de son tour.`;
+                } else {
+                    gameState.log = `🪣 Le seau est vide ! Fin du tour de ${player.pseudo}.`;
+                }
+                // Passe au joueur suivant
+                gameState.turnIndex = (gameState.turnIndex + 1) % gameState.order.length;
+                broadcastState();
+            }
+        }
+
+        function checkFamiliesCompleted() {
+            Object.values(gameState.players).forEach(player => {
+                let countryCounts = {};
+                player.hand.forEach(c => {
+                    countryCounts[c.country] = (countryCounts[c.country] || 0) + 1;
+                });
+
+                Object.keys(countryCounts).forEach(country => {
+                    if (countryCounts[country] === 4) { // 4 cartes = famille
+                        // Retire les cartes de la main
+                        player.hand = player.hand.filter(c => c.country !== country);
+                        player.score += 1;
+                        gameState.log = `🌟 INCROYABLE ! ${player.pseudo} a réuni la famille ${country.toUpperCase()} !`;
+                    }
+                });
+            });
+            
+            // Condition de fin de jeu (Si deck vide et mains vides ou un certain score)
+            // Simplifié : Si plus de cartes nulle part
+            let totalCardsInPlay = gameState.deck.length + Object.values(gameState.players).reduce((acc, p) => acc + p.hand.length, 0);
+            if (totalCardsInPlay === 0 && gameState.started) {
+                document.getElementById('table-area').style.display = 'none';
+                document.getElementById('game-over-overlay').style.display = 'flex';
+            }
+        }
+
+        // ==========================================
+        // 3. AFFICHAGE ET ACTIONS CLIENT
+        // ==========================================
+
+        function renderGameClient() {
+            document.getElementById('deck-count').innerText = gameState.deck.length + " cartes";
+            document.getElementById('game-log').innerText = gameState.log;
+            
+            const isMyTurn = (gameState.order[gameState.turnIndex] === myPlayerId);
+            document.getElementById('action-panel').style.display = isMyTurn ? 'block' : 'none';
+
+            // Adversaires
+            const oppArea = document.getElementById('opponents-area');
+            const oppSelect = document.getElementById('opponent-select');
+            oppArea.innerHTML = '';
+            oppSelect.innerHTML = '';
+
+            Object.keys(gameState.players).forEach(id => {
+                if (id !== myPlayerId) {
+                    let p = gameState.players[id];
+                    let count = p.cardCount !== undefined ? p.cardCount : p.hand.length;
+                    let isHisTurn = (gameState.order[gameState.turnIndex] === id);
+                    
+                    oppArea.innerHTML += `
+                        <div class="opponent-hud ${isHisTurn ? 'active-turn' : ''}">
+                            <div style="font-weight:bold; color:var(--p1)">${p.pseudo}</div>
+                            <div>🃏 ${count} cartes</div>
+                            <div style="font-size:0.8em; color:var(--p3)">⭐ ${p.score}</div>
+                        </div>`;
+                    
+                    oppSelect.innerHTML += `<option value="${id}">${p.pseudo}</option>`;
+                } else {
+                    document.getElementById('my-score-display').innerText = gameState.players[id].score;
+                }
+            });
+
+            // Ma Main
+            const myHandArea = document.getElementById('my-hand');
+            const countrySelect = document.getElementById('country-select');
+            myHandArea.innerHTML = '';
+            countrySelect.innerHTML = '';
+
+            let myHand = gameState.players[myPlayerId] ? gameState.players[myPlayerId].hand : [];
+            let myCountries = new Set();
+
+            myHand.forEach(card => {
+                myCountries.add(card.country);
+                // CHARGEMENT DE TES ASSETS GITHUB
+                let imgSrc = `assets/card/_${card.id}.png`; 
+                myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
+            });
+
+            myCountries.forEach(c => {
+                countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`;
+            });
+
+            // Désactiver le bouton de vol si on n'a pas de pays à demander ou pas d'adversaire
+            if (myCountries.size === 0 || Object.keys(gameState.players).length <= 1) {
+                let btn = document.querySelector('#action-panel .red');
+                if(btn) btn.disabled = true;
+            } else {
+                let btn = document.querySelector('#action-panel .red');
+                if(btn) btn.disabled = false;
+            }
+        }
+
+        function askCard() {
+            const country = document.getElementById('country-select').value;
+            const targetId = document.getElementById('opponent-select').value;
+            if(!country || !targetId) return;
+
+            let actionData = { type: 'ACTION', action: 'ASK', askerId: myPlayerId, targetId: targetId, country: country };
+            
+            if (isHost) handleGameAction(actionData);
+            else connsNet[0].send(actionData);
+        }
+
+        function drawFromBucket() {
+            let actionData = { type: 'ACTION', action: 'DRAW', playerId: myPlayerId };
+            
+            if (isHost) handleGameAction(actionData);
+            else connsNet[0].send(actionData);
+        }
+
+    </script>
 </body>
 </html>
