@@ -3,93 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber-Command : Micro RTS</title>
-    <!-- Lien vers ton fichier CSS -->
-    <link rel="stylesheet" href="css/style.css">
-    <!-- Lien vers la librairie réseau PeerJS -->
+    <title>TravelSlime - Jeu du Seau</title>
+    
+    <!-- Librairie PeerJS pour le multijoueur -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <!-- API YouTube pour la musique de fond -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Appel de la feuille de style externe -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    
+    <!-- Player Musique YouTube -->
+    <div id="yt-player-container"><div id="yt-player"></div></div>
 
-    <script>
-        // Empêche le "pull-to-refresh" sur mobile
-        document.addEventListener('touchstart', (e) => { 
-            if(e.target.closest('.no-swipe')) e.stopPropagation(); 
-        }, { passive: false });
-        // Empêche le menu contextuel du navigateur (clic droit)
-        document.addEventListener('contextmenu', event => event.preventDefault());
-    </script>
-
-    <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
-
-    <!-- ÉCRAN DE CONNEXION -->
-    <div id="screen-login" class="screen active-screen flex-center">
-        <h1 class="main-title">CYBER-COMMAND</h1>
-        <div class="panel">
-            <h2>Connexion Réseau</h2>
-            <input type="text" id="player-name" placeholder="Votre Pseudo" maxlength="12">
-            <button class="btn-solid btn-cyan" id="btn-host">Créer une partie</button>
-            <hr>
-            <input type="text" id="join-id" placeholder="Code (ex: RTS5945)" style="text-transform: uppercase;">
-            <button class="btn-solid btn-pink" id="btn-join">Rejoindre</button>
-            <p id="login-error" style="color:var(--neon-pink); margin-top:15px; font-weight:bold;"></p>
+    <h1 class="game-title">TravelSlime</h1>
+    
+    <div id="game-container" class="size-wide">
+        
+        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+        
+        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+            <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
-    </div>
 
-    <!-- ÉCRAN DU LOBBY -->
-    <div id="screen-lobby" class="screen flex-center">
-        <h1 class="main-title">SALLE D'ATTENTE</h1>
-        <div class="panel">
-            <p class="share-code-text">Partagez ce code : <br><span id="my-id" class="share-code-val">...</span></p>
-            <div id="players-list-container" class="players-container"></div>
-            <p id="min-players-msg" style="color:var(--neon-yellow); margin-top:15px;">En attente de l'adversaire...</p>
+        <div class="overlay" id="network-menu">
+            <h2 style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Le Jeu du Seau</h2>
+            <div class="menu-title" style="font-size: 1.2em; margin-bottom: 20px; color: #aaa;">Connexion Multijoueur</div>
             
-            <!-- MENU DE CHOIX DE CARTE (Hôte Uniquement) -->
-            <div id="host-options" style="display:none; margin-top:20px; width: 100%;">
-                <label style="color:var(--neon-cyan); font-weight:bold; display:block; margin-bottom:5px;">Choix de la Map :</label>
-                <select id="map-choice" class="cyber-select">
-                    <option value="classic">🌍 FORÊT (Classique)</option>
-                    <option value="hell">🔥 ENFER (Lave)</option>
-                </select>
+            <input type="text" id="pseudo" placeholder="Ton Pseudo" required>
+            
+            <p style="margin-top:20px;">Code de ton salon : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Génération...</span></p>
+            <button class="btn-main" id="host-btn" onclick="autoFullscreen(); hostGame()">Héberger une partie</button>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="startGame()">Commencer à jouer !</button>
+            
+            <p style="margin: 15px 0; color: #888; font-weight: bold;">--- OU ---</p>
+            
+            <input type="text" id="join-id" placeholder="Code du salon (ex: TRA1234)" style="text-transform: uppercase;">
+            <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
+            
+            <p id="status-text" style="color: var(--p3); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
+        </div>
+
+        <div id="table-area" style="display: none;">
+            <div id="opponents-area"></div>
+
+            <div id="center-table">
+                <div class="bucket-deck">
+                    🪣 LE SEAU<br><br><span id="deck-count" style="color:var(--p1)">0</span>
+                </div>
+                <div id="game-log">En attente du lancement...</div>
             </div>
 
-            <button id="btn-start" class="btn-solid btn-green" style="display:none; margin-top:20px;">Lancer la partie</button>
-            <p id="waiting-host-msg" style="display:none; color:gray;">En attente de l'hôte...</p>
+            <div id="action-panel" style="display: none;">
+                <span style="font-weight: bold; font-size: 1.2rem; color: var(--p4)">C'EST TON TOUR !</span><br>
+                Demander la famille 
+                <select id="country-select"></select>
+                à 
+                <select id="opponent-select"></select>
+                <button class="btn-main red" style="padding: 10px; font-size: 1rem;" onclick="askCard()">Voler !</button>
+            </div>
+
+            <div id="my-hand"></div>
+            
+            <div id="my-stats">
+                Joueur : <span id="my-name-display" style="color:var(--p1); font-weight:bold;">...</span><br>
+                Familles complétées : <span id="my-score-display" style="color:var(--p3); font-weight:bold;">0</span>
+            </div>
+        </div>
+
+        <div class="overlay" id="game-over-overlay" style="display: none;">
+            <div class="menu-title" id="winner-text" style="font-size: 3em;">PARTIE TERMINÉE</div>
+            <button class="btn-main" id="btn-restart" onclick="location.reload()">Retour au menu</button>
+        </div>
+
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <!-- ÉCRAN DE JEU -->
-    <div id="game-container" class="screen no-swipe">
-        <canvas id="gameCanvas"></canvas>
-
-        <div id="minimap-container"><canvas id="minimap" width="150" height="150"></canvas></div>
-
-        <!-- Bouton Paramètres (Dark Mode) -->
-        <button id="btn-settings" class="btn-settings" title="Mode Lumineux / Sombre">
-            <img src="assets/decoration/setting.png" alt="Settings">
-        </button>
-
-        <div id="ui-top">
-            <span class="res-gold">💰 <span id="val-gold">0</span></span>
-            <span class="res-wood">🪵 <span id="val-wood">0</span></span>
-            <span class="res-food">🍞 <span id="val-food">0</span></span>
-            <span class="res-pop">👥 <span id="val-pop">0</span>/<span id="val-maxpop">0</span></span>
-        </div>
-
-        <div id="global-chat-container"><div id="global-chat-messages"></div></div>
-
-        <div id="build-instructions">Clic Gauche pour Placer - Clic Droit pour Annuler</div>
-        <div id="ui-bottom"></div>
-
-        <div id="game-over-screen">
-            <h1 id="winner-text">MATRICE DÉTRUITE</h1>
-            <p id="winner-desc"></p>
-            <button class="restart-btn" id="btn-replay" style="display:none;">Retour au Lobby</button>
-        </div>
-    </div>
-
-    <!-- Chargement des scripts (Dans le bon ordre !) -->
-    <script src="js/entities.js"></script>
-    <script src="js/engine.js"></script>
+    <!-- Appel du script externe -->
+    <script src="travelslime.js"></script>
 </body>
 </html>
