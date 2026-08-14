@@ -48,8 +48,41 @@
             <p id="status-text" style="color: var(--p3); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
         </div>
 
-        <div id="table-area" style="display: none;">
-            <div id="opponents-area"></div>
+<div id="table-area" style="display: none;">
+            
+            <!-- Les 3 zones autour de la table -->
+            <div id="top-opponents"></div>
+            <div id="left-opponents"></div>
+            <div id="right-opponents"></div>
+
+            <!-- Centre de table : Le Seau et les infos -->
+            <div id="center-table">
+                <div class="bucket-deck">
+                    🪣 SEAU<br><br><span id="deck-count" style="color:var(--p1); font-size:1.5rem;">0</span>
+                </div>
+                <div id="game-log">En attente du lancement...</div>
+            </div>
+
+            <!-- Ta zone (en bas) -->
+            <div id="player-bottom-area">
+                <div id="action-panel" style="display: none;">
+                    <span style="font-weight: bold; font-size: 1.2rem; color: var(--p4)">C'EST TON TOUR !</span><br>
+                    Demander 
+                    <select id="country-select"></select>
+                    à 
+                    <select id="opponent-select"></select>
+                    <button class="btn-main red" style="padding: 10px; font-size: 1rem;" onclick="askCard()">Voler !</button>
+                </div>
+
+                <div id="my-hand"></div>
+            </div>
+            
+            <div id="my-stats">
+                <img id="my-avatar" src="" style="width:40px; height:40px; vertical-align:middle; margin-right:10px;">
+                <span id="my-name-display" style="color:var(--p1); font-weight:bold; font-size: 1.2rem;">...</span><br>
+                Familles : <span id="my-score-display" style="color:var(--p3); font-weight:bold; font-size: 1.2rem;">0</span>
+            </div>
+        </div>
 
             <div id="center-table">
                 <div class="bucket-deck">
