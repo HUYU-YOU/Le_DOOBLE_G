@@ -355,7 +355,7 @@ function renderGameClient() {
 
     myHand.forEach(card => {
         myCountries.add(card.country);
-        let imgSrc = `assets/card/_${card.id}.png`; 
+        let imgSrc = `assets/card/${card.id}.png`; 
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
 
