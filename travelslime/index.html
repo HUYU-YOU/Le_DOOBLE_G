@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelSlime - Jeu du Seau</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Librairie magique pour le multijoueur sur Github Pages -->
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+    <!-- Écran de connexion -->
+    <div id="login-screen">
+        <h1>🌍 TravelSlime</h1>
+        <p>Le jeu du Seau !</p>
+        <input type="text" id="pseudo" placeholder="Ton Pseudo" required>
+        
+        <div class="actions">
+            <button onclick="createGame()" class="btn-create">Créer une partie</button>
+            <p>OU</p>
+            <input type="text" id="room-code" placeholder="Code (ex: ABCD)">
+            <button onclick="joinGame()" class="btn-join">Rejoindre</button>
+        </div>
+        <p id="status-msg"></p>
+    </div>
+
+    <!-- Écran de jeu -->
+    <div id="game-screen" style="display: none;">
+        <div id="table-info">
+            <h2 id="room-title"></h2>
+            <p id="game-messages">En attente de joueurs...</p>
+            <button id="start-btn" onclick="startGame()" style="display:none;">Démarrer la partie</button>
+        </div>
+
+        <div id="opponents-area">
+            <!-- Adversaires injectés ici -->
+        </div>
+
+        <div id="center-table">
+            <div class="bucket-deck">
+                🪣 LE SEAU<br><span id="deck-count">0</span>
+            </div>
+        </div>
+
+        <div id="action-area" style="display: none;">
+            <h3>C'est ton tour !</h3>
+            <select id="country-select"></select>
+            <span>à</span>
+            <select id="opponent-select"></select>
+            <button onclick="askCard()">Demander</button>
+            <button onclick="drawFromBucket()" class="btn-bucket">Piocher dans le Seau</button>
+        </div>
+
+        <div id="my-hand">
+            <!-- Tes cartes injectées ici -->
+        </div>
+    </div>
+
+    <script src="travelslime.js"></script>
+</body>
+</html>
