@@ -9,7 +9,7 @@ const mmCtx = minimapCanvas.getContext('2d');
 
 let width, height;
 
-// Dimensions Titanesques (4 images 8K)
+// Dimensions Titanesques (2 images superposées)
 const MAP_WIDTH = 15360;
 const MAP_HEIGHT = 8640;
 
@@ -49,8 +49,9 @@ const ASSETS_PATHS = {
     warrior: 'assets/skins/warrior.png',
     archer: 'assets/skins/archer.png',
     mage: 'assets/skins/mage.png',
-    wheat: 'assets/map/wheat.png',
-    farm: 'assets/bat/farm.png',
+    mean1: 'assets/skins/MEAN1.png', // NOUS Y VOILA !
+    mean2: 'assets/skins/MEAN2.png',
+    mean3: 'assets/skins/MEAN3.png',
     river1: 'assets/decoration/river1.png',
     river2: 'assets/decoration/river2.png',
     river3: 'assets/decoration/river3.png'
@@ -63,7 +64,6 @@ for(let i=1; i<=8; i++) ASSETS_PATHS['wood'+i] = `assets/decoration/wood${i}.png
 for(let i=1; i<=10; i++) ASSETS_PATHS['buisson'+i] = `assets/decoration/buisson${i}.png`;
 for(let i=1; i<=4; i++) ASSETS_PATHS['herb'+i] = `assets/decoration/herb${i}.png`;
 for(let i=1; i<=6; i++) ASSETS_PATHS['fleur'+i] = `assets/decoration/fleur${i}.png`;
-for(let i=1; i<=3; i++) ASSETS_PATHS['farmDeco'+i] = `assets/decoration/farm${i}.png`; 
 for(let i=1; i<=2; i++) ASSETS_PATHS['shroom'+i] = `assets/decoration/shroom${i}.png`;
 
 const images = {};
@@ -207,7 +207,6 @@ let mouseHoverScreen = { x: 0, y: 0 };
 let mouseHoverWorld = { x: 0, y: 0 };
 let inputMode = 'mouse';
 let survivalTimer = 0; 
-let lastFamineLogTime = 0; 
 
 // --- UTILITAIRES ---
 function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
@@ -236,7 +235,6 @@ function seededRandom() {
 function isPositionFree(x, y, minDistance) {
     for(let r of rivers) if(dist({x,y}, r) < minDistance + r.radius) return false;
     for(let t of trees) if(dist({x,y}, t) < minDistance + 20) return false;
-    for(let w of wheats) if(dist({x,y}, w) < minDistance + 20) return false;
     for(let d of decorations) if(dist({x,y}, d) < minDistance + d.size/2) return false;
     if(baseHost && dist({x,y}, baseHost) < minDistance + baseHost.size/2 + 50) return false;
     if(baseGuest && dist({x,y}, baseGuest) < minDistance + baseGuest.size/2 + 50) return false;
@@ -333,13 +331,14 @@ function drawMinimap() {
 
     rivers.forEach(r => drawDot(r, '#3388ff', 3));
     trees.forEach(t => drawDot(t, '#ff8c00', 1));
-    wheats.forEach(w => drawDot(w, '#39ff14', 1));
     buildings.forEach(b => drawDot(b, b.owner === 'host' ? '#00f0ff' : '#ff007f', 4));
     
     if (baseHost && baseHost.hp > 0) drawDot(baseHost, '#00f0ff', 6);
     if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, '#ff007f', 6);
     
     units.forEach(u => drawDot(u, u.owner === 'host' ? '#00f0ff' : '#ff007f', 2));
+    
+    // Sur la minimap, on continue de les dessiner en ROUGE pour la lisibilité
     enemies.forEach(e => drawDot(e, '#ff3333', 3));
 
     mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
@@ -359,7 +358,7 @@ function executeCommand(data) {
 
     if (data.action === 'move') {
         let uList = units.filter(u => data.unitIds.includes(u.id));
-        let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || wheats.find(w=>w.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || rivers.find(r=>r.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
+        let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || rivers.find(r=>r.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
         
         uList.forEach((u, i) => {
             let dx = data.x + (i%3)*20 - 20; let dy = data.y + Math.floor(i/3)*20;
@@ -453,23 +452,11 @@ function buildMapElements(seed) {
         }
     }
 
-    for(let i=0; i<30; i++) {
-        let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
-        if(dist({x:cx,y:cy}, baseHost) < 1000 || dist({x:cx,y:cy}, baseGuest) < 1000) continue;
-        for(let j=0; j<8; j++) { 
-            let wx = cx + (seededRandom()-0.5)*150; let wy = cy + (seededRandom()-0.5)*150;
-            if (isPositionFree(wx, wy, 20)) {
-                wheats.push(new ResourceNode(wx, wy, 'wheat'));
-            }
-        }
-    }
-
     const decoFamilies = [
         ['wood1', 'wood2', 'wood3', 'wood4', 'wood5', 'wood6', 'wood7', 'wood8'],
         ['buisson1', 'buisson2', 'buisson3', 'buisson4', 'buisson5', 'buisson6', 'buisson7', 'buisson8', 'buisson9', 'buisson10'],
         ['herb1', 'herb2', 'herb3', 'herb4'],
         ['fleur1', 'fleur2', 'fleur3', 'fleur4', 'fleur5', 'fleur6'],
-        ['farmDeco1', 'farmDeco2', 'farmDeco3'],
         ['shroom1', 'shroom2']
     ];
     for(let i=0; i<100; i++) { 
@@ -566,8 +553,9 @@ function syncClientState(data) {
     baseGuest.hp = data.bG.hp;
     
     trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree', t.s); r.id = t.id; r.amount = t.a; return r; });
-    wheats = data.w.map(w => { let r = new ResourceNode(w.x, w.y, 'wheat'); r.id = w.id; r.amount = w.a; return r; });
-    enemies = data.en.map(e => { let en = new Enemy(e.x, e.y); en.id=e.id; en.hp=e.hp; en.element=e.el; en.color=e.c; en.slowTimer=e.st; return en; });
+    
+    // CORRECTION RESEAU : Récupération du skin (s) du MEAN
+    enemies = data.en.map(e => { let en = new Enemy(e.x, e.y); en.id=e.id; en.hp=e.hp; en.skinNum=e.s; en.slowTimer=e.st; return en; });
     
     buildings = data.b.map(b => {
         let build = new Building(b.x, b.y, b.t, b.o); build.id = b.id; build.hp = b.hp; build.maxHp = b.mHp; build.level = b.l; build.farmersInside = b.fi; return build;
@@ -697,7 +685,6 @@ canvas.addEventListener('contextmenu', (e) => {
     let clickedEnt = units.find(u=>dist(wPos, u)<25) 
         || buildings.find(b=>dist(wPos, b)<b.size) 
         || trees.find(t=>dist(wPos, t)<40) 
-        || wheats.find(w=>dist(wPos, w)<40) 
         || rivers.find(r=>dist(wPos, r)<r.radius) 
         || enemies.find(en=>dist(wPos, en)<25) 
         || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
@@ -852,13 +839,13 @@ function hostUpdate(dt) {
     enemies.forEach((e, i) => { e.update(dt); if (e.hp <= 0) { enemies.splice(i, 1); }});
     trees = trees.filter(t => t.amount > 0); wheats = wheats.filter(w => w.amount > 0);
 
+    // CORRECTION RESEAU : On envoie le skin (s: e.skinNum) au lieu de l'élément/couleur pour les virus
     let pack = {
         type: 'sync',
         u: units.map(u => ({ id: u.id, x: u.x, y: u.y, t: u.type, e: u.element, o: u.owner, hp: u.hp, mHp: u.maxHp, s: u.state, p: u.payload, st: u.slowTimer })),
         b: buildings.map(b => ({ id: b.id, x: b.x, y: b.y, t: b.type, o: b.owner, hp: b.hp, mHp: b.maxHp, l: b.level, fi: b.farmersInside })),
         t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount, s: t.skin })), 
-        w: wheats.map(w => ({ id: w.id, x: w.x, y: w.y, a: w.amount })),
-        en: enemies.map(e => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, el: e.element, c: e.color, st: e.slowTimer })),
+        en: enemies.map(e => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, s: e.skinNum, st: e.slowTimer })),
         rv: rivers.map(r => ({ id: r.id, x: r.x, y: r.y, v: r.variant })),
         bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp },
         bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
@@ -879,12 +866,11 @@ function draw() {
 
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     
-    // CORRECTION SUB-PIXEL : Ajout de l'Overlapping (+2 pixels) pour écraser les bordures noires
     if (!isDarkMode) {
         let prefix = currentMapTheme === 'hell' ? 'hell' : 'map';
         const halfW = MAP_WIDTH / 2;
         const halfH = MAP_HEIGHT / 2;
-        const overlap = 2; // Le secret anti-traits noirs
+        const overlap = 2; 
 
         if (images[prefix+'HG'] && images[prefix+'HG'].complete && images[prefix+'HG'].naturalWidth > 0) {
             ctx.drawImage(images[prefix+'HG'], 0, 0, halfW + overlap, halfH + overlap);
@@ -904,14 +890,15 @@ function draw() {
         decorations.forEach(d => d.draw(ctx, images)); 
         rivers.forEach(r => r.draw(ctx, images));
         trees.forEach(t => t.draw(ctx, images)); 
-        wheats.forEach(w => w.draw(ctx, images));
         buildings.forEach(b => b.draw(ctx, images));
         
         if (baseHost && baseHost.hp > 0) baseHost.draw(ctx, images);
         if (baseGuest && baseGuest.hp > 0) baseGuest.draw(ctx, images);
         
         units.forEach(u => u.draw(ctx, images));
-        enemies.forEach(e => e.draw(ctx));
+        
+        // DESSIN DES ENNEMIS VIA LEUR METHODE DANS entities.js (Avec les images)
+        enemies.forEach(e => e.draw(ctx, images));
 
         lasers.forEach(l => {
             ctx.strokeStyle = l.color; ctx.lineWidth = 4; ctx.shadowBlur = 10; ctx.shadowColor = l.color;
