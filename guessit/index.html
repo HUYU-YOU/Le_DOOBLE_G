@@ -2,74 +2,177 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Guess it</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guest it - Survival</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #090a0f; --panel: rgba(20, 22, 35, 0.9); --pink: #ff007f; --cyan: #00f0ff; --green: #39ff14; --red: #ff003c; --gold: #ffd700; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; background: radial-gradient(circle at 50% -20%, #2b1055, var(--bg)); }
-        #game-container { background: var(--panel); backdrop-filter: blur(10px); border-radius: 20px; padding: 40px; box-shadow: 0 0 40px rgba(255, 0, 127, 0.15); max-width: 750px; width: 100%; border: 1px solid rgba(255, 0, 127, 0.3); }
+        :root { 
+            --bg: #090a0f; 
+            --panel: rgba(20, 22, 35, 0.9); 
+            --pink: #ff007f; 
+            --cyan: #00f0ff; 
+            --green: #39ff14; 
+            --red: #ff003c; 
+            --gold: #ffd700; 
+        }
+        
+        body { 
+            font-family: 'Rajdhani', 'Segoe UI', system-ui, sans-serif; 
+            background-color: var(--bg); color: #fff; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; 
+            background: radial-gradient(circle at 50% -20%, #2b1055, var(--bg)); 
+            overflow-x: hidden;
+        }
+
+        /* --- CONTENEUR PRINCIPAL & TAILLES --- */
+        #game-container { 
+            position: relative; background: var(--panel); backdrop-filter: blur(10px); 
+            border-radius: 20px; padding: 40px; box-shadow: 0 0 40px rgba(255, 0, 127, 0.15); 
+            width: 100%; border: 1px solid rgba(255, 0, 127, 0.3); box-sizing: border-box;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .size-classic { max-width: 750px; }
+        .size-wide { width: 95vw !important; max-width: 1000px !important; min-height: 85vh; }
+        .size-full { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; max-width: none !important; border-radius: 0 !important; border: none !important; z-index: 50; display: flex; flex-direction: column; justify-content: center;}
+
+        /* --- BOUTONS FLOTTANTS --- */
+        .hub-link { 
+            position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; 
+            font-weight: bold; z-index: 100; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; 
+            border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); font-size: 1.2rem;
+        }
+        .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.3); border-color: var(--cyan); box-shadow: 0 0 15px var(--cyan); transform: translateX(-5px);}
+
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--pink); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--pink), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- MODAL PARAMETRES --- */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--cyan); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--cyan); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--cyan); color: #000; box-shadow: 0 0 15px var(--cyan); }
+        .close-btn { margin-top: 25px; background: var(--cyan); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--cyan); transform: scale(1.05); }
+
+        /* --- EFFETS DU JEU --- */
         .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-8px, 0, 0); } 40%, 60% { transform: translate3d(8px, 0, 0); } }
-        h1 { color: var(--pink); text-transform: uppercase; letter-spacing: 5px; font-size: 2.5em; margin-top: 0; text-align: center; text-shadow: 0 0 20px var(--pink); }
-        .top-bar { display: flex; justify-content: space-between; font-size: 1.4em; font-weight: bold; margin-bottom: 25px; background: rgba(0,0,0,0.5); padding: 15px 25px; border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.2); }
+        
+        h1 { color: var(--pink); text-transform: uppercase; letter-spacing: 5px; font-size: 3em; margin-top: 0; text-align: center; text-shadow: 0 0 20px var(--pink); }
+        .top-bar { display: flex; justify-content: space-between; font-size: 1.6em; font-weight: bold; margin-bottom: 25px; background: rgba(0,0,0,0.5); padding: 15px 25px; border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.2); }
         .lives { color: var(--red); letter-spacing: 2px; text-shadow: 0 0 15px var(--red); }
         .score-info { color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
         .combo { color: #f1c40f; font-size: 0.9em; margin-left: 15px; transition: 0.2s; display: inline-block; text-shadow: 0 0 10px #f1c40f; }
         .combo-active { transform: scale(1.6) rotate(-5deg); color: #fff; }
+        
         #timer-container { width: 100%; height: 12px; background-color: rgba(0,0,0,0.5); border-radius: 10px; margin-bottom: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         #timer-bar { height: 100%; width: 100%; background-color: var(--cyan); transition: width 0.1s linear, background-color 0.3s; box-shadow: 0 0 15px var(--cyan); }
         
+        /* --- ZONE D'IMAGE & SLIME --- */
         #question-area { position: relative; width: 100%; height: 350px; background: #000; border-radius: 15px; margin-bottom: 25px; overflow: hidden; border: 2px solid var(--pink); box-shadow: 0 0 20px rgba(255, 0, 127, 0.3); display: flex; justify-content: center; align-items: center;}
-        /* MODIFICATION ICI : object-fit: contain; au lieu de cover pour ne plus rogner les images */
         #manga-image { width: 100%; height: 100%; object-fit: contain; filter: blur(25px); transition: filter 0.1s linear; }
         
+        /* NOUVEAU: Le conteneur du slime */
+        #slime-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; display: none; pointer-events: none; }
+        #slime-anim-img { width: 100%; height: 100%; object-fit: cover; } /* cover pour cacher toute l'image derrière */
+
+        /* --- BOUTONS OPTIONS --- */
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        button.option-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3); color: white; padding: 15px; font-size: 1.1em; font-weight: bold; border-radius: 12px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; backdrop-filter: blur(5px); }
+        button.option-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3); color: white; padding: 15px; font-size: 1.2em; font-family: 'Rajdhani'; font-weight: bold; border-radius: 12px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; backdrop-filter: blur(5px); }
         button.option-btn:hover { background: rgba(0, 240, 255, 0.1); border-color: var(--cyan); box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); transform: translateY(-3px); }
         button.option-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
         .correct { background-color: rgba(57, 255, 20, 0.2) !important; border-color: var(--green) !important; box-shadow: 0 0 20px rgba(57, 255, 20, 0.4) !important; color: var(--green) !important; }
         .wrong { background-color: rgba(255, 0, 60, 0.2) !important; border-color: var(--red) !important; box-shadow: 0 0 20px rgba(255, 0, 60, 0.4) !important; color: var(--red) !important; }
-        .btn-main { background: var(--pink); color: white; border: none; padding: 15px 35px; font-size: 1.2em; font-weight: bold; border-radius: 50px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 0, 127, 0.5); transition: 0.3s; margin-top: 20px; letter-spacing: 2px; }
+        
+        .btn-main { background: var(--pink); color: white; border: none; padding: 15px 35px; font-size: 1.3em; font-family: 'Rajdhani'; font-weight: bold; border-radius: 50px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 0, 127, 0.5); transition: 0.3s; margin-top: 20px; letter-spacing: 2px; }
         .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 0, 127, 0.8); }
         
         #leaderboard { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; margin-top: 20px; text-align: left; border: 1px solid var(--cyan);}
-        .lb-entry { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.1em;}
-        #player-name-input { padding: 10px; font-size: 1.2em; border-radius: 8px; border: 1px solid var(--cyan); background: #000; color: #fff; text-align: center; margin-bottom: 15px; text-transform: uppercase;}
+        .lb-entry { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.2em;}
+        #player-name-input { padding: 10px; font-size: 1.2em; border-radius: 8px; border: 1px solid var(--cyan); background: #000; color: #fff; text-align: center; margin-bottom: 15px; text-transform: uppercase; font-family: 'Rajdhani';}
         
-        .hub-link { color: rgba(255,255,255,0.5); text-decoration: none; display: inline-block; margin-top: 20px; font-weight: bold; transition: 0.2s; }
-        .hub-link:hover { color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
+        /* Ajustements mobiles */
+        @media (max-width: 600px) {
+            .options-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 2em; }
+            #question-area { height: 250px; }
+        }
     </style>
 </head>
 <body>
-    <div id="game-container">
+
+    <!-- BOUTONS FLOTTANTS HORS DU CONTAINER -->
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--cyan); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Classique</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <!-- JEU -->
+    <div id="game-container" class="size-wide">
         <h1>GUEST IT SURVIVAL</h1>
+        
+        <!-- ÉCRAN D'ACCUEIL -->
         <div id="start-screen">
-            <!-- AJOUT DU BEST SCORE ICI -->
-            <h2 style="color: var(--cyan); text-shadow: 0 0 10px var(--cyan); margin-bottom: 20px; text-align: center;">
+            <h2 style="color: var(--cyan); text-shadow: 0 0 10px var(--cyan); margin-bottom: 20px; text-align: center; font-size: 2em;">
                 🏆 BEST SCORE : <span id="best-score-display">0</span>
             </h2>
-            
-            <p style="font-size: 1.2em; color: #a9a9b3; line-height: 1.8; margin-bottom: 30px; text-align: center;">
+            <p style="font-size: 1.3em; color: #a9a9b3; line-height: 1.8; margin-bottom: 30px; text-align: center;">
                 Mode <span style="color: var(--cyan);">VISUEL</span>.<br>
                 L'image est floue ! Devinez vite pour faire exploser le <b style="color: #f1c40f;">COMBO</b>.<br>
             </p>
             <div style="text-align: center;">
-                <button class="btn-main" onclick="startGame()">Initier la séquence</button><br>
-                <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+                <button class="btn-main" onclick="startGame()">Initier la séquence</button>
             </div>
         </div>
 
+        <!-- ÉCRAN DE JEU -->
         <div id="game-screen" style="display: none;">
             <div class="top-bar">
                 <div class="lives" id="lives-display">❤️❤️❤️</div>
                 <div class="score-info">SCORE: <span id="current-score" style="color: white;">0</span> <span class="combo" id="combo-display">x1</span></div>
             </div>
             <div id="timer-container"><div id="timer-bar"></div></div>
+            
             <div id="question-area">
                 <img id="manga-image" src="" alt="Manga Image">
+                
+                <!-- LE SLIME ANIMÉ QUI CACHE L'IMAGE -->
+                <div id="slime-overlay">
+                    <img id="slime-anim-img" src="">
+                </div>
             </div>
+            
             <div class="options-grid" id="options-area"></div>
         </div>
 
+        <!-- ÉCRAN DE FIN -->
         <div id="end-screen" style="display: none; text-align: center;">
             <h2 style="font-size: 3em; color: var(--red); margin-bottom: 10px; text-shadow: 0 0 20px var(--red);">SYSTEM FAILURE</h2>
             <p style="font-size: 1.5em; color: #fff;">Score Final : <strong id="final-score" style="color: var(--cyan);">0</strong></p>
@@ -84,12 +187,76 @@
                 <div id="lb-list"></div>
             </div>
             
-            <button class="btn-main" style="background: #333; box-shadow: none;" onclick="location.reload()">Rejouer</button><br>
-            <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+            <button class="btn-main" style="background: #333; box-shadow: none;" onclick="location.reload()">Rejouer</button>
         </div>
     </div>
 
+    <!-- SCRIPT GESTION PARAMÈTRES & UI -->
     <script>
+        function autoFullscreen() {
+            if (!document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
+        }
+
+        function setGameSize(size) {
+            const container = document.getElementById('game-container');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                container.classList.add('size-classic'); document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } else if (size === 'wide') {
+                container.classList.add('size-wide'); document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } else if (size === 'full') {
+                container.classList.add('size-full'); document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e));
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
+        });
+
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrameSett = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrameSett = 0; settingsBtnImg.src = animFrames[currentFrameSett];
+            hoverInterval = setInterval(() => {
+                currentFrameSett = (currentFrameSett + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrameSett];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) settingsBtnImg.src = '../img/setting.png';
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png'; toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
+    </script>
+
+    <script>
+        // --- PRÉCHARGEMENT DES IMAGES DU SLIME ---
+        // On charge les 8 images dans la mémoire du navigateur dès le départ
+        const preloadedSlimes = [];
+        for(let i = 1; i <= 8; i++) {
+            let img = new Image();
+            img.src = `slime${i}.png`;
+            preloadedSlimes.push(img);
+        }
+
         // --- GESTION AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
@@ -102,28 +269,20 @@
             const now = audioCtx.currentTime;
 
             if (type === 'correct') {
-                osc.type = 'sine'; // Son pur et doux
-                osc.frequency.setValueAtTime(523.25, now); // Note Do (C5)
-                osc.frequency.setValueAtTime(659.25, now + 0.1); // Note Mi (E5) rapide
-                
-                // Volume TRÈS FAIBLE (0.03 sur 1)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.1); 
                 gain.gain.setValueAtTime(0.03, now);
                 gain.gain.linearRampToValueAtTime(0.03, now + 0.1);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                
-                osc.start(now);
-                osc.stop(now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'wrong') {
-                osc.type = 'triangle'; // Son légèrement étouffé
-                osc.frequency.setValueAtTime(250, now); // Son grave
+                osc.type = 'triangle'; 
+                osc.frequency.setValueAtTime(250, now); 
                 osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
-                
-                // Volume TRÈS FAIBLE (0.04 sur 1)
                 gain.gain.setValueAtTime(0.04, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-                
-                osc.start(now);
-                osc.stop(now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
             }
         }
 
@@ -150,7 +309,6 @@
         let questionsData = [];
         let currentQuestionIndex = 0; let score = 0; let lives = 3; let combo = 1; let timeLeft = 100; let timerInterval; let isAnswering = false;
         
-        // --- GESTION DU BEST SCORE ---
         let bestMangaScore = localStorage.getItem('guessitBestScore') || 0;
         
         const screens = { start: document.getElementById('start-screen'), game: document.getElementById('game-screen'), end: document.getElementById('end-screen') };
@@ -160,10 +318,11 @@
             let display = document.getElementById('best-score-display');
             if (display) display.innerText = bestMangaScore;
             displayLeaderboard();
+            setGameSize('wide'); // Format par défaut
         });
 
         function startGame() { 
-            if (audioCtx.state === 'suspended') audioCtx.resume(); // Débloque l'audio navigateur
+            if (audioCtx.state === 'suspended') audioCtx.resume(); 
             
             screens.start.style.display = 'none'; 
             screens.game.style.display = 'block'; 
@@ -172,17 +331,14 @@
      
             questionsData = shuffledList.map(manga => {
                 let wrongOptions = [];
- 
                 while(wrongOptions.length < 3) {
                     let rManga = baseMangaList[Math.floor(Math.random() * baseMangaList.length)];
                     if (rManga.title !== manga.title && !wrongOptions.includes(rManga.title)) {
                         wrongOptions.push(rManga.title);
                     }
                 }
-
                 let options = [...wrongOptions, manga.title].sort(() => Math.random() - 0.5);
                 let correctIndex = options.indexOf(manga.title);
-                
                 return { img: manga.img, options: options, correct: correctIndex };
             });
 
@@ -198,19 +354,26 @@
         }
 
         function loadQuestion() {
-            isAnswering = false; timeLeft = 100; updateHUD();
             const q = questionsData[currentQuestionIndex];
-            ui.img.src = q.img; ui.img.style.filter = "blur(25px)";
+            ui.img.src = q.img; 
+            ui.img.style.filter = "blur(25px)";
             ui.opt.innerHTML = "";
             q.options.forEach((opt, idx) => {
                 const btn = document.createElement('button'); btn.className = 'option-btn'; btn.innerText = opt;
                 btn.onclick = () => checkAnswer(idx, btn); ui.opt.appendChild(btn);
             });
+            
+            isAnswering = false; 
+            timeLeft = 100; 
+            updateHUD();
+            ui.timer.style.width = "100%"; 
+            ui.timer.style.backgroundColor = "var(--cyan)";
+            
             startTimer();
         }
 
         function startTimer() {
-            clearInterval(timerInterval); ui.timer.style.width = "100%"; ui.timer.style.backgroundColor = "var(--cyan)";
+            clearInterval(timerInterval); 
             timerInterval = setInterval(() => {
                 timeLeft -= 0.6; 
                 ui.timer.style.width = Math.max(0, timeLeft) + "%";
@@ -222,42 +385,118 @@
             }, 50);
         }
 
+        // --- ANIMATION SLIME QUI TOURNE LA PAGE ---
+        function playSlimeTransition(callback) {
+            const overlay = document.getElementById('slime-overlay');
+            const slimeImg = document.getElementById('slime-anim-img');
+            overlay.style.display = 'block';
+            
+            let frame = 1;
+            slimeImg.src = preloadedSlimes[frame - 1].src; // Frame 1
+            
+            let interval = setInterval(() => {
+                frame++;
+                if (frame <= 8) {
+                    slimeImg.src = preloadedSlimes[frame - 1].src;
+                }
+                
+                // Frame 5 : Le slime couvre tout l'écran, on change de photo !
+                if (frame === 5) {
+                    callback(); 
+                }
+                
+                // Fin de l'animation
+                if (frame >= 8) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        // On ne lance le chronomètre que quand le slime est parti
+                        if (callback === nextQuestion) startTimer(); 
+                    }, 100);
+                }
+            }, 100); // 100ms par frame (soit 800ms total)
+        }
+
         function checkAnswer(selectedIndex, buttonClicked) {
-            if (isAnswering) return; isAnswering = true; clearInterval(timerInterval);
-            ui.img.style.filter = "blur(0px)"; // Révèle l'image instantanément
-            const q = questionsData[currentQuestionIndex]; const buttons = ui.opt.querySelectorAll('.option-btn');
-            buttons.forEach(b => b.disabled = true); buttons[q.correct].classList.add('correct');
+            if (isAnswering) return; 
+            isAnswering = true; 
+            clearInterval(timerInterval);
+            
+            ui.img.style.filter = "blur(0px)"; // Révèle l'image
+            const q = questionsData[currentQuestionIndex]; 
+            const buttons = ui.opt.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.disabled = true); 
+
+            // Si c'est un timeout (selectedIndex === -1)
+            if (selectedIndex === -1) {
+                playFeedbackSound('wrong');
+                buttons[q.correct].classList.add('correct');
+                lives--; combo = 1;
+                ui.container.classList.add('shake'); 
+                setTimeout(() => ui.container.classList.remove('shake'), 400);
+                updateHUD();
+                if (lives <= 0) setTimeout(() => playSlimeTransition(endGame), 1500); 
+                else setTimeout(() => playSlimeTransition(nextQuestion), 1500);
+                return;
+            }
+
+            buttons[q.correct].classList.add('correct');
 
             if (selectedIndex === q.correct) {
-                playFeedbackSound('correct'); // Bruit de victoire doux
-                score += Math.floor(100 + (timeLeft * 2)) * combo; combo++;
+                playFeedbackSound('correct'); 
+                score += Math.floor(100 + (timeLeft * 2)) * combo; 
+                combo++;
                 const cEl = document.getElementById('combo-display'); cEl.classList.add('combo-active');
                 setTimeout(() => cEl.classList.remove('combo-active'), 300);
-                setTimeout(nextQuestion, 1500);
+                
+                // Appel l'animation du slime avant la question suivante
+                setTimeout(() => playSlimeTransition(nextQuestion), 1000);
             } else {
-                playFeedbackSound('wrong'); // Bruit d'erreur doux
+                playFeedbackSound('wrong'); 
                 if (buttonClicked) buttonClicked.classList.add('wrong');
                 lives--; combo = 1;
                 ui.container.classList.add('shake'); setTimeout(() => ui.container.classList.remove('shake'), 400);
                 updateHUD();
-                if (lives <= 0) setTimeout(endGame, 2000); else setTimeout(nextQuestion, 2000);
+                
+                // Appel l'animation du slime
+                if (lives <= 0) setTimeout(() => playSlimeTransition(endGame), 1500); 
+                else setTimeout(() => playSlimeTransition(nextQuestion), 1500);
             }
         }
 
-        function nextQuestion() { currentQuestionIndex++; if (currentQuestionIndex < questionsData.length) loadQuestion(); else endGame(); }
+        // On ne lance PAS loadQuestion directement ici, le slime s'en charge à la frame 5 !
+        function nextQuestion() { 
+            currentQuestionIndex++; 
+            if (currentQuestionIndex < questionsData.length) {
+                // On met juste en place l'image et l'UI, le timer sera lancé à la fin du slime
+                const q = questionsData[currentQuestionIndex];
+                ui.img.src = q.img; 
+                ui.img.style.filter = "blur(25px)";
+                ui.opt.innerHTML = "";
+                q.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button'); btn.className = 'option-btn'; btn.innerText = opt;
+                    btn.onclick = () => checkAnswer(idx, btn); ui.opt.appendChild(btn);
+                });
+                isAnswering = false; 
+                timeLeft = 100; 
+                updateHUD();
+                ui.timer.style.width = "100%"; 
+                ui.timer.style.backgroundColor = "var(--cyan)";
+            } else {
+                endGame(); 
+            }
+        }
         
         function endGame() { 
             screens.game.style.display = 'none'; screens.end.style.display = 'block'; 
             document.getElementById('final-score').innerText = score;
             
-            // --- SAUVEGARDE DU BEST SCORE ---
             if (score > bestMangaScore) {
                 bestMangaScore = score;
                 localStorage.setItem('guessitBestScore', bestMangaScore);
                 let display = document.getElementById('best-score-display');
                 if (display) display.innerText = bestMangaScore;
             }
-            
             displayLeaderboard();
         }
 
@@ -284,9 +523,8 @@
             });
         }
     </script>
-    <!-- ========================================== -->
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
-    <!-- ========================================== -->
+
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE) -->
     <script>
         const gamesHubList = [
             "../cybertank/index.html",
@@ -314,7 +552,6 @@
 
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
-            
             let currentIndex = gamesHubList.findIndex(game => {
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
@@ -323,7 +560,6 @@
             if (currentIndex === -1) return;
 
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
-
             window.location.href = gamesHubList[nextIndex];
         }
 
