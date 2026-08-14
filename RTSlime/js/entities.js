@@ -4,6 +4,21 @@
 
 let entityIdCounter = 1;
 
+// LE SCANNER GLOBAL (Répare le bug de la boussole et de la cible)
+function getEntityById(id) {
+    if (!id) return null;
+    let ent = null;
+    if (typeof units !== 'undefined') { ent = units.find(u => u.id === id); if (ent) return ent; }
+    if (typeof buildings !== 'undefined') { ent = buildings.find(b => b.id === id); if (ent) return ent; }
+    if (typeof trees !== 'undefined') { ent = trees.find(t => t.id === id); if (ent) return ent; }
+    if (typeof wheats !== 'undefined') { ent = wheats.find(w => w.id === id); if (ent) return ent; }
+    if (typeof enemies !== 'undefined') { ent = enemies.find(e => e.id === id); if (ent) return ent; }
+    if (typeof rivers !== 'undefined') { ent = rivers.find(r => r.id === id); if (ent) return ent; }
+    if (typeof baseHost !== 'undefined' && baseHost && baseHost.id === id) return baseHost;
+    if (typeof baseGuest !== 'undefined' && baseGuest && baseGuest.id === id) return baseGuest;
+    return null;
+}
+
 class Decoration {
     constructor(x, y, skin, size) {
         this.x = x; this.y = y; 
@@ -219,8 +234,8 @@ class Unit {
 
     setCommand(x, y, entity = null) {
         if(this.state === 'farming') {
-            let b = buildings.find(b => b.id === this.targetEntityId);
-            if(b) b.farmersInside--;
+            let b = getEntityById(this.targetEntityId);
+            if(b && b.farmersInside > 0) b.farmersInside--;
         }
 
         this.targetPos = { x, y };
@@ -273,13 +288,8 @@ class Unit {
             }
         });
 
-        let targetEnt = null;
-        if (this.targetEntityId) {
-            targetEnt = units.find(u => u.id === this.targetEntityId) || buildings.find(b => b.id === this.targetEntityId) || baseHost.id === this.targetEntityId ? baseHost : (baseGuest.id === this.targetEntityId ? baseGuest : null);
-            if(!targetEnt) targetEnt = trees.find(t=>t.id===this.targetEntityId) || wheats.find(w=>w.id===this.targetEntityId);
-            if(!targetEnt) targetEnt = enemies.find(e=>e.id===this.targetEntityId);
-            if(!targetEnt) targetEnt = rivers.find(r=>r.id===this.targetEntityId);
-        }
+        // UTILISATION DU SCANNER GLOBAL ICI
+        let targetEnt = getEntityById(this.targetEntityId);
 
         if (this.type === 'farmer') {
             if (this.state === 'moving_to_res' && targetEnt) {
@@ -462,10 +472,9 @@ class Enemy {
         this.attackCooldown = 0;
         this.slowTimer = 0;
         
-        // Attribution d'un skin MEAN aléatoire (1, 2 ou 3)
         this.skinNum = Math.floor(Math.random() * 3) + 1;
-        this.element = 'normal'; // Plus d'éléments colorés
-        this.color = '#888888';  // Gris cendre pour les particules d'attaque
+        this.element = 'normal'; 
+        this.color = '#888888';  
     }
 
     update(dt) {
@@ -507,14 +516,12 @@ class Enemy {
     }
 
     draw(ctx, images) {
-        // Dessin du nouveau skin MEAN
         let img = images['mean' + this.skinNum];
         let drawSize = 34; 
 
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - drawSize/2, this.y - drawSize/2, drawSize, drawSize);
         } else {
-            // Secours visuel (Rond gris sombre)
             ctx.shadowBlur = 10; ctx.shadowColor = '#333';
             ctx.fillStyle = '#222'; ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
