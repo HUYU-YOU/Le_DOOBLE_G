@@ -73,31 +73,34 @@ input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
 .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 
-/* --- LE FOND DE LA TABLE (TAVERNE) --- */
+/* --- LE FOND DE LA TABLE (MAP) --- */
 #table-area {
     width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
     position: relative; z-index: 5; padding: 20px; box-sizing: border-box;
-    background-image: url('assets/skins/map.jpg'); 
+    background-image: url('assets/skins/map.png'); 
     background-size: cover; background-position: center;
 }
 
-/* --- DISPOSITION DES ADVERSAIRES AUTOUR DE LA TABLE --- */
+/* --- DISPOSITION DES ADVERSAIRES AUTOUR DE LA TABLE (SANS CADRE NÉON) --- */
 #top-opponents { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 30px; }
 #left-opponents { position: absolute; left: 20px; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 30px; }
 #right-opponents { position: absolute; right: 20px; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 30px; }
 
 .opponent-hud { 
-    background: rgba(10, 15, 28, 0.85); border: 2px solid var(--p2); border-radius: 12px; 
-    padding: 10px; text-align: center; box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
-    min-width: 90px; backdrop-filter: blur(5px);
+    background: transparent; border: none; box-shadow: none; padding: 5px;
+    color: #fff; text-align: center; font-family: 'Rajdhani';
     display: flex; flex-direction: column; align-items: center;
 }
-.opponent-hud.active-turn { border-color: var(--p3); box-shadow: 0 0 20px var(--p3); transform: scale(1.1); transition: 0.2s; }
+.opponent-hud.active-turn .slime-avatar {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 15px var(--p1));
+}
 
 /* --- LES SKINS DE SLIME --- */
 .slime-avatar {
-    width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px;
+    width: 60px; height: 60px; object-fit: contain; margin-bottom: 2px;
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+    transition: transform 0.3s ease;
 }
 
 /* --- LE CENTRE (LE SEAU) --- */
@@ -117,11 +120,18 @@ input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #action-panel { text-align: center; padding: 15px; background: rgba(0,0,0,0.8); border-radius: 10px; border: 1px solid var(--p1); margin-bottom: 10px;}
 #action-panel select { width: auto; max-width: 200px; margin: 0 5px; padding: 8px; font-size: 1.1rem; }
 
+/* --- ANIMATION DE PIOCHE DES CARTES --- */
+@keyframes drawCard {
+    0% { transform: translateY(60px) scale(0.7); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
 #my-hand { display: flex; justify-content: center; height: 200px; align-items: flex-end; }
 .card {
     width: 120px; height: 180px; background-color: #222; border-radius: 10px;
     margin-left: -50px; box-shadow: -5px 0 15px rgba(0,0,0,0.6); transition: transform 0.2s, margin 0.2s;
     background-size: cover; background-position: center; border: 2px solid rgba(255,255,255,0.2);
+    animation: drawCard 0.35s ease-out;
 }
 .card:first-child { margin-left: 0; }
 .card:hover { transform: translateY(-30px); z-index: 10; cursor: pointer; border-color: var(--p1); }
@@ -130,7 +140,6 @@ input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 #yt-player-container { position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
 
-/* Zone d'action de ton joueur (en bas) */
 #player-bottom-area {
     display: flex; flex-direction: column; align-items: center; width: 100%; z-index: 10;
 }
