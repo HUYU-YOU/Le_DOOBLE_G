@@ -73,7 +73,6 @@ class Base {
         ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
         ctx.fillText(this.owner === 'host' ? 'P1' : 'P2', this.x, this.y - this.size/2 - 15);
 
-        // CORRECTION : Bouclier visuel et timer texte pendant 180s (3 minutes)
         if (typeof survivalTimer !== 'undefined' && survivalTimer < 180) {
             let timeLeft = 180 - Math.floor(survivalTimer);
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2 + 20, 0, Math.PI*2); ctx.stroke();
@@ -113,7 +112,6 @@ class Building {
                 let targets = units.concat(enemies).filter(e => e.owner !== this.owner);
                 let closestEnemy = getClosest(this, targets);
                 if (closestEnemy && dist(this, closestEnemy) <= 400) {
-                    // CORRECTION : Les tours ne tirent pas pendant les 180s de paix (sauf sur les virus)
                     if (typeof survivalTimer !== 'undefined' && survivalTimer < 180 && closestEnemy.owner !== 'virus') {
                     } else {
                         closestEnemy.hp -= 40;
@@ -262,7 +260,6 @@ class Unit {
         }
 
         units.forEach(other => {
-            // CORRECTION FERME BLOQUEE : On désactive la collision quand l'unité veut entrer
             if (this.state === 'moving_to_building') return;
 
             if(other.id !== this.id && other.state !== 'farming' && this.state !== 'farming') {
@@ -324,7 +321,6 @@ class Unit {
                 }
             }
             else if (this.state === 'moving_to_building' && targetEnt) {
-                // CORRECTION FERME BLOQUEE : Tolérance d'entrée énorme (+40px)
                 if (dist(this, targetEnt) <= targetEnt.size/2 + 40) {
                     if(targetEnt.farmersInside < 5) {
                         this.state = 'farming'; targetEnt.farmersInside++; this.targetPos = null;
@@ -381,7 +377,6 @@ class Unit {
     }
 
     applyDamage(target) {
-        // CORRECTION PAIX : 180s
         if (typeof survivalTimer !== 'undefined' && survivalTimer < 180 && target.owner !== 'virus') {
             return; 
         }
@@ -460,19 +455,17 @@ class Enemy {
     constructor(x, y) {
         this.id = entityIdCounter++;
         this.x = x; this.y = y; this.owner = 'virus';
-        this.radius = 12;
+        this.radius = 15;
         this.baseSpeed = 40 + Math.random() * 30;
         this.hp = 100; 
         this.maxHp = this.hp;
         this.attackCooldown = 0;
         this.slowTimer = 0;
         
-        const els = ['normal', 'fire', 'water', 'plant'];
-        this.element = els[Math.floor(Math.random() * els.length)];
-        if(this.element === 'normal') this.color = '#ff3333';
-        if(this.element === 'fire') this.color = '#ff5500';
-        if(this.element === 'water') this.color = '#3388ff';
-        if(this.element === 'plant') this.color = '#39ff14';
+        // Attribution d'un skin MEAN aléatoire (1, 2 ou 3)
+        this.skinNum = Math.floor(Math.random() * 3) + 1;
+        this.element = 'normal'; // Plus d'éléments colorés
+        this.color = '#888888';  // Gris cendre pour les particules d'attaque
     }
 
     update(dt) {
@@ -500,7 +493,6 @@ class Enemy {
                 this.x += ((target.x - this.x) / d) * currentSpeed * dt;
                 this.y += ((target.y - this.y) / d) * currentSpeed * dt;
             } else if (this.attackCooldown <= 0) {
-                // CORRECTION PAIX : Les virus ne tapent pas pendant 180s
                 if (typeof survivalTimer !== 'undefined' && survivalTimer < 180) {
                 } else {
                     target.hp -= 15;
@@ -514,15 +506,21 @@ class Enemy {
         }
     }
 
-    draw(ctx) {
-        ctx.shadowBlur = 10; ctx.shadowColor = this.color;
-        ctx.fillStyle = '#111'; ctx.strokeStyle = this.color; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        ctx.fill(); ctx.stroke();
-        
-        ctx.beginPath(); ctx.moveTo(this.x-5, this.y-5); ctx.lineTo(this.x+5, this.y+5);
-        ctx.moveTo(this.x+5, this.y-5); ctx.lineTo(this.x-5, this.y+5); ctx.stroke();
-        ctx.shadowBlur = 0;
+    draw(ctx, images) {
+        // Dessin du nouveau skin MEAN
+        let img = images['mean' + this.skinNum];
+        let drawSize = 34; 
+
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, this.x - drawSize/2, this.y - drawSize/2, drawSize, drawSize);
+        } else {
+            // Secours visuel (Rond gris sombre)
+            ctx.shadowBlur = 10; ctx.shadowColor = '#333';
+            ctx.fillStyle = '#222'; ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+            ctx.fill(); ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
 
         if(this.slowTimer > 0) { 
             ctx.strokeStyle = '#b000ff'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius+4, 0, Math.PI*2); ctx.stroke();
