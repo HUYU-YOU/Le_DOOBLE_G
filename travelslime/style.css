@@ -111,3 +111,47 @@ input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #my-stats { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px; border: 1px solid var(--p1); }
 
 #yt-player-container { position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
+/* --- LE FOND DE LA TABLE --- */
+#table-area {
+    width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
+    position: relative; z-index: 5; padding: 20px; box-sizing: border-box;
+    /* Remplace par la bonne extension .jpg ou .png */
+    background-image: url('assets/skins/map.jpg'); 
+    background-size: cover; background-position: center;
+}
+
+/* --- DISPOSITION DES ADVERSAIRES --- */
+#top-opponents { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 30px; }
+#left-opponents { position: absolute; left: 20px; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 30px; }
+#right-opponents { position: absolute; right: 20px; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 30px; }
+
+.opponent-hud { 
+    background: rgba(10, 15, 28, 0.85); border: 2px solid var(--p2); border-radius: 12px; 
+    padding: 10px; text-align: center; box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+    min-width: 90px; backdrop-filter: blur(5px);
+    display: flex; flex-direction: column; align-items: center;
+}
+.opponent-hud.active-turn { border-color: var(--p3); box-shadow: 0 0 20px var(--p3); transform: scale(1.1); transition: 0.2s; }
+
+/* --- LES SKINS DE SLIME --- */
+.slime-avatar {
+    width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+}
+
+/* --- LE CENTRE (LE SEAU) --- */
+#center-table {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center;
+}
+.bucket-deck {
+    width: 100px; height: 140px; background: rgba(20, 20, 40, 0.95);
+    border: 3px solid var(--p1); border-radius: 10px; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; font-weight: bold; font-size: 1.1rem;
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.6);
+}
+
+/* Zone d'action de ton joueur (en bas) */
+#player-bottom-area {
+    display: flex; flex-direction: column; align-items: center; width: 100%; z-index: 10;
+}
