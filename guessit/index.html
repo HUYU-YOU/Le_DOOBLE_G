@@ -81,9 +81,9 @@
         #question-area { position: relative; width: 100%; height: 350px; background: #000; border-radius: 15px; margin-bottom: 25px; overflow: hidden; border: 2px solid var(--pink); box-shadow: 0 0 20px rgba(255, 0, 127, 0.3); display: flex; justify-content: center; align-items: center;}
         #manga-image { width: 100%; height: 100%; object-fit: contain; filter: blur(25px); transition: filter 0.1s linear; }
         
-        /* NOUVEAU: Le conteneur du slime */
         #slime-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; display: none; pointer-events: none; }
-        #slime-anim-img { width: 100%; height: 100%; object-fit: cover; } /* cover pour cacher toute l'image derrière */
+        /* color: transparent permet de masquer le texte ALT de l'image si elle casse */
+        #slime-anim-img { width: 100%; height: 100%; object-fit: cover; color: transparent; }
 
         /* --- BOUTONS OPTIONS --- */
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -163,9 +163,9 @@
             <div id="question-area">
                 <img id="manga-image" src="" alt="Manga Image">
                 
-                <!-- LE SLIME ANIMÉ QUI CACHE L'IMAGE -->
+                <!-- LE SLIME ANIMÉ QUI CACHE L'IMAGE (GIF transparent par défaut pour éviter l'icone cassée) -->
                 <div id="slime-overlay">
-                    <img id="slime-anim-img" src="">
+                    <img id="slime-anim-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
                 </div>
             </div>
             
@@ -249,11 +249,15 @@
 
     <script>
         // --- PRÉCHARGEMENT DES IMAGES DU SLIME ---
-        // On charge les 8 images dans la mémoire du navigateur dès le départ
+        
+        // ⚠️ TRÈS IMPORTANT : Si tes fichiers slime1.png sont dans un dossier "img", 
+        // modifie la ligne ci-dessous en const SLIME_FOLDER = "img/";
+        const SLIME_FOLDER = ""; 
+
         const preloadedSlimes = [];
         for(let i = 1; i <= 8; i++) {
             let img = new Image();
-            img.src = `slime${i}.png`;
+            img.src = `${SLIME_FOLDER}slime${i}.png`;
             preloadedSlimes.push(img);
         }
 
@@ -389,10 +393,20 @@
         function playSlimeTransition(callback) {
             const overlay = document.getElementById('slime-overlay');
             const slimeImg = document.getElementById('slime-anim-img');
+
+            // Sécurité : si la 1ère image du slime n'est pas chargée, on zappe l'animation 
+            // pour ne pas avoir de bug visuel ou d'icône cassée.
+            if (!preloadedSlimes[0] || preloadedSlimes[0].naturalWidth === 0) {
+                console.warn("Images slime introuvables ou mal renseignées. L'animation est ignorée.");
+                callback();
+                if (callback === nextQuestion) startTimer();
+                return;
+            }
+
             overlay.style.display = 'block';
             
             let frame = 1;
-            slimeImg.src = preloadedSlimes[frame - 1].src; // Frame 1
+            slimeImg.src = preloadedSlimes[frame - 1].src; 
             
             let interval = setInterval(() => {
                 frame++;
@@ -400,21 +414,21 @@
                     slimeImg.src = preloadedSlimes[frame - 1].src;
                 }
                 
-                // Frame 5 : Le slime couvre tout l'écran, on change de photo !
                 if (frame === 5) {
                     callback(); 
                 }
                 
-                // Fin de l'animation
                 if (frame >= 8) {
                     clearInterval(interval);
                     setTimeout(() => {
                         overlay.style.display = 'none';
-                        // On ne lance le chronomètre que quand le slime est parti
+                        // Remise à zéro pour éviter les glitchs visuels
+                        slimeImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                        
                         if (callback === nextQuestion) startTimer(); 
                     }, 100);
                 }
-            }, 100); // 100ms par frame (soit 800ms total)
+            }, 80); // Accéléré à 80ms pour plus d'impact !
         }
 
         function checkAnswer(selectedIndex, buttonClicked) {
@@ -449,7 +463,6 @@
                 const cEl = document.getElementById('combo-display'); cEl.classList.add('combo-active');
                 setTimeout(() => cEl.classList.remove('combo-active'), 300);
                 
-                // Appel l'animation du slime avant la question suivante
                 setTimeout(() => playSlimeTransition(nextQuestion), 1000);
             } else {
                 playFeedbackSound('wrong'); 
@@ -458,7 +471,6 @@
                 ui.container.classList.add('shake'); setTimeout(() => ui.container.classList.remove('shake'), 400);
                 updateHUD();
                 
-                // Appel l'animation du slime
                 if (lives <= 0) setTimeout(() => playSlimeTransition(endGame), 1500); 
                 else setTimeout(() => playSlimeTransition(nextQuestion), 1500);
             }
@@ -468,7 +480,6 @@
         function nextQuestion() { 
             currentQuestionIndex++; 
             if (currentQuestionIndex < questionsData.length) {
-                // On met juste en place l'image et l'UI, le timer sera lancé à la fin du slime
                 const q = questionsData[currentQuestionIndex];
                 ui.img.src = q.img; 
                 ui.img.style.filter = "blur(25px)";
