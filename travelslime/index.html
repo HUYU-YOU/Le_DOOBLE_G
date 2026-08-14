@@ -57,12 +57,12 @@
             <div id="left-opponents"></div>
             <div id="right-opponents"></div>
 
-            <!-- Centre de table : Le Seau et les logs -->
+            <!-- Centre de table : Log au-dessus, et deck visuel backcard.png en dessous -->
             <div id="center-table">
-                <div class="bucket-deck">
-                    🪣 SEAU<br><br><span id="deck-count" style="color:var(--p1); font-size:1.5rem;">0</span>
-                </div>
                 <div id="game-log">En attente du lancement...</div>
+                <div class="bucket-deck">
+                    <span id="deck-count">0</span>
+                </div>
             </div>
 
             <!-- Ta zone (en bas : panel d'action et main de cartes) -->
@@ -102,7 +102,7 @@
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
-                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Classique</button>
                     <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
                 </div>
