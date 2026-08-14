@@ -1,0 +1,118 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #2e6f40; /* Vert table de jeu */
+    color: white;
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+#login-screen {
+    margin: auto;
+    background: rgba(0,0,0,0.8);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+#login-screen input, #login-screen button {
+    display: block;
+    margin: 10px auto;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+}
+
+.btn-create { background: #ff9800; color: white; cursor: pointer; font-weight: bold;}
+.btn-join { background: #2196f3; color: white; cursor: pointer; font-weight: bold;}
+
+#game-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#table-info {
+    text-align: center;
+    padding: 10px;
+    background: rgba(0,0,0,0.4);
+}
+
+#center-table {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.bucket-deck {
+    width: 100px;
+    height: 140px;
+    background: #6d4c41;
+    border: 3px solid #d7ccc8;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    font-size: 1.2rem;
+}
+
+#opponents-area {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 20px;
+    min-height: 100px;
+}
+
+.opponent {
+    text-align: center;
+    background: rgba(255,255,255,0.2);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+#action-area {
+    text-align: center;
+    padding: 15px;
+    background: rgba(0,0,0,0.8);
+}
+
+#action-area select, #action-area button {
+    padding: 8px;
+    font-size: 16px;
+    margin: 0 5px;
+}
+
+.btn-bucket { background: #795548; color: white; border: none; cursor: pointer; }
+
+#my-hand {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    height: 220px;
+}
+
+.card {
+    width: 130px;
+    height: 190px;
+    background-color: white;
+    border-radius: 10px;
+    margin-left: -50px; /* Superposition façon Uno */
+    box-shadow: -2px 0 10px rgba(0,0,0,0.4);
+    transition: transform 0.2s;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid white;
+}
+
+.card:first-child { margin-left: 0; }
+.card:hover { transform: translateY(-20px); z-index: 10; cursor: pointer; }
