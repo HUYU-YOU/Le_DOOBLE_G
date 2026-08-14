@@ -133,18 +133,23 @@ function hostGame() {
         document.getElementById('start-net-btn').style.display = 'inline-block';
     });
 
+   // Dans hostGame() : Quand l'Hôte se crée
+    peerNet.on('open', id => {
+        // ...
+        // Le skin est basé sur le nombre de joueurs (de 1 à 8)
+        gameState.players[myPlayerId] = { pseudo: myPseudo, hand: [], score: 0, skin: 1 };
+        gameState.order.push(myPlayerId);
+        // ...
+    });
+
+    // Dans hostGame() : Quand un joueur rejoint
     peerNet.on('connection', conn => {
         conn.on('data', data => {
             if (data.type === 'JOIN') {
-                gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0 };
+                let assignedSkin = (gameState.order.length % 8) + 1; // Donne 1, 2, 3... jusqu'à 8
+                gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
                 gameState.order.push(data.id);
-                connsNet.push(conn);
-                
-                document.getElementById('status-text').innerText = `${data.pseudo} a rejoint ! (${connsNet.length + 1} joueurs)`;
-                broadcastState();
-            }
-            if (data.type === 'ACTION' && gameState.started) handleGameAction(data);
-        });
+                // ...
 
         // GESTION DE LA DÉCONNEXION
         conn.on('close', () => {
@@ -316,36 +321,55 @@ function checkFamiliesCompleted() {
 }
 
 // --- AFFICHAGE ET ACTIONS CLIENT ---
+// --- AFFICHAGE ET ACTIONS CLIENT ---
 function renderGameClient() {
-    document.getElementById('deck-count').innerText = gameState.deck.length + " cartes";
+    document.getElementById('deck-count').innerText = gameState.deck.length;
     document.getElementById('game-log').innerText = gameState.log;
     
     const isMyTurn = (gameState.order[gameState.turnIndex] === myPlayerId);
     document.getElementById('action-panel').style.display = isMyTurn ? 'block' : 'none';
 
-    const oppArea = document.getElementById('opponents-area');
+    // Récupération des zones HTML
+    const topArea = document.getElementById('top-opponents');
+    const leftArea = document.getElementById('left-opponents');
+    const rightArea = document.getElementById('right-opponents');
     const oppSelect = document.getElementById('opponent-select');
-    oppArea.innerHTML = ''; oppSelect.innerHTML = '';
+    
+    topArea.innerHTML = ''; leftArea.innerHTML = ''; rightArea.innerHTML = ''; oppSelect.innerHTML = '';
 
-    Object.keys(gameState.players).forEach(id => {
-        if (id !== myPlayerId) {
-            let p = gameState.players[id];
-            let count = p.cardCount !== undefined ? p.cardCount : p.hand.length;
-            let isHisTurn = (gameState.order[gameState.turnIndex] === id);
-            
-            oppArea.innerHTML += `
-                <div class="opponent-hud ${isHisTurn ? 'active-turn' : ''}">
-                    <div style="font-weight:bold; color:var(--p1)">${p.pseudo}</div>
-                    <div>🃏 ${count} cartes</div>
-                    <div style="font-size:0.8em; color:var(--p3)">⭐ ${p.score}</div>
-                </div>`;
-            
-            oppSelect.innerHTML += `<option value="${id}">${p.pseudo}</option>`;
-        } else {
-            document.getElementById('my-score-display').innerText = gameState.players[id].score;
-        }
+    // Liste des adversaires (on s'exclut)
+    let opponents = Object.keys(gameState.players).filter(id => id !== myPlayerId);
+    
+    // Distribution des adversaires (Haut, Gauche, Droite, Haut, Gauche, Droite...)
+    let distribution = [topArea, leftArea, rightArea, topArea, leftArea, rightArea, topArea];
+
+    opponents.forEach((id, index) => {
+        let p = gameState.players[id];
+        let count = p.cardCount !== undefined ? p.cardCount : p.hand.length;
+        let isHisTurn = (gameState.order[gameState.turnIndex] === id);
+        
+        let oppHtml = `
+            <div class="opponent-hud ${isHisTurn ? 'active-turn' : ''}">
+                <img src="assets/skins/slime${p.skin}.png" class="slime-avatar" alt="Slime">
+                <div style="font-weight:bold; color:var(--p1)">${p.pseudo}</div>
+                <div>🃏 ${count}</div>
+                <div style="font-size:0.8em; color:var(--p3)">⭐ ${p.score}</div>
+            </div>`;
+        
+        // On place l'adversaire dans la zone correspondante
+        let targetZone = distribution[index % distribution.length];
+        targetZone.innerHTML += oppHtml;
+        
+        oppSelect.innerHTML += `<option value="${id}">${p.pseudo}</option>`;
     });
 
+    // Mes propres infos (Skin en bas à gauche)
+    if (gameState.players[myPlayerId]) {
+        document.getElementById('my-score-display').innerText = gameState.players[myPlayerId].score;
+        document.getElementById('my-avatar').src = `assets/skins/slime${gameState.players[myPlayerId].skin}.png`;
+    }
+
+    // Affichage de ma main
     const myHandArea = document.getElementById('my-hand');
     const countrySelect = document.getElementById('country-select');
     myHandArea.innerHTML = ''; countrySelect.innerHTML = '';
@@ -355,9 +379,16 @@ function renderGameClient() {
 
     myHand.forEach(card => {
         myCountries.add(card.country);
+        // Retrait du tiret du bas comme convenu !
         let imgSrc = `assets/card/${card.id}.png`; 
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
+
+    myCountries.forEach(c => { countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; });
+
+    let btn = document.querySelector('#action-panel .red');
+    if(btn) btn.disabled = (myCountries.size === 0 || opponents.length === 0);
+}
 
     myCountries.forEach(c => { countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; });
 
