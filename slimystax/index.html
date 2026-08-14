@@ -73,7 +73,7 @@
         .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
         .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
 
-        /* Overlays Menus (Glassmorphism) */
+        /* Overlays Menus */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 15, 28, 0.85); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 15px; }
         
         .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.5em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px; position: relative; overflow: hidden; pointer-events: auto;}
@@ -155,9 +155,7 @@
     <!-- SCRIPT GESTION ECRAN & PARAMETRES -->
     <script>
         function autoFullscreen() {
-            if (!document.getElementById('game-container').classList.contains('size-full')) {
-                setGameSize('wide');
-            }
+            if (!document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
         }
 
         function setGameSize(size) {
@@ -168,26 +166,19 @@
             container.classList.remove('size-classic', 'size-wide', 'size-full');
             
             if (size === 'classic') {
-                container.classList.add('size-classic');
-                document.getElementById('btn-sz-classic').classList.add('active');
+                container.classList.add('size-classic'); document.getElementById('btn-sz-classic').classList.add('active');
                 if (document.fullscreenElement) document.exitFullscreen();
             } else if (size === 'wide') {
-                container.classList.add('size-wide');
-                document.getElementById('btn-sz-wide').classList.add('active');
+                container.classList.add('size-wide'); document.getElementById('btn-sz-wide').classList.add('active');
                 if (document.fullscreenElement) document.exitFullscreen();
             } else if (size === 'full') {
-                container.classList.add('size-full');
-                document.getElementById('btn-sz-full').classList.add('active');
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().catch(e => console.log(e));
-                }
+                container.classList.add('size-full'); document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e));
             }
         }
 
         document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
-                setGameSize('wide');
-            }
+            if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
         });
 
         const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -304,11 +295,17 @@
         let towerSway = 0; 
         let totalOffset = 0; 
         let swingAngle = 0;
-        let swingSpeed = 0.05;
-        const MAX_OFFSET_TOLERANCE = BLOCK_SIZE * 1.5; // Effondrement si le déséquilibre est trop grand
+        let swingSpeed = 0.02; // Vitesse de départ ralentie (avant c'était 0.05)
+        const MAX_OFFSET_TOLERANCE = BLOCK_SIZE * 1.1; // Tolérance d'effondrement si la tour est trop penchée globalement
 
         let particles = [];
         let floatingTexts = [];
+        
+        // Génération des étoiles pour l'espace
+        let stars = [];
+        for(let i=0; i<100; i++) {
+            stars.push({ x: Math.random() * 1000, y: -Math.random() * 10000, s: Math.random() * 2 + 1, a: Math.random() });
+        }
 
         class FloatingText {
             constructor(x, y, text, color) {
@@ -335,7 +332,7 @@
                 this.vy = 0;
                 this.angle = 0;
                 this.vAngle = 0;
-                this.visualX = x; // Ajouté pour la collision dynamique
+                this.visualX = x; // Position visuelle calculée avec le tangage
             }
             draw() {
                 let drawX = this.x;
@@ -343,15 +340,12 @@
 
                 if (this.state === 'landed') {
                     let heightIndex = blocks.indexOf(this);
-                    // L'amplitude du tangage augmente avec la hauteur et le déséquilibre global
                     let swayAmplitude = (Math.abs(totalOffset) * 0.05) + (heightIndex * 0.5);
                     let swayOffset = Math.sin(towerSway + heightIndex * 0.1) * swayAmplitude;
-                    
-                    // La courbure statique due au déséquilibre
                     let staticBend = (heightIndex / blocks.length) * totalOffset * 0.4;
                     
                     drawX += swayOffset + staticBend;
-                    this.visualX = drawX; // Met à jour la position réelle pour le bloc d'au dessus !
+                    this.visualX = drawX; // Met à jour la position réelle pour le bloc au-dessus
                 } else {
                     this.visualX = this.x;
                 }
@@ -399,7 +393,7 @@
 
         function startGame() {
             score = 0; perfectCount = 0; comboMultiplier = 1; totalOffset = 0;
-            cameraY = 0; targetCameraY = 0; towerSway = 0; swingSpeed = 0.04;
+            cameraY = 0; targetCameraY = 0; towerSway = 0; swingSpeed = 0.02;
             particles = []; floatingTexts = [];
             
             blocks = [new Block(canvas.width/2, canvas.height - 50, Math.floor(Math.random()*7)+1)];
@@ -435,9 +429,9 @@
             activeBlock = new Block(canvas.width/2, spawnY, type);
             swingAngle = 0;
             
-            // La difficulté augmente avec la hauteur (et le tangage)
-            swingSpeed = 0.04 + (blocks.length * 0.001) + (Math.abs(totalOffset) * 0.0002);
-            if (swingSpeed > 0.12) swingSpeed = 0.12; 
+            // La difficulté augmente avec la hauteur (et très légèrement avec le tangage)
+            swingSpeed = 0.02 + (blocks.length * 0.0015) + (Math.abs(totalOffset) * 0.0001);
+            if (swingSpeed > 0.1) swingSpeed = 0.1; 
         }
 
         function updateHUD() {
@@ -470,12 +464,11 @@
             
             if (activeBlock.y + BLOCK_SIZE/2 >= topBlock.y - BLOCK_SIZE/2) {
                 
-                // LA MAGIE EST ICI : On compare avec la position VISUELLE du bloc qui tangue !
                 let targetX = topBlock.visualX || topBlock.x;
                 let diffX = activeBlock.x - targetX;
                 
-                // Tolérance d'atterrissage
-                if (Math.abs(diffX) <= BLOCK_SIZE * 0.8) {
+                // LOGIQUE GRAVITATIONNELLE : Si le bloc dépasse de plus de 55% la surface du bloc du dessous, il tombe !
+                if (Math.abs(diffX) <= BLOCK_SIZE * 0.55) {
                     activeBlock.y = topBlock.y - BLOCK_SIZE;
                     activeBlock.state = 'landed';
                     blocks.push(activeBlock);
@@ -492,8 +485,13 @@
                         createParticles(activeBlock.x, activeBlock.y, color, 20);
                         playSound('perfect');
                         
-                        // Réduit le déséquilibre global si on fait un parfait
-                        totalOffset *= 0.5; 
+                        // MÉCANIQUE DE REDRESSEMENT DE TOUR (3 Perfects de suite)
+                        if (perfectCount >= 3) {
+                            totalOffset = 0; // La tour redevient magiquement droite !
+                            floatingTexts.push(new FloatingText(activeBlock.x, activeBlock.y - 70, "TOWER CENTERED!", "var(--p1)"));
+                        } else {
+                            totalOffset *= 0.5; // Aide à stabiliser quand même
+                        }
                         
                         floatingTexts.push(new FloatingText(activeBlock.x, activeBlock.y - 20, "PERFECT +50", color));
                     } else {
@@ -517,7 +515,7 @@
                     updateHUD();
                     targetCameraY -= BLOCK_SIZE;
                     
-                    // --- VÉRIFICATION DE L'EFFONDREMENT ---
+                    // --- VÉRIFICATION DE L'EFFONDREMENT (SI LA TOUR PÈSE TROP D'UN CÔTÉ) ---
                     if (Math.abs(totalOffset) > MAX_OFFSET_TOLERANCE) {
                         triggerGameOver();
                     } else {
@@ -525,7 +523,7 @@
                         setTimeout(spawnBlock, 150);
                     }
                 } else {
-                    // BLOC TOMBÉ À COTÉ = EFFONDREMENT DIRECT
+                    // BLOC PLACÉ DANS LE VIDE = EFFONDREMENT DIRECT
                     activeBlock.state = 'dead';
                     activeBlock.vx = (Math.random() - 0.5) * 10;
                     activeBlock.vy = -5;
@@ -601,16 +599,37 @@
             // --- RENDU ---
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            let parallaxY = cameraY * 0.15; 
+            // FOND DYNAMIQUE : S'assombrit pour devenir l'espace au fur et à mesure de l'ascension
+            let heightFactor = Math.min(1, Math.abs(cameraY) / 6000); // Pourcentage de la hauteur vers l'espace
+            let r = Math.floor(5 * (1 - heightFactor));
+            let g = Math.floor(5 * (1 - heightFactor));
+            let b = Math.floor(8 + 30 * (1 - heightFactor));
             
-            let bgHeight = Math.min(blocks.length * 5, 200);
             let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, `rgb(5, 5, ${8 + bgHeight})`);
+            grad.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
             grad.addColorStop(1, '#020205');
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dessin Parallaxe
+            // Dessin des étoiles de l'espace
+            if (heightFactor > 0.05) {
+                ctx.save();
+                ctx.translate(0, -cameraY * 0.05); // Effet parallaxe des étoiles
+                stars.forEach(star => {
+                    // Optimisation : on ne dessine que les étoiles visibles
+                    if (star.y > cameraY - canvas.height && star.y < cameraY + canvas.height) {
+                        ctx.fillStyle = `rgba(255, 255, 255, ${star.a * heightFactor})`;
+                        ctx.beginPath();
+                        ctx.arc(star.x, star.y, star.s, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                });
+                ctx.restore();
+            }
+
+            let parallaxY = cameraY * 0.15; 
+            
+            // Dessin Parallaxe du décor sol
             ctx.save();
             ctx.translate(0, -parallaxY);
             
@@ -651,7 +670,7 @@
                 if(particles[i].life <= 0) particles.splice(i, 1);
             }
             
-            // Textes flottants (Juice)
+            // Textes flottants
             for(let i=floatingTexts.length-1; i>=0; i--) {
                 floatingTexts[i].update(); floatingTexts[i].draw();
                 if(floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
