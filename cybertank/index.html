@@ -38,15 +38,23 @@
         /* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
         .size-classic canvas { width: 100%; max-width: 800px; }
         
-        /* Le jeu se lance de base en Full Page */
+        /* --- GESTION DU VRAI PLEIN ÉCRAN --- */
         #game-container.size-wide, #game-container.size-full {
             position: fixed !important; top: 0; left: 0; 
             width: 100vw !important; height: 100vh !important;
-            max-width: none; max-height: none; border-radius: 0; border: none; padding: 20px 10px; 
-            z-index: 50; background: var(--bg); justify-content: center;
+            max-width: none; max-height: none; border-radius: 0; border: none; 
+            padding: 10px; box-sizing: border-box; 
+            z-index: 50; background: var(--bg); 
+            display: flex; flex-direction: column; justify-content: flex-start;
         }
         #game-container.size-wide canvas, #game-container.size-full canvas {
-            max-height: 75vh; object-fit: contain; width: auto;
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            max-height: none;
+            flex: 1; /* Permet au canvas d'occuper tout l'espace disponible sous le HUD */
+            min-height: 0; /* Obligatoire dans un flexbox pour éviter les débordements */
+            object-fit: contain; /* Conserve ton ratio 4:3 sans déformer les graphismes */
         }
 
         /* BOUTONS FLOTTANTS (Settings & Hub) */
@@ -111,7 +119,6 @@
         @media (max-width: 800px) {
             h1.game-title { font-size: 1.8em; margin-top: 40px; }
             #mobile-controls { display: flex; }
-            #game-container.size-wide canvas, #game-container.size-full canvas { max-height: 60vh; }
         }
     </style>
 </head>
