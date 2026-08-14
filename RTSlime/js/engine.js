@@ -131,8 +131,8 @@ document.getElementById('btn-host').addEventListener('click', (e) => {
     document.getElementById('screen-lobby').style.display = 'flex';
     document.getElementById('my-id').innerText = "Chargement...";
     
-    // Affiche le sélecteur de map uniquement pour l'hôte
-    document.getElementById('host-options').style.display = 'block';
+    let hostOptions = document.getElementById('host-options');
+    if(hostOptions) hostOptions.style.display = 'block';
     
     peer.destroy();
     peer = new Peer(code);
@@ -165,9 +165,9 @@ document.getElementById('btn-join').addEventListener('click', (e) => {
 document.getElementById('btn-start').addEventListener('click', () => {
     if(isHost) {
         let gameSeed = Math.floor(Math.random() * 1000000); 
-        let mapChoice = document.getElementById('map-choice').value; // Récupère le choix de la map
+        let mapChoiceEl = document.getElementById('map-choice');
+        let mapChoice = mapChoiceEl ? mapChoiceEl.value : 'classic'; 
         initGame(gameSeed, mapChoice);
-        // On envoie le choix au Guest !
         connToGuest.send({ type: 'start_game', seed: gameSeed, mapTheme: mapChoice });
     }
 });
@@ -323,7 +323,6 @@ function moveCameraFromMinimap(e) {
 // --- MINIMAP ---
 function drawMinimap() {
     mmCtx.clearRect(0, 0, 150, 150);
-    // Teinte rougeatre si Hell, bleue nuit sinon
     mmCtx.fillStyle = currentMapTheme === 'hell' ? 'rgba(40, 10, 10, 0.8)' : 'rgba(0, 20, 30, 0.8)';
     mmCtx.fillRect(0, 0, 150, 150);
 
@@ -490,10 +489,9 @@ function buildMapElements(seed) {
 }
 
 // --- INITIALISATION ---
-function initGame(seed, mapTheme) {
+function initGame(seed, mapTheme = 'classic') {
     gameState = 'PLAYING';
-    currentMapTheme = mapTheme; // "classic" ou "hell"
-    
+    currentMapTheme = mapTheme;
     resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
     resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
     units = []; buildings = []; enemies = []; particles = []; lasers = []; selectedUnits = [];
@@ -535,7 +533,7 @@ function initGame(seed, mapTheme) {
     updateUI(); renderBottomUI();
 }
 
-function initGameClient(seed, mapTheme) {
+function initGameClient(seed, mapTheme = 'classic') {
     gameState = 'PLAYING';
     currentMapTheme = mapTheme;
     survivalTimer = 0;
@@ -881,13 +879,25 @@ function draw() {
 
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     
-    // GESTION DES 4 CARTES ET DU DARK MODE
+    // CORRECTION SUB-PIXEL : Ajout de l'Overlapping (+2 pixels) pour écraser les bordures noires
     if (!isDarkMode) {
         let prefix = currentMapTheme === 'hell' ? 'hell' : 'map';
-        if (images[prefix+'HG'] && images[prefix+'HG'].complete && images[prefix+'HG'].naturalWidth > 0) ctx.drawImage(images[prefix+'HG'], 0, 0, MAP_WIDTH/2, MAP_HEIGHT/2);
-        if (images[prefix+'HD'] && images[prefix+'HD'].complete && images[prefix+'HD'].naturalWidth > 0) ctx.drawImage(images[prefix+'HD'], MAP_WIDTH/2, 0, MAP_WIDTH/2, MAP_HEIGHT/2);
-        if (images[prefix+'BG'] && images[prefix+'BG'].complete && images[prefix+'BG'].naturalWidth > 0) ctx.drawImage(images[prefix+'BG'], 0, MAP_HEIGHT/2, MAP_WIDTH/2, MAP_HEIGHT/2);
-        if (images[prefix+'BD'] && images[prefix+'BD'].complete && images[prefix+'BD'].naturalWidth > 0) ctx.drawImage(images[prefix+'BD'], MAP_WIDTH/2, MAP_HEIGHT/2, MAP_WIDTH/2, MAP_HEIGHT/2);
+        const halfW = MAP_WIDTH / 2;
+        const halfH = MAP_HEIGHT / 2;
+        const overlap = 2; // Le secret anti-traits noirs
+
+        if (images[prefix+'HG'] && images[prefix+'HG'].complete && images[prefix+'HG'].naturalWidth > 0) {
+            ctx.drawImage(images[prefix+'HG'], 0, 0, halfW + overlap, halfH + overlap);
+        }
+        if (images[prefix+'HD'] && images[prefix+'HD'].complete && images[prefix+'HD'].naturalWidth > 0) {
+            ctx.drawImage(images[prefix+'HD'], halfW - 1, 0, halfW + overlap, halfH + overlap);
+        }
+        if (images[prefix+'BG'] && images[prefix+'BG'].complete && images[prefix+'BG'].naturalWidth > 0) {
+            ctx.drawImage(images[prefix+'BG'], 0, halfH - 1, halfW + overlap, halfH + overlap);
+        }
+        if (images[prefix+'BD'] && images[prefix+'BD'].complete && images[prefix+'BD'].naturalWidth > 0) {
+            ctx.drawImage(images[prefix+'BD'], halfW - 1, halfH - 1, halfW + overlap, halfH + overlap);
+        }
     }
 
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
