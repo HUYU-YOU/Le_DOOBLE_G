@@ -76,7 +76,7 @@ function onYouTubeIframeAPIReady() {
     musicPlayer = new YT.Player('yt-player', {
         height: '0', width: '0', videoId: 'z8zgBvQ5JI4',
         playerVars: { 'autoplay': 0, 'controls': 0, 'loop': 1, 'playlist': 'z8zgBvQ5JI4' },
-        events: { 'onReady': (event) => { event.target.setVolume(10); } } // Volume à 10%
+        events: { 'onReady': (event) => { event.target.setVolume(10); } }
     });
 }
 function playBackgroundMusic() {
@@ -126,32 +126,28 @@ function hostGame() {
         document.getElementById('status-text').innerText = "Salon ouvert ! Partage ton code : " + id;
         navigator.clipboard.writeText(id).catch(e=>{});
         
-        gameState.players[myPlayerId] = { pseudo: myPseudo, hand: [], score: 0 };
+        let assignedSkin = 1;
+        gameState.players[myPlayerId] = { pseudo: myPseudo, hand: [], score: 0, skin: assignedSkin };
         gameState.order.push(myPlayerId);
         
         document.getElementById('host-btn').style.display = 'none';
         document.getElementById('start-net-btn').style.display = 'inline-block';
     });
 
-   // Dans hostGame() : Quand l'Hôte se crée
-    peerNet.on('open', id => {
-        // ...
-        // Le skin est basé sur le nombre de joueurs (de 1 à 8)
-        gameState.players[myPlayerId] = { pseudo: myPseudo, hand: [], score: 0, skin: 1 };
-        gameState.order.push(myPlayerId);
-        // ...
-    });
-
-    // Dans hostGame() : Quand un joueur rejoint
     peerNet.on('connection', conn => {
+        connsNet.push(conn);
+        
         conn.on('data', data => {
             if (data.type === 'JOIN') {
-                let assignedSkin = (gameState.order.length % 8) + 1; // Donne 1, 2, 3... jusqu'à 8
+                let assignedSkin = (gameState.order.length % 8) + 1;
                 gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
                 gameState.order.push(data.id);
-                // ...
+                broadcastState();
+            } else if (data.type === 'ACTION') {
+                handleGameAction(data);
+            }
+        });
 
-        // GESTION DE LA DÉCONNEXION
         conn.on('close', () => {
             if(gameState.started && gameState.players[conn.peer]) {
                 let pId = conn.peer;
@@ -321,7 +317,6 @@ function checkFamiliesCompleted() {
 }
 
 // --- AFFICHAGE ET ACTIONS CLIENT ---
-// --- AFFICHAGE ET ACTIONS CLIENT ---
 function renderGameClient() {
     document.getElementById('deck-count').innerText = gameState.deck.length;
     document.getElementById('game-log').innerText = gameState.log;
@@ -340,7 +335,7 @@ function renderGameClient() {
     // Liste des adversaires (on s'exclut)
     let opponents = Object.keys(gameState.players).filter(id => id !== myPlayerId);
     
-    // Distribution des adversaires (Haut, Gauche, Droite, Haut, Gauche, Droite...)
+    // Distribution des adversaires (Haut, Gauche, Droite...)
     let distribution = [topArea, leftArea, rightArea, topArea, leftArea, rightArea, topArea];
 
     opponents.forEach((id, index) => {
@@ -356,14 +351,13 @@ function renderGameClient() {
                 <div style="font-size:0.8em; color:var(--p3)">⭐ ${p.score}</div>
             </div>`;
         
-        // On place l'adversaire dans la zone correspondante
         let targetZone = distribution[index % distribution.length];
         targetZone.innerHTML += oppHtml;
         
         oppSelect.innerHTML += `<option value="${id}">${p.pseudo}</option>`;
     });
 
-    // Mes propres infos (Skin en bas à gauche)
+    // Mes propres infos
     if (gameState.players[myPlayerId]) {
         document.getElementById('my-score-display').innerText = gameState.players[myPlayerId].score;
         document.getElementById('my-avatar').src = `assets/skins/slime${gameState.players[myPlayerId].skin}.png`;
@@ -379,7 +373,6 @@ function renderGameClient() {
 
     myHand.forEach(card => {
         myCountries.add(card.country);
-        // Retrait du tiret du bas comme convenu !
         let imgSrc = `assets/card/${card.id}.png`; 
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
@@ -388,12 +381,6 @@ function renderGameClient() {
 
     let btn = document.querySelector('#action-panel .red');
     if(btn) btn.disabled = (myCountries.size === 0 || opponents.length === 0);
-}
-
-    myCountries.forEach(c => { countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; });
-
-    let btn = document.querySelector('#action-panel .red');
-    if(btn) btn.disabled = (myCountries.size === 0 || Object.keys(gameState.players).length <= 1);
 }
 
 function askCard() {
