@@ -81,6 +81,7 @@
         #question-area { position: relative; width: 100%; height: 350px; background: #000; border-radius: 15px; margin-bottom: 25px; overflow: hidden; border: 2px solid var(--pink); box-shadow: 0 0 20px rgba(255, 0, 127, 0.3); display: flex; justify-content: center; align-items: center;}
         #manga-image { width: 100%; height: 100%; object-fit: contain; filter: blur(25px); transition: filter 0.1s linear; }
         
+        /* Conteneur du slime */
         #slime-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; display: none; pointer-events: none; }
         /* color: transparent permet de masquer le texte ALT de l'image si elle casse */
         #slime-anim-img { width: 100%; height: 100%; object-fit: cover; color: transparent; }
@@ -163,7 +164,7 @@
             <div id="question-area">
                 <img id="manga-image" src="" alt="Manga Image">
                 
-                <!-- LE SLIME ANIMÉ QUI CACHE L'IMAGE (GIF transparent par défaut pour éviter l'icone cassée) -->
+                <!-- LE SLIME ANIMÉ QUI CACHE L'IMAGE -->
                 <div id="slime-overlay">
                     <img id="slime-anim-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
                 </div>
@@ -250,9 +251,8 @@
     <script>
         // --- PRÉCHARGEMENT DES IMAGES DU SLIME ---
         
-        // ⚠️ TRÈS IMPORTANT : Si tes fichiers slime1.png sont dans un dossier "img", 
-        // modifie la ligne ci-dessous en const SLIME_FOLDER = "img/";
-        const SLIME_FOLDER = ""; 
+        // Le dossier où sont stockées tes images de slime
+        const SLIME_FOLDER = "img/"; 
 
         const preloadedSlimes = [];
         for(let i = 1; i <= 8; i++) {
@@ -394,19 +394,11 @@
             const overlay = document.getElementById('slime-overlay');
             const slimeImg = document.getElementById('slime-anim-img');
 
-            // Sécurité : si la 1ère image du slime n'est pas chargée, on zappe l'animation 
-            // pour ne pas avoir de bug visuel ou d'icône cassée.
-            if (!preloadedSlimes[0] || preloadedSlimes[0].naturalWidth === 0) {
-                console.warn("Images slime introuvables ou mal renseignées. L'animation est ignorée.");
-                callback();
-                if (callback === nextQuestion) startTimer();
-                return;
-            }
-
+            // Affichage forcé : on affiche le bloc même si la sécurité était déclenchée
             overlay.style.display = 'block';
             
             let frame = 1;
-            slimeImg.src = preloadedSlimes[frame - 1].src; 
+            slimeImg.src = preloadedSlimes[frame - 1].src; // Frame 1
             
             let interval = setInterval(() => {
                 frame++;
@@ -414,10 +406,12 @@
                     slimeImg.src = preloadedSlimes[frame - 1].src;
                 }
                 
+                // Frame 5 : Le slime couvre tout l'écran, on change de photo !
                 if (frame === 5) {
                     callback(); 
                 }
                 
+                // Fin de l'animation
                 if (frame >= 8) {
                     clearInterval(interval);
                     setTimeout(() => {
