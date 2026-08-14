@@ -9,7 +9,7 @@ const mmCtx = minimapCanvas.getContext('2d');
 
 let width, height;
 
-// Dimensions Titanesques (2 images superposées)
+// Dimensions Titanesques (2 images superposées ou 4 images 8K)
 const MAP_WIDTH = 15360;
 const MAP_HEIGHT = 8640;
 
@@ -29,6 +29,8 @@ let currentMapTheme = 'classic';
 
 // --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
+    mapstax1: 'assets/map/mapstax1.png',
+    mapstax2: 'assets/map/mapstax2.png',
     mapHG: 'assets/map/MAPHG.png',
     mapHD: 'assets/map/MAPHD.png',
     mapBG: 'assets/map/MAPBG.png',
@@ -49,12 +51,13 @@ const ASSETS_PATHS = {
     warrior: 'assets/skins/warrior.png',
     archer: 'assets/skins/archer.png',
     mage: 'assets/skins/mage.png',
-    mean1: 'assets/skins/MEAN1.png', // NOUS Y VOILA !
+    mean1: 'assets/skins/MEAN1.png',
     mean2: 'assets/skins/MEAN2.png',
     mean3: 'assets/skins/MEAN3.png',
     river1: 'assets/decoration/river1.png',
     river2: 'assets/decoration/river2.png',
-    river3: 'assets/decoration/river3.png'
+    river3: 'assets/decoration/river3.png',
+    farm: 'assets/bat/farm.png'
 };
 
 for(let i=1; i<=4; i++) ASSETS_PATHS['sapin'+i] = `assets/decoration/sapin${i}.png`;
@@ -235,6 +238,7 @@ function seededRandom() {
 function isPositionFree(x, y, minDistance) {
     for(let r of rivers) if(dist({x,y}, r) < minDistance + r.radius) return false;
     for(let t of trees) if(dist({x,y}, t) < minDistance + 20) return false;
+    for(let w of wheats) if(dist({x,y}, w) < minDistance + 20) return false;
     for(let d of decorations) if(dist({x,y}, d) < minDistance + d.size/2) return false;
     if(baseHost && dist({x,y}, baseHost) < minDistance + baseHost.size/2 + 50) return false;
     if(baseGuest && dist({x,y}, baseGuest) < minDistance + baseGuest.size/2 + 50) return false;
@@ -337,8 +341,6 @@ function drawMinimap() {
     if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, '#ff007f', 6);
     
     units.forEach(u => drawDot(u, u.owner === 'host' ? '#00f0ff' : '#ff007f', 2));
-    
-    // Sur la minimap, on continue de les dessiner en ROUGE pour la lisibilité
     enemies.forEach(e => drawDot(e, '#ff3333', 3));
 
     mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
@@ -358,7 +360,8 @@ function executeCommand(data) {
 
     if (data.action === 'move') {
         let uList = units.filter(u => data.unitIds.includes(u.id));
-        let ent = units.find(u=>u.id===data.targetId) || buildings.find(b=>b.id===data.targetId) || trees.find(t=>t.id===data.targetId) || enemies.find(e=>e.id===data.targetId) || rivers.find(r=>r.id===data.targetId) || (baseHost.id===data.targetId?baseHost:null) || (baseGuest.id===data.targetId?baseGuest:null);
+        // UTILISATION DU SCANNER GLOBAL POUR CORRIGER LE CIBLAGE !
+        let ent = getEntityById(data.targetId);
         
         uList.forEach((u, i) => {
             let dx = data.x + (i%3)*20 - 20; let dy = data.y + Math.floor(i/3)*20;
@@ -419,7 +422,7 @@ function buildMapElements(seed) {
     mapSeed = seed;
     trees = []; wheats = []; rivers = []; decorations = [];
 
-    for(let i=0; i<15; i++) {
+    for(let i=0; i<20; i++) {
         let placed = false;
         let attempts = 0;
         while(!placed && attempts < 10) {
@@ -438,13 +441,14 @@ function buildMapElements(seed) {
         ['three1', 'three2', 'three3', 'three4', 'three5', 'three6'],
         ['bouleau1', 'bouleau2', 'bouleau3', 'bouleau4', 'bouleau5', 'bouleau6']
     ];
-    for(let i=0; i<40; i++) { 
+    
+    for(let i=0; i<150; i++) { 
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
-        if(dist({x:cx,y:cy}, baseHost) < 1200 || dist({x:cx,y:cy}, baseGuest) < 1200) continue;
+        if(dist({x:cx,y:cy}, baseHost) < 1500 || dist({x:cx,y:cy}, baseGuest) < 1500) continue;
         
         let family = treeFamilies[Math.floor(seededRandom() * treeFamilies.length)];
-        for(let j=0; j<8; j++) { 
-            let tx = cx + (seededRandom()-0.5)*150; let ty = cy + (seededRandom()-0.5)*150;
+        for(let j=0; j<25; j++) { 
+            let tx = cx + (seededRandom()-0.5)*400; let ty = cy + (seededRandom()-0.5)*400;
             if (isPositionFree(tx, ty, 20)) {
                 let skin = family[Math.floor(seededRandom() * family.length)];
                 trees.push(new ResourceNode(tx, ty, 'tree', skin));
@@ -459,13 +463,13 @@ function buildMapElements(seed) {
         ['fleur1', 'fleur2', 'fleur3', 'fleur4', 'fleur5', 'fleur6'],
         ['shroom1', 'shroom2']
     ];
-    for(let i=0; i<100; i++) { 
+    for(let i=0; i<300; i++) { 
         let cx = seededRandom() * MAP_WIDTH; let cy = seededRandom() * MAP_HEIGHT;
         let family = decoFamilies[Math.floor(seededRandom() * decoFamilies.length)];
-        let count = Math.floor(seededRandom() * 3) + 1; 
+        let count = Math.floor(seededRandom() * 4) + 2; 
         
         for(let j=0; j<count; j++) {
-            let dx = cx + (seededRandom()-0.5)*80; let dy = cy + (seededRandom()-0.5)*80;
+            let dx = cx + (seededRandom()-0.5)*150; let dy = cy + (seededRandom()-0.5)*150;
             let size = seededRandom() * 10 + 15; 
             if (isPositionFree(dx, dy, size)) {
                 let skin = family[Math.floor(seededRandom() * family.length)];
@@ -490,8 +494,8 @@ function initGame(seed, mapTheme = 'classic') {
     
     resize();
 
-    baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
-    baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
+    baseHost = new Base(1500, MAP_HEIGHT/2, 'host');
+    baseGuest = new Base(MAP_WIDTH - 1500, MAP_HEIGHT/2, 'guest');
     
     camera.x = baseHost.x - (width / zoom) / 2;
     camera.y = baseHost.y - (height / zoom) / 2;
@@ -500,9 +504,9 @@ function initGame(seed, mapTheme = 'classic') {
 
     buildMapElements(seed);
 
-    for(let i=0; i<150; i++) {
+    for(let i=0; i<180; i++) {
         let ex = Math.random() * MAP_WIDTH; let ey = Math.random() * MAP_HEIGHT;
-        if(dist({x:ex,y:ey}, baseHost) > 1500 && dist({x:ex,y:ey}, baseGuest) > 1500) {
+        if(dist({x:ex,y:ey}, baseHost) > 1800 && dist({x:ex,y:ey}, baseGuest) > 1800) {
             enemies.push(new Enemy(ex, ey));
         }
     }
@@ -532,8 +536,8 @@ function initGameClient(seed, mapTheme = 'classic') {
     
     resize();
     
-    baseHost = new Base(1000, MAP_HEIGHT/2, 'host');
-    baseGuest = new Base(MAP_WIDTH - 1000, MAP_HEIGHT/2, 'guest');
+    baseHost = new Base(1500, MAP_HEIGHT/2, 'host');
+    baseGuest = new Base(MAP_WIDTH - 1500, MAP_HEIGHT/2, 'guest');
     buildMapElements(seed);
     
     updateUI(); renderBottomUI();
@@ -553,8 +557,6 @@ function syncClientState(data) {
     baseGuest.hp = data.bG.hp;
     
     trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree', t.s); r.id = t.id; r.amount = t.a; return r; });
-    
-    // CORRECTION RESEAU : Récupération du skin (s) du MEAN
     enemies = data.en.map(e => { let en = new Enemy(e.x, e.y); en.id=e.id; en.hp=e.hp; en.skinNum=e.s; en.slowTimer=e.st; return en; });
     
     buildings = data.b.map(b => {
@@ -839,7 +841,6 @@ function hostUpdate(dt) {
     enemies.forEach((e, i) => { e.update(dt); if (e.hp <= 0) { enemies.splice(i, 1); }});
     trees = trees.filter(t => t.amount > 0); wheats = wheats.filter(w => w.amount > 0);
 
-    // CORRECTION RESEAU : On envoie le skin (s: e.skinNum) au lieu de l'élément/couleur pour les virus
     let pack = {
         type: 'sync',
         u: units.map(u => ({ id: u.id, x: u.x, y: u.y, t: u.type, e: u.element, o: u.owner, hp: u.hp, mHp: u.maxHp, s: u.state, p: u.payload, st: u.slowTimer })),
@@ -867,22 +868,31 @@ function draw() {
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     
     if (!isDarkMode) {
-        let prefix = currentMapTheme === 'hell' ? 'hell' : 'map';
-        const halfW = MAP_WIDTH / 2;
-        const halfH = MAP_HEIGHT / 2;
-        const overlap = 2; 
+        if (currentMapTheme === 'classic') {
+            if (images['mapstax2'] && images['mapstax2'].complete && images['mapstax2'].naturalWidth > 0) {
+                ctx.drawImage(images['mapstax2'], 0, 0, MAP_WIDTH, MAP_HEIGHT/2);
+            }
+            if (images['mapstax1'] && images['mapstax1'].complete && images['mapstax1'].naturalWidth > 0) {
+                ctx.drawImage(images['mapstax1'], 0, MAP_HEIGHT/2 - 2, MAP_WIDTH, MAP_HEIGHT/2 + 2); 
+            }
+        } else {
+            let prefix = 'hell';
+            const halfW = MAP_WIDTH / 2;
+            const halfH = MAP_HEIGHT / 2;
+            const overlap = 2; 
 
-        if (images[prefix+'HG'] && images[prefix+'HG'].complete && images[prefix+'HG'].naturalWidth > 0) {
-            ctx.drawImage(images[prefix+'HG'], 0, 0, halfW + overlap, halfH + overlap);
-        }
-        if (images[prefix+'HD'] && images[prefix+'HD'].complete && images[prefix+'HD'].naturalWidth > 0) {
-            ctx.drawImage(images[prefix+'HD'], halfW - 1, 0, halfW + overlap, halfH + overlap);
-        }
-        if (images[prefix+'BG'] && images[prefix+'BG'].complete && images[prefix+'BG'].naturalWidth > 0) {
-            ctx.drawImage(images[prefix+'BG'], 0, halfH - 1, halfW + overlap, halfH + overlap);
-        }
-        if (images[prefix+'BD'] && images[prefix+'BD'].complete && images[prefix+'BD'].naturalWidth > 0) {
-            ctx.drawImage(images[prefix+'BD'], halfW - 1, halfH - 1, halfW + overlap, halfH + overlap);
+            if (images[prefix+'HG'] && images[prefix+'HG'].complete && images[prefix+'HG'].naturalWidth > 0) {
+                ctx.drawImage(images[prefix+'HG'], 0, 0, halfW + overlap, halfH + overlap);
+            }
+            if (images[prefix+'HD'] && images[prefix+'HD'].complete && images[prefix+'HD'].naturalWidth > 0) {
+                ctx.drawImage(images[prefix+'HD'], halfW - 1, 0, halfW + overlap, halfH + overlap);
+            }
+            if (images[prefix+'BG'] && images[prefix+'BG'].complete && images[prefix+'BG'].naturalWidth > 0) {
+                ctx.drawImage(images[prefix+'BG'], 0, halfH - 1, halfW + overlap, halfH + overlap);
+            }
+            if (images[prefix+'BD'] && images[prefix+'BD'].complete && images[prefix+'BD'].naturalWidth > 0) {
+                ctx.drawImage(images[prefix+'BD'], halfW - 1, halfH - 1, halfW + overlap, halfH + overlap);
+            }
         }
     }
 
@@ -896,8 +906,6 @@ function draw() {
         if (baseGuest && baseGuest.hp > 0) baseGuest.draw(ctx, images);
         
         units.forEach(u => u.draw(ctx, images));
-        
-        // DESSIN DES ENNEMIS VIA LEUR METHODE DANS entities.js (Avec les images)
         enemies.forEach(e => e.draw(ctx, images));
 
         lasers.forEach(l => {
