@@ -37,18 +37,30 @@
         }
 
         /* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
-        .size-classic canvas { width: 100%; }
+        .size-classic canvas { width: 100%; max-width: 900px; }
         
         /* Le jeu se lance en Full Page */
         #game-container.size-wide, #game-container.size-full {
             position: fixed !important; top: 0; left: 0; 
             width: 100vw !important; height: 100vh !important;
-            max-width: none; max-height: none; border-radius: 0; border: none; padding: 20px 10px; 
-            z-index: 50; background: var(--bg); justify-content: center;
+            max-width: none; max-height: none; border-radius: 0; border: none; padding: 10px; 
+            z-index: 50; background: var(--bg); 
+            display: flex; flex-direction: column; justify-content: space-between;
         }
+
+        /* NOUVEAU : Wrapper Flexbox pour forcer le canvas à occuper tout l'espace central */
+        .canvas-wrapper {
+            position: relative; width: 100%; display: flex; justify-content: center; align-items: center;
+        }
+        #game-container.size-wide .canvas-wrapper, #game-container.size-full .canvas-wrapper {
+            flex: 1; min-height: 0; margin: 5px 0;
+        }
+
         #game-container.size-wide canvas, #game-container.size-full canvas {
-            max-height: 50vh; /* Laisse de la place pour les contrôles en bas */
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            max-height: none; /* On supprime l'ancienne limite de 50vh */
+            object-fit: contain; /* Assure que le jeu ne soit pas déformé ni étiré */
         }
 
         /* BOUTONS FLOTTANTS (Settings & Hub) */
@@ -271,8 +283,8 @@
             </div>
         </div>
 
-        <!-- ZONE DU CANVAS AVEC ALERTE ENNEMIE -->
-        <div style="position: relative; width: 100%;">
+        <!-- ZONE DU CANVAS AVEC ALERTE ENNEMIE (MODIFIÉE) -->
+        <div class="canvas-wrapper">
             <canvas id="gameCanvas" width="900" height="300"></canvas>
             <div id="enemy-alert" onclick="jumpToEnemy()">⚠️ ENEMIES ▶</div>
         </div>
@@ -398,9 +410,9 @@
         const floorY = 250;
         
         const unitStats = {
-            slime:       { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 25, h: 29,  type: 'melee', rew: 10, xp: 10, imgKey: 'slimewest1', nativeFace: 'left', tech: 1 },
-            spear_slime: { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 25, h: 32,  type: 'ranged', rew: 15, xp: 15, imgKey: 'slimewest2', nativeFace: 'left', tech: 1, projectile: true },
-            dino_slime:  { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 90, h: 100, type: 'melee', rew: 30, xp: 25, imgKey: 'slimewest3', nativeFace: 'left', tech: 1 },
+            slime:        { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 25, h: 29,  type: 'melee', rew: 10, xp: 10, imgKey: 'slimewest1', nativeFace: 'left', tech: 1 },
+            spear_slime:  { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 25, h: 32,  type: 'ranged', rew: 15, xp: 15, imgKey: 'slimewest2', nativeFace: 'left', tech: 1, projectile: true },
+            dino_slime:   { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 90, h: 100, type: 'melee', rew: 30, xp: 25, imgKey: 'slimewest3', nativeFace: 'left', tech: 1 },
             warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 29, h: 36,  type: 'melee', rew: 50, xp: 40, imgKey: 'drone', nativeFace: 'right', tech: 2 },
             mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 25, h: 36,  type: 'ranged', rew: 70, xp: 60, imgKey: 'blaster', nativeFace: 'right', tech: 2 },
             mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 46, h: 50,type: 'melee', rew: 120, xp: 90, imgKey: 'mech', nativeFace: 'right', tech: 2 },
