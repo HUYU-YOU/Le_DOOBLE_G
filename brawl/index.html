@@ -48,9 +48,12 @@
             width: 100vw !important; height: 100vh !important;
             max-width: none; border-radius: 0; border: none; padding: 0; 
             z-index: 999; background: var(--bg); 
+            display: flex; justify-content: center; align-items: center; /* Centrage ajouté */
         }
         #game-container.size-wide canvas, #game-container.size-full canvas {
-            width: 100vw; height: 100vh; border-radius: 0; border: none; object-fit: fill;
+            width: 100%; height: 100%; max-width: none; max-height: none; 
+            border-radius: 0; border: none; 
+            object-fit: contain; /* Remplacé 'fill' par 'contain' pour éviter la déformation */
         }
         
         /* OVERLAYS EN GLASSMORPHISM */
@@ -142,7 +145,8 @@
     
     <h1 class="game-title">Cyber Smash</h1>
     
-    <div id="game-container" class="size-classic">
+    <!-- CHANGEMENT ICI: class="size-wide" par défaut au lieu de "size-classic" -->
+    <div id="game-container" class="size-wide">
         
         <!-- BOUTONS DANS LE CONTAINER (S'adaptent à toutes les tailles d'écran) -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
@@ -291,8 +295,9 @@
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
-                    <button id="btn-sz-classic" class="btn-size active" onclick="setGameSize('classic')">Petit</button>
-                    <button id="btn-sz-wide" class="btn-size" onclick="setGameSize('wide')">Plein Page</button>
+                    <!-- CHANGEMENT ICI: La classe "active" est sur le bouton Plein Page -->
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
                 </div>
             </div>
