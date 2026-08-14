@@ -30,6 +30,7 @@
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
 
+        <!-- MENU MULTIJOUEUR -->
         <div class="overlay" id="network-menu">
             <h2 style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Le Jeu du Seau</h2>
             <div class="menu-title" style="font-size: 1.2em; margin-bottom: 20px; color: #aaa;">Connexion Multijoueur</div>
@@ -48,14 +49,15 @@
             <p id="status-text" style="color: var(--p3); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
         </div>
 
-<div id="table-area" style="display: none;">
+        <!-- LA TABLE DE JEU (TAVERNE) -->
+        <div id="table-area" style="display: none;">
             
-            <!-- Les 3 zones autour de la table -->
+            <!-- Les 3 zones autour de la table pour les slimes adverses -->
             <div id="top-opponents"></div>
             <div id="left-opponents"></div>
             <div id="right-opponents"></div>
 
-            <!-- Centre de table : Le Seau et les infos -->
+            <!-- Centre de table : Le Seau et les logs -->
             <div id="center-table">
                 <div class="bucket-deck">
                     🪣 SEAU<br><br><span id="deck-count" style="color:var(--p1); font-size:1.5rem;">0</span>
@@ -63,7 +65,7 @@
                 <div id="game-log">En attente du lancement...</div>
             </div>
 
-            <!-- Ta zone (en bas) -->
+            <!-- Ta zone (en bas : panel d'action et main de cartes) -->
             <div id="player-bottom-area">
                 <div id="action-panel" style="display: none;">
                     <span style="font-weight: bold; font-size: 1.2rem; color: var(--p4)">C'EST TON TOUR !</span><br>
@@ -77,43 +79,21 @@
                 <div id="my-hand"></div>
             </div>
             
+            <!-- Tes stats et ton avatar de slime en bas à gauche -->
             <div id="my-stats">
-                <img id="my-avatar" src="" style="width:40px; height:40px; vertical-align:middle; margin-right:10px;">
+                <img id="my-avatar" src="" style="width:40px; height:40px; vertical-align:middle; margin-right:10px; object-fit:contain;">
                 <span id="my-name-display" style="color:var(--p1); font-weight:bold; font-size: 1.2rem;">...</span><br>
                 Familles : <span id="my-score-display" style="color:var(--p3); font-weight:bold; font-size: 1.2rem;">0</span>
             </div>
         </div>
 
-            <div id="center-table">
-                <div class="bucket-deck">
-                    🪣 LE SEAU<br><br><span id="deck-count" style="color:var(--p1)">0</span>
-                </div>
-                <div id="game-log">En attente du lancement...</div>
-            </div>
-
-            <div id="action-panel" style="display: none;">
-                <span style="font-weight: bold; font-size: 1.2rem; color: var(--p4)">C'EST TON TOUR !</span><br>
-                Demander la famille 
-                <select id="country-select"></select>
-                à 
-                <select id="opponent-select"></select>
-                <button class="btn-main red" style="padding: 10px; font-size: 1rem;" onclick="askCard()">Voler !</button>
-            </div>
-
-            <div id="my-hand"></div>
-            
-            <div id="my-stats">
-                Joueur : <span id="my-name-display" style="color:var(--p1); font-weight:bold;">...</span><br>
-                Familles complétées : <span id="my-score-display" style="color:var(--p3); font-weight:bold;">0</span>
-            </div>
-        </div>
-
+        <!-- ÉCRAN DE FIN DE PARTIE -->
         <div class="overlay" id="game-over-overlay" style="display: none;">
             <div class="menu-title" id="winner-text" style="font-size: 3em;">PARTIE TERMINÉE</div>
             <button class="btn-main" id="btn-restart" onclick="location.reload()">Retour au menu</button>
         </div>
 
-    </div>
+    </div> <!-- FIN DU GAME CONTAINER -->
 
     <!-- MODAL PARAMETRES -->
     <div id="settings-modal">
