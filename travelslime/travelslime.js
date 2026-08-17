@@ -135,14 +135,12 @@ function hostGame() {
     });
 
     peerNet.on('connection', conn => {
-        connsNet.push(conn);
-        
-        conn.on('open', () => {
-            if (gameState.started) broadcastState();
-        });
-
         conn.on('data', data => {
             if (data.type === 'JOIN') {
+                // SÉCURITÉ MAJEURE : On lie l'ID unique de l'invité à sa connexion
+                conn.playerId = data.id; 
+                if (!connsNet.includes(conn)) connsNet.push(conn);
+
                 let assignedSkin = (gameState.order.length % 8) + 1;
                 gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
                 gameState.order.push(data.id);
@@ -153,13 +151,15 @@ function hostGame() {
         });
 
         conn.on('close', () => {
-            if(gameState.started && gameState.players[conn.peer]) {
-                let pId = conn.peer;
+            if(gameState.started && conn.playerId && gameState.players[conn.playerId]) {
+                let pId = conn.playerId;
                 let p = gameState.players[pId];
                 gameState.log = `🔌 ${p.pseudo} s'est déconnecté. Ses cartes retournent dans le seau.`;
                 
-                gameState.deck.push(...p.hand);
-                gameState.deck.sort(() => Math.random() - 0.5); 
+                if (p.hand.length > 0) {
+                    gameState.deck.push(...p.hand);
+                    gameState.deck.sort(() => Math.random() - 0.5); 
+                }
                 
                 let pIdx = gameState.order.indexOf(pId);
                 if(pIdx !== -1) {
@@ -195,14 +195,17 @@ function joinGame() {
 
     peerNet.on('open', () => {
         let conn = peerNet.connect(targetCode, { reliable: true });
+        
         conn.on('open', () => {
             connsNet = [conn];
             conn.send({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId });
             document.getElementById('status-text').innerText = "Connecté ! En attente de l'Hôte.";
         });
+
         conn.on('data', data => {
             if (data.type === 'STATE_UPDATE') {
-                if(data.state.started && !gameState.started) {
+                // FORÇAGE DE L'AFFICHAGE (Évite au guest de rester bloqué sur "En attente")
+                if(data.state.started) {
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('table-area').style.display = 'flex';
                     document.getElementById('my-name-display').innerText = myPseudo;
@@ -238,14 +241,15 @@ function broadcastState() {
     checkFamiliesCompleted();
 
     connsNet.forEach(conn => {
-        if(conn && conn.open) {
+        try {
             let safeState = JSON.parse(JSON.stringify(gameState));
             Object.keys(safeState.players).forEach(pId => {
                 safeState.players[pId].cardCount = safeState.players[pId].hand.length;
-                if (pId !== conn.peer) safeState.players[pId].hand = [];
+                // L'hôte cache les mains des autres joueurs en se basant sur le vrai ID
+                if (pId !== conn.playerId) safeState.players[pId].hand = [];
             });
             conn.send({ type: 'STATE_UPDATE', state: safeState });
-        }
+        } catch(e) { console.error("Erreur de synchronisation", e); }
     });
 
     renderGameClient();
@@ -262,6 +266,8 @@ function handleGameAction(data) {
         const asker = gameState.players[data.askerId];
         const target = gameState.players[data.targetId];
         const country = data.country;
+
+        if (!asker || !target) return;
 
         const cardsToSteal = target.hand.filter(c => c.country === country);
         
@@ -311,16 +317,18 @@ function checkFamiliesCompleted() {
     let totalCardsInPlay = gameState.deck.length + Object.values(gameState.players).reduce((acc, p) => acc + p.hand.length, 0);
     if (totalCardsInPlay === 0 && gameState.started) {
         document.getElementById('table-area').style.display = 'none';
+        
         let winner = ""; let maxScore = -1;
         Object.values(gameState.players).forEach(p => {
             if(p.score > maxScore) { maxScore = p.score; winner = p.pseudo; }
         });
+        
         document.getElementById('winner-text').innerHTML = `VICTOIRE DE<br><span style="color:var(--p1)">${winner}</span><br>AVEC ${maxScore} FAMILLES !`;
         document.getElementById('game-over-overlay').style.display = 'flex';
     }
 }
 
-// --- RENDU CLIENT ---
+// --- AFFICHAGE ET ACTIONS CLIENT ---
 function renderGameClient() {
     document.getElementById('deck-count').innerText = gameState.deck.length;
     document.getElementById('game-log').innerText = gameState.log;
@@ -328,6 +336,7 @@ function renderGameClient() {
     const isMyTurn = (gameState.order[gameState.turnIndex] === myPlayerId);
     document.getElementById('action-panel').style.display = isMyTurn ? 'block' : 'none';
 
+    // Récupération des zones HTML
     const topArea = document.getElementById('top-opponents');
     const leftArea = document.getElementById('left-opponents');
     const rightArea = document.getElementById('right-opponents');
@@ -335,8 +344,9 @@ function renderGameClient() {
     
     topArea.innerHTML = ''; leftArea.innerHTML = ''; rightArea.innerHTML = ''; oppSelect.innerHTML = '';
 
+    // Liste des adversaires (on s'exclut)
     let opponents = Object.keys(gameState.players).filter(id => id !== myPlayerId);
-    let distribution = [topArea, leftArea, rightArea, topArea, leftArea, rightArea];
+    let distribution = [topArea, leftArea, rightArea, topArea, leftArea, rightArea, topArea];
 
     opponents.forEach((id, index) => {
         let p = gameState.players[id];
@@ -346,8 +356,9 @@ function renderGameClient() {
         let oppHtml = `
             <div class="opponent-hud ${isHisTurn ? 'active-turn' : ''}">
                 <img src="assets/skins/slime${p.skin}.png" class="slime-avatar" alt="Slime">
-                <div style="font-weight:bold; color:var(--p1); text-shadow:0 2px 4px rgba(0,0,0,0.8);">${p.pseudo}</div>
-                <div style="font-size:0.9em; text-shadow:0 2px 4px rgba(0,0,0,0.8);">🃏 ${count} | ⭐ ${p.score}</div>
+                <div style="font-weight:bold; color:var(--p1)">${p.pseudo}</div>
+                <div>🃏 ${count}</div>
+                <div style="font-size:0.8em; color:var(--p3)">⭐ ${p.score}</div>
             </div>`;
         
         let targetZone = distribution[index % distribution.length];
@@ -356,11 +367,14 @@ function renderGameClient() {
         oppSelect.innerHTML += `<option value="${id}">${p.pseudo}</option>`;
     });
 
+    // Mes propres infos
     if (gameState.players[myPlayerId]) {
         document.getElementById('my-score-display').innerText = gameState.players[myPlayerId].score;
-        document.getElementById('my-avatar').src = `assets/skins/slime${gameState.players[myPlayerId].skin}.png`;
+        let myAvatar = document.getElementById('my-avatar');
+        if(myAvatar) myAvatar.src = `assets/skins/slime${gameState.players[myPlayerId].skin}.png`;
     }
 
+    // Affichage de ma main
     const myHandArea = document.getElementById('my-hand');
     const countrySelect = document.getElementById('country-select');
     myHandArea.innerHTML = ''; countrySelect.innerHTML = '';
@@ -376,7 +390,7 @@ function renderGameClient() {
 
     myCountries.forEach(c => { countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; });
 
-    let btn = document.querySelector('#action-panel .btn-main');
+    let btn = document.querySelector('#action-panel .red');
     if(btn) btn.disabled = (myCountries.size === 0 || opponents.length === 0);
 }
 
