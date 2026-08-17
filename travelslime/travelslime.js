@@ -52,22 +52,6 @@ function autoFullscreen() { if (!document.getElementById('game-container').class
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide'); });
 
 // ==========================================
-// NAVIGATION PAR SWIPE (HUB)
-// ==========================================
-
-const gamesHubList = ["../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html", "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html", "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html", "../worms/index.html", "../travelslime/index.html"];
-let touchstartX = 0; let touchendX = 0; let mouseX = 0; let endMouseX = 0;
-
-function handleSwipeGesture(start, end) { const swipeThreshold = 75; if (end < start - swipeThreshold) navigateGames(1); if (end > start + swipeThreshold) navigateGames(-1); }
-function navigateGames(direction) { const currentPath = window.location.pathname; let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1])); if (currentIndex === -1) return; window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length]; }
-function isProtectedElement(e) { let tag = e.target.tagName.toLowerCase(); return tag === 'canvas' || tag === 'button' || tag === 'input' || tag === 'select' || e.target.classList.contains('card') || e.target.classList.contains('bucket-deck'); }
-
-document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
-document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
-document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; mouseX = e.screenX; });
-document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endMouseX = e.screenX; handleSwipeGesture(mouseX, endMouseX); });
-
-// ==========================================
 // MUSIQUE YOUTUBE
 // ==========================================
 
@@ -101,7 +85,18 @@ let myPlayerId = '';
 let myPseudo = '';
 let roomCode = 'TRA' + Math.floor(1000 + Math.random() * 9000);
 
-document.getElementById('my-id').innerText = roomCode;
+// --- COPIER LE CODE DU SALON ---
+const myIdEl = document.getElementById('my-id');
+myIdEl.innerText = roomCode;
+myIdEl.style.cursor = 'pointer';
+myIdEl.title = 'Cliquez pour copier le code !';
+myIdEl.addEventListener('click', () => {
+    navigator.clipboard.writeText(roomCode).then(() => {
+        let oldColor = myIdEl.style.color;
+        myIdEl.style.color = '#39ff14'; // Clignote en vert
+        setTimeout(() => { myIdEl.style.color = oldColor; }, 500);
+    });
+});
 
 let gameState = {
     players: {}, 
@@ -123,8 +118,7 @@ function hostGame() {
     peerNet = new Peer(roomCode);
     
     peerNet.on('open', id => {
-        document.getElementById('status-text').innerText = "Salon ouvert ! Partage ton code : " + id;
-        navigator.clipboard.writeText(id).catch(e=>{});
+        document.getElementById('status-text').innerText = "Salon ouvert ! Code cliquable au-dessus.";
         
         let assignedSkin = 1;
         gameState.players[myPlayerId] = { pseudo: myPseudo, hand: [], score: 0, skin: assignedSkin };
@@ -135,11 +129,12 @@ function hostGame() {
     });
 
     peerNet.on('connection', conn => {
+        if (!connsNet.includes(conn)) connsNet.push(conn);
+
         conn.on('data', data => {
             if (data.type === 'JOIN') {
-                // SÉCURITÉ MAJEURE : On lie l'ID unique de l'invité à sa connexion
+                // SÉCURITÉ : Fixe l'ID exact de la connexion pour que l'invité puisse jouer et voir ses cartes
                 conn.playerId = data.id; 
-                if (!connsNet.includes(conn)) connsNet.push(conn);
 
                 let assignedSkin = (gameState.order.length % 8) + 1;
                 gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
@@ -151,8 +146,9 @@ function hostGame() {
         });
 
         conn.on('close', () => {
-            if(gameState.started && conn.playerId && gameState.players[conn.playerId]) {
-                let pId = conn.playerId;
+            // Utilise conn.playerId fixé ci-dessus
+            let pId = conn.playerId || conn.peer; 
+            if(gameState.started && gameState.players[pId]) {
                 let p = gameState.players[pId];
                 gameState.log = `🔌 ${p.pseudo} s'est déconnecté. Ses cartes retournent dans le seau.`;
                 
@@ -204,7 +200,6 @@ function joinGame() {
 
         conn.on('data', data => {
             if (data.type === 'STATE_UPDATE') {
-                // FORÇAGE DE L'AFFICHAGE (Évite au guest de rester bloqué sur "En attente")
                 if(data.state.started) {
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('table-area').style.display = 'flex';
@@ -245,8 +240,12 @@ function broadcastState() {
             let safeState = JSON.parse(JSON.stringify(gameState));
             Object.keys(safeState.players).forEach(pId => {
                 safeState.players[pId].cardCount = safeState.players[pId].hand.length;
-                // L'hôte cache les mains des autres joueurs en se basant sur le vrai ID
-                if (pId !== conn.playerId) safeState.players[pId].hand = [];
+                
+                // Cache les cartes des autres. Utilise playerId validé pour ne jamais cacher les cartes de l'invité à lui-même
+                let remoteId = conn.playerId || conn.peer;
+                if (pId !== remoteId) {
+                    safeState.players[pId].hand = [];
+                }
             });
             conn.send({ type: 'STATE_UPDATE', state: safeState });
         } catch(e) { console.error("Erreur de synchronisation", e); }
@@ -356,9 +355,12 @@ function renderGameClient() {
         let oppHtml = `
             <div class="opponent-hud ${isHisTurn ? 'active-turn' : ''}">
                 <img src="assets/skins/slime${p.skin}.png" class="slime-avatar" alt="Slime">
-                <div style="font-weight:bold; color:var(--p1)">${p.pseudo}</div>
-                <div>🃏 ${count}</div>
-                <div style="font-size:0.8em; color:var(--p3)">⭐ ${p.score}</div>
+                <div style="font-weight:bold; color:var(--p1); text-shadow:0 2px 4px rgba(0,0,0,0.8);">${p.pseudo}</div>
+                <div class="opp-hand">
+                    <div class="mini-back"></div>
+                    <span>x${count}</span>
+                </div>
+                <div style="font-size:0.8em; color:var(--p3); margin-top:2px;">⭐ ${p.score}</div>
             </div>`;
         
         let targetZone = distribution[index % distribution.length];
