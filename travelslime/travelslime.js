@@ -79,7 +79,8 @@ const countriesList = [
 ];
 
 let peerNet = null;
-let hostConn = null; // Connexion du guest vers l'hôte
+let connsNet = []; 
+let hostConn = null; 
 let isHost = false;
 let myPlayerId = '';
 let myPseudo = '';
@@ -131,32 +132,35 @@ function hostGame() {
     });
 
     peerNet.on('connection', conn => {
-        // ENREGISTREMENT BLINDÉ : L'ID est directement injecté par l'invité à la connexion
-        if (conn.metadata && conn.metadata.id) {
-            let guestId = conn.metadata.id;
-            if (!gameState.players[guestId]) {
-                let assignedSkin = (gameState.order.length % 8) + 1;
-                gameState.players[guestId] = { pseudo: conn.metadata.pseudo, hand: [], score: 0, skin: assignedSkin };
-                gameState.order.push(guestId);
+        connsNet.push(conn);
+
+        conn.on('data', data => {
+            if (data.type === 'JOIN') {
+                conn.playerId = data.id; 
+                if (!gameState.players[data.id]) {
+                    let assignedSkin = (gameState.order.length % 8) + 1;
+                    gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
+                    gameState.order.push(data.id);
+                }
+                broadcastState();
+            } else if (data.type === 'ACTION') {
+                handleGameAction(data);
             }
-        }
+        });
 
         conn.on('open', () => {
             broadcastState(); 
         });
 
         conn.on('data', data => {
-            // Lecture sécurisée du JSON texte
             if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
-            
-            if (data && data.type === 'ACTION') {
-                handleGameAction(data);
-            }
+            if (data && data.type === 'ACTION') { handleGameAction(data); }
         });
 
         conn.on('close', () => {
-            let pId = conn.metadata ? conn.metadata.id : null;
-            if (pId && gameState.started && gameState.players[pId]) {
+            connsNet = connsNet.filter(c => c !== conn);
+            let pId = conn.playerId; 
+            if(pId && gameState.started && gameState.players[pId]) {
                 let p = gameState.players[pId];
                 gameState.log = `🔌 ${p.pseudo} s'est déconnecté.`;
                 
@@ -199,7 +203,6 @@ function joinGame() {
     peerNet = new Peer(myPlayerId);
 
     peerNet.on('open', () => {
-        // Envoi de la "carte d'identité" (metadata) dès la connexion pour éviter les bugs
         hostConn = peerNet.connect(targetCode, { 
             metadata: { id: myPlayerId, pseudo: myPseudo } 
         });
@@ -209,7 +212,6 @@ function joinGame() {
         });
 
         hostConn.on('data', data => {
-            // Lecture sécurisée du JSON texte
             if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
             
             if (data && data.type === 'STATE_UPDATE') {
@@ -249,7 +251,6 @@ function broadcastState() {
     try { checkFamiliesCompleted(); } catch(e) {}
     renderGameClient();
 
-    // MOTEUR D'ENVOI BLINDÉ : On utilise des textes (String) au lieu d'objets complexes pour éviter les plantages de PeerJS
     if (peerNet && peerNet.connections) {
         Object.values(peerNet.connections).forEach(conns => {
             conns.forEach(conn => {
@@ -258,12 +259,10 @@ function broadcastState() {
                         let safeState = JSON.parse(JSON.stringify(gameState));
                         Object.keys(safeState.players).forEach(targetId => {
                             safeState.players[targetId].cardCount = safeState.players[targetId].hand.length;
-                            // Masquage des mains adverses
                             if (conn.metadata && targetId !== conn.metadata.id) {
                                 safeState.players[targetId].hand = []; 
                             }
                         });
-                        // COMPRESSION EN TEXTE POUR L'ENVOI
                         conn.send(JSON.stringify({ type: 'STATE_UPDATE', state: safeState }));
                     } catch(e) { console.error(e); }
                 }
@@ -413,24 +412,27 @@ function renderGameClient() {
     myHandArea.innerHTML = ''; countrySelect.innerHTML = '';
 
     let myHand = gameState.players[myPlayerId] ? gameState.players[myPlayerId].hand : [];
+    let myCountries = new Set(); // SÉCURITÉ: Permet de lister les pays qu'on possède
 
     myHand.forEach(card => {
+        myCountries.add(card.country); // On ajoute le pays au "Set" (pour éviter les doublons dans la liste)
         let imgSrc = `assets/card/${card.id}.png`; 
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
 
-    // CAHIER DES CHARGES: On affiche absolument tous les pays existants du jeu !
-    countriesList.forEach(c => { 
+    // CAHIER DES CHARGES (LA VRAIE RÈGLE DU JEU) : On ne liste QUE les pays qu'on a déjà en main !
+    myCountries.forEach(c => { 
         countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; 
     });
 
     let btn = document.querySelector('#action-panel .red');
     if(btn) {
-        btn.disabled = (opponents.length === 0);
+        // Désactive le bouton si pas d'adversaire OU si l'on a aucune famille en main
+        btn.disabled = (opponents.length === 0 || myCountries.size === 0);
         
         if (isMyTurn) {
-            // Sécurité anti-blocage : Si le joueur n'a plus de carte dans un seau vide, il peut passer
-            if (myHand.length === 0) {
+            if (myCountries.size === 0) {
+                // Si on a 0 cartes en main, on DOIT passer son tour (Bouton d'urgence)
                 btn.innerText = "Passer";
                 btn.disabled = false;
                 btn.onclick = () => {
@@ -456,7 +458,6 @@ function askCard() {
     if (isHost) {
         handleGameAction(actionData);
     } else {
-        // Envoi de la donnée en texte pour ne pas faire planter PeerJS
         if (hostConn && hostConn.open) {
             hostConn.send(JSON.stringify(actionData));
         }
