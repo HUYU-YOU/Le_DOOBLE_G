@@ -79,8 +79,6 @@ const countriesList = [
 ];
 
 let peerNet = null;
-let connsNet = [];
-let hostConn = null;
 let isHost = false;
 let myPlayerId = '';
 let myPseudo = '';
@@ -88,16 +86,18 @@ let roomCode = 'TRA' + Math.floor(1000 + Math.random() * 9000);
 
 // --- COPIER LE CODE DU SALON ---
 const myIdEl = document.getElementById('my-id');
-myIdEl.innerText = roomCode;
-myIdEl.style.cursor = 'pointer';
-myIdEl.title = 'Cliquez pour copier le code !';
-myIdEl.addEventListener('click', () => {
-    navigator.clipboard.writeText(roomCode).then(() => {
-        let oldColor = myIdEl.style.color;
-        myIdEl.style.color = '#39ff14';
-        setTimeout(() => { myIdEl.style.color = oldColor; }, 500);
+if (myIdEl) {
+    myIdEl.innerText = roomCode;
+    myIdEl.style.cursor = 'pointer';
+    myIdEl.title = 'Cliquez pour copier le code !';
+    myIdEl.addEventListener('click', () => {
+        navigator.clipboard.writeText(roomCode).then(() => {
+            let oldColor = myIdEl.style.color;
+            myIdEl.style.color = '#39ff14';
+            setTimeout(() => { myIdEl.style.color = oldColor; }, 500);
+        });
     });
-});
+}
 
 let gameState = {
     players: {}, 
@@ -130,12 +130,8 @@ function hostGame() {
     });
 
     peerNet.on('connection', conn => {
-        // Ajout brut sans filtre capricieux
-        connsNet.push(conn);
-
         conn.on('data', data => {
             if (data.type === 'JOIN') {
-                conn.playerId = data.id; 
                 if (!gameState.players[data.id]) {
                     let assignedSkin = (gameState.order.length % 8) + 1;
                     gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
@@ -148,8 +144,8 @@ function hostGame() {
         });
 
         conn.on('close', () => {
-            let pId = conn.playerId; 
-            if(pId && gameState.started && gameState.players[pId]) {
+            let pId = conn.peer; 
+            if(gameState.started && gameState.players[pId]) {
                 let p = gameState.players[pId];
                 gameState.log = `🔌 ${p.pseudo} s'est déconnecté.`;
                 
@@ -192,17 +188,16 @@ function joinGame() {
     peerNet = new Peer(myPlayerId);
 
     peerNet.on('open', () => {
-        // Force la connexion "reliable" pour éviter les pertes de paquets
-        hostConn = peerNet.connect(targetCode, { reliable: true });
+        let conn = peerNet.connect(targetCode, { reliable: true });
         
-        hostConn.on('open', () => {
-            hostConn.send({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId });
+        conn.on('open', () => {
+            conn.send({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId });
             document.getElementById('status-text').innerText = "Connecté ! En attente de l'Hôte.";
         });
 
-        hostConn.on('data', data => {
+        conn.on('data', data => {
             if (data.type === 'STATE_UPDATE') {
-                if(data.state.started && !gameState.started) {
+                if(data.state.started) {
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('table-area').style.display = 'flex';
                     document.getElementById('my-name-display').innerText = myPseudo;
@@ -238,34 +233,53 @@ function broadcastState() {
     checkFamiliesCompleted();
     renderGameClient();
 
-    // Envoi forcé sans filtres bloquants
-    connsNet.forEach(conn => {
-        try {
-            let safeState = JSON.parse(JSON.stringify(gameState));
-            Object.keys(safeState.players).forEach(pId => {
-                safeState.players[pId].cardCount = safeState.players[pId].hand.length;
-                let remoteId = conn.playerId;
-                if (pId !== remoteId) {
-                    safeState.players[pId].hand = []; // Masque les cartes des autres
+    // MOTEUR D'ENVOI BLINDÉ : On utilise l'API native de PeerJS pour ne perdre aucun joueur
+    if (peerNet && peerNet.connections) {
+        Object.values(peerNet.connections).forEach(conns => {
+            conns.forEach(conn => {
+                if (conn.open) {
+                    try {
+                        let safeState = JSON.parse(JSON.stringify(gameState));
+                        Object.keys(safeState.players).forEach(pId => {
+                            safeState.players[pId].cardCount = safeState.players[pId].hand.length;
+                            // On cache les cartes des autres joueurs (conn.peer = ID du joueur ciblé)
+                            if (pId !== conn.peer) {
+                                safeState.players[pId].hand = [];
+                            }
+                        });
+                        conn.send({ type: 'STATE_UPDATE', state: safeState });
+                    } catch(e) { console.error("Erreur d'envoi réseau :", e); }
                 }
             });
-            conn.send({ type: 'STATE_UPDATE', state: safeState });
-        } catch(e) {} // On ignore silencieusement les erreurs réseaux temporaires
-    });
+        });
+    }
 }
 
 function passTurn() {
     checkEmptyHands();
     
-    // On passe au joueur suivant, peu importe son nombre de cartes
-    gameState.turnIndex = (gameState.turnIndex + 1) % gameState.order.length;
+    // On passe au joueur suivant qui possède des cartes
+    let attempts = 0;
+    do {
+        gameState.turnIndex = (gameState.turnIndex + 1) % gameState.order.length;
+        let nextId = gameState.order[gameState.turnIndex];
+        if (gameState.players[nextId] && gameState.players[nextId].hand.length > 0) break;
+        attempts++;
+    } while (attempts < gameState.order.length);
+
     let nextPlayer = gameState.players[gameState.order[gameState.turnIndex]];
     gameState.log += `\n➡️ C'est au tour de ${nextPlayer.pseudo}.`;
 
-    broadcastState();
+    broadcastState(); // Ce broadcast informera l'invité que c'est à son tour
 }
 
 function handleGameAction(data) {
+    if (data.action === 'PASS') {
+        gameState.log = `⏭️ ${gameState.players[data.askerId].pseudo} passe son tour.`;
+        passTurn();
+        return;
+    }
+
     if (data.action === 'ASK') {
         const asker = gameState.players[data.askerId];
         const target = gameState.players[data.targetId];
@@ -380,19 +394,16 @@ function renderGameClient() {
 
     const myHandArea = document.getElementById('my-hand');
     const countrySelect = document.getElementById('country-select');
-    
-    myHandArea.innerHTML = ''; 
-    countrySelect.innerHTML = '';
+    myHandArea.innerHTML = ''; countrySelect.innerHTML = '';
 
     let myHand = gameState.players[myPlayerId] ? gameState.players[myPlayerId].hand : [];
 
-    // Affichage des cartes dans la main
     myHand.forEach(card => {
         let imgSrc = `assets/card/${card.id}.png`; 
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
 
-    // CAHIER DES CHARGES : TOUS les pays du jeu sont dans le select !
+    // CAHIER DES CHARGES : La liste affiche systématiquement TOUS les pays du jeu
     countriesList.forEach(c => { 
         countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; 
     });
@@ -400,6 +411,7 @@ function renderGameClient() {
     let btn = document.querySelector('#action-panel .red');
     if(btn) {
         btn.disabled = (opponents.length === 0);
+        
         if (isMyTurn && !btn.disabled) {
             btn.innerText = "Voler !";
             btn.onclick = askCard;
@@ -417,8 +429,13 @@ function askCard() {
     if (isHost) {
         handleGameAction(actionData);
     } else {
-        if (hostConn) {
-            hostConn.send(actionData);
+        // Envoi depuis l'invité garanti
+        if (peerNet && peerNet.connections) {
+            Object.values(peerNet.connections).forEach(conns => {
+                conns.forEach(conn => {
+                    if (conn.open) { conn.send(actionData); }
+                });
+            });
         }
     }
 }
