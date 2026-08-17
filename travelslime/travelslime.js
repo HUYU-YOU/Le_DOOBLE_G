@@ -93,7 +93,7 @@ myIdEl.title = 'Cliquez pour copier le code !';
 myIdEl.addEventListener('click', () => {
     navigator.clipboard.writeText(roomCode).then(() => {
         let oldColor = myIdEl.style.color;
-        myIdEl.style.color = '#39ff14'; // Clignote en vert
+        myIdEl.style.color = '#39ff14';
         setTimeout(() => { myIdEl.style.color = oldColor; }, 500);
     });
 });
@@ -133,9 +133,7 @@ function hostGame() {
 
         conn.on('data', data => {
             if (data.type === 'JOIN') {
-                // SÉCURITÉ : Fixe l'ID exact de la connexion pour que l'invité puisse jouer et voir ses cartes
                 conn.playerId = data.id; 
-
                 let assignedSkin = (gameState.order.length % 8) + 1;
                 gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
                 gameState.order.push(data.id);
@@ -146,7 +144,6 @@ function hostGame() {
         });
 
         conn.on('close', () => {
-            // Utilise conn.playerId fixé ci-dessus
             let pId = conn.playerId || conn.peer; 
             if(gameState.started && gameState.players[pId]) {
                 let p = gameState.players[pId];
@@ -240,8 +237,6 @@ function broadcastState() {
             let safeState = JSON.parse(JSON.stringify(gameState));
             Object.keys(safeState.players).forEach(pId => {
                 safeState.players[pId].cardCount = safeState.players[pId].hand.length;
-                
-                // Cache les cartes des autres. Utilise playerId validé pour ne jamais cacher les cartes de l'invité à lui-même
                 let remoteId = conn.playerId || conn.peer;
                 if (pId !== remoteId) {
                     safeState.players[pId].hand = [];
@@ -255,12 +250,30 @@ function broadcastState() {
 }
 
 function passTurn() {
-    gameState.turnIndex = (gameState.turnIndex + 1) % gameState.order.length;
     checkEmptyHands();
+    
+    // On passe au joueur suivant en s'assurant qu'il a des cartes en main
+    let attempts = 0;
+    do {
+        gameState.turnIndex = (gameState.turnIndex + 1) % gameState.order.length;
+        let nextId = gameState.order[gameState.turnIndex];
+        if (gameState.players[nextId].hand.length > 0) break;
+        attempts++;
+    } while (attempts < gameState.order.length);
+
+    let nextPlayer = gameState.players[gameState.order[gameState.turnIndex]];
+    gameState.log += `\n➡️ C'est au tour de ${nextPlayer.pseudo}.`;
+
     broadcastState();
 }
 
 function handleGameAction(data) {
+    if (data.action === 'PASS') {
+        gameState.log = `⏭️ ${gameState.players[data.askerId].pseudo} ne peut pas jouer et passe son tour.`;
+        passTurn();
+        return;
+    }
+
     if (data.action === 'ASK') {
         const asker = gameState.players[data.askerId];
         const target = gameState.players[data.targetId];
@@ -279,9 +292,9 @@ function handleGameAction(data) {
             if (gameState.deck.length > 0) {
                 let drawn = gameState.deck.pop();
                 asker.hand.push(drawn);
-                gameState.log = `❌ Raté ! ${target.pseudo} n'a pas de ${country.toUpperCase()}.\n🪣 ${asker.pseudo} pioche et passe son tour.`;
+                gameState.log = `❌ Raté ! ${target.pseudo} n'a pas de ${country.toUpperCase()}.\n🪣 ${asker.pseudo} pioche.`;
             } else {
-                gameState.log = `❌ Raté ! ${target.pseudo} n'a pas la carte et le seau est vide. Fin de tour.`;
+                gameState.log = `❌ Raté ! ${target.pseudo} n'a pas la carte et le seau est vide.`;
             }
             passTurn();
         }
@@ -343,7 +356,7 @@ function renderGameClient() {
     
     topArea.innerHTML = ''; leftArea.innerHTML = ''; rightArea.innerHTML = ''; oppSelect.innerHTML = '';
 
-    // Liste des adversaires (on s'exclut)
+    // Liste des adversaires
     let opponents = Object.keys(gameState.players).filter(id => id !== myPlayerId);
     let distribution = [topArea, leftArea, rightArea, topArea, leftArea, rightArea, topArea];
 
@@ -393,7 +406,22 @@ function renderGameClient() {
     myCountries.forEach(c => { countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; });
 
     let btn = document.querySelector('#action-panel .red');
-    if(btn) btn.disabled = (myCountries.size === 0 || opponents.length === 0);
+    if(btn) {
+        btn.disabled = (myCountries.size === 0 || opponents.length === 0);
+        // SÉCURITÉ : Transforme le bouton en "Passer" si le joueur est coincé (ex: 0 cartes)
+        if (isMyTurn && btn.disabled) {
+            btn.disabled = false;
+            btn.innerText = "Passer";
+            btn.onclick = () => {
+                let actionData = { type: 'ACTION', action: 'PASS', askerId: myPlayerId };
+                if (isHost) handleGameAction(actionData);
+                else if (connsNet.length > 0 && connsNet[0].open) connsNet[0].send(actionData);
+            };
+        } else if (isMyTurn) {
+            btn.innerText = "Voler !";
+            btn.onclick = askCard;
+        }
+    }
 }
 
 function askCard() {
