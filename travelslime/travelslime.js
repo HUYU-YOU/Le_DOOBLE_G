@@ -79,6 +79,8 @@ const countriesList = [
 ];
 
 let peerNet = null;
+let hostClients = {}; // HÔTE : Stockage blindé des connexions invités
+let hostConn = null;  // INVITÉ : Stockage blindé de la connexion vers l'Hôte
 let isHost = false;
 let myPlayerId = '';
 let myPseudo = '';
@@ -116,7 +118,8 @@ function hostGame() {
     playBackgroundMusic(); 
     
     if(peerNet) peerNet.destroy();
-    peerNet = new Peer(roomCode);
+    // PingInterval permet de garder la connexion parfaitement stable
+    peerNet = new Peer(roomCode, { pingInterval: 5000 });
     
     peerNet.on('open', id => {
         document.getElementById('status-text').innerText = "Salon ouvert ! Code cliquable au-dessus.";
@@ -132,6 +135,9 @@ function hostGame() {
     peerNet.on('connection', conn => {
         conn.on('data', data => {
             if (data.type === 'JOIN') {
+                // STOCKAGE BLINDÉ direct de l'invité
+                hostClients[data.id] = conn; 
+                
                 if (!gameState.players[data.id]) {
                     let assignedSkin = (gameState.order.length % 8) + 1;
                     gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
@@ -144,34 +150,39 @@ function hostGame() {
         });
 
         conn.on('close', () => {
-            let pId = conn.peer; 
-            if(gameState.started && gameState.players[pId]) {
-                let p = gameState.players[pId];
-                gameState.log = `🔌 ${p.pseudo} s'est déconnecté.`;
-                
-                if (p.hand.length > 0) {
-                    gameState.deck.push(...p.hand);
-                    gameState.deck.sort(() => Math.random() - 0.5); 
-                }
-                
-                let pIdx = gameState.order.indexOf(pId);
-                if(pIdx !== -1) {
-                    gameState.order.splice(pIdx, 1);
-                    if(gameState.turnIndex >= pIdx && gameState.turnIndex > 0) gameState.turnIndex--;
-                    if(gameState.turnIndex >= gameState.order.length) gameState.turnIndex = 0;
-                }
-                delete gameState.players[pId];
-                
-                if(gameState.order.length < 2) {
-                    document.getElementById('table-area').style.display = 'none';
-                    document.getElementById('winner-text').innerText = "PARTIE ANNULÉE";
-                    document.getElementById('game-over-overlay').style.display = 'flex';
-                } else {
-                    broadcastState();
-                }
-            }
+            let pId = Object.keys(hostClients).find(key => hostClients[key] === conn);
+            if (pId) handleDisconnect(pId);
         });
     });
+}
+
+function handleDisconnect(pId) {
+    if(gameState.started && gameState.players[pId]) {
+        let p = gameState.players[pId];
+        gameState.log = `🔌 ${p.pseudo} s'est déconnecté.`;
+        
+        if (p.hand.length > 0) {
+            gameState.deck.push(...p.hand);
+            gameState.deck.sort(() => Math.random() - 0.5); 
+        }
+        
+        let pIdx = gameState.order.indexOf(pId);
+        if(pIdx !== -1) {
+            gameState.order.splice(pIdx, 1);
+            if(gameState.turnIndex >= pIdx && gameState.turnIndex > 0) gameState.turnIndex--;
+            if(gameState.turnIndex >= gameState.order.length) gameState.turnIndex = 0;
+        }
+        delete gameState.players[pId];
+        delete hostClients[pId]; // Nettoyage de la connexion
+        
+        if(gameState.order.length < 2) {
+            document.getElementById('table-area').style.display = 'none';
+            document.getElementById('winner-text').innerText = "PARTIE ANNULÉE";
+            document.getElementById('game-over-overlay').style.display = 'flex';
+        } else {
+            broadcastState();
+        }
+    }
 }
 
 // --- CONNEXION (INVITÉ) ---
@@ -185,19 +196,20 @@ function joinGame() {
     playBackgroundMusic(); 
     
     if (peerNet) peerNet.destroy();
-    peerNet = new Peer(myPlayerId);
+    peerNet = new Peer(myPlayerId, { pingInterval: 5000 });
 
     peerNet.on('open', () => {
-        let conn = peerNet.connect(targetCode, { reliable: true });
+        // Enregistre la connexion à l'hôte sans l'écraser
+        hostConn = peerNet.connect(targetCode, { reliable: true });
         
-        conn.on('open', () => {
-            conn.send({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId });
+        hostConn.on('open', () => {
+            hostConn.send({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId });
             document.getElementById('status-text').innerText = "Connecté ! En attente de l'Hôte.";
         });
 
-        conn.on('data', data => {
+        hostConn.on('data', data => {
             if (data.type === 'STATE_UPDATE') {
-                if(data.state.started) {
+                if(data.state.started && !gameState.started) {
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('table-area').style.display = 'flex';
                     document.getElementById('my-name-display').innerText = myPseudo;
@@ -230,35 +242,31 @@ function startGame() {
 
 function broadcastState() {
     if (!isHost) return;
-    checkFamiliesCompleted();
+    
+    try { checkFamiliesCompleted(); } catch(e) {}
     renderGameClient();
 
-    // MOTEUR D'ENVOI BLINDÉ : On utilise l'API native de PeerJS pour ne perdre aucun joueur
-    if (peerNet && peerNet.connections) {
-        Object.values(peerNet.connections).forEach(conns => {
-            conns.forEach(conn => {
-                if (conn.open) {
-                    try {
-                        let safeState = JSON.parse(JSON.stringify(gameState));
-                        Object.keys(safeState.players).forEach(pId => {
-                            safeState.players[pId].cardCount = safeState.players[pId].hand.length;
-                            // On cache les cartes des autres joueurs (conn.peer = ID du joueur ciblé)
-                            if (pId !== conn.peer) {
-                                safeState.players[pId].hand = [];
-                            }
-                        });
-                        conn.send({ type: 'STATE_UPDATE', state: safeState });
-                    } catch(e) { console.error("Erreur d'envoi réseau :", e); }
-                }
-            });
-        });
-    }
+    // ENVOI FORCÉ SANS FILTRE CAPRICIEUX : On force l'envoi à tous les invités connus
+    Object.keys(hostClients).forEach(pId => {
+        let conn = hostClients[pId];
+        if (conn) {
+            try {
+                let safeState = JSON.parse(JSON.stringify(gameState));
+                Object.keys(safeState.players).forEach(targetId => {
+                    safeState.players[targetId].cardCount = safeState.players[targetId].hand.length;
+                    if (targetId !== pId) {
+                        safeState.players[targetId].hand = []; // Masque les mains des autres
+                    }
+                });
+                conn.send({ type: 'STATE_UPDATE', state: safeState });
+            } catch(e) { console.error("Erreur réseau (ignorée)", e); }
+        }
+    });
 }
 
 function passTurn() {
     checkEmptyHands();
     
-    // On passe au joueur suivant qui possède des cartes
     let attempts = 0;
     do {
         gameState.turnIndex = (gameState.turnIndex + 1) % gameState.order.length;
@@ -270,7 +278,7 @@ function passTurn() {
     let nextPlayer = gameState.players[gameState.order[gameState.turnIndex]];
     gameState.log += `\n➡️ C'est au tour de ${nextPlayer.pseudo}.`;
 
-    broadcastState(); // Ce broadcast informera l'invité que c'est à son tour
+    broadcastState();
 }
 
 function handleGameAction(data) {
@@ -403,7 +411,7 @@ function renderGameClient() {
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
 
-    // CAHIER DES CHARGES : La liste affiche systématiquement TOUS les pays du jeu
+    // Affiche la liste TOTALE des pays du jeu comme demandé, peu importe qui les a !
     countriesList.forEach(c => { 
         countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; 
     });
@@ -429,13 +437,9 @@ function askCard() {
     if (isHost) {
         handleGameAction(actionData);
     } else {
-        // Envoi depuis l'invité garanti
-        if (peerNet && peerNet.connections) {
-            Object.values(peerNet.connections).forEach(conns => {
-                conns.forEach(conn => {
-                    if (conn.open) { conn.send(actionData); }
-                });
-            });
+        // L'invité envoie son action via sa connexion directe à l'Hôte
+        if (hostConn) {
+            hostConn.send(actionData);
         }
     }
 }
