@@ -79,8 +79,8 @@ const countriesList = [
 ];
 
 let peerNet = null;
-let hostConn = null; // La ligne directe du Guest vers l'Hôte
-let clientConns = {}; // Le dictionnaire blindé de l'Hôte vers les Guests
+let connsNet = [];
+let hostConn = null;
 let isHost = false;
 let myPlayerId = '';
 let myPseudo = '';
@@ -130,12 +130,12 @@ function hostGame() {
     });
 
     peerNet.on('connection', conn => {
+        // Ajout brut sans filtre capricieux
+        connsNet.push(conn);
+
         conn.on('data', data => {
             if (data.type === 'JOIN') {
-                // STOCKAGE BLINDÉ : On lie l'ID directement à la connexion sans filtre hasardeux
                 conn.playerId = data.id; 
-                clientConns[data.id] = conn; 
-
                 if (!gameState.players[data.id]) {
                     let assignedSkin = (gameState.order.length % 8) + 1;
                     gameState.players[data.id] = { pseudo: data.pseudo, hand: [], score: 0, skin: assignedSkin };
@@ -151,7 +151,7 @@ function hostGame() {
             let pId = conn.playerId; 
             if(pId && gameState.started && gameState.players[pId]) {
                 let p = gameState.players[pId];
-                gameState.log = `🔌 ${p.pseudo} s'est déconnecté. Ses cartes retournent dans le seau.`;
+                gameState.log = `🔌 ${p.pseudo} s'est déconnecté.`;
                 
                 if (p.hand.length > 0) {
                     gameState.deck.push(...p.hand);
@@ -165,7 +165,6 @@ function hostGame() {
                     if(gameState.turnIndex >= gameState.order.length) gameState.turnIndex = 0;
                 }
                 delete gameState.players[pId];
-                delete clientConns[pId]; // Nettoyage de la connexion
                 
                 if(gameState.order.length < 2) {
                     document.getElementById('table-area').style.display = 'none';
@@ -193,7 +192,8 @@ function joinGame() {
     peerNet = new Peer(myPlayerId);
 
     peerNet.on('open', () => {
-        hostConn = peerNet.connect(targetCode);
+        // Force la connexion "reliable" pour éviter les pertes de paquets
+        hostConn = peerNet.connect(targetCode, { reliable: true });
         
         hostConn.on('open', () => {
             hostConn.send({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId });
@@ -202,13 +202,13 @@ function joinGame() {
 
         hostConn.on('data', data => {
             if (data.type === 'STATE_UPDATE') {
-                if(data.state.started) {
+                if(data.state.started && !gameState.started) {
                     document.getElementById('network-menu').style.display = 'none';
                     document.getElementById('table-area').style.display = 'flex';
                     document.getElementById('my-name-display').innerText = myPseudo;
                 }
                 gameState = data.state;
-                renderGameClient(); // Met à jour l'affichage de l'invité
+                renderGameClient(); 
             }
         });
     });
@@ -236,38 +236,29 @@ function startGame() {
 function broadcastState() {
     if (!isHost) return;
     checkFamiliesCompleted();
-
-    // Rendu local immédiat pour l'Hôte
     renderGameClient();
 
-    // Envoi garanti à tous les clients stockés
-    Object.values(clientConns).forEach(conn => {
+    // Envoi forcé sans filtres bloquants
+    connsNet.forEach(conn => {
         try {
             let safeState = JSON.parse(JSON.stringify(gameState));
             Object.keys(safeState.players).forEach(pId => {
                 safeState.players[pId].cardCount = safeState.players[pId].hand.length;
                 let remoteId = conn.playerId;
                 if (pId !== remoteId) {
-                    safeState.players[pId].hand = []; // On cache la main des autres joueurs
+                    safeState.players[pId].hand = []; // Masque les cartes des autres
                 }
             });
             conn.send({ type: 'STATE_UPDATE', state: safeState });
-        } catch(e) { console.error("Erreur de synchronisation", e); }
+        } catch(e) {} // On ignore silencieusement les erreurs réseaux temporaires
     });
 }
 
 function passTurn() {
     checkEmptyHands();
     
-    // On passe au joueur suivant en s'assurant qu'il a des cartes en main
-    let attempts = 0;
-    do {
-        gameState.turnIndex = (gameState.turnIndex + 1) % gameState.order.length;
-        let nextId = gameState.order[gameState.turnIndex];
-        if (gameState.players[nextId] && gameState.players[nextId].hand.length > 0) break;
-        attempts++;
-    } while (attempts < gameState.order.length);
-
+    // On passe au joueur suivant, peu importe son nombre de cartes
+    gameState.turnIndex = (gameState.turnIndex + 1) % gameState.order.length;
     let nextPlayer = gameState.players[gameState.order[gameState.turnIndex]];
     gameState.log += `\n➡️ C'est au tour de ${nextPlayer.pseudo}.`;
 
@@ -275,12 +266,6 @@ function passTurn() {
 }
 
 function handleGameAction(data) {
-    if (data.action === 'PASS') {
-        gameState.log = `⏭️ ${gameState.players[data.askerId].pseudo} ne peut pas jouer et passe son tour.`;
-        passTurn();
-        return;
-    }
-
     if (data.action === 'ASK') {
         const asker = gameState.players[data.askerId];
         const target = gameState.players[data.targetId];
@@ -355,7 +340,6 @@ function renderGameClient() {
     const isMyTurn = (gameState.order[gameState.turnIndex] === myPlayerId);
     document.getElementById('action-panel').style.display = isMyTurn ? 'block' : 'none';
 
-    // Récupération des zones HTML
     const topArea = document.getElementById('top-opponents');
     const leftArea = document.getElementById('left-opponents');
     const rightArea = document.getElementById('right-opponents');
@@ -363,7 +347,6 @@ function renderGameClient() {
     
     topArea.innerHTML = ''; leftArea.innerHTML = ''; rightArea.innerHTML = ''; oppSelect.innerHTML = '';
 
-    // Liste des adversaires
     let opponents = Object.keys(gameState.players).filter(id => id !== myPlayerId);
     let distribution = [topArea, leftArea, rightArea, topArea, leftArea, rightArea, topArea];
 
@@ -389,42 +372,35 @@ function renderGameClient() {
         oppSelect.innerHTML += `<option value="${id}">${p.pseudo}</option>`;
     });
 
-    // Mes propres infos
     if (gameState.players[myPlayerId]) {
         document.getElementById('my-score-display').innerText = gameState.players[myPlayerId].score;
         let myAvatar = document.getElementById('my-avatar');
         if(myAvatar) myAvatar.src = `assets/skins/slime${gameState.players[myPlayerId].skin}.png`;
     }
 
-    // Affichage de ma main
     const myHandArea = document.getElementById('my-hand');
     const countrySelect = document.getElementById('country-select');
-    myHandArea.innerHTML = ''; countrySelect.innerHTML = '';
+    
+    myHandArea.innerHTML = ''; 
+    countrySelect.innerHTML = '';
 
     let myHand = gameState.players[myPlayerId] ? gameState.players[myPlayerId].hand : [];
-    let myCountries = new Set();
 
+    // Affichage des cartes dans la main
     myHand.forEach(card => {
-        myCountries.add(card.country);
         let imgSrc = `assets/card/${card.id}.png`; 
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
 
-    myCountries.forEach(c => { countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; });
+    // CAHIER DES CHARGES : TOUS les pays du jeu sont dans le select !
+    countriesList.forEach(c => { 
+        countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; 
+    });
 
     let btn = document.querySelector('#action-panel .red');
     if(btn) {
-        btn.disabled = (myCountries.size === 0 || opponents.length === 0);
-        
-        if (isMyTurn && btn.disabled) {
-            btn.disabled = false;
-            btn.innerText = "Passer";
-            btn.onclick = () => {
-                let actionData = { type: 'ACTION', action: 'PASS', askerId: myPlayerId };
-                if (isHost) handleGameAction(actionData);
-                else if (hostConn) hostConn.send(actionData);
-            };
-        } else if (isMyTurn) {
+        btn.disabled = (opponents.length === 0);
+        if (isMyTurn && !btn.disabled) {
             btn.innerText = "Voler !";
             btn.onclick = askCard;
         }
@@ -437,10 +413,10 @@ function askCard() {
     if(!country || !targetId) return;
 
     let actionData = { type: 'ACTION', action: 'ASK', askerId: myPlayerId, targetId: targetId, country: country };
+    
     if (isHost) {
         handleGameAction(actionData);
     } else {
-        // Envoi simple et fiable via la connexion directe à l'Hôte
         if (hostConn) {
             hostConn.send(actionData);
         }
