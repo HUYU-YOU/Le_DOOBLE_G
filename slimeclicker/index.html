@@ -13,6 +13,7 @@
             --neon-green: #39ff14;
             --neon-gold: #fce803;
             --neon-purple: #9b59b6;
+            --neon-red: #ff3333;
             --text-color: #e0e0e0;
             --font-main: 'Segoe UI', system-ui, sans-serif;
         }
@@ -44,13 +45,15 @@
         }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-        #btn-retour-hub {
-            position: absolute; top: 20px; left: 20px;
+        .header-btn {
+            position: absolute; top: 20px;
             background-color: rgba(0, 0, 0, 0.7); border: 1px solid var(--neon-cyan);
             color: var(--neon-cyan); padding: 8px 15px; border-radius: 5px; cursor: pointer;
             text-decoration: none; font-weight: bold; transition: 0.3s; z-index: 100;
         }
-        #btn-retour-hub:hover { background: rgba(0, 240, 255, 0.2); box-shadow: 0 0 10px rgba(0,240,255,0.5); }
+        #btn-retour-hub { left: 20px; }
+        #btn-save { left: 180px; border-color: var(--neon-green); color: var(--neon-green); }
+        .header-btn:hover { background: rgba(255, 255, 255, 0.1); box-shadow: 0 0 10px currentColor; }
 
         #crystals-display {
             position: absolute; top: 20px; right: 20px;
@@ -86,6 +89,7 @@
 
         #slime-image { width: 420px; height: auto; cursor: pointer; filter: drop-shadow(0 15px 25px rgba(57, 255, 20, 0.5)); transition: transform 0.05s ease-out, filter 0.2s; z-index: 10; -webkit-user-drag: none; }
         #slime-image:hover { filter: drop-shadow(0 15px 35px rgba(57, 255, 20, 0.8)); transform: scale(1.02); }
+        #slime-image:active { transform: scale(0.95); }
 
         #golden-slime {
             display: none; position: fixed; width: 120px; height: auto; cursor: pointer; z-index: 999; -webkit-user-drag: none;
@@ -122,7 +126,7 @@
         .buy-btn { background: #222; border: 1px solid #555; color: #888; padding: 5px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s;}
         .buy-btn.active { background: var(--neon-cyan); color: #000; border-color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
 
-        /* Dresseurs */
+        /* Dresseurs -> Bâtiments */
         .shop-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); border: 1px solid #333; border-radius: 8px; padding: 12px; cursor: pointer; transition: 0.2s; }
         .shop-item:hover { border-color: var(--neon-cyan); background: rgba(0, 240, 255, 0.15); }
         .shop-item.disabled { opacity: 0.5; filter: grayscale(100%); cursor: not-allowed; }
@@ -154,12 +158,16 @@
         .achiev-text h4 { margin: 0; color: #fff; font-size: 1rem; }
         .achiev-text p { margin: 2px 0 0 0; color: #aaa; font-size: 0.8rem; }
 
-        /* Prestige */
+        /* Prestige & Reset */
         #prestige-content { text-align: center; padding: 20px 10px; }
         .crystal-icon { font-size: 4rem; filter: drop-shadow(0 0 20px var(--neon-purple)); margin-bottom: 10px; }
         #prestige-btn { background: var(--bg-color); border: 2px solid var(--neon-gold); color: var(--neon-gold); padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 20px; transition: 0.3s; text-transform: uppercase; font-family: inherit;}
         #prestige-btn:hover { background: var(--neon-gold); color: #000; box-shadow: 0 0 20px var(--neon-gold); }
         #prestige-btn.disabled { opacity: 0.5; pointer-events: none; border-color: gray; color: gray; }
+
+        .danger-zone { margin-top: 40px; padding-top: 20px; border-top: 1px solid #444; }
+        #reset-btn { background: rgba(255,0,0,0.1); border: 1px solid var(--neon-red); color: var(--neon-red); padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s;}
+        #reset-btn:hover { background: var(--neon-red); color: #000; box-shadow: 0 0 15px var(--neon-red); }
 
         /* POPUP NOTIFICATION SUCCES */
         #toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; pointer-events: none; }
@@ -187,7 +195,7 @@
     <div id="afk-modal">
         <div class="afk-content">
             <h2>Pendant ton absence...</h2>
-            <p>Tes dresseurs n'ont pas chômé ! Ils ont récolté :</p>
+            <p>Tes infrastructures n'ont pas chômé ! Elles ont récolté :</p>
             <h1 style="color: var(--neon-green); margin: 10px 0; font-size: 2.5rem;">+<span id="afk-amount">0</span></h1>
             <p>Slimes !</p>
             <button class="afk-btn" onclick="document.getElementById('afk-modal').style.display='none'">Super !</button>
@@ -197,7 +205,8 @@
     <div id="toast-container"></div>
 
     <img id="golden-slime" src="img/goldenslime.png" alt="Golden Slime" draggable="false" onclick="activateGoldenBuff(event)">
-    <a href="../index.html" id="btn-retour-hub">&#11013; Retour au Hub</a>
+    <a href="../index.html" class="header-btn" id="btn-retour-hub">&#11013; Retour au Hub</a>
+    <button class="header-btn" id="btn-save" onclick="manualSave()">💾 Sauvegarder</button>
     <div id="crystals-display">🌌 0 Cristaux</div>
 
     <header>
@@ -213,13 +222,14 @@
             <div id="score-display">0 Slimes</div>
             <div id="sps-display">0 / sec</div>
             <div id="golden-buff-ui">🔥 PRODUCTION X2 (<span id="golden-time">00:00</span>) 🔥</div>
+            <!-- Assure toi que tes images existent toujours dans le bon dossier -->
             <img id="slime-image" src="img/slm1.png" alt="Big Slime" draggable="false">
         </div>
 
         <div id="shop-area">
             
             <div class="shop-tabs">
-                <div class="tab-btn active" data-tab="dresseurs" onclick="switchTab('dresseurs')">Dresseurs</div>
+                <div class="tab-btn active" data-tab="dresseurs" onclick="switchTab('dresseurs')">Bâtiments 🏗️</div>
                 <div class="tab-btn" data-tab="labo" onclick="switchTab('labo')">Labo 🧬</div>
                 <div class="tab-btn" data-tab="succes" onclick="switchTab('succes')">Succès 🏆</div>
                 <div class="tab-btn" data-tab="prestige" onclick="switchTab('prestige')">Ascension 🌌</div>
@@ -245,8 +255,7 @@
             <div id="content-prestige" class="tab-content">
                 <div id="prestige-content">
                     <div class="crystal-icon">🌌</div>
-                    <h2 style="color: var(--neon-purple); border: none;">Cristaux Quantiques</h2>
-                    <!-- LE BONUS EST PASSE A 1% POUR EVITER L'EXPLOSION DU JEU -->
+                    <h2 style="color: var(--neon-purple); border: none; margin:0;">Cristaux Quantiques</h2>
                     <p style="color: #aaa; margin-bottom: 20px;">Chaque Cristal offre un bonus <strong>permanent de +1%</strong> sur votre production.</p>
                     
                     <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid #444;">
@@ -261,7 +270,13 @@
                     </div>
 
                     <button id="prestige-btn" class="disabled" onclick="doPrestige()">Mutation Quantique</button>
-                    <p style="font-size: 0.8rem; color: #ff3333; margin-top: 10px;">⚠️ Attention : Réinitialise vos Slimes et Dresseurs !</p>
+                    <p style="font-size: 0.8rem; color: var(--neon-red); margin-top: 10px;">⚠️ Attention : Réinitialise vos Slimes et Bâtiments !</p>
+                    
+                    <!-- BOUTON HARD RESET -->
+                    <div class="danger-zone">
+                        <button id="reset-btn" onclick="hardReset()">☠️ RÉINITIALISATION TOTALE (Remise à Zéro)</button>
+                        <p style="font-size: 0.75rem; color: gray; margin-top: 5px;">Efface absolument TOUT de la sauvegarde.</p>
+                    </div>
                 </div>
             </div>
 
@@ -274,6 +289,7 @@
             const ptTime = new Date().toLocaleString("en-US", {timeZone: "Europe/Lisbon"});
             const hour = new Date(ptTime).getHours();
             const body = document.body;
+            // Adapte les chemins d'images si nécessaire !
             if (hour >= 8 && hour < 19) body.style.backgroundImage = "url('img/backday.png')";
             else body.style.backgroundImage = "url('img/backnight.png')";
             body.style.backgroundSize = "cover"; body.style.backgroundPosition = "center"; body.style.backgroundAttachment = "fixed";
@@ -288,62 +304,63 @@
         let goldenMultiplier = 1; let goldenTimerRemaining = 0; let goldenTimeout;
         let buyAmount = 1; 
 
-        // 1. EQUILIBRAGE DES COÛTS (PRIX PLUS ELEVES SUR LA FIN ET PRODUCTION ADAPTEE)
+        // NOUVEAUX NOMS ET THÈMES POUR LES BÂTIMENTS
         const buildings = [
-            { id: 'b1', name: "Clic Musclé", desc: "Augmente ton clic", baseCost: 15, sps: 0, clickBonus: 1, count: 0, icon: "👆" },
-            { id: 'b2', name: "Nathan", desc: "Apprenti dresseur", baseCost: 100, sps: 1, clickBonus: 0, count: 0, icon: "👦" },
-            { id: 'b3', name: "Dylan", desc: "Dresseur amateur", baseCost: 1100, sps: 8, clickBonus: 0, count: 0, icon: "🧑‍🎓" },
-            { id: 'b4', name: "Lucas", desc: "Expert en bétail", baseCost: 12000, sps: 47, clickBonus: 0, count: 0, icon: "🤠" },
-            { id: 'b5', name: "Antoine", desc: "Maître Invocateur", baseCost: 130000, sps: 260, clickBonus: 0, count: 0, icon: "🧙‍♂️" },
-            { id: 'b6', name: "Romain", desc: "Gourou du Slime", baseCost: 1400000, sps: 1400, clickBonus: 0, count: 0, icon: "🦸‍♂️" },
-            { id: 'b7', name: "Emre", desc: "Seigneur Gluant", baseCost: 20000000, sps: 7800, clickBonus: 0, count: 0, icon: "👑" },
-            { id: 'b8', name: "MARC", desc: "Dieu des Slimes", baseCost: 330000000, sps: 44000, clickBonus: 0, count: 0, icon: "🔱" },
-            { id: 'b9', name: "Nathan & Norvégienne", desc: "Duo Mythique", baseCost: 5100000000, sps: 260000, clickBonus: 0, count: 0, icon: "👩‍❤️‍👨" },
-            { id: 'b10', name: "Dylan la Peufra", desc: "Légende Vivante", baseCost: 75000000000, sps: 1600000, clickBonus: 0, count: 0, icon: "🔥" },
-            { id: 'b11', name: "Lucas le Floppeur", desc: "Chevalier Maudit", baseCost: 1000000000000, sps: 10000000, clickBonus: 0, count: 0, icon: "⚔️" },
-            { id: 'b12', name: "Dieu Ancien", desc: "Mythe Oublié", baseCost: 14000000000000, sps: 65000000, clickBonus: 0, count: 0, icon: "👁️" },
+            { id: 'b1', name: "Clic Musclé", desc: "Améliore votre clic", baseCost: 15, sps: 0, clickBonus: 1, count: 0, icon: "👆" },
+            { id: 'b2', name: "Bébé Slime", desc: "Produit un peu de gelée", baseCost: 100, sps: 1, clickBonus: 0, count: 0, icon: "💧" },
+            { id: 'b3', name: "Slime Ouvrier", desc: "Un bosseur acharné", baseCost: 1100, sps: 8, clickBonus: 0, count: 0, icon: "👷" },
+            { id: 'b4', name: "Ferme à Slimes", desc: "L'agriculture visqueuse", baseCost: 12000, sps: 47, clickBonus: 0, count: 0, icon: "🚜" },
+            { id: 'b5', name: "Usine de Gelée", desc: "Production industrielle", baseCost: 130000, sps: 260, clickBonus: 0, count: 0, icon: "🏭" },
+            { id: 'b6', name: "Labo Slime", desc: "Expériences douteuses", baseCost: 1400000, sps: 1400, clickBonus: 0, count: 0, icon: "🧪" },
+            { id: 'b7', name: "Mine de Slime", desc: "Extraction profonde", baseCost: 20000000, sps: 7800, clickBonus: 0, count: 0, icon: "⛏️" },
+            { id: 'b8', name: "Roi Slime", desc: "Règne sur la gelée", baseCost: 330000000, sps: 44000, clickBonus: 0, count: 0, icon: "👑" },
+            { id: 'b9', name: "Mégacorporation", desc: "Monopole mondial", baseCost: 5100000000, sps: 260000, clickBonus: 0, count: 0, icon: "🏢" },
+            { id: 'b10', name: "Slime Mutant Alpha", desc: "Une bête redoutable", baseCost: 75000000000, sps: 1600000, clickBonus: 0, count: 0, icon: "🦖" },
+            { id: 'b11', name: "Dragon Slime", desc: "Crache de la gelée pure", baseCost: 1000000000000, sps: 10000000, clickBonus: 0, count: 0, icon: "🐉" },
+            { id: 'b12', name: "Dieu Slime", desc: "L'entité suprême", baseCost: 14000000000000, sps: 65000000, clickBonus: 0, count: 0, icon: "👁️" },
             { id: 'b13', name: "Faille Quantique", desc: "Déchire l'espace", baseCost: 170000000000000, sps: 430000000, clickBonus: 0, count: 0, icon: "🌌" },
-            { id: 'b14', name: "Univers Slime", desc: "Création pure", baseCost: 2100000000000000, sps: 2900000000, clickBonus: 0, count: 0, icon: "🪐" },
-            { id: 'b15', name: "Omnivers", desc: "Au-delà de tout", baseCost: 26000000000000000, sps: 21000000000, clickBonus: 0, count: 0, icon: "🎇" }
+            { id: 'b14', name: "Planète Slime", desc: "Un monde englouti", baseCost: 2100000000000000, sps: 2900000000, clickBonus: 0, count: 0, icon: "🪐" },
+            { id: 'b15', name: "L'Omnivers", desc: "Tout est slime", baseCost: 26000000000000000, sps: 21000000000, clickBonus: 0, count: 0, icon: "🎇" }
         ];
 
-        // 2. EQUILIBRAGE DES UPGRADES (Coûts BEAUCOUP plus élevés sur la fin)
+        // NOUVEAUX NOMS POUR LES UPGRADES
         const upgradesDef = [
-            { id: 'u1', name: "Doigt qui pue", desc: "Clic x2", cost: 500, target: 'b1', mult: 2, icon: "🦾" },
-            { id: 'u2', name: "Tarpe chargé", desc: "Nathan x2", cost: 1000, target: 'b2', mult: 2, icon: "🥫" },
-            { id: 'u3', name: "Yeux rouges", desc: "Dylan x2", cost: 11000, target: 'b3', mult: 2, icon: "📘" },
-            { id: 'u4', name: "Le clic esclave", desc: "Clic x2", cost: 50000, target: 'b1', mult: 2, icon: "⚙️" },
-            { id: 'u5', name: "Puanteur médiéval", desc: "Lucas x2", cost: 120000, target: 'b4', mult: 2, icon: "🤠" },
-            { id: 'u6', name: "Stickos Magique", desc: "Antoine x2", cost: 1300000, target: 'b5', mult: 2, icon: "🪄" },
+            { id: 'u1', name: "Doigt Élastique", desc: "Clic x2", cost: 500, target: 'b1', mult: 2, icon: "🦾" },
+            { id: 'u2', name: "Biberon de Gelée", desc: "Bébés Slimes x2", cost: 1000, target: 'b2', mult: 2, icon: "🍼" },
+            { id: 'u3', name: "Casque de Chantier", desc: "Ouvriers x2", cost: 11000, target: 'b3', mult: 2, icon: "👷‍♂️" },
+            { id: 'u4', name: "Souris Ergonomique", desc: "Clic x2", cost: 50000, target: 'b1', mult: 2, icon: "🖱️" },
+            { id: 'u5', name: "Engrais Vert", desc: "Fermes x2", cost: 120000, target: 'b4', mult: 2, icon: "🌱" },
+            { id: 'u6', name: "Chaîne de Montage", desc: "Usines x2", cost: 1300000, target: 'b5', mult: 2, icon: "⚙️" },
             { id: 'u7', name: "Clic Quantique", desc: "Clic x2", cost: 5000000, target: 'b1', mult: 2, icon: "🌌" },
-            { id: 'u8', name: "Mode GMK", desc: "Romain x2", cost: 14000000, target: 'b6', mult: 2, icon: "🦸‍♂️" },
-            { id: 'u9', name: "Trône Doré", desc: "Emre x2", cost: 200000000, target: 'b7', mult: 2, icon: "🪑" },
-            { id: 'u10', name: "Godé du cul", desc: "MARC x2", cost: 3300000000, target: 'b8', mult: 2, icon: "🔱" },
-            { id: 'u11', name: "Mouchoirs Bellepou", desc: "Norvégienne x2", cost: 51000000000, target: 'b9', mult: 2, icon: "✈️" },
-            { id: 'u12', name: "Triple filtre", desc: "Peufra x2", cost: 750000000000, target: 'b10', mult: 2, icon: "🏋️" },
-            { id: 'u13', name: "Vla les tals--!", desc: "Floppeur x2", cost: 10000000000000, target: 'b11', mult: 2, icon: "📦" }
+            { id: 'u8', name: "Bécher Renforcé", desc: "Labos x2", cost: 14000000, target: 'b6', mult: 2, icon: "🧫" },
+            { id: 'u9', name: "Foreuse Géante", desc: "Mines x2", cost: 200000000, target: 'b7', mult: 2, icon: "🪛" },
+            { id: 'u10', name: "Couronne d'Or", desc: "Rois x2", cost: 3300000000, target: 'b8', mult: 2, icon: "👑" },
+            { id: 'u11', name: "Paradis Fiscal", desc: "Mégacorporations x2", cost: 51000000000, target: 'b9', mult: 2, icon: "📈" },
+            { id: 'u12', name: "ADN Instable", desc: "Mutants x2", cost: 750000000000, target: 'b10', mult: 2, icon: "🧬" },
+            { id: 'u13', name: "Souffle de Gelée", desc: "Dragons x2", cost: 10000000000000, target: 'b11', mult: 2, icon: "🔥" }
         ];
 
         const achievementsDef = [
             { id: 'a1', name: "Premier Sang", desc: "Générer 100 Slimes", icon: "🩸", req: () => game.totalSlimes >= 100 },
             { id: 'a2', name: "Capitaliste", desc: "Générer 1 Million de Slimes", icon: "💰", req: () => game.totalSlimes >= 1000000 },
             { id: 'a3', name: "Milliardaire", desc: "Générer 1 Milliard de Slimes", icon: "💎", req: () => game.totalSlimes >= 1000000000 },
-            { id: 'a4', name: "Armée de Nathans", desc: "Acheter 50 Nathans", icon: "👦", req: () => buildings.find(b=>b.id==='b2').count >= 50 },
+            { id: 'a4', name: "Pouponnière", desc: "Acheter 50 Bébés Slimes", icon: "💧", req: () => buildings.find(b=>b.id==='b2').count >= 50 },
             { id: 'a5', name: "Syndicat", desc: "Acheter 100 bâtiments", icon: "🏗️", req: () => buildings.reduce((sum, b) => sum + b.count, 0) >= 100 },
             { id: 'a6', name: "Scientifique Fou", desc: "Acheter 5 améliorations", icon: "🧪", req: () => game.upgradesBought.length >= 5 },
             { id: 'a7', name: "Coup de Chance", desc: "Cliquer sur un Slime Doré", icon: "🌟", req: () => false },
-            { id: 'a8', name: "L'Éveil", desc: "Faire une Ascension", icon: "🌌", req: () => game.cristaux > 0 }
+            { id: 'a8', name: "L'Éveil", desc: "Faire une Ascension", icon: "🌌", req: () => game.cristaux > 0 },
+            { id: 'a9', name: "Maître de l'Univers", desc: "Atteindre 1 Octillion de Slimes", icon: "🪐", req: () => game.totalSlimes >= 1e27 }
         ];
 
         const newsLines = [
             "Flash Info : L'odeur de gelée envahit les rues...",
-            "Rumeur : Un certain Marc se prendrait pour un Dieu.",
+            "Rumeur : Les slimes mutent plus vite que prévu.",
             "Économie : Le cours du Slime explose à la bourse de Wall Street !",
             "Science : Les Slimes produiraient une énergie infinie.",
-            "Scandale : Lucas aurait encore floppé lors d'un tournoi."
+            "Scandale : Le Roi Slime aurait dévoré une ville entière.",
+            "Alerte : Ne touchez pas aux slimes radioactifs !"
         ];
 
-        // AJOUT DE NOUVEAUX SUFFIXES POUR ALLER PLUS LOIN (Jusqu'au Centillion)
         function formatNum(num) {
             if (num < 1000000) return Math.floor(num).toLocaleString('fr-FR');
             
@@ -407,6 +424,21 @@
             localStorage.setItem('slimeClickerSave', JSON.stringify(saveObj));
         }
 
+        function manualSave() {
+            saveGame();
+            showToast("💾", "Sauvegardé", "Votre partie a été enregistrée.");
+        }
+
+        // NOUVEAU BOUTON : HARD RESET (Remise à Zéro)
+        function hardReset() {
+            if (confirm("⚠️ ATTENTION ! Voulez-vous vraiment TOUT effacer ? Vous perdrez vos Slimes, vos bâtiments, et MÊME VOS CRISTAUX QUANTIQUES. C'est un retour à zéro complet.")) {
+                if (confirm("Es-tu vraiment, vraiment sûr ? Il n'y aura aucun retour en arrière !")) {
+                    localStorage.removeItem('slimeClickerSave');
+                    location.reload();
+                }
+            }
+        }
+
         // ==========================================
         // 🧮 LOGIQUE DU JEU
         // ==========================================
@@ -425,7 +457,6 @@
             return power;
         }
 
-        // 3. REDUCTION DU BONUS DES CRISTAUX DE 5% A 1%
         function getSPS() { return getBaseSPS() * goldenMultiplier * (1 + (game.cristaux * 0.01)); }
         function getClickPower() { return getBaseClick() * goldenMultiplier * (1 + (game.cristaux * 0.01)); }
 
@@ -436,13 +467,15 @@
         }
 
         // ==========================================
-        // 🌌 PRESTIGE (LE PLUS IMPORTANT POUR RALENTIR)
+        // 🌌 PRESTIGE (CORRIGÉ)
         // ==========================================
         function getCrystalsToGain() {
-            // 4. ON EXIGE DES TRILLIONS (1 000 000 000 000) ET NON PLUS 100 000. 
-            // C'est la formule mathématique d'un jeu infini officiel.
-            if (game.totalSlimes < 1000000000000) return 0;
-            let totalLifetimeCrystals = Math.floor(Math.cbrt(game.totalSlimes / 1000000000000));
+            // NOUVELLE FORMULE PLUS JUSTE POUR LES HAUTS NIVEAUX (Racine carrée des millions au lieu de cubique des trillions)
+            // Cela permettra de toujours progresser sans être bloqué par les mathématiques.
+            if (game.totalSlimes < 1000000) return 0;
+            
+            // On divise par un Million et on prend la racine carrée
+            let totalLifetimeCrystals = Math.floor(Math.pow(game.totalSlimes / 1000000, 0.5));
             let toGain = totalLifetimeCrystals - game.cristaux;
             return toGain > 0 ? toGain : 0;
         }
@@ -450,7 +483,7 @@
         function doPrestige() {
             const toGain = getCrystalsToGain();
             if (toGain <= 0) return;
-            if (confirm(`Muter ?\nVous perdrez vos Slimes et Dresseurs, mais gagnerez ${toGain} Cristaux (+${toGain}% bonus permanent).`)) {
+            if (confirm(`Muter ?\nVous perdrez vos Slimes et Bâtiments, mais gagnerez ${toGain} Cristaux (+${toGain}% bonus permanent).`)) {
                 game.cristaux += toGain; game.slimes = 0; game.upgradesBought = []; buildings.forEach(b => b.count = 0);
                 document.getElementById('crystals-display').style.display = 'block';
                 saveGame(); renderShop(); renderUpgrades(); updateUI(); switchTab('dresseurs'); checkAchievements();
@@ -460,7 +493,6 @@
         // ==========================================
         // 🌟 SLIME DORÉ
         // ==========================================
-        // Un peu plus long a apparaitre (3 à 6 minutes)
         function scheduleGoldenSlime() { setTimeout(spawnGoldenSlime, (Math.random() * 180000) + 180000); }
         function spawnGoldenSlime() {
             if (goldenMultiplier > 1) { scheduleGoldenSlime(); return; }
@@ -470,7 +502,6 @@
         }
         function activateGoldenBuff(e) {
             const gs = document.getElementById('golden-slime'); gs.style.display = 'none'; clearTimeout(goldenTimeout);
-            // 5. NERF DU BUFF : Il dure 60 secondes et non plus 180.
             goldenMultiplier = 2; goldenTimerRemaining = 60; document.getElementById('golden-buff-ui').style.display = 'block'; updateUI();
             spawnFloatingText(e.clientX, e.clientY, "PRODUCTION X2 !!", "var(--neon-gold)");
             unlockAchievement('a7');
@@ -489,13 +520,15 @@
         }
         function handleSlimePress(e) {
             if (e.cancelable) e.preventDefault();
-            slimeImg.src = 'img/slm17.png'; slimeImg.style.transform = 'scale(0.9) translateY(15px)';
+            // Adapte le chemin vers l'image "appuyée" si tu l'as changée
+            slimeImg.style.transform = 'scale(0.9) translateY(15px)';
             const power = getClickPower(); game.slimes += power; game.totalSlimes += power; updateUI();
             let x = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
             let y = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
             spawnFloatingText(x, y, `+${formatNum(power)}`, "var(--neon-green)");
         }
-        function handleSlimeRelease() { slimeImg.src = 'img/slm1.png'; slimeImg.style.transform = 'scale(1) translateY(0)'; }
+        function handleSlimeRelease() { slimeImg.style.transform = 'scale(1) translateY(0)'; }
+        
         slimeImg.addEventListener('mousedown', handleSlimePress); slimeImg.addEventListener('mouseup', handleSlimeRelease); slimeImg.addEventListener('mouseleave', handleSlimeRelease);
         slimeImg.addEventListener('touchstart', handleSlimePress, {passive: false}); slimeImg.addEventListener('touchend', handleSlimeRelease); slimeImg.addEventListener('touchcancel', handleSlimeRelease);
 
