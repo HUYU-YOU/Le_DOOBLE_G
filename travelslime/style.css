@@ -73,7 +73,7 @@ input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
 .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 
-/* --- LE FOND DE LA TABLE (MAP) --- */
+/* --- LE FOND DE LA TABLE --- */
 #table-area {
     width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-end;
     position: relative; z-index: 5; padding: 20px; box-sizing: border-box;
@@ -81,7 +81,7 @@ input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     background-size: cover; background-position: center;
 }
 
-/* --- DISPOSITION DES ADVERSAIRES AUTOUR DE LA TABLE --- */
+/* --- DISPOSITION DES ADVERSAIRES --- */
 #top-opponents { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 30px; }
 #left-opponents { position: absolute; left: 20px; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 30px; }
 #right-opponents { position: absolute; right: 20px; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 30px; }
@@ -98,14 +98,13 @@ input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     filter: drop-shadow(0 0 15px var(--p1));
 }
 
-/* --- TAILLE DES SKINS X2 --- */
 .slime-avatar {
     width: 120px; height: 120px; object-fit: contain; margin-bottom: 2px;
     filter: drop-shadow(0 0 8px rgba(0,255,255,0.4));
     transition: transform 0.3s ease;
 }
 
-/* --- LA MAIN DE L'ADVERSAIRE (MINI DOS DE CARTE) --- */
+/* --- LA MAIN DE L'ADVERSAIRE (DOS DE CARTE CORRIGÉ) --- */
 .opp-hand {
     display: flex; align-items: center; justify-content: center; 
     gap: 6px; font-size: 1.2rem; font-weight: bold; margin-top: 5px; 
@@ -113,19 +112,19 @@ input:focus, select:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 .mini-back {
     width: 25px; height: 35px; 
-    background: url('assets/card/backcard.png') center/cover no-repeat; 
+    background: url('assets/skins/backcard.png') center/cover no-repeat; 
     border-radius: 4px; border: 1px solid rgba(255,255,255,0.4); 
     box-shadow: 0 2px 5px rgba(0,0,0,0.8);
 }
 
-/* --- LE CENTRE DE LA TABLE (LE SEAU EN DOS DE CARTE) --- */
+/* --- LE CENTRE DE LA TABLE (DOS DE CARTE CORRIGÉ) --- */
 #center-table {
     position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
     display: flex; flex-direction: column; align-items: center; gap: 15px;
 }
 .bucket-deck {
     width: 90px; height: 130px; 
-    background: url('assets/card/backcard.png') center/cover no-repeat;
+    background: url('assets/skins/backcard.png') center/cover no-repeat;
     border-radius: 8px; display: flex; flex-direction: column;
     justify-content: center; align-items: center; font-weight: bold; font-size: 2.2rem;
     box-shadow: 0 5px 20px rgba(0,0,0,0.8);
