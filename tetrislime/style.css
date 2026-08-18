@@ -12,7 +12,7 @@
 body, html { 
     font-family: 'Rajdhani', sans-serif; 
     background-color: var(--bg); 
-    /* L'image est gérée dynamiquement par le JS pour le mode jour/nuit */
+    background-image: url('assets/backgroundday.png'); /* Fond par défaut */
     background-size: cover;
     background-position: center;
     color: white; margin: 0; padding: 0; 
@@ -20,23 +20,6 @@ body, html {
     min-height: 100vh; user-select: none; touch-action: none; overflow: hidden; 
 }
 
-#game-container { 
-    position: relative; background: var(--panel); border-radius: 15px; 
-    box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
-    width: 100%; max-width: 900px; height: 80vh; border: 1px solid rgba(0, 240, 255, 0.3); 
-    backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
-    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
-}
-
-.size-classic { width: 900px !important; height: 700px !important; }
-#game-container.size-wide, #game-container.size-full {
-    position: fixed !important; top: 0; left: 0; 
-    width: 100vw !important; height: 100vh !important;
-    max-width: none; max-height: none; border-radius: 0; border: none; padding: 0; 
-    z-index: 50; background: rgba(10, 15, 25, 0.7); justify-content: center;
-}
-
-/* BOUTONS FLOTTANTS ET SETTINGS */
 .hub-link { 
     position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; 
     font-weight: bold; z-index: 100; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; 
@@ -46,11 +29,7 @@ body, html {
 
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
-.orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
-.orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--perfect); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--perfect), 0 0 5px #ffffff; }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
-.settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
-@keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* MODAL PARAMETRES */
 #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
@@ -63,6 +42,21 @@ body, html {
 .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 
 /* MENUS & OVERLAYS */
+#game-container { 
+    position: relative; background: var(--panel); border-radius: 15px; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+    width: 100%; max-width: 900px; height: 80vh; border: 1px solid rgba(0, 240, 255, 0.3); 
+    backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
+}
+
+#game-container.size-wide, #game-container.size-full {
+    position: fixed !important; top: 0; left: 0; 
+    width: 100vw !important; height: 100vh !important;
+    max-width: none; max-height: none; border-radius: 0; border: none; padding: 0; 
+    z-index: 50; background: rgba(10, 15, 25, 0.7); justify-content: center;
+}
+
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
     background: rgba(10, 15, 28, 0.9); z-index: 50; display: flex; flex-direction: column; 
@@ -78,7 +72,12 @@ body, html {
 input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
-/* UI DU JEU TETRIS */
+/* UI DU JEU TETRIS AVEC ZOOM POUR LE MODE "GRAND" */
+#game-ui {
+    transition: transform 0.3s ease;
+    transform-origin: center center;
+}
+
 .side-panel { display: flex; flex-direction: column; gap: 15px; width: 160px; }
 .panel-box {
     background: rgba(0,0,0,0.7); border: 2px solid var(--p1); border-radius: 10px; padding: 15px;
@@ -100,7 +99,7 @@ canvas { display: block; border-radius: 5px; }
 .m-btn:active { background: var(--p1); color: #000; }
 
 @media (max-width: 900px) {
-    #game-ui { flex-direction: column !important; padding-top: 60px !important; }
+    #game-ui { flex-direction: column !important; padding-top: 60px !important; transform: scale(0.9) !important;}
     .side-panel { flex-direction: row; width: 100%; max-width: 320px; justify-content: space-between; }
     .panel-box { padding: 5px; flex: 1; margin: 0 5px; }
     .board-wrapper canvas { width: 250px; height: 500px; }
