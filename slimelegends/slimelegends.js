@@ -5,11 +5,11 @@ const ctx = canvas.getContext('2d');
 const MAP_WIDTH = 3500; 
 const MAP_HEIGHT = 1000;
 
-// Chargement de l'image de la carte (celle que tu m'as fournie)
+// Chargement de l'image de la carte (depuis ton dossier assets)
 const mapImg = new Image();
-mapImg.src = 'img/image_68bdea.jpg';
+mapImg.src = 'assets/mapsol.png'; // <--- LE CHANGEMENT EST ICI
 
-// Définition des "Flaques" (Zones de furtivité)
+// Définition des "Flaques" (Zones de furtivité - à ajuster selon ton image mapsol.png)
 // Approximativement les bords haut et bas de l'image
 const PUDDLE_ZONES = [
     { yMin: 0, yMax: 250 },   // Bordure Haute
