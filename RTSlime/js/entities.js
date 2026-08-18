@@ -11,7 +11,6 @@ function getEntityById(id) {
     if (typeof units !== 'undefined') { ent = units.find(u => u.id === id); if (ent) return ent; }
     if (typeof buildings !== 'undefined') { ent = buildings.find(b => b.id === id); if (ent) return ent; }
     if (typeof trees !== 'undefined') { ent = trees.find(t => t.id === id); if (ent) return ent; }
-    if (typeof wheats !== 'undefined') { ent = wheats.find(w => w.id === id); if (ent) return ent; }
     if (typeof enemies !== 'undefined') { ent = enemies.find(e => e.id === id); if (ent) return ent; }
     if (typeof rivers !== 'undefined') { ent = rivers.find(r => r.id === id); if (ent) return ent; }
     if (typeof baseHost !== 'undefined' && baseHost && baseHost.id === id) return baseHost;
@@ -78,7 +77,7 @@ class Base {
             ctx.shadowBlur = 0;
         }
 
-        if (images.hdv.complete && images.hdv.naturalWidth > 0) {
+        if (images.hdv && images.hdv.complete && images.hdv.naturalWidth > 0) {
             ctx.drawImage(images.hdv, this.x - this.size/2, this.y - this.size/2, this.size, this.size);
         } else {
             ctx.fillStyle = '#111'; ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
@@ -191,7 +190,7 @@ class ResourceNode {
         this.color = type === 'tree' ? '#4da037' : '#ffd700'; 
     }
     draw(ctx, images) {
-        let img = this.skin ? images[this.skin] : (this.type === 'wheat' ? images.wheat : null);
+        let img = this.skin ? images[this.skin] : null;
 
         if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, this.x - 20, this.y - 20, 40, 40);
@@ -247,7 +246,7 @@ class Unit {
         }
 
         if (this.type === 'farmer') {
-            if (['tree', 'wheat'].includes(entity.type)) {
+            if (['tree'].includes(entity.type)) {
                 this.state = 'moving_to_res';
             } else if (['farm', 'sawmill', 'mine'].includes(entity.type) && entity.owner === this.owner) {
                 this.state = 'moving_to_building';
@@ -255,7 +254,7 @@ class Unit {
                 this.state = 'moving';
             }
         } else {
-            if (entity.owner !== this.owner && entity.hp > 0 && !['wheat', 'tree', 'river'].includes(entity.type)) {
+            if (entity.owner !== this.owner && entity.hp > 0 && !['tree', 'river'].includes(entity.type)) {
                 this.state = 'attacking';
             } else {
                 this.state = 'moving';
@@ -274,10 +273,11 @@ class Unit {
             this.hp = Math.min(this.maxHp, this.hp + 20 * dt); 
         }
 
+        // CORRECTION COLLISION BÛCHERONS : Ils traversent les copains pendant le travail
         units.forEach(other => {
-            if (this.state === 'moving_to_building') return;
+            if (['moving_to_building', 'moving_to_res', 'gathering', 'returning', 'farming'].includes(this.state)) return;
 
-            if(other.id !== this.id && other.state !== 'farming' && this.state !== 'farming') {
+            if(other.id !== this.id && !['farming', 'gathering', 'returning', 'moving_to_res'].includes(other.state)) {
                 let d = dist(this, other);
                 let minDist = this.radius + other.radius + 5;
                 if(d < minDist && d > 0) {
@@ -288,12 +288,19 @@ class Unit {
             }
         });
 
-        // UTILISATION DU SCANNER GLOBAL ICI
+        // SCAN DE L'ENTITE CIBLE
         let targetEnt = getEntityById(this.targetEntityId);
 
         if (this.type === 'farmer') {
-            if (this.state === 'moving_to_res' && targetEnt) {
-                if (dist(this, targetEnt) < this.radius + targetEnt.radius + 5) {
+            // CORRECTION I.A : Si l'arbre est coupé par un autre avant d'arriver
+            if (this.state === 'moving_to_res' && !targetEnt) {
+                let closestRes = getClosest(this, trees);
+                if (closestRes) this.setCommand(closestRes.x, closestRes.y, closestRes);
+                else { this.state = 'idle'; this.targetPos = null; }
+            }
+            else if (this.state === 'moving_to_res' && targetEnt) {
+                // Zone de récolte élargie (+15px) pour éviter qu'ils bloquent autour de l'arbre
+                if (dist(this, targetEnt) < this.radius + targetEnt.radius + 15) {
                     this.state = 'gathering'; this.targetPos = null;
                     this.payloadType = targetEnt.type === 'tree' ? 'wood' : 'food';
                 }
@@ -314,7 +321,19 @@ class Unit {
                             this.state = 'idle';
                         }
                     }
-                } else { this.state = 'idle'; }
+                } else { 
+                    // L'arbre est vide, mais on a encore de la place dans le sac
+                    if (this.payload > 0) {
+                        let myBase = this.owner === 'host' ? baseHost : baseGuest;
+                        this.targetEntityId = myBase.id;
+                        this.targetPos = { x: myBase.x, y: myBase.y }; 
+                        this.state = 'returning';
+                    } else {
+                        let closestRes = getClosest(this, trees);
+                        if(closestRes) this.setCommand(closestRes.x, closestRes.y, closestRes);
+                        else { this.state = 'idle'; this.targetPos = null; }
+                    }
+                }
             }
             else if (this.state === 'returning') {
                 let myBase = this.owner === 'host' ? baseHost : baseGuest;
@@ -324,10 +343,9 @@ class Unit {
                     if(this.payloadType === 'food') myRes.food += Math.floor(this.payload);
                     this.payload = 0;
                     
-                    let pool = this.payloadType === 'wood' ? trees : wheats;
-                    let closestRes = getClosest(this, pool);
+                    let closestRes = getClosest(this, trees);
                     if(closestRes) this.setCommand(closestRes.x, closestRes.y, closestRes);
-                    else this.state = 'idle';
+                    else { this.state = 'idle'; this.targetPos = null; }
                 }
             }
             else if (this.state === 'moving_to_building' && targetEnt) {
