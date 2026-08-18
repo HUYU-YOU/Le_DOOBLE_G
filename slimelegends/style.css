@@ -1,114 +1,140 @@
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Courier New', Courier, monospace;
-    user-select: none; /* Empêche de sélectionner le texte sur mobile */
+:root { 
+    --bg: #050811; 
+    --panel: rgba(10, 15, 28, 0.85); 
+    --p1: #00f0ff; 
+    --p2: #ff007f; 
+    --p3: #39ff14; 
+    --p4: #ffbf00; 
+    --sys: #00e5ff; 
 }
 
-body {
-    background-color: #1e1e2f;
-    color: white;
-    text-align: center;
-    overflow: hidden; /* Empêche le scroll sur mobile */
+body, html { 
+    font-family: 'Rajdhani', sans-serif; 
+    background-color: var(--bg); 
+    color: #fff; 
+    margin: 0; 
+    padding: 0; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    min-height: 100vh; 
+    user-select: none; 
+    overflow: hidden; 
 }
 
-.screen {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+h1.game-title { 
+    color: #fff; 
+    text-transform: uppercase; 
+    letter-spacing: 8px; 
+    margin-top: 15px; 
+    margin-bottom: 15px; 
+    text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); 
+    font-size: 3rem; 
 }
 
-/* --- MENUS --- */
-.panel {
-    background-color: #2a2a40;
-    padding: 20px;
-    border-radius: 10px;
-    margin-top: 20px;
+#game-container { 
+    position: relative; 
+    background: var(--panel); 
+    border-radius: 15px; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+    padding: 20px; 
+    border: 1px solid rgba(0, 240, 255, 0.2); 
+    transition: all 0.4s; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
 }
 
-button {
-    background-color: #ff4757;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 5px;
-    cursor: pointer;
-    margin: 10px;
+canvas { 
+    background: #1a1a2e; 
+    border-radius: 10px; 
+    border: 2px solid #333; 
+    display: block; 
+    box-shadow: inset 0 0 50px #000; 
+    cursor: crosshair; 
 }
 
-button:active { background-color: #ff6b81; }
+.size-classic canvas { width: 800px; height: 500px; }
 
-input {
-    padding: 10px;
-    font-size: 16px;
-    text-align: center;
-    border-radius: 5px;
-    border: none;
-    text-transform: uppercase;
+#game-container.size-wide, #game-container.size-full { 
+    position: fixed !important; 
+    top: 0; left: 0; 
+    width: 100vw !important; 
+    height: 100vh !important; 
+    max-width: none; 
+    border-radius: 0; 
+    border: none; 
+    padding: 0; 
+    z-index: 999; 
+    background: var(--bg); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
 }
 
-/* --- SELECTION CHAMPION --- */
-.roster-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-top: 20px;
+#game-container.size-wide canvas, #game-container.size-full canvas { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: contain; 
 }
 
-.champ-card {
-    background-color: #333;
-    padding: 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    border: 3px solid transparent;
+.overlay { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(5, 8, 17, 0.85); 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    z-index: 10; text-align: center; backdrop-filter: blur(12px); 
 }
 
-.champ-card.selected { border-color: #ff4757; }
+.menu-title { font-size: 2.2em; margin-bottom: 20px; color: var(--p1); text-transform: uppercase; text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
 
-/* --- LE JEU --- */
-canvas {
-    background-color: #2f3542;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+.selection-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; max-width: 750px; }
+#char-select { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 550px; margin: 0 auto 20px auto; }
+
+.card { 
+    background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; 
+    cursor: pointer; border: 1px solid rgba(255,255,255,0.1); 
+    text-align: center; transition: all 0.3s ease; width: 120px; 
 }
 
-/* --- UI MOBILE (Joysticks et Boutons) --- */
-#mobile-ui {
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 30px;
-    pointer-events: none; /* Laisse les clics passer au travers sauf sur les boutons */
+.card:hover, .card.selected { 
+    background: rgba(0, 240, 255, 0.15); 
+    transform: translateY(-5px); 
+    border-color: var(--p1); 
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); 
 }
 
-#joystick-area, #action-area {
-    pointer-events: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.char-card { position: relative; width: 160px; height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.char-card img { width: 90px; height: 90px; object-fit: contain; z-index: 1; margin-bottom: 15px; }
+.char-card b { position: absolute; bottom: 12px; z-index: 2; background: rgba(0,0,0,0.8); padding: 4px 15px; border-radius: 15px; }
+
+.btn-main { 
+    background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); 
+    padding: 12px 30px; font-size: 1.3em; font-weight: bold; border-radius: 8px; 
+    cursor: pointer; text-transform: uppercase; transition: 0.3s; margin: 10px; 
+}
+.btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); }
+
+.hub-link { 
+    position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); 
+    text-decoration: none; font-weight: bold; font-size: 1.2rem; background: rgba(0,0,0,0.5); 
+    padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); z-index: 100; 
 }
 
-.d-pad-row { display: flex; }
-
-.d-pad, .action-btn {
-    width: 50px;
-    height: 50px;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    margin: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 20px;
+/* --- HUD MOBA --- */
+#hud { 
+    position: absolute; bottom: 20px; left: 20px; right: 20px; 
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; pointer-events: none; z-index: 20;
 }
+.player-hud { background: rgba(0,0,0,0.75); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid; display: none; }
+#h1 { border-color: var(--p1); } #h2 { border-color: var(--p2); }
 
-.action-btn.attack { width: 70px; height: 70px; background-color: rgba(255, 71, 87, 0.5); }
-.action-btn.skill { background-color: rgba(46, 213, 115, 0.5); }
-.action-btn.ult { background-color: rgba(55, 66, 250, 0.5); }
+.hp-bar-container { width: 100%; height: 15px; background: #222; margin-top: 5px; border-radius: 4px; border: 1px solid #444; position: relative; }
+.hp-bar { height: 100%; background: #39ff14; width: 100%; transition: width 0.2s; border-radius: 4px; }
+.shield-bar { height: 100%; background: rgba(0, 240, 255, 0.6); position: absolute; top: 0; left: 0; width: 0%; border-radius: 4px; }
+.hp-text { position: absolute; width: 100%; top: -2px; font-size: 12px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black; }
+
+.cd-container { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
+.cd-box { width: 25px; height: 25px; background: #333; border: 1px solid #666; border-radius: 4px; color: white; font-size: 12px; line-height: 25px; font-weight: bold; }
+.cd-box.ready { border-color: var(--p1); box-shadow: 0 0 5px var(--p1); }
