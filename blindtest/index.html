@@ -211,9 +211,12 @@
             <div class="cat-grid" id="cat-buttons">
                 <button class="btn-main" onclick="launchGame('RAP')" style="border-color: #ff5500; color: #ffaa00;">🎤 RAP FR</button>
                 <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 OLD / NOSTALGIE </button>
-                <button class="btn-main" onclick="launchGame('POP')" style="border-color: #ff00aa; color: #ff88cc;">🌍 POP INTERNATIONALE</button>
+                <button class="btn-main" onclick="launchGame('POP')" style="border-color: #ff00aa; color: #ff88cc;">🌍 POP INT.</button>
                 <button class="btn-main btn-sys" onclick="launchGame('ANIME')">📺 ANIME</button>
-                <button class="btn-main" onclick="launchGame('FILMS')" style="border-color: #ffd700; color: #ffeb66; grid-column: 1 / -1;">🎬 MOVIES </button>
+                <button class="btn-main" onclick="launchGame('FILMS')" style="border-color: #ffd700; color: #ffeb66;">🎬 MOVIES </button>
+                
+                <!-- BOUTON DISNEY -->
+                <button class="btn-main" onclick="launchGame('DISNEY')" style="border-color: #9d00ff; color: #d488ff;">🏰 DISNEY </button>
                 
                 <!-- BOUTON MULTIJOUEUR INCLUS DIRECTEMENT ICI -->
                 <button class="btn-main btn-pink" id="btn-multi-toggle" onclick="openMenu('network')" style="grid-column: 1 / -1; margin-top: 15px;">🌐 JOUER EN MODE MULTIJOUEUR</button>
@@ -329,6 +332,28 @@
                 { film: "James Bond", aliases: ["james bond", "007"], search: "James Bond Theme Monty Norman" },
                 { film: "Le Bon, la Brute et le Truand", aliases: ["the good the bad and the ugly", "le bon la brute"], search: "The Good The Bad Ennio Morricone" }
             ],
+            DISNEY: [
+                { disney: "Le Roi Lion", aliases: ["roi lion", "the lion king"], search: "L'histoire de la vie" },
+                { disney: "Aladdin", aliases: ["aladin"], search: "Ce rêve bleu" },
+                { disney: "La Reine des Neiges", aliases: ["reine des neiges", "frozen"], search: "Libérée délivrée" },
+                { disney: "Mulan", aliases: [""], search: "Comme un homme Mulan" },
+                { disney: "Tarzan", aliases: [""], search: "Enfant de l'homme Phil Collins" },
+                { disney: "Hercule", aliases: [""], search: "Le Gospel Pur" },
+                { disney: "Vaiana", aliases: ["moana", "la legende du bout du monde"], search: "Le bleu lumière" },
+                { disney: "La Petite Sirène", aliases: ["petite sirene", "little mermaid"], search: "Sous l'océan" },
+                { disney: "Le Livre de la Jungle", aliases: ["livre de la jungle", "jungle book"], search: "Il en faut peu pour être heureux" },
+                { disney: "Raiponce", aliases: ["tangled"], search: "Où est la vraie vie" },
+                { disney: "Pocahontas", aliases: [""], search: "L'air du vent" },
+                { disney: "La Belle et la Bête", aliases: ["belle et la bete", "beauty and the beast"], search: "Histoire éternelle" },
+                { disney: "Le Bossu de Notre-Dame", aliases: ["bossu de notre dame", "hunchback"], search: "Rien qu'un jour" },
+                { disney: "Frère des Ours", aliases: ["frere des ours", "brother bear"], search: "Je m'en vais" },
+                { disney: "Encanto", aliases: [""], search: "Ne parlons pas de Bruno" },
+                { disney: "Toy Story", aliases: [""], search: "Je suis ton ami" },
+                { disney: "Coco", aliases: [""], search: "Ne m'oublie pas Coco" },
+                { disney: "Lilo et Stitch", aliases: ["lilo & stitch", "lilo and stitch"], search: "Hawaiian Roller Coaster Ride" },
+                { disney: "Les Aristochats", aliases: ["aristochats", "aristocats"], search: "Tout le monde veut devenir un cat" },
+                { disney: "Blanche-Neige", aliases: ["blanche neige", "snow white"], search: "Un jour mon prince viendra" }
+            ],
             RAP: [
                 { search: "Orelsan", artist: "Orelsan" }, { search: "Booba", artist: "Booba" }, { search: "PNL", artist: "PNL" },
                 { search: "Damso", artist: "Damso" }, { search: "Nekfeu", artist: "Nekfeu" }, { search: "Alpha Wann", artist: "Alpha Wann" },
@@ -415,7 +440,7 @@
         let audioPlayer = new Audio();
 
         // État de la manche
-        let state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, timeLeft: 20 };
+        let state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, disneyFound: false, timeLeft: 20 };
         let roundInterval = null;
         let isRoundActive = false;
 
@@ -462,16 +487,19 @@
 
         function setupUIForCategory(cat) {
             currentCategory = cat;
-            if (cat === 'ANIME' || cat === 'FILMS') {
+            if (cat === 'ANIME' || cat === 'FILMS' || cat === 'DISNEY') {
                 boxArtist.style.display = 'none';
                 boxTitle.style.display = 'none';
                 boxAnime.style.display = 'block';
                 if (cat === 'ANIME') {
                     guessInput.placeholder = "Tapez le nom de l'anime (ex: SNK, Jojo...)";
                     boxAnime.innerText = "📺 ANIME : ? ? ?";
-                } else {
+                } else if (cat === 'FILMS') {
                     guessInput.placeholder = "Tapez le nom du film (ex: Interstellar...)";
                     boxAnime.innerText = "🎬 FILM : ? ? ?";
+                } else if (cat === 'DISNEY') {
+                    guessInput.placeholder = "Tapez le nom du Disney (ex: Le Roi Lion...)";
+                    boxAnime.innerText = "🏰 DISNEY : ? ? ?";
                 }
             } else {
                 boxAnime.style.display = 'none';
@@ -572,7 +600,8 @@
                     conn.send({ type: 'join', name: myName });
 
                     document.getElementById('network-menu').style.display = 'none';
-                    document.getElementById('waiting-menu').style.display = 'flex';
+                    document.getElementById('main-menu').style.display = 'flex';
+                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2.5em; margin-bottom:20px;">CONNEXION ÉTABLIE</div><p style="font-size:1.5em; color:#fff; font-weight:600;">En attente du lancement par l\'hôte...</p><div class="loader"></div>';
                 });
 
                 conn.on('data', data => {
@@ -658,6 +687,11 @@
                                 filmName: searchItem.film, aliases: searchItem.aliases,
                                 previewUrl: rTrack.previewUrl
                             });
+                        } else if (cat === 'DISNEY') {
+                            selectedTracks.push({
+                                disneyName: searchItem.disney, aliases: searchItem.aliases,
+                                previewUrl: rTrack.previewUrl
+                            });
                         } else {
                             // On utilise le nom d'artiste PROPRE de notre base de données s'il existe ! (ex: Hugo TSR au lieu de Hugo (TSR))
                             selectedTracks.push({
@@ -700,7 +734,7 @@
             if (currentTrackIndex >= playlist.length) { endGame(); return; }
 
             currentTrack = playlist[currentTrackIndex];
-            state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, timeLeft: 20 };
+            state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, disneyFound: false, timeLeft: 20 };
 
             clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
 
@@ -764,6 +798,10 @@
             } else if (currentCategory === 'FILMS') {
                 if (stateData.filmFound && !boxAnime.classList.contains('found')) {
                     boxAnime.classList.add('found'); boxAnime.innerText = "🎬 FILM TROUVÉ !";
+                }
+            } else if (currentCategory === 'DISNEY') {
+                if (stateData.disneyFound && !boxAnime.classList.contains('found')) {
+                    boxAnime.classList.add('found'); boxAnime.innerText = "🏰 DISNEY TROUVÉ !";
                 }
             } else {
                 if (stateData.artistFound && !boxArtist.classList.contains('found')) {
@@ -880,6 +918,23 @@
                     boxAnime.innerText = gameMode === 'solo' ? `🎬 ${currentTrack.filmName}` : "🎬 FILM TROUVÉ !";
                     if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
                 }
+            } else if (currentCategory === 'DISNEY') {
+                if (state.disneyFound) return;
+
+                correct = checkMatch(text, currentTrack.disneyName);
+                if (!correct && currentTrack.aliases) {
+                    for (let alias of currentTrack.aliases) { if (checkMatch(text, alias)) { correct = true; break; } }
+                }
+
+                if (correct) {
+                    state.disneyFound = true; scores[pid]++;
+                    let msg = `🔥 ${playerPseudo} a trouvé le Disney !`;
+                    displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
+
+                    boxAnime.classList.add('found');
+                    boxAnime.innerText = gameMode === 'solo' ? `🏰 ${currentTrack.disneyName}` : "🏰 DISNEY TROUVÉ !";
+                    if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
+                }
             } else {
                 let aMatch = !state.artistFound && checkMatch(text, currentTrack.artistName);
                 if (!aMatch && currentTrack.aliases) {
@@ -959,6 +1014,8 @@
                 boxAnime.className = 'mystery-box'; boxAnime.innerText = "📺 ANIME : ? ? ?";
             } else if (currentCategory === 'FILMS') {
                 boxAnime.className = 'mystery-box'; boxAnime.innerText = "🎬 FILM : ? ? ?";
+            } else if (currentCategory === 'DISNEY') {
+                boxAnime.className = 'mystery-box'; boxAnime.innerText = "🏰 DISNEY : ? ? ?";
             } else {
                 boxArtist.className = 'mystery-box'; boxArtist.innerText = "🧑‍🎤 ARTISTE : ? ? ?";
                 boxTitle.className = 'mystery-box'; boxTitle.innerText = "🎵 TITRE : ? ? ?";
@@ -971,6 +1028,8 @@
                 boxAnime.classList.add('found'); boxAnime.innerText = `📺 ${trackObj.animeName}`;
             } else if (currentCategory === 'FILMS') {
                 boxAnime.classList.add('found'); boxAnime.innerText = `🎬 ${trackObj.filmName}`;
+            } else if (currentCategory === 'DISNEY') {
+                boxAnime.classList.add('found'); boxAnime.innerText = `🏰 ${trackObj.disneyName}`;
             } else {
                 boxArtist.classList.add('found'); boxArtist.innerText = `🧑‍🎤 ${trackObj.artistName}`;
                 boxTitle.classList.add('found'); boxTitle.innerText = `🎵 ${trackObj.trackName.split('(')[0]}`;
@@ -983,7 +1042,7 @@
             let t = document.getElementById('final-scores-text');
 
             if (gameMode === 'solo') {
-                let maxPts = (currentCategory === 'ANIME' || currentCategory === 'FILMS') ? 10 : 20;
+                let maxPts = (currentCategory === 'ANIME' || currentCategory === 'FILMS' || currentCategory === 'DISNEY') ? 10 : 20;
                 t.innerHTML = `Score Final : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>`;
             } else {
                 let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
