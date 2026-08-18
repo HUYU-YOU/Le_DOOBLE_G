@@ -9,41 +9,20 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- BOUTONS FLOTTANTS (S'adaptent à l'écran) -->
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <div class="settings-btn-wrapper" onclick="toggleSettings()">
-        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
-    </div>
-
-    <!-- MODAL PARAMÈTRES -->
-    <div id="settings-modal" class="overlay" style="display: none; z-index: 99999;">
-        <div class="settings-content">
-            <h2 style="color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
-            
-            <div style="margin: 20px 0; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px;">
-                <label style="font-size: 1.2em; font-weight: bold; color: var(--p3);">Disposition Clavier :</label>
-                <select id="keyboard-layout" style="width: 100%; margin-top: 10px; font-size: 1.1em; padding: 8px; background: #222; color: #fff; border: 1px solid var(--p1);">
-                    <option value="azerty">AZERTY (A, Z, E, R)</option>
-                    <option value="qwerty">QWERTY (Q, W, E, R)</option>
-                </select>
-            </div>
-
-            <div class="controls-info" style="font-size: 1em; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px;">
-                <b style="color: var(--p1);">Déplacement :</b> Clic Gauche sur le sol<br><br>
-                <b style="color: var(--p2);">Lancer un sort :</b> Touche du clavier (Tire vers la souris)<br>
-                <i style="color: #aaa;">OU clique sur l'icône du sort puis Clic Droit.</i><br><br>
-                <b style="color: var(--p4);">Caméra :</b> Pousse la souris sur les bords de l'écran.<br>
-                <b style="color: #00ffcc;">Furtivité :</b> Marche dans les flaques de slime pour devenir invisible !
-            </div>
-            
-            <button onclick="toggleSettings()" class="close-btn" style="margin-top: 20px;">Fermer</button>
-        </div>
-    </div>
-
-    <!-- CONTENEUR DU JEU -->
+    
+    <h1 class="game-title">Cyber Smash</h1>
+    
+    <!-- TON CONTENEUR AVEC SIZE-WIDE PAR DEFAUT -->
     <div id="game-container" class="size-wide">
-        <canvas id="gameCanvas"></canvas>
+        
+        <!-- BOUTONS DANS LE CONTAINER -->
+        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+        
+        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+            <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
         
         <!-- HUD MOBA IN-GAME -->
         <div id="hud" style="display: none;">
@@ -62,28 +41,60 @@
             </div>
         </div>
 
-        <!-- MENU DE SÉLECTION -->
+        <!-- MENU LOCAL -->
         <div class="overlay" id="local-menu">
-            <h1 class="game-title">Cyber Smash</h1>
-            <div class="menu-title" id="instruction-title">Sélectionne ton Champion</div>
+            <div class="menu-title" id="instruction-title">Sélection Joueur 1</div>
             <div id="char-select">
-                <div class="card char-card" onclick="chooseChar('ninja')"><img src="img/NINJA.png" alt="Ninja"><b>Ninja</b></div>
-                <div class="card char-card" onclick="chooseChar('gunner')"><img src="img/GUNNER.png" alt="Gunner"><b>Gunner</b></div>
-                <div class="card char-card" onclick="chooseChar('slime')"><img src="img/SLIME.png" alt="Slime"><b>Slime</b></div>
-                <div class="card char-card" onclick="chooseChar('seth')"><img src="img/BRUTE.png" alt="Brute"><b>Seth</b></div>
-                <div class="card char-card" onclick="chooseChar('mage')"><img src="img/MAGE.png" alt="Mage"><b>Mage</b></div>
-                <div class="card char-card" onclick="chooseChar('teemo')"><img src="img/PATHKILLER.png" alt="Pathkiller"><b>Scout</b></div>
+                <div class="card char-card" onclick="chooseChar('ninja')"><b>Ninja</b></div>
+                <div class="card char-card" onclick="chooseChar('gunner')"><b>Gunner</b></div>
+                <div class="card char-card" onclick="chooseChar('slime')"><b>Slime</b></div>
+                <div class="card char-card" onclick="chooseChar('seth')"><b>Seth</b></div>
+                <div class="card char-card" onclick="chooseChar('mage')"><b>Mage</b></div>
+                <div class="card char-card" onclick="chooseChar('teemo')"><b>Scout</b></div>
             </div>
-            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="startLocalGame()">LANCER LA PARTIE</button>
+            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">FIGHT !</button>
         </div>
 
         <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over-overlay" style="display: none;">
-            <div class="menu-title" id="winner-text" style="font-size: 4em; text-shadow: 0 0 20px #000;"></div>
-            <button class="btn-main" onclick="location.reload()">Retour au Menu</button>
+            <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
+            <button class="btn-main" id="btn-restart" onclick="location.reload()">Retour au menu de sélection</button>
+        </div>
+    </div> <!-- FIN DU GAME CONTAINER -->
+
+    <!-- MODAL PARAMETRES (Hors du container pour toujours s'afficher au centre, COMME TON CODE) -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+
+            <!-- Ajout du choix de clavier pour le gameplay MOBA -->
+            <div class="setting-item" style="flex-direction: column; gap: 10px; margin-bottom: 30px;">
+                <span>Contrôles (AZERTY / QWERTY) ⌨️</span>
+                <select id="keyboard-layout" style="font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em; padding: 5px; border-radius: 5px; background: #222; color: white; border: 1px solid var(--p1);">
+                    <option value="azerty">AZERTY (A, Z, E, R)</option>
+                    <option value="qwerty">QWERTY (Q, W, E, R)</option>
+                </select>
+                <div style="font-size: 0.9em; color: #aaa; margin-top: 10px; text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;">
+                    <b>Déplacement :</b> Clic Gauche<br>
+                    <b>Sorts :</b> Touche clavier OU (Clic Icône + Clic Droit)<br>
+                    <b>Furtivité :</b> Marche dans les flaques !
+                </div>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
+    <!-- TON SCRIPT PRINCIPAL -->
     <script src="slimelegends.js"></script>
 </body>
 </html>
