@@ -91,8 +91,8 @@
             pointer-events: none;
         }
         
-        #ui-container-left { position: absolute; top: 65px; left: 15px; } /* Sous le bouton Retour */
-        #ui-container-right { position: absolute; top: 65px; right: 25px; } /* Sous les Paramètres */
+        #ui-container-left { position: absolute; top: 65px; left: 15px; }
+        #ui-container-right { position: absolute; top: 65px; right: 25px; }
         #ui-container-center { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); }
 
         .hud-title { font-size: 0.9em; color: #aaa; text-transform: uppercase; letter-spacing: 2px;}
@@ -137,7 +137,6 @@
     <div id="game-container" class="size-wide">
         
         <div id="hud">
-            <!-- Centre : Combo (N'apparaît que lors des perfects) -->
             <div id="ui-container-center">
                 <div class="hud-box" id="combo-box" style="border-color: var(--perfect); opacity: 0; transition: 0.3s;">
                     <div class="hud-title" style="color:var(--perfect)">Combo</div>
@@ -145,7 +144,6 @@
                 </div>
             </div>
             
-            <!-- Gauche : Hauteur de la tour -->
             <div id="ui-container-left">
                 <div class="hud-box">
                     <div class="hud-title">Hauteur</div>
@@ -153,7 +151,6 @@
                 </div>
             </div>
 
-            <!-- Droite : Score Actuel + Best Score -->
             <div id="ui-container-right">
                 <div class="hud-box" style="border-color: var(--p2);">
                     <div class="hud-title" style="color:var(--p2)">Score</div>
@@ -167,7 +164,6 @@
 
         <canvas id="gameCanvas" width="500" height="700"></canvas>
 
-        <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over" style="display: none;">
             <h2 id="end-message" style="font-size: 4em; margin-bottom: 10px; color: var(--p2); text-shadow: 0 0 20px var(--p2); text-transform: uppercase;">TOUR EFFONDRÉE</h2>
             <p style="font-size: 1.8em; color: #fff; margin-bottom: 10px;">Score Final : <span id="final-score" style="color:var(--gold)">0</span></p>
@@ -287,10 +283,11 @@
         const imgPaths = {
             1: 'img/cube1.png', 2: 'img/cube2.png', 3: 'img/cube3.png', 4: 'img/cube4.png',
             5: 'img/cube5.png', 6: 'img/cube6.png', 7: 'img/cube7.png',
-            8: 'img/cube8.png', // Golden
-            9: 'img/cube9.png',  // Legendary
+            8: 'img/cube8.png', 
+            9: 'img/cube9.png',  
             'map1': 'img/mapstax1.png', 
-            'map2': 'img/mapstax2.png'  
+            'map2': 'img/mapstax2.png',
+            'map3': 'img/mapstax3.png' // <-- NOUVELLE MAP
         };
         const fallbackColors = {
             1: '#ff0055', 2: '#00f0ff', 3: '#39ff14', 4: '#b82aff', 5: '#ffaa00', 6: '#0055ff', 7: '#ff00ff',
@@ -306,7 +303,7 @@
         let loopRunning = false;
         
         let score = 0;
-        let bestScore = parseInt(localStorage.getItem('slimyStaxBestScore')) || 0; // Chargement du Best Score
+        let bestScore = parseInt(localStorage.getItem('slimyStaxBestScore')) || 0; 
         let perfectCount = 0;
         let comboMultiplier = 1;
         
@@ -317,10 +314,9 @@
         let cameraY = 0;
         let targetCameraY = 0;
         
-        // Physique et équilibre (CORRIGÉS POUR LA FLUIDITÉ)
         let towerSway = 0; 
         let targetTotalOffset = 0; 
-        let currentTotalOffset = 0; // Ajout d'une interpolation pour lisser la courbure de la tour
+        let currentTotalOffset = 0; 
         let swingAngle = 0;
         let swingSpeed = 0.02; 
         const MAX_OFFSET_TOLERANCE = BLOCK_SIZE * 1.1; 
@@ -328,7 +324,6 @@
         let particles = [];
         let floatingTexts = [];
         
-        // Génération des étoiles pour l'espace
         let stars = [];
         for(let i=0; i<100; i++) {
             stars.push({ x: Math.random() * 1000, y: -Math.random() * 10000, s: Math.random() * 2 + 1, a: Math.random() });
@@ -359,7 +354,7 @@
                 this.vy = 0;
                 this.angle = 0;
                 this.vAngle = 0;
-                this.visualX = x; // Position visuelle calculée avec le tangage
+                this.visualX = x; 
             }
             draw() {
                 let drawX = this.x;
@@ -369,8 +364,6 @@
                     let heightIndex = blocks.indexOf(this);
                     let swayAmplitude = (Math.abs(currentTotalOffset) * 0.05) + (heightIndex * 0.5);
                     let swayOffset = Math.sin(towerSway + heightIndex * 0.1) * swayAmplitude;
-                    
-                    // FIX: Le staticBend n'est plus calculé en fonction de blocks.length pour éviter l'effet "saut décalé" !
                     let staticBend = heightIndex * currentTotalOffset * 0.012; 
                     
                     drawX += swayOffset + staticBend;
@@ -414,16 +407,15 @@
 
         function createParticles(x, y, color, count) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
 
-        // DEMARRAGE DIRECT AU CHARGEMENT
         document.addEventListener("DOMContentLoaded", () => {
             setGameSize('wide');
-            updateHUD(); // Affiche le best score dès le chargement
+            updateHUD(); 
             startGame();
         });
 
         function startGame() {
             score = 0; perfectCount = 0; comboMultiplier = 1; 
-            targetTotalOffset = 0; currentTotalOffset = 0; // Remise à zéro de la courbure
+            targetTotalOffset = 0; currentTotalOffset = 0; 
             cameraY = 0; targetCameraY = 0; towerSway = 0; swingSpeed = 0.02;
             particles = []; floatingTexts = [];
             
@@ -466,7 +458,7 @@
 
         function updateHUD() {
             document.getElementById('ui-score').innerText = score;
-            document.getElementById('ui-best').innerText = bestScore; // Mise à jour du best score !
+            document.getElementById('ui-best').innerText = bestScore; 
             document.getElementById('ui-height').innerText = blocks.length;
             
             let comboBox = document.getElementById('combo-box');
@@ -493,8 +485,6 @@
             if (!activeBlock || activeBlock.state !== 'falling') return;
 
             let topBlock = blocks[blocks.length - 1];
-            
-            // FIX : On compare par rapport à la position VISUELLE du bloc en dessous
             let topVisualX = topBlock.visualX || topBlock.x;
             let diffX = activeBlock.x - topVisualX; 
             
@@ -505,9 +495,8 @@
                 let points = 10;
                 let color = '#fff';
 
-                // PERFECT PLACEMENT
                 if (Math.abs(diffX) <= 6) {
-                    activeBlock.x = topBlock.x; // S'aligne parfaitement sur la logique du bloc en dessous (retire le décalage)
+                    activeBlock.x = topBlock.x; 
                     points = 50;
                     color = 'var(--perfect)';
                     perfectCount++;
@@ -515,14 +504,12 @@
                     playSound('perfect');
                     
                     if (perfectCount >= 3) {
-                        targetTotalOffset = 0; // La tour redevient magiquement droite !
+                        targetTotalOffset = 0; 
                         floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 70, "TOWER CENTERED!", "var(--p1)"));
                     }
                     
                     floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 20, "PERFECT +50", color));
                 } else {
-                    // IMPERFECT PLACEMENT
-                    // On enregistre sa position en retirant le tangage actuel pour que la fonction draw() ne l'applique pas en double !
                     activeBlock.x = activeBlock.x - (topVisualX - topBlock.x); 
                     perfectCount = 0;
                     targetTotalOffset += diffX; 
@@ -538,10 +525,9 @@
                 
                 score += points * comboMultiplier;
                 
-                // --- GESTION DU BEST SCORE ---
                 if (score > bestScore) {
                     bestScore = score;
-                    localStorage.setItem('slimyStaxBestScore', bestScore); // Sauvegarde dans le navigateur
+                    localStorage.setItem('slimyStaxBestScore', bestScore); 
                 }
                 
                 if (activeBlock.type === 8) comboMultiplier = 2;
@@ -558,7 +544,6 @@
                     setTimeout(spawnBlock, 150);
                 }
             } else {
-                // BLOC PLACÉ DANS LE VIDE
                 activeBlock.state = 'dead';
                 activeBlock.vx = (Math.random() - 0.5) * 10;
                 activeBlock.vy = -5;
@@ -610,7 +595,6 @@
                 }
             }
 
-            // Interpolation pour rendre la courbure et le redressement de la tour ultra fluides !
             currentTotalOffset += (targetTotalOffset - currentTotalOffset) * 0.1;
 
             blocks.forEach(b => {
@@ -658,27 +642,41 @@
 
             let parallaxY = cameraY * 0.15; 
             
+            // --- GESTION PARALLAXE MULTI-MAPS ---
             ctx.save();
             ctx.translate(0, -parallaxY);
             
             let bg1 = imgs['map1'];
             let bg2 = imgs['map2'];
+            let bg3 = imgs['map3']; // Chargement de la Map 3
             
             if (bg1 && bg1.complete && bg1.naturalWidth > 0) {
                 let scale1 = canvas.width / bg1.naturalWidth;
                 let h1 = bg1.naturalHeight * scale1;
-                let y1 = canvas.height - h1; 
+                let currentY = canvas.height - h1; 
                 
-                ctx.drawImage(bg1, 0, y1, canvas.width, h1);
+                // 1. Map 1 en bas
+                ctx.drawImage(bg1, 0, currentY, canvas.width, h1);
                 
                 if (bg2 && bg2.complete && bg2.naturalWidth > 0) {
                     let scale2 = canvas.width / bg2.naturalWidth;
                     let h2 = bg2.naturalHeight * scale2;
-                    let currentY = y1 - h2;
+                    currentY -= h2;
                     
-                    while (currentY + h2 > parallaxY - 500) {
-                        ctx.drawImage(bg2, 0, currentY, canvas.width, h2);
-                        currentY -= h2;
+                    // 2. Map 2 pour la transition
+                    ctx.drawImage(bg2, 0, currentY, canvas.width, h2);
+                    
+                    if (bg3 && bg3.complete && bg3.naturalWidth > 0) {
+                        let scale3 = canvas.width / bg3.naturalWidth;
+                        let h3 = bg3.naturalHeight * scale3;
+                        currentY -= h3;
+                        
+                        // 3. Map 3 en BOUCLE INFINIE pour monter jusqu'aux étoiles
+                        // On remonte tant qu'on est visible à l'écran
+                        while (currentY + h3 > parallaxY - canvas.height) {
+                            ctx.drawImage(bg3, 0, currentY, canvas.width, h3);
+                            currentY -= h3;
+                        }
                     }
                 }
             }
