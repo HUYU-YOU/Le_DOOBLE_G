@@ -187,7 +187,7 @@
 
         /* Bloc d'Action */
         .action-zone {
-            background: var(--inner-bg); border: 2px solid var(--pink); /* Modifié pour correspondre au style Cyber-Spy */
+            background: var(--inner-bg); border: 2px solid var(--pink);
             border-radius: 8px; padding: 25px; box-shadow: 0 0 20px rgba(255, 0, 127, 0.15);
         }
         .action-zone h3 { color: var(--pink); margin-top: 0; font-size: 1.5em;}
@@ -207,7 +207,16 @@
         }
         .vote-btn:hover { background: var(--cyan); color: #000; box-shadow: 0 0 20px var(--cyan); transform: scale(1.05);}
 
+        /* Ecran de fin */
         #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--cyan); padding: 30px; border-radius: 8px; background: rgba(0, 240, 255, 0.1); box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);}
+        
+        /* Recap de fin de partie */
+        #end-game-reveal {
+            background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; 
+            margin-bottom: 25px; text-align: left; border: 1px dashed var(--pink);
+        }
+        #end-game-reveal p { margin: 8px 0; font-size: 1.2em; }
+        
         hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0; }
     </style>
 </head>
@@ -281,7 +290,7 @@
             </div>
 
             <div id="host-config" style="display: none;">
-                <!-- NOUVEAU BLOC : SÉLECTION DE LA LANGUE -->
+                <!-- SÉLECTION DE LA LANGUE -->
                 <div style="background: rgba(0,240,255,0.05); border: 1px solid var(--teal); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
                     <h4 style="margin: 0 0 10px 0; color: var(--cyan); text-transform: uppercase;">Réglages de la partie</h4>
                     <label style="color: #fff; margin-right: 10px; font-size: 1.1em;">Langue des mots :</label>
@@ -354,6 +363,15 @@
             <div id="game-over-screen">
                 <h2 id="winner-text" style="color: var(--cyan); font-size: 2.5em; margin-bottom: 10px;">...</h2>
                 <p id="winner-desc" style="color: white; font-size: 1.3em; margin-bottom: 20px;"></p>
+                
+                <!-- REVELATION FIN DE PARTIE -->
+                <div id="end-game-reveal">
+                    <p><strong>Mot Civil :</strong> <span id="end-civil" style="color: var(--cyan);"></span></p>
+                    <p><strong>Mot Anomalie :</strong> <span id="end-undercover" style="color: var(--pink);"></span></p>
+                    <p><strong>Anomalie(s) :</strong> <span id="end-undercover-names" style="color: var(--pink);"></span></p>
+                    <p id="end-glitch-row"><strong>Glitch :</strong> <span id="end-glitch-name" style="color: var(--teal);"></span></p>
+                </div>
+
                 <!-- Bouton Rejouer pour l'hôte -->
                 <button class="btn btn-pink" id="btn-restart" style="display:none; padding:20px; font-size:1.3em;">Relancer une partie avec ce groupe</button>
                 <p id="waiting-restart-msg" style="color: #aaa; display:none; font-style: italic; font-size:1.2em; text-align:center;">En attente du choix de l'hôte...</p>
@@ -476,7 +494,8 @@
             roundNumber: 0,   // Nombre de votes / éliminations
             descRound: 1,     // Compteur pour forcer 2 tours de mots avant vote
             hasVoted: false,
-            votesCast: 0
+            votesCast: 0,
+            secretData: null  // STOCKAGE DES REPONSES POUR L'ECRAN DE FIN
         };
 
         const screens = document.querySelectorAll('.screen');
@@ -620,6 +639,7 @@
                 case 's_game_setup':
                     players = data.playerList;
                     gameLogic.turnOrder = data.turnOrder;
+                    gameLogic.secretData = data.secretData; // Stockage local des mots pour la fin
                     showScreen('screen-game');
                     setupGameUI();
                     gameLogic.phase = GAME_PHASES.ROLE_REVEAL;
@@ -808,14 +828,13 @@
             gameLogic.roundNumber = 0;
             const pairData = wordPairs[Math.floor(Math.random() * wordPairs.length)];
             
-            // --- NOUVEAU : GESTION DE LA LANGUE SÉLECTIONNÉE ---
             const lang = document.getElementById('host-lang-select').value;
             let pair = [];
             
             if (lang === 'dual') {
                 pair = [`${pairData.fr[0]} / ${pairData.en[0]}`, `${pairData.fr[1]} / ${pairData.en[1]}`];
             } else {
-                pair = pairData[lang]; // Soit 'fr', soit 'en'
+                pair = pairData[lang]; 
             }
 
             gameLogic.currentPair = pair;
@@ -853,13 +872,24 @@
 
             gameLogic.phase = GAME_PHASES.ROLE_REVEAL;
 
+            // Prépare les données pour la fin de partie (Plus de triche pendant le jeu !)
+            const undercovers = players.filter(p => p.role === ROLES.UNDERCOVER).map(p => p.pseudo).join(', ');
+            const glitch = players.filter(p => p.role === ROLES.GLITCH).map(p => p.pseudo).join(', ') || 'Aucun';
+            
+            const secretData = {
+                civilWord: gameLogic.civilWord,
+                undercoverWord: gameLogic.undercoverWord,
+                undercovers: undercovers,
+                glitch: glitch
+            };
+            gameLogic.secretData = secretData;
+
             const cleanPlayerList = players.map(p => ({ id: p.id, peerId: p.peerId, pseudo: p.pseudo, isAlive: true }));
-            broadcast({ type: 's_game_setup', playerList: cleanPlayerList, turnOrder: gameLogic.turnOrder });
+            broadcast({ type: 's_game_setup', playerList: cleanPlayerList, turnOrder: gameLogic.turnOrder, secretData: secretData });
 
             showScreen('screen-game');
             setupGameUI();
 
-            // Création du mot personnalisé pour le Glitch (traduit aussi !)
             let glitchMsg = "TU ES LE GLITCH. Mêle-toi à la foule.";
             if (lang === 'en') glitchMsg = "YOU ARE THE GLITCH. Blend in with the crowd.";
             if (lang === 'dual') glitchMsg = "GLITCH: Mêle-toi à la foule / Blend in with the crowd.";
@@ -1247,6 +1277,20 @@
             document.getElementById('winner-text').innerText = data.winner;
             document.getElementById('winner-desc').innerText = data.desc;
             
+            // REVELATION DES MOTS SECRET SUR L'ECRAN DE FIN
+            if(gameLogic.secretData) {
+                document.getElementById('end-civil').innerText = gameLogic.secretData.civilWord;
+                document.getElementById('end-undercover').innerText = gameLogic.secretData.undercoverWord;
+                document.getElementById('end-undercover-names').innerText = gameLogic.secretData.undercovers;
+                
+                if(gameLogic.secretData.glitch && gameLogic.secretData.glitch !== 'Aucun') {
+                    document.getElementById('end-glitch-row').style.display = 'block';
+                    document.getElementById('end-glitch-name').innerText = gameLogic.secretData.glitch;
+                } else {
+                    document.getElementById('end-glitch-row').style.display = 'none';
+                }
+            }
+            
             const restartBtn = document.getElementById('btn-restart');
             const waitingMsg = document.getElementById('waiting-restart-msg');
             
@@ -1265,7 +1309,7 @@
 
         function resetToLobby() {
             gameLogic = {
-                phase: GAME_PHASES.LOBBY, currentPair: [], turnOrder: [], turnIndex: 0, civilWord: "", roundNumber: 0, descRound: 1, hasVoted: false, votesCast: 0
+                phase: GAME_PHASES.LOBBY, currentPair: [], turnOrder: [], turnIndex: 0, civilWord: "", roundNumber: 0, descRound: 1, hasVoted: false, votesCast: 0, secretData: null
             };
             
             players.forEach(p => {
@@ -1276,6 +1320,7 @@
             
             chatArea.innerHTML = "";
             document.getElementById('secret-word').innerText = "...";
+
             showScreen('screen-lobby');
             
             if (isHost) {
