@@ -1,0 +1,114 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace;
+    user-select: none; /* Empêche de sélectionner le texte sur mobile */
+}
+
+body {
+    background-color: #1e1e2f;
+    color: white;
+    text-align: center;
+    overflow: hidden; /* Empêche le scroll sur mobile */
+}
+
+.screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- MENUS --- */
+.panel {
+    background-color: #2a2a40;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+button {
+    background-color: #ff4757;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+}
+
+button:active { background-color: #ff6b81; }
+
+input {
+    padding: 10px;
+    font-size: 16px;
+    text-align: center;
+    border-radius: 5px;
+    border: none;
+    text-transform: uppercase;
+}
+
+/* --- SELECTION CHAMPION --- */
+.roster-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.champ-card {
+    background-color: #333;
+    padding: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 3px solid transparent;
+}
+
+.champ-card.selected { border-color: #ff4757; }
+
+/* --- LE JEU --- */
+canvas {
+    background-color: #2f3542;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* --- UI MOBILE (Joysticks et Boutons) --- */
+#mobile-ui {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 30px;
+    pointer-events: none; /* Laisse les clics passer au travers sauf sur les boutons */
+}
+
+#joystick-area, #action-area {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.d-pad-row { display: flex; }
+
+.d-pad, .action-btn {
+    width: 50px;
+    height: 50px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    margin: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+}
+
+.action-btn.attack { width: 70px; height: 70px; background-color: rgba(255, 71, 87, 0.5); }
+.action-btn.skill { background-color: rgba(46, 213, 115, 0.5); }
+.action-btn.ult { background-color: rgba(55, 66, 250, 0.5); }
