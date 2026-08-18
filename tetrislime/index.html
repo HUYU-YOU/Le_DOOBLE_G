@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TetriSlime - Solo & Versus</title>
     
+    <!-- Librairie PeerJS pour le multijoueur -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <!-- BOUTON RETOUR ET PARAMÈTRES -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
@@ -18,6 +21,7 @@
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
+    <!-- MODAL PARAMETRES -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
@@ -39,14 +43,17 @@
         </div>
     </div>
 
+    <!-- CONTENEUR PRINCIPAL DU JEU -->
     <div id="game-container" class="size-wide">
         
+        <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
             <h1 class="game-title">TETRISLIME</h1>
             <button class="btn-main" onclick="startSolo()">Jouer en Solo</button>
             <button class="btn-main" onclick="openMultiMenu()">Multijoueur</button>
         </div>
 
+        <!-- MENU MULTIJOUEUR -->
         <div class="overlay" id="network-menu" style="display: none;">
             <h2 style="color: var(--p1); font-size: 3em; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 0 15px var(--p1);">Versus</h2>
             
@@ -68,8 +75,10 @@
             <p id="status-text" style="color: var(--p4); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
         </div>
 
+        <!-- ZONE DE JEU (Cachée au début) -->
         <div id="game-ui" style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; gap: 20px; flex-direction: row; padding: 20px; box-sizing: border-box;">
             
+            <!-- Panneau Gauche : Stats & Hold -->
             <div class="side-panel left-panel">
                 <div class="panel-box">
                     <div class="panel-title">Score</div>
@@ -86,10 +95,12 @@
                 </div>
             </div>
 
+            <!-- Grille Principale -->
             <div class="board-wrapper">
                 <canvas id="tetris-canvas" width="300" height="600"></canvas>
             </div>
 
+            <!-- Panneau Droit : Next & Adversaire -->
             <div class="side-panel right-panel">
                 <div class="panel-box">
                     <div class="panel-title">Suivant</div>
@@ -102,6 +113,7 @@
                 </div>
             </div>
 
+            <!-- Contrôles Mobiles -->
             <div id="mobile-controls">
                 <button class="m-btn" ontouchstart="moveLeft(event)">⬅</button>
                 <button class="m-btn" ontouchstart="rotate(event)">↻</button>
@@ -110,6 +122,7 @@
             </div>
         </div>
 
+        <!-- ECRAN DE FIN DE PARTIE -->
         <div class="overlay" id="game-over" style="display: none;">
             <h2 id="end-title" style="font-size: 4em; color: var(--p2); text-shadow: 0 0 20px var(--p2);">GAME OVER</h2>
             <p style="font-size: 1.8em;">Score : <span id="final-score" style="color:var(--gold)">0</span></p>
