@@ -12,7 +12,8 @@
 body, html { 
     font-family: 'Rajdhani', sans-serif; 
     background-color: var(--bg); 
-    background-image: url('assets/backgroundday.png'); /* Fond par défaut */
+    /* J'utilise exactement l'orthographe de ton dossier ! */
+    background-image: url('assets/backgrounday.png'); 
     background-size: cover;
     background-position: center;
     color: white; margin: 0; padding: 0; 
