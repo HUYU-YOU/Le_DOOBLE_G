@@ -1,76 +1,98 @@
-:root { 
-    --bg: #050811; 
-    --panel: #111827; 
-    --p1: #00f0ff; 
-    --p2: #ff007f; 
-    --p3: #39ff14; 
-    --p4: #ffbf00; 
-    --sys: #00e5ff; 
-}
+:root { --bg: #050811; --panel: rgba(10, 15, 28, 0.85); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; --sys: #00e5ff; }
 
 body, html { 
     font-family: 'Rajdhani', sans-serif; 
-    background-color: var(--bg); 
-    color: #fff; 
-    margin: 0; 
-    padding: 0; 
-    width: 100vw; 
-    height: 100vh; 
-    overflow: hidden; 
-    user-select: none;
+    background-color: var(--bg); color: #fff; margin: 0; padding: 0; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; user-select: none; overflow: hidden;
 }
 
-.game-title { 
-    color: #fff; text-transform: uppercase; letter-spacing: 8px; 
-    text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 4rem; margin-bottom: 20px;
+h1.game-title { 
+    color: #fff; text-transform: uppercase; letter-spacing: 8px; margin-top: 15px; margin-bottom: 15px; 
+    text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 3rem; 
 }
 
-#game-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+/* --- TON CONTENEUR PRINCIPAL EXACT --- */
+#game-container { 
+    position: relative; 
+    background: var(--panel) radial-gradient(circle at center, rgba(0, 240, 255, 0.05) 0%, transparent 100%); 
+    border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+    padding: 20px; border: 1px solid rgba(0, 240, 255, 0.2); overflow: hidden; 
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    backdrop-filter: blur(10px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
 
-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; background: #0a0a14; }
+canvas { 
+    background: transparent; border-radius: 10px; border: 2px solid #333; display: block; 
+    box-shadow: inset 0 0 50px #000; cursor: crosshair; transition: all 0.4s ease;
+}
 
-/* MENUS & OVERLAYS */
+/* --- TES 3 TAILLES D'ÉCRAN --- */
+.size-classic canvas { width: 800px; height: 500px; }
+
+#game-container.size-wide, #game-container.size-full {
+    position: fixed !important; top: 0; left: 0; 
+    width: 100vw !important; height: 100vh !important;
+    max-width: none; border-radius: 0; border: none; padding: 0; 
+    z-index: 999; background: var(--bg); 
+    display: flex; justify-content: center; align-items: center;
+}
+#game-container.size-wide canvas, #game-container.size-full canvas {
+    width: 100%; height: 100%; max-width: none; max-height: none; 
+    border-radius: 0; border: none; 
+    object-fit: contain;
+}
+
+/* --- TES OVERLAYS EN GLASSMORPHISM --- */
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(5, 8, 17, 0.9); 
-    display: flex; flex-direction: column; align-items: center; justify-content: center; 
-    z-index: 10; text-align: center; backdrop-filter: blur(8px); 
+    background: rgba(5, 8, 17, 0.85); border-radius: inherit; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; z-index: 10; text-align: center; padding: 20px; 
+    box-sizing: border-box; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 
-.menu-title { font-size: 2.5em; margin-bottom: 20px; color: var(--p1); text-transform: uppercase; text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
+.menu-title { font-size: 2.2em; margin-bottom: 20px; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
 
-#char-select { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 600px; margin: 0 auto 20px auto; }
+#char-select { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 550px; margin: 0 auto 20px auto; }
 
-.card { 
-    background: rgba(0,0,0,0.8); padding: 15px; border-radius: 12px; 
-    cursor: pointer; border: 2px solid #333; text-align: center; transition: all 0.2s ease; 
-}
-.card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }
+.card { background: rgba(0,0,0,0.6); padding: 15px; border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); text-align: center; transition: all 0.3s ease; width: 150px; font-size: 1.2em; }
 .card:hover, .card.selected { background: rgba(0, 240, 255, 0.15); transform: translateY(-5px); border-color: var(--p1); box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
 
-.btn-main, .close-btn { 
-    background: #222; color: white; border: 2px solid var(--p1); 
-    padding: 12px 40px; font-size: 1.5em; font-weight: bold; border-radius: 8px; 
+.btn-main { 
+    background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 12px 30px; 
+    font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 8px; 
     cursor: pointer; text-transform: uppercase; transition: 0.3s; margin: 10px; 
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); width: 80%; max-width: 400px; 
 }
-.btn-main:hover, .close-btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); }
+.btn-main:hover { background: var(--p1); color: #000; transform: scale(1.05); box-shadow: 0 0 25px var(--p1); }
 
-/* BOUTONS FLOTTANTS */
+/* --- TES BOUTONS FLOTTANTS --- */
 .hub-link { 
-    position: absolute; top: 20px; left: 20px; z-index: 100;
-    font-weight: bold; font-size: 1.2rem; background: rgba(0,0,0,0.7); 
-    padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.5); 
-    color: white; text-decoration: none; transition: 0.3s; backdrop-filter: blur(5px);
+    position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem;
+    background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
+    transition: all 0.3s ease; z-index: 100;
 }
-.hub-link:hover { background: var(--p1); color: black; box-shadow: 0 0 15px var(--p1); }
+.hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
 
-.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; background: rgba(0,0,0,0.5); border-radius: 50%; padding: 5px; border: 1px solid rgba(0,240,255,0.5); }
-.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; }
-.settings-btn-wrapper:hover { background: var(--p1); box-shadow: 0 0 15px var(--p1); }
+.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); }
+.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-.settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 400px; }
+/* --- TON MODAL PARAMETRES EXACT --- */
+#settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+#settings-modal.show { opacity: 1; pointer-events: auto; }
+.settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 420px; }
 
-/* HUD MOBA */
+.size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+.btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+.btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+
+.close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+.close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+/* --- HUD MOBA IN-GAME --- */
 #hud { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: center; pointer-events: none; z-index: 20; }
 .hud-center { background: rgba(10, 15, 28, 0.9); padding: 20px 40px; border-radius: 10px 10px 0 0; border: 2px solid #444; border-bottom: none; pointer-events: auto; }
 
@@ -86,5 +108,4 @@ canvas { display: block; width: 100%; height: 100%; cursor: crosshair; backgroun
 .cd-box.cooldown { filter: brightness(0.4); pointer-events: none; }
 .ult-box { border-color: #ffbf00; }
 .ult-box.ready { box-shadow: 0 0 15px rgba(255,191,0,0.6); border-color: #ffbf00;}
-
 .key-hint { position: absolute; top: -10px; left: -10px; background: #000; border: 1px solid #fff; border-radius: 3px; font-size: 12px; padding: 2px 6px; font-weight: bold; }
