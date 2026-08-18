@@ -3,40 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Smash - MOBA Top-Down</title>
+    <title>Cyber Smash - ARAM Edition</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- BOUTONS FLOTTANTS (Hub et Paramètres) -->
+    <!-- BOUTONS FLOTTANTS (S'adaptent à l'écran) -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-    <button class="settings-btn" onclick="toggleSettings()">⚙️ Paramètres</button>
+    <div class="settings-btn-wrapper" onclick="toggleSettings()">
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
 
-    <!-- FENÊTRE PARAMÈTRES -->
-    <div id="settings-modal" class="overlay" style="display: none; z-index: 1000;">
-        <div class="panel">
-            <h2>PARAMÈTRES</h2>
-            <div style="margin: 20px 0;">
-                <label style="font-size: 1.2em; margin-right: 10px;">Disposition Clavier :</label>
-                <select id="keyboard-layout" style="font-size: 1.2em; padding: 5px;">
+    <!-- MODAL PARAMÈTRES -->
+    <div id="settings-modal" class="overlay" style="display: none; z-index: 99999;">
+        <div class="settings-content">
+            <h2 style="color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div style="margin: 20px 0; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px;">
+                <label style="font-size: 1.2em; font-weight: bold; color: var(--p3);">Disposition Clavier :</label>
+                <select id="keyboard-layout" style="width: 100%; margin-top: 10px; font-size: 1.1em; padding: 8px; background: #222; color: #fff; border: 1px solid var(--p1);">
                     <option value="azerty">AZERTY (A, Z, E, R)</option>
                     <option value="qwerty">QWERTY (Q, W, E, R)</option>
                 </select>
             </div>
-            <p style="color: #aaa; margin-bottom: 20px;">
-                <b>Déplacement :</b> Clic Gauche<br>
-                <b>Lancer un sort :</b> Touche du clavier (Quick-Cast) <br>OU Clic sur le sort en bas + Clic Droit
-            </p>
-            <button class="btn-main" onclick="toggleSettings()">Fermer</button>
+
+            <div class="controls-info" style="font-size: 1em; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px;">
+                <b style="color: var(--p1);">Déplacement :</b> Clic Gauche sur le sol<br><br>
+                <b style="color: var(--p2);">Lancer un sort :</b> Touche du clavier (Tire vers la souris)<br>
+                <i style="color: #aaa;">OU clique sur l'icône du sort puis Clic Droit.</i><br><br>
+                <b style="color: var(--p4);">Caméra :</b> Pousse la souris sur les bords de l'écran.<br>
+                <b style="color: #00ffcc;">Furtivité :</b> Marche dans les flaques de slime pour devenir invisible !
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn" style="margin-top: 20px;">Fermer</button>
         </div>
     </div>
 
     <!-- CONTENEUR DU JEU -->
-    <div id="game-container">
+    <div id="game-container" class="size-wide">
         <canvas id="gameCanvas"></canvas>
         
-        <!-- HUD MOBA -->
+        <!-- HUD MOBA IN-GAME -->
         <div id="hud" style="display: none;">
             <div class="hud-center">
                 <div class="hp-bar-container">
@@ -45,7 +54,6 @@
                     <div class="hp-text" id="p1-hp-txt">1000/1000</div>
                 </div>
                 <div class="cd-container">
-                    <!-- Les clics sur ces boutons préparent le sort pour le Clic Droit -->
                     <div class="cd-box" id="spell-s1" onclick="prepareSpell('s1')"><span class="key-hint" id="key-s1">A</span></div>
                     <div class="cd-box" id="spell-s2" onclick="prepareSpell('s2')"><span class="key-hint" id="key-s2">Z</span></div>
                     <div class="cd-box" id="spell-s3" onclick="prepareSpell('s3')"><span class="key-hint" id="key-s3">E</span></div>
@@ -54,17 +62,17 @@
             </div>
         </div>
 
-        <!-- MENU LOCAL (Choix du champion) -->
+        <!-- MENU DE SÉLECTION -->
         <div class="overlay" id="local-menu">
             <h1 class="game-title">Cyber Smash</h1>
-            <div class="menu-title" id="instruction-title">Sélection Joueur 1</div>
+            <div class="menu-title" id="instruction-title">Sélectionne ton Champion</div>
             <div id="char-select">
-                <div class="card char-card" onclick="chooseChar('ninja')"><b>Ninja</b><br><small>Assassin</small></div>
-                <div class="card char-card" onclick="chooseChar('gunner')"><b>Gunner</b><br><small>ADC</small></div>
-                <div class="card char-card" onclick="chooseChar('slime')"><b>Slime</b><br><small>Gros Tank</small></div>
-                <div class="card char-card" onclick="chooseChar('seth')"><b>Seth</b><br><small>Brawler</small></div>
-                <div class="card char-card" onclick="chooseChar('mage')"><b>Mage</b><br><small>Burst</small></div>
-                <div class="card char-card" onclick="chooseChar('teemo')"><b>Scout</b><br><small>Poison / Furtif</small></div>
+                <div class="card char-card" onclick="chooseChar('ninja')"><img src="img/NINJA.png" alt="Ninja"><b>Ninja</b></div>
+                <div class="card char-card" onclick="chooseChar('gunner')"><img src="img/GUNNER.png" alt="Gunner"><b>Gunner</b></div>
+                <div class="card char-card" onclick="chooseChar('slime')"><img src="img/SLIME.png" alt="Slime"><b>Slime</b></div>
+                <div class="card char-card" onclick="chooseChar('seth')"><img src="img/BRUTE.png" alt="Brute"><b>Seth</b></div>
+                <div class="card char-card" onclick="chooseChar('mage')"><img src="img/MAGE.png" alt="Mage"><b>Mage</b></div>
+                <div class="card char-card" onclick="chooseChar('teemo')"><img src="img/PATHKILLER.png" alt="Pathkiller"><b>Scout</b></div>
             </div>
             <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="startLocalGame()">LANCER LA PARTIE</button>
         </div>
@@ -72,7 +80,7 @@
         <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over-overlay" style="display: none;">
             <div class="menu-title" id="winner-text" style="font-size: 4em; text-shadow: 0 0 20px #000;"></div>
-            <button class="btn-main" onclick="location.reload()">Rejouer</button>
+            <button class="btn-main" onclick="location.reload()">Retour au Menu</button>
         </div>
     </div>
 
