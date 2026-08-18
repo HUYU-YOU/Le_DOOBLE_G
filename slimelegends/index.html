@@ -3,56 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Slime of Legends</title>
+    <title>Cyber Smash - MOBA Edition</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Lien vers ton fichier CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- MENU PRINCIPAL -->
-    <div id="lobby-screen" class="screen">
-        <h1>🗡️ Slime of Legends</h1>
-        <div class="panel">
-            <button id="btn-create">Créer une partie</button>
-            <p id="room-code-display"></p>
-            
-            <hr>
-            
-            <input type="text" id="input-code" placeholder="Ex: LEG123" maxlength="6">
-            <button id="btn-join">Rejoindre</button>
-        </div>
-    </div>
+    <h1 class="game-title">Cyber Smash</h1>
+    
+    <div id="game-container" class="size-wide">
+        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
-    <!-- SÉLECTION DES CHAMPIONS -->
-    <div id="select-screen" class="screen" style="display: none;">
-        <h2>Choisis ton Champion</h2>
-        <div id="roster" class="roster-grid">
-            <!-- Rempli par le JS -->
-        </div>
-        <button id="btn-start" style="display: none; margin-top: 20px;">LANCER LA BAGARRE !</button>
-    </div>
-
-    <!-- LE JEU -->
-    <div id="game-screen" class="screen" style="display: none;">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
         
-        <!-- UI Mobile / Tactile -->
-        <div id="mobile-ui">
-            <div id="joystick-area">
-                <div class="d-pad" id="btn-up">⬆️</div>
-                <div class="d-pad-row">
-                    <div class="d-pad" id="btn-left">⬅️</div>
-                    <div class="d-pad" id="btn-right">➡️</div>
+        <!-- HUD MOBA -->
+        <div id="hud" style="display: none;">
+            <!-- Player 1 -->
+            <div class="player-hud" id="h1">
+                <div style="font-weight:bold; color: var(--p1)">Joueur 1 (<span id="p1-name"></span>)</div>
+                <div class="hp-bar-container">
+                    <div class="hp-bar" id="p1-hp-bar"></div>
+                    <div class="shield-bar" id="p1-shield-bar"></div>
+                    <div class="hp-text" id="p1-hp-txt">1000/1000</div>
                 </div>
-                <div class="d-pad" id="btn-down">⬇️</div>
+                <div class="cd-container">
+                    <div class="cd-box" id="p1-cd1">A</div>
+                    <div class="cd-box" id="p1-cd2">E</div>
+                    <div class="cd-box" id="p1-cd3">F</div>
+                    <div class="cd-box" id="p1-ult">R</div>
+                </div>
             </div>
-            <div id="action-area">
-                <button class="action-btn skill" id="btn-skill">S1</button>
-                <button class="action-btn ult" id="btn-ult">ULT</button>
-                <button class="action-btn attack" id="btn-attack">ATT</button>
+            <!-- Player 2 -->
+            <div class="player-hud" id="h2">
+                <div style="font-weight:bold; color: var(--p2)">Joueur 2 (<span id="p2-name"></span>)</div>
+                <div class="hp-bar-container">
+                    <div class="hp-bar" id="p2-hp-bar" style="background: var(--p2)"></div>
+                    <div class="shield-bar" id="p2-shield-bar"></div>
+                    <div class="hp-text" id="p2-hp-txt">1000/1000</div>
+                </div>
+                <div class="cd-container">
+                    <div class="cd-box" id="p2-cd1">A</div>
+                    <div class="cd-box" id="p2-cd2">E</div>
+                    <div class="cd-box" id="p2-cd3">F</div>
+                    <div class="cd-box" id="p2-ult">R</div>
+                </div>
             </div>
+        </div>
+
+        <!-- MENU LOCAL -->
+        <div class="overlay" id="local-menu">
+            <div class="menu-title" id="instruction-title">Sélection Joueur 1</div>
+            <div id="char-select">
+                <div class="card char-card" onclick="chooseChar('ninja')"><img src="img/NINJA.png" alt="Ninja"><b>Ninja</b></div>
+                <div class="card char-card" onclick="chooseChar('gunner')"><img src="img/GUNNER.png" alt="ADC"><b>ADC (Gunner)</b></div>
+                <div class="card char-card" onclick="chooseChar('slime')"><img src="img/SLIME.png" alt="Slime"><b>Slime (Tank)</b></div>
+                <div class="card char-card" onclick="chooseChar('seth')"><img src="img/BRUTE.png" alt="Seth"><b>Seth (Brawler)</b></div>
+                <div class="card char-card" onclick="chooseChar('mage')"><img src="img/MAGE.png" alt="Mage"><b>Mage</b></div>
+                <div class="card char-card" onclick="chooseChar('teemo')"><img src="img/PATHKILLER.png" alt="Teemo"><b>Scout (Teemo)</b></div>
+            </div>
+            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="startLocalGame()">FIGHT !</button>
+        </div>
+
+        <div class="overlay" id="game-over-overlay" style="display: none;">
+            <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
+            <button class="btn-main" onclick="location.reload()">Rejouer</button>
         </div>
     </div>
 
+    <!-- Lien vers ton fichier JavaScript -->
     <script src="slimelegends.js"></script>
 </body>
 </html>
