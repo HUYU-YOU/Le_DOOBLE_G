@@ -3,6 +3,8 @@
     --panel: #111827; 
     --p1: #00f0ff; 
     --p2: #ff007f; 
+    --p3: #39ff14; 
+    --p4: #ffbf00; 
     --sys: #00e5ff; 
 }
 
@@ -14,32 +16,18 @@ body, html {
     padding: 0; 
     width: 100vw; 
     height: 100vh; 
-    overflow: hidden; /* Empêche le scroll, on se déplace avec la caméra du jeu */
+    overflow: hidden; 
     user-select: none;
 }
 
 .game-title { 
-    color: #fff; 
-    text-transform: uppercase; 
-    letter-spacing: 8px; 
-    text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); 
-    font-size: 3rem; 
-    margin-bottom: 30px;
+    color: #fff; text-transform: uppercase; letter-spacing: 8px; 
+    text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 4rem; margin-bottom: 20px;
 }
 
-#game-container { 
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-}
+#game-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-canvas { 
-    display: block; 
-    width: 100%; 
-    height: 100%;
-    /* Un curseur stylé en forme de cible */
-    cursor: crosshair; 
-}
+canvas { display: block; width: 100%; height: 100%; cursor: crosshair; background: #0a0a14; }
 
 /* MENUS & OVERLAYS */
 .overlay { 
@@ -49,63 +37,42 @@ canvas {
     z-index: 10; text-align: center; backdrop-filter: blur(8px); 
 }
 
-.panel {
-    background: var(--panel);
-    padding: 40px;
-    border-radius: 15px;
-    border: 2px solid var(--p1);
-    box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
-}
-
 .menu-title { font-size: 2.5em; margin-bottom: 20px; color: var(--p1); text-transform: uppercase; text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
 
 #char-select { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 600px; margin: 0 auto 20px auto; }
 
 .card { 
-    background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; 
-    cursor: pointer; border: 2px solid #333; 
-    text-align: center; transition: all 0.2s ease; font-size: 1.2em;
+    background: rgba(0,0,0,0.8); padding: 15px; border-radius: 12px; 
+    cursor: pointer; border: 2px solid #333; text-align: center; transition: all 0.2s ease; 
 }
+.card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }
+.card:hover, .card.selected { background: rgba(0, 240, 255, 0.15); transform: translateY(-5px); border-color: var(--p1); box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
 
-.card:hover, .card.selected { 
-    background: rgba(0, 240, 255, 0.15); 
-    transform: translateY(-5px); 
-    border-color: var(--p1); 
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); 
-}
-
-.btn-main { 
+.btn-main, .close-btn { 
     background: #222; color: white; border: 2px solid var(--p1); 
     padding: 12px 40px; font-size: 1.5em; font-weight: bold; border-radius: 8px; 
     cursor: pointer; text-transform: uppercase; transition: 0.3s; margin: 10px; 
 }
-.btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); }
+.btn-main:hover, .close-btn:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); }
 
-/* BOUTONS HAUT DE PAGE */
-.hub-link, .settings-btn { 
-    position: absolute; top: 20px; z-index: 100;
+/* BOUTONS FLOTTANTS */
+.hub-link { 
+    position: absolute; top: 20px; left: 20px; z-index: 100;
     font-weight: bold; font-size: 1.2rem; background: rgba(0,0,0,0.7); 
     padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.5); 
-    color: white; text-decoration: none; cursor: pointer; backdrop-filter: blur(5px);
-    transition: 0.3s;
+    color: white; text-decoration: none; transition: 0.3s; backdrop-filter: blur(5px);
 }
-.hub-link { left: 20px; }
-.settings-btn { right: 20px; }
-.hub-link:hover, .settings-btn:hover { background: var(--p1); color: black; box-shadow: 0 0 15px var(--p1); }
+.hub-link:hover { background: var(--p1); color: black; box-shadow: 0 0 15px var(--p1); }
 
-/* HUD MOBA (Barre de vie + Sorts) */
-#hud { 
-    position: absolute; bottom: 30px; left: 0; width: 100%; 
-    display: flex; justify-content: center; pointer-events: none; z-index: 20;
-}
-.hud-center {
-    background: rgba(10, 15, 28, 0.9);
-    padding: 20px 40px;
-    border-radius: 10px 10px 0 0;
-    border: 2px solid #444;
-    border-bottom: none;
-    pointer-events: auto;
-}
+.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; background: rgba(0,0,0,0.5); border-radius: 50%; padding: 5px; border: 1px solid rgba(0,240,255,0.5); }
+.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; }
+.settings-btn-wrapper:hover { background: var(--p1); box-shadow: 0 0 15px var(--p1); }
+
+.settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 400px; }
+
+/* HUD MOBA */
+#hud { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: center; pointer-events: none; z-index: 20; }
+.hud-center { background: rgba(10, 15, 28, 0.9); padding: 20px 40px; border-radius: 10px 10px 0 0; border: 2px solid #444; border-bottom: none; pointer-events: auto; }
 
 .hp-bar-container { width: 300px; height: 25px; background: #222; border-radius: 5px; border: 2px solid #000; position: relative; margin-bottom: 15px; }
 .hp-bar { height: 100%; background: #39ff14; width: 100%; transition: width 0.1s; }
@@ -113,11 +80,7 @@ canvas {
 .hp-text { position: absolute; width: 100%; top: 2px; text-align: center; font-size: 16px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black; }
 
 .cd-container { display: flex; justify-content: center; gap: 15px; }
-.cd-box { 
-    width: 60px; height: 60px; background: #2a2a2a; border: 2px solid #555; 
-    border-radius: 8px; position: relative; cursor: pointer; transition: 0.2s;
-    display: flex; align-items: center; justify-content: center; font-size: 1.5em; color: #fff;
-}
+.cd-box { width: 60px; height: 60px; background: #2a2a2a; border: 2px solid #555; border-radius: 8px; position: relative; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.5em; color: #fff; }
 .cd-box.ready { border-color: var(--p1); box-shadow: 0 0 15px rgba(0,240,255,0.4); }
 .cd-box.active { border-color: #fff; background: rgba(255,255,255,0.2); box-shadow: 0 0 20px #fff; transform: translateY(-5px); }
 .cd-box.cooldown { filter: brightness(0.4); pointer-events: none; }
