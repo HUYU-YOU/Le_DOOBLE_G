@@ -273,155 +273,10 @@
         </div>
     </div>
 
-    <script>
-        // --- MASTER DATABASES (ULTIMATE EDITION) ---
-        const catalogs = {
-            ANIME: [
-                { anime: "Naruto", aliases: ["naruto shippuden"], search: "Silhouette Kana-Boon" }, { anime: "Naruto", aliases: ["naruto shippuden"], search: "Blue Bird Ikimonogakari" },
-                { anime: "One Piece", aliases: ["onepiece"], search: "We Are! Hiroshi Kitadani" }, { anime: "One Piece", aliases: ["onepiece"], search: "Hope Namie Amuro" },
-                { anime: "Bleach", aliases: ["bleachanime"], search: "Asterisk Orange Range" }, { anime: "Bleach", aliases: ["bleachanime"], search: "Ranbu no Melody SID" },
-                { anime: "Dragon Ball Z", aliases: ["dbz", "dragonball", "dragon ball"], search: "Cha La Head Cha La" }, { anime: "Hunter x Hunter", aliases: ["hxh"], search: "Departure Ono Masatoshi" },
-                { anime: "Fairy Tail", aliases: ["fairytail"], search: "Snow Fairy FUNKIST" }, { anime: "Gintama", aliases: ["gin tama"], search: "Tougenkyou Alien" },
-                { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "Guren no Yumiya Linked Horizon" }, { anime: "Attack on Titan", aliases: ["snk", "shingeki no kyojin", "aot"], search: "The Rumbling SiM" },
-                { anime: "Demon Slayer", aliases: ["kimetsu no yaiba"], search: "Gurenge LiSA" }, { anime: "Jujutsu Kaisen", aliases: ["jjk"], search: "Kaikai Kitan Eve" },
-                { anime: "My Hero Academia", aliases: ["mha", "boku no hero academia"], search: "Peace Sign Kenshi Yonezu" }, { anime: "Chainsaw Man", aliases: ["csm"], search: "Kick Back Kenshi Yonezu" },
-                { anime: "Oshi no Ko", aliases: ["oshinoko"], search: "Idol Yoasobi" }, { anime: "Spy x Family", aliases: ["spyxfamily", "sxf"], search: "Mixed Nuts Official Hige Dandism" },
-                { anime: "Mashle", aliases: ["mashle magic and muscles"], search: "Bling-Bang-Bang-Born Creepy Nuts" }, { anime: "Solo Leveling", aliases: ["sololeveling"], search: "LEveL SawanoHiroyuki" },
-                { anime: "Tokyo Revengers", aliases: ["tokyorevengers"], search: "Cry Baby Official Hige Dandism" }, { anime: "Fullmetal Alchemist", aliases: ["fma", "full metal alchemist", "fmab", "brotherhood"], search: "Again YUI" },
-                { anime: "Death Note", aliases: ["deathnote"], search: "the WORLD Nightmare" }, { anime: "Jojo's Bizarre Adventure", aliases: ["jojo", "jojos", "jjba"], search: "Bloody Stream Coda" },
-                { anime: "Evangelion", aliases: ["neon genesis evangelion", "nge"], search: "A Cruel Angels Thesis" }, { anime: "Cowboy Bebop", aliases: ["cowboybebop"], search: "Tank Seatbelts" },
-                { anime: "Great Teacher Onizuka", aliases: ["gto"], search: "Drivers High L'Arc-en-Ciel" }, { anime: "Pokemon", aliases: ["pocket monsters"], search: "Gotta Catch Em All Theme" },
-                { anime: "Sword Art Online", aliases: ["sao"], search: "Crossing Field LiSA" }, { anime: "Tokyo Ghoul", aliases: ["tokyoghoul"], search: "Unravel TK" },
-                { anime: "One Punch Man", aliases: ["opm"], search: "The Hero JAM Project" }, { anime: "Cyberpunk Edgerunners", aliases: ["cyberpunk", "edgerunners"], search: "This Fffire Franz Ferdinand" },
-                { anime: "Saint Seiya", aliases: ["les chevaliers du zodiaque"], search: "Pegasus Fantasy Make-Up" }, { anime: "Sailor Moon", aliases: ["sailormoon"], search: "Moonlight Densetsu" },
-                { anime: "Goldorak", aliases: ["ufo robot grendizer"], search: "Goldorak Noam" }, { anime: "Captain Tsubasa", aliases: ["olive et tom"], search: "Moete Hero" },
-                { anime: "Death Parade", aliases: ["deathparade"], search: "Flyers Bradio" }, { anime: "Kuzu no Honkai", aliases: ["scums wish", "uso no hibana", "kuzu no honkai"], search: "Uso no Hibana 96neko" },
-                { anime: "Kamisama Kiss", aliases: ["kamisama hajimemashita", "kamisama"], search: "Kamisama Hajimemashita Hanae" }, { anime: "Noragami", aliases: ["noragami aragoto"], search: "Kyouran Hey Kids The Oral Cigarettes" },
-                { anime: "Psycho-Pass", aliases: ["psycho pass", "psychopass"], search: "Abnormalize Ling Tosite Sigure" }, { anime: "Moi, quand je me réincarne en Slime", aliases: ["tensura", "that time i got reincarnated as a slime", "slime"], search: "Nameless Story Takuma Terashima" },
-                { anime: "Dragon Ball", aliases: ["db", "dragonball"], search: "Makafushigi Adventure" }, { anime: "Black Clover", aliases: ["blackclover"], search: "Black Rover Vickeblanka" }
-            ],
-            FILMS: [
-                { film: "Interstellar", aliases: ["interstellar"], search: "Cornfield Chase Hans Zimmer" },
-                { film: "Inception", aliases: ["inception"], search: "Time Hans Zimmer" },
-                { film: "Gladiator", aliases: ["gladiator"], search: "Now We Are Free Hans Zimmer" },
-                { film: "The Dark Knight", aliases: ["dark knight", "batman", "the dark knight"], search: "Why So Serious Hans Zimmer" },
-                { film: "Le Roi Lion", aliases: ["lion king", "le roi lion"], search: "This Land Hans Zimmer" },
-                { film: "Pirates des Caraïbes", aliases: ["pirates of the caribbean", "pirate des caraibes"], search: "He's a Pirate Klaus Badelt" },
-                { film: "Man of Steel", aliases: ["superman man of steel", "man of steel"], search: "Flight Hans Zimmer" },
-                { film: "Dune", aliases: ["dune part 1", "dune part 2", "dune"], search: "Paul's Dream Hans Zimmer" },
-                { film: "Pearl Harbor", aliases: ["pearl harbor"], search: "Tennessee Hans Zimmer" },
-                { film: "Le Dernier Samouraï", aliases: ["the last samurai", "dernier samourai"], search: "A Way of Life Hans Zimmer" },
-                { film: "Spirit", aliases: ["spirit l'étalon des plaines", "spirit l'etalon des plaines", "spirit"], search: "Homeland Hans Zimmer" },
-                { film: "Da Vinci Code", aliases: ["da vinci code", "the da vinci code"], search: "Chevaliers de Sangreal Hans Zimmer" },
-                { film: "Batman Begins", aliases: ["batman begins"], search: "Molossus Hans Zimmer" },
-                { film: "Star Wars", aliases: ["starwars", "star war"], search: "The Imperial March John Williams" },
-                { film: "Harry Potter", aliases: ["harrypotter"], search: "Hedwig's Theme John Williams" },
-                { film: "Jurassic Park", aliases: ["jurassicpark"], search: "Theme from Jurassic Park John Williams" },
-                { film: "Indiana Jones", aliases: ["indiana jones", "les aventuriers de l'arche perdue"], search: "Raiders March John Williams" },
-                { film: "Les Dents de la Mer", aliases: ["jaws", "dents de la mer"], search: "Theme From Jaws John Williams" },
-                { film: "E.T. l'extra-terrestre", aliases: ["e.t.", "et l'extra-terrestre", "et l extraterrestre"], search: "Flying Theme E.T. John Williams" },
-                { film: "Le Seigneur des Anneaux", aliases: ["lord of the rings", "lotr", "lsda", "seigneur des anneaux"], search: "The Shire Howard Shore" },
-                { film: "Game of Thrones", aliases: ["got", "game of throne"], search: "Game of Thrones Ramin Djawadi" },
-                { film: "Avengers", aliases: ["avenger", "marvel avengers", "the avengers"], search: "The Avengers Alan Silvestri" },
-                { film: "Retour vers le futur", aliases: ["back to the future", "retour vers le futur"], search: "Back to the Future Alan Silvestri" },
-                { film: "Forrest Gump", aliases: ["forrestgump", "forrest gump"], search: "Forrest Gump Suite Alan Silvestri" },
-                { film: "Oppenheimer", aliases: ["oppenheimer"], search: "Can You Hear The Music Ludwig Goransson" },
-                { film: "Rocky", aliases: ["rocky", "rocky balboa"], search: "Gonna Fly Now Bill Conti" },
-                { film: "Terminator", aliases: ["terminator"], search: "The Terminator Theme Brad Fiedel" },
-                { film: "Mission Impossible", aliases: ["mission impossible"], search: "Mission Impossible Lalo Schifrin" },
-                { film: "James Bond", aliases: ["james bond", "007"], search: "James Bond Theme Monty Norman" },
-                { film: "Le Bon, la Brute et le Truand", aliases: ["the good the bad and the ugly", "le bon la brute"], search: "The Good The Bad Ennio Morricone" }
-            ],
-            DISNEY: [
-                { disney: "Le Roi Lion", aliases: ["roi lion", "the lion king"], search: "L'histoire de la vie" },
-                { disney: "Aladdin", aliases: ["aladin"], search: "Ce rêve bleu" },
-                { disney: "La Reine des Neiges", aliases: ["reine des neiges", "frozen"], search: "Libérée délivrée" },
-                { disney: "Mulan", aliases: [""], search: "Comme un homme Mulan" },
-                { disney: "Tarzan", aliases: [""], search: "Enfant de l'homme Phil Collins" },
-                { disney: "Hercule", aliases: [""], search: "Le Gospel Pur" },
-                { disney: "Vaiana", aliases: ["moana", "la legende du bout du monde"], search: "Le bleu lumière" },
-                { disney: "La Petite Sirène", aliases: ["petite sirene", "little mermaid"], search: "Sous l'océan" },
-                { disney: "Le Livre de la Jungle", aliases: ["livre de la jungle", "jungle book"], search: "Il en faut peu pour être heureux" },
-                { disney: "Raiponce", aliases: ["tangled"], search: "Où est la vraie vie" },
-                { disney: "Pocahontas", aliases: [""], search: "L'air du vent" },
-                { disney: "La Belle et la Bête", aliases: ["belle et la bete", "beauty and the beast"], search: "Histoire éternelle" },
-                { disney: "Le Bossu de Notre-Dame", aliases: ["bossu de notre dame", "hunchback"], search: "Rien qu'un jour" },
-                { disney: "Frère des Ours", aliases: ["frere des ours", "brother bear"], search: "Je m'en vais" },
-                { disney: "Encanto", aliases: [""], search: "Ne parlons pas de Bruno" },
-                { disney: "Toy Story", aliases: [""], search: "Je suis ton ami" },
-                { disney: "Coco", aliases: [""], search: "Ne m'oublie pas Coco" },
-                { disney: "Lilo et Stitch", aliases: ["lilo & stitch", "lilo and stitch"], search: "Hawaiian Roller Coaster Ride" },
-                { disney: "Les Aristochats", aliases: ["aristochats", "aristocats"], search: "Tout le monde veut devenir un cat" },
-                { disney: "Blanche-Neige", aliases: ["blanche neige", "snow white"], search: "Un jour mon prince viendra" }
-            ],
-            RAP: [
-                { search: "Orelsan", artist: "Orelsan" }, { search: "Booba", artist: "Booba" }, { search: "PNL", artist: "PNL" },
-                { search: "Damso", artist: "Damso" }, { search: "Nekfeu", artist: "Nekfeu" }, { search: "Alpha Wann", artist: "Alpha Wann" },
-                { search: "Freeze Corleone", artist: "Freeze Corleone" }, { search: "Kaaris", artist: "Kaaris" }, { search: "SCH", artist: "SCH" },
-                { search: "IAM rap", artist: "IAM" }, { search: "Supreme NTM", artist: "Suprême NTM", aliases: ["ntm", "supreme ntm"] },
-                { search: "Vald", artist: "Vald" }, { search: "Hugo TSR", artist: "Hugo TSR", aliases: ["hugo (tsr)", "tsr crew"] },
-                { search: "Lino Arsenik", artist: "Lino" }, { search: "Despo Rutti", artist: "Despo Rutti" }, { search: "Ninho", artist: "Ninho" },
-                { search: "Gazo", artist: "Gazo" }, { search: "Koba LaD", artist: "Koba LaD" }, { search: "Josman", artist: "Josman" },
-                { search: "Dinos Punchlinovic", artist: "Dinos", aliases: ["dinos punchlinovic"] }, { search: "Disiz", artist: "Disiz", aliases: ["disiz la peste"] },
-                { search: "1995 rap", artist: "1995" }, { search: "Fonky Family", artist: "Fonky Family", aliases: ["ff", "la fonky family"] },
-                { search: "Rohff", artist: "Rohff" }, { search: "La Fouine", artist: "La Fouine" }, { search: "Kalash Criminel", artist: "Kalash Criminel" },
-                { search: "Niska", artist: "Niska" }, { search: "Gradur", artist: "Gradur" }, { search: "Mac Tyer", artist: "Mac Tyer" },
-                { search: "Kery James", artist: "Kery James" }, { search: "Sniper rap", artist: "Sniper" }, { search: "113 rap", artist: "113" },
-                { search: "Mafia K'1 Fry", artist: "Mafia K'1 Fry", aliases: ["mafia k1 fry"] }, { search: "Lunatic Booba", artist: "Lunatic" },
-                { search: "Sexion d'Assaut", artist: "Sexion d'Assaut", aliases: ["sexion dassaut"] }, { search: "PLK", artist: "PLK" },
-                { search: "Ziak", artist: "Ziak" }, { search: "Seth Gueko", artist: "Seth Gueko" }, { search: "Youssoupha", artist: "Youssoupha" },
-                { search: "Medine rap", artist: "Medine" }, { search: "Sinik", artist: "Sinik" }, { search: "Diam's", artist: "Diam's", aliases: ["diams"] },
-                { search: "Salif rap", artist: "Salif" }, { search: "Guizmo rap", artist: "Guizmo" }, { search: "Naps", artist: "Naps" },
-                { search: "Jul rap", artist: "Jul" }, { search: "Werenoi", artist: "Werenoi" }, { search: "Tiakola", artist: "Tiakola" },
-                { search: "SDM", artist: "SDM" }, { search: "Maes", artist: "Maes" }, { search: "Alkpote", artist: "Alkpote" },
-                { search: "Bosh rap", artist: "Bosh" }, { search: "Niro rap", artist: "Niro" }
-            ],
-            FR: [
-                { search: "Georges Brassens", artist: "Georges Brassens" }, { search: "Barbara aigle", artist: "Barbara" },
-                { search: "Charles Aznavour", artist: "Charles Aznavour" }, { search: "Gregory Lemarchal", artist: "Gregory Lemarchal" },
-                { search: "Lorie", artist: "Lorie" }, { search: "Jenifer soleil", artist: "Jenifer" }, { search: "Tragedie hey oh", artist: "Tragedie" },
-                { search: "Anne Sylvestre", artist: "Anne Sylvestre" }, { search: "Jacques Brel", artist: "Jacques Brel" },
-                { search: "Edith Piaf", artist: "Edith Piaf" }, { search: "Renaud mistral", artist: "Renaud" },
-                { search: "Francis Cabrel", artist: "Francis Cabrel" }, { search: "Jean-Jacques Goldman", artist: "Jean-Jacques Goldman", aliases: ["jjg", "jean jacques goldman"] },
-                { search: "Celine Dion francais", artist: "Celine Dion" }, { search: "Claude Francois", artist: "Claude Francois", aliases: ["cloclo"] },
-                { search: "Daniel Balavoine", artist: "Daniel Balavoine" }, { search: "K-Maro", artist: "K-Maro", aliases: ["kmaro"] },
-                { search: "Larusso", artist: "Larusso" }, { search: "Alizee lolita", artist: "Alizee" }, { search: "Michel Sardou", artist: "Michel Sardou" },
-                { search: "Johnny Hallyday", artist: "Johnny Hallyday" }, { search: "Joe Dassin", artist: "Joe Dassin" },
-                { search: "Mylene Farmer", artist: "Mylene Farmer" }, { search: "France Gall", artist: "France Gall" },
-                { search: "Michel Berger", artist: "Michel Berger" }, { search: "Kyo derniere danse", artist: "Kyo" },
-                { search: "Tribal King", artist: "Tribal King" }, { search: "Serge Gainsbourg", artist: "Serge Gainsbourg" },
-                { search: "Leo Ferre", artist: "Leo Ferre" }, { search: "Georges Moustaki", artist: "Georges Moustaki" },
-                { search: "Dalida", artist: "Dalida" }, { search: "Christophe aline", artist: "Christophe" },
-                { search: "Michel Polnareff", artist: "Michel Polnareff" }, { search: "Laurent Voulzy", artist: "Laurent Voulzy" },
-                { search: "Alain Souchon", artist: "Alain Souchon" }, { search: "Julien Clerc", artist: "Julien Clerc" },
-                { search: "Maxime Le Forestier", artist: "Maxime Le Forestier" }, { search: "Nino Ferrer", artist: "Nino Ferrer" },
-                { search: "Sheila francais", artist: "Sheila" }, { search: "Sylvie Vartan", artist: "Sylvie Vartan" },
-                { search: "Priscilla amour", artist: "Priscilla" }, { search: "Amel Bent", artist: "Amel Bent" },
-                { search: "Nadiya", artist: "Nadiya" }, { search: "L5 toutes", artist: "L5" }, { search: "Garou", artist: "Garou" },
-                { search: "Willy Denzey", artist: "Willy Denzey" }, { search: "Leslie pardonner", artist: "Leslie" },
-                { search: "Magic System", artist: "Magic System" }, { search: "Yannick soirees", artist: "Yannick" }
-            ],
-            POP: [
-                { search: "Michael Jackson", artist: "Michael Jackson" }, { search: "Queen", artist: "Queen" }, { search: "The Weeknd", artist: "The Weeknd" }, 
-                { search: "Dua Lipa", artist: "Dua Lipa" }, { search: "Daft Punk", artist: "Daft Punk" }, { search: "Bruno Mars", artist: "Bruno Mars" }, 
-                { search: "Lady Gaga", artist: "Lady Gaga" }, { search: "Ed Sheeran", artist: "Ed Sheeran" }, { search: "Coldplay", artist: "Coldplay" }, 
-                { search: "Rihanna", artist: "Rihanna" }, { search: "Eminem", artist: "Eminem" }, { search: "Gorillaz", artist: "Gorillaz" }, 
-                { search: "Beyonce", artist: "Beyonce" }, { search: "Katy Perry", artist: "Katy Perry" }, { search: "Maroon 5", artist: "Maroon 5" }, 
-                { search: "Adele", artist: "Adele" }, { search: "Taylor Swift", artist: "Taylor Swift" }, { search: "Justin Timberlake", artist: "Justin Timberlake" }, 
-                { search: "Britney Spears", artist: "Britney Spears" }, { search: "Shakira", artist: "Shakira" }, { search: "Madonna", artist: "Madonna" }, 
-                { search: "Elton John", artist: "Elton John" }, { search: "David Bowie", artist: "David Bowie" }, { search: "Prince", artist: "Prince" }, 
-                { search: "Sia", artist: "Sia" }, { search: "ABBA", artist: "ABBA" }, { search: "The Beatles", artist: "The Beatles" }, 
-                { search: "The Rolling Stones", artist: "The Rolling Stones" }, { search: "AC/DC", artist: "AC/DC" }, { search: "U2", artist: "U2" }, 
-                { search: "Oasis", artist: "Oasis" }, { search: "Nirvana", artist: "Nirvana" }, { search: "Red Hot Chili Peppers", artist: "Red Hot Chili Peppers" }, 
-                { search: "Linkin Park", artist: "Linkin Park" }, { search: "The Black Eyed Peas", artist: "The Black Eyed Peas" }, { search: "Justin Bieber", artist: "Justin Bieber" }, 
-                { search: "Ariana Grande", artist: "Ariana Grande" }, { search: "Billie Eilish", artist: "Billie Eilish" }, { search: "Harry Styles", artist: "Harry Styles" }, 
-                { search: "Miley Cyrus", artist: "Miley Cyrus" }, { search: "Kylie Minogue", artist: "Kylie Minogue" }, { search: "Spice Girls", artist: "Spice Girls" }, 
-                { search: "Backstreet Boys", artist: "Backstreet Boys" }, { search: "NSYNC", artist: "NSYNC" }, { search: "Destiny's Child", artist: "Destiny's Child" }, 
-                { search: "Avril Lavigne", artist: "Avril Lavigne" }, { search: "Pink", artist: "Pink" }, { search: "Gwen Stefani", artist: "Gwen Stefani" }, 
-                { search: "Alicia Keys", artist: "Alicia Keys" }, { search: "Usher", artist: "Usher" }, { search: "50 Cent", artist: "50 Cent" }
-            ]
-        };
+    <!-- INCLUSION DE NOTRE BASE DE DONNÉES MUSICALE SÉPARÉE -->
+    <script src="js/music.js"></script>
 
+    <script>
         // --- VARIABLES GLOBALES ---
         let gameMode = 'solo'; 
         let currentCategory = 'RAP'; 
@@ -600,8 +455,7 @@
                     conn.send({ type: 'join', name: myName });
 
                     document.getElementById('network-menu').style.display = 'none';
-                    document.getElementById('main-menu').style.display = 'flex';
-                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2.5em; margin-bottom:20px;">CONNEXION ÉTABLIE</div><p style="font-size:1.5em; color:#fff; font-weight:600;">En attente du lancement par l\'hôte...</p><div class="loader"></div>';
+                    document.getElementById('waiting-menu').style.display = 'flex';
                 });
 
                 conn.on('data', data => {
@@ -643,7 +497,7 @@
             document.getElementById('loading-api').style.display = 'flex';
 
             let selectedTracks = [];
-            // Mélange le tableau complet d'artistes
+            // Mélange le tableau complet d'artistes (ici on utilise catalogs chargé depuis music.js)
             let shuffled = catalogs[cat].sort(() => Math.random() - 0.5);
 
             for (let i = 0; i < shuffled.length; i++) {
