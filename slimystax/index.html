@@ -81,20 +81,31 @@
         .btn-main:hover::after { left: 150%; }
         .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
 
-        /* HUD */
-        #hud { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box; z-index: 10; pointer-events: none; }
-        .hud-box { background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 10px; border: 1px solid var(--p1); text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.2); backdrop-filter: blur(5px);}
+        /* HUD - NOUVELLE MISE EN PAGE */
+        #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+        
+        .hud-box { 
+            background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 10px; 
+            border: 1px solid var(--p1); text-align: center; 
+            box-shadow: 0 0 15px rgba(0,240,255,0.2); backdrop-filter: blur(5px);
+            pointer-events: none;
+        }
+        
+        #ui-container-left { position: absolute; top: 65px; left: 15px; } /* Sous le bouton Retour */
+        #ui-container-right { position: absolute; top: 65px; right: 25px; } /* Sous les Paramètres */
+        #ui-container-center { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); }
+
         .hud-title { font-size: 0.9em; color: #aaa; text-transform: uppercase; letter-spacing: 2px;}
-        .hud-val { font-size: 2em; font-weight: bold; color: #fff; text-shadow: 0 0 10px var(--p1);}
-        .hud-combo { color: var(--perfect); text-shadow: 0 0 10px var(--perfect); font-size: 1.5em; font-weight: bold; margin-top: 5px; opacity: 0; transition: opacity 0.3s;}
+        .hud-val { font-size: 1.8em; font-weight: bold; color: #fff; text-shadow: 0 0 10px var(--p1);}
+        
+        .hud-combo { color: var(--perfect); text-shadow: 0 0 10px var(--perfect); font-size: 1.5em; font-weight: bold; opacity: 0; transition: opacity 0.3s;}
         .hud-combo.show { opacity: 1; }
 
         canvas { background: #020205; border-radius: 15px; cursor: pointer; }
 
         @media (max-width: 800px) {
             #game-container.size-wide canvas, #game-container.size-full canvas { max-height: 100vh; }
-            #hud { padding: 0 15px; }
-            .hud-box { padding: 5px 15px; }
+            #ui-container-right { right: 15px; }
             .hud-val { font-size: 1.5em; }
         }
     </style>
@@ -126,17 +137,31 @@
     <div id="game-container" class="size-wide">
         
         <div id="hud">
-            <div class="hud-box">
-                <div class="hud-title">Hauteur</div>
-                <div class="hud-val" id="ui-height">1</div>
+            <!-- Centre : Combo (N'apparaît que lors des perfects) -->
+            <div id="ui-container-center">
+                <div class="hud-box" id="combo-box" style="border-color: var(--perfect); opacity: 0; transition: 0.3s;">
+                    <div class="hud-title" style="color:var(--perfect)">Combo</div>
+                    <div class="hud-val" id="ui-combo" style="color:var(--perfect); text-shadow: 0 0 10px var(--perfect);">x0</div>
+                </div>
             </div>
-            <div class="hud-box" style="border-color: var(--perfect);">
-                <div class="hud-title" style="color:var(--perfect)">Combo</div>
-                <div class="hud-val" id="ui-combo" style="color:var(--perfect); text-shadow: 0 0 10px var(--perfect);">x0</div>
+            
+            <!-- Gauche : Hauteur de la tour -->
+            <div id="ui-container-left">
+                <div class="hud-box">
+                    <div class="hud-title">Hauteur</div>
+                    <div class="hud-val" id="ui-height">1</div>
+                </div>
             </div>
-            <div class="hud-box" style="border-color: var(--p2);">
-                <div class="hud-title" style="color:var(--p2)">Score</div>
-                <div class="hud-val" id="ui-score" style="text-shadow: 0 0 10px var(--p2);">0</div>
+
+            <!-- Droite : Score Actuel + Best Score -->
+            <div id="ui-container-right">
+                <div class="hud-box" style="border-color: var(--p2);">
+                    <div class="hud-title" style="color:var(--p2)">Score</div>
+                    <div class="hud-val" id="ui-score" style="text-shadow: 0 0 10px var(--p2);">0</div>
+                    <div style="font-size: 0.85em; color: var(--gold); margin-top: 5px; font-weight: bold; text-transform: uppercase;">
+                        Best: <span id="ui-best">0</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -281,6 +306,7 @@
         let loopRunning = false;
         
         let score = 0;
+        let bestScore = parseInt(localStorage.getItem('slimyStaxBestScore')) || 0; // Chargement du Best Score
         let perfectCount = 0;
         let comboMultiplier = 1;
         
@@ -291,12 +317,13 @@
         let cameraY = 0;
         let targetCameraY = 0;
         
-        // Physique et équilibre
+        // Physique et équilibre (CORRIGÉS POUR LA FLUIDITÉ)
         let towerSway = 0; 
-        let totalOffset = 0; 
+        let targetTotalOffset = 0; 
+        let currentTotalOffset = 0; // Ajout d'une interpolation pour lisser la courbure de la tour
         let swingAngle = 0;
-        let swingSpeed = 0.02; // Vitesse de départ ralentie (avant c'était 0.05)
-        const MAX_OFFSET_TOLERANCE = BLOCK_SIZE * 1.1; // Tolérance d'effondrement si la tour est trop penchée globalement
+        let swingSpeed = 0.02; 
+        const MAX_OFFSET_TOLERANCE = BLOCK_SIZE * 1.1; 
 
         let particles = [];
         let floatingTexts = [];
@@ -340,12 +367,14 @@
 
                 if (this.state === 'landed') {
                     let heightIndex = blocks.indexOf(this);
-                    let swayAmplitude = (Math.abs(totalOffset) * 0.05) + (heightIndex * 0.5);
+                    let swayAmplitude = (Math.abs(currentTotalOffset) * 0.05) + (heightIndex * 0.5);
                     let swayOffset = Math.sin(towerSway + heightIndex * 0.1) * swayAmplitude;
-                    let staticBend = (heightIndex / blocks.length) * totalOffset * 0.4;
+                    
+                    // FIX: Le staticBend n'est plus calculé en fonction de blocks.length pour éviter l'effet "saut décalé" !
+                    let staticBend = heightIndex * currentTotalOffset * 0.012; 
                     
                     drawX += swayOffset + staticBend;
-                    this.visualX = drawX; // Met à jour la position réelle pour le bloc au-dessus
+                    this.visualX = drawX; 
                 } else {
                     this.visualX = this.x;
                 }
@@ -388,11 +417,13 @@
         // DEMARRAGE DIRECT AU CHARGEMENT
         document.addEventListener("DOMContentLoaded", () => {
             setGameSize('wide');
+            updateHUD(); // Affiche le best score dès le chargement
             startGame();
         });
 
         function startGame() {
-            score = 0; perfectCount = 0; comboMultiplier = 1; totalOffset = 0;
+            score = 0; perfectCount = 0; comboMultiplier = 1; 
+            targetTotalOffset = 0; currentTotalOffset = 0; // Remise à zéro de la courbure
             cameraY = 0; targetCameraY = 0; towerSway = 0; swingSpeed = 0.02;
             particles = []; floatingTexts = [];
             
@@ -429,21 +460,22 @@
             activeBlock = new Block(canvas.width/2, spawnY, type);
             swingAngle = 0;
             
-            // La difficulté augmente avec la hauteur (et très légèrement avec le tangage)
-            swingSpeed = 0.02 + (blocks.length * 0.0015) + (Math.abs(totalOffset) * 0.0001);
+            swingSpeed = 0.02 + (blocks.length * 0.0015) + (Math.abs(currentTotalOffset) * 0.0001);
             if (swingSpeed > 0.1) swingSpeed = 0.1; 
         }
 
         function updateHUD() {
             document.getElementById('ui-score').innerText = score;
+            document.getElementById('ui-best').innerText = bestScore; // Mise à jour du best score !
             document.getElementById('ui-height').innerText = blocks.length;
             
+            let comboBox = document.getElementById('combo-box');
             let comboUI = document.getElementById('ui-combo');
             if (perfectCount > 1) {
-                comboUI.innerText = `PERFECT x${perfectCount}`;
-                comboUI.classList.add('show');
+                comboUI.innerText = `x${perfectCount}`;
+                comboBox.style.opacity = '1';
             } else {
-                comboUI.classList.remove('show');
+                comboBox.style.opacity = '0';
             }
         }
 
@@ -462,73 +494,75 @@
 
             let topBlock = blocks[blocks.length - 1];
             
-            if (activeBlock.y + BLOCK_SIZE/2 >= topBlock.y - BLOCK_SIZE/2) {
+            // FIX : On compare par rapport à la position VISUELLE du bloc en dessous
+            let topVisualX = topBlock.visualX || topBlock.x;
+            let diffX = activeBlock.x - topVisualX; 
+            
+            if (Math.abs(diffX) <= BLOCK_SIZE * 0.55) {
+                activeBlock.y = topBlock.y - BLOCK_SIZE;
+                activeBlock.state = 'landed';
                 
-                let targetX = topBlock.visualX || topBlock.x;
-                let diffX = activeBlock.x - targetX;
-                
-                // LOGIQUE GRAVITATIONNELLE : Si le bloc dépasse de plus de 55% la surface du bloc du dessous, il tombe !
-                if (Math.abs(diffX) <= BLOCK_SIZE * 0.55) {
-                    activeBlock.y = topBlock.y - BLOCK_SIZE;
-                    activeBlock.state = 'landed';
-                    blocks.push(activeBlock);
+                let points = 10;
+                let color = '#fff';
+
+                // PERFECT PLACEMENT
+                if (Math.abs(diffX) <= 6) {
+                    activeBlock.x = topBlock.x; // S'aligne parfaitement sur la logique du bloc en dessous (retire le décalage)
+                    points = 50;
+                    color = 'var(--perfect)';
+                    perfectCount++;
+                    createParticles(topVisualX, activeBlock.y, color, 20);
+                    playSound('perfect');
                     
-                    let points = 10;
-                    let color = '#fff';
-
-                    // PERFECT PLACEMENT
-                    if (Math.abs(diffX) <= 6) {
-                        activeBlock.x = targetX; // S'aligne parfaitement sur la tour
-                        points = 50;
-                        color = 'var(--perfect)';
-                        perfectCount++;
-                        createParticles(activeBlock.x, activeBlock.y, color, 20);
-                        playSound('perfect');
-                        
-                        // MÉCANIQUE DE REDRESSEMENT DE TOUR (3 Perfects de suite)
-                        if (perfectCount >= 3) {
-                            totalOffset = 0; // La tour redevient magiquement droite !
-                            floatingTexts.push(new FloatingText(activeBlock.x, activeBlock.y - 70, "TOWER CENTERED!", "var(--p1)"));
-                        } else {
-                            totalOffset *= 0.5; // Aide à stabiliser quand même
-                        }
-                        
-                        floatingTexts.push(new FloatingText(activeBlock.x, activeBlock.y - 20, "PERFECT +50", color));
-                    } else {
-                        perfectCount = 0;
-                        totalOffset += diffX; // Augmente le déséquilibre
-                        createParticles(activeBlock.x, activeBlock.y, '#fff', 10);
-                        playSound('land');
-                        floatingTexts.push(new FloatingText(activeBlock.x, activeBlock.y - 20, "+10", color));
-                    }
-
-                    if (activeBlock.type === 9) {
-                        points = 500;
-                        floatingTexts.push(new FloatingText(activeBlock.x, activeBlock.y - 50, "+500 LEGENDARY", "#fff"));
+                    if (perfectCount >= 3) {
+                        targetTotalOffset = 0; // La tour redevient magiquement droite !
+                        floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 70, "TOWER CENTERED!", "var(--p1)"));
                     }
                     
-                    score += points * comboMultiplier;
-                    
-                    if (activeBlock.type === 8) comboMultiplier = 2;
-                    else comboMultiplier = 1;
-
-                    updateHUD();
-                    targetCameraY -= BLOCK_SIZE;
-                    
-                    // --- VÉRIFICATION DE L'EFFONDREMENT (SI LA TOUR PÈSE TROP D'UN CÔTÉ) ---
-                    if (Math.abs(totalOffset) > MAX_OFFSET_TOLERANCE) {
-                        triggerGameOver();
-                    } else {
-                        activeBlock = null;
-                        setTimeout(spawnBlock, 150);
-                    }
+                    floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 20, "PERFECT +50", color));
                 } else {
-                    // BLOC PLACÉ DANS LE VIDE = EFFONDREMENT DIRECT
-                    activeBlock.state = 'dead';
-                    activeBlock.vx = (Math.random() - 0.5) * 10;
-                    activeBlock.vy = -5;
-                    triggerGameOver();
+                    // IMPERFECT PLACEMENT
+                    // On enregistre sa position en retirant le tangage actuel pour que la fonction draw() ne l'applique pas en double !
+                    activeBlock.x = activeBlock.x - (topVisualX - topBlock.x); 
+                    perfectCount = 0;
+                    targetTotalOffset += diffX; 
+                    createParticles(activeBlock.x + (topVisualX - topBlock.x), activeBlock.y, '#fff', 10);
+                    playSound('land');
+                    floatingTexts.push(new FloatingText(activeBlock.x + (topVisualX - topBlock.x), activeBlock.y - 20, "+10", color));
                 }
+
+                if (activeBlock.type === 9) {
+                    points = 500;
+                    floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 50, "+500 LEGENDARY", "#fff"));
+                }
+                
+                score += points * comboMultiplier;
+                
+                // --- GESTION DU BEST SCORE ---
+                if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem('slimyStaxBestScore', bestScore); // Sauvegarde dans le navigateur
+                }
+                
+                if (activeBlock.type === 8) comboMultiplier = 2;
+                else comboMultiplier = 1;
+
+                blocks.push(activeBlock);
+                updateHUD();
+                targetCameraY -= BLOCK_SIZE;
+                
+                if (Math.abs(targetTotalOffset) > MAX_OFFSET_TOLERANCE) {
+                    triggerGameOver();
+                } else {
+                    activeBlock = null;
+                    setTimeout(spawnBlock, 150);
+                }
+            } else {
+                // BLOC PLACÉ DANS LE VIDE
+                activeBlock.state = 'dead';
+                activeBlock.vx = (Math.random() - 0.5) * 10;
+                activeBlock.vy = -5;
+                triggerGameOver();
             }
         }
 
@@ -537,11 +571,9 @@
             gameState = 'GAMEOVER';
             playSound('gameover');
             
-            // Calcul du côté où la tour s'effondre
-            let fallDir = totalOffset > 0 ? 1 : -1;
-            if (totalOffset === 0) fallDir = Math.random() > 0.5 ? 1 : -1;
+            let fallDir = targetTotalOffset > 0 ? 1 : -1;
+            if (targetTotalOffset === 0) fallDir = Math.random() > 0.5 ? 1 : -1;
 
-            // Explosion de toute la tour
             blocks.forEach((b, i) => {
                 if (i > 0) { 
                     b.state = 'dead';
@@ -578,11 +610,13 @@
                 }
             }
 
-            // Gestion de la chute des blocs (Game Over)
+            // Interpolation pour rendre la courbure et le redressement de la tour ultra fluides !
+            currentTotalOffset += (targetTotalOffset - currentTotalOffset) * 0.1;
+
             blocks.forEach(b => {
                 if (b.state === 'dead') {
                     b.x += b.vx || 0;
-                    b.vy += 0.5; // Gravité
+                    b.vy += 0.5;
                     b.y += b.vy;
                 }
             });
@@ -592,15 +626,12 @@
                 activeBlock.y += activeBlock.vy;
             }
 
-            // Caméra et Oscillation de la Tour
             cameraY += (targetCameraY - cameraY) * 0.1;
-            towerSway += 0.05 + (Math.abs(totalOffset) * 0.0005);
+            towerSway += 0.05 + (Math.abs(currentTotalOffset) * 0.0005);
 
-            // --- RENDU ---
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // FOND DYNAMIQUE : S'assombrit pour devenir l'espace au fur et à mesure de l'ascension
-            let heightFactor = Math.min(1, Math.abs(cameraY) / 6000); // Pourcentage de la hauteur vers l'espace
+            let heightFactor = Math.min(1, Math.abs(cameraY) / 6000); 
             let r = Math.floor(5 * (1 - heightFactor));
             let g = Math.floor(5 * (1 - heightFactor));
             let b = Math.floor(8 + 30 * (1 - heightFactor));
@@ -611,12 +642,10 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dessin des étoiles de l'espace
             if (heightFactor > 0.05) {
                 ctx.save();
-                ctx.translate(0, -cameraY * 0.05); // Effet parallaxe des étoiles
+                ctx.translate(0, -cameraY * 0.05); 
                 stars.forEach(star => {
-                    // Optimisation : on ne dessine que les étoiles visibles
                     if (star.y > cameraY - canvas.height && star.y < cameraY + canvas.height) {
                         ctx.fillStyle = `rgba(255, 255, 255, ${star.a * heightFactor})`;
                         ctx.beginPath();
@@ -629,7 +658,6 @@
 
             let parallaxY = cameraY * 0.15; 
             
-            // Dessin Parallaxe du décor sol
             ctx.save();
             ctx.translate(0, -parallaxY);
             
@@ -656,21 +684,17 @@
             }
             ctx.restore();
 
-            // Dessin de la tour et des objets
             ctx.save();
             ctx.translate(0, -cameraY);
 
-            // L'ordre est important : la base d'abord pour le calcul du visualX
             blocks.forEach(b => b.draw());
             if (activeBlock) activeBlock.draw();
             
-            // Particules
             for(let i=particles.length-1; i>=0; i--) {
                 particles[i].update(); particles[i].draw();
                 if(particles[i].life <= 0) particles.splice(i, 1);
             }
             
-            // Textes flottants
             for(let i=floatingTexts.length-1; i>=0; i--) {
                 floatingTexts[i].update(); floatingTexts[i].draw();
                 if(floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
