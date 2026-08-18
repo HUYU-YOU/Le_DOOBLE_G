@@ -4,7 +4,6 @@
 let isNight = localStorage.getItem('tetrisNight') === 'true';
 
 function applyTheme() {
-    // Orthographe corrigée selon tes fichiers !
     document.body.style.backgroundImage = isNight ? "url('assets/backgrounnight.png')" : "url('assets/backgrounday.png')";
     const themeBtn = document.getElementById('btn-theme-toggle');
     if (themeBtn) {
@@ -44,7 +43,6 @@ function clickSettingsAnim() {
 
 function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
 
-// ZOOM DE L'INTERFACE
 function setGameSize(size) {
     const container = document.getElementById('game-container');
     const gameUi = document.getElementById('game-ui');
@@ -59,7 +57,7 @@ function setGameSize(size) {
         if (document.fullscreenElement) document.exitFullscreen();
     } else if (size === 'wide') {
         container.classList.add('size-wide'); document.getElementById('btn-sz-wide').classList.add('active');
-        gameUi.style.transform = 'scale(1.2)'; // MODE GRAND
+        gameUi.style.transform = 'scale(1.2)'; 
         if (document.fullscreenElement) document.exitFullscreen();
     } else if (size === 'full') {
         container.classList.add('size-full'); document.getElementById('btn-sz-full').classList.add('active');
@@ -84,15 +82,13 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// Chargement de TOUTES tes images (Z270 ajouté, et J/S préparés au cas où)
+// On charge UNIQUEMENT les images que tu as (plus de L bleu)
 const skinNames = [
     'BARRE', 'BARRE90', 
     'CROIX', 'CROIX90', 'CROIX180', 'CROIX270', 
     'CUBE', 
     'L0', 'L90', 'L180', 'L270', 
-    'J0', 'J90', 'J180', 'J270', // Si tu ne les as pas, il mettra une couleur unie
-    'Z', 'Z90', 'Z180', 'Z270',  // Z270 ajouté !
-    'S0', 'S90', 'S180', 'S270'  // Idem, en attente de tes PNG
+    'Z', 'Z90', 'Z180', 'Z270'
 ];
 
 const skins = {};
@@ -101,19 +97,17 @@ skinNames.forEach(name => {
     skins[name].src = `assets/${name}.png`;
 });
 
-// Les 7 formes standards
+// LES 5 FORMES UNIQUES DU JEU (Matrices corrigées pour coller pile à tes dessins)
 const SHAPES = [
     [], 
-    [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // 1: BARRE 
-    [[2,0,0], [2,2,2], [0,0,0]], // 2: J 
-    [[0,0,3], [3,3,3], [0,0,0]], // 3: L
-    [[4,4], [4,4]], // 4: CUBE 
-    [[0,5,5], [5,5,0], [0,0,0]], // 5: S 
-    [[0,6,0], [6,6,6], [0,0,0]], // 6: CROIX 
-    [[7,7,0], [0,7,7], [0,0,0]]  // 7: Z 
+    [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // 1: BARRE (Cyan)
+    [[0,0,2], [2,2,2], [0,0,0]],                  // 2: L (Orange)
+    [[3,3], [3,3]],                               // 3: CUBE (Jaune)
+    [[0,4,4], [4,4,0], [0,0,0]],                  // 4: Z (Le vert, forme "S" visuelle)
+    [[0,5,0], [5,5,5], [0,0,0]]                   // 5: CROIX (Violet)
 ];
 
-const COLORS = [ null, '#00f0ff', '#0055ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#ff007f', '#666666'];
+const COLORS = [ null, '#00f0ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#666666'];
 
 let board = [];
 let piece = null;
@@ -135,7 +129,7 @@ document.getElementById('best-score').innerText = bestScore;
 function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
 
 function randomPiece() {
-    const typeId = Math.floor(Math.random() * 7) + 1;
+    const typeId = Math.floor(Math.random() * 5) + 1; // 5 PIÈCES MAXIMUM MAINTENANT
     return {
         matrix: SHAPES[typeId],
         pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0].length/2), y: 0 },
@@ -144,22 +138,18 @@ function randomPiece() {
     };
 }
 
-// Le Mapping qui corrige le bug du bleu (BARRE90 et BARRE ont été inversés)
 function getImgName(type, rotIndex) {
     const idx = rotIndex / 90;
     const map = {
-        1: ['BARRE90', 'BARRE', 'BARRE90', 'BARRE'], // Inversé ici pour ton image !
-        2: ['J0', 'J90', 'J180', 'J270'], 
-        3: ['L0', 'L90', 'L180', 'L270'],
-        4: ['CUBE', 'CUBE', 'CUBE', 'CUBE'],
-        5: ['S0', 'S90', 'S180', 'S270'], 
-        6: ['CROIX', 'CROIX90', 'CROIX180', 'CROIX270'],
-        7: ['Z', 'Z90', 'Z180', 'Z270'] // Z270 ajouté ici
+        1: ['BARRE90', 'BARRE', 'BARRE90', 'BARRE'],
+        2: ['L0', 'L90', 'L180', 'L270'], 
+        3: ['CUBE', 'CUBE', 'CUBE', 'CUBE'],
+        4: ['Z', 'Z90', 'Z180', 'Z270'], 
+        5: ['CROIX', 'CROIX90', 'CROIX180', 'CROIX270']
     };
     return map[type] ? map[type][idx] : null;
 }
 
-// Trouve la vraie taille de la forme
 function getBoundingBox(matrix) {
     let minX = matrix[0].length, maxX = 0, minY = matrix.length, maxY = 0, found = false;
     for(let y=0; y<matrix.length; y++) {
@@ -175,16 +165,14 @@ function getBoundingBox(matrix) {
     return {x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1};
 }
 
-// Affichage d'un bloc simple de slime (Si l'image PNG n'existe pas)
 function drawBlock(ctxTarget, x, y, size, colorIndex) {
     if (colorIndex === 0) return;
-    ctxTarget.fillStyle = COLORS[colorIndex] || '#fff';
+    ctxTarget.fillStyle = COLORS[colorIndex] || '#666666';
     ctxTarget.beginPath(); ctxTarget.roundRect(x * size + 1, y * size + 1, size - 2, size - 2, 6); ctxTarget.fill();
     ctxTarget.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctxTarget.beginPath(); ctxTarget.roundRect(x * size + 3, y * size + 3, size - 6, size / 3, 4); ctxTarget.fill();
 }
 
-// Découpe l'image PNG bloc par bloc quand elle est posée sur le plateau !
 function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
     matrix.forEach((row, y) => { 
         row.forEach((cell, x) => { 
@@ -227,14 +215,12 @@ function draw() {
     drawMatrix(board, {x:0, y:0}, ctx);
     
     if (piece) {
-        // Fantome
         let ghostY = piece.pos.y;
         while (!collide(board, {matrix: piece.matrix, pos: {x: piece.pos.x, y: ghostY + 1}})) ghostY++;
         ctx.globalAlpha = 0.2;
         drawPiece(ctx, { ...piece, pos: {x: piece.pos.x, y: ghostY} }, BLOCK_SIZE);
         ctx.globalAlpha = 1.0;
         
-        // Piece active
         drawPiece(ctx, piece, BLOCK_SIZE);
     }
 }
@@ -374,7 +360,7 @@ function receiveGarbage(amount) {
     const hole = Math.floor(Math.random() * COLS);
     for (let i = 0; i < amount; i++) {
         board.shift();
-        let newRow = Array(COLS).fill(8); // Les déchets
+        let newRow = Array(COLS).fill(6); // Les déchets sont de couleur 6
         newRow[hole] = 0; board.push(newRow);
     }
 }
