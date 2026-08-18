@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Slime of Legends</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- MENU PRINCIPAL -->
+    <div id="lobby-screen" class="screen">
+        <h1>🗡️ Slime of Legends</h1>
+        <div class="panel">
+            <button id="btn-create">Créer une partie</button>
+            <p id="room-code-display"></p>
+            
+            <hr>
+            
+            <input type="text" id="input-code" placeholder="Ex: LEG123" maxlength="6">
+            <button id="btn-join">Rejoindre</button>
+        </div>
+    </div>
+
+    <!-- SÉLECTION DES CHAMPIONS -->
+    <div id="select-screen" class="screen" style="display: none;">
+        <h2>Choisis ton Champion</h2>
+        <div id="roster" class="roster-grid">
+            <!-- Rempli par le JS -->
+        </div>
+        <button id="btn-start" style="display: none; margin-top: 20px;">LANCER LA BAGARRE !</button>
+    </div>
+
+    <!-- LE JEU -->
+    <div id="game-screen" class="screen" style="display: none;">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- UI Mobile / Tactile -->
+        <div id="mobile-ui">
+            <div id="joystick-area">
+                <div class="d-pad" id="btn-up">⬆️</div>
+                <div class="d-pad-row">
+                    <div class="d-pad" id="btn-left">⬅️</div>
+                    <div class="d-pad" id="btn-right">➡️</div>
+                </div>
+                <div class="d-pad" id="btn-down">⬇️</div>
+            </div>
+            <div id="action-area">
+                <button class="action-btn skill" id="btn-skill">S1</button>
+                <button class="action-btn ult" id="btn-ult">ULT</button>
+                <button class="action-btn attack" id="btn-attack">ATT</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="slimelegends.js"></script>
+</body>
+</html>
