@@ -4,7 +4,7 @@
 let isNight = localStorage.getItem('tetrisNight') === 'true';
 
 function applyTheme() {
-    // Correction de l'orthographe pour matcher tes fichiers exacts !
+    // Orthographe corrigée selon tes fichiers !
     document.body.style.backgroundImage = isNight ? "url('assets/backgrounnight.png')" : "url('assets/backgrounday.png')";
     const themeBtn = document.getElementById('btn-theme-toggle');
     if (themeBtn) {
@@ -44,7 +44,7 @@ function clickSettingsAnim() {
 
 function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
 
-// ZOOM DE L'INTERFACE (La taille "Grand" zoome tout le plateau de jeu)
+// ZOOM DE L'INTERFACE
 function setGameSize(size) {
     const container = document.getElementById('game-container');
     const gameUi = document.getElementById('game-ui');
@@ -84,8 +84,17 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// Chargement de tes propres images (Skins)
-const skinNames = ['BARRE', 'BARRE90', 'CROIX', 'CROIX90', 'CROIX180', 'CROIX270', 'CUBE', 'L0', 'L90', 'L180', 'L270', 'Z', 'Z90', 'Z180'];
+// Chargement de TOUTES tes images (Z270 ajouté, et J/S préparés au cas où)
+const skinNames = [
+    'BARRE', 'BARRE90', 
+    'CROIX', 'CROIX90', 'CROIX180', 'CROIX270', 
+    'CUBE', 
+    'L0', 'L90', 'L180', 'L270', 
+    'J0', 'J90', 'J180', 'J270', // Si tu ne les as pas, il mettra une couleur unie
+    'Z', 'Z90', 'Z180', 'Z270',  // Z270 ajouté !
+    'S0', 'S90', 'S180', 'S270'  // Idem, en attente de tes PNG
+];
+
 const skins = {};
 skinNames.forEach(name => {
     skins[name] = new Image();
@@ -96,10 +105,10 @@ skinNames.forEach(name => {
 const SHAPES = [
     [], 
     [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // 1: BARRE 
-    [[2,0,0], [2,2,2], [0,0,0]], // 2: J (utilise skin L)
+    [[2,0,0], [2,2,2], [0,0,0]], // 2: J 
     [[0,0,3], [3,3,3], [0,0,0]], // 3: L
     [[4,4], [4,4]], // 4: CUBE 
-    [[0,5,5], [5,5,0], [0,0,0]], // 5: S (utilise skin Z)
+    [[0,5,5], [5,5,0], [0,0,0]], // 5: S 
     [[0,6,0], [6,6,6], [0,0,0]], // 6: CROIX 
     [[7,7,0], [0,7,7], [0,0,0]]  // 7: Z 
 ];
@@ -135,17 +144,17 @@ function randomPiece() {
     };
 }
 
-// Retrouve le bon nom de fichier image (J'ai géré le Z270 manquant)
+// Le Mapping qui corrige le bug du bleu (BARRE90 et BARRE ont été inversés)
 function getImgName(type, rotIndex) {
     const idx = rotIndex / 90;
     const map = {
-        1: ['BARRE', 'BARRE90', 'BARRE', 'BARRE90'],
-        2: ['L0', 'L90', 'L180', 'L270'], 
+        1: ['BARRE90', 'BARRE', 'BARRE90', 'BARRE'], // Inversé ici pour ton image !
+        2: ['J0', 'J90', 'J180', 'J270'], 
         3: ['L0', 'L90', 'L180', 'L270'],
         4: ['CUBE', 'CUBE', 'CUBE', 'CUBE'],
-        5: ['Z', 'Z90', 'Z180', 'Z90'], 
+        5: ['S0', 'S90', 'S180', 'S270'], 
         6: ['CROIX', 'CROIX90', 'CROIX180', 'CROIX270'],
-        7: ['Z', 'Z90', 'Z180', 'Z90']
+        7: ['Z', 'Z90', 'Z180', 'Z270'] // Z270 ajouté ici
     };
     return map[type] ? map[type][idx] : null;
 }
@@ -166,7 +175,7 @@ function getBoundingBox(matrix) {
     return {x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1};
 }
 
-// Affichage d'un bloc simple (sécurité si le PNG manque)
+// Affichage d'un bloc simple de slime (Si l'image PNG n'existe pas)
 function drawBlock(ctxTarget, x, y, size, colorIndex) {
     if (colorIndex === 0) return;
     ctxTarget.fillStyle = COLORS[colorIndex] || '#fff';
@@ -175,12 +184,11 @@ function drawBlock(ctxTarget, x, y, size, colorIndex) {
     ctxTarget.beginPath(); ctxTarget.roundRect(x * size + 3, y * size + 3, size - 6, size / 3, 4); ctxTarget.fill();
 }
 
-// LA MAGIE EST ICI : Le jeu découpe l'image PNG bloc par bloc quand elle est sur le plateau !
+// Découpe l'image PNG bloc par bloc quand elle est posée sur le plateau !
 function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
     matrix.forEach((row, y) => { 
         row.forEach((cell, x) => { 
             if (cell !== 0) {
-                // Si la cellule est un objet (pièce posée contenant l'info du découpage)
                 if (typeof cell === 'object') {
                     let imgName = getImgName(cell.type, cell.rot);
                     let img = skins[imgName];
@@ -191,13 +199,11 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
                         let sX = cell.imgX * sW;
                         let sY = cell.imgY * sH;
                         
-                        // Découpe un petit bout du PNG et l'affiche à l'écran
                         ctxTarget.drawImage(img, sX, sY, sW, sH, (x + offset.x) * size, (y + offset.y) * size, size, size);
                     } else {
                         drawBlock(ctxTarget, x + offset.x, y + offset.y, size, cell.val);
                     }
                 } else {
-                    // Bloc classique ou poubelle
                     drawBlock(ctxTarget, x + offset.x, y + offset.y, size, cell);
                 }
             } 
@@ -253,7 +259,6 @@ function collide(arena, player) {
     const m = player.matrix; const o = player.pos;
     for (let y = 0; y < m.length; ++y) {
         for (let x = 0; x < m[y].length; ++x) {
-            // Tolérance : On vérifie si la cellule (même si c'est un objet) n'est pas vide
             if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true;
         }
     }
@@ -265,7 +270,6 @@ function merge(arena, player) {
     player.matrix.forEach((row, py) => {
         row.forEach((value, px) => {
             if (value !== 0) {
-                // On enregistre les données de découpage du PNG dans la grille !
                 arena[py + player.pos.y][px + player.pos.x] = {
                     val: value,
                     type: player.type,
@@ -370,7 +374,7 @@ function receiveGarbage(amount) {
     const hole = Math.floor(Math.random() * COLS);
     for (let i = 0; i < amount; i++) {
         board.shift();
-        let newRow = Array(COLS).fill(8); // Les déchets sont des blocs classiques
+        let newRow = Array(COLS).fill(8); // Les déchets
         newRow[hole] = 0; board.push(newRow);
     }
 }
@@ -418,11 +422,11 @@ function rotate(e) { e.preventDefault(); playerRotate(); }
 function drop(e) { e.preventDefault(); playerDrop(); }
 
 // ==========================================
-// ROUTAGE AUTO (LANCEMENT DIRECT SOLO)
+// ROUTAGE AUTO ET LANCEMENT DIRECT
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     applyTheme();
-    setGameSize('wide'); // Taille "Grand" activée par défaut
+    setGameSize('wide'); 
 
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
