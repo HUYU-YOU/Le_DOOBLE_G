@@ -9,7 +9,7 @@ const mmCtx = minimapCanvas.getContext('2d');
 
 let width, height;
 
-// Dimensions Titanesques (2 images superposées ou 4 images 8K)
+// Dimensions Titanesques (4 images 8K pour sauver la RAM)
 const MAP_WIDTH = 15360;
 const MAP_HEIGHT = 8640;
 
@@ -29,8 +29,6 @@ let currentMapTheme = 'classic';
 
 // --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
-    mapstax1: 'assets/map/mapstax1.png',
-    mapstax2: 'assets/map/mapstax2.png',
     mapHG: 'assets/map/MAPHG.png',
     mapHD: 'assets/map/MAPHD.png',
     mapBG: 'assets/map/MAPBG.png',
@@ -192,7 +190,6 @@ let buildings = [];
 let units = [];
 let enemies = []; 
 let trees = [];
-let wheats = [];
 let rivers = [];
 let decorations = []; 
 let particles = [];
@@ -238,7 +235,6 @@ function seededRandom() {
 function isPositionFree(x, y, minDistance) {
     for(let r of rivers) if(dist({x,y}, r) < minDistance + r.radius) return false;
     for(let t of trees) if(dist({x,y}, t) < minDistance + 20) return false;
-    for(let w of wheats) if(dist({x,y}, w) < minDistance + 20) return false;
     for(let d of decorations) if(dist({x,y}, d) < minDistance + d.size/2) return false;
     if(baseHost && dist({x,y}, baseHost) < minDistance + baseHost.size/2 + 50) return false;
     if(baseGuest && dist({x,y}, baseGuest) < minDistance + baseGuest.size/2 + 50) return false;
@@ -360,7 +356,6 @@ function executeCommand(data) {
 
     if (data.action === 'move') {
         let uList = units.filter(u => data.unitIds.includes(u.id));
-        // UTILISATION DU SCANNER GLOBAL POUR CORRIGER LE CIBLAGE !
         let ent = getEntityById(data.targetId);
         
         uList.forEach((u, i) => {
@@ -420,7 +415,7 @@ function executeCommand(data) {
 // --- GENERATION DE LA CARTE ---
 function buildMapElements(seed) {
     mapSeed = seed;
-    trees = []; wheats = []; rivers = []; decorations = [];
+    trees = []; rivers = []; decorations = [];
 
     for(let i=0; i<20; i++) {
         let placed = false;
@@ -839,7 +834,7 @@ function hostUpdate(dt) {
     buildings.forEach((b, i) => { b.update(dt); if (b.hp <= 0) { buildings.splice(i, 1); }});
     units.forEach((u, i) => { u.update(dt); if (u.hp <= 0) { units.splice(i, 1); }});
     enemies.forEach((e, i) => { e.update(dt); if (e.hp <= 0) { enemies.splice(i, 1); }});
-    trees = trees.filter(t => t.amount > 0); wheats = wheats.filter(w => w.amount > 0);
+    trees = trees.filter(t => t.amount > 0); 
 
     let pack = {
         type: 'sync',
@@ -867,32 +862,24 @@ function draw() {
 
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     
+    // CORRECTION RAM : Utilisation des 4 morceaux pour éviter le crash du navigateur
     if (!isDarkMode) {
-        if (currentMapTheme === 'classic') {
-            if (images['mapstax2'] && images['mapstax2'].complete && images['mapstax2'].naturalWidth > 0) {
-                ctx.drawImage(images['mapstax2'], 0, 0, MAP_WIDTH, MAP_HEIGHT/2);
-            }
-            if (images['mapstax1'] && images['mapstax1'].complete && images['mapstax1'].naturalWidth > 0) {
-                ctx.drawImage(images['mapstax1'], 0, MAP_HEIGHT/2 - 2, MAP_WIDTH, MAP_HEIGHT/2 + 2); 
-            }
-        } else {
-            let prefix = 'hell';
-            const halfW = MAP_WIDTH / 2;
-            const halfH = MAP_HEIGHT / 2;
-            const overlap = 2; 
+        let prefix = currentMapTheme === 'hell' ? 'hell' : 'map';
+        const halfW = MAP_WIDTH / 2;
+        const halfH = MAP_HEIGHT / 2;
+        const overlap = 2; 
 
-            if (images[prefix+'HG'] && images[prefix+'HG'].complete && images[prefix+'HG'].naturalWidth > 0) {
-                ctx.drawImage(images[prefix+'HG'], 0, 0, halfW + overlap, halfH + overlap);
-            }
-            if (images[prefix+'HD'] && images[prefix+'HD'].complete && images[prefix+'HD'].naturalWidth > 0) {
-                ctx.drawImage(images[prefix+'HD'], halfW - 1, 0, halfW + overlap, halfH + overlap);
-            }
-            if (images[prefix+'BG'] && images[prefix+'BG'].complete && images[prefix+'BG'].naturalWidth > 0) {
-                ctx.drawImage(images[prefix+'BG'], 0, halfH - 1, halfW + overlap, halfH + overlap);
-            }
-            if (images[prefix+'BD'] && images[prefix+'BD'].complete && images[prefix+'BD'].naturalWidth > 0) {
-                ctx.drawImage(images[prefix+'BD'], halfW - 1, halfH - 1, halfW + overlap, halfH + overlap);
-            }
+        if (images[prefix+'HG'] && images[prefix+'HG'].complete && images[prefix+'HG'].naturalWidth > 0) {
+            ctx.drawImage(images[prefix+'HG'], 0, 0, halfW + overlap, halfH + overlap);
+        }
+        if (images[prefix+'HD'] && images[prefix+'HD'].complete && images[prefix+'HD'].naturalWidth > 0) {
+            ctx.drawImage(images[prefix+'HD'], halfW - 1, 0, halfW + overlap, halfH + overlap);
+        }
+        if (images[prefix+'BG'] && images[prefix+'BG'].complete && images[prefix+'BG'].naturalWidth > 0) {
+            ctx.drawImage(images[prefix+'BG'], 0, halfH - 1, halfW + overlap, halfH + overlap);
+        }
+        if (images[prefix+'BD'] && images[prefix+'BD'].complete && images[prefix+'BD'].naturalWidth > 0) {
+            ctx.drawImage(images[prefix+'BD'], halfW - 1, halfH - 1, halfW + overlap, halfH + overlap);
         }
     }
 
