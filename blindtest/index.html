@@ -6,7 +6,7 @@
     <title>Cyber Blind Test - Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         :root { 
             --bg: #050508; 
@@ -18,7 +18,7 @@
             --gold: #f1c40f;
             --font-main: 'Rajdhani', sans-serif;
         }
-        
+
         body { 
             font-family: var(--font-main); 
             background-color: var(--bg); 
@@ -36,7 +36,7 @@
             text-shadow: 0 0 15px var(--p1), 0 0 30px var(--p1); 
             text-align: center; font-size: 2.5em; font-weight: 700;
         }
-        
+
         #game-container { 
             position: relative; background: var(--panel); border-radius: 20px; 
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.05); 
@@ -45,16 +45,16 @@
             display: flex; flex-direction: column; overflow: hidden; 
             backdrop-filter: blur(12px);
         }
-        
+
         .overlay { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(5, 5, 8, 0.92); display: flex; flex-direction: column; 
             align-items: center; justify-content: center; z-index: 10; text-align: center; 
             padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px); 
         }
-        
+
         .menu-title { font-size: 2.5em; font-weight: 700; margin-bottom: 25px; color: #fff; text-transform: uppercase; letter-spacing: 3px; }
-        
+
         .btn-main { 
             background: rgba(255,255,255,0.05); color: #fff; border: 2px solid #555; 
             padding: 15px 35px; font-size: 1.3em; font-weight: 700; font-family: var(--font-main);
@@ -69,16 +69,16 @@
         }
         .btn-main:hover::before { left: 100%; }
         .btn-main:hover { transform: translateY(-3px); box-shadow: 0 5px 20px rgba(255,255,255,0.2); border-color: #fff; }
-        
+
         .btn-cyan { border-color: var(--p1); color: var(--p1); background: rgba(0, 240, 255, 0.05); }
         .btn-cyan:hover { background: var(--p1); color: #000; box-shadow: 0 0 20px var(--p1); border-color: var(--p1); }
-        
+
         .btn-pink { border-color: var(--p2); color: var(--p2); background: rgba(255, 0, 127, 0.05); }
         .btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 20px var(--p2); border-color: var(--p2); }
 
         .btn-sys { border-color: var(--sys); color: var(--sys); background: rgba(57, 255, 20, 0.05); }
         .btn-sys:hover { background: var(--sys); color: #000; box-shadow: 0 0 20px var(--sys); }
-        
+
         #game-header { 
             display: flex; justify-content: space-between; align-items: center; 
             background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 12px; 
@@ -98,7 +98,7 @@
         }
 
         #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; align-items: center; width: 100%; }
-        
+
         .mystery-box { 
             width: 90%; background: linear-gradient(135deg, rgba(20,25,40,0.8), rgba(10,12,20,0.9)); 
             padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
@@ -120,14 +120,14 @@
             box-shadow: 0 0 25px rgba(57, 255, 20, 0.2), inset 0 0 15px rgba(57, 255, 20, 0.1);
         }
         .mystery-box.found::before { display: none; }
-        
+
         #chat-container { 
             flex-grow: 1; background: rgba(5,5,8,0.8); border-radius: 12px; 
             border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; 
             overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
         #chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        
+
         #chat-input-area { 
             display: flex; background: rgba(20,25,35,0.9); padding: 15px; 
             border-top: 1px solid rgba(0, 240, 255, 0.2); 
@@ -138,7 +138,7 @@
             outline: none; transition: 0.3s; letter-spacing: 1px;
         }
         #guess-input:focus { border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
-        
+
         #btn-send { 
             background: var(--p1); color: #000; border: none; font-weight: 700; font-family: var(--font-main);
             padding: 0 30px; margin-left: 15px; border-radius: 8px; cursor: pointer; font-size: 1.3em; 
@@ -148,7 +148,7 @@
 
         .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--p1); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 25px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
+
         .hub-link { 
             position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.6); 
             text-decoration: none; font-weight: 600; font-size: 1.1em; z-index: 1000; 
@@ -163,7 +163,7 @@
             border: 1px solid rgba(57, 255, 20, 0.3); font-weight: 700; text-align: center; 
             width: 90%; margin-top: 5px; box-shadow: 0 0 10px rgba(57, 255, 20, 0.1);
         }
-        
+
         .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 85%; max-width: 600px; margin-top: 20px;}
         @media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; } }
 
@@ -203,17 +203,32 @@
             </div>
         </div>
 
-        <!-- MENU PRINCIPAL -->
-        <div class="overlay" id="main-menu">
-            <div class="menu-title" style="color: #fff;">CHOISISSEZ VOTRE MODE</div>
-            <button class="btn-main btn-cyan" onclick="openMenu('solo')">Entraînement (Solo)</button>
-            <button class="btn-main btn-pink" onclick="openMenu('network')">Multijoueur (Réseau)</button>
+        <!-- MENU CATÉGORIE (AFFICHÉ PAR DÉFAUT AU LANCEMENT) -->
+        <div class="overlay" id="category-menu">
+            <div class="menu-title" style="color:var(--sys); text-shadow: 0 0 15px var(--sys);">SÉLECTION DE LA PLAYLIST</div>
+            <p id="lobby-count" style="color:#0ff; font-weight:700; font-size:1.3em; display:none; margin-bottom: 5px;">1 joueur(s) dans le salon</p>
+
+            <div class="cat-grid" id="cat-buttons">
+                <button class="btn-main" onclick="launchGame('RAP')" style="border-color: #ff5500; color: #ffaa00;">🎤 RAP FR</button>
+                <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 OLD / NOSTALGIE </button>
+                <button class="btn-main" onclick="launchGame('POP')" style="border-color: #ff00aa; color: #ff88cc;">🌍 POP INTERNATIONALE</button>
+                <button class="btn-main btn-sys" onclick="launchGame('ANIME')">📺 ANIME</button>
+                <button class="btn-main" onclick="launchGame('FILMS')" style="border-color: #ffd700; color: #ffeb66; grid-column: 1 / -1;">🎬 MOVIES </button>
+                
+                <!-- BOUTON MULTIJOUEUR INCLUS DIRECTEMENT ICI -->
+                <button class="btn-main btn-pink" id="btn-multi-toggle" onclick="openMenu('network')" style="grid-column: 1 / -1; margin-top: 15px;">🌐 JOUER EN MODE MULTIJOUEUR</button>
+            </div>
+
+            <div id="loading-api" style="display: none; flex-direction: column; align-items: center;">
+                <div class="loader"></div>
+                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px;">Génération des pistes originales en cours...</p>
+            </div>
         </div>
 
-        <!-- MENU RÉSEAU -->
+        <!-- MENU RÉSEAU (MULTIJOUEUR) -->
         <div class="overlay" id="network-menu" style="display: none;">
             <div class="menu-title" style="color: var(--p2);">CONNEXION RÉSEAU</div>
-            
+
             <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px; border: 1px solid var(--gold); width: 340px; margin-bottom: 20px; text-align: center;">
                 <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">VOTRE PSEUDO :</h3>
                 <input type="text" id="player-name-input" class="input-pseudo" placeholder="Ex: CyberNinja" maxlength="12">
@@ -224,7 +239,7 @@
                     <h3 style="color: #fff; margin-top: 0; font-size: 1.4em; font-weight: 700;">CRÉER UN SALON</h3>
                     <p style="color: #aaa; font-size: 1em; margin-bottom: 10px;">Code de votre salon :</p>
                     <div id="my-id" style="color:var(--p1); font-weight:700; font-size:2.5em; letter-spacing: 4px; margin: 15px 0; min-height: 40px; text-shadow: 0 0 15px var(--p1);">...</div>
-                    
+
                     <button class="btn-main btn-cyan" id="btn-host" onclick="hostGame()" style="width: 100%; padding: 15px; font-size: 1.1em;">1. Générer le Code</button>
                     <button class="btn-main btn-sys" id="btn-start-host" onclick="goToLobby()" style="width: 100%; padding: 15px; font-size: 1.1em; display: none;">2. Configurer ➔</button>
                 </div>
@@ -235,28 +250,16 @@
                     <button class="btn-main btn-pink" onclick="joinGame()" style="width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px;">Infiltrer</button>
                 </div>
             </div>
-            
+
             <div id="conn-status" style="margin-top: 25px; font-weight: 700; font-size: 1.2em; transition: 0.3s; text-align: center;"></div>
             <button class="btn-main" style="font-size:1em; margin-top:10px; border-color: #444; color:#888;" onclick="location.reload()">Retour</button>
         </div>
 
-        <!-- MENU CATÉGORIE -->
-        <div class="overlay" id="category-menu" style="display: none;">
-            <div class="menu-title" style="color:var(--sys); text-shadow: 0 0 15px var(--sys);">SÉLECTION DE LA PLAYLIST</div>
-            <p id="lobby-count" style="color:#0ff; font-weight:700; font-size:1.3em; display:none; margin-bottom: 5px;">1 joueur(s) dans le salon</p>
-            
-            <div class="cat-grid" id="cat-buttons">
-                <button class="btn-main" onclick="launchGame('RAP')" style="border-color: #ff5500; color: #ffaa00;">🎤 RAP FR</button>
-                <button class="btn-main" onclick="launchGame('FR')" style="border-color: #00aaff; color: #88ccff;">🥐 OLD / NOSTALGIE </button>
-                <button class="btn-main" onclick="launchGame('POP')" style="border-color: #ff00aa; color: #ff88cc;">🌍 POP INTERNATIONALE</button>
-                <button class="btn-main btn-sys" onclick="launchGame('ANIME')">📺 ANIME</button>
-                <button class="btn-main" onclick="launchGame('FILMS')" style="border-color: #ffd700; color: #ffeb66; grid-column: 1 / -1;">🎬 MOVIES </button>
-            </div>
-            
-            <div id="loading-api" style="display: none; flex-direction: column; align-items: center;">
-                <div class="loader"></div>
-                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px;">Génération des pistes originales en cours...</p>
-            </div>
+        <!-- ECRAN D'ATTENTE GUEST -->
+        <div class="overlay" id="waiting-menu" style="display: none;">
+            <div class="menu-title" style="color:var(--sys); font-size:2.5em; margin-bottom:20px;">CONNEXION ÉTABLIE</div>
+            <p style="font-size:1.5em; color:#fff; font-weight:600;">En attente du lancement par l'hôte...</p>
+            <div class="loader"></div>
         </div>
 
         <!-- ECRAN DE FIN -->
@@ -398,24 +401,24 @@
         let gameMode = 'solo'; 
         let currentCategory = 'RAP'; 
         let myPid = 1; 
-        let myName = "Joueur";
-        
+        let myName = "Solo";
+
         let peer = null; 
         let conns = []; 
         let scores = { 1: 0 }; 
-        let playerNames = { 1: "Hôte" }; // Map Pid -> Nom
+        let playerNames = { 1: "Solo" }; // Map Pid -> Nom
         let playerColors = ['#00f0ff', '#ff007f', '#f1c40f', '#39ff14', '#ff8800', '#b800ff', '#00ffaa', '#ff0000'];
-        
+
         let playlist = [];
         let currentTrackIndex = -1;
         let currentTrack = null;
         let audioPlayer = new Audio();
-        
+
         // État de la manche
         let state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, timeLeft: 20 };
         let roundInterval = null;
         let isRoundActive = false;
-        
+
         let fadeInterval = null;
         let isFading = false;
 
@@ -427,6 +430,11 @@
         const boxTitle = document.getElementById('box-title');
         const boxAnime = document.getElementById('box-anime');
 
+        // Initialisation automatique du mode solo au chargement
+        window.addEventListener('DOMContentLoaded', () => {
+            updateScoreUI();
+        });
+
         guessInput.addEventListener("keypress", function(event) {
             if (event.key === "Enter") { event.preventDefault(); submitGuess(); }
         });
@@ -435,13 +443,15 @@
 
         function openMenu(mode) {
             gameMode = mode;
-            document.getElementById('main-menu').style.display = 'none';
             if (mode === 'solo') {
                 myName = "Solo";
                 playerNames = { 1: "Solo" };
+                document.getElementById('network-menu').style.display = 'none';
                 document.getElementById('category-menu').style.display = 'flex';
+                document.getElementById('btn-multi-toggle').style.display = 'block';
                 updateScoreUI(); 
             } else {
+                document.getElementById('category-menu').style.display = 'none';
                 document.getElementById('network-menu').style.display = 'flex';
                 document.getElementById('my-id').innerText = "...";
                 document.getElementById('btn-host').style.display = 'inline-block';
@@ -480,22 +490,22 @@
 
             status.style.color = "var(--p1)";
             status.innerText = "Création du serveur..."; 
-            
+
             let code = 'BLD' + Math.floor(1000 + Math.random() * 9000);
-            
+
             if (peer) peer.destroy();
             peer = new Peer(code);
-            
+
             peer.on('open', id => {
                 document.getElementById('my-id').innerText = id;
                 try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e=>{}); } catch(e) {}
-                
+
                 status.style.color = "var(--sys)";
                 status.innerText = "Serveur prêt ! Donnez le code à vos amis."; 
-                
+
                 document.getElementById('btn-host').style.display = 'none';
                 document.getElementById('btn-start-host').style.display = 'inline-block';
-                
+
                 gameMode = 'host'; myPid = 1;
                 scores = { 1: 0 };
             });
@@ -512,14 +522,14 @@
                         scores[newPid] = 0; 
                         playerNames[newPid] = data.name.substring(0, 15); // Sécurité taille
                         conns.push(c); 
-                        
+
                         status.style.color = "var(--sys)";
                         status.innerText = `${conns.length + 1} joueur(s) connectés !`;
                         document.getElementById('lobby-count').innerText = Object.keys(scores).length + " joueur(s) dans le salon";
 
                         // Sync le nouveau joueur
                         c.send({ type: 'init', pid: newPid, playerNames: playerNames, scores: scores, category: currentCategory });
-                        
+
                         // Informer tout le monde
                         let msg = `${playerNames[newPid]} a rejoint la partie !`;
                         broadcast({ type: 'sys', msg: msg, playerNames: playerNames, scores: scores });
@@ -528,43 +538,43 @@
                     if (data.type === 'guess') processGuess(data.text, c.pid); 
                 });
             }); 
-            
+
             peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = "Erreur de création : " + err.type; });
         }
 
         function goToLobby() {
             document.getElementById('network-menu').style.display = 'none';
             document.getElementById('category-menu').style.display = 'flex';
+            document.getElementById('btn-multi-toggle').style.display = 'none'; // L'hôte ne peut plus cliquer sur "Jouer en Multi" puisqu'il y est déjà.
             document.getElementById('lobby-count').style.display = 'block';
             updateScoreUI();
         }
-        
+
         function joinGame() { 
             let id = document.getElementById('join-id').value.trim().toUpperCase(); 
             let pseudoInput = document.getElementById('player-name-input').value.trim();
             myName = pseudoInput ? pseudoInput : "Joueur";
 
             if (!id) return; 
-            
+
             let status = document.getElementById('conn-status');
             status.style.color = "var(--p1)"; status.innerText = "Connexion au salon..."; 
-            
+
             if (peer) peer.destroy(); peer = new Peer(); 
-            
+
             peer.on('open', () => {
                 let conn = peer.connect(id, { reliable: true }); 
                 gameMode = 'client'; 
-                
+
                 conn.on('open', () => {
                     conns = [conn]; 
                     // Envoyer mon nom à l'hôte
                     conn.send({ type: 'join', name: myName });
 
                     document.getElementById('network-menu').style.display = 'none';
-                    document.getElementById('main-menu').style.display = 'flex';
-                    document.getElementById('main-menu').innerHTML = '<div class="menu-title" style="color:var(--sys); font-size:2.5em; margin-bottom:20px;">CONNEXION ÉTABLIE</div><p style="font-size:1.5em; color:#fff; font-weight:600;">En attente du lancement par l\'hôte...</p><div class="loader"></div>';
+                    document.getElementById('waiting-menu').style.display = 'flex';
                 });
-                
+
                 conn.on('data', data => {
                     if (data.type === 'init') { 
                         myPid = data.pid; 
@@ -580,7 +590,7 @@
                         updateScoreUI();
                     }
                     if (data.type === 'start_game') { setupUIForCategory(data.category); } 
-                    if (data.type === 'start_round') { clientStartRound(data.track); }
+                    if (data.type === 'start_round') { clientStartRound(data.track, data.round); }
                     if (data.type === 'update_state') { 
                         if (data.stateData.playerNames) playerNames = data.stateData.playerNames;
                         clientUpdateState(data.stateData); 
@@ -612,11 +622,11 @@
                 try {
                     let searchItem = shuffled[i];
                     let searchTerm = searchItem.search || searchItem;
-                    
+
                     // On filtre brutalement les covers via l'API iTunes en analysant finement les resultats.
                     let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=fr&media=music&entity=song&limit=20`);
                     let data = await res.json();
-                    
+
                     // ANTI COVER & ANTI VERSIONS SUSPECTES FILTER
                     let validTracks = data.results.filter(t => {
                         if (!t.previewUrl) return false;
@@ -637,7 +647,7 @@
                         // FIX MAJEUR: On ne prend PAS un résultat random. L'API d'iTunes trie par pertinence. 
                         // Le [0] est l'original 99% du temps. Prendre du random donnait souvent des remix.
                         let rTrack = validTracks[0];
-                        
+
                         if (cat === 'ANIME') {
                             selectedTracks.push({
                                 animeName: searchItem.anime, aliases: searchItem.aliases,
@@ -668,10 +678,10 @@
 
             playlist = selectedTracks;
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
-            
+
             if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a lancé la catégorie ${cat} !` });
             displaySys(`🎵 DÉBUT DE LA PARTIE (${playlist.length} Manches) 🎵`);
-            
+
             setTimeout(startNextRound, 2000);
         }
 
@@ -691,15 +701,16 @@
 
             currentTrack = playlist[currentTrackIndex];
             state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, timeLeft: 20 };
-            
+
             clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
 
             resetRoundUI();
             audioPlayer.src = currentTrack.previewUrl;
             audioPlayer.play().catch(e => console.log("Autoplay bloqué"));
-            
+
             isRoundActive = true;
-            if (gameMode === 'host') broadcast({ type: 'start_round', track: { previewUrl: currentTrack.previewUrl } });
+            // FIX RÉSEAU : Envoi explicite du numéro de la manche au Guest !
+            if (gameMode === 'host') broadcast({ type: 'start_round', track: { previewUrl: currentTrack.previewUrl }, round: currentTrackIndex + 1 });
 
             displaySys(`▶️ MANCHE ${currentTrackIndex + 1} / 10`);
 
@@ -716,10 +727,10 @@
         function endRound() {
             isRoundActive = false;
             clearInterval(roundInterval); clearInterval(fadeInterval); audioPlayer.pause();
-            
+
             revealAnswers(currentTrack);
             displaySys(`Fin de la manche. Préparation de la suivante...`);
-            
+
             if (gameMode === 'host') broadcast({ type: 'end_round', track: currentTrack });
             setTimeout(startNextRound, 5000); 
         }
@@ -730,20 +741,20 @@
         }
 
         // --- LOGIQUE CLIENT ---
-        function clientStartRound(track) {
+        function clientStartRound(track, round) {
             currentTrack = track;
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
-            
+
             clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
             resetRoundUI(); audioPlayer.src = track.previewUrl; audioPlayer.play().catch(e => console.log(e));
-            isRoundActive = true; displaySys(`▶️ MANCHE ${currentTrackIndex + 1}`);
+            isRoundActive = true; displaySys(`▶️ MANCHE ${round} / 10`);
         }
 
         function clientUpdateState(stateData) {
             state.timeLeft = stateData.timeLeft; timerBox.innerText = state.timeLeft;
             if (state.timeLeft <= 3) timerBox.style.color = '#ff0000'; else timerBox.style.color = 'var(--gold)';
             if (state.timeLeft <= 3 && !isFading) startFadeOut();
-            
+
             updateScoreUI(stateData.scores); 
 
             if (currentCategory === 'ANIME') {
@@ -773,22 +784,22 @@
         function cleanText(str) {
             if (!str) return '';
             let s = str.toLowerCase();
-            
+
             // On supprime les "feat." et tout ce qui est après
             s = s.split(/feat\.|ft\.|featuring/i)[0];
-            
+
             // On supprime les informations gênantes entre crochets
             s = s.replace(/\[.*?\]/g, ''); 
-            
+
             // On supprime les mots spécifiques (souvent entre parenthèses) qui gênent, sans pour autant TOUT supprimer dans les parenthèses
             s = s.replace(/\(?(remastered|remaster|radio edit|live|version|instrumental).*?\)?/gi, '');
-            
+
             // Retrait des accents
             s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
-            
+
             // Retrait de TOUT ce qui n'est pas une lettre ou un chiffre (supprime les espaces, les parenthèses restantes)
             s = s.replace(/[^a-z0-9]/g, '');
-            
+
             return s;
         }
 
@@ -810,15 +821,15 @@
         function checkMatch(guess, target) {
             let g = cleanText(guess); let t = cleanText(target);
             if (g.length < 2) return false;
-            
+
             // Si c'est exact, ou que le mot est contenu à au moins 75%
             if (g === t || (t.includes(g) && g.length >= t.length * 0.75) || (g.includes(t) && t.length >= g.length * 0.75)) return true;
-            
+
             // Tolérance aux fautes de frappe (Levenshtein)
             let distance = levenshtein(g, t);
             if (t.length > 5 && distance <= 2) return true; // 2 erreurs max pour mots longs
             if (t.length <= 5 && distance <= 1) return true; // 1 erreur max pour mots courts
-            
+
             return false;
         }
 
@@ -837,7 +848,7 @@
 
             if (currentCategory === 'ANIME') {
                 if (state.animeFound) return;
-                
+
                 correct = checkMatch(text, currentTrack.animeName);
                 if (!correct && currentTrack.aliases) {
                     for (let alias of currentTrack.aliases) { if (checkMatch(text, alias)) { correct = true; break; } }
@@ -847,14 +858,14 @@
                     state.animeFound = true; scores[pid]++;
                     let msg = `🔥 ${playerPseudo} a trouvé l'Anime !`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
-                    
+
                     boxAnime.classList.add('found');
                     boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : "📺 ANIME TROUVÉ !";
                     if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
                 }
             } else if (currentCategory === 'FILMS') {
                 if (state.filmFound) return;
-                
+
                 correct = checkMatch(text, currentTrack.filmName);
                 if (!correct && currentTrack.aliases) {
                     for (let alias of currentTrack.aliases) { if (checkMatch(text, alias)) { correct = true; break; } }
@@ -864,7 +875,7 @@
                     state.filmFound = true; scores[pid]++;
                     let msg = `🔥 ${playerPseudo} a trouvé le Film !`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
-                    
+
                     boxAnime.classList.add('found');
                     boxAnime.innerText = gameMode === 'solo' ? `🎬 ${currentTrack.filmName}` : "🎬 FILM TROUVÉ !";
                     if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
@@ -905,7 +916,7 @@
         function displayChat(msg, pid) {
             let div = document.createElement('div'); div.className = 'msg'; let color = getPlayerColor(pid);
             div.style.alignSelf = pid === myPid ? 'flex-end' : 'flex-start';
-            
+
             let pseudo = playerNames[pid] || `Joueur ${pid}`;
 
             if (pid === myPid) {
@@ -915,7 +926,7 @@
                 div.style.borderLeft = `4px solid ${color}`;
                 div.style.background = `linear-gradient(90deg, rgba(${hexToRgb(color)}, 0.15), rgba(255,255,255,0.02))`;
             }
-            
+
             div.style.color = '#fff'; 
             div.innerHTML = `<span style="font-size:0.7em; opacity:0.7; display:block; margin-bottom:2px; color:${color};">${pseudo}</span>${msg}`;
             chatMsgs.appendChild(div); chatMsgs.scrollTop = chatMsgs.scrollHeight;
@@ -970,7 +981,7 @@
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
             document.getElementById('end-screen').style.display = 'flex';
             let t = document.getElementById('final-scores-text');
-            
+
             if (gameMode === 'solo') {
                 let maxPts = (currentCategory === 'ANIME' || currentCategory === 'FILMS') ? 10 : 20;
                 t.innerHTML = `Score Final : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>`;
@@ -986,7 +997,7 @@
             }
         }
     </script>
-    
+
     <!-- SCRIPT DE NAVIGATION SWIPE GLOBAL -->
     <script>
         const gamesHubList = [
@@ -996,7 +1007,7 @@
             "../worms/index.html"
         ];
         let globalTouchStartX = 0, globalTouchStartY = 0; let globalTouchEndX = 0, globalTouchEndY = 0;
-        
+
         function handleSwipeGesture() {
             const swipeThreshold = 75; 
             let diffX = globalTouchEndX - globalTouchStartX; let diffY = globalTouchEndY - globalTouchStartY;
