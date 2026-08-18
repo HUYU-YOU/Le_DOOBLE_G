@@ -4,7 +4,6 @@
 let isNight = localStorage.getItem('tetrisNight') === 'true';
 
 function applyTheme() {
-    // Applique le bon background depuis le dossier assets
     document.body.style.backgroundImage = isNight ? "url('assets/backgroundnight.png')" : "url('assets/backgroundday.png')";
     const themeBtn = document.getElementById('btn-theme-toggle');
     if (themeBtn) {
@@ -18,10 +17,6 @@ function toggleTheme() {
     applyTheme();
 }
 
-// Initialise le thème au chargement
-document.addEventListener('DOMContentLoaded', applyTheme);
-
-// Animations du bouton paramètres
 const settingsBtnImg = document.getElementById('settings-btn-img');
 const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
 let hoverInterval; let currentFrame = 0;
@@ -48,20 +43,26 @@ function clickSettingsAnim() {
 
 function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
 
+// ZOOM DE L'INTERFACE (La taille "Grand" zoome tout le plateau de jeu)
 function setGameSize(size) {
     const container = document.getElementById('game-container');
+    const gameUi = document.getElementById('game-ui');
     const btns = document.querySelectorAll('.btn-size');
     btns.forEach(b => b.classList.remove('active'));
+    
     container.classList.remove('size-classic', 'size-wide', 'size-full');
     
     if (size === 'classic') {
         container.classList.add('size-classic'); document.getElementById('btn-sz-classic').classList.add('active');
+        gameUi.style.transform = 'scale(0.8)';
         if (document.fullscreenElement) document.exitFullscreen();
     } else if (size === 'wide') {
         container.classList.add('size-wide'); document.getElementById('btn-sz-wide').classList.add('active');
+        gameUi.style.transform = 'scale(1.2)'; // MODE GRAND
         if (document.fullscreenElement) document.exitFullscreen();
     } else if (size === 'full') {
         container.classList.add('size-full'); document.getElementById('btn-sz-full').classList.add('active');
+        gameUi.style.transform = 'scale(1.4)';
         if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e));
     }
 }
@@ -70,24 +71,9 @@ document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
 });
 
-// ==========================================
-// ROUTAGE AUTO (HUB)
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('mode');
-    
-    if (mode === 'solo') {
-        document.getElementById('main-menu').style.display = 'none';
-        startSolo();
-    } else if (mode === 'multi') {
-        document.getElementById('main-menu').style.display = 'none';
-        openMultiMenu();
-    }
-});
 
 // ==========================================
-// MOTEUR TETRISLIME
+// MOTEUR TETRISLIME ET SKINS PNG
 // ==========================================
 const canvas = document.getElementById('tetris-canvas');
 const ctx = canvas.getContext('2d');
@@ -98,28 +84,28 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
+// Chargement de tes propres images (Skins)
+const skinNames = ['BARRE', 'BARRE90', 'CROIX', 'CROIX90', 'CROIX180', 'CROIX270', 'CUBE', 'L0', 'L90', 'L180', 'L270', 'Z', 'Z90', 'Z180', 'Z270'];
+const skins = {};
+skinNames.forEach(name => {
+    skins[name] = new Image();
+    skins[name].src = `assets/${name}.png`;
+});
+
+// Les 7 formes standards
 const SHAPES = [
     [], 
     [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // 1: BARRE 
-    [[2,0,0], [2,2,2], [0,0,0]], // 2: J 
+    [[2,0,0], [2,2,2], [0,0,0]], // 2: J (utilise skin L)
     [[0,0,3], [3,3,3], [0,0,0]], // 3: L
     [[4,4], [4,4]], // 4: CUBE 
-    [[0,5,5], [5,5,0], [0,0,0]], // 5: S 
+    [[0,5,5], [5,5,0], [0,0,0]], // 5: S (utilise skin Z)
     [[0,6,0], [6,6,6], [0,0,0]], // 6: CROIX 
     [[7,7,0], [0,7,7], [0,0,0]]  // 7: Z 
 ];
 
-const COLORS = [
-    null,
-    '#00f0ff', // Cyan
-    '#0055ff', // Blue
-    '#ffaa00', // Orange
-    '#ffd700', // Yellow
-    '#39ff14', // Green
-    '#b82aff', // Purple
-    '#ff007f', // Red
-    '#666666'  // Garbage block (Multi)
-];
+// Fallback de couleurs de slime pour les blocs posés
+const COLORS = [ null, '#00f0ff', '#0055ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#ff007f', '#666666'];
 
 let board = [];
 let piece = null;
@@ -138,86 +124,112 @@ let animationId;
 let bestScore = parseInt(localStorage.getItem('tetriSlimeBest')) || 0;
 document.getElementById('best-score').innerText = bestScore;
 
-function createMatrix(w, h) {
-    return Array.from({length: h}, () => Array(w).fill(0));
-}
+function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
 
 function randomPiece() {
     const typeId = Math.floor(Math.random() * 7) + 1;
     return {
         matrix: SHAPES[typeId],
         pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0].length/2), y: 0 },
-        type: typeId
+        type: typeId,
+        rotIndex: 0 // Index de rotation pour trouver la bonne image
     };
 }
 
-// Fonction de dessin : Look "Slime" généré par le code
+// Retrouve le bon nom de fichier image selon la forme et la rotation
+function getImgName(type, rotIndex) {
+    const idx = rotIndex / 90;
+    const map = {
+        1: ['BARRE', 'BARRE90', 'BARRE', 'BARRE90'],
+        2: ['L0', 'L90', 'L180', 'L270'], // J utilise les skins de L par défaut
+        3: ['L0', 'L90', 'L180', 'L270'],
+        4: ['CUBE', 'CUBE', 'CUBE', 'CUBE'],
+        5: ['Z', 'Z90', 'Z180', 'Z270'], // S utilise les skins de Z par défaut
+        6: ['CROIX', 'CROIX90', 'CROIX180', 'CROIX270'],
+        7: ['Z', 'Z90', 'Z180', 'Z270']
+    };
+    return map[type][idx];
+}
+
+// Trouve la vraie taille de la forme pour coller l'image pile poil
+function getBoundingBox(matrix) {
+    let minX = matrix[0].length, maxX = 0, minY = matrix.length, maxY = 0, found = false;
+    for(let y=0; y<matrix.length; y++) {
+        for(let x=0; x<matrix[y].length; x++) {
+            if(matrix[y][x]) {
+                minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                found = true;
+            }
+        }
+    }
+    if(!found) return {x:0, y:0, w:0, h:0};
+    return {x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1};
+}
+
+// Affichage d'un bloc classique (fusionné avec la gelée une fois au sol)
 function drawBlock(ctxTarget, x, y, size, colorIndex) {
     if (colorIndex === 0) return;
-    const color = COLORS[colorIndex];
-    
-    ctxTarget.fillStyle = color;
-    ctxTarget.beginPath();
-    ctxTarget.roundRect(x * size + 1, y * size + 1, size - 2, size - 2, 6);
-    ctxTarget.fill();
-    
+    ctxTarget.fillStyle = COLORS[colorIndex];
+    ctxTarget.beginPath(); ctxTarget.roundRect(x * size + 1, y * size + 1, size - 2, size - 2, 6); ctxTarget.fill();
     ctxTarget.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctxTarget.beginPath();
-    ctxTarget.roundRect(x * size + 3, y * size + 3, size - 6, size / 3, 4);
-    ctxTarget.fill();
+    ctxTarget.beginPath(); ctxTarget.roundRect(x * size + 3, y * size + 3, size - 6, size / 3, 4); ctxTarget.fill();
 }
 
 function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
-    matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                drawBlock(ctxTarget, x + offset.x, y + offset.y, size, value);
-            }
-        });
-    });
+    matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) drawBlock(ctxTarget, x + offset.x, y + offset.y, size, value); }); });
 }
 
-function drawGhost() {
-    let ghost = { matrix: piece.matrix, pos: { x: piece.pos.x, y: piece.pos.y } };
-    while (!collide(board, ghost)) {
-        ghost.pos.y++;
+// Dessine l'image PNG entière de la forme !
+function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
+    let imgName = getImgName(p.type, p.rotIndex);
+    let img = skins[imgName];
+    if (img && img.complete && img.naturalWidth > 0) {
+        let box = getBoundingBox(p.matrix);
+        ctxTarget.drawImage(img, (p.pos.x + box.x + offsetX) * size, (p.pos.y + box.y + offsetY) * size, box.w * size, box.h * size);
+    } else {
+        drawMatrix(p.matrix, {x: p.pos.x + offsetX, y: p.pos.y + offsetY}, ctxTarget, size);
     }
-    ghost.pos.y--; 
-    
-    ctx.globalAlpha = 0.2;
-    drawMatrix(ghost.matrix, ghost.pos, ctx);
-    ctx.globalAlpha = 1.0;
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawMatrix(board, {x:0, y:0}, ctx);
+    drawMatrix(board, {x:0, y:0}, ctx); // Le plateau figé (slimes coupables)
     
     if (piece) {
-        drawGhost();
-        drawMatrix(piece.matrix, piece.pos, ctx);
+        // Fantome
+        let ghostY = piece.pos.y;
+        while (!collide(board, {matrix: piece.matrix, pos: {x: piece.pos.x, y: ghostY + 1}})) ghostY++;
+        ctx.globalAlpha = 0.2;
+        drawPiece(ctx, { ...piece, pos: {x: piece.pos.x, y: ghostY} }, BLOCK_SIZE);
+        ctx.globalAlpha = 1.0;
+        
+        // Piece active (Avec tes PNG)
+        drawPiece(ctx, piece, BLOCK_SIZE);
     }
 }
 
 function drawPreview(ctxTarget, p, size) {
     ctxTarget.clearRect(0, 0, ctxTarget.canvas.width, ctxTarget.canvas.height);
     if (!p) return;
-    const offset = {
-        x: (ctxTarget.canvas.width / size - p.matrix[0].length) / 2,
-        y: (ctxTarget.canvas.height / size - p.matrix.length) / 2
-    };
-    drawMatrix(p.matrix, offset, ctxTarget, size);
+    let box = getBoundingBox(p.matrix);
+    let drawX = (ctxTarget.canvas.width - box.w * size) / 2;
+    let drawY = (ctxTarget.canvas.height - box.h * size) / 2;
+    
+    let imgName = getImgName(p.type, p.rotIndex);
+    let img = skins[imgName];
+    if (img && img.complete && img.naturalWidth > 0) {
+        ctxTarget.drawImage(img, drawX, drawY, box.w * size, box.h * size);
+    } else {
+        drawMatrix(p.matrix, {x: (ctxTarget.canvas.width/size - p.matrix[0].length)/2, y: (ctxTarget.canvas.height/size - p.matrix.length)/2}, ctxTarget, size);
+    }
 }
 
 function collide(arena, player) {
-    const m = player.matrix;
-    const o = player.pos;
+    const m = player.matrix; const o = player.pos;
     for (let y = 0; y < m.length; ++y) {
         for (let x = 0; x < m[y].length; ++x) {
-            if (m[y][x] !== 0 &&
-               (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
-                return true;
-            }
+            if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true;
         }
     }
     return false;
@@ -226,36 +238,31 @@ function collide(arena, player) {
 function merge(arena, player) {
     player.matrix.forEach((row, y) => {
         row.forEach((value, x) => {
-            if (value !== 0) {
-                arena[y + player.pos.y][x + player.pos.x] = value;
-            }
+            if (value !== 0) arena[y + player.pos.y][x + player.pos.x] = value;
         });
     });
 }
 
-function rotateMatrix(matrix) {
-    return matrix.map((row, i) => row.map((val, j) => matrix[matrix.length - 1 - j][i]));
-}
+function rotateMatrix(matrix) { return matrix.map((row, i) => row.map((val, j) => matrix[matrix.length - 1 - j][i])); }
 
 function playerRotate() {
     const pos = piece.pos.x;
     let offset = 1;
     piece.matrix = rotateMatrix(piece.matrix);
+    piece.rotIndex = (piece.rotIndex + 90) % 360; // Gère le skin à afficher
     while (collide(board, piece)) {
         piece.pos.x += offset;
         offset = -(offset + (offset > 0 ? 1 : -1));
         if (offset > piece.matrix[0].length) {
             piece.matrix = rotateMatrix(rotateMatrix(rotateMatrix(piece.matrix)));
+            piece.rotIndex = (piece.rotIndex - 90 + 360) % 360;
             piece.pos.x = pos;
             return;
         }
     }
 }
 
-function playerMove(dir) {
-    piece.pos.x += dir;
-    if (collide(board, piece)) piece.pos.x -= dir;
-}
+function playerMove(dir) { piece.pos.x += dir; if (collide(board, piece)) piece.pos.x -= dir; }
 
 function playerDrop() {
     piece.pos.y++;
@@ -272,11 +279,11 @@ function playerDrop() {
 function hold() {
     if (!canHold) return;
     if (holdPiece) {
-        let temp = { matrix: holdPiece.matrix, type: holdPiece.type, pos: {x: Math.floor(COLS/2)-1, y:0} };
-        holdPiece = { matrix: SHAPES[piece.type], type: piece.type };
+        let temp = { matrix: holdPiece.matrix, type: holdPiece.type, rotIndex: holdPiece.rotIndex, pos: {x: Math.floor(COLS/2)-1, y:0} };
+        holdPiece = { matrix: SHAPES[piece.type], type: piece.type, rotIndex: 0 };
         piece = temp;
     } else {
-        holdPiece = { matrix: SHAPES[piece.type], type: piece.type };
+        holdPiece = { matrix: SHAPES[piece.type], type: piece.type, rotIndex: 0 };
         resetPiece();
     }
     canHold = false;
@@ -288,20 +295,16 @@ function resetPiece() {
     piece = nextPiece;
     nextPiece = randomPiece();
     drawPreview(nextCtx, nextPiece, 25);
-    
     if (collide(board, piece)) { triggerGameOver(); }
 }
 
 function clearLines() {
     let linesCleared = 0;
     outer: for (let y = ROWS - 1; y >= 0; --y) {
-        for (let x = 0; x < COLS; ++x) {
-            if (board[y][x] === 0) continue outer;
-        }
+        for (let x = 0; x < COLS; ++x) if (board[y][x] === 0) continue outer;
         const row = board.splice(y, 1)[0].fill(0);
         board.unshift(row);
-        ++y; 
-        linesCleared++;
+        ++y; linesCleared++;
     }
 
     if (linesCleared > 0) {
@@ -314,8 +317,7 @@ function clearLines() {
         document.getElementById('lines').innerText = lines;
         
         if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('tetriSlimeBest', bestScore);
+            bestScore = score; localStorage.setItem('tetriSlimeBest', bestScore);
             document.getElementById('best-score').innerText = bestScore;
         }
 
@@ -324,7 +326,6 @@ function clearLines() {
             hostConn.send(JSON.stringify({ type: 'GARBAGE', amount: garbageSent }));
         }
     }
-
     if (gameMode === 'multi') broadcastBoard();
 }
 
@@ -333,8 +334,7 @@ function receiveGarbage(amount) {
     for (let i = 0; i < amount; i++) {
         board.shift();
         let newRow = Array(COLS).fill(8); 
-        newRow[hole] = 0;
-        board.push(newRow);
+        newRow[hole] = 0; board.push(newRow);
     }
 }
 
@@ -346,31 +346,22 @@ function triggerGameOver() {
     if (gameMode === 'multi') {
         document.getElementById('end-title').innerText = "TU AS PERDU...";
         document.getElementById('end-title').style.color = "var(--p2)";
-        if (hostConn && hostConn.open) {
-            hostConn.send(JSON.stringify({ type: 'GAMEOVER' }));
-        }
+        if (hostConn && hostConn.open) hostConn.send(JSON.stringify({ type: 'GAMEOVER' }));
     } else {
         document.getElementById('end-title').innerText = "GAME OVER";
     }
-    
     document.getElementById('game-over').style.display = 'flex';
 }
 
 function update(time = 0) {
     if (isGameOver) return;
-    const deltaTime = time - lastTime;
-    lastTime = time;
-
+    const deltaTime = time - lastTime; lastTime = time;
     dropCounter += deltaTime;
-    if (dropCounter > dropInterval) {
-        playerDrop();
-    }
-
+    if (dropCounter > dropInterval) playerDrop();
     draw();
     animationId = requestAnimationFrame(update);
 }
 
-// CONTRÔLES CLAVIER
 document.addEventListener('keydown', event => {
     if (isGameOver || document.getElementById('game-ui').style.display === 'none') return;
     if (event.keyCode === 37) { playerMove(-1); } // Gauche
@@ -380,22 +371,45 @@ document.addEventListener('keydown', event => {
     else if (event.keyCode === 32) { 
         while (!collide(board, piece)) { piece.pos.y++; }
         piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); canHold = true; dropCounter = 0;
-    } // Espace (Hard Drop)
-    else if (event.keyCode === 16 || event.keyCode === 67) { hold(); } // Shift ou C
+    } // Espace
+    else if (event.keyCode === 16 || event.keyCode === 67) { hold(); } // Shift
 });
 
-// CONTRÔLES MOBILES
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
 function moveRight(e) { e.preventDefault(); playerMove(1); }
 function rotate(e) { e.preventDefault(); playerRotate(); }
 function drop(e) { e.preventDefault(); playerDrop(); }
 
 // ==========================================
-// LOGIQUE MULTIJOUEUR ET MENUS
+// ROUTAGE AUTO (LANCEMENT DIRECT SOLO)
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    applyTheme();
+    setGameSize('wide'); // Taille "Grand" activée par défaut
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    
+    if (mode === 'solo') {
+        // Un léger délai permet à la page de bien charger avant d'écraser l'affichage
+        setTimeout(() => {
+            document.getElementById('main-menu').style.display = 'none';
+            startSolo();
+        }, 50);
+    } else if (mode === 'multi') {
+        setTimeout(() => {
+            document.getElementById('main-menu').style.display = 'none';
+            openMultiMenu();
+        }, 50);
+    }
+});
+
+// ==========================================
+// MENUS MULTIJOUEUR
 // ==========================================
 function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('game-ui').style.display = 'flex'; // Affichage du jeu
+    document.getElementById('game-ui').style.display = 'flex'; 
     gameMode = 'solo';
     board = createMatrix(COLS, ROWS);
     resetPiece();
@@ -407,30 +421,17 @@ function openMultiMenu() {
     document.getElementById('network-menu').style.display = 'flex';
 }
 
-let peerNet = null;
-let hostConn = null;
-let isHost = false;
+let peerNet = null; let hostConn = null; let isHost = false;
 let roomCode = 'TET' + Math.floor(1000 + Math.random() * 9000);
-
-const myIdEl = document.getElementById('my-id');
-if (myIdEl) {
-    myIdEl.innerText = roomCode;
-    myIdEl.addEventListener('click', () => {
-        navigator.clipboard.writeText(roomCode);
-        myIdEl.style.color = '#fff'; setTimeout(() => myIdEl.style.color = 'var(--perfect)', 300);
-    });
-}
 
 function hostGame() {
     isHost = true;
     if(peerNet) peerNet.destroy();
     peerNet = new Peer(roomCode);
-    
     peerNet.on('open', () => {
         document.getElementById('status-text').innerText = "Salon ouvert ! En attente d'un adversaire...";
         document.getElementById('host-btn').style.display = 'none';
     });
-
     peerNet.on('connection', conn => {
         hostConn = conn;
         document.getElementById('status-text').innerText = "Adversaire connecté !";
@@ -442,11 +443,9 @@ function hostGame() {
 function joinGame() {
     const targetCode = document.getElementById('join-id').value.trim().toUpperCase();
     if (!targetCode) return alert("Il faut un code !");
-    
     document.getElementById('status-text').innerText = "Connexion à " + targetCode + "...";
     if (peerNet) peerNet.destroy();
     peerNet = new Peer('P' + Math.floor(Math.random() * 10000));
-
     peerNet.on('open', () => {
         hostConn = peerNet.connect(targetCode);
         setupConnectionListeners(hostConn);
@@ -457,10 +456,8 @@ function setupConnectionListeners(conn) {
     conn.on('open', () => {
         document.getElementById('status-text').innerText = isHost ? "Prêt à lancer !" : "Connecté, en attente de l'Hôte...";
     });
-
     conn.on('data', data => {
         if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
-        
         if (data.type === 'START') {
             startMultiGameDisplay();
         } else if (data.type === 'BOARD_UPDATE') {
@@ -492,7 +489,6 @@ function startMultiGameDisplay() {
     document.getElementById('network-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex';
     document.getElementById('opponent-box').style.display = 'block';
-    
     gameMode = 'multi';
     board = createMatrix(COLS, ROWS);
     resetPiece();
@@ -505,9 +501,7 @@ function broadcastBoard() {
         if (piece) {
             piece.matrix.forEach((row, y) => {
                 row.forEach((value, x) => {
-                    if (value !== 0 && tempBoard[y + piece.pos.y]) {
-                        tempBoard[y + piece.pos.y][x + piece.pos.x] = value;
-                    }
+                    if (value !== 0 && tempBoard[y + piece.pos.y]) tempBoard[y + piece.pos.y][x + piece.pos.x] = value;
                 });
             });
         }
