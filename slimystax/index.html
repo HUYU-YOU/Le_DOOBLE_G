@@ -81,7 +81,7 @@
         .btn-main:hover::after { left: 150%; }
         .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
 
-        /* HUD - NOUVELLE MISE EN PAGE */
+        /* HUD */
         #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         
         .hud-box { 
@@ -173,7 +173,6 @@
 
     </div>
 
-    <!-- SCRIPT GESTION ECRAN & PARAMETRES -->
     <script>
         function autoFullscreen() {
             if (!document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
@@ -287,7 +286,7 @@
             9: 'img/cube9.png',  
             'map1': 'img/mapstax1.png', 
             'map2': 'img/mapstax2.png',
-            'map3': 'img/mapstax3.png' // <-- NOUVELLE MAP
+            'map3': 'img/mapstax3.png'
         };
         const fallbackColors = {
             1: '#ff0055', 2: '#00f0ff', 3: '#39ff14', 4: '#b82aff', 5: '#ffaa00', 6: '#0055ff', 7: '#ff00ff',
@@ -351,7 +350,7 @@
                 this.x = x; this.y = y; this.type = type;
                 this.state = 'swinging'; 
                 this.vx = 0;
-                this.vy = 0;
+                this.vy = 0; // Vitesse verticale initiale (utilisée pour la gravité)
                 this.angle = 0;
                 this.vAngle = 0;
                 this.visualX = x; 
@@ -474,7 +473,9 @@
         function dropBlock() {
             if (gameState !== 'PLAYING' || !activeBlock || activeBlock.state !== 'swinging') return;
             activeBlock.state = 'falling';
-            activeBlock.vy = 20;
+            
+            // LA MAGIE EST LÀ : Vitesse initiale à 0 pour laisser la gravité agir
+            activeBlock.vy = 0; 
             playSound('drop');
         }
 
@@ -486,68 +487,73 @@
 
             let topBlock = blocks[blocks.length - 1];
             let topVisualX = topBlock.visualX || topBlock.x;
-            let diffX = activeBlock.x - topVisualX; 
             
-            if (Math.abs(diffX) <= BLOCK_SIZE * 0.55) {
-                activeBlock.y = topBlock.y - BLOCK_SIZE;
-                activeBlock.state = 'landed';
+            // On vérifie si on a atteint ou dépassé le bloc du dessous
+            if (activeBlock.y + BLOCK_SIZE/2 >= topBlock.y - BLOCK_SIZE/2) {
                 
-                let points = 10;
-                let color = '#fff';
-
-                if (Math.abs(diffX) <= 6) {
-                    activeBlock.x = topBlock.x; 
-                    points = 50;
-                    color = 'var(--perfect)';
-                    perfectCount++;
-                    createParticles(topVisualX, activeBlock.y, color, 20);
-                    playSound('perfect');
+                let diffX = activeBlock.x - topVisualX; 
+                
+                if (Math.abs(diffX) <= BLOCK_SIZE * 0.55) {
+                    activeBlock.y = topBlock.y - BLOCK_SIZE; // Aligne parfaitement sur l'axe Y
+                    activeBlock.state = 'landed';
                     
-                    if (perfectCount >= 3) {
-                        targetTotalOffset = 0; 
-                        floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 70, "TOWER CENTERED!", "var(--p1)"));
+                    let points = 10;
+                    let color = '#fff';
+
+                    if (Math.abs(diffX) <= 6) {
+                        activeBlock.x = topBlock.x; 
+                        points = 50;
+                        color = 'var(--perfect)';
+                        perfectCount++;
+                        createParticles(topVisualX, activeBlock.y, color, 20);
+                        playSound('perfect');
+                        
+                        if (perfectCount >= 3) {
+                            targetTotalOffset = 0; 
+                            floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 70, "TOWER CENTERED!", "var(--p1)"));
+                        }
+                        
+                        floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 20, "PERFECT +50", color));
+                    } else {
+                        activeBlock.x = activeBlock.x - (topVisualX - topBlock.x); 
+                        perfectCount = 0;
+                        targetTotalOffset += diffX; 
+                        createParticles(activeBlock.x + (topVisualX - topBlock.x), activeBlock.y, '#fff', 10);
+                        playSound('land');
+                        floatingTexts.push(new FloatingText(activeBlock.x + (topVisualX - topBlock.x), activeBlock.y - 20, "+10", color));
+                    }
+
+                    if (activeBlock.type === 9) {
+                        points = 500;
+                        floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 50, "+500 LEGENDARY", "#fff"));
                     }
                     
-                    floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 20, "PERFECT +50", color));
+                    score += points * comboMultiplier;
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        localStorage.setItem('slimyStaxBestScore', bestScore); 
+                    }
+                    
+                    if (activeBlock.type === 8) comboMultiplier = 2;
+                    else comboMultiplier = 1;
+
+                    blocks.push(activeBlock);
+                    updateHUD();
+                    targetCameraY -= BLOCK_SIZE;
+                    
+                    if (Math.abs(targetTotalOffset) > MAX_OFFSET_TOLERANCE) {
+                        triggerGameOver();
+                    } else {
+                        activeBlock = null;
+                        setTimeout(spawnBlock, 150);
+                    }
                 } else {
-                    activeBlock.x = activeBlock.x - (topVisualX - topBlock.x); 
-                    perfectCount = 0;
-                    targetTotalOffset += diffX; 
-                    createParticles(activeBlock.x + (topVisualX - topBlock.x), activeBlock.y, '#fff', 10);
-                    playSound('land');
-                    floatingTexts.push(new FloatingText(activeBlock.x + (topVisualX - topBlock.x), activeBlock.y - 20, "+10", color));
-                }
-
-                if (activeBlock.type === 9) {
-                    points = 500;
-                    floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 50, "+500 LEGENDARY", "#fff"));
-                }
-                
-                score += points * comboMultiplier;
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    localStorage.setItem('slimyStaxBestScore', bestScore); 
-                }
-                
-                if (activeBlock.type === 8) comboMultiplier = 2;
-                else comboMultiplier = 1;
-
-                blocks.push(activeBlock);
-                updateHUD();
-                targetCameraY -= BLOCK_SIZE;
-                
-                if (Math.abs(targetTotalOffset) > MAX_OFFSET_TOLERANCE) {
+                    activeBlock.state = 'dead';
+                    activeBlock.vx = (Math.random() - 0.5) * 10;
+                    activeBlock.vy = -5;
                     triggerGameOver();
-                } else {
-                    activeBlock = null;
-                    setTimeout(spawnBlock, 150);
                 }
-            } else {
-                activeBlock.state = 'dead';
-                activeBlock.vx = (Math.random() - 0.5) * 10;
-                activeBlock.vy = -5;
-                triggerGameOver();
             }
         }
 
@@ -589,7 +595,10 @@
                     let amplitude = canvas.width / 2 - BLOCK_SIZE/2;
                     activeBlock.x = canvas.width/2 + Math.sin(swingAngle) * amplitude;
                 }
+                
                 if (activeBlock && activeBlock.state === 'falling') {
+                    // C'EST ICI LA GRAVITÉ !
+                    activeBlock.vy += 1.2; // Accélération vers le bas
                     activeBlock.y += activeBlock.vy;
                     checkCollision();
                 }
@@ -642,20 +651,18 @@
 
             let parallaxY = cameraY * 0.15; 
             
-            // --- GESTION PARALLAXE MULTI-MAPS ---
             ctx.save();
             ctx.translate(0, -parallaxY);
             
             let bg1 = imgs['map1'];
             let bg2 = imgs['map2'];
-            let bg3 = imgs['map3']; // Chargement de la Map 3
+            let bg3 = imgs['map3']; 
             
             if (bg1 && bg1.complete && bg1.naturalWidth > 0) {
                 let scale1 = canvas.width / bg1.naturalWidth;
                 let h1 = bg1.naturalHeight * scale1;
                 let currentY = canvas.height - h1; 
                 
-                // 1. Map 1 en bas
                 ctx.drawImage(bg1, 0, currentY, canvas.width, h1);
                 
                 if (bg2 && bg2.complete && bg2.naturalWidth > 0) {
@@ -663,7 +670,6 @@
                     let h2 = bg2.naturalHeight * scale2;
                     currentY -= h2;
                     
-                    // 2. Map 2 pour la transition
                     ctx.drawImage(bg2, 0, currentY, canvas.width, h2);
                     
                     if (bg3 && bg3.complete && bg3.naturalWidth > 0) {
@@ -671,8 +677,6 @@
                         let h3 = bg3.naturalHeight * scale3;
                         currentY -= h3;
                         
-                        // 3. Map 3 en BOUCLE INFINIE pour monter jusqu'aux étoiles
-                        // On remonte tant qu'on est visible à l'écran
                         while (currentY + h3 > parallaxY - canvas.height) {
                             ctx.drawImage(bg3, 0, currentY, canvas.width, h3);
                             currentY -= h3;
