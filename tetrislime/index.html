@@ -1,1 +1,103 @@
-dsa
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TetriSlime - Solo & Versus</title>
+    
+    <!-- Librairie PeerJS pour le multijoueur -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+    <!-- MENU PRINCIPAL (Si ouvert sans paramètre) -->
+    <div class="overlay" id="main-menu">
+        <h1 class="game-title">TETRISLIME</h1>
+        <button class="btn-main" onclick="startSolo()">Jouer en Solo</button>
+        <button class="btn-main" onclick="openMultiMenu()">Multijoueur</button>
+    </div>
+
+    <!-- MENU MULTIJOUEUR -->
+    <div class="overlay" id="network-menu" style="display: none;">
+        <h2 style="color: var(--p1); font-size: 3em; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 0 15px var(--p1);">Versus</h2>
+        
+        <input type="text" id="pseudo" placeholder="Ton Pseudo" required>
+        
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid var(--perfect);">
+            <p style="margin: 0; font-size: 1.2em;">Code de ton salon :</p>
+            <span id="my-id" style="color:var(--perfect); font-weight:bold; font-size:2em; cursor: pointer;" title="Copier le code">Génération...</span>
+            <br>
+            <button class="btn-main" id="host-btn" onclick="hostGame()" style="font-size: 1rem; padding: 10px 20px;">Héberger</button>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--perfect); color:#000;" onclick="startMultiGame()">Lancer le duel !</button>
+        </div>
+        
+        <p style="margin: 10px 0; color: #888; font-weight: bold;">--- OU ---</p>
+        
+        <input type="text" id="join-id" placeholder="Code du salon (ex: TET1234)" style="text-transform: uppercase;">
+        <button class="btn-main red" id="join-btn" onclick="joinGame()">Rejoindre</button>
+        
+        <p id="status-text" style="color: var(--p4); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
+    </div>
+
+    <!-- ZONE DE JEU -->
+    <div id="game-container" style="display: none;">
+        
+        <!-- Panneau Gauche : Stats & Hold -->
+        <div class="side-panel left-panel">
+            <div class="panel-box">
+                <div class="panel-title">Score</div>
+                <div class="panel-val" id="score">0</div>
+                <div style="font-size:0.8em; color:var(--gold); margin-top:5px;">Best: <span id="best-score">0</span></div>
+            </div>
+            <div class="panel-box">
+                <div class="panel-title">Lignes</div>
+                <div class="panel-val" id="lines">0</div>
+            </div>
+            <div class="panel-box">
+                <div class="panel-title">Réserve</div>
+                <canvas id="hold-canvas" width="120" height="120"></canvas>
+            </div>
+        </div>
+
+        <!-- Grille Principale -->
+        <div class="board-wrapper">
+            <canvas id="tetris-canvas" width="300" height="600"></canvas>
+        </div>
+
+        <!-- Panneau Droit : Next & Adversaire (Multi) -->
+        <div class="side-panel right-panel">
+            <div class="panel-box">
+                <div class="panel-title">Suivant</div>
+                <canvas id="next-canvas" width="120" height="120"></canvas>
+            </div>
+            
+            <div class="panel-box" id="opponent-box" style="display: none; border-color: var(--p2);">
+                <div class="panel-title" style="color:var(--p2)" id="opponent-name">Adversaire</div>
+                <canvas id="opponent-canvas" width="150" height="300" style="background: rgba(0,0,0,0.8); border-radius: 5px;"></canvas>
+            </div>
+        </div>
+
+        <!-- Contrôles Mobiles -->
+        <div id="mobile-controls">
+            <button class="m-btn" ontouchstart="moveLeft(event)">⬅</button>
+            <button class="m-btn" ontouchstart="rotate(event)">↻</button>
+            <button class="m-btn" ontouchstart="moveRight(event)">➡</button>
+            <button class="m-btn" ontouchstart="drop(event)">⬇</button>
+        </div>
+
+        <!-- ECRAN DE FIN DE PARTIE -->
+        <div class="overlay" id="game-over" style="display: none;">
+            <h2 id="end-title" style="font-size: 4em; color: var(--p2); text-shadow: 0 0 20px var(--p2);">GAME OVER</h2>
+            <p style="font-size: 1.8em;">Score : <span id="final-score" style="color:var(--gold)">0</span></p>
+            <button class="btn-main" onclick="location.reload()">Retour au Menu</button>
+        </div>
+
+    </div>
+
+    <script src="tetrislime.js"></script>
+</body>
+</html>
