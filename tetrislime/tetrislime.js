@@ -4,7 +4,8 @@
 let isNight = localStorage.getItem('tetrisNight') === 'true';
 
 function applyTheme() {
-    document.body.style.backgroundImage = isNight ? "url('assets/backgroundnight.png')" : "url('assets/backgroundday.png')";
+    // Correction de l'orthographe pour matcher tes fichiers exacts !
+    document.body.style.backgroundImage = isNight ? "url('assets/backgrounnight.png')" : "url('assets/backgrounday.png')";
     const themeBtn = document.getElementById('btn-theme-toggle');
     if (themeBtn) {
         themeBtn.innerText = isNight ? "Mode Nuit 🌙" : "Mode Jour ☀️";
@@ -71,9 +72,8 @@ document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
 });
 
-
 // ==========================================
-// MOTEUR TETRISLIME ET SKINS PNG
+// MOTEUR TETRISLIME ET DÉCOUPAGE SKINS PNG
 // ==========================================
 const canvas = document.getElementById('tetris-canvas');
 const ctx = canvas.getContext('2d');
@@ -85,7 +85,7 @@ const COLS = 10;
 const BLOCK_SIZE = 30; 
 
 // Chargement de tes propres images (Skins)
-const skinNames = ['BARRE', 'BARRE90', 'CROIX', 'CROIX90', 'CROIX180', 'CROIX270', 'CUBE', 'L0', 'L90', 'L180', 'L270', 'Z', 'Z90', 'Z180', 'Z270'];
+const skinNames = ['BARRE', 'BARRE90', 'CROIX', 'CROIX90', 'CROIX180', 'CROIX270', 'CUBE', 'L0', 'L90', 'L180', 'L270', 'Z', 'Z90', 'Z180'];
 const skins = {};
 skinNames.forEach(name => {
     skins[name] = new Image();
@@ -104,7 +104,6 @@ const SHAPES = [
     [[7,7,0], [0,7,7], [0,0,0]]  // 7: Z 
 ];
 
-// Fallback de couleurs de slime pour les blocs posés
 const COLORS = [ null, '#00f0ff', '#0055ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#ff007f', '#666666'];
 
 let board = [];
@@ -132,26 +131,26 @@ function randomPiece() {
         matrix: SHAPES[typeId],
         pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0].length/2), y: 0 },
         type: typeId,
-        rotIndex: 0 // Index de rotation pour trouver la bonne image
+        rotIndex: 0 
     };
 }
 
-// Retrouve le bon nom de fichier image selon la forme et la rotation
+// Retrouve le bon nom de fichier image (J'ai géré le Z270 manquant)
 function getImgName(type, rotIndex) {
     const idx = rotIndex / 90;
     const map = {
         1: ['BARRE', 'BARRE90', 'BARRE', 'BARRE90'],
-        2: ['L0', 'L90', 'L180', 'L270'], // J utilise les skins de L par défaut
+        2: ['L0', 'L90', 'L180', 'L270'], 
         3: ['L0', 'L90', 'L180', 'L270'],
         4: ['CUBE', 'CUBE', 'CUBE', 'CUBE'],
-        5: ['Z', 'Z90', 'Z180', 'Z270'], // S utilise les skins de Z par défaut
+        5: ['Z', 'Z90', 'Z180', 'Z90'], 
         6: ['CROIX', 'CROIX90', 'CROIX180', 'CROIX270'],
-        7: ['Z', 'Z90', 'Z180', 'Z270']
+        7: ['Z', 'Z90', 'Z180', 'Z90']
     };
-    return map[type][idx];
+    return map[type] ? map[type][idx] : null;
 }
 
-// Trouve la vraie taille de la forme pour coller l'image pile poil
+// Trouve la vraie taille de la forme
 function getBoundingBox(matrix) {
     let minX = matrix[0].length, maxX = 0, minY = matrix.length, maxY = 0, found = false;
     for(let y=0; y<matrix.length; y++) {
@@ -167,20 +166,45 @@ function getBoundingBox(matrix) {
     return {x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1};
 }
 
-// Affichage d'un bloc classique (fusionné avec la gelée une fois au sol)
+// Affichage d'un bloc simple (sécurité si le PNG manque)
 function drawBlock(ctxTarget, x, y, size, colorIndex) {
     if (colorIndex === 0) return;
-    ctxTarget.fillStyle = COLORS[colorIndex];
+    ctxTarget.fillStyle = COLORS[colorIndex] || '#fff';
     ctxTarget.beginPath(); ctxTarget.roundRect(x * size + 1, y * size + 1, size - 2, size - 2, 6); ctxTarget.fill();
     ctxTarget.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctxTarget.beginPath(); ctxTarget.roundRect(x * size + 3, y * size + 3, size - 6, size / 3, 4); ctxTarget.fill();
 }
 
+// LA MAGIE EST ICI : Le jeu découpe l'image PNG bloc par bloc quand elle est sur le plateau !
 function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
-    matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) drawBlock(ctxTarget, x + offset.x, y + offset.y, size, value); }); });
+    matrix.forEach((row, y) => { 
+        row.forEach((cell, x) => { 
+            if (cell !== 0) {
+                // Si la cellule est un objet (pièce posée contenant l'info du découpage)
+                if (typeof cell === 'object') {
+                    let imgName = getImgName(cell.type, cell.rot);
+                    let img = skins[imgName];
+                    
+                    if (img && img.complete && img.naturalWidth > 0) {
+                        let sW = img.naturalWidth / cell.boxW;
+                        let sH = img.naturalHeight / cell.boxH;
+                        let sX = cell.imgX * sW;
+                        let sY = cell.imgY * sH;
+                        
+                        // Découpe un petit bout du PNG et l'affiche à l'écran
+                        ctxTarget.drawImage(img, sX, sY, sW, sH, (x + offset.x) * size, (y + offset.y) * size, size, size);
+                    } else {
+                        drawBlock(ctxTarget, x + offset.x, y + offset.y, size, cell.val);
+                    }
+                } else {
+                    // Bloc classique ou poubelle
+                    drawBlock(ctxTarget, x + offset.x, y + offset.y, size, cell);
+                }
+            } 
+        }); 
+    });
 }
 
-// Dessine l'image PNG entière de la forme !
 function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
@@ -194,7 +218,7 @@ function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawMatrix(board, {x:0, y:0}, ctx); // Le plateau figé (slimes coupables)
+    drawMatrix(board, {x:0, y:0}, ctx);
     
     if (piece) {
         // Fantome
@@ -204,7 +228,7 @@ function draw() {
         drawPiece(ctx, { ...piece, pos: {x: piece.pos.x, y: ghostY} }, BLOCK_SIZE);
         ctx.globalAlpha = 1.0;
         
-        // Piece active (Avec tes PNG)
+        // Piece active
         drawPiece(ctx, piece, BLOCK_SIZE);
     }
 }
@@ -229,6 +253,7 @@ function collide(arena, player) {
     const m = player.matrix; const o = player.pos;
     for (let y = 0; y < m.length; ++y) {
         for (let x = 0; x < m[y].length; ++x) {
+            // Tolérance : On vérifie si la cellule (même si c'est un objet) n'est pas vide
             if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true;
         }
     }
@@ -236,9 +261,21 @@ function collide(arena, player) {
 }
 
 function merge(arena, player) {
-    player.matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) arena[y + player.pos.y][x + player.pos.x] = value;
+    let box = getBoundingBox(player.matrix);
+    player.matrix.forEach((row, py) => {
+        row.forEach((value, px) => {
+            if (value !== 0) {
+                // On enregistre les données de découpage du PNG dans la grille !
+                arena[py + player.pos.y][px + player.pos.x] = {
+                    val: value,
+                    type: player.type,
+                    rot: player.rotIndex,
+                    imgX: px - box.x, 
+                    imgY: py - box.y, 
+                    boxW: box.w,
+                    boxH: box.h
+                };
+            }
         });
     });
 }
@@ -249,7 +286,7 @@ function playerRotate() {
     const pos = piece.pos.x;
     let offset = 1;
     piece.matrix = rotateMatrix(piece.matrix);
-    piece.rotIndex = (piece.rotIndex + 90) % 360; // Gère le skin à afficher
+    piece.rotIndex = (piece.rotIndex + 90) % 360; 
     while (collide(board, piece)) {
         piece.pos.x += offset;
         offset = -(offset + (offset > 0 ? 1 : -1));
@@ -333,7 +370,7 @@ function receiveGarbage(amount) {
     const hole = Math.floor(Math.random() * COLS);
     for (let i = 0; i < amount; i++) {
         board.shift();
-        let newRow = Array(COLS).fill(8); 
+        let newRow = Array(COLS).fill(8); // Les déchets sont des blocs classiques
         newRow[hole] = 0; board.push(newRow);
     }
 }
@@ -391,7 +428,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const mode = urlParams.get('mode');
     
     if (mode === 'solo') {
-        // Un léger délai permet à la page de bien charger avant d'écraser l'affichage
         setTimeout(() => {
             document.getElementById('main-menu').style.display = 'none';
             startSolo();
