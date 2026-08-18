@@ -1,16 +1,120 @@
+// =========================================================
+// 1. TES SCRIPTS D'INTERFACE (ANIMATION, TAILLE, SWIPE)
+// =========================================================
+
+// --- ANIMATION DU BOUTON SETTINGS ---
+const settingsBtnImg = document.getElementById('settings-btn-img');
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+let hoverInterval; let currentFrame = 0;
+
+function startSettingsAnim() {
+    if (hoverInterval) return;
+    currentFrame = 0;
+    settingsBtnImg.src = animFrames[currentFrame];
+    hoverInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % animFrames.length;
+        settingsBtnImg.src = animFrames[currentFrame];
+    }, 100); 
+}
+
+function stopSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+}
+
+function clickSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    settingsBtnImg.src = '../img/settings4.png';
+    toggleSettings();
+    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+}
+
+function toggleSettings() {
+    document.getElementById('settings-modal').classList.toggle('show');
+}
+
+// --- GESTION DE LA TAILLE DU JEU ---
+function setGameSize(size) {
+    const container = document.getElementById('game-container');
+    const btns = document.querySelectorAll('.btn-size');
+    btns.forEach(b => b.classList.remove('active'));
+
+    container.classList.remove('size-classic', 'size-wide', 'size-full');
+    
+    if (size === 'classic') {
+        container.classList.add('size-classic');
+        document.getElementById('btn-sz-classic').classList.add('active');
+        if (document.fullscreenElement) document.exitFullscreen();
+    } 
+    else if (size === 'wide') {
+        container.classList.add('size-wide');
+        document.getElementById('btn-sz-wide').classList.add('active');
+        if (document.fullscreenElement) document.exitFullscreen();
+    } 
+    else if (size === 'full') {
+        container.classList.add('size-full');
+        document.getElementById('btn-sz-full').classList.add('active');
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(e => console.log(e));
+        }
+    }
+}
+
+function autoFullscreen() {
+    if (!document.getElementById('game-container').classList.contains('size-full')) {
+        setGameSize('wide');
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+        setGameSize('wide');
+    }
+});
+
+// --- SCRIPT DE NAVIGATION PAR SWIPE ---
+const gamesHubList = [
+    "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+    "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+    "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+    "../worms/index.html"
+];
+let touchstartX = 0; let touchendX = 0; let swipeMouseX = 0; let endSwipeMouseX = 0;
+
+function handleSwipeGesture(start, end) {
+    const swipeThreshold = 75; 
+    if (end < start - swipeThreshold) navigateGames(1);
+    if (end > start + swipeThreshold) navigateGames(-1);
+}
+function navigateGames(direction) {
+    const currentPath = window.location.pathname;
+    let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
+    if (currentIndex === -1) return;
+    window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
+}
+function isProtectedElement(e) { 
+    return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input'; 
+}
+document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
+document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
+document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; swipeMouseX = e.screenX; });
+document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endSwipeMouseX = e.screenX; handleSwipeGesture(swipeMouseX, endSwipeMouseX); });
+
+
+// =========================================================
+// 2. MOTEUR DE JEU MOBA ARAM (Mécanique Flaque et Visée)
+// =========================================================
+
 const canvas = document.getElementById('gameCanvas'); 
 const ctx = canvas.getContext('2d');
 
-// --- DIMENSIONS ARAM DE TA MAP ---
 const MAP_WIDTH = 3500; 
 const MAP_HEIGHT = 1000;
 
-// Chargement de l'image de la carte (depuis ton dossier assets)
+// Chargement de l'image de la carte dans assets/
 const mapImg = new Image();
-mapImg.src = 'assets/mapsol.png'; // <--- LE CHANGEMENT EST ICI
+mapImg.src = 'assets/mapsol.png';
 
-// Définition des "Flaques" (Zones de furtivité - à ajuster selon ton image mapsol.png)
-// Approximativement les bords haut et bas de l'image
 const PUDDLE_ZONES = [
     { yMin: 0, yMax: 250 },   // Bordure Haute
     { yMin: 750, yMax: 1000 } // Bordure Basse
@@ -18,19 +122,12 @@ const PUDDLE_ZONES = [
 
 let cameraX = 0; let cameraY = 0;
 let mouseX = 0; let mouseY = 0; let worldMouseX = 0; let worldMouseY = 0;
-
 let gameActive = false;
 let players = []; let projectiles = []; let clickMarkers = [];
 let locSelections = [];
 
-// --- REGLAGES ET CLAVIER ---
 let activeSpellSlot = null; 
 let keyboardKeys = { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
-
-function toggleSettings() {
-    let modal = document.getElementById('settings-modal');
-    modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
-}
 
 document.getElementById('keyboard-layout').addEventListener('change', (e) => {
     let isQwerty = e.target.value === 'qwerty';
@@ -41,7 +138,6 @@ document.getElementById('keyboard-layout').addEventListener('change', (e) => {
     document.getElementById('key-ult').innerText = keyboardKeys.ult.toUpperCase();
 });
 
-// --- SOURIS ET CAMÉRA ---
 window.addEventListener('mousemove', e => {
     mouseX = e.clientX; mouseY = e.clientY;
     worldMouseX = mouseX + cameraX;
@@ -82,7 +178,6 @@ window.prepareSpell = function(slot) {
     }
 };
 
-// --- CLASSES ET MECANIQUES MOBA ---
 const charData = {
     seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6, radius: 25 },
     teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20 },
@@ -105,9 +200,8 @@ class Player {
         
         this.stunTimer = 0; this.actionLock = 0; this.isDead = false;
         
-        // Furtivité (Flaques)
-        this.currentPuddle = -1; // -1 = Pas dans une flaque
-        this.revealTimer = 0; // Si on attaque, on est visible
+        this.currentPuddle = -1;
+        this.revealTimer = 0;
     }
 
     setMovementTarget(tx, ty) { this.target = { x: tx, y: ty }; }
@@ -135,11 +229,10 @@ class Player {
         this.x = Math.max(this.radius, Math.min(MAP_WIDTH - this.radius, this.x));
         this.y = Math.max(this.radius, Math.min(MAP_HEIGHT - this.radius, this.y));
 
-        // CHECK DES FLAQUES DE SLIME (Invisibilité)
         this.currentPuddle = -1;
         for (let i = 0; i < PUDDLE_ZONES.length; i++) {
             if (this.y > PUDDLE_ZONES[i].yMin && this.y < PUDDLE_ZONES[i].yMax) {
-                this.currentPuddle = i; // Enregistre dans quelle flaque il est
+                this.currentPuddle = i; 
             }
         }
     }
@@ -147,25 +240,16 @@ class Player {
     draw() {
         if (this.isDead) return;
 
-        // CALCUL DE LA VISIBILITÉ (MÉCANIQUE DES FLAQUES)
         let alpha = 1.0;
-        
         if (this.currentPuddle !== -1 && this.revealTimer === 0) {
-            if (this.id === 1) {
-                // Le joueur 1 se voit toujours, mais translucide
-                alpha = 0.4; 
-            } else {
-                // L'ennemi (Bot) est dans une flaque
+            if (this.id === 1) alpha = 0.4; 
+            else {
                 let p1Puddle = players[0].currentPuddle;
-                if (p1Puddle === this.currentPuddle) {
-                    alpha = 0.5; // Ils sont dans la MÊME flaque = on le voit un peu
-                } else {
-                    alpha = 0.0; // Dans une autre flaque ou P1 n'est pas dedans = INVISIBLE !
-                }
+                if (p1Puddle === this.currentPuddle) alpha = 0.5; 
+                else alpha = 0.0; 
             }
         }
 
-        // Si totalement invisible, on ne dessine rien !
         if (alpha <= 0) return;
 
         ctx.save();
@@ -177,11 +261,9 @@ class Player {
         ctx.fillStyle = this.color; ctx.fill();
         ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.stroke();
         
-        // Direction
         ctx.fillStyle = '#fff'; ctx.fillRect(this.radius - 10, -5, 15, 10);
         ctx.restore();
 
-        // UI au-dessus de la tête (Seulement si visible)
         ctx.globalAlpha = alpha;
         ctx.fillStyle = '#222'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
         ctx.fillStyle = (this.id === 1) ? '#39ff14' : '#ff007f';
@@ -189,28 +271,24 @@ class Player {
         
         ctx.textAlign = 'center';
         if (this.stunTimer > 0) { ctx.fillStyle = "yellow"; ctx.fillText("STUN", this.x, this.y - this.radius - 25); }
-        ctx.globalAlpha = 1.0; // Reset
+        ctx.globalAlpha = 1.0; 
     }
 
     castSpell(slot, targetX, targetY) {
         if(this.isDead || this.stunTimer > 0 || this.actionLock > 0 || this.cds[slot] > 0) return;
         
-        // Lancer un sort annule l'invisibilité pendant 1 seconde (60 frames)
         this.revealTimer = 60;
-
         this.target = null; 
         this.angle = Math.atan2(targetY - this.y, targetX - this.x);
         let dx = Math.cos(this.angle); let dy = Math.sin(this.angle);
 
-        // Sorts Simplifiés pour l'exemple
         if (this.charType === 'gunner') {
             if (slot === 'basic') { projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 60)); this.cds.basic = 15; }
             if (slot === 'ult') { projectiles.push(new Projectile(this.x, this.y, dx*30, dy*30, this, 300, 30)); this.cds.ult = 1200; this.actionLock = 20;}
         } else if (this.charType === 'ninja') {
             if (slot === 'basic') { projectiles.push(new Projectile(this.x, this.y, dx*20, dy*20, this, 40)); this.cds.basic = 20; }
-            if (slot === 's1') { this.x += dx*100; this.y += dy*100; this.cds.s1 = 120; } // Dash
+            if (slot === 's1') { this.x += dx*100; this.y += dy*100; this.cds.s1 = 120; } 
         } else {
-            // Generique
             if (slot === 'basic') { projectiles.push(new Projectile(this.x, this.y, dx*15, dy*15, this, 50)); this.cds.basic = 30; }
         }
     }
@@ -251,10 +329,9 @@ function updateBot(bot) {
     let target = players[0];
     if (target.isDead) return;
 
-    // Le bot est "intelligent" : s'il ne voit pas le joueur (car joueur furtif), il ne fait rien ou s'arrête !
     let p1Visible = true;
     if (target.currentPuddle !== -1 && target.revealTimer === 0 && target.currentPuddle !== bot.currentPuddle) {
-        p1Visible = false; // P1 est caché !
+        p1Visible = false; 
     }
 
     if (p1Visible) {
@@ -262,17 +339,14 @@ function updateBot(bot) {
         if (dist > 250) { bot.setMovementTarget(target.x, target.y); } 
         else { bot.target = null; }
         
-        // Attaque
         if (dist < 400 && bot.cds.basic === 0 && Math.random() < 0.05) {
             bot.castSpell('basic', target.x, target.y);
         }
     } else {
-        // P1 est invisible, le bot s'arrête et attend bêtement
         bot.target = null; 
     }
 }
 
-// --- INITIALISATION DU JEU ---
 function chooseChar(type) {
     locSelections.push(type);
     document.getElementById('instruction-title').innerText = "Adversaire (IA)";
@@ -286,7 +360,6 @@ function startLocalGame() {
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('hud').style.display = 'flex';
     
-    // Spawn ARAM (Chacun à un bout du grand couloir)
     players = [
         new Player(1, 400, MAP_HEIGHT / 2, locSelections[0]),
         new Player(2, MAP_WIDTH - 400, MAP_HEIGHT / 2, locSelections[1])
@@ -332,7 +405,6 @@ function checkWin() {
     }
 }
 
-// --- BOUCLE PRINCIPALE ---
 function gameLoop() {
     if (!gameActive) return;
 
@@ -349,14 +421,12 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save(); ctx.translate(-cameraX, -cameraY);
 
-    // Dessin de l'image de fond
     if (mapImg.complete) {
         ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     } else {
         ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     }
 
-    // Effets visuels des clics
     for (let i = clickMarkers.length - 1; i >= 0; i--) {
         let m = clickMarkers[i]; ctx.beginPath(); ctx.arc(m.x, m.y, 30 - m.life, 0, Math.PI*2);
         ctx.strokeStyle = m.isExplosion ? m.color : `rgba(0, 255, 0, ${m.life / 20})`; ctx.lineWidth = 2; ctx.stroke();
@@ -364,7 +434,6 @@ function gameLoop() {
     }
 
     players[0].update(); updateBot(players[1]); players[1].update();
-    
     players.forEach(p => p.draw());
 
     for (let i = projectiles.length - 1; i >= 0; i--) {
