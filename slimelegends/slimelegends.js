@@ -30,7 +30,7 @@ function clickSettingsAnim() {
 
 function toggleSettings() {
     let modal = document.getElementById('settings-modal');
-    if (modal) modal.classList.toggle('show');
+    modal.classList.toggle('show');
 }
 
 function setGameSize(size) {
@@ -47,62 +47,8 @@ function setGameSize(size) {
 function autoFullscreen() { if (!document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide'); }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide'); });
 
-
 // =========================================================
-// 2. NAVIGATION DES MENUS ET RÉSEAU (CE QUI MANQUAIT !)
-// =========================================================
-
-function openMenu(type) {
-    document.getElementById('main-menu').style.display = 'none';
-    if (type === 'local') {
-        document.getElementById('local-menu').style.display = 'flex';
-    }
-}
-
-let currentIsBot = true; 
-function toggleBot() {
-    currentIsBot = !currentIsBot;
-    let btn = document.getElementById('bot-toggle-btn');
-    if(btn) {
-        if(currentIsBot) {
-            btn.innerHTML = "🤖 IA (Bot)"; btn.style.background = "#ff007f"; btn.style.borderColor = "#ff007f";
-        } else {
-            btn.innerHTML = "👤 Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333";
-        }
-    }
-}
-
-function chooseMap(idx, element) {
-    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
-    if(element) element.classList.add('selected');
-}
-
-function handleRestart() {
-    location.reload();
-}
-
-// Bouchons Réseau pour éviter les crashs sur les menus multijoueurs
-function prepareNetwork(mode) {
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('network-menu').style.display = 'flex';
-}
-function selectNetChar(char, el) {
-    document.querySelectorAll('#net-char-grid .card').forEach(c => c.classList.remove('selected'));
-    if(el) el.classList.add('selected');
-    let nameEl = document.getElementById('net-char-name');
-    if(nameEl) nameEl.innerText = char.toUpperCase();
-}
-function hostGame() {
-    document.getElementById('my-id').innerText = "SERVEUR ARAM";
-    document.getElementById('host-btn').style.display = 'none';
-    document.getElementById('start-net-btn').style.display = 'inline-block';
-}
-function joinGame() { alert("Le réseau est en cours de configuration. Teste le mode local !"); }
-function startNetworkGameHost() { alert("Le réseau est en cours de configuration. Teste le mode local !"); }
-
-
-// =========================================================
-// 3. MOTEUR DE JEU MOBA ARAM
+// 2. MOTEUR DE JEU MOBA ARAM (Skins + Auto-Attack + Zoom)
 // =========================================================
 
 const canvas = document.getElementById('gameCanvas'); 
@@ -113,7 +59,16 @@ const MAP_HEIGHT = 1000;
 const mapImg = new Image();
 mapImg.src = 'assets/mapsol.png';
 
-// Chargement des 5 images de ton dossier skins/
+// --- LIMITES DU PONT ET ZONES DE SLIME (CORRIGÉES) ---
+const PLAYABLE_Y_MIN = 220; // Haut du pont (bloque contre le mur du haut)
+const PLAYABLE_Y_MAX = 780; // Bas du pont (bloque contre le mur du bas)
+
+const PUDDLE_ZONES = [
+    { yMin: 220, yMax: 350 },   // Flaques du Haut
+    { yMin: 650, yMax: 780 }    // Flaques du Bas
+];
+
+// --- CHARGEMENT DES SKINS ---
 const skins = { teemo: {}, ninja: {} };
 ['nord', 'nordouest', 'ouest', 'sud', 'sudouest'].forEach(dir => {
     skins.teemo[dir] = new Image(); skins.teemo[dir].src = `assets/skins/scout${dir}.png`;
@@ -122,8 +77,7 @@ const skins = { teemo: {}, ninja: {} };
     skins.ninja[dir] = new Image(); skins.ninja[dir].src = `assets/skins/ninja${dir}.png`;
 });
 
-const PUDDLE_ZONES = [ { yMin: 0, yMax: 280 }, { yMin: 720, yMax: 1000 } ];
-
+let CAMERA_ZOOM = 1.0; // Variable de Zoom (Molette Souris)
 let cameraX = 0; let cameraY = 0;
 let mouseX = 0; let mouseY = 0; let worldMouseX = 0; let worldMouseY = 0;
 let gameActive = false;
@@ -133,22 +87,33 @@ let locSelections = [];
 let keyboardKeys = { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
 let pendingSpell = null; 
 
-let layoutSelect = document.getElementById('keyboard-layout');
-if(layoutSelect) {
-    layoutSelect.addEventListener('change', (e) => {
-        let isQwerty = e.target.value === 'qwerty';
-        keyboardKeys = isQwerty ? { s1: 'q', s2: 'w', s3: 'e', ult: 'r' } : { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
-        document.getElementById('key-s1').innerText = keyboardKeys.s1.toUpperCase();
-        document.getElementById('key-s2').innerText = keyboardKeys.s2.toUpperCase();
-        document.getElementById('key-s3').innerText = keyboardKeys.s3.toUpperCase();
-        document.getElementById('key-ult').innerText = keyboardKeys.ult.toUpperCase();
-    });
-}
+document.getElementById('keyboard-layout').addEventListener('change', (e) => {
+    let isQwerty = e.target.value === 'qwerty';
+    keyboardKeys = isQwerty ? { s1: 'q', s2: 'w', s3: 'e', ult: 'r' } : { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
+    document.getElementById('key-s1').innerText = keyboardKeys.s1.toUpperCase();
+    document.getElementById('key-s2').innerText = keyboardKeys.s2.toUpperCase();
+    document.getElementById('key-s3').innerText = keyboardKeys.s3.toUpperCase();
+    document.getElementById('key-ult').innerText = keyboardKeys.ult.toUpperCase();
+});
 
+// --- GESTION DU ZOOM (MOLETTE) ---
+window.addEventListener('wheel', e => {
+    if(!gameActive) return;
+    // Zoom in / Zoom out entre 0.5 (dézoomé) et 2.0 (très zoomé)
+    if(e.deltaY > 0) CAMERA_ZOOM = Math.max(0.5, CAMERA_ZOOM - 0.1);
+    else CAMERA_ZOOM = Math.min(2.0, CAMERA_ZOOM + 0.1);
+    
+    // Met à jour la position de la souris instantanément avec le nouveau zoom
+    worldMouseX = (mouseX / CAMERA_ZOOM) + cameraX;
+    worldMouseY = (mouseY / CAMERA_ZOOM) + cameraY;
+});
+
+// --- SOURIS ---
 window.addEventListener('mousemove', e => {
     mouseX = e.clientX; mouseY = e.clientY;
-    worldMouseX = mouseX + cameraX;
-    worldMouseY = mouseY + cameraY;
+    // On applique le zoom sur les coordonnées de la souris !
+    worldMouseX = (mouseX / CAMERA_ZOOM) + cameraX;
+    worldMouseY = (mouseY / CAMERA_ZOOM) + cameraY;
 });
 
 canvas.addEventListener('mousedown', e => {
@@ -162,7 +127,7 @@ canvas.addEventListener('mousedown', e => {
 
     if (e.button === 2) { 
         pendingSpell = null; 
-        players[0].autoAttackTarget = null; 
+        players[0].autoAttackTarget = null; // On annule l'attaque automatique
         players[0].setMovementTarget(worldMouseX, worldMouseY);
         clickMarkers.push({x: worldMouseX, y: worldMouseY, life: 20, color: '#00f0ff'});
     }
@@ -173,13 +138,15 @@ canvas.addEventListener('mousedown', e => {
         
         enemies.forEach(ent => {
             if(ent.currentPuddle !== -1 && ent.revealTimer === 0 && ent.currentPuddle !== players[0].currentPuddle) return;
-            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 20) {
+            // On ajoute une petite marge (+30) pour cliquer plus facilement
+            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 30) {
                 clickedEnemy = ent;
             }
         });
 
         if(clickedEnemy) {
             players[0].autoAttackTarget = clickedEnemy; 
+            players[0].target = null; // ARRÊTE le mouvement manuel pour privilégier l'attaque
             clickMarkers.push({x: clickedEnemy.x, y: clickedEnemy.y, life: 20, color: '#ff007f'});
         }
     }
@@ -205,12 +172,12 @@ window.addEventListener('keydown', e => {
 });
 
 const charData = {
-    seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6, radius: 25, range: 80 },
-    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20, range: 300 },
-    gunner: { name: "ADC", color: '#ffbf00', hp: 850, speed: 6, radius: 22, range: 350 },
-    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 80 },
-    mage: { name: "Mage", color: '#9d00ff', hp: 800, speed: 5.5, radius: 22, range: 300 },
-    ninja: { name: "Ninja", color: '#00f0ff', hp: 1000, speed: 8, radius: 22, range: 90 }
+    seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6, radius: 25, range: 90 },
+    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20, range: 350 },
+    gunner: { name: "ADC", color: '#ffbf00', hp: 850, speed: 6, radius: 22, range: 400 },
+    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 90 },
+    mage: { name: "Mage", color: '#9d00ff', hp: 800, speed: 5.5, radius: 22, range: 350 },
+    ninja: { name: "Ninja", color: '#00f0ff', hp: 1000, speed: 8, radius: 22, range: 100 }
 };
 
 class Turret {
@@ -280,6 +247,7 @@ class Player {
         if(this.actionLock > 0) this.actionLock--;
         if(this.revealTimer > 0) this.revealTimer--;
 
+        // --- PRIORITÉ A L'AUTO-ATTACK SUR LE DÉPLACEMENT ---
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) {
                 this.autoAttackTarget = null;
@@ -291,9 +259,11 @@ class Player {
                 this.angle = Math.atan2(dy, dx);
 
                 if (dist > this.attackRange) {
-                    this.setMovementTarget(this.autoAttackTarget.x, this.autoAttackTarget.y);
+                    // Hors de portée = Avance vers la cible (devient le 'target')
+                    this.target = { x: this.autoAttackTarget.x, y: this.autoAttackTarget.y };
                 } else {
-                    this.target = null;
+                    // À portée = STOPPE tout déplacement et attaque !
+                    this.target = null; 
                     if (this.cds.basic === 0) {
                         this.castSpell('basic', this.autoAttackTarget.x, this.autoAttackTarget.y);
                     }
@@ -301,7 +271,8 @@ class Player {
             }
         }
 
-        else if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
+        // --- DÉPLACEMENT ---
+        if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
             let dx = this.target.x - this.x; let dy = this.target.y - this.y;
             let dist = Math.hypot(dx, dy);
             this.angle = Math.atan2(dy, dx);
@@ -313,12 +284,14 @@ class Player {
             }
         }
 
+        // --- RESTRICTION DES MURS (NE PEUT PLUS SORTIR DE LA CARTE) ---
         this.x = Math.max(this.radius, Math.min(MAP_WIDTH - this.radius, this.x));
-        this.y = Math.max(this.radius, Math.min(MAP_HEIGHT - this.radius, this.y));
+        this.y = Math.max(PLAYABLE_Y_MIN + this.radius, Math.min(PLAYABLE_Y_MAX - this.radius, this.y));
 
+        // --- ZONES DE SLIME (FURTIVITÉ PRÉCISE) ---
         this.currentPuddle = -1;
         for (let i = 0; i < PUDDLE_ZONES.length; i++) {
-            if (this.y > PUDDLE_ZONES[i].yMin && this.y < PUDDLE_ZONES[i].yMax) {
+            if (this.y >= PUDDLE_ZONES[i].yMin && this.y <= PUDDLE_ZONES[i].yMax) {
                 this.currentPuddle = i; 
             }
         }
@@ -447,7 +420,7 @@ class Projectile {
         }
 
         this.x += this.vx; this.y += this.vy; this.life--;
-        if(this.life <= 0 || this.x < 0 || this.x > MAP_WIDTH || this.y < 0 || this.y > MAP_HEIGHT) this.active = false;
+        if(this.life <= 0 || this.x < 0 || this.x > MAP_WIDTH || this.y < PLAYABLE_Y_MIN - 50 || this.y > PLAYABLE_Y_MAX + 50) this.active = false;
 
         let targets = [...players, ...turrets].filter(ent => ent.team !== this.owner.team && !ent.isDead);
         
@@ -486,7 +459,7 @@ function updateBot(bot) {
     }
 }
 
-// Lancement direct de la partie en local 1v1
+// --- INITIALISATION DU JEU ---
 function chooseChar(type) {
     locSelections.push(type);
     document.getElementById('instruction-title').innerText = "Adversaire (IA)";
@@ -551,17 +524,23 @@ function checkWin() {
 function gameLoop() {
     if (!gameActive) return;
 
-    const panSpeed = 20; const edgeSize = 50;
+    // Edge Panning Caméra + Application du Zoom sur la Vitesse
+    const panSpeed = 20 / CAMERA_ZOOM; const edgeSize = 50;
     if (mouseX < edgeSize) cameraX -= panSpeed;
     if (mouseX > window.innerWidth - edgeSize) cameraX += panSpeed;
     if (mouseY < edgeSize) cameraY -= panSpeed;
     if (mouseY > window.innerHeight - edgeSize) cameraY += panSpeed;
 
-    cameraX = Math.max(0, Math.min(MAP_WIDTH - window.innerWidth, cameraX));
-    cameraY = Math.max(0, Math.min(MAP_HEIGHT - window.innerHeight, cameraY));
+    // Bloque la caméra aux bords de la map, en prenant en compte le zoom
+    cameraX = Math.max(0, Math.min(MAP_WIDTH - window.innerWidth / CAMERA_ZOOM, cameraX));
+    cameraY = Math.max(0, Math.min(MAP_HEIGHT - window.innerHeight / CAMERA_ZOOM, cameraY));
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save(); ctx.translate(-cameraX, -cameraY);
+    ctx.save(); 
+    
+    // Application de la caméra ET DU ZOOM !
+    ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM);
+    ctx.translate(-cameraX, -cameraY);
 
     if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
