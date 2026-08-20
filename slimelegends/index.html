@@ -10,12 +10,8 @@
 </head>
 <body>
     
-    <h1 class="game-title">Cyber Smash</h1>
-    
-    <!-- TON CONTENEUR AVEC SIZE-WIDE PAR DEFAUT -->
     <div id="game-container" class="size-wide">
         
-        <!-- BOUTONS DANS LE CONTAINER -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
@@ -24,7 +20,7 @@
 
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
-        <!-- HUD MOBA IN-GAME -->
+        <!-- HUD MOBA -->
         <div id="hud" style="display: none;">
             <div class="hud-center">
                 <div class="hp-bar-container">
@@ -33,16 +29,17 @@
                     <div class="hp-text" id="p1-hp-txt">1000/1000</div>
                 </div>
                 <div class="cd-container">
-                    <div class="cd-box" id="spell-s1" onclick="prepareSpell('s1')"><span class="key-hint" id="key-s1">A</span></div>
-                    <div class="cd-box" id="spell-s2" onclick="prepareSpell('s2')"><span class="key-hint" id="key-s2">Z</span></div>
-                    <div class="cd-box" id="spell-s3" onclick="prepareSpell('s3')"><span class="key-hint" id="key-s3">E</span></div>
-                    <div class="cd-box ult-box" id="spell-ult" onclick="prepareSpell('ult')"><span class="key-hint" id="key-ult">R</span></div>
+                    <div class="cd-box" id="spell-s1"><span class="key-hint" id="key-s1">A</span></div>
+                    <div class="cd-box" id="spell-s2"><span class="key-hint" id="key-s2">Z</span></div>
+                    <div class="cd-box" id="spell-s3"><span class="key-hint" id="key-s3">E</span></div>
+                    <div class="cd-box ult-box" id="spell-ult"><span class="key-hint" id="key-ult">R</span></div>
                 </div>
             </div>
         </div>
 
         <!-- MENU LOCAL -->
         <div class="overlay" id="local-menu">
+            <h1 class="game-title">Cyber Smash</h1>
             <div class="menu-title" id="instruction-title">Sélection Joueur 1</div>
             <div id="char-select">
                 <div class="card char-card" onclick="chooseChar('ninja')"><b>Ninja</b></div>
@@ -52,7 +49,7 @@
                 <div class="card char-card" onclick="chooseChar('mage')"><b>Mage</b></div>
                 <div class="card char-card" onclick="chooseChar('teemo')"><b>Scout</b></div>
             </div>
-            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">FIGHT !</button>
+            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">LANCER LA PARTIE</button>
         </div>
 
         <!-- ECRAN DE FIN -->
@@ -60,14 +57,14 @@
             <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
             <button class="btn-main" id="btn-restart" onclick="location.reload()">Retour au menu de sélection</button>
         </div>
-    </div> <!-- FIN DU GAME CONTAINER -->
+    </div>
 
-    <!-- MODAL PARAMETRES (Hors du container pour toujours s'afficher au centre, COMME TON CODE) -->
+    <!-- MODAL PARAMÈTRES (AVEC LE SELECTEUR AZERTY / QWERTY RETROUVÉ) -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
             
-            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
+            <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
                     <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
@@ -76,25 +73,18 @@
                 </div>
             </div>
 
-            <!-- Ajout du choix de clavier pour le gameplay MOBA -->
-            <div class="setting-item" style="flex-direction: column; gap: 10px; margin-bottom: 30px;">
-                <span>Contrôles (AZERTY / QWERTY) ⌨️</span>
-                <select id="keyboard-layout" style="font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em; padding: 5px; border-radius: 5px; background: #222; color: white; border: 1px solid var(--p1);">
+            <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 30px;">
+                <span>Disposition Clavier ⌨️</span>
+                <select id="keyboard-layout" style="font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em; padding: 8px; border-radius: 5px; background: #222; color: white; border: 1px solid var(--p1); text-align: center;">
                     <option value="azerty">AZERTY (A, Z, E, R)</option>
                     <option value="qwerty">QWERTY (Q, W, E, R)</option>
                 </select>
-                <div style="font-size: 0.9em; color: #aaa; margin-top: 10px; text-align: left; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;">
-                    <b>Déplacement :</b> Clic Gauche<br>
-                    <b>Sorts :</b> Touche clavier OU (Clic Icône + Clic Droit)<br>
-                    <b>Furtivité :</b> Marche dans les flaques !
-                </div>
             </div>
             
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <!-- TON SCRIPT PRINCIPAL -->
     <script src="slimelegends.js"></script>
 </body>
 </html>
