@@ -2,13 +2,16 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Server Defense - Infinite Run</title>
     <style>
         :root { --bg: #090a0f; --panel: #111827; --accent: #10b981; --danger: #ef4444; --text: #e5e7eb; --aoe: #f97316; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;}
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden;}
         h1 { margin-top: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 15px rgba(16, 185, 129, 0.5); font-size: 2.2em;}
-        #game-container { display: flex; gap: 20px; background: var(--panel); padding: 20px; border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); border: 1px solid rgba(16, 185, 129, 0.15); }
+        
+        #game-container { transition: transform 0.3s ease; transform-origin: top center; display: flex; gap: 20px; background: var(--panel); padding: 20px; border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); border: 1px solid rgba(16, 185, 129, 0.15); margin-top: 10px;}
         canvas { background-color: #0b0f19; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: crosshair; box-shadow: inset 0 0 40px rgba(0,0,0,0.8); }
+        
         #ui-panel { width: 340px; display: flex; flex-direction: column; gap: 10px; }
         .stat-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; flex-wrap: wrap; }
         .gold { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); } .lives { color: var(--danger); } .wave { color: var(--accent); width: 100%; margin-top: 5px; font-size: 1.1em; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 5px;}
@@ -34,14 +37,56 @@
         #btn-wave:hover:not(:disabled) { background: #dc2626; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
         #game-over { display: none; text-align: center; margin-top: 20px;}
         
+        /* BOUTONS FLOTTANTS ET SETTINGS */
         .hub-link-top { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
         .hub-link-top:hover { color: #fff; background: rgba(16, 185, 129, 0.3); border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--accent); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--accent), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MODAL PARAMETRES */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: var(--panel); border: 2px solid var(--accent); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(16,185,129,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--accent); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: inherit; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(16, 185, 129, 0.2); }
+        .btn-size.active { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
+        .close-btn { margin-top: 25px; background: var(--accent); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--accent); transform: scale(1.05); }
     </style>
 </head>
 <body>
     <a href="../index.html" class="hub-link-top">⬅ Retour au Hub</a>
     
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+    
     <h1>Protocol Defense: Endless</h1>
+    
     <div id="game-container">
         <canvas id="gameCanvas" width="600" height="450"></canvas>
         <div id="ui-panel">
@@ -81,7 +126,7 @@
             
             <div id="upgrade-panel">
                 <div style="font-weight:bold; color: #fff;" id="tower-name-display">Noeud Sélectionné</div>
-                <div id="tower-stats" style="font-size:12px; color: #9ca3af;"></div>
+                <div id="tower-stats" style="font-size:12px; color: #9ca3af; min-height: 55px;"></div>
                 <button class="action-btn" id="btn-upgrade" onclick="upgradeSelectedTower()">Optimiser</button>
                 <button class="action-btn" style="background:transparent; border: 1px solid var(--danger); color:var(--danger);" onclick="sellSelectedTower()">Vendre</button>
             </div>
@@ -99,6 +144,59 @@
         <button class="action-btn" onclick="location.reload()" style="padding: 15px 30px;">Rebooter le Serveur</button>
     </div>
 
+    <!-- SCRIPT DU MENU & DES PARAMÈTRES -->
+    <script>
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
+
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0; settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
+        }
+
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) settingsBtnImg.src = '../img/setting.png';
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png'; toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
+
+        function setGameSize(size) {
+            const container = document.getElementById('game-container');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+            
+            if (size === 'classic') {
+                document.getElementById('btn-sz-classic').classList.add('active');
+                container.style.transform = 'scale(0.8)';
+                if (document.fullscreenElement) document.exitFullscreen();
+            } else if (size === 'wide') {
+                document.getElementById('btn-sz-wide').classList.add('active');
+                container.style.transform = 'scale(1.1)'; 
+                if (document.fullscreenElement) document.exitFullscreen();
+            } else if (size === 'full') {
+                document.getElementById('btn-sz-full').classList.add('active');
+                container.style.transform = 'scale(1.35)';
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e));
+            }
+        }
+        
+        document.addEventListener("DOMContentLoaded", () => { setGameSize('wide'); });
+        document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setGameSize('wide'); });
+    </script>
+
+    <!-- MOTEUR DE JEU -->
     <script>
         const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d'); 
         const tileSize = 30; const cols = 20; const rows = 15;
@@ -107,74 +205,71 @@
         let selectedTowerType = 1, hoveredGrid = {x: -1, y: -1}, selectedTowerInstance = null;
         
         let autoWave = false; let gameSpeed = 1; let timeAccumulator = 0; 
-        let skeletonsUnlocked = false; // Se débloque après le Boss 1
+        let skeletonsUnlocked = false; 
         
-        // --- SYSTEME AUDIO WEB API ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
 
-            if (type === 'shoot_normal') { // Fantassin
+            if (type === 'shoot_normal') { 
                 osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
                 gain.gain.setValueAtTime(0.015, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'shoot_ricochet') { // Tireur
+            } else if (type === 'shoot_ricochet') { 
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1);
                 gain.gain.setValueAtTime(0.015, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'shoot_armor') { // Blindé
+            } else if (type === 'shoot_armor') { 
                 osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
                 gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
                 osc.start(now); osc.stop(now + 0.2);
-            } else if (type === 'shoot_sniper') { // Sniper
+            } else if (type === 'shoot_sniper') { 
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, now); osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
                 gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 osc.start(now); osc.stop(now + 0.15);
-            } else if (type === 'shoot_aoe') { // Bombardier
+            } else if (type === 'shoot_aoe') { 
                 osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
                 gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'shoot_poison') { // Alchimiste
+            } else if (type === 'shoot_poison') { 
                 osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(200, now + 0.15);
                 gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 osc.start(now); osc.stop(now + 0.15);
-            } else if (type === 'hit') { // Dégâts pris par un ennemi
+            } else if (type === 'hit') { 
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.05);
                 gain.gain.setValueAtTime(0.008, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
                 osc.start(now); osc.stop(now + 0.05);
-            } else if (type === 'kill') { // Ennemi tué
+            } else if (type === 'kill') { 
                 osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
                 gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'base_damage') { // Base touchée
+            } else if (type === 'base_damage') { 
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(80, now + 0.3);
                 gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'game_over') { // Défaite
+            } else if (type === 'game_over') { 
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(20, now + 1.5);
                 gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
                 osc.start(now); osc.stop(now + 1.5);
-            } else if (type === 'ui_buy') { // Achat d'une tour
+            } else if (type === 'ui_buy') { 
                 osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(600, now + 0.1);
                 gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'ui_upgrade') { // Amélioration
+            } else if (type === 'ui_upgrade') { 
                 osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(900, now + 0.15);
                 gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 osc.start(now); osc.stop(now + 0.15);
-            } else if (type === 'ui_sell') { // Vente
+            } else if (type === 'ui_sell') { 
                 osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.linearRampToValueAtTime(300, now + 0.15);
                 gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 osc.start(now); osc.stop(now + 0.15);
             }
         }
 
-        // --- CHARGEMENT IMAGES ---
         const imgs = {};
         const imgFiles = {
             'map': 'img/map.png', 'fantassin': 'img/fantassin.png', 'tirreur': 'img/tirreur.png', 
@@ -183,7 +278,6 @@
         };
         Object.keys(imgFiles).forEach(k => { imgs[k] = new Image(); imgs[k].src = imgFiles[k]; });
 
-        // --- DÉFINITION DU CHEMIN (MAP) ---
         const pathCoords = [
             {x: 0, y: 2}, {x: 4, y: 2}, {x: 4, y: 10}, {x: 10, y: 10},
             {x: 10, y: 4}, {x: 16, y: 4}, {x: 16, y: 12}, {x: 19, y: 12}
@@ -199,7 +293,6 @@
             }
         }
 
-        // --- STATS DES TOURS ---
         const towerDefs = { 
             1: { name: 'Fantassin', cost: 20, range: 90, damage: 15, cooldown: 25, skin: 'fantassin', pColor: '#60a5fa', type: 'normal' }, 
             2: { name: 'Tireur', cost: 60, range: 100, damage: 20, cooldown: 40, skin: 'tirreur', pColor: '#fde047', type: 'ricochet' }, 
@@ -209,18 +302,44 @@
             6: { name: 'Alchimiste', cost: 80, range: 110, damage: 15, cooldown: 60, skin: 'alchimiste', pColor: '#6ee7b7', type: 'poison' } 
         };
 
-        // --- CONTROLES SOURIS ---
-        canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); hoveredGrid.x = Math.floor((e.clientX - rect.left) / tileSize); hoveredGrid.y = Math.floor((e.clientY - rect.top) / tileSize); });
+        // --- CORRECTION SOURIS AVEC ÉCHELLE ET SÉLECTION ANTI-BUG ---
+        canvas.addEventListener('mousemove', (e) => { 
+            const rect = canvas.getBoundingClientRect(); 
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            hoveredGrid.x = Math.floor(((e.clientX - rect.left) * scaleX) / tileSize); 
+            hoveredGrid.y = Math.floor(((e.clientY - rect.top) * scaleY) / tileSize); 
+        });
+        
         canvas.addEventListener('mouseleave', () => { hoveredGrid = {x: -1, y: -1}; });
-        canvas.addEventListener('click', () => {
+        
+        canvas.addEventListener('click', (e) => {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            if (gameOver) return; const hx = hoveredGrid.x; const hy = hoveredGrid.y;
+            if (gameOver) return; 
+            
+            const rect = canvas.getBoundingClientRect(); 
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const hx = Math.floor(((e.clientX - rect.left) * scaleX) / tileSize); 
+            const hy = Math.floor(((e.clientY - rect.top) * scaleY) / tileSize);
+            
             const clickedTower = towers.find(t => Math.floor(t.x/tileSize) === hx && Math.floor(t.y/tileSize) === hy);
-            if (clickedTower) { selectedTowerInstance = clickedTower; updateUpgradePanel(); return; }
-            selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none';
+            
+            if (clickedTower) { 
+                selectedTowerInstance = clickedTower; 
+                updateUpgradePanel(); 
+                return; 
+            }
+            
+            // CORRECTION DU BUG "Je ne peux plus cliquer" : Si on clique dans le vide, on enlève la sélection et on S'ARRÊTE (pour ne pas racheter une tour)
+            if (selectedTowerInstance) {
+                selectedTowerInstance = null; 
+                document.getElementById('upgrade-panel').style.display = 'none';
+                return; 
+            }
             
             if (hx < 0 || hx >= cols || hy < 0 || hy >= rows) return;
-            if (mapGrid[hx][hy] === 1) { return; } // Bloqué sur le chemin
+            if (mapGrid[hx][hy] === 1) { return; } 
             
             const def = towerDefs[selectedTowerType];
             if (gold >= def.cost) {
@@ -237,13 +356,16 @@
             [1,2,3,4,5,6].forEach(id => document.getElementById(`btn-tower-${id}`).classList.remove('selected')); 
             document.getElementById(`btn-tower-${t}`).classList.add('selected'); 
         };
+        
         window.upgradeSelectedTower = () => { 
             if (selectedTowerInstance && selectedTowerInstance.level < 3 && gold >= selectedTowerInstance.upgradeCost) { 
-                gold -= selectedTowerInstance.upgradeCost; selectedTowerInstance.upgrade(); 
+                gold -= selectedTowerInstance.upgradeCost; 
+                selectedTowerInstance.upgrade(); 
                 playSound('ui_upgrade');
                 updateUI(); updateUpgradePanel(); 
             } 
         };
+        
         window.sellSelectedTower = () => { 
             if (selectedTowerInstance) { 
                 gold += Math.floor(selectedTowerInstance.totalValue * 0.6); towers = towers.filter(t => t !== selectedTowerInstance); 
@@ -256,8 +378,12 @@
         function updateUpgradePanel() {
             const panel = document.getElementById('upgrade-panel');
             if (selectedTowerInstance) {
-                panel.style.display = 'flex'; document.getElementById('tower-name-display').innerText = selectedTowerInstance.name;
-                document.getElementById('tower-stats').innerHTML = `Niveau: <span style="color:#fff">${selectedTowerInstance.level}/3</span><br>Puissance: <span style="color:#fff">${selectedTowerInstance.damage}</span><br>Portée: <span style="color:#fff">${selectedTowerInstance.range}</span>`;
+                panel.style.display = 'flex'; 
+                document.getElementById('tower-name-display').innerText = selectedTowerInstance.name;
+                
+                let speedBuff = Math.round((1 - selectedTowerInstance.cdMax / towerDefs[selectedTowerInstance.tK].cooldown) * 100);
+                
+                document.getElementById('tower-stats').innerHTML = `Niveau: <span style="color:#fff">${selectedTowerInstance.level}/3</span><br>Puissance: <span style="color:#fff">${selectedTowerInstance.damage}</span><br>Portée: <span style="color:#fff">${selectedTowerInstance.range}</span><br>Vit. Attaque: <span style="color:#39ff14">+${speedBuff}%</span>`;
                 const btn = document.getElementById('btn-upgrade');
                 if (selectedTowerInstance.level < 3) { btn.innerText = `Optimiser (${selectedTowerInstance.upgradeCost} ⚡)`; btn.disabled = gold < selectedTowerInstance.upgradeCost; } 
                 else { btn.innerText = "MAX"; btn.disabled = true; }
@@ -281,11 +407,10 @@
         
         function generateWaveQueue() { 
             enemiesToSpawn = []; 
-            // BOSS ALTERNATIF TOUTES LES 5 VAGUES
             if (wave % 5 === 0) {
                 if (wave % 10 === 5) enemiesToSpawn.push('boss1');
                 else enemiesToSpawn.push('boss2');
-                for(let i=0; i<Math.floor(wave/2); i++) enemiesToSpawn.push('squelette'); // Accompagné
+                for(let i=0; i<Math.floor(wave/2); i++) enemiesToSpawn.push('squelette'); 
                 return;
             }
 
@@ -411,11 +536,14 @@
                 this.disabledTimer = 0; 
             }
             
+            // --- CORRECTION DES OPTIMISATIONS PLUS RENTABLES ---
             upgrade() { 
-                this.level++; this.totalValue += this.upgradeCost; 
-                this.damage = Math.floor(this.damage * 1.5); 
-                if (this.dType !== 'ricochet') this.range += 15; 
-                this.upgradeCost = Math.floor(this.upgradeCost * 1.5); 
+                this.level++; 
+                this.totalValue += this.upgradeCost; 
+                this.damage = Math.floor(this.damage * 2.2); // GROS BOOST DE DÉGÂTS (+120%)
+                if (this.dType !== 'ricochet') this.range += 25; // PLUS DE PORTÉE
+                this.cdMax = Math.max(5, Math.floor(this.cdMax * 0.8)); // TIRE 20% PLUS VITE !
+                this.upgradeCost = Math.floor(this.upgradeCost * 1.6); 
             }
             
             draw() {
@@ -464,7 +592,6 @@
 
                     if (this.cd <= 0 && Math.abs(diff) < 0.5) { 
                         
-                        // Joue le son correspondant à la tour
                         const soundMap = {1: 'shoot_normal', 2: 'shoot_ricochet', 3: 'shoot_armor', 4: 'shoot_sniper', 5: 'shoot_aoe', 6: 'shoot_poison'};
                         playSound(soundMap[this.tK]);
 
