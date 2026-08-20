@@ -134,8 +134,15 @@ function hostGame() {
     peerNet.on('connection', conn => {
         connsNet.push(conn);
 
+        conn.on('open', () => {
+            broadcastState(); 
+        });
+
+        // Hôte : Réception et lecture blindée
         conn.on('data', data => {
-            if (data.type === 'JOIN') {
+            if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
+            
+            if (data && data.type === 'JOIN') {
                 conn.playerId = data.id; 
                 if (!gameState.players[data.id]) {
                     let assignedSkin = (gameState.order.length % 8) + 1;
@@ -143,18 +150,9 @@ function hostGame() {
                     gameState.order.push(data.id);
                 }
                 broadcastState();
-            } else if (data.type === 'ACTION') {
+            } else if (data && data.type === 'ACTION') {
                 handleGameAction(data);
             }
-        });
-
-        conn.on('open', () => {
-            broadcastState(); 
-        });
-
-        conn.on('data', data => {
-            if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
-            if (data && data.type === 'ACTION') { handleGameAction(data); }
         });
 
         conn.on('close', () => {
@@ -203,12 +201,13 @@ function joinGame() {
     peerNet = new Peer(myPlayerId);
 
     peerNet.on('open', () => {
-        hostConn = peerNet.connect(targetCode, { 
-            metadata: { id: myPlayerId, pseudo: myPseudo } 
-        });
+        hostConn = peerNet.connect(targetCode, { reliable: true });
         
         hostConn.on('open', () => {
             document.getElementById('status-text').innerText = "Connecté ! En attente de l'Hôte.";
+            
+            // LA CORRECTION EST ICI : L'invité envoie bien son inscription à l'hôte !
+            hostConn.send(JSON.stringify({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId }));
         });
 
         hostConn.on('data', data => {
@@ -251,24 +250,23 @@ function broadcastState() {
     try { checkFamiliesCompleted(); } catch(e) {}
     renderGameClient();
 
-    if (peerNet && peerNet.connections) {
-        Object.values(peerNet.connections).forEach(conns => {
-            conns.forEach(conn => {
-                if (conn.open) {
-                    try {
-                        let safeState = JSON.parse(JSON.stringify(gameState));
-                        Object.keys(safeState.players).forEach(targetId => {
-                            safeState.players[targetId].cardCount = safeState.players[targetId].hand.length;
-                            if (conn.metadata && targetId !== conn.metadata.id) {
-                                safeState.players[targetId].hand = []; 
-                            }
-                        });
-                        conn.send(JSON.stringify({ type: 'STATE_UPDATE', state: safeState }));
-                    } catch(e) { console.error(e); }
-                }
-            });
-        });
-    }
+    // Moteur d'envoi réseau nettoyé et blindé
+    connsNet.forEach(conn => {
+        if (conn && conn.open && conn.playerId) {
+            try {
+                let safeState = JSON.parse(JSON.stringify(gameState));
+                Object.keys(safeState.players).forEach(targetId => {
+                    safeState.players[targetId].cardCount = safeState.players[targetId].hand.length;
+                    
+                    // On masque bien la main des adversaires (mais on laisse celle du joueur pour lui-même)
+                    if (targetId !== conn.playerId) {
+                        safeState.players[targetId].hand = []; 
+                    }
+                });
+                conn.send(JSON.stringify({ type: 'STATE_UPDATE', state: safeState }));
+            } catch(e) { console.error(e); }
+        }
+    });
 }
 
 function passTurn() {
@@ -412,27 +410,24 @@ function renderGameClient() {
     myHandArea.innerHTML = ''; countrySelect.innerHTML = '';
 
     let myHand = gameState.players[myPlayerId] ? gameState.players[myPlayerId].hand : [];
-    let myCountries = new Set(); // SÉCURITÉ: Permet de lister les pays qu'on possède
+    let myCountries = new Set();
 
     myHand.forEach(card => {
-        myCountries.add(card.country); // On ajoute le pays au "Set" (pour éviter les doublons dans la liste)
+        myCountries.add(card.country);
         let imgSrc = `assets/card/${card.id}.png`; 
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
 
-    // CAHIER DES CHARGES (LA VRAIE RÈGLE DU JEU) : On ne liste QUE les pays qu'on a déjà en main !
     myCountries.forEach(c => { 
         countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`; 
     });
 
     let btn = document.querySelector('#action-panel .red');
     if(btn) {
-        // Désactive le bouton si pas d'adversaire OU si l'on a aucune famille en main
         btn.disabled = (opponents.length === 0 || myCountries.size === 0);
         
         if (isMyTurn) {
             if (myCountries.size === 0) {
-                // Si on a 0 cartes en main, on DOIT passer son tour (Bouton d'urgence)
                 btn.innerText = "Passer";
                 btn.disabled = false;
                 btn.onclick = () => {
@@ -459,6 +454,7 @@ function askCard() {
         handleGameAction(actionData);
     } else {
         if (hostConn && hostConn.open) {
+            // Sécurité : l'invité envoie l'action bien au format string compressé
             hostConn.send(JSON.stringify(actionData));
         }
     }
