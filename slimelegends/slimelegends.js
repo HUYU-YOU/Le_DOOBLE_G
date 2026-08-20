@@ -48,7 +48,7 @@ function autoFullscreen() { if (!document.getElementById('game-container').class
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide'); });
 
 // =========================================================
-// 2. MOTEUR DE JEU MOBA ARAM (Commandes & Skins Scout)
+// 2. MOTEUR DE JEU MOBA ARAM (Skins + Auto-Attack)
 // =========================================================
 
 const canvas = document.getElementById('gameCanvas'); 
@@ -59,12 +59,19 @@ const MAP_HEIGHT = 1000;
 const mapImg = new Image();
 mapImg.src = 'assets/mapsol.png';
 
-// Chargement des 5 images de ton dossier skins/
-const scoutImgs = {};
-const scoutFiles = ['nord', 'nordouest', 'ouest', 'sud', 'sudouest'];
-scoutFiles.forEach(dir => {
-    scoutImgs[dir] = new Image();
-    scoutImgs[dir].src = `skins/scout${dir}.png`;
+// --- CHARGEMENT DES SKINS (Dossier assets/skins/) ---
+const skins = { teemo: {}, ninja: {} };
+
+// Fichiers du Scout (Scout utilise "nord")
+['nord', 'nordouest', 'ouest', 'sud', 'sudouest'].forEach(dir => {
+    skins.teemo[dir] = new Image();
+    skins.teemo[dir].src = `assets/skins/scout${dir}.png`;
+});
+
+// Fichiers du Ninja (Ninja utilise "north")
+['north', 'northouest', 'ouest', 'sud', 'sudouest'].forEach(dir => {
+    skins.ninja[dir] = new Image();
+    skins.ninja[dir].src = `assets/skins/ninja${dir}.png`;
 });
 
 const PUDDLE_ZONES = [
@@ -79,6 +86,7 @@ let players = []; let turrets = []; let projectiles = []; let clickMarkers = [];
 let locSelections = [];
 
 let keyboardKeys = { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
+let pendingSpell = null; 
 
 document.getElementById('keyboard-layout').addEventListener('change', (e) => {
     let isQwerty = e.target.value === 'qwerty';
@@ -95,25 +103,29 @@ window.addEventListener('mousemove', e => {
     worldMouseY = mouseY + cameraY;
 });
 
-// --- CLICS : DROIT = BOUGER, GAUCHE = LOCK / AUTO-ATTACK ---
 canvas.addEventListener('mousedown', e => {
     if(!gameActive || players[0].isDead) return;
     
-    // CLIC DROIT : Déplacement libre
+    if (pendingSpell && e.button === 0) {
+        players[0].castSpell(pendingSpell, worldMouseX, worldMouseY);
+        pendingSpell = null;
+        return;
+    }
+
     if (e.button === 2) { 
+        pendingSpell = null; 
         players[0].autoAttackTarget = null; 
         players[0].setMovementTarget(worldMouseX, worldMouseY);
         clickMarkers.push({x: worldMouseX, y: worldMouseY, life: 20, color: '#00f0ff'});
     }
     
-    // CLIC GAUCHE : Verrouiller une cible pour l'Auto-Attack
     if (e.button === 0) { 
         let clickedEnemy = null;
         let enemies = [...players, ...turrets].filter(ent => ent.team !== players[0].team && !ent.isDead);
         
         enemies.forEach(ent => {
             if(ent.currentPuddle !== -1 && ent.revealTimer === 0 && ent.currentPuddle !== players[0].currentPuddle) return;
-            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 25) {
+            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 20) {
                 clickedEnemy = ent;
             }
         });
@@ -127,20 +139,26 @@ canvas.addEventListener('mousedown', e => {
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-// --- CLAVIER : SORTS RAPIDES (A, Z, E, R) ---
 window.addEventListener('keydown', e => {
     if(!gameActive || players[0].isDead) return;
     let key = e.key.toLowerCase();
     
-    if(key === keyboardKeys.s1) players[0].castSpell('s1', worldMouseX, worldMouseY);
-    if(key === keyboardKeys.s2) players[0].castSpell('s2', worldMouseX, worldMouseY);
-    if(key === keyboardKeys.s3) players[0].castSpell('s3', worldMouseX, worldMouseY);
-    if(key === keyboardKeys.ult) players[0].castSpell('ult', worldMouseX, worldMouseY);
+    let chosenSlot = null;
+    if(key === keyboardKeys.s1) chosenSlot = 's1';
+    if(key === keyboardKeys.s2) chosenSlot = 's2';
+    if(key === keyboardKeys.s3) chosenSlot = 's3';
+    if(key === keyboardKeys.ult) chosenSlot = 'ult';
+
+    if (chosenSlot) {
+        if (players[0].cds[chosenSlot] === 0 && players[0].isSilenced === 0) {
+            pendingSpell = (pendingSpell === chosenSlot) ? null : chosenSlot; 
+        }
+    }
 });
 
 const charData = {
     seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6, radius: 25, range: 80 },
-    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 22, range: 320 },
+    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20, range: 300 },
     gunner: { name: "ADC", color: '#ffbf00', hp: 850, speed: 6, radius: 22, range: 350 },
     slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 80 },
     mage: { name: "Mage", color: '#9d00ff', hp: 800, speed: 5.5, radius: 22, range: 300 },
@@ -214,7 +232,6 @@ class Player {
         if(this.actionLock > 0) this.actionLock--;
         if(this.revealTimer > 0) this.revealTimer--;
 
-        // GESTION AUTO-ATTACK STYLE MOBA (S'arrête à portée et vise l'ennemi en boucle)
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) {
                 this.autoAttackTarget = null;
@@ -223,14 +240,11 @@ class Player {
                 let dy = this.autoAttackTarget.y - this.y;
                 let dist = Math.hypot(dx, dy);
 
-                // Oriente instantanément le perso vers l'ennemi
                 this.angle = Math.atan2(dy, dx);
 
                 if (dist > this.attackRange) {
-                    // S'approche s'il est trop loin
                     this.setMovementTarget(this.autoAttackTarget.x, this.autoAttackTarget.y);
                 } else {
-                    // À portée : Stoppe la marche et tire en boucle !
                     this.target = null;
                     if (this.cds.basic === 0) {
                         this.castSpell('basic', this.autoAttackTarget.x, this.autoAttackTarget.y);
@@ -239,7 +253,6 @@ class Player {
             }
         }
 
-        // DÉPLACEMENT CLASSIQUE AU CLIC DROIT
         else if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
             let dx = this.target.x - this.x; let dy = this.target.y - this.y;
             let dist = Math.hypot(dx, dy);
@@ -285,26 +298,27 @@ class Player {
         ctx.globalAlpha = alpha;
         ctx.translate(this.x, this.y);
 
-        // --- AFFICHAGE 8 DIRECTIONS POUR LE SCOUT (AVEC LES SKINS) ---
-        if (this.charType === 'teemo') {
+        // --- AFFICHAGE 8 DIRECTIONS POUR LE SCOUT ET LE NINJA ---
+        if (this.charType === 'teemo' || this.charType === 'ninja') {
             let deg = (this.angle * 180 / Math.PI + 360) % 360;
             let octant = Math.floor((deg + 22.5) / 45) % 8; 
 
             let spriteKey = 'sud';
             let flipX = false;
+            let isNinja = (this.charType === 'ninja');
 
             switch(octant) {
-                case 0: spriteKey = 'ouest'; flipX = true; break;     // Est
-                case 1: spriteKey = 'sudouest'; flipX = true; break;  // Sud-Est
-                case 2: spriteKey = 'sud'; break;                     // Sud
-                case 3: spriteKey = 'sudouest'; break;                // Sud-Ouest
-                case 4: spriteKey = 'ouest'; break;                   // Ouest
-                case 5: spriteKey = 'nordouest'; break;               // Nord-Ouest
-                case 6: spriteKey = 'nord'; break;                    // Nord
-                case 7: spriteKey = 'nordouest'; flipX = true; break; // Nord-Est
+                case 0: spriteKey = 'ouest'; flipX = true; break;     
+                case 1: spriteKey = 'sudouest'; flipX = true; break;  
+                case 2: spriteKey = 'sud'; break;                     
+                case 3: spriteKey = 'sudouest'; break;                
+                case 4: spriteKey = 'ouest'; break;                   
+                case 5: spriteKey = isNinja ? 'northouest' : 'nordouest'; break; // Gestion du nom anglais pour le ninja
+                case 6: spriteKey = isNinja ? 'north' : 'nord'; break;           // Gestion du nom anglais pour le ninja
+                case 7: spriteKey = isNinja ? 'northouest' : 'nordouest'; flipX = true; break; 
             }
 
-            let img = scoutImgs[spriteKey];
+            let img = skins[this.charType][spriteKey];
             if (img && img.complete && img.naturalWidth > 0) {
                 ctx.save();
                 if (flipX) ctx.scale(-1, 1);
@@ -312,12 +326,10 @@ class Player {
                 ctx.drawImage(img, -drawSize/2, -drawSize/2, drawSize, drawSize);
                 ctx.restore();
             } else {
-                // Secours si l'image charge mal
                 ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color; ctx.fill();
             }
         } else {
-            // Forme par défaut pour les autres champions
             ctx.rotate(this.angle);
             ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
             ctx.fillStyle = this.color; ctx.fill();
@@ -352,7 +364,7 @@ class Player {
         
         let dx = targetX - this.x; let dy = targetY - this.y;
         let dist = Math.hypot(dx, dy) || 1;
-        this.angle = Math.atan2(dy, dx); // Oriente vers la cible du sort
+        this.angle = Math.atan2(dy, dx); 
         dx /= dist; dy /= dist; 
 
         if (slot === 'basic') {
@@ -505,6 +517,16 @@ function gameLoop() {
 
     if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
+
+    if (pendingSpell && !players[0].isDead) {
+        ctx.beginPath();
+        ctx.arc(players[0].x, players[0].y, 150, 0, Math.PI * 2); 
+        ctx.fillStyle = "rgba(0, 240, 255, 0.15)"; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = "rgba(0, 240, 255, 0.8)"; ctx.stroke();
+
+        ctx.beginPath(); ctx.moveTo(players[0].x, players[0].y); ctx.lineTo(worldMouseX, worldMouseY);
+        ctx.strokeStyle = "#ffbf00"; ctx.lineWidth = 3; ctx.stroke();
+    }
 
     for (let i = clickMarkers.length - 1; i >= 0; i--) {
         let m = clickMarkers[i]; ctx.beginPath(); ctx.arc(m.x, m.y, 30 - m.life, 0, Math.PI*2);
