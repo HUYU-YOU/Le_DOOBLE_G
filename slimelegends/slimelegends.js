@@ -1,5 +1,5 @@
 // =========================================================
-// 1. SCRIPTS D'INTERFACE (ANIMATION, TAILLE)
+// 1. ANIMATION DES PARAMÈTRES (AVEC TES IMAGES SETTINGS)
 // =========================================================
 
 const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -30,7 +30,7 @@ function clickSettingsAnim() {
 
 function toggleSettings() {
     let modal = document.getElementById('settings-modal');
-    modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+    modal.classList.toggle('show');
 }
 
 function setGameSize(size) {
@@ -48,7 +48,7 @@ function autoFullscreen() { if (!document.getElementById('game-container').class
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide'); });
 
 // =========================================================
-// 2. MOTEUR DE JEU MOBA ARAM (Commandes Inversées + Preview)
+// 2. MOTEUR DE JEU MOBA ARAM (Commandes & Skins Scout)
 // =========================================================
 
 const canvas = document.getElementById('gameCanvas'); 
@@ -58,6 +58,14 @@ const MAP_WIDTH = 3500;
 const MAP_HEIGHT = 1000;
 const mapImg = new Image();
 mapImg.src = 'assets/mapsol.png';
+
+// Chargement des 5 images de ton dossier skins/
+const scoutImgs = {};
+const scoutFiles = ['nord', 'nordouest', 'ouest', 'sud', 'sudouest'];
+scoutFiles.forEach(dir => {
+    scoutImgs[dir] = new Image();
+    scoutImgs[dir].src = `skins/scout${dir}.png`;
+});
 
 const PUDDLE_ZONES = [
     { yMin: 0, yMax: 280 },   
@@ -71,7 +79,6 @@ let players = []; let turrets = []; let projectiles = []; let clickMarkers = [];
 let locSelections = [];
 
 let keyboardKeys = { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
-let pendingSpell = null; // Stocke le sort en cours de prévisualisation
 
 document.getElementById('keyboard-layout').addEventListener('change', (e) => {
     let isQwerty = e.target.value === 'qwerty';
@@ -88,39 +95,31 @@ window.addEventListener('mousemove', e => {
     worldMouseY = mouseY + cameraY;
 });
 
-// --- CORRECTION DES CLICS : DROIT = BOUGER, GAUCHE = LOCK / AUTO-ATTACK ---
+// --- CLICS : DROIT = BOUGER, GAUCHE = LOCK / AUTO-ATTACK ---
 canvas.addEventListener('mousedown', e => {
     if(!gameActive || players[0].isDead) return;
     
-    // Si on est en train de prévisualiser un sort, le Clic Gauche le valide et le tire !
-    if (pendingSpell && e.button === 0) {
-        players[0].castSpell(pendingSpell, worldMouseX, worldMouseY);
-        pendingSpell = null;
-        return;
-    }
-
     // CLIC DROIT : Déplacement libre
     if (e.button === 2) { 
-        pendingSpell = null; // Annule le sort en attente si on bouge
         players[0].autoAttackTarget = null; 
         players[0].setMovementTarget(worldMouseX, worldMouseY);
         clickMarkers.push({x: worldMouseX, y: worldMouseY, life: 20, color: '#00f0ff'});
     }
     
-    // CLIC GAUCHE : Verrouiller une cible pour l'Auto-Attack (Sans viser)
+    // CLIC GAUCHE : Verrouiller une cible pour l'Auto-Attack
     if (e.button === 0) { 
         let clickedEnemy = null;
         let enemies = [...players, ...turrets].filter(ent => ent.team !== players[0].team && !ent.isDead);
         
         enemies.forEach(ent => {
             if(ent.currentPuddle !== -1 && ent.revealTimer === 0 && ent.currentPuddle !== players[0].currentPuddle) return;
-            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 20) {
+            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 25) {
                 clickedEnemy = ent;
             }
         });
 
         if(clickedEnemy) {
-            players[0].autoAttackTarget = clickedEnemy; // Lock automatique !
+            players[0].autoAttackTarget = clickedEnemy; 
             clickMarkers.push({x: clickedEnemy.x, y: clickedEnemy.y, life: 20, color: '#ff007f'});
         }
     }
@@ -128,27 +127,20 @@ canvas.addEventListener('mousedown', e => {
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-// --- CLAVIER : PRÉVISUALISATION DES SORTS (A, Z, E, R) ---
+// --- CLAVIER : SORTS RAPIDES (A, Z, E, R) ---
 window.addEventListener('keydown', e => {
     if(!gameActive || players[0].isDead) return;
     let key = e.key.toLowerCase();
     
-    let chosenSlot = null;
-    if(key === keyboardKeys.s1) chosenSlot = 's1';
-    if(key === keyboardKeys.s2) chosenSlot = 's2';
-    if(key === keyboardKeys.s3) chosenSlot = 's3';
-    if(key === keyboardKeys.ult) chosenSlot = 'ult';
-
-    if (chosenSlot) {
-        if (players[0].cds[chosenSlot] === 0 && players[0].isSilenced === 0) {
-            pendingSpell = (pendingSpell === chosenSlot) ? null : chosenSlot; // Toggle preview
-        }
-    }
+    if(key === keyboardKeys.s1) players[0].castSpell('s1', worldMouseX, worldMouseY);
+    if(key === keyboardKeys.s2) players[0].castSpell('s2', worldMouseX, worldMouseY);
+    if(key === keyboardKeys.s3) players[0].castSpell('s3', worldMouseX, worldMouseY);
+    if(key === keyboardKeys.ult) players[0].castSpell('ult', worldMouseX, worldMouseY);
 });
 
 const charData = {
     seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6, radius: 25, range: 80 },
-    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20, range: 300 },
+    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 22, range: 320 },
     gunner: { name: "ADC", color: '#ffbf00', hp: 850, speed: 6, radius: 22, range: 350 },
     slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 80 },
     mage: { name: "Mage", color: '#9d00ff', hp: 800, speed: 5.5, radius: 22, range: 300 },
@@ -222,15 +214,23 @@ class Player {
         if(this.actionLock > 0) this.actionLock--;
         if(this.revealTimer > 0) this.revealTimer--;
 
-        // LOGIQUE AUTO-ATTACK SANS VISER (Dès qu'on lock un ennemi au clic gauche)
+        // GESTION AUTO-ATTACK STYLE MOBA (S'arrête à portée et vise l'ennemi en boucle)
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) {
                 this.autoAttackTarget = null;
             } else {
-                let dist = Math.hypot(this.autoAttackTarget.x - this.x, this.autoAttackTarget.y - this.y);
+                let dx = this.autoAttackTarget.x - this.x;
+                let dy = this.autoAttackTarget.y - this.y;
+                let dist = Math.hypot(dx, dy);
+
+                // Oriente instantanément le perso vers l'ennemi
+                this.angle = Math.atan2(dy, dx);
+
                 if (dist > this.attackRange) {
+                    // S'approche s'il est trop loin
                     this.setMovementTarget(this.autoAttackTarget.x, this.autoAttackTarget.y);
                 } else {
+                    // À portée : Stoppe la marche et tire en boucle !
                     this.target = null;
                     if (this.cds.basic === 0) {
                         this.castSpell('basic', this.autoAttackTarget.x, this.autoAttackTarget.y);
@@ -239,7 +239,8 @@ class Player {
             }
         }
 
-        if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
+        // DÉPLACEMENT CLASSIQUE AU CLIC DROIT
+        else if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
             let dx = this.target.x - this.x; let dy = this.target.y - this.y;
             let dist = Math.hypot(dx, dy);
             this.angle = Math.atan2(dy, dx);
@@ -283,12 +284,47 @@ class Player {
         ctx.save();
         ctx.globalAlpha = alpha;
         ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle); 
-        
-        ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color; ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.stroke();
-        ctx.fillStyle = '#fff'; ctx.fillRect(this.radius - 10, -5, 15, 10);
+
+        // --- AFFICHAGE 8 DIRECTIONS POUR LE SCOUT (AVEC LES SKINS) ---
+        if (this.charType === 'teemo') {
+            let deg = (this.angle * 180 / Math.PI + 360) % 360;
+            let octant = Math.floor((deg + 22.5) / 45) % 8; 
+
+            let spriteKey = 'sud';
+            let flipX = false;
+
+            switch(octant) {
+                case 0: spriteKey = 'ouest'; flipX = true; break;     // Est
+                case 1: spriteKey = 'sudouest'; flipX = true; break;  // Sud-Est
+                case 2: spriteKey = 'sud'; break;                     // Sud
+                case 3: spriteKey = 'sudouest'; break;                // Sud-Ouest
+                case 4: spriteKey = 'ouest'; break;                   // Ouest
+                case 5: spriteKey = 'nordouest'; break;               // Nord-Ouest
+                case 6: spriteKey = 'nord'; break;                    // Nord
+                case 7: spriteKey = 'nordouest'; flipX = true; break; // Nord-Est
+            }
+
+            let img = scoutImgs[spriteKey];
+            if (img && img.complete && img.naturalWidth > 0) {
+                ctx.save();
+                if (flipX) ctx.scale(-1, 1);
+                let drawSize = this.radius * 2.5;
+                ctx.drawImage(img, -drawSize/2, -drawSize/2, drawSize, drawSize);
+                ctx.restore();
+            } else {
+                // Secours si l'image charge mal
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color; ctx.fill();
+            }
+        } else {
+            // Forme par défaut pour les autres champions
+            ctx.rotate(this.angle);
+            ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color; ctx.fill();
+            ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.stroke();
+            ctx.fillStyle = '#fff'; ctx.fillRect(this.radius - 10, -5, 15, 10);
+        }
+
         ctx.restore();
 
         if(isStealthyToSelf) {
@@ -316,13 +352,14 @@ class Player {
         
         let dx = targetX - this.x; let dy = targetY - this.y;
         let dist = Math.hypot(dx, dy) || 1;
+        this.angle = Math.atan2(dy, dx); // Oriente vers la cible du sort
         dx /= dist; dy /= dist; 
 
         if (slot === 'basic') {
             projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 50)); 
             this.cds.basic = 25;
         } else {
-            projectiles.push(new Projectile(this.x, this.y, dx*20, dy*20, this, 120, 15));
+            projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 130, 15));
             this.cds[slot] = 300; 
         }
     }
@@ -380,7 +417,7 @@ function updateBot(bot) {
     if (p1Visible) {
         let dist = Math.hypot(target.x - bot.x, target.y - bot.y);
         if (dist > bot.attackRange) { bot.setMovementTarget(target.x, target.y); } 
-        else { bot.target = null; }
+        else { bot.target = null; bot.angle = Math.atan2(target.y - bot.y, target.x - bot.x); }
         
         if (dist < bot.attackRange + 50 && bot.cds.basic === 0 && Math.random() < 0.1) {
             bot.castSpell('basic', target.x, target.y);
@@ -468,25 +505,6 @@ function gameLoop() {
 
     if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
-
-    // Effet visuel du sort en cours de prévisualisation (Target Indicator)
-    if (pendingSpell && !players[0].isDead) {
-        ctx.beginPath();
-        ctx.arc(players[0].x, players[0].y, 150, 0, Math.PI * 2); // Cercle de portée indicative
-        ctx.fillStyle = "rgba(0, 240, 255, 0.15)";
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "rgba(0, 240, 255, 0.8)";
-        ctx.stroke();
-
-        // Ligne de visée vers la souris
-        ctx.beginPath();
-        ctx.moveTo(players[0].x, players[0].y);
-        ctx.lineTo(worldMouseX, worldMouseY);
-        ctx.strokeStyle = "#ffbf00";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    }
 
     for (let i = clickMarkers.length - 1; i >= 0; i--) {
         let m = clickMarkers[i]; ctx.beginPath(); ctx.arc(m.x, m.y, 30 - m.life, 0, Math.PI*2);
