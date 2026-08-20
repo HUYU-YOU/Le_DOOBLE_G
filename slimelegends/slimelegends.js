@@ -1,5 +1,5 @@
 // =========================================================
-// 1. ANIMATION DES PARAMÈTRES (AVEC TES IMAGES SETTINGS)
+// 1. ANIMATION DES PARAMÈTRES ET TAILLES D'ÉCRAN
 // =========================================================
 
 const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -30,7 +30,7 @@ function clickSettingsAnim() {
 
 function toggleSettings() {
     let modal = document.getElementById('settings-modal');
-    modal.classList.toggle('show');
+    if (modal) modal.classList.toggle('show');
 }
 
 function setGameSize(size) {
@@ -47,8 +47,62 @@ function setGameSize(size) {
 function autoFullscreen() { if (!document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide'); }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide'); });
 
+
 // =========================================================
-// 2. MOTEUR DE JEU MOBA ARAM (Skins + Auto-Attack)
+// 2. NAVIGATION DES MENUS ET RÉSEAU (CE QUI MANQUAIT !)
+// =========================================================
+
+function openMenu(type) {
+    document.getElementById('main-menu').style.display = 'none';
+    if (type === 'local') {
+        document.getElementById('local-menu').style.display = 'flex';
+    }
+}
+
+let currentIsBot = true; 
+function toggleBot() {
+    currentIsBot = !currentIsBot;
+    let btn = document.getElementById('bot-toggle-btn');
+    if(btn) {
+        if(currentIsBot) {
+            btn.innerHTML = "🤖 IA (Bot)"; btn.style.background = "#ff007f"; btn.style.borderColor = "#ff007f";
+        } else {
+            btn.innerHTML = "👤 Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333";
+        }
+    }
+}
+
+function chooseMap(idx, element) {
+    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
+    if(element) element.classList.add('selected');
+}
+
+function handleRestart() {
+    location.reload();
+}
+
+// Bouchons Réseau pour éviter les crashs sur les menus multijoueurs
+function prepareNetwork(mode) {
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('network-menu').style.display = 'flex';
+}
+function selectNetChar(char, el) {
+    document.querySelectorAll('#net-char-grid .card').forEach(c => c.classList.remove('selected'));
+    if(el) el.classList.add('selected');
+    let nameEl = document.getElementById('net-char-name');
+    if(nameEl) nameEl.innerText = char.toUpperCase();
+}
+function hostGame() {
+    document.getElementById('my-id').innerText = "SERVEUR ARAM";
+    document.getElementById('host-btn').style.display = 'none';
+    document.getElementById('start-net-btn').style.display = 'inline-block';
+}
+function joinGame() { alert("Le réseau est en cours de configuration. Teste le mode local !"); }
+function startNetworkGameHost() { alert("Le réseau est en cours de configuration. Teste le mode local !"); }
+
+
+// =========================================================
+// 3. MOTEUR DE JEU MOBA ARAM
 // =========================================================
 
 const canvas = document.getElementById('gameCanvas'); 
@@ -59,25 +113,16 @@ const MAP_HEIGHT = 1000;
 const mapImg = new Image();
 mapImg.src = 'assets/mapsol.png';
 
-// --- CHARGEMENT DES SKINS (Dossier assets/skins/) ---
+// Chargement des 5 images de ton dossier skins/
 const skins = { teemo: {}, ninja: {} };
-
-// Fichiers du Scout (Scout utilise "nord")
 ['nord', 'nordouest', 'ouest', 'sud', 'sudouest'].forEach(dir => {
-    skins.teemo[dir] = new Image();
-    skins.teemo[dir].src = `assets/skins/scout${dir}.png`;
+    skins.teemo[dir] = new Image(); skins.teemo[dir].src = `assets/skins/scout${dir}.png`;
 });
-
-// Fichiers du Ninja (Ninja utilise "north")
 ['north', 'northouest', 'ouest', 'sud', 'sudouest'].forEach(dir => {
-    skins.ninja[dir] = new Image();
-    skins.ninja[dir].src = `assets/skins/ninja${dir}.png`;
+    skins.ninja[dir] = new Image(); skins.ninja[dir].src = `assets/skins/ninja${dir}.png`;
 });
 
-const PUDDLE_ZONES = [
-    { yMin: 0, yMax: 280 },   
-    { yMin: 720, yMax: 1000 } 
-];
+const PUDDLE_ZONES = [ { yMin: 0, yMax: 280 }, { yMin: 720, yMax: 1000 } ];
 
 let cameraX = 0; let cameraY = 0;
 let mouseX = 0; let mouseY = 0; let worldMouseX = 0; let worldMouseY = 0;
@@ -88,14 +133,17 @@ let locSelections = [];
 let keyboardKeys = { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
 let pendingSpell = null; 
 
-document.getElementById('keyboard-layout').addEventListener('change', (e) => {
-    let isQwerty = e.target.value === 'qwerty';
-    keyboardKeys = isQwerty ? { s1: 'q', s2: 'w', s3: 'e', ult: 'r' } : { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
-    document.getElementById('key-s1').innerText = keyboardKeys.s1.toUpperCase();
-    document.getElementById('key-s2').innerText = keyboardKeys.s2.toUpperCase();
-    document.getElementById('key-s3').innerText = keyboardKeys.s3.toUpperCase();
-    document.getElementById('key-ult').innerText = keyboardKeys.ult.toUpperCase();
-});
+let layoutSelect = document.getElementById('keyboard-layout');
+if(layoutSelect) {
+    layoutSelect.addEventListener('change', (e) => {
+        let isQwerty = e.target.value === 'qwerty';
+        keyboardKeys = isQwerty ? { s1: 'q', s2: 'w', s3: 'e', ult: 'r' } : { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
+        document.getElementById('key-s1').innerText = keyboardKeys.s1.toUpperCase();
+        document.getElementById('key-s2').innerText = keyboardKeys.s2.toUpperCase();
+        document.getElementById('key-s3').innerText = keyboardKeys.s3.toUpperCase();
+        document.getElementById('key-ult').innerText = keyboardKeys.ult.toUpperCase();
+    });
+}
 
 window.addEventListener('mousemove', e => {
     mouseX = e.clientX; mouseY = e.clientY;
@@ -298,7 +346,6 @@ class Player {
         ctx.globalAlpha = alpha;
         ctx.translate(this.x, this.y);
 
-        // --- AFFICHAGE 8 DIRECTIONS POUR LE SCOUT ET LE NINJA ---
         if (this.charType === 'teemo' || this.charType === 'ninja') {
             let deg = (this.angle * 180 / Math.PI + 360) % 360;
             let octant = Math.floor((deg + 22.5) / 45) % 8; 
@@ -313,8 +360,8 @@ class Player {
                 case 2: spriteKey = 'sud'; break;                     
                 case 3: spriteKey = 'sudouest'; break;                
                 case 4: spriteKey = 'ouest'; break;                   
-                case 5: spriteKey = isNinja ? 'northouest' : 'nordouest'; break; // Gestion du nom anglais pour le ninja
-                case 6: spriteKey = isNinja ? 'north' : 'nord'; break;           // Gestion du nom anglais pour le ninja
+                case 5: spriteKey = isNinja ? 'northouest' : 'nordouest'; break; 
+                case 6: spriteKey = isNinja ? 'north' : 'nord'; break;           
                 case 7: spriteKey = isNinja ? 'northouest' : 'nordouest'; flipX = true; break; 
             }
 
@@ -439,6 +486,7 @@ function updateBot(bot) {
     }
 }
 
+// Lancement direct de la partie en local 1v1
 function chooseChar(type) {
     locSelections.push(type);
     document.getElementById('instruction-title').innerText = "Adversaire (IA)";
