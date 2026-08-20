@@ -107,6 +107,7 @@ let gameState = {
     deck: [],
     turnIndex: 0,
     started: false,
+    lastActionSuccess: false, // <-- NOUVEAUTÉ : Indicateur de succès pour l'affichage
     log: "La partie va bientôt commencer..."
 };
 
@@ -138,7 +139,6 @@ function hostGame() {
             broadcastState(); 
         });
 
-        // Hôte : Réception et lecture blindée
         conn.on('data', data => {
             if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
             
@@ -201,12 +201,11 @@ function joinGame() {
     peerNet = new Peer(myPlayerId);
 
     peerNet.on('open', () => {
-        hostConn = peerNet.connect(targetCode, { reliable: true });
+        // CORRECTION ANTI-FREEZE : Retrait du mode "reliable" capricieux (comme dans Tetris)
+        hostConn = peerNet.connect(targetCode);
         
         hostConn.on('open', () => {
             document.getElementById('status-text').innerText = "Connecté ! En attente de l'Hôte.";
-            
-            // LA CORRECTION EST ICI : L'invité envoie bien son inscription à l'hôte !
             hostConn.send(JSON.stringify({ type: 'JOIN', pseudo: myPseudo, id: myPlayerId }));
         });
 
@@ -250,7 +249,6 @@ function broadcastState() {
     try { checkFamiliesCompleted(); } catch(e) {}
     renderGameClient();
 
-    // Moteur d'envoi réseau nettoyé et blindé
     connsNet.forEach(conn => {
         if (conn && conn.open && conn.playerId) {
             try {
@@ -258,11 +256,11 @@ function broadcastState() {
                 Object.keys(safeState.players).forEach(targetId => {
                     safeState.players[targetId].cardCount = safeState.players[targetId].hand.length;
                     
-                    // On masque bien la main des adversaires (mais on laisse celle du joueur pour lui-même)
                     if (targetId !== conn.playerId) {
                         safeState.players[targetId].hand = []; 
                     }
                 });
+                // Envoi compressé en texte pour éviter les plantages
                 conn.send(JSON.stringify({ type: 'STATE_UPDATE', state: safeState }));
             } catch(e) { console.error(e); }
         }
@@ -282,6 +280,8 @@ function passTurn() {
 
     let nextPlayer = gameState.players[gameState.order[gameState.turnIndex]];
     gameState.log += `\n➡️ C'est au tour de ${nextPlayer.pseudo}.`;
+    
+    gameState.lastActionSuccess = false; // Remise à zéro de l'indicateur visuel
 
     broadcastState();
 }
@@ -289,6 +289,7 @@ function passTurn() {
 function handleGameAction(data) {
     if (data.action === 'PASS') {
         gameState.log = `⏭️ ${gameState.players[data.askerId].pseudo} passe son tour.`;
+        gameState.lastActionSuccess = false;
         passTurn();
         return;
     }
@@ -306,6 +307,7 @@ function handleGameAction(data) {
             target.hand = target.hand.filter(c => c.country !== country);
             asker.hand.push(...cardsToSteal);
             gameState.log = `⚡ ${asker.pseudo} a volé les cartes ${country.toUpperCase()} de ${target.pseudo} ! Il rejoue.`;
+            gameState.lastActionSuccess = true; // Activera le "TU REJOUES !" chez le joueur
             broadcastState(); 
         } else {
             if (gameState.deck.length > 0) {
@@ -315,6 +317,7 @@ function handleGameAction(data) {
             } else {
                 gameState.log = `❌ Raté ! ${target.pseudo} n'a pas la carte et le seau est vide.`;
             }
+            gameState.lastActionSuccess = false;
             passTurn();
         }
     }
@@ -410,10 +413,10 @@ function renderGameClient() {
     myHandArea.innerHTML = ''; countrySelect.innerHTML = '';
 
     let myHand = gameState.players[myPlayerId] ? gameState.players[myPlayerId].hand : [];
-    let myCountries = new Set();
+    let myCountries = new Set(); 
 
     myHand.forEach(card => {
-        myCountries.add(card.country);
+        myCountries.add(card.country); 
         let imgSrc = `assets/card/${card.id}.png`; 
         myHandArea.innerHTML += `<div class="card" style="background-image: url('${imgSrc}')" title="${card.country.toUpperCase()}"></div>`;
     });
@@ -427,6 +430,19 @@ function renderGameClient() {
         btn.disabled = (opponents.length === 0 || myCountries.size === 0);
         
         if (isMyTurn) {
+            
+            // --- NOUVEAUTÉ : FEEDBACK VISUEL POUR NE PLUS SE PERDRE ---
+            let titleSpan = document.querySelector('#action-panel span');
+            if (titleSpan) {
+                if (gameState.lastActionSuccess) {
+                    titleSpan.innerText = "🔥 BIEN JOUÉ ! TU REJOUES !";
+                    titleSpan.style.color = "var(--perfect)";
+                } else {
+                    titleSpan.innerText = "C'EST TON TOUR !";
+                    titleSpan.style.color = "var(--p4)";
+                }
+            }
+
             if (myCountries.size === 0) {
                 btn.innerText = "Passer";
                 btn.disabled = false;
@@ -454,7 +470,6 @@ function askCard() {
         handleGameAction(actionData);
     } else {
         if (hostConn && hostConn.open) {
-            // Sécurité : l'invité envoie l'action bien au format string compressé
             hostConn.send(JSON.stringify(actionData));
         }
     }
