@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Smash - ARAM Edition</title>
+    <title>Cyber Smash - Definitive Edition</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     
+    <h1 class="game-title">Cyber Smash</h1>
+    
     <div id="game-container" class="size-wide">
         
+        <!-- BOUTONS DANS LE CONTAINER -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
@@ -20,7 +24,7 @@
 
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
-        <!-- HUD MOBA -->
+        <!-- NOUVEAU HUD MOBA IN-GAME -->
         <div id="hud" style="display: none;">
             <div class="hud-center">
                 <div class="hp-bar-container">
@@ -37,34 +41,104 @@
             </div>
         </div>
 
-        <!-- MENU LOCAL -->
-        <div class="overlay" id="local-menu">
-            <h1 class="game-title">Cyber Smash</h1>
-            <div class="menu-title" id="instruction-title">Sélection Joueur 1</div>
-            <div id="char-select">
-                <div class="card char-card" onclick="chooseChar('ninja')"><b>Ninja</b></div>
-                <div class="card char-card" onclick="chooseChar('gunner')"><b>Gunner</b></div>
-                <div class="card char-card" onclick="chooseChar('slime')"><b>Slime</b></div>
-                <div class="card char-card" onclick="chooseChar('seth')"><b>Seth</b></div>
-                <div class="card char-card" onclick="chooseChar('mage')"><b>Mage</b></div>
-                <div class="card char-card" onclick="chooseChar('teemo')"><b>Scout</b></div>
-            </div>
-            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">LANCER LA PARTIE</button>
+        <!-- MENU PRINCIPAL -->
+        <div class="overlay" id="main-menu">
+            <div class="menu-title">CHOOSE YOUR BATTLE</div>
+            <button class="btn-main" id="btn-local-mode" onclick="autoFullscreen(); openMenu('local');">🎮 Mode Local (1v1 ou IA)</button>
+            
+            <hr id="menu-separator" style="width: 60%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+            
+            <div class="menu-title" id="multi-title" style="font-size: 1.2em; margin-bottom: 10px; color: #aaa;">Arènes Multijoueurs</div>
+            <button class="btn-main red" id="btn-net-1" onclick="autoFullscreen(); prepareNetwork('1v1');">🌐 Réseau (1 VS 1)</button>
+            <button class="btn-main green" id="btn-net-2" onclick="autoFullscreen(); prepareNetwork('2v2');">🛡️ Réseau (2 VS 2 Équipes)</button>
+            <button class="btn-main gold" id="btn-net-4" onclick="autoFullscreen(); prepareNetwork('ffa');">⚔️ Réseau (4 Chacun Pour Soi)</button>
         </div>
 
-        <!-- ECRAN DE FIN -->
+        <!-- MENU LOCAL -->
+        <div class="overlay" id="local-menu" style="display: none;">
+            <div class="menu-title" id="instruction-title">Select player 1</div>
+            <button class="btn-main" id="bot-toggle-btn" onclick="toggleBot()" style="background:#555; color:#fff; font-size:1em; padding:8px 20px; margin-bottom:15px; border:2px solid #333; box-shadow: none;">👤 Contrôlé par : Humain</button>
+            
+            <div id="char-select">
+                <div class="card char-card" onclick="chooseChar('ninja')"><img src="img/NINJA.png" alt="Ninja"><video src="img/NINJA.mp4" loop muted playsinline></video><b>Ninja</b></div>
+                <div class="card char-card" onclick="chooseChar('gunner')"><img src="img/GUNNER.png" alt="Gunner"><video src="img/GUNNER.mp4" loop muted playsinline></video><b>Gunner</b></div>
+                <div class="card char-card" onclick="chooseChar('slime')"><img src="img/SLIME.png" alt="Slime"><video src="img/SLIME.mp4" loop muted playsinline></video><b>Slime</b></div>
+                <div class="card char-card" onclick="chooseChar('seth')"><img src="img/BRUTE.png" alt="Brute"><video src="img/BRUTE.mp4" loop muted playsinline></video><b>Brute</b></div>
+                <div class="card char-card" onclick="chooseChar('mage')"><img src="img/MAGE.png" alt="Mage"><video src="img/MAGE.mp4" loop muted playsinline></video><b>Mage</b></div>
+                <div class="card char-card" onclick="chooseChar('teemo')"><img src="img/PATHKILLER.png" alt="Pathkiller"><video src="img/PATHKILLER.mp4" loop muted playsinline></video><b>Scout</b></div>
+            </div>
+            
+            <div id="map-select-container" style="display: none;">
+                <div class="menu-title" style="font-size: 1.2em; margin-top:10px;">Choix de l'Arène</div>
+                <div class="selection-grid">
+                    <div class="card map-card" onclick="chooseMap(0, this)"><img src="img/map1.png" alt="Map 1">Arène Royale</div>
+                    <div class="card map-card" onclick="chooseMap(1, this)"><img src="img/map2.png" alt="Map 2">Ciel Brisé</div>
+                    <div class="card map-card" onclick="chooseMap(2, this)"><img src="img/map3.png" alt="Map 3">Le Gouffre</div>
+                </div>
+            </div>
+            
+            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">FIGHT !</button>
+            
+            <div>
+                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
+                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border: none; box-shadow: none;" onclick="location.reload()">Retour</button>
+            </div>
+        </div>
+
+        <!-- MENU RESEAU -->
+        <div class="overlay" id="network-menu" style="display: none;">
+            <h2 id="net-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Terminal Réseau</h2>
+            <div style="margin-bottom: 20px;">
+                <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Slime</span></div>
+                <div id="net-char-grid">
+                    <div class="card char-card" onclick="selectNetChar('ninja', this)"><img src="img/NINJA.png"><video src="img/NINJA.mp4" loop muted playsinline></video><b>Ninja</b></div>
+                        <div class="card char-card" onclick="selectNetChar('gunner', this)"><img src="img/GUNNER.png"><video src="img/GUNNER.mp4" loop muted playsinline></video><b>Gunner</b></div>
+                        <div class="card char-card selected" onclick="selectNetChar('slime', this)"><img src="img/SLIME.png"><video src="img/SLIME.mp4" loop muted playsinline></video><b>Slime</b></div>
+                        <div class="card char-card" onclick="selectNetChar('seth', this)"><img src="img/BRUTE.png"><video src="img/BRUTE.mp4" loop muted playsinline></video><b>Brute</b></div>
+                        <div class="card char-card" onclick="selectNetChar('mage', this)"><img src="img/MAGE.png"><video src="img/MAGE.mp4" loop muted playsinline></video><b>Mage</b></div>
+                        <div class="card char-card" onclick="selectNetChar('teemo', this)"><img src="img/PATHKILLER.png"><video src="img/PATHKILLER.mp4" loop muted playsinline></video><b>Scout</b></div>
+                </div>
+            </div>
+            <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
+            <button class="btn-main" id="host-btn" onclick="hostGame()">Créer (Héberger)</button>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startNetworkGameHost()">Lancer le combat !</button>
+            <p style="margin: 10px 0; color: #888;">OU</p>
+            <input type="text" id="join-id" placeholder="Coller l'ID de l'Hôte">
+            <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
+            <p id="status-text" style="color: #aaa; margin-top: 10px; font-weight: bold;"></p>
+            
+            <div>
+                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
+                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border:none; box-shadow:none;" onclick="location.reload()">Retour</button>
+            </div>
+        </div>
+
+        <!-- CONTROLS MODAL MIS A JOUR MOBA -->
+        <div class="overlay" id="controls-modal" style="display: none; z-index: 100;">
+            <div class="menu-title" style="color: var(--p1);">Guide de Combat MOBA</div>
+            <div class="controls-info" style="font-size: 1em; max-height: 350px; overflow-y: auto;">
+                <b style="color: var(--p1);">Déplacement :</b> Clic Droit sur le sol<br>
+                <b style="color: var(--p1);">Auto-Attaque :</b> Clic Gauche sur l'ennemi<br>
+                <b style="color: var(--p1);">Sorts Magiques :</b> Touches (A, Z, E, R) / (Q, W, E, R)<br>
+                <hr style="border-color: #333; margin: 10px 0;">
+                <b style="color: #00ffcc;">Furtivité :</b> Reste dans les flaques de Slime pour disparaître de la vision ennemie !<br>
+                <b style="color: #ff007f;">Objectif :</b> Détruis la tourelle ennemie pour remporter la victoire !<br>
+            </div>
+            <button class="btn-main" style="margin-top:20px; background: var(--p2); color: #fff; border-color: var(--p2);" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
+        </div>
+
         <div class="overlay" id="game-over-overlay" style="display: none;">
             <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
-            <button class="btn-main" id="btn-restart" onclick="location.reload()">Retour au menu de sélection</button>
+            <button class="btn-main" id="btn-restart" onclick="handleRestart()">Retour au menu de sélection</button>
         </div>
-    </div>
+    </div> <!-- FIN DU GAME CONTAINER -->
 
-    <!-- MODAL PARAMÈTRES (AVEC LE SELECTEUR AZERTY / QWERTY RETROUVÉ) -->
+    <!-- MODAL PARAMETRES (Hors du container pour toujours s'afficher au centre) -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
             
-            <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
                     <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
@@ -73,9 +147,9 @@
                 </div>
             </div>
 
-            <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 30px;">
-                <span>Disposition Clavier ⌨️</span>
-                <select id="keyboard-layout" style="font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em; padding: 8px; border-radius: 5px; background: #222; color: white; border: 1px solid var(--p1); text-align: center;">
+            <div class="setting-item" style="flex-direction: column; gap: 10px; margin-bottom: 30px;">
+                <span>Contrôles (AZERTY / QWERTY) ⌨️</span>
+                <select id="keyboard-layout" style="font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em; padding: 5px; border-radius: 5px; background: #222; color: white; border: 1px solid var(--p1);">
                     <option value="azerty">AZERTY (A, Z, E, R)</option>
                     <option value="qwerty">QWERTY (Q, W, E, R)</option>
                 </select>
@@ -85,6 +159,74 @@
         </div>
     </div>
 
+    <!-- SCRIPT IMMÉDIAT POUR L'URL -->
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const forceMode = params.get('mode');
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            if (forceMode === 'solo') {
+                document.getElementById('main-menu').style.display = 'none';
+                document.getElementById('local-menu').style.display = 'flex';
+                window.gameMode = 'local';
+            } else if (forceMode === 'multi') {
+                document.getElementById('btn-local-mode').style.display = 'none';
+                document.getElementById('menu-separator').style.display = 'none';
+            }
+        });
+    </script>
+
+    <!-- SCRIPT DES ANIMATIONS VIDÉO AU SURVOL -->
+    <script>
+        document.querySelectorAll('.char-card').forEach(card => {
+            let expandTimeout; 
+            card.addEventListener('mouseenter', () => {
+                const vid = card.querySelector('video');
+                const img = card.querySelector('img');
+                if(vid && img) {
+                    img.style.opacity = '0';
+                    vid.style.display = 'block';
+                    vid.play().catch(e => console.warn("Auto-play bloqué", e));
+                    expandTimeout = setTimeout(() => { card.classList.add('video-expanded'); }, 3000);
+                }
+            });
+            card.addEventListener('mouseleave', () => {
+                clearTimeout(expandTimeout);
+                card.classList.remove('video-expanded');
+                const vid = card.querySelector('video');
+                const img = card.querySelector('img');
+                if(vid && img) { vid.pause(); vid.currentTime = 0; vid.style.display = 'none'; img.style.opacity = '1'; }
+            });
+        });
+    </script>
+    
+    <!-- SCRIPT DE NAVIGATION PAR SWIPE -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+            "../worms/index.html"
+        ];
+        let touchstartX = 0; let touchendX = 0; let swipeMouseX = 0; let endSwipeMouseX = 0;
+        function handleSwipeGesture(start, end) {
+            const swipeThreshold = 75; 
+            if (end < start - swipeThreshold) navigateGames(1);
+            if (end > start + swipeThreshold) navigateGames(-1);
+        }
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
+            if (currentIndex === -1) return;
+            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
+        }
+        function isProtectedElement(e) { return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select'; }
+        document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
+        document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
+        document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; swipeMouseX = e.screenX; });
+        document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endSwipeMouseX = e.screenX; handleSwipeGesture(swipeMouseX, endSwipeMouseX); });
+    </script>
+    
     <script src="slimelegends.js"></script>
 </body>
 </html>
