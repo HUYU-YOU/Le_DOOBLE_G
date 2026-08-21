@@ -70,6 +70,7 @@ document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
 });
 
+
 // ==========================================
 // MOTEUR TETRISLIME ET DÉCOUPAGE SKINS PNG
 // ==========================================
@@ -82,13 +83,13 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// On charge UNIQUEMENT les images que tu as
+// On charge la nouvelle nomenclature de fichiers
 const skinNames = [
-    'BARRE', 'BARRE90', 
-    'CROIX', 'CROIX90', 'CROIX180', 'CROIX270', 
-    'CUBE', 
-    'L0', 'L90', 'L180', 'L270', 
-    'Z', 'Z90', 'Z180', 'Z270'
+    'BARRE_0', 'BARRE_90', 
+    'L_0', 'L_90', 'L_180', 'L_270', 
+    'Z_0', 'Z_90', 'Z_180', 'Z_270',
+    'CROIX_0', 'CROIX_90', 'CROIX_180', 'CROIX_270',
+    'CUBE'
 ];
 
 const skins = {};
@@ -97,13 +98,13 @@ skinNames.forEach(name => {
     skins[name].src = `assets/${name}.png`;
 });
 
-// LES 5 FORMES UNIQUES DU JEU (Matrices corrigées pour coller pile à tes dessins)
+// LES 5 FORMES UNIQUES DU JEU
 const SHAPES = [
     [], 
     [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // 1: BARRE 
     [[0,0,2], [2,2,2], [0,0,0]],                  // 2: L 
     [[3,3], [3,3]],                               // 3: CUBE 
-    [[0,4,4], [4,4,0], [0,0,0]],                  // 4: Z (Le vert, forme "S" visuelle)
+    [[0,4,4], [4,4,0], [0,0,0]],                  // 4: Z 
     [[0,5,0], [5,5,5], [0,0,0]]                   // 5: CROIX 
 ];
 
@@ -129,7 +130,7 @@ document.getElementById('best-score').innerText = bestScore;
 function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
 
 function randomPiece() {
-    const typeId = Math.floor(Math.random() * 5) + 1; // 5 PIÈCES MAXIMUM MAINTENANT
+    const typeId = Math.floor(Math.random() * 5) + 1; // 5 PIÈCES MAX
     return {
         matrix: SHAPES[typeId],
         pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0].length/2), y: 0 },
@@ -138,16 +139,29 @@ function randomPiece() {
     };
 }
 
+// NOUVEAU SYSTÈME DE NOMMAGE ROBUSTE
 function getImgName(type, rotIndex) {
-    const idx = rotIndex / 90;
-    const map = {
-        1: ['BARRE90', 'BARRE', 'BARRE90', 'BARRE'],
-        2: ['L0', 'L90', 'L180', 'L270'], 
-        3: ['CUBE', 'CUBE', 'CUBE', 'CUBE'],
-        4: ['Z', 'Z90', 'Z180', 'Z270'], 
-        5: ['CROIX', 'CROIX90', 'CROIX180', 'CROIX270']
+    const rot = rotIndex; // 0, 90, 180, 270
+    
+    const prefixes = {
+        1: 'BARRE', 
+        2: 'L',     
+        3: 'CUBE',  
+        4: 'Z',     
+        5: 'CROIX'  
     };
-    return map[type] ? map[type][idx] : null;
+
+    const prefix = prefixes[type];
+    
+    // Le cube n'a pas de rotation
+    if (prefix === 'CUBE') return 'CUBE';
+    
+    // La barre n'a besoin que de 0 et 90 visuellement
+    if (prefix === 'BARRE') {
+        return (rot === 0 || rot === 180) ? 'BARRE_0' : 'BARRE_90';
+    }
+    
+    return `${prefix}_${rot}`;
 }
 
 function getBoundingBox(matrix) {
