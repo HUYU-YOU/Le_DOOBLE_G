@@ -131,12 +131,21 @@ mapImg.src = 'assets/mapsol.png';
 const PLAYABLE_X_MIN = 120; const PLAYABLE_X_MAX = 3380;
 const PLAYABLE_Y_MIN = 260; const PLAYABLE_Y_MAX = 740; 
 
+// --- NOUVELLES ZONES DE FURTIVITÉ STRICTEMENT RECTANGULAIRES ---
 const PUDDLES = [
-    { x: 400, y: 260, r: 150 }, { x: 1000, y: 260, r: 150 }, { x: 2600, y: 260, r: 150 }, { x: 3100, y: 260, r: 150 },
-    { x: 350, y: 740, r: 150 }, { x: 1200, y: 740, r: 150 }, { x: 2300, y: 740, r: 150 }, { x: 3200, y: 740, r: 150 }
+    // Ligne du Haut (Cyan)
+    { xMin: 780, xMax: 1080, yMin: 220, yMax: 330 },
+    { xMin: 1150, xMax: 1800, yMin: 220, yMax: 330 },
+    { xMin: 2250, xMax: 2650, yMin: 220, yMax: 330 },
+    { xMin: 2850, xMax: 3150, yMin: 220, yMax: 330 },
+    
+    // Ligne du Bas (Magenta)
+    { xMin: 730, xMax: 1080, yMin: 670, yMax: 780 },
+    { xMin: 1200, xMax: 1800, yMin: 670, yMax: 780 },
+    { xMin: 2200, xMax: 2950, yMin: 670, yMax: 780 },
+    { xMin: 3100, xMax: 3380, yMin: 670, yMax: 780 }
 ];
 
-// --- CHARGEMENT DYNAMIQUE DE TOUS LES NOUVEAUX SKINS ---
 const skins = {};
 const skinFiles = [
     'adcnorth', 'adcouest', 'adcsud', 'adcsudest', 'adcsudouest',
@@ -173,7 +182,6 @@ if(layoutSelect) {
     });
 }
 
-// --- GESTION DU ZOOM ET SURVOL ---
 window.addEventListener('wheel', e => {
     if(!gameActive) return;
     let zoomAmount = 0.1;
@@ -382,16 +390,18 @@ class Player {
 
         this.clampPosition();
 
+        // --- NOUVELLE VÉRIFICATION DE FURTIVITÉ ---
         this.currentPuddle = -1;
         for (let i = 0; i < PUDDLES.length; i++) {
-            if (Math.hypot(this.x - PUDDLES[i].x, this.y - PUDDLES[i].y) < PUDDLES[i].r) {
+            let p = PUDDLES[i];
+            // Test de collision sur la zone Rectangulaire !
+            if (this.x >= p.xMin && this.x <= p.xMax && this.y >= p.yMin && this.y <= p.yMax) {
                 this.currentPuddle = i; 
                 break;
             }
         }
     }
 
-    // GESTION INTELLIGENTE DES SKINS
     getSkinFrame(octant) {
         let key = null; let flip = false;
         switch(this.charType) {
@@ -417,9 +427,9 @@ class Player {
                 break;
             case 'seth':
                 if(octant===0) { key = 'setouest'; flip = true; }
-                if(octant===1) { key = 'setsouthest'; flip = false; } // Utilise ton fichier "setsouthest"
+                if(octant===1) { key = 'setsouthest'; flip = false; } 
                 if(octant===2) { key = 'setsud'; flip = false; }
-                if(octant===3) { key = 'setsouthest'; flip = true; } // Flip pour le SW
+                if(octant===3) { key = 'setsouthest'; flip = true; } 
                 if(octant===4) { key = 'setouest'; flip = false; }
                 if(octant===5) { key = 'setnordouest'; flip = false; }
                 if(octant===6) { key = 'setnord'; flip = false; }
@@ -431,14 +441,14 @@ class Player {
                 if(octant===2) { key = 'adcsud'; flip = false; }
                 if(octant===3) { key = 'adcsudouest'; flip = false; }
                 if(octant===4) { key = 'adcouest'; flip = false; }
-                if(octant===5) { key = 'adcouest'; flip = false; } // Fallback
+                if(octant===5) { key = 'adcouest'; flip = false; } 
                 if(octant===6) { key = 'adcnorth'; flip = false; }
-                if(octant===7) { key = 'adcouest'; flip = true; } // Fallback
+                if(octant===7) { key = 'adcouest'; flip = true; } 
                 break;
             case 'mage':
                 if(octant===0) { key = 'mageouest'; flip = true; }
                 if(octant===1) { key = 'magesudouest'; flip = true; } 
-                if(octant===2) { key = 'mangesud'; flip = false; } // Utilise ton fichier "mangesud"
+                if(octant===2) { key = 'mangesud'; flip = false; } 
                 if(octant===3) { key = 'magesudouest'; flip = false; }
                 if(octant===4) { key = 'mageouest'; flip = false; }
                 if(octant===5) { key = 'magenordest'; flip = true; } 
@@ -485,13 +495,11 @@ class Player {
                 ctx.drawImage(img, -drawSize/2, -drawSize/2, drawSize, drawSize);
                 ctx.restore();
             } else {
-                // Fallback forme basique
                 ctx.rotate(this.angle);
                 ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color; ctx.fill();
             }
         } else {
-            // Le slime n'a pas de skins, on dessine une gelée ronde par défaut
             ctx.rotate(this.angle);
             ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
             ctx.fillStyle = this.color; ctx.fill();
@@ -501,7 +509,6 @@ class Player {
 
         ctx.restore();
 
-        // Indicateur Furtif
         if(isStealthyToSelf) {
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 15, 0, Math.PI * 2);
             ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
@@ -509,7 +516,6 @@ class Player {
             ctx.fillText("FURTIF", this.x, this.y + this.radius + 30);
         }
 
-        // Barre de Vie & Bouclier
         ctx.globalAlpha = alpha;
         ctx.fillStyle = '#222'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
         if(this.shield > 0) {
@@ -546,7 +552,6 @@ class Player {
             return;
         }
 
-        // --- SORTS PAR CLASSE ---
         let cooldown = 0;
 
         switch(this.charType) {
