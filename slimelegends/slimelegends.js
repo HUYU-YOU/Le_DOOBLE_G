@@ -36,10 +36,7 @@ function toggleSettings() {
 function setGameSize(size) {
     const container = document.getElementById('game-container');
     if (!container) return;
-    
-    const btns = document.querySelectorAll('.btn-size');
-    btns.forEach(b => b.classList.remove('active'));
-
+    document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active'));
     container.classList.remove('size-classic', 'size-wide', 'size-full');
     
     let btnClassic = document.getElementById('btn-sz-classic');
@@ -47,18 +44,13 @@ function setGameSize(size) {
     let btnFull = document.getElementById('btn-sz-full');
 
     if (size === 'classic') { 
-        container.classList.add('size-classic'); 
-        if(btnClassic) btnClassic.classList.add('active'); 
+        container.classList.add('size-classic'); if(btnClassic) btnClassic.classList.add('active'); 
         if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); 
-    } 
-    else if (size === 'wide') { 
-        container.classList.add('size-wide'); 
-        if(btnWide) btnWide.classList.add('active'); 
+    } else if (size === 'wide') { 
+        container.classList.add('size-wide'); if(btnWide) btnWide.classList.add('active'); 
         if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); 
-    } 
-    else if (size === 'full') { 
-        container.classList.add('size-full'); 
-        if(btnFull) btnFull.classList.add('active'); 
+    } else if (size === 'full') { 
+        container.classList.add('size-full'); if(btnFull) btnFull.classList.add('active'); 
         if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e)); 
     }
 }
@@ -72,28 +64,50 @@ document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && container && container.classList.contains('size-full')) setGameSize('wide'); 
 });
 
+// =========================================================
+// 2. GESTION DES MODES DE JEU ET MENUS
+// =========================================================
+
+let selectedGameRule = 'nexus'; // 'nexus' ou '3kills'
+let currentIsBot = true; 
+let locSelections = [];
+let killsBlue = 0;
+let killsRed = 0;
+
 function openMenu(type) {
-    let mainMenu = document.getElementById('main-menu');
-    if(mainMenu) mainMenu.style.display = 'none';
-    if (type === 'local') {
-        let localMenu = document.getElementById('local-menu');
-        if(localMenu) localMenu.style.display = 'flex';
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-mode-menu').style.display = 'none';
+    document.getElementById('local-menu').style.display = 'none';
+
+    if (type === 'mode-select') {
+        document.getElementById('game-mode-menu').style.display = 'flex';
+    } else if (type === 'local') {
+        document.getElementById('local-menu').style.display = 'flex';
     }
 }
 
-let currentIsBot = true; 
+function selectBattleRule(rule, element) {
+    selectedGameRule = rule;
+    document.querySelectorAll('.card-mode').forEach(c => c.classList.remove('selected'));
+    if(element) element.classList.add('selected');
+}
+
+function goToCharSelect() {
+    document.getElementById('game-mode-menu').style.display = 'none';
+    document.getElementById('local-menu').style.display = 'flex';
+    document.getElementById('instruction-title').innerText = "Sélectionne ton Champion";
+    locSelections = [];
+    document.getElementById('start-local-btn').style.display = 'none';
+    document.getElementById('char-select').style.display = 'grid';
+}
+
 function toggleBot() {
     currentIsBot = !currentIsBot;
     let btn = document.getElementById('bot-toggle-btn');
     if(btn) {
-        if(currentIsBot) { btn.innerHTML = "🤖 IA (Bot)"; btn.style.background = "#ff007f"; btn.style.borderColor = "#ff007f"; } 
-        else { btn.innerHTML = "👤 Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333"; }
+        if(currentIsBot) { btn.innerHTML = "🤖 Adversaire : IA (Bot)"; btn.style.background = "#ff007f"; btn.style.borderColor = "#ff007f"; } 
+        else { btn.innerHTML = "👤 Joueur 2 Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333"; }
     }
-}
-
-function chooseMap(idx, element) {
-    document.querySelectorAll('.map-card').forEach(c => c.classList.remove('selected'));
-    if(element) element.classList.add('selected');
 }
 
 function handleRestart() { location.reload(); }
@@ -113,11 +127,11 @@ function hostGame() {
     document.getElementById('host-btn').style.display = 'none';
     document.getElementById('start-net-btn').style.display = 'inline-block';
 }
-function joinGame() { alert("Le réseau arrive bientôt. Entraîne-toi en mode local !"); }
-function startNetworkGameHost() { alert("Le réseau arrive bientôt. Entraîne-toi en mode local !"); }
+function joinGame() { alert("Mode Réseau en maintenance. Teste le mode Solo / 1v1 !"); }
+function startNetworkGameHost() { alert("Mode Réseau en maintenance. Teste le mode Solo / 1v1 !"); }
 
 // =========================================================
-// 2. MOTEUR DE JEU MOBA ARAM
+// 3. MOTEUR DU MOBA (ARAM, NEXUS, TOURELLES, RESPAWN)
 // =========================================================
 
 const canvas = document.getElementById('gameCanvas'); 
@@ -160,8 +174,7 @@ let cameraX = 0; let cameraY = 0;
 let mouseX = 0; let mouseY = 0; let worldMouseX = 0; let worldMouseY = 0;
 
 let gameActive = false;
-let players = []; let turrets = []; let projectiles = []; let clickMarkers = [];
-let locSelections = [];
+let players = []; let turrets = []; let nexuses = []; let projectiles = []; let clickMarkers = [];
 
 let keyboardKeys = { s1: 'a', s2: 'z', ult: 'e' };
 let pendingSpell = null; 
@@ -178,6 +191,7 @@ if(layoutSelect) {
     });
 }
 
+// ZOOM MOLETTE
 window.addEventListener('wheel', e => {
     if(!gameActive) return;
     let zoomAmount = 0.1;
@@ -188,6 +202,7 @@ window.addEventListener('wheel', e => {
     worldMouseY = (mouseY / CAMERA_ZOOM) + cameraY;
 });
 
+// POSITION SOURIS & CIBLAGE (HOVER)
 window.addEventListener('mousemove', e => {
     mouseX = e.clientX; mouseY = e.clientY;
     worldMouseX = (mouseX / CAMERA_ZOOM) + cameraX;
@@ -195,7 +210,7 @@ window.addEventListener('mousemove', e => {
 
     hoveredEnemy = null;
     if (gameActive && players.length > 0 && !players[0].isDead && !pendingSpell) {
-        let enemies = [...players, ...turrets].filter(ent => ent.team !== players[0].team && !ent.isDead);
+        let enemies = [...players, ...turrets, ...nexuses].filter(ent => ent.team !== players[0].team && !ent.isDead);
         for (let ent of enemies) {
             if(ent.currentPuddle !== -1 && ent.revealTimer === 0 && ent.currentPuddle !== players[0].currentPuddle) continue;
             if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 40) {
@@ -206,10 +221,11 @@ window.addEventListener('mousemove', e => {
     }
 });
 
+// CLICS SOURIS
 canvas.addEventListener('mousedown', e => {
-    if(!gameActive || players[0].isDead) return;
+    if(!gameActive || (players[0] && players[0].isDead)) return;
 
-    if (e.button === 0) { 
+    if (e.button === 0) { // CLIC GAUCHE
         if (pendingSpell) {
             players[0].castSpell(pendingSpell, worldMouseX, worldMouseY);
             pendingSpell = null; updateSpellUI();
@@ -222,9 +238,8 @@ canvas.addEventListener('mousedown', e => {
         }
     }
 
-    if (e.button === 2) { 
+    if (e.button === 2) { // CLIC DROIT
         pendingSpell = null; updateSpellUI();
-        
         if (hoveredEnemy) {
             players[0].autoAttackTarget = hoveredEnemy;
             players[0].target = null; 
@@ -240,7 +255,7 @@ canvas.addEventListener('mousedown', e => {
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 
 window.addEventListener('keydown', e => {
-    if(!gameActive || players[0].isDead) return;
+    if(!gameActive || (players[0] && players[0].isDead)) return;
     let key = e.key.toLowerCase();
     
     let chosenSlot = null;
@@ -249,7 +264,6 @@ window.addEventListener('keydown', e => {
     if(key === keyboardKeys.ult) chosenSlot = 'ult';
 
     if (chosenSlot) {
-        // LE FAMEUX BUG CORRIGÉ ICI : on vérifie juste qu'il n'est pas stun (et plus de isSilenced inexistant)
         if (players[0].cds[chosenSlot] === 0 && players[0].stunTimer === 0) {
             pendingSpell = (pendingSpell === chosenSlot) ? null : chosenSlot; 
             updateSpellUI();
@@ -258,30 +272,76 @@ window.addEventListener('keydown', e => {
 });
 
 window.prepareSpell = function(slot) {
-    if(players[0].cds[slot] === 0 && players[0].stunTimer === 0) { // CORRIGÉ ICI AUSSI
+    if(players[0] && players[0].cds[slot] === 0 && players[0].stunTimer === 0 && !players[0].isDead) {
         pendingSpell = slot; updateSpellUI();
     }
 };
 
 const charData = {
-    seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6.5, radius: 25, range: 120 },
-    ninja: { name: "Ninja", color: '#00f0ff', hp: 1000, speed: 8, radius: 22, range: 120 },
-    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 350 },
-    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20, range: 450 },
-    mage: { name: "Mage", color: '#9d00ff', hp: 800, speed: 5.5, radius: 22, range: 450 },
-    gunner: { name: "ADC", color: '#ffbf00', hp: 850, speed: 6, radius: 22, range: 550 }
+    seth: { name: "Seth", color: '#ff007f', hp: 1600, speed: 6.5, radius: 25, range: 130 },
+    ninja: { name: "Ninja", color: '#00f0ff', hp: 1000, speed: 8.0, radius: 22, range: 130 },
+    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5.2, radius: 30, range: 350 },
+    teemo: { name: "Scout", color: '#39ff14', hp: 950, speed: 7.0, radius: 20, range: 450 },
+    mage: { name: "Mage", color: '#9d00ff', hp: 850, speed: 5.5, radius: 22, range: 450 },
+    gunner: { name: "ADC", color: '#ffbf00', hp: 900, speed: 6.0, radius: 22, range: 550 }
 };
 
-// =========================================================
-// 3. ENTITÉS DU JEU
-// =========================================================
+// --- NEXUS CLASSE ---
+class Nexus {
+    constructor(team, x, y, color) {
+        this.team = team; this.x = x; this.y = y;
+        this.radius = 70; this.maxHp = 4500; this.hp = this.maxHp;
+        this.color = color; this.isDead = false; this.pulse = 0;
+    }
+    update() { this.pulse += 0.05; }
+    draw() {
+        if (this.isDead) return;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        // Aura d'énergie
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius + Math.sin(this.pulse) * 8, 0, Math.PI*2);
+        ctx.fillStyle = this.team === 1 ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255, 0, 127, 0.2)';
+        ctx.fill();
 
+        // Cristal du Nexus
+        ctx.beginPath();
+        ctx.moveTo(0, -this.radius);
+        ctx.lineTo(this.radius * 0.7, 0);
+        ctx.lineTo(0, this.radius);
+        ctx.lineTo(-this.radius * 0.7, 0);
+        ctx.closePath();
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 25; ctx.shadowColor = this.color;
+        ctx.fill();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+
+        // Barre de Vie
+        ctx.fillStyle = '#222'; ctx.fillRect(this.x - 50, this.y - 95, 100, 10);
+        ctx.fillStyle = this.color; ctx.fillRect(this.x - 50, this.y - 95, 100 * (this.hp / this.maxHp), 10);
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(this.x - 50, this.y - 95, 100, 10);
+    }
+    takeDamage(amount) {
+        // En mode Nexus, le Nexus est protégé tant que la tourelle de son camp est vivante
+        if (selectedGameRule === 'nexus') {
+            let alliedTurret = turrets.find(t => t.team === this.team && !t.isDead);
+            if (alliedTurret) return; // Invulnérable !
+        }
+        if (this.isDead) return;
+        this.hp -= amount;
+        if (this.hp <= 0) { this.hp = 0; this.isDead = true; checkWin(); }
+    }
+}
+
+// --- TOURELLE CLASSE ---
 class Turret {
     constructor(id, team, x, y, color) {
         this.id = id; this.team = team; this.x = x; this.y = y;
-        this.radius = 50; this.maxHp = 3000; this.hp = this.maxHp;
-        this.color = color; this.isDead = false;
-        this.range = 450; this.attackTimer = 0;
+        this.radius = 45; this.maxHp = 2500; this.hp = this.maxHp;
+        this.color = color; this.isDead = false; this.range = 450; this.attackTimer = 0;
     }
     update() {
         if(this.isDead) return;
@@ -297,18 +357,19 @@ class Turret {
         });
         
         if(target && this.attackTimer === 0) {
-            projectiles.push(new Projectile(this.x, this.y, 0, 0, this, 100, 15, target, this.range / 12, this.color));
+            projectiles.push(new Projectile(this.x, this.y, 0, 0, this, 120, 14, target, this.range / 12, this.color));
             this.attackTimer = 60; 
         }
     }
     draw() {
         if(this.isDead) return;
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        ctx.fillStyle = '#333'; ctx.fill();
+        ctx.fillStyle = '#222'; ctx.fill();
         ctx.lineWidth = 4; ctx.strokeStyle = this.color; ctx.stroke();
         
-        ctx.fillStyle = '#222'; ctx.fillRect(this.x - 40, this.y - 70, 80, 8);
+        ctx.fillStyle = '#111'; ctx.fillRect(this.x - 40, this.y - 70, 80, 8);
         ctx.fillStyle = this.color; ctx.fillRect(this.x - 40, this.y - 70, 80 * (this.hp / this.maxHp), 8);
+        ctx.strokeStyle = '#000'; ctx.strokeRect(this.x - 40, this.y - 70, 80, 8);
     }
     takeDamage(amount) {
         if (this.isDead) return;
@@ -317,18 +378,23 @@ class Turret {
     }
 }
 
+// --- JOUEUR CLASSE ---
 class Player {
-    constructor(id, team, x, y, type) {
-        this.id = id; this.team = team; this.x = x; this.y = y; 
+    constructor(id, team, x, y, type, isAI = false) {
+        this.id = id; this.team = team; this.spawnX = x; this.spawnY = y;
+        this.x = x; this.y = y; 
         this.charType = type; this.color = charData[type].color;
         this.baseSpeed = charData[type].speed; this.radius = charData[type].radius;
         this.attackRange = charData[type].range;
         this.maxHp = charData[type].hp; this.hp = this.maxHp; this.shield = 0;
+        this.isAI = isAI;
         
         this.target = null; this.autoAttackTarget = null; this.angle = 0;
         this.cds = { basic: 0, s1: 0, s2: 0, ult: 0 };
         
-        this.stunTimer = 0; this.actionLock = 0; this.isDead = false;
+        this.stunTimer = 0; this.actionLock = 0; 
+        this.isDead = false; this.respawnTimer = 0;
+        
         this.currentPuddle = -1; this.revealTimer = 0;
         this.speedBuff = 0;
     }
@@ -341,7 +407,14 @@ class Player {
     }
 
     update() {
-        if (this.isDead) return;
+        // GESTION DU RESPAWN
+        if (this.isDead) {
+            this.respawnTimer--;
+            if (this.respawnTimer <= 0) {
+                this.respawn();
+            }
+            return;
+        }
 
         for(let key in this.cds) if(this.cds[key] > 0) this.cds[key]--;
         if(this.stunTimer > 0) this.stunTimer--;
@@ -349,6 +422,7 @@ class Player {
         if(this.revealTimer > 0) this.revealTimer--;
         if(this.speedBuff > 0) this.speedBuff--;
 
+        // LOGIQUE D'AUTO-ATTAQUE
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) {
                 this.autoAttackTarget = null;
@@ -356,7 +430,6 @@ class Player {
                 let dx = this.autoAttackTarget.x - this.x;
                 let dy = this.autoAttackTarget.y - this.y;
                 let dist = Math.hypot(dx, dy);
-
                 this.angle = Math.atan2(dy, dx); 
 
                 if (dist > this.attackRange) {
@@ -370,6 +443,7 @@ class Player {
             }
         }
 
+        // DÉPLACEMENT
         if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
             let dx = this.target.x - this.x; let dy = this.target.y - this.y;
             let dist = Math.hypot(dx, dy);
@@ -387,6 +461,7 @@ class Player {
 
         this.clampPosition();
 
+        // FURTIVITÉ
         this.currentPuddle = -1;
         for (let i = 0; i < PUDDLES.length; i++) {
             let p = PUDDLES[i];
@@ -538,7 +613,7 @@ class Player {
 
         if (slot === 'basic') {
             if(this.charType === 'ninja' || this.charType === 'seth') {
-                this.meleeAttack(40, this.attackRange);
+                this.meleeAttack(45, this.attackRange);
             } else {
                 let speed = 18; let lifeTime = this.attackRange / speed;
                 projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, 50, 10, null, lifeTime, this.color)); 
@@ -551,43 +626,43 @@ class Player {
 
         switch(this.charType) {
             case 'ninja':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 90, 15, null, 400/22, this.color)); cooldown=120; }
-                if(slot==='s2') { this.x += dx*250; this.y += dy*250; this.clampPosition(); this.meleeAttack(80, 150); cooldown=300; } 
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 95, 15, null, 400/22, this.color)); cooldown=120; }
+                if(slot==='s2') { this.x += dx*250; this.y += dy*250; this.clampPosition(); this.meleeAttack(85, 150); cooldown=300; } 
                 if(slot==='ult') { 
                     let t = this.getClosestEnemy(targetX, targetY);
-                    if(t) { this.x = t.x - dx*50; this.y = t.y - dy*50; this.clampPosition(); this.meleeAttack(250, 150); t.stunTimer = 60; }
+                    if(t) { this.x = t.x - dx*50; this.y = t.y - dy*50; this.clampPosition(); this.meleeAttack(260, 150); t.stunTimer = 60; }
                     cooldown=900; 
                 }
                 break;
                 
             case 'gunner':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*30, dy*30, this, 120, 12, null, 700/30, this.color)); cooldown=180; } 
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*30, dy*30, this, 130, 12, null, 700/30, this.color)); cooldown=180; } 
                 if(slot==='s2') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 150, 40, null, 300, '#ffbf00')); cooldown=400; } 
-                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*35, dy*35, this, 350, 50, null, 800/35, '#ff0000')); cooldown=1000; } 
+                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*35, dy*35, this, 360, 50, null, 800/35, '#ff0000')); cooldown=1000; } 
                 break;
 
             case 'slime':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*15, dy*15, this, 100, 25, null, 400/15, this.color)); cooldown=150; }
-                if(slot==='s2') { this.hp = Math.min(this.maxHp, this.hp + 200); this.shield += 150; clickMarkers.push({x: this.x, y: this.y, life: 30, color: '#00ffcc', isExplosion: true}); cooldown=500; } 
-                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*10, dy*10, this, 300, 100, null, 600/10, this.color)); cooldown=900; } 
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*15, dy*15, this, 110, 25, null, 400/15, this.color)); cooldown=150; }
+                if(slot==='s2') { this.hp = Math.min(this.maxHp, this.hp + 250); this.shield += 180; clickMarkers.push({x: this.x, y: this.y, life: 30, color: '#00ffcc', isExplosion: true}); cooldown=500; } 
+                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*10, dy*10, this, 320, 100, null, 600/10, this.color)); cooldown=900; } 
                 break;
 
             case 'seth':
-                if(slot==='s1') { this.meleeAttack(120, 200); clickMarkers.push({x: this.x, y: this.y, life: 20, color: this.color, isExplosion: true}); cooldown=200; } 
-                if(slot==='s2') { this.x += dx*200; this.y += dy*200; this.clampPosition(); this.meleeAttack(80, 120); cooldown=300; } 
-                if(slot==='ult') { this.x = targetX; this.y = targetY; this.clampPosition(); this.meleeAttack(300, 250); clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true}); cooldown=1000; } 
+                if(slot==='s1') { this.meleeAttack(130, 200); clickMarkers.push({x: this.x, y: this.y, life: 20, color: this.color, isExplosion: true}); cooldown=200; } 
+                if(slot==='s2') { this.x += dx*200; this.y += dy*200; this.clampPosition(); this.meleeAttack(90, 120); cooldown=300; } 
+                if(slot==='ult') { this.x = targetX; this.y = targetY; this.clampPosition(); this.meleeAttack(320, 250); clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true}); cooldown=1000; } 
                 break;
 
             case 'mage':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 130, 20, null, 500/18, '#ff5500')); cooldown=180; } 
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 140, 20, null, 500/18, '#ff5500')); cooldown=180; } 
                 if(slot==='s2') { this.x = targetX; this.y = targetY; this.clampPosition(); clickMarkers.push({x: this.x, y: this.y, life: 15, color: '#9d00ff', isExplosion: true}); cooldown=400; } 
                 if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*5, dy*5, this, 500, 60, null, 700/5, '#330066')); cooldown=1100; } 
                 break;
 
             case 'teemo':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 90, 10, null, 500/22, this.color)); cooldown=120; } 
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 95, 10, null, 500/22, this.color)); cooldown=120; } 
                 if(slot==='s2') { this.speedBuff = 180; cooldown=400; } 
-                if(slot==='ult') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 300, 35, null, 1000, this.color)); cooldown=800; } 
+                if(slot==='ult') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 320, 35, null, 1000, this.color)); cooldown=800; } 
                 break;
         }
 
@@ -596,7 +671,7 @@ class Player {
 
     getClosestEnemy(tx, ty) {
         let target = null; let minDist = Infinity;
-        let targets = [...players, ...turrets].filter(ent => ent.team !== this.team && !ent.isDead);
+        let targets = [...players, ...turrets, ...nexuses].filter(ent => ent.team !== this.team && !ent.isDead);
         targets.forEach(ent => { let d = Math.hypot(ent.x - tx, ent.y - ty); if(d < minDist) { minDist = d; target = ent; } });
         return target;
     }
@@ -605,7 +680,7 @@ class Player {
         let hitX = this.x + Math.cos(this.angle) * (range/2);
         let hitY = this.y + Math.sin(this.angle) * (range/2);
 
-        let targets = [...players, ...turrets].filter(ent => ent.team !== this.team && !ent.isDead);
+        let targets = [...players, ...turrets, ...nexuses].filter(ent => ent.team !== this.team && !ent.isDead);
         targets.forEach(ent => {
             if (Math.hypot(ent.x - hitX, ent.y - hitY) < ent.radius + (range/2)) {
                 ent.takeDamage(dmg); clickMarkers.push({x: ent.x, y: ent.y, life: 10, color: '#fff', isExplosion: true});
@@ -619,7 +694,30 @@ class Player {
         if(this.shield > 0) { this.shield -= amount; if(this.shield < 0) { amount = Math.abs(this.shield); this.shield = 0; } else return; }
         
         this.hp -= amount;
-        if (this.hp <= 0) { this.hp = 0; this.isDead = true; checkWin(); }
+        if (this.hp <= 0) { 
+            this.hp = 0; 
+            this.isDead = true; 
+            this.respawnTimer = 240; // 4 secondes de respawn
+            
+            // Score Kills
+            if (this.team === 1) killsRed++;
+            else killsBlue++;
+            updateScoreHUD();
+
+            checkWin(); 
+        }
+    }
+
+    respawn() {
+        this.isDead = false;
+        this.hp = this.maxHp;
+        this.shield = 0;
+        this.x = this.spawnX;
+        this.y = this.spawnY;
+        this.target = null;
+        this.autoAttackTarget = null;
+        this.stunTimer = 0;
+        clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true});
     }
 }
 
@@ -640,7 +738,7 @@ class Projectile {
         this.x += this.vx; this.y += this.vy; this.life--;
         if(this.life <= 0 || this.x < PLAYABLE_X_MIN || this.x > PLAYABLE_X_MAX || this.y < PLAYABLE_Y_MIN - 50 || this.y > PLAYABLE_Y_MAX + 50) this.active = false;
 
-        let targets = [...players, ...turrets].filter(ent => ent.team !== this.owner.team && !ent.isDead);
+        let targets = [...players, ...turrets, ...nexuses].filter(ent => ent.team !== this.owner.team && !ent.isDead);
         
         targets.forEach(ent => {
             if (this.active && Math.hypot(ent.x - this.x, ent.y - this.y) < ent.radius + this.radius) {
@@ -654,10 +752,23 @@ class Projectile {
     }
 }
 
+// --- INTELLIGENCE ARTIFICIELLE ULTRA DYNAMIQUE ---
 function updateBot(bot) {
     if (bot.isDead || bot.stunTimer > 0) return;
     let target = players[0]; 
-    if (target.isDead) return;
+    if (target.isDead) {
+        // Si le joueur est mort, le bot attaque la tourelle ou le nexus ennemi !
+        let objTarget = turrets.find(t => t.team === 1 && !t.isDead) || nexuses.find(n => n.team === 1 && !n.isDead);
+        if (objTarget) {
+            let dist = Math.hypot(objTarget.x - bot.x, objTarget.y - bot.y);
+            if (dist > bot.attackRange) { bot.setMovementTarget(objTarget.x, objTarget.y); }
+            else { 
+                bot.target = null; bot.angle = Math.atan2(objTarget.y - bot.y, objTarget.x - bot.x);
+                if (bot.cds.basic === 0) bot.castSpell('basic', objTarget.x, objTarget.y);
+            }
+        }
+        return;
+    }
 
     let p1Visible = true;
     if (target.currentPuddle !== -1 && target.revealTimer === 0 && target.currentPuddle !== bot.currentPuddle) {
@@ -666,49 +777,94 @@ function updateBot(bot) {
 
     if (p1Visible) {
         let dist = Math.hypot(target.x - bot.x, target.y - bot.y);
-        if (dist > bot.attackRange) { bot.setMovementTarget(target.x, target.y); } 
-        else { bot.target = null; bot.angle = Math.atan2(target.y - bot.y, target.x - bot.x); }
         
-        if (dist <= bot.attackRange && bot.cds.basic === 0 && Math.random() < 0.1) {
+        // Mouvement de combat
+        if (dist > bot.attackRange) { 
+            bot.setMovementTarget(target.x, target.y); 
+        } else { 
+            bot.target = null; 
+            bot.angle = Math.atan2(target.y - bot.y, target.x - bot.x); 
+        }
+        
+        // Auto-Attaque
+        if (dist <= bot.attackRange + 40 && bot.cds.basic === 0) {
             bot.castSpell('basic', target.x, target.y);
         }
 
-        if (dist < 400 && Math.random() < 0.02) {
-            let spells = ['s1', 's2', 'ult'];
-            let s = spells[Math.floor(Math.random()*spells.length)];
-            if(bot.cds[s] === 0) bot.castSpell(s, target.x, target.y);
+        // L'IA lance activement ses sorts (A, Z, Ultime E) !
+        if (dist < 550) {
+            if (bot.cds.s1 === 0 && Math.random() < 0.08) {
+                bot.castSpell('s1', target.x, target.y);
+            } else if (bot.cds.s2 === 0 && Math.random() < 0.05) {
+                bot.castSpell('s2', target.x, target.y);
+            } else if (bot.cds.ult === 0 && (target.hp < target.maxHp * 0.6 || Math.random() < 0.03)) {
+                bot.castSpell('ult', target.x, target.y);
+            }
         }
     } else {
         bot.target = null; 
     }
 }
 
+// --- INITIALISATION DU MATCH ---
 function chooseChar(type) {
     locSelections.push(type);
-    let title = document.getElementById('instruction-title');
-    if(title) title.innerText = "Adversaire (IA)";
-    if (locSelections.length === 2) {
-        let cs = document.getElementById('char-select');
-        let slb = document.getElementById('start-local-btn');
-        if(cs) cs.style.display = 'none';
-        if(slb) slb.style.display = 'block';
+    
+    if (currentIsBot) {
+        // En solo : Choisit aléatoirement le champion de l'IA
+        let pool = ['ninja', 'gunner', 'slime', 'seth', 'mage', 'teemo'];
+        let botChar = pool[Math.floor(Math.random() * pool.length)];
+        locSelections.push(botChar);
+        startLocalGame();
+    } else {
+        // En 1v1 local
+        document.getElementById('instruction-title').innerText = "Joueur 2 : Choisis ton Champion";
+        if (locSelections.length === 2) {
+            document.getElementById('char-select').style.display = 'none';
+            document.getElementById('start-local-btn').style.display = 'block';
+        }
+    }
+}
+
+function updateScoreHUD() {
+    let blueScoreEl = document.getElementById('score-team-blue');
+    let redScoreEl = document.getElementById('score-team-red');
+    let titleEl = document.getElementById('score-mode-title');
+    
+    if (selectedGameRule === '3kills') {
+        titleEl.innerText = "PREMIER À 3 KILLS";
+        blueScoreEl.innerText = `J1 : ${killsBlue} / 3`;
+        redScoreEl.innerText = `${currentIsBot ? 'IA' : 'J2'} : ${killsRed} / 3`;
+    } else {
+        titleEl.innerText = "DESTRUCTION DU NEXUS";
+        blueScoreEl.innerText = `J1 : ${killsBlue} Kills`;
+        redScoreEl.innerText = `${currentIsBot ? 'IA' : 'J2'} : ${killsRed} Kills`;
     }
 }
 
 function startLocalGame() {
-    let lm = document.getElementById('local-menu');
-    let hud = document.getElementById('hud');
-    if(lm) lm.style.display = 'none';
-    if(hud) hud.style.display = 'flex';
+    document.getElementById('local-menu').style.display = 'none';
+    document.getElementById('hud').style.display = 'flex';
     
+    killsBlue = 0; killsRed = 0;
+    updateScoreHUD();
+    
+    // Id, Team, X, Y, Type, isAI
     players = [
-        new Player(1, 1, PLAYABLE_X_MIN + 200, MAP_HEIGHT / 2, locSelections[0]),
-        new Player(2, 2, PLAYABLE_X_MAX - 200, MAP_HEIGHT / 2, locSelections[1])
+        new Player(1, 1, PLAYABLE_X_MIN + 300, MAP_HEIGHT / 2, locSelections[0], false),
+        new Player(2, 2, PLAYABLE_X_MAX - 300, MAP_HEIGHT / 2, locSelections[1], currentIsBot)
     ];
 
+    // Nexus Bleu (Gauche) et Nexus Rouge (Droite)
+    nexuses = [
+        new Nexus(1, PLAYABLE_X_MIN + 60, MAP_HEIGHT / 2, '#00f0ff'),
+        new Nexus(2, PLAYABLE_X_MAX - 60, MAP_HEIGHT / 2, '#ff007f')
+    ];
+
+    // Tourelle Bleue et Tourelle Rouge
     turrets = [
-        new Turret(3, 1, PLAYABLE_X_MIN + 100, MAP_HEIGHT / 2, '#00f0ff'),
-        new Turret(4, 2, PLAYABLE_X_MAX - 100, MAP_HEIGHT / 2, '#ff007f')
+        new Turret(3, 1, PLAYABLE_X_MIN + 450, MAP_HEIGHT / 2, '#00f0ff'),
+        new Turret(4, 2, PLAYABLE_X_MAX - 450, MAP_HEIGHT / 2, '#ff007f')
     ];
 
     cameraX = players[0].x - window.innerWidth / 2;
@@ -744,24 +900,44 @@ function updateSpellUI() {
 }
 
 function checkWin() {
-    let t1Dead = turrets[0].isDead;
-    let t2Dead = turrets[1].isDead;
+    let gameOver = false;
+    let winnerText = "";
+    let subText = "";
+    let winColor = "#fff";
+
+    // CONDITION DE VICTOIRE SELON LE MODE
+    if (selectedGameRule === '3kills') {
+        if (killsBlue >= 3) {
+            gameOver = true; winnerText = "VICTOIRE !"; subText = "Tu as obtenu 3 éliminations !"; winColor = "#39ff14";
+        } else if (killsRed >= 3) {
+            gameOver = true; winnerText = "DÉFAITE !"; subText = `${currentIsBot ? "L'IA" : "Le Joueur 2"} a atteint 3 éliminations.`; winColor = "#ff007f";
+        }
+    } else {
+        let nexus1Dead = nexuses[0].isDead;
+        let nexus2Dead = nexuses[1].isDead;
+        if (nexus2Dead) {
+            gameOver = true; winnerText = "VICTOIRE ÉPIQUE !"; subText = "Le Nexus adverse a été pulvérisé !"; winColor = "#39ff14";
+        } else if (nexus1Dead) {
+            gameOver = true; winnerText = "DÉFAITE !"; subText = "Ton Nexus a été détruit..."; winColor = "#ff007f";
+        }
+    }
     
-    if(t1Dead || t2Dead) {
+    if (gameOver) {
         gameActive = false;
         let overlay = document.getElementById('game-over-overlay');
         let wtext = document.getElementById('winner-text');
+        let stext = document.getElementById('winner-subtext');
         if(overlay) overlay.style.display = 'flex';
-        if(wtext) {
-            wtext.innerText = t2Dead ? `VICTOIRE !` : "DÉFAITE !";
-            wtext.style.color = t2Dead ? '#39ff14' : '#ff007f';
-        }
+        if(wtext) { wtext.innerText = winnerText; wtext.style.color = winColor; }
+        if(stext) stext.innerText = subText;
     }
 }
 
+// --- BOUCLE PRINCIPALE DU JEU ---
 function gameLoop() {
     if (!gameActive) return;
 
+    // Edge Panning Caméra
     const panSpeed = 20 / CAMERA_ZOOM; const edgeSize = 50;
     if (mouseX < edgeSize) cameraX -= panSpeed;
     if (mouseX > window.innerWidth - edgeSize) cameraX += panSpeed;
@@ -779,8 +955,13 @@ function gameLoop() {
     if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
 
+    // DESSIN DES NEXUS ET TOURELLES
+    nexuses.forEach(n => { n.update(); n.draw(); });
+    turrets.forEach(t => { t.update(); t.draw(); });
+
+    // DESSIN DU CIBLAGE
     if (hoveredEnemy && !hoveredEnemy.isDead && !pendingSpell) {
-        ctx.beginPath(); ctx.arc(hoveredEnemy.x, hoveredEnemy.y, hoveredEnemy.radius + 10, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(hoveredEnemy.x, hoveredEnemy.y, hoveredEnemy.radius + 12, 0, Math.PI * 2);
         ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; ctx.lineWidth = 3; ctx.stroke();
         ctx.beginPath(); ctx.arc(players[0].x, players[0].y, players[0].attackRange, 0, Math.PI * 2);
         ctx.strokeStyle = "rgba(255, 255, 255, 0.3)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
@@ -803,6 +984,15 @@ function gameLoop() {
         ctx.strokeStyle = "#ffbf00"; ctx.lineWidth = 3; ctx.stroke();
     }
 
+    // JOUEURS
+    players[0].update(); 
+    if (players[1]) {
+        if (players[1].isAI) updateBot(players[1]); 
+        players[1].update();
+    }
+    players.forEach(p => p.draw());
+
+    // PARTICULES & COUPS
     for (let i = clickMarkers.length - 1; i >= 0; i--) {
         let m = clickMarkers[i];
         if (m.isSlash) {
@@ -818,10 +1008,7 @@ function gameLoop() {
         m.life--; if (m.life <= 0) clickMarkers.splice(i, 1);
     }
 
-    turrets.forEach(t => { t.update(); t.draw(); });
-    players[0].update(); updateBot(players[1]); players[1].update();
-    players.forEach(p => p.draw());
-
+    // PROJECTILES
     for (let i = projectiles.length - 1; i >= 0; i--) {
         projectiles[i].update(); if (!projectiles[i].active) projectiles.splice(i, 1);
     }
