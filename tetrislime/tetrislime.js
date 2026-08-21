@@ -70,7 +70,6 @@ document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
 });
 
-
 // ==========================================
 // MOTEUR TETRISLIME ET DÉCOUPAGE SKINS PNG
 // ==========================================
@@ -83,12 +82,12 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// On charge la nouvelle nomenclature de fichiers
+// ON CHARGE EXACTEMENT LES NOMS DE TON DOSSIER ASSETS !
 const skinNames = [
-    'BARRE_0', 'BARRE_90', 
-    'L_0', 'L_90', 'L_180', 'L_270', 
-    'Z_0', 'Z_90', 'Z_180', 'Z_270',
-    'CROIX_0', 'CROIX_90', 'CROIX_180', 'CROIX_270',
+    'BARRE', 'BARRE90', 
+    'L0', 'L90', 'L180', 'L270', 
+    'Z', 'Z90', 'Z180', 'Z270',
+    'CROIX', 'CROIX90', 'CROIX180', 'CROIX270',
     'CUBE'
 ];
 
@@ -130,7 +129,7 @@ document.getElementById('best-score').innerText = bestScore;
 function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
 
 function randomPiece() {
-    const typeId = Math.floor(Math.random() * 5) + 1; // 5 PIÈCES MAX
+    const typeId = Math.floor(Math.random() * 5) + 1;
     return {
         matrix: SHAPES[typeId],
         pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0].length/2), y: 0 },
@@ -139,29 +138,14 @@ function randomPiece() {
     };
 }
 
-// NOUVEAU SYSTÈME DE NOMMAGE ROBUSTE
+// ADAPTÉ PARFAITEMENT A TES FICHIERS SANS UNDERSCORE
 function getImgName(type, rotIndex) {
-    const rot = rotIndex; // 0, 90, 180, 270
-    
-    const prefixes = {
-        1: 'BARRE', 
-        2: 'L',     
-        3: 'CUBE',  
-        4: 'Z',     
-        5: 'CROIX'  
-    };
-
-    const prefix = prefixes[type];
-    
-    // Le cube n'a pas de rotation
-    if (prefix === 'CUBE') return 'CUBE';
-    
-    // La barre n'a besoin que de 0 et 90 visuellement
-    if (prefix === 'BARRE') {
-        return (rot === 0 || rot === 180) ? 'BARRE_0' : 'BARRE_90';
-    }
-    
-    return `${prefix}_${rot}`;
+    if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE' : 'BARRE90';
+    if (type === 2) return 'L' + rotIndex;
+    if (type === 3) return 'CUBE';
+    if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
+    if (type === 5) return rotIndex === 0 ? 'CROIX' : 'CROIX' + rotIndex;
+    return null;
 }
 
 function getBoundingBox(matrix) {
@@ -374,7 +358,7 @@ function receiveGarbage(amount) {
     const hole = Math.floor(Math.random() * COLS);
     for (let i = 0; i < amount; i++) {
         board.shift();
-        let newRow = Array(COLS).fill(6); // Les déchets sont gris
+        let newRow = Array(COLS).fill(6); 
         newRow[hole] = 0; board.push(newRow);
     }
 }
