@@ -23,12 +23,12 @@
 
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
-        <!-- HUD MOBA (Vie, Score Kills/Nexus, 3 Sorts : A, Z, E) -->
+        <!-- HUD MOBA -->
         <div id="hud" style="display: none;">
             <div id="match-score-hud">
                 <span id="score-team-blue">J1 : 0</span>
                 <span id="score-mode-title" style="color:#aaa; font-size: 0.8em; margin: 0 15px;">NEXUS BRAWL</span>
-                <span id="score-team-red">IA : 0</span>
+                <span id="score-team-red">J2 : 0</span>
             </div>
             
             <div class="hud-center">
@@ -48,7 +48,7 @@
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
             <div class="menu-title">CHOOSE YOUR BATTLE</div>
-            <button class="btn-main" id="btn-local-mode" onclick="autoFullscreen(); openMenu('mode-select');">🎮 Mode Local (1v1 ou IA)</button>
+            <button class="btn-main" id="btn-local-mode" onclick="autoFullscreen(); openMenu('mode-select');">🎮 Mode Local (1v1)</button>
             
             <hr id="menu-separator" style="width: 60%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
             
@@ -79,16 +79,27 @@
 
         <!-- MENU LOCAL (SÉLECTION CHAMPION) -->
         <div class="overlay" id="local-menu" style="display: none;">
-            <div class="menu-title" id="instruction-title">Sélectionne ton Champion</div>
-            <button class="btn-main" id="bot-toggle-btn" onclick="toggleBot()" style="background:#ff007f; color:#fff; font-size:1em; padding:8px 20px; margin-bottom:15px; border:2px solid #ff007f; box-shadow: none;">🤖 Adversaire : IA (Bot)</button>
+            <div class="menu-title" id="instruction-title">Sélectionne ton Champion (J1)</div>
             
             <div id="char-select">
-                <div class="card char-card" onclick="chooseChar('ninja')"><b>Ninja</b></div>
-                <div class="card char-card" onclick="chooseChar('gunner')"><b>Gunner</b></div>
-                <div class="card char-card" onclick="chooseChar('slime')"><b>Slime</b></div>
-                <div class="card char-card" onclick="chooseChar('seth')"><b>Seth</b></div>
-                <div class="card char-card" onclick="chooseChar('mage')"><b>Mage</b></div>
-                <div class="card char-card" onclick="chooseChar('teemo')"><b>Scout</b></div>
+                <div class="card char-card" onclick="chooseChar('ninja')">
+                    <img src="assets/skins/ninjasud.png" alt="Ninja"><b>Ninja</b>
+                </div>
+                <div class="card char-card" onclick="chooseChar('gunner')">
+                    <img src="assets/skins/adcsud.png" alt="Gunner"><b>Gunner</b>
+                </div>
+                <div class="card char-card" onclick="chooseChar('slime')">
+                    <img src="img/SLIME.png" alt="Slime"><b>Slime</b>
+                </div>
+                <div class="card char-card" onclick="chooseChar('seth')">
+                    <img src="assets/skins/setsud.png" alt="Seth"><b>Seth</b>
+                </div>
+                <div class="card char-card" onclick="chooseChar('mage')">
+                    <img src="assets/skins/mangesud.png" alt="Mage"><b>Mage</b>
+                </div>
+                <div class="card char-card" onclick="chooseChar('teemo')">
+                    <img src="assets/skins/scoutsud.png" alt="Scout"><b>Scout</b>
+                </div>
             </div>
             
             <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">FIGHT !</button>
@@ -105,12 +116,12 @@
             <div style="margin-bottom: 20px;">
                 <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Slime</span></div>
                 <div id="net-char-grid">
-                    <div class="card char-card" onclick="selectNetChar('ninja', this)"><b>Ninja</b></div>
-                    <div class="card char-card" onclick="selectNetChar('gunner', this)"><b>Gunner</b></div>
-                    <div class="card char-card selected" onclick="selectNetChar('slime', this)"><b>Slime</b></div>
-                    <div class="card char-card" onclick="selectNetChar('seth', this)"><b>Seth</b></div>
-                    <div class="card char-card" onclick="selectNetChar('mage', this)"><b>Mage</b></div>
-                    <div class="card char-card" onclick="selectNetChar('teemo', this)"><b>Scout</b></div>
+                    <div class="card char-card" onclick="selectNetChar('ninja', this)"><img src="assets/skins/ninjasud.png" alt="Ninja"><b>Ninja</b></div>
+                    <div class="card char-card" onclick="selectNetChar('gunner', this)"><img src="assets/skins/adcsud.png" alt="Gunner"><b>Gunner</b></div>
+                    <div class="card char-card selected" onclick="selectNetChar('slime', this)"><img src="img/SLIME.png" alt="Slime"><b>Slime</b></div>
+                    <div class="card char-card" onclick="selectNetChar('seth', this)"><img src="assets/skins/setsud.png" alt="Seth"><b>Seth</b></div>
+                    <div class="card char-card" onclick="selectNetChar('mage', this)"><img src="assets/skins/mangesud.png" alt="Mage"><b>Mage</b></div>
+                    <div class="card char-card" onclick="selectNetChar('teemo', this)"><img src="assets/skins/scoutsud.png" alt="Scout"><b>Scout</b></div>
                 </div>
             </div>
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
@@ -175,17 +186,15 @@
         </div>
     </div>
 
-    <!-- SCRIPT URL HUB (GESTION SOLO PROPRE) -->
+    <!-- SCRIPT URL HUB -->
     <script>
         const params = new URLSearchParams(window.location.search);
         const forceMode = params.get('mode');
         
         window.addEventListener('DOMContentLoaded', () => {
             if (forceMode === 'solo') {
-                // Va directement au choix du mode solo vs IA sans sauter la sélection
                 document.getElementById('main-menu').style.display = 'none';
                 document.getElementById('game-mode-menu').style.display = 'flex';
-                window.currentIsBot = true;
             } else if (forceMode === 'multi') {
                 document.getElementById('btn-local-mode').style.display = 'none';
                 document.getElementById('menu-separator').style.display = 'none';
