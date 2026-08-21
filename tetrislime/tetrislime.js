@@ -82,12 +82,12 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// ON CHARGE EXACTEMENT LES NOMS DE TON DOSSIER ASSETS !
+// CHARGEMENT DES NOMS DE FICHIERS AVEC UNDERSCORES
 const skinNames = [
-    'BARRE', 'BARRE90', 
-    'L0', 'L90', 'L180', 'L270', 
-    'Z', 'Z90', 'Z180', 'Z270',
-    'CROIX', 'CROIX90', 'CROIX180', 'CROIX270',
+    'BARRE_0', 'BARRE_90', 
+    'L_0', 'L_90', 'L_180', 'L_270', 
+    'Z_0', 'Z_90', 'Z_180', 'Z_270',
+    'CROIX_0', 'CROIX_90', 'CROIX_180', 'CROIX_270',
     'CUBE'
 ];
 
@@ -101,7 +101,7 @@ skinNames.forEach(name => {
 const SHAPES = [
     [], 
     [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // 1: BARRE 
-    [[0,0,2], [2,2,2], [0,0,0]],                  // 2: L 
+    [[2,0,0], [2,2,2], [0,0,0]],                  // 2: L (Bosse à gauche)
     [[3,3], [3,3]],                               // 3: CUBE 
     [[0,4,4], [4,4,0], [0,0,0]],                  // 4: Z 
     [[0,5,0], [5,5,5], [0,0,0]]                   // 5: CROIX 
@@ -138,13 +138,35 @@ function randomPiece() {
     };
 }
 
-// ADAPTÉ PARFAITEMENT A TES FICHIERS SANS UNDERSCORE
+// SYSTÈME DE NOMMAGE FIXE (Traduction des rotations pour coller à tes fichiers)
 function getImgName(type, rotIndex) {
-    if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE' : 'BARRE90';
-    if (type === 2) return 'L' + rotIndex;
+    const rot = rotIndex; // 0, 90, 180, 270
+    
     if (type === 3) return 'CUBE';
-    if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
-    if (type === 5) return rotIndex === 0 ? 'CROIX' : 'CROIX' + rotIndex;
+    if (type === 1) return (rot === 0 || rot === 180) ? 'BARRE_0' : 'BARRE_90';
+    
+    // Correction de l'inversion mathématique pour coller au sens de tes dessins
+    if (type === 2) {
+        if (rot === 0) return 'L_0';
+        if (rot === 90) return 'L_270';  
+        if (rot === 180) return 'L_180';
+        if (rot === 270) return 'L_90';
+    }
+    
+    if (type === 4) {
+        if (rot === 0) return 'Z_0';
+        if (rot === 90) return 'Z_270';
+        if (rot === 180) return 'Z_180';
+        if (rot === 270) return 'Z_90';
+    }
+    
+    if (type === 5) {
+        if (rot === 0) return 'CROIX_0';
+        if (rot === 90) return 'CROIX_270';
+        if (rot === 180) return 'CROIX_180';
+        if (rot === 270) return 'CROIX_90';
+    }
+    
     return null;
 }
 
@@ -358,7 +380,7 @@ function receiveGarbage(amount) {
     const hole = Math.floor(Math.random() * COLS);
     for (let i = 0; i < amount; i++) {
         board.shift();
-        let newRow = Array(COLS).fill(6); 
+        let newRow = Array(COLS).fill(6); // Les déchets
         newRow[hole] = 0; board.push(newRow);
     }
 }
