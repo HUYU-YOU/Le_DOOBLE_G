@@ -479,8 +479,21 @@
             playSound('drop');
         }
 
+        // ÉCOUTEURS D'ÉVÉNEMENTS POUR DROP LE BLOC
         canvas.addEventListener('mousedown', dropBlock);
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); dropBlock(); }, {passive: false});
+        
+        // Ajout de l'événement clavier (Espace ou Entrée)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                // Empêche le comportement par défaut (comme scroller la page avec espace)
+                if(e.target === document.body) {
+                    e.preventDefault();
+                }
+                dropBlock();
+            }
+        });
+
 
         function checkCollision() {
             if (!activeBlock || activeBlock.state !== 'falling') return;
