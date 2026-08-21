@@ -36,7 +36,10 @@ function toggleSettings() {
 function setGameSize(size) {
     const container = document.getElementById('game-container');
     if (!container) return;
-    document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active'));
+    
+    const btns = document.querySelectorAll('.btn-size');
+    btns.forEach(b => b.classList.remove('active'));
+
     container.classList.remove('size-classic', 'size-wide', 'size-full');
     
     let btnClassic = document.getElementById('btn-sz-classic');
@@ -69,7 +72,6 @@ document.addEventListener('fullscreenchange', () => {
 // =========================================================
 
 let selectedGameRule = 'nexus'; // 'nexus' ou '3kills'
-let currentIsBot = true; 
 let locSelections = [];
 let killsBlue = 0;
 let killsRed = 0;
@@ -95,19 +97,10 @@ function selectBattleRule(rule, element) {
 function goToCharSelect() {
     document.getElementById('game-mode-menu').style.display = 'none';
     document.getElementById('local-menu').style.display = 'flex';
-    document.getElementById('instruction-title').innerText = "Sélectionne ton Champion";
+    document.getElementById('instruction-title').innerText = "Sélectionne ton Champion (J1)";
     locSelections = [];
     document.getElementById('start-local-btn').style.display = 'none';
     document.getElementById('char-select').style.display = 'grid';
-}
-
-function toggleBot() {
-    currentIsBot = !currentIsBot;
-    let btn = document.getElementById('bot-toggle-btn');
-    if(btn) {
-        if(currentIsBot) { btn.innerHTML = "🤖 Adversaire : IA (Bot)"; btn.style.background = "#ff007f"; btn.style.borderColor = "#ff007f"; } 
-        else { btn.innerHTML = "👤 Joueur 2 Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333"; }
-    }
 }
 
 function handleRestart() { location.reload(); }
@@ -127,8 +120,8 @@ function hostGame() {
     document.getElementById('host-btn').style.display = 'none';
     document.getElementById('start-net-btn').style.display = 'inline-block';
 }
-function joinGame() { alert("Mode Réseau en maintenance. Teste le mode Solo / 1v1 !"); }
-function startNetworkGameHost() { alert("Mode Réseau en maintenance. Teste le mode Solo / 1v1 !"); }
+function joinGame() { alert("Mode Réseau en maintenance. Teste le mode Local !"); }
+function startNetworkGameHost() { alert("Mode Réseau en maintenance. Teste le mode Local !"); }
 
 // =========================================================
 // 3. MOTEUR DU MOBA (ARAM, NEXUS, TOURELLES, RESPAWN)
@@ -299,13 +292,11 @@ class Nexus {
         ctx.save();
         ctx.translate(this.x, this.y);
         
-        // Aura d'énergie
         ctx.beginPath();
         ctx.arc(0, 0, this.radius + Math.sin(this.pulse) * 8, 0, Math.PI*2);
         ctx.fillStyle = this.team === 1 ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255, 0, 127, 0.2)';
         ctx.fill();
 
-        // Cristal du Nexus
         ctx.beginPath();
         ctx.moveTo(0, -this.radius);
         ctx.lineTo(this.radius * 0.7, 0);
@@ -319,16 +310,14 @@ class Nexus {
         ctx.shadowBlur = 0;
         ctx.restore();
 
-        // Barre de Vie
         ctx.fillStyle = '#222'; ctx.fillRect(this.x - 50, this.y - 95, 100, 10);
         ctx.fillStyle = this.color; ctx.fillRect(this.x - 50, this.y - 95, 100 * (this.hp / this.maxHp), 10);
         ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(this.x - 50, this.y - 95, 100, 10);
     }
     takeDamage(amount) {
-        // En mode Nexus, le Nexus est protégé tant que la tourelle de son camp est vivante
         if (selectedGameRule === 'nexus') {
             let alliedTurret = turrets.find(t => t.team === this.team && !t.isDead);
-            if (alliedTurret) return; // Invulnérable !
+            if (alliedTurret) return; 
         }
         if (this.isDead) return;
         this.hp -= amount;
@@ -380,14 +369,13 @@ class Turret {
 
 // --- JOUEUR CLASSE ---
 class Player {
-    constructor(id, team, x, y, type, isAI = false) {
+    constructor(id, team, x, y, type) {
         this.id = id; this.team = team; this.spawnX = x; this.spawnY = y;
         this.x = x; this.y = y; 
         this.charType = type; this.color = charData[type].color;
         this.baseSpeed = charData[type].speed; this.radius = charData[type].radius;
         this.attackRange = charData[type].range;
         this.maxHp = charData[type].hp; this.hp = this.maxHp; this.shield = 0;
-        this.isAI = isAI;
         
         this.target = null; this.autoAttackTarget = null; this.angle = 0;
         this.cds = { basic: 0, s1: 0, s2: 0, ult: 0 };
@@ -407,7 +395,6 @@ class Player {
     }
 
     update() {
-        // GESTION DU RESPAWN
         if (this.isDead) {
             this.respawnTimer--;
             if (this.respawnTimer <= 0) {
@@ -422,7 +409,6 @@ class Player {
         if(this.revealTimer > 0) this.revealTimer--;
         if(this.speedBuff > 0) this.speedBuff--;
 
-        // LOGIQUE D'AUTO-ATTAQUE
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) {
                 this.autoAttackTarget = null;
@@ -443,7 +429,6 @@ class Player {
             }
         }
 
-        // DÉPLACEMENT
         if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
             let dx = this.target.x - this.x; let dy = this.target.y - this.y;
             let dist = Math.hypot(dx, dy);
@@ -461,7 +446,6 @@ class Player {
 
         this.clampPosition();
 
-        // FURTIVITÉ
         this.currentPuddle = -1;
         for (let i = 0; i < PUDDLES.length; i++) {
             let p = PUDDLES[i];
@@ -697,26 +681,16 @@ class Player {
         if (this.hp <= 0) { 
             this.hp = 0; 
             this.isDead = true; 
-            this.respawnTimer = 240; // 4 secondes de respawn
-            
-            // Score Kills
-            if (this.team === 1) killsRed++;
-            else killsBlue++;
-            updateScoreHUD();
-
-            checkWin(); 
+            this.respawnTimer = 240; // 4s
+            if (this.team === 1) killsRed++; else killsBlue++;
+            updateScoreHUD(); checkWin(); 
         }
     }
 
     respawn() {
-        this.isDead = false;
-        this.hp = this.maxHp;
-        this.shield = 0;
-        this.x = this.spawnX;
-        this.y = this.spawnY;
-        this.target = null;
-        this.autoAttackTarget = null;
-        this.stunTimer = 0;
+        this.isDead = false; this.hp = this.maxHp; this.shield = 0;
+        this.x = this.spawnX; this.y = this.spawnY;
+        this.target = null; this.autoAttackTarget = null; this.stunTimer = 0;
         clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true});
     }
 }
@@ -752,77 +726,16 @@ class Projectile {
     }
 }
 
-// --- INTELLIGENCE ARTIFICIELLE ULTRA DYNAMIQUE ---
-function updateBot(bot) {
-    if (bot.isDead || bot.stunTimer > 0) return;
-    let target = players[0]; 
-    if (target.isDead) {
-        // Si le joueur est mort, le bot attaque la tourelle ou le nexus ennemi !
-        let objTarget = turrets.find(t => t.team === 1 && !t.isDead) || nexuses.find(n => n.team === 1 && !n.isDead);
-        if (objTarget) {
-            let dist = Math.hypot(objTarget.x - bot.x, objTarget.y - bot.y);
-            if (dist > bot.attackRange) { bot.setMovementTarget(objTarget.x, objTarget.y); }
-            else { 
-                bot.target = null; bot.angle = Math.atan2(objTarget.y - bot.y, objTarget.x - bot.x);
-                if (bot.cds.basic === 0) bot.castSpell('basic', objTarget.x, objTarget.y);
-            }
-        }
-        return;
-    }
-
-    let p1Visible = true;
-    if (target.currentPuddle !== -1 && target.revealTimer === 0 && target.currentPuddle !== bot.currentPuddle) {
-        p1Visible = false; 
-    }
-
-    if (p1Visible) {
-        let dist = Math.hypot(target.x - bot.x, target.y - bot.y);
-        
-        // Mouvement de combat
-        if (dist > bot.attackRange) { 
-            bot.setMovementTarget(target.x, target.y); 
-        } else { 
-            bot.target = null; 
-            bot.angle = Math.atan2(target.y - bot.y, target.x - bot.x); 
-        }
-        
-        // Auto-Attaque
-        if (dist <= bot.attackRange + 40 && bot.cds.basic === 0) {
-            bot.castSpell('basic', target.x, target.y);
-        }
-
-        // L'IA lance activement ses sorts (A, Z, Ultime E) !
-        if (dist < 550) {
-            if (bot.cds.s1 === 0 && Math.random() < 0.08) {
-                bot.castSpell('s1', target.x, target.y);
-            } else if (bot.cds.s2 === 0 && Math.random() < 0.05) {
-                bot.castSpell('s2', target.x, target.y);
-            } else if (bot.cds.ult === 0 && (target.hp < target.maxHp * 0.6 || Math.random() < 0.03)) {
-                bot.castSpell('ult', target.x, target.y);
-            }
-        }
-    } else {
-        bot.target = null; 
-    }
-}
-
-// --- INITIALISATION DU MATCH ---
 function chooseChar(type) {
     locSelections.push(type);
+    let title = document.getElementById('instruction-title');
+    if(title) title.innerText = "Joueur 2 : Choisis ton Champion";
     
-    if (currentIsBot) {
-        // En solo : Choisit aléatoirement le champion de l'IA
-        let pool = ['ninja', 'gunner', 'slime', 'seth', 'mage', 'teemo'];
-        let botChar = pool[Math.floor(Math.random() * pool.length)];
-        locSelections.push(botChar);
-        startLocalGame();
-    } else {
-        // En 1v1 local
-        document.getElementById('instruction-title').innerText = "Joueur 2 : Choisis ton Champion";
-        if (locSelections.length === 2) {
-            document.getElementById('char-select').style.display = 'none';
-            document.getElementById('start-local-btn').style.display = 'block';
-        }
+    if (locSelections.length === 2) {
+        let cs = document.getElementById('char-select');
+        let slb = document.getElementById('start-local-btn');
+        if(cs) cs.style.display = 'none';
+        if(slb) slb.style.display = 'block';
     }
 }
 
@@ -834,34 +747,32 @@ function updateScoreHUD() {
     if (selectedGameRule === '3kills') {
         titleEl.innerText = "PREMIER À 3 KILLS";
         blueScoreEl.innerText = `J1 : ${killsBlue} / 3`;
-        redScoreEl.innerText = `${currentIsBot ? 'IA' : 'J2'} : ${killsRed} / 3`;
+        redScoreEl.innerText = `J2 : ${killsRed} / 3`;
     } else {
         titleEl.innerText = "DESTRUCTION DU NEXUS";
         blueScoreEl.innerText = `J1 : ${killsBlue} Kills`;
-        redScoreEl.innerText = `${currentIsBot ? 'IA' : 'J2'} : ${killsRed} Kills`;
+        redScoreEl.innerText = `J2 : ${killsRed} Kills`;
     }
 }
 
 function startLocalGame() {
-    document.getElementById('local-menu').style.display = 'none';
-    document.getElementById('hud').style.display = 'flex';
+    let lm = document.getElementById('local-menu');
+    let hud = document.getElementById('hud');
+    if(lm) lm.style.display = 'none';
+    if(hud) hud.style.display = 'flex';
     
-    killsBlue = 0; killsRed = 0;
-    updateScoreHUD();
+    killsBlue = 0; killsRed = 0; updateScoreHUD();
     
-    // Id, Team, X, Y, Type, isAI
     players = [
-        new Player(1, 1, PLAYABLE_X_MIN + 300, MAP_HEIGHT / 2, locSelections[0], false),
-        new Player(2, 2, PLAYABLE_X_MAX - 300, MAP_HEIGHT / 2, locSelections[1], currentIsBot)
+        new Player(1, 1, PLAYABLE_X_MIN + 300, MAP_HEIGHT / 2, locSelections[0]),
+        new Player(2, 2, PLAYABLE_X_MAX - 300, MAP_HEIGHT / 2, locSelections[1])
     ];
 
-    // Nexus Bleu (Gauche) et Nexus Rouge (Droite)
     nexuses = [
         new Nexus(1, PLAYABLE_X_MIN + 60, MAP_HEIGHT / 2, '#00f0ff'),
         new Nexus(2, PLAYABLE_X_MAX - 60, MAP_HEIGHT / 2, '#ff007f')
     ];
 
-    // Tourelle Bleue et Tourelle Rouge
     turrets = [
         new Turret(3, 1, PLAYABLE_X_MIN + 450, MAP_HEIGHT / 2, '#00f0ff'),
         new Turret(4, 2, PLAYABLE_X_MAX - 450, MAP_HEIGHT / 2, '#ff007f')
@@ -901,25 +812,15 @@ function updateSpellUI() {
 
 function checkWin() {
     let gameOver = false;
-    let winnerText = "";
-    let subText = "";
-    let winColor = "#fff";
+    let winnerText = ""; let subText = ""; let winColor = "#fff";
 
-    // CONDITION DE VICTOIRE SELON LE MODE
     if (selectedGameRule === '3kills') {
-        if (killsBlue >= 3) {
-            gameOver = true; winnerText = "VICTOIRE !"; subText = "Tu as obtenu 3 éliminations !"; winColor = "#39ff14";
-        } else if (killsRed >= 3) {
-            gameOver = true; winnerText = "DÉFAITE !"; subText = `${currentIsBot ? "L'IA" : "Le Joueur 2"} a atteint 3 éliminations.`; winColor = "#ff007f";
-        }
+        if (killsBlue >= 3) { gameOver = true; winnerText = "VICTOIRE !"; subText = "Tu as obtenu 3 éliminations !"; winColor = "#39ff14"; } 
+        else if (killsRed >= 3) { gameOver = true; winnerText = "DÉFAITE !"; subText = "Le Joueur 2 a atteint 3 éliminations."; winColor = "#ff007f"; }
     } else {
-        let nexus1Dead = nexuses[0].isDead;
-        let nexus2Dead = nexuses[1].isDead;
-        if (nexus2Dead) {
-            gameOver = true; winnerText = "VICTOIRE ÉPIQUE !"; subText = "Le Nexus adverse a été pulvérisé !"; winColor = "#39ff14";
-        } else if (nexus1Dead) {
-            gameOver = true; winnerText = "DÉFAITE !"; subText = "Ton Nexus a été détruit..."; winColor = "#ff007f";
-        }
+        let nexus1Dead = nexuses[0].isDead; let nexus2Dead = nexuses[1].isDead;
+        if (nexus2Dead) { gameOver = true; winnerText = "VICTOIRE ÉPIQUE !"; subText = "Le Nexus adverse a été pulvérisé !"; winColor = "#39ff14"; } 
+        else if (nexus1Dead) { gameOver = true; winnerText = "DÉFAITE !"; subText = "Ton Nexus a été détruit..."; winColor = "#ff007f"; }
     }
     
     if (gameOver) {
@@ -933,11 +834,9 @@ function checkWin() {
     }
 }
 
-// --- BOUCLE PRINCIPALE DU JEU ---
 function gameLoop() {
     if (!gameActive) return;
 
-    // Edge Panning Caméra
     const panSpeed = 20 / CAMERA_ZOOM; const edgeSize = 50;
     if (mouseX < edgeSize) cameraX -= panSpeed;
     if (mouseX > window.innerWidth - edgeSize) cameraX += panSpeed;
@@ -955,11 +854,9 @@ function gameLoop() {
     if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
 
-    // DESSIN DES NEXUS ET TOURELLES
     nexuses.forEach(n => { n.update(); n.draw(); });
     turrets.forEach(t => { t.update(); t.draw(); });
 
-    // DESSIN DU CIBLAGE
     if (hoveredEnemy && !hoveredEnemy.isDead && !pendingSpell) {
         ctx.beginPath(); ctx.arc(hoveredEnemy.x, hoveredEnemy.y, hoveredEnemy.radius + 12, 0, Math.PI * 2);
         ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; ctx.lineWidth = 3; ctx.stroke();
@@ -984,15 +881,14 @@ function gameLoop() {
         ctx.strokeStyle = "#ffbf00"; ctx.lineWidth = 3; ctx.stroke();
     }
 
-    // JOUEURS
     players[0].update(); 
     if (players[1]) {
-        if (players[1].isAI) updateBot(players[1]); 
+        // En mode local, c'est du 1v1 sans bot. Si c'est le bot qu'on avait avant, j'ai enlevé la fonction updateBot pour obliger le joueur 2 à jouer
+        // Mais puisqu'on a pas de controles clavier joueur 2 pour l'instant, il restera immobile pour tes tests de tir
         players[1].update();
     }
     players.forEach(p => p.draw());
 
-    // PARTICULES & COUPS
     for (let i = clickMarkers.length - 1; i >= 0; i--) {
         let m = clickMarkers[i];
         if (m.isSlash) {
@@ -1008,7 +904,6 @@ function gameLoop() {
         m.life--; if (m.life <= 0) clickMarkers.splice(i, 1);
     }
 
-    // PROJECTILES
     for (let i = projectiles.length - 1; i >= 0; i--) {
         projectiles[i].update(); if (!projectiles[i].active) projectiles.splice(i, 1);
     }
