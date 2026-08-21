@@ -3,97 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Smash - ARAM Edition</title>
+    <title>TetriSlime - Solo & Versus</title>
+    
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
-    <!-- CONTENEUR PRINCIPAL -->
-    <div id="game-container" class="size-wide">
-        
-        <!-- BOUTONS FLOTTANTS (Avec ton animation EXACTE) -->
-        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-        
-        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
-            <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
-        </div>
 
-        <canvas id="gameCanvas" width="800" height="500"></canvas>
-        
-        <!-- HUD MOBA IN-GAME -->
-        <div id="hud" style="display: none;">
-            <div class="hud-center">
-                <div class="hp-bar-container">
-                    <div class="hp-bar" id="p1-hp-bar"></div>
-                    <div class="shield-bar" id="p1-shield-bar"></div>
-                    <div class="hp-text" id="p1-hp-txt">1000/1000</div>
-                </div>
-                <div class="cd-container">
-                    <div class="cd-box" id="spell-s1"><span class="key-hint" id="key-s1">A</span></div>
-                    <div class="cd-box" id="spell-s2"><span class="key-hint" id="key-s2">Z</span></div>
-                    <div class="cd-box" id="spell-s3"><span class="key-hint" id="key-s3">E</span></div>
-                    <div class="cd-box ult-box" id="spell-ult"><span class="key-hint" id="key-ult">R</span></div>
-                </div>
-            </div>
-        </div>
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
 
-        <!-- MENU LOCAL -->
-        <div class="overlay" id="local-menu">
-            <h1 class="game-title">Cyber Smash</h1>
-            <div class="menu-title" id="instruction-title">Sélection Joueur 1</div>
-            <div id="char-select">
-                <div class="card char-card" onclick="chooseChar('ninja')"><b>Ninja</b></div>
-                <div class="card char-card" onclick="chooseChar('gunner')"><b>Gunner</b></div>
-                <div class="card char-card" onclick="chooseChar('slime')"><b>Slime</b></div>
-                <div class="card char-card" onclick="chooseChar('seth')"><b>Seth</b></div>
-                <div class="card char-card" onclick="chooseChar('mage')"><b>Mage</b></div>
-                <div class="card char-card" onclick="chooseChar('teemo')"><b>Scout</b></div>
-            </div>
-            <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">LANCER LA PARTIE</button>
-        </div>
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
 
-        <!-- ECRAN DE FIN -->
-        <div class="overlay" id="game-over-overlay" style="display: none;">
-            <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
-            <button class="btn-main" id="btn-restart" onclick="location.reload()">Retour au menu de sélection</button>
-        </div>
-    </div> <!-- FIN DU GAME CONTAINER -->
-
-    <!-- MODAL PARAMETRES -->
-    <div id="settings-modal" class="overlay" style="display: none; z-index: 99999;">
+    <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
             
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <span>Thème (Fond d'écran) 🌗</span>
+                <button id="btn-theme-toggle" class="btn-main" style="width:auto; font-size:1.2rem; padding:10px 20px;" onclick="toggleTheme()">Mode Jour ☀️</button>
+            </div>
+
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
                     <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
-                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Grand</button>
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
                 </div>
             </div>
-
-            <div class="setting-item" style="flex-direction: column; gap: 10px; margin-bottom: 30px;">
-                <span>Contrôles (AZERTY / QWERTY) ⌨️</span>
-                <select id="keyboard-layout" style="font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em; padding: 5px; border-radius: 5px; background: #222; color: white; border: 1px solid var(--p1);">
-                    <option value="azerty">AZERTY (A, Z, E, R)</option>
-                    <option value="qwerty">QWERTY (Q, W, E, R)</option>
-                </select>
-                <div style="font-size: 0.9em; color: #aaa; margin-top: 10px; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px;">
-                    <b style="color: var(--p1);">Déplacement :</b> Clic Droit<br>
-                    <b style="color: #ff007f;">Auto-Attaque :</b> Clic Gauche sur l'ennemi<br>
-                    <b style="color: var(--p2);">Sorts :</b> A, Z, E, R (Tire vers la souris)<br>
-                    <b style="color: #00ffcc;">Furtivité :</b> Marche dans les flaques !
-                </div>
-            </div>
-            
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <!-- SCRIPT PRINCIPAL -->
-    <script src="slimelegends.js"></script>
+    <div id="game-container" class="size-wide">
+        
+        <div class="overlay" id="main-menu">
+            <h1 class="game-title">TETRISLIME</h1>
+            <button class="btn-main" onclick="startSolo()">Jouer en Solo</button>
+            <button class="btn-main" onclick="openMultiMenu()">Multijoueur</button>
+        </div>
+
+        <div class="overlay" id="network-menu" style="display: none;">
+            <h2 style="color: var(--p1); font-size: 3em; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 0 15px var(--p1);">Versus</h2>
+            
+            <input type="text" id="pseudo" placeholder="Ton Pseudo" required>
+            
+            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid var(--perfect);">
+                <p style="margin: 0; font-size: 1.2em;">Code de ton salon :</p>
+                <span id="my-id" style="color:var(--perfect); font-weight:bold; font-size:2em; cursor: pointer;" title="Copier le code">Génération...</span>
+                <br>
+                <button class="btn-main" id="host-btn" onclick="hostGame()" style="font-size: 1rem; padding: 10px 20px;">Héberger</button>
+                <button class="btn-main" id="start-net-btn" style="display:none; background:var(--perfect); color:#000;" onclick="startMultiGame()">Lancer le duel !</button>
+            </div>
+            
+            <p style="margin: 10px 0; color: #888; font-weight: bold;">--- OU ---</p>
+            
+            <input type="text" id="join-id" placeholder="Code du salon (ex: TET1234)" style="text-transform: uppercase;">
+            <button class="btn-main red" id="join-btn" onclick="joinGame()">Rejoindre</button>
+            
+            <p id="status-text" style="color: var(--p4); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
+        </div>
+
+        <div id="game-ui" style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; gap: 20px; flex-direction: row; padding: 20px; box-sizing: border-box;">
+            
+            <div class="side-panel left-panel">
+                <div class="panel-box">
+                    <div class="panel-title">Score</div>
+                    <div class="panel-val" id="score">0</div>
+                    <div style="font-size:0.8em; color:var(--gold); margin-top:5px;">Best: <span id="best-score">0</span></div>
+                </div>
+                <div class="panel-box">
+                    <div class="panel-title">Lignes</div>
+                    <div class="panel-val" id="lines">0</div>
+                </div>
+                <div class="panel-box">
+                    <div class="panel-title">Réserve (Shift)</div>
+                    <canvas id="hold-canvas" width="120" height="120"></canvas>
+                </div>
+            </div>
+
+            <div class="board-wrapper">
+                <canvas id="tetris-canvas" width="300" height="600"></canvas>
+            </div>
+
+            <div class="side-panel right-panel">
+                <div class="panel-box">
+                    <div class="panel-title">Suivant</div>
+                    <canvas id="next-canvas" width="120" height="120"></canvas>
+                </div>
+                
+                <div class="panel-box" id="opponent-box" style="display: none; border-color: var(--p2);">
+                    <div class="panel-title" style="color:var(--p2)" id="opponent-name">Adversaire</div>
+                    <canvas id="opponent-canvas" width="150" height="300" style="background: rgba(0,0,0,0.8); border-radius: 5px;"></canvas>
+                </div>
+            </div>
+
+            <div id="mobile-controls">
+                <button class="m-btn" ontouchstart="moveLeft(event)">⬅</button>
+                <button class="m-btn" ontouchstart="rotate(event)">↻</button>
+                <button class="m-btn" ontouchstart="drop(event)">⬇</button>
+                <button class="m-btn" ontouchstart="moveRight(event)">➡</button>
+            </div>
+        </div>
+
+        <div class="overlay" id="game-over" style="display: none;">
+            <h2 id="end-title" style="font-size: 4em; color: var(--p2); text-shadow: 0 0 20px var(--p2);">GAME OVER</h2>
+            <p style="font-size: 1.8em;">Score : <span id="final-score" style="color:var(--gold)">0</span></p>
+            <button class="btn-main" onclick="location.reload()">Retour au Menu</button>
+        </div>
+
+    </div>
+
+    <script src="tetrislime.js"></script>
 </body>
 </html>
