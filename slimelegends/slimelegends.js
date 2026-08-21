@@ -72,11 +72,7 @@ document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && container && container.classList.contains('size-full')) setGameSize('wide'); 
 });
 
-
-// =========================================================
-// 2. NAVIGATION DES MENUS ET RÉSEAU
-// =========================================================
-
+// --- NAVIGATION MENUS ---
 function openMenu(type) {
     let mainMenu = document.getElementById('main-menu');
     if(mainMenu) mainMenu.style.display = 'none';
@@ -101,11 +97,8 @@ function chooseMap(idx, element) {
     if(element) element.classList.add('selected');
 }
 
-function handleRestart() {
-    location.reload();
-}
+function handleRestart() { location.reload(); }
 
-// Menus Réseaux
 function prepareNetwork(mode) {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('network-menu').style.display = 'flex';
@@ -124,9 +117,8 @@ function hostGame() {
 function joinGame() { alert("Le réseau arrive bientôt. Entraîne-toi en mode local !"); }
 function startNetworkGameHost() { alert("Le réseau arrive bientôt. Entraîne-toi en mode local !"); }
 
-
 // =========================================================
-// 3. MOTEUR DE JEU MOBA ARAM (Skins + Auto-Attack + Zoom)
+// 3. MOTEUR DE JEU MOBA ARAM
 // =========================================================
 
 const canvas = document.getElementById('gameCanvas'); 
@@ -137,19 +129,16 @@ const MAP_HEIGHT = 1000;
 const mapImg = new Image();
 mapImg.src = 'assets/mapsol.png';
 
-// Limites du pont
 const PLAYABLE_X_MIN = 120;
 const PLAYABLE_X_MAX = 3380;
 const PLAYABLE_Y_MIN = 260; 
 const PLAYABLE_Y_MAX = 740; 
 
-// Flaques de Slime
 const PUDDLES = [
     { x: 400, y: 260, r: 150 }, { x: 1000, y: 260, r: 150 }, { x: 2600, y: 260, r: 150 }, { x: 3100, y: 260, r: 150 },
     { x: 350, y: 740, r: 150 }, { x: 1200, y: 740, r: 150 }, { x: 2300, y: 740, r: 150 }, { x: 3200, y: 740, r: 150 }
 ];
 
-// Chargement des Skins
 const skins = { teemo: {}, ninja: {} };
 ['nord', 'nordouest', 'ouest', 'sud', 'sudouest'].forEach(dir => {
     skins.teemo[dir] = new Image(); skins.teemo[dir].src = `assets/skins/scout${dir}.png`;
@@ -168,6 +157,7 @@ let locSelections = [];
 
 let keyboardKeys = { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
 let pendingSpell = null; 
+let hoveredEnemy = null; // Ennemi survolé par la souris
 
 let layoutSelect = document.getElementById('keyboard-layout');
 if(layoutSelect) {
@@ -181,7 +171,7 @@ if(layoutSelect) {
     });
 }
 
-// Gestion Zoom et Souris
+// --- GESTION DU ZOOM ET SURVOL ---
 window.addEventListener('wheel', e => {
     if(!gameActive) return;
     let zoomAmount = 0.1;
@@ -196,39 +186,53 @@ window.addEventListener('mousemove', e => {
     mouseX = e.clientX; mouseY = e.clientY;
     worldMouseX = (mouseX / CAMERA_ZOOM) + cameraX;
     worldMouseY = (mouseY / CAMERA_ZOOM) + cameraY;
+
+    // Détection de survol (Hover) : Qui est sous ma souris ?
+    hoveredEnemy = null;
+    if (gameActive && players.length > 0 && !players[0].isDead) {
+        let enemies = [...players, ...turrets].filter(ent => ent.team !== players[0].team && !ent.isDead);
+        for (let ent of enemies) {
+            if(ent.currentPuddle !== -1 && ent.revealTimer === 0 && ent.currentPuddle !== players[0].currentPuddle) continue;
+            // Hitbox très généreuse pour pouvoir cliquer facilement (+40 pixels)
+            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 40) {
+                hoveredEnemy = ent;
+                break;
+            }
+        }
+    }
 });
 
-// Clics en jeu
+// --- CLICS MOBA PARFAITS ---
 canvas.addEventListener('mousedown', e => {
     if(!gameActive || players[0].isDead) return;
 
-    if (e.button === 0) { // CLIC GAUCHE
-        if (pendingSpell) { // Valider un sort
+    // CLIC GAUCHE
+    if (e.button === 0) { 
+        if (pendingSpell) {
             players[0].castSpell(pendingSpell, worldMouseX, worldMouseY);
             pendingSpell = null; updateSpellUI();
-        } else { // Lock un ennemi
-            let clickedEnemy = null;
-            let enemies = [...players, ...turrets].filter(ent => ent.team !== players[0].team && !ent.isDead);
-            
-            enemies.forEach(ent => {
-                if(ent.currentPuddle !== -1 && ent.revealTimer === 0 && ent.currentPuddle !== players[0].currentPuddle) return;
-                if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 30) clickedEnemy = ent;
-            });
-
-            if(clickedEnemy) {
-                players[0].autoAttackTarget = clickedEnemy;
-                players[0].target = null;
-                clickMarkers.push({x: clickedEnemy.x, y: clickedEnemy.y, life: 20, color: '#ff007f'});
-            }
+            return;
         }
-        return; 
+        if (hoveredEnemy) {
+            players[0].autoAttackTarget = hoveredEnemy;
+            players[0].target = null; // Stoppe le mouvement forcé, l'IA d'attaque prend le relais
+            clickMarkers.push({x: hoveredEnemy.x, y: hoveredEnemy.y, life: 20, color: '#ff007f'});
+        }
     }
 
-    if (e.button === 2) { // CLIC DROIT : Déplacement classique
+    // CLIC DROIT
+    if (e.button === 2) { 
         pendingSpell = null; updateSpellUI();
-        players[0].autoAttackTarget = null;
-        players[0].setMovementTarget(worldMouseX, worldMouseY);
-        clickMarkers.push({x: worldMouseX, y: worldMouseY, life: 20, color: '#00f0ff'});
+        
+        if (hoveredEnemy) {
+            players[0].autoAttackTarget = hoveredEnemy;
+            players[0].target = null; // On privilégie l'attaque !
+            clickMarkers.push({x: hoveredEnemy.x, y: hoveredEnemy.y, life: 20, color: '#ff007f'});
+        } else {
+            players[0].autoAttackTarget = null;
+            players[0].setMovementTarget(worldMouseX, worldMouseY);
+            clickMarkers.push({x: worldMouseX, y: worldMouseY, life: 20, color: '#00f0ff'});
+        }
     }
 });
 
@@ -262,14 +266,11 @@ const charData = {
     seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6.5, radius: 25, range: 100 },
     teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20, range: 350 },
     gunner: { name: "ADC", color: '#ffbf00', hp: 850, speed: 6, radius: 22, range: 400 },
-    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 100 },
+    // LE SLIME EST MAINTENANT RANGED (Range: 350)
+    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 350 },
     mage: { name: "Mage", color: '#9d00ff', hp: 800, speed: 5.5, radius: 22, range: 350 },
     ninja: { name: "Ninja", color: '#00f0ff', hp: 1000, speed: 8, radius: 22, range: 100 }
 };
-
-// =========================================================
-// 4. ENTITÉS DU JEU
-// =========================================================
 
 class Turret {
     constructor(id, team, x, y, color) {
@@ -337,6 +338,7 @@ class Player {
         if(this.actionLock > 0) this.actionLock--;
         if(this.revealTimer > 0) this.revealTimer--;
 
+        // --- PRIORITÉ À L'ATTAQUE (LE PERSO S'ARRÊTE S'IL EST À PORTÉE) ---
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) {
                 this.autoAttackTarget = null;
@@ -345,11 +347,13 @@ class Player {
                 let dy = this.autoAttackTarget.y - this.y;
                 let dist = Math.hypot(dx, dy);
 
-                this.angle = Math.atan2(dy, dx);
+                this.angle = Math.atan2(dy, dx); // Regarde toujours sa cible
 
                 if (dist > this.attackRange) {
+                    // Trop loin = Il avance
                     this.target = { x: this.autoAttackTarget.x, y: this.autoAttackTarget.y };
                 } else {
+                    // À PORTÉE = S'ARRÊTE IMMÉDIATEMENT ET TIRE
                     this.target = null; 
                     if (this.cds.basic === 0) {
                         this.castSpell('basic', this.autoAttackTarget.x, this.autoAttackTarget.y);
@@ -358,6 +362,7 @@ class Player {
             }
         }
 
+        // --- DÉPLACEMENT ---
         if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
             let dx = this.target.x - this.x; let dy = this.target.y - this.y;
             let dist = Math.hypot(dx, dy);
@@ -385,13 +390,16 @@ class Player {
     draw() {
         if (this.isDead) return;
 
-        let alpha = 1.0; let isStealthyToSelf = false;
+        let alpha = 1.0;
+        let isStealthyToSelf = false;
 
         if (this.currentPuddle !== -1 && this.revealTimer === 0) {
-            if (this.id === 1) { alpha = 0.5; isStealthyToSelf = true; } 
-            else {
+            if (this.id === 1) {
+                alpha = 0.5; isStealthyToSelf = true; 
+            } else {
                 let p1Puddle = players[0].currentPuddle;
-                if (p1Puddle === this.currentPuddle) alpha = 0.5; else alpha = 0.0; 
+                if (p1Puddle === this.currentPuddle) alpha = 0.5; 
+                else alpha = 0.0; 
             }
         }
 
@@ -469,11 +477,13 @@ class Player {
         dx /= dist; dy /= dist; 
 
         if (slot === 'basic') {
-            if(this.charType === 'ninja' || this.charType === 'seth' || this.charType === 'slime') {
+            // Le Slime tire maintenant des projectiles de Slime
+            if(this.charType === 'ninja' || this.charType === 'seth') {
                 this.meleeAttack(40, this.attackRange);
                 this.cds.basic = 20;
             } else {
-                projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 50)); 
+                let projDmg = this.charType === 'slime' ? 40 : 50;
+                projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, projDmg)); 
                 this.cds.basic = 25;
             }
         } else {
@@ -654,6 +664,23 @@ function gameLoop() {
 
     if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
+
+    // --- CIBLAGE VISUEL ---
+    // Ennemi survolé par la souris (Cercle Rouge)
+    if (hoveredEnemy && !hoveredEnemy.isDead) {
+        ctx.beginPath();
+        ctx.arc(hoveredEnemy.x, hoveredEnemy.y, hoveredEnemy.radius + 10, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; ctx.lineWidth = 3; ctx.stroke();
+    }
+    
+    // Ennemi verrouillé pour attaque auto (Cercle Rose pointillé)
+    let p1 = players[0];
+    if (p1 && p1.autoAttackTarget && !p1.autoAttackTarget.isDead) {
+        let t = p1.autoAttackTarget;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, t.radius + 15, 0, Math.PI * 2);
+        ctx.strokeStyle = "#ff007f"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    }
 
     if (pendingSpell && !players[0].isDead) {
         ctx.beginPath();
