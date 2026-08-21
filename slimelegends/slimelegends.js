@@ -131,15 +131,11 @@ mapImg.src = 'assets/mapsol.png';
 const PLAYABLE_X_MIN = 120; const PLAYABLE_X_MAX = 3380;
 const PLAYABLE_Y_MIN = 260; const PLAYABLE_Y_MAX = 740; 
 
-// --- NOUVELLES ZONES DE FURTIVITÉ STRICTEMENT RECTANGULAIRES ---
 const PUDDLES = [
-    // Ligne du Haut (Cyan)
     { xMin: 780, xMax: 1080, yMin: 220, yMax: 330 },
     { xMin: 1150, xMax: 1800, yMin: 220, yMax: 330 },
     { xMin: 2250, xMax: 2650, yMin: 220, yMax: 330 },
     { xMin: 2850, xMax: 3150, yMin: 220, yMax: 330 },
-    
-    // Ligne du Bas (Magenta)
     { xMin: 730, xMax: 1080, yMin: 670, yMax: 780 },
     { xMin: 1200, xMax: 1800, yMin: 670, yMax: 780 },
     { xMin: 2200, xMax: 2950, yMin: 670, yMax: 780 },
@@ -253,7 +249,8 @@ window.addEventListener('keydown', e => {
     if(key === keyboardKeys.ult) chosenSlot = 'ult';
 
     if (chosenSlot) {
-        if (players[0].cds[chosenSlot] === 0 && players[0].isSilenced === 0) {
+        // LE FAMEUX BUG CORRIGÉ ICI : on vérifie juste qu'il n'est pas stun (et plus de isSilenced inexistant)
+        if (players[0].cds[chosenSlot] === 0 && players[0].stunTimer === 0) {
             pendingSpell = (pendingSpell === chosenSlot) ? null : chosenSlot; 
             updateSpellUI();
         }
@@ -261,7 +258,7 @@ window.addEventListener('keydown', e => {
 });
 
 window.prepareSpell = function(slot) {
-    if(players[0].cds[slot] === 0 && players[0].isSilenced === 0) {
+    if(players[0].cds[slot] === 0 && players[0].stunTimer === 0) { // CORRIGÉ ICI AUSSI
         pendingSpell = slot; updateSpellUI();
     }
 };
@@ -390,11 +387,9 @@ class Player {
 
         this.clampPosition();
 
-        // --- NOUVELLE VÉRIFICATION DE FURTIVITÉ ---
         this.currentPuddle = -1;
         for (let i = 0; i < PUDDLES.length; i++) {
             let p = PUDDLES[i];
-            // Test de collision sur la zone Rectangulaire !
             if (this.x >= p.xMin && this.x <= p.xMax && this.y >= p.yMin && this.y <= p.yMax) {
                 this.currentPuddle = i; 
                 break;
