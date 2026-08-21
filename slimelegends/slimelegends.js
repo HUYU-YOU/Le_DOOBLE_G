@@ -72,7 +72,6 @@ document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && container && container.classList.contains('size-full')) setGameSize('wide'); 
 });
 
-// --- NAVIGATION MENUS ---
 function openMenu(type) {
     let mainMenu = document.getElementById('main-menu');
     if(mainMenu) mainMenu.style.display = 'none';
@@ -118,7 +117,7 @@ function joinGame() { alert("Le réseau arrive bientôt. Entraîne-toi en mode l
 function startNetworkGameHost() { alert("Le réseau arrive bientôt. Entraîne-toi en mode local !"); }
 
 // =========================================================
-// 3. MOTEUR DE JEU MOBA ARAM
+// 2. MOTEUR DE JEU MOBA ARAM
 // =========================================================
 
 const canvas = document.getElementById('gameCanvas'); 
@@ -129,22 +128,26 @@ const MAP_HEIGHT = 1000;
 const mapImg = new Image();
 mapImg.src = 'assets/mapsol.png';
 
-const PLAYABLE_X_MIN = 120;
-const PLAYABLE_X_MAX = 3380;
-const PLAYABLE_Y_MIN = 260; 
-const PLAYABLE_Y_MAX = 740; 
+const PLAYABLE_X_MIN = 120; const PLAYABLE_X_MAX = 3380;
+const PLAYABLE_Y_MIN = 260; const PLAYABLE_Y_MAX = 740; 
 
 const PUDDLES = [
     { x: 400, y: 260, r: 150 }, { x: 1000, y: 260, r: 150 }, { x: 2600, y: 260, r: 150 }, { x: 3100, y: 260, r: 150 },
     { x: 350, y: 740, r: 150 }, { x: 1200, y: 740, r: 150 }, { x: 2300, y: 740, r: 150 }, { x: 3200, y: 740, r: 150 }
 ];
 
-const skins = { teemo: {}, ninja: {} };
-['nord', 'nordouest', 'ouest', 'sud', 'sudouest'].forEach(dir => {
-    skins.teemo[dir] = new Image(); skins.teemo[dir].src = `assets/skins/scout${dir}.png`;
-});
-['north', 'northouest', 'ouest', 'sud', 'sudouest'].forEach(dir => {
-    skins.ninja[dir] = new Image(); skins.ninja[dir].src = `assets/skins/ninja${dir}.png`;
+// --- CHARGEMENT DYNAMIQUE DE TOUS LES NOUVEAUX SKINS ---
+const skins = {};
+const skinFiles = [
+    'adcnorth', 'adcouest', 'adcsud', 'adcsudest', 'adcsudouest',
+    'magenord', 'magenordest', 'mageouest', 'magesudouest', 'mangesud',
+    'ninjanorth', 'ninjanorthouest', 'ninjaouest', 'ninjasud', 'ninjasudouest',
+    'scoutnord', 'scoutnordouest', 'scoutouest', 'scoutsud', 'scoutsudouest',
+    'setnord', 'setnordouest', 'setouest', 'setsouthest', 'setsud'
+];
+skinFiles.forEach(file => {
+    skins[file] = new Image();
+    skins[file].src = `assets/skins/${file}.png`;
 });
 
 let CAMERA_ZOOM = 1.0; 
@@ -155,7 +158,7 @@ let gameActive = false;
 let players = []; let turrets = []; let projectiles = []; let clickMarkers = [];
 let locSelections = [];
 
-let keyboardKeys = { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
+let keyboardKeys = { s1: 'a', s2: 'z', ult: 'e' };
 let pendingSpell = null; 
 let hoveredEnemy = null; 
 
@@ -163,10 +166,9 @@ let layoutSelect = document.getElementById('keyboard-layout');
 if(layoutSelect) {
     layoutSelect.addEventListener('change', (e) => {
         let isQwerty = e.target.value === 'qwerty';
-        keyboardKeys = isQwerty ? { s1: 'q', s2: 'w', s3: 'e', ult: 'r' } : { s1: 'a', s2: 'z', s3: 'e', ult: 'r' };
+        keyboardKeys = isQwerty ? { s1: 'q', s2: 'w', ult: 'e' } : { s1: 'a', s2: 'z', ult: 'e' };
         document.getElementById('key-s1').innerText = keyboardKeys.s1.toUpperCase();
         document.getElementById('key-s2').innerText = keyboardKeys.s2.toUpperCase();
-        document.getElementById('key-s3').innerText = keyboardKeys.s3.toUpperCase();
         document.getElementById('key-ult').innerText = keyboardKeys.ult.toUpperCase();
     });
 }
@@ -188,7 +190,7 @@ window.addEventListener('mousemove', e => {
     worldMouseY = (mouseY / CAMERA_ZOOM) + cameraY;
 
     hoveredEnemy = null;
-    if (gameActive && players.length > 0 && !players[0].isDead) {
+    if (gameActive && players.length > 0 && !players[0].isDead && !pendingSpell) {
         let enemies = [...players, ...turrets].filter(ent => ent.team !== players[0].team && !ent.isDead);
         for (let ent of enemies) {
             if(ent.currentPuddle !== -1 && ent.revealTimer === 0 && ent.currentPuddle !== players[0].currentPuddle) continue;
@@ -200,7 +202,6 @@ window.addEventListener('mousemove', e => {
     }
 });
 
-// --- CLICS MOBA PARFAITS ---
 canvas.addEventListener('mousedown', e => {
     if(!gameActive || players[0].isDead) return;
 
@@ -241,7 +242,6 @@ window.addEventListener('keydown', e => {
     let chosenSlot = null;
     if(key === keyboardKeys.s1) chosenSlot = 's1';
     if(key === keyboardKeys.s2) chosenSlot = 's2';
-    if(key === keyboardKeys.s3) chosenSlot = 's3';
     if(key === keyboardKeys.ult) chosenSlot = 'ult';
 
     if (chosenSlot) {
@@ -258,18 +258,17 @@ window.prepareSpell = function(slot) {
     }
 };
 
-// --- DATA AVEC LES VRAIES PORTÉES (RANGES) ---
 const charData = {
-    seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6.5, radius: 25, range: 120 }, // Mêlée
-    ninja: { name: "Ninja", color: '#00f0ff', hp: 1000, speed: 8, radius: 22, range: 120 }, // Mêlée
-    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 350 }, // Mi-distance
-    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20, range: 450 },  // Distance
-    mage: { name: "Mage", color: '#9d00ff', hp: 800, speed: 5.5, radius: 22, range: 450 },  // Distance
-    gunner: { name: "ADC", color: '#ffbf00', hp: 850, speed: 6, radius: 22, range: 550 }    // Sniper
+    seth: { name: "Seth", color: '#ff007f', hp: 1500, speed: 6.5, radius: 25, range: 120 },
+    ninja: { name: "Ninja", color: '#00f0ff', hp: 1000, speed: 8, radius: 22, range: 120 },
+    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5, radius: 30, range: 350 },
+    teemo: { name: "Scout", color: '#39ff14', hp: 900, speed: 7, radius: 20, range: 450 },
+    mage: { name: "Mage", color: '#9d00ff', hp: 800, speed: 5.5, radius: 22, range: 450 },
+    gunner: { name: "ADC", color: '#ffbf00', hp: 850, speed: 6, radius: 22, range: 550 }
 };
 
 // =========================================================
-// 4. ENTITÉS DU JEU
+// 3. ENTITÉS DU JEU
 // =========================================================
 
 class Turret {
@@ -293,8 +292,7 @@ class Turret {
         });
         
         if(target && this.attackTimer === 0) {
-            // Vitesse 12. Durée de vie = portée / vitesse
-            projectiles.push(new Projectile(this.x, this.y, 0, 0, this, 100, 15, target, this.range / 12));
+            projectiles.push(new Projectile(this.x, this.y, 0, 0, this, 100, 15, target, this.range / 12, this.color));
             this.attackTimer = 60; 
         }
     }
@@ -323,13 +321,19 @@ class Player {
         this.maxHp = charData[type].hp; this.hp = this.maxHp; this.shield = 0;
         
         this.target = null; this.autoAttackTarget = null; this.angle = 0;
-        this.cds = { s1: 0, s2: 0, s3: 0, ult: 0, basic: 0 };
+        this.cds = { basic: 0, s1: 0, s2: 0, ult: 0 };
         
         this.stunTimer = 0; this.actionLock = 0; this.isDead = false;
         this.currentPuddle = -1; this.revealTimer = 0;
+        this.speedBuff = 0;
     }
 
     setMovementTarget(tx, ty) { this.target = { x: tx, y: ty }; }
+
+    clampPosition() {
+        this.x = Math.max(PLAYABLE_X_MIN + this.radius, Math.min(PLAYABLE_X_MAX - this.radius, this.x));
+        this.y = Math.max(PLAYABLE_Y_MIN + this.radius, Math.min(PLAYABLE_Y_MAX - this.radius, this.y));
+    }
 
     update() {
         if (this.isDead) return;
@@ -338,6 +342,7 @@ class Player {
         if(this.stunTimer > 0) this.stunTimer--;
         if(this.actionLock > 0) this.actionLock--;
         if(this.revealTimer > 0) this.revealTimer--;
+        if(this.speedBuff > 0) this.speedBuff--;
 
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) {
@@ -364,16 +369,18 @@ class Player {
             let dx = this.target.x - this.x; let dy = this.target.y - this.y;
             let dist = Math.hypot(dx, dy);
             this.angle = Math.atan2(dy, dx);
-            if (dist > this.baseSpeed) {
-                this.x += (dx / dist) * this.baseSpeed;
-                this.y += (dy / dist) * this.baseSpeed;
+            
+            let currentSpeed = this.speedBuff > 0 ? this.baseSpeed * 1.5 : this.baseSpeed;
+
+            if (dist > currentSpeed) {
+                this.x += (dx / dist) * currentSpeed;
+                this.y += (dy / dist) * currentSpeed;
             } else {
                 this.x = this.target.x; this.y = this.target.y; this.target = null;
             }
         }
 
-        this.x = Math.max(PLAYABLE_X_MIN + this.radius, Math.min(PLAYABLE_X_MAX - this.radius, this.x));
-        this.y = Math.max(PLAYABLE_Y_MIN + this.radius, Math.min(PLAYABLE_Y_MAX - this.radius, this.y));
+        this.clampPosition();
 
         this.currentPuddle = -1;
         for (let i = 0; i < PUDDLES.length; i++) {
@@ -382,6 +389,64 @@ class Player {
                 break;
             }
         }
+    }
+
+    // GESTION INTELLIGENTE DES SKINS
+    getSkinFrame(octant) {
+        let key = null; let flip = false;
+        switch(this.charType) {
+            case 'ninja':
+                if(octant===0) { key = 'ninjaouest'; flip = true; }
+                if(octant===1) { key = 'ninjasudouest'; flip = true; }
+                if(octant===2) { key = 'ninjasud'; flip = false; }
+                if(octant===3) { key = 'ninjasudouest'; flip = false; }
+                if(octant===4) { key = 'ninjaouest'; flip = false; }
+                if(octant===5) { key = 'ninjanorthouest'; flip = false; }
+                if(octant===6) { key = 'ninjanorth'; flip = false; }
+                if(octant===7) { key = 'ninjanorthouest'; flip = true; }
+                break;
+            case 'teemo':
+                if(octant===0) { key = 'scoutouest'; flip = true; }
+                if(octant===1) { key = 'scoutsudouest'; flip = true; }
+                if(octant===2) { key = 'scoutsud'; flip = false; }
+                if(octant===3) { key = 'scoutsudouest'; flip = false; }
+                if(octant===4) { key = 'scoutouest'; flip = false; }
+                if(octant===5) { key = 'scoutnordouest'; flip = false; }
+                if(octant===6) { key = 'scoutnord'; flip = false; }
+                if(octant===7) { key = 'scoutnordouest'; flip = true; }
+                break;
+            case 'seth':
+                if(octant===0) { key = 'setouest'; flip = true; }
+                if(octant===1) { key = 'setsouthest'; flip = false; } // Utilise ton fichier "setsouthest"
+                if(octant===2) { key = 'setsud'; flip = false; }
+                if(octant===3) { key = 'setsouthest'; flip = true; } // Flip pour le SW
+                if(octant===4) { key = 'setouest'; flip = false; }
+                if(octant===5) { key = 'setnordouest'; flip = false; }
+                if(octant===6) { key = 'setnord'; flip = false; }
+                if(octant===7) { key = 'setnordouest'; flip = true; }
+                break;
+            case 'gunner':
+                if(octant===0) { key = 'adcouest'; flip = true; }
+                if(octant===1) { key = 'adcsudest'; flip = false; }
+                if(octant===2) { key = 'adcsud'; flip = false; }
+                if(octant===3) { key = 'adcsudouest'; flip = false; }
+                if(octant===4) { key = 'adcouest'; flip = false; }
+                if(octant===5) { key = 'adcouest'; flip = false; } // Fallback
+                if(octant===6) { key = 'adcnorth'; flip = false; }
+                if(octant===7) { key = 'adcouest'; flip = true; } // Fallback
+                break;
+            case 'mage':
+                if(octant===0) { key = 'mageouest'; flip = true; }
+                if(octant===1) { key = 'magesudouest'; flip = true; } 
+                if(octant===2) { key = 'mangesud'; flip = false; } // Utilise ton fichier "mangesud"
+                if(octant===3) { key = 'magesudouest'; flip = false; }
+                if(octant===4) { key = 'mageouest'; flip = false; }
+                if(octant===5) { key = 'magenordest'; flip = true; } 
+                if(octant===6) { key = 'magenord'; flip = false; }
+                if(octant===7) { key = 'magenordest'; flip = false; }
+                break;
+        }
+        return { key, flip };
     }
 
     draw() {
@@ -406,36 +471,27 @@ class Player {
         ctx.globalAlpha = alpha;
         ctx.translate(this.x, this.y);
 
-        if (this.charType === 'teemo' || this.charType === 'ninja') {
+        if (this.charType !== 'slime') {
             let deg = (this.angle * 180 / Math.PI + 360) % 360;
             let octant = Math.floor((deg + 22.5) / 45) % 8; 
 
-            let spriteKey = 'sud'; let flipX = false;
-            let isNinja = (this.charType === 'ninja');
+            let frame = this.getSkinFrame(octant);
+            let img = frame ? skins[frame.key] : null;
 
-            switch(octant) {
-                case 0: spriteKey = 'ouest'; flipX = true; break;     
-                case 1: spriteKey = 'sudouest'; flipX = true; break;  
-                case 2: spriteKey = 'sud'; break;                     
-                case 3: spriteKey = 'sudouest'; break;                
-                case 4: spriteKey = 'ouest'; break;                   
-                case 5: spriteKey = isNinja ? 'northouest' : 'nordouest'; break; 
-                case 6: spriteKey = isNinja ? 'north' : 'nord'; break;           
-                case 7: spriteKey = isNinja ? 'northouest' : 'nordouest'; flipX = true; break; 
-            }
-
-            let img = skins[this.charType][spriteKey];
             if (img && img.complete && img.naturalWidth > 0) {
                 ctx.save();
-                if (flipX) ctx.scale(-1, 1);
-                let drawSize = this.radius * 2.5;
+                if (frame.flip) ctx.scale(-1, 1);
+                let drawSize = this.radius * 2.8;
                 ctx.drawImage(img, -drawSize/2, -drawSize/2, drawSize, drawSize);
                 ctx.restore();
             } else {
+                // Fallback forme basique
+                ctx.rotate(this.angle);
                 ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color; ctx.fill();
             }
         } else {
+            // Le slime n'a pas de skins, on dessine une gelée ronde par défaut
             ctx.rotate(this.angle);
             ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
             ctx.fillStyle = this.color; ctx.fill();
@@ -445,6 +501,7 @@ class Player {
 
         ctx.restore();
 
+        // Indicateur Furtif
         if(isStealthyToSelf) {
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 15, 0, Math.PI * 2);
             ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
@@ -452,10 +509,15 @@ class Player {
             ctx.fillText("FURTIF", this.x, this.y + this.radius + 30);
         }
 
+        // Barre de Vie & Bouclier
         ctx.globalAlpha = alpha;
         ctx.fillStyle = '#222'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
-        ctx.fillStyle = (this.team === 1) ? '#39ff14' : '#ff007f';
-        ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60 * (this.hp / this.maxHp), 8);
+        if(this.shield > 0) {
+            ctx.fillStyle = '#00f0ff'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
+        } else {
+            ctx.fillStyle = (this.team === 1) ? '#39ff14' : '#ff007f';
+            ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60 * (this.hp / this.maxHp), 8);
+        }
         
         ctx.textAlign = 'center';
         if (this.stunTimer > 0) { ctx.fillStyle = "yellow"; ctx.fillText("STUN", this.x, this.y - this.radius - 35); }
@@ -475,24 +537,68 @@ class Player {
 
         if (slot === 'basic') {
             if(this.charType === 'ninja' || this.charType === 'seth') {
-                // Mêlée
                 this.meleeAttack(40, this.attackRange);
-                this.cds.basic = 20;
             } else {
-                // Distance (Les projectiles meurent pile à la portée max !)
-                let speed = 18;
-                let lifeTime = this.attackRange / speed; 
-                projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, 50, 10, null, lifeTime)); 
-                this.cds.basic = 25;
+                let speed = 18; let lifeTime = this.attackRange / speed;
+                projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, 50, 10, null, lifeTime, this.color)); 
             }
-        } else {
-            // Sort magique (Portée souvent plus grande que l'attaque de base)
-            let speed = 22;
-            let spellRange = this.attackRange + 200;
-            let lifeTime = spellRange / speed;
-            projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, 130, 15, null, lifeTime));
-            this.cds[slot] = 300; 
+            this.cds.basic = 25;
+            return;
         }
+
+        // --- SORTS PAR CLASSE ---
+        let cooldown = 0;
+
+        switch(this.charType) {
+            case 'ninja':
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 90, 15, null, 400/22, this.color)); cooldown=120; }
+                if(slot==='s2') { this.x += dx*250; this.y += dy*250; this.clampPosition(); this.meleeAttack(80, 150); cooldown=300; } 
+                if(slot==='ult') { 
+                    let t = this.getClosestEnemy(targetX, targetY);
+                    if(t) { this.x = t.x - dx*50; this.y = t.y - dy*50; this.clampPosition(); this.meleeAttack(250, 150); t.stunTimer = 60; }
+                    cooldown=900; 
+                }
+                break;
+                
+            case 'gunner':
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*30, dy*30, this, 120, 12, null, 700/30, this.color)); cooldown=180; } 
+                if(slot==='s2') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 150, 40, null, 300, '#ffbf00')); cooldown=400; } 
+                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*35, dy*35, this, 350, 50, null, 800/35, '#ff0000')); cooldown=1000; } 
+                break;
+
+            case 'slime':
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*15, dy*15, this, 100, 25, null, 400/15, this.color)); cooldown=150; }
+                if(slot==='s2') { this.hp = Math.min(this.maxHp, this.hp + 200); this.shield += 150; clickMarkers.push({x: this.x, y: this.y, life: 30, color: '#00ffcc', isExplosion: true}); cooldown=500; } 
+                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*10, dy*10, this, 300, 100, null, 600/10, this.color)); cooldown=900; } 
+                break;
+
+            case 'seth':
+                if(slot==='s1') { this.meleeAttack(120, 200); clickMarkers.push({x: this.x, y: this.y, life: 20, color: this.color, isExplosion: true}); cooldown=200; } 
+                if(slot==='s2') { this.x += dx*200; this.y += dy*200; this.clampPosition(); this.meleeAttack(80, 120); cooldown=300; } 
+                if(slot==='ult') { this.x = targetX; this.y = targetY; this.clampPosition(); this.meleeAttack(300, 250); clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true}); cooldown=1000; } 
+                break;
+
+            case 'mage':
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 130, 20, null, 500/18, '#ff5500')); cooldown=180; } 
+                if(slot==='s2') { this.x = targetX; this.y = targetY; this.clampPosition(); clickMarkers.push({x: this.x, y: this.y, life: 15, color: '#9d00ff', isExplosion: true}); cooldown=400; } 
+                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*5, dy*5, this, 500, 60, null, 700/5, '#330066')); cooldown=1100; } 
+                break;
+
+            case 'teemo':
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 90, 10, null, 500/22, this.color)); cooldown=120; } 
+                if(slot==='s2') { this.speedBuff = 180; cooldown=400; } 
+                if(slot==='ult') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 300, 35, null, 1000, this.color)); cooldown=800; } 
+                break;
+        }
+
+        this.cds[slot] = cooldown; 
+    }
+
+    getClosestEnemy(tx, ty) {
+        let target = null; let minDist = Infinity;
+        let targets = [...players, ...turrets].filter(ent => ent.team !== this.team && !ent.isDead);
+        targets.forEach(ent => { let d = Math.hypot(ent.x - tx, ent.y - ty); if(d < minDist) { minDist = d; target = ent; } });
+        return target;
     }
 
     meleeAttack(dmg, range) {
@@ -502,8 +608,7 @@ class Player {
         let targets = [...players, ...turrets].filter(ent => ent.team !== this.team && !ent.isDead);
         targets.forEach(ent => {
             if (Math.hypot(ent.x - hitX, ent.y - hitY) < ent.radius + (range/2)) {
-                ent.takeDamage(dmg);
-                clickMarkers.push({x: ent.x, y: ent.y, life: 10, color: '#fff', isExplosion: true});
+                ent.takeDamage(dmg); clickMarkers.push({x: ent.x, y: ent.y, life: 10, color: '#fff', isExplosion: true});
             }
         });
         clickMarkers.push({x: hitX, y: hitY, life: 10, color: '#fff', isSlash: true, angle: this.angle});
@@ -519,12 +624,11 @@ class Player {
 }
 
 class Projectile {
-    // Ajout d'une durée de vie (life) pour que les sorts ne traversent pas toute la map
-    constructor(x, y, vx, vy, owner, dmg, size=10, homingTarget=null, life=100) {
+    constructor(x, y, vx, vy, owner, dmg, size=10, homingTarget=null, life=100, color='#fff') {
         this.x = x; this.y = y; this.vx = vx; this.vy = vy; 
         this.owner = owner; this.dmg = dmg; this.radius = size;
         this.homingTarget = homingTarget; 
-        this.active = true; this.life = life;
+        this.active = true; this.life = life; this.color = color;
     }
     update() {
         if(this.homingTarget && !this.homingTarget.isDead) {
@@ -546,7 +650,7 @@ class Projectile {
         });
 
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        ctx.fillStyle = this.owner.color; ctx.fill();
+        ctx.fillStyle = this.color; ctx.fill();
     }
 }
 
@@ -567,6 +671,12 @@ function updateBot(bot) {
         
         if (dist <= bot.attackRange && bot.cds.basic === 0 && Math.random() < 0.1) {
             bot.castSpell('basic', target.x, target.y);
+        }
+
+        if (dist < 400 && Math.random() < 0.02) {
+            let spells = ['s1', 's2', 'ult'];
+            let s = spells[Math.floor(Math.random()*spells.length)];
+            if(bot.cds[s] === 0) bot.castSpell(s, target.x, target.y);
         }
     } else {
         bot.target = null; 
@@ -614,7 +724,7 @@ function updateSpellUI() {
     if(players.length === 0 || players[0].isDead) return;
     let p = players[0];
     
-    ['s1', 's2', 's3', 'ult'].forEach(slot => {
+    ['s1', 's2', 'ult'].forEach(slot => {
         let box = document.getElementById(`spell-${slot}`);
         if (!box) return;
         
@@ -669,32 +779,23 @@ function gameLoop() {
     if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
     else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
 
-    // --- VISUELS DE PORTÉE (RANGES) ---
-    // Ennemi survolé par la souris : Cercle Rouge sur lui + Cercle de Portée d'Attaque du joueur
     if (hoveredEnemy && !hoveredEnemy.isDead && !pendingSpell) {
-        ctx.beginPath();
-        ctx.arc(hoveredEnemy.x, hoveredEnemy.y, hoveredEnemy.radius + 10, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(hoveredEnemy.x, hoveredEnemy.y, hoveredEnemy.radius + 10, 0, Math.PI * 2);
         ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; ctx.lineWidth = 3; ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.arc(players[0].x, players[0].y, players[0].attackRange, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(players[0].x, players[0].y, players[0].attackRange, 0, Math.PI * 2);
         ctx.strokeStyle = "rgba(255, 255, 255, 0.3)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
     }
     
-    // Ennemi verrouillé
     let p1 = players[0];
     if (p1 && p1.autoAttackTarget && !p1.autoAttackTarget.isDead) {
         let t = p1.autoAttackTarget;
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, t.radius + 15, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(t.x, t.y, t.radius + 15, 0, Math.PI * 2);
         ctx.strokeStyle = "#ff007f"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     }
 
-    // Prévisualisation de sort (A, Z, E, R)
     if (pendingSpell && !players[0].isDead) {
-        let spellRange = players[0].attackRange + 200; // La portée du sort est plus grande
-        ctx.beginPath();
-        ctx.arc(players[0].x, players[0].y, spellRange, 0, Math.PI * 2); 
+        let spellRange = players[0].attackRange + 200; 
+        ctx.beginPath(); ctx.arc(players[0].x, players[0].y, spellRange, 0, Math.PI * 2); 
         ctx.fillStyle = "rgba(0, 240, 255, 0.1)"; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = "rgba(0, 240, 255, 0.5)"; ctx.stroke();
 
