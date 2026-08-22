@@ -4,7 +4,7 @@
 
 let entityIdCounter = 1;
 
-// LE SCANNER GLOBAL (Répare le bug de la boussole et de la cible)
+// LE SCANNER GLOBAL
 function getEntityById(id) {
     if (!id) return null;
     let ent = null;
@@ -16,6 +16,36 @@ function getEntityById(id) {
     if (typeof baseHost !== 'undefined' && baseHost && baseHost.id === id) return baseHost;
     if (typeof baseGuest !== 'undefined' && baseGuest && baseGuest.id === id) return baseGuest;
     return null;
+}
+
+// NOUVEAU: CLASSE TRÉSOR AVEC SKIN COFFRE
+class Treasure {
+    constructor(x, y) {
+        this.id = entityIdCounter++;
+        this.x = x; this.y = y;
+        this.size = 35; // Taille ajustée pour le coffre
+        this.animY = 0;
+    }
+    draw(ctx, images) {
+        this.animY = Math.sin(performance.now() / 200) * 5;
+        let img = images.treasure;
+        
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.shadowBlur = 15; ctx.shadowColor = '#ffd700';
+            ctx.drawImage(img, this.x - this.size/2, this.y - this.size/2 + this.animY, this.size, this.size);
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.shadowBlur = 15; ctx.shadowColor = '#ffd700';
+            ctx.fillStyle = '#ffaa00';
+            ctx.fillRect(this.x - this.size/2, this.y - this.size/2 + this.animY, this.size, this.size);
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(this.x - this.size/2 + 2, this.y - this.size/2 + 2 + this.animY, this.size - 4, this.size - 4);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '16px Arial'; ctx.textAlign = 'center';
+            ctx.fillText('🎁', this.x, this.y + 4 + this.animY);
+            ctx.shadowBlur = 0;
+        }
+    }
 }
 
 class Decoration {
@@ -65,6 +95,7 @@ class Base {
     constructor(x, y, owner) {
         this.id = entityIdCounter++; this.owner = owner;
         this.x = x; this.y = y; this.type = 'hdv';
+        this.level = 1; 
         this.size = 120; 
         this.hp = 2500; this.maxHp = 2500;
         this.color = owner === 'host' ? '#00f0ff' : '#ff007f';
@@ -87,6 +118,11 @@ class Base {
         ctx.fillStyle = this.color; ctx.font = '14px Arial'; ctx.textAlign = 'center';
         ctx.fillText(this.owner === 'host' ? 'P1' : 'P2', this.x, this.y - this.size/2 - 15);
 
+        if (this.level > 1) {
+            ctx.fillStyle = '#fce803'; ctx.font = '24px Arial'; 
+            ctx.fillText('★', this.x, this.y - this.size/2 + 25);
+        }
+
         if (typeof survivalTimer !== 'undefined' && survivalTimer < 180) {
             let timeLeft = 180 - Math.floor(survivalTimer);
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size/2 + 20, 0, Math.PI*2); ctx.stroke();
@@ -106,6 +142,7 @@ class Building {
         this.id = entityIdCounter++; this.owner = owner;
         this.x = x; this.y = y; this.type = type;
         this.size = 64; this.farmersInside = 0; this.level = 1; this.attackCooldown = 0; 
+        this.element = 'normal'; 
         this.color = owner === 'host' ? '#00f0ff' : '#ff007f';
 
         if(type === 'house') { this.hp = 300; }
@@ -147,6 +184,18 @@ class Building {
             ctx.shadowBlur = 0;
         }
 
+        if (this.level === 3) {
+            let glow = this.element === 'fire' ? '#ff3333' : this.element === 'water' ? '#3388ff' : '#39ff14';
+            ctx.shadowBlur = 20; ctx.shadowColor = glow;
+            ctx.strokeStyle = glow; ctx.lineWidth = 3;
+            ctx.strokeRect(this.x - this.size/2 - 2, this.y - this.size/2 - 2, this.size + 4, this.size + 4);
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = glow; ctx.font = '22px Arial';
+            let icon = this.element === 'fire' ? '🔥' : this.element === 'water' ? '💧' : '🌿';
+            ctx.fillText(icon, this.x + this.size/2 - 15, this.y - this.size/2 + 20);
+        }
+
         let img = null;
         if(this.type === 'house') img = images.house;
         if(this.type === 'sawmill') img = images.sawmill;
@@ -166,7 +215,7 @@ class Building {
         
         ctx.strokeStyle = this.color; ctx.lineWidth = 1; ctx.strokeRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
 
-        if (this.level > 1) {
+        if (this.level >= 2) {
             ctx.fillStyle = '#fce803'; ctx.font = '16px Arial'; ctx.fillText('★', this.x + this.size/2 - 10, this.y - this.size/2 + 15);
         }
         if (this.type === 'sawmill' || this.type === 'mine' || this.type === 'farm') {
@@ -273,7 +322,6 @@ class Unit {
             this.hp = Math.min(this.maxHp, this.hp + 20 * dt); 
         }
 
-        // CORRECTION COLLISION BÛCHERONS : Ils traversent les copains pendant le travail
         units.forEach(other => {
             if (['moving_to_building', 'moving_to_res', 'gathering', 'returning', 'farming'].includes(this.state)) return;
 
@@ -288,18 +336,15 @@ class Unit {
             }
         });
 
-        // SCAN DE L'ENTITE CIBLE
         let targetEnt = getEntityById(this.targetEntityId);
 
         if (this.type === 'farmer') {
-            // CORRECTION I.A : Si l'arbre est coupé par un autre avant d'arriver
             if (this.state === 'moving_to_res' && !targetEnt) {
                 let closestRes = getClosest(this, trees);
                 if (closestRes) this.setCommand(closestRes.x, closestRes.y, closestRes);
                 else { this.state = 'idle'; this.targetPos = null; }
             }
             else if (this.state === 'moving_to_res' && targetEnt) {
-                // Zone de récolte élargie (+15px) pour éviter qu'ils bloquent autour de l'arbre
                 if (dist(this, targetEnt) < this.radius + targetEnt.radius + 15) {
                     this.state = 'gathering'; this.targetPos = null;
                     this.payloadType = targetEnt.type === 'tree' ? 'wood' : 'food';
@@ -322,7 +367,6 @@ class Unit {
                         }
                     }
                 } else { 
-                    // L'arbre est vide, mais on a encore de la place dans le sac
                     if (this.payload > 0) {
                         let myBase = this.owner === 'host' ? baseHost : baseGuest;
                         this.targetEntityId = myBase.id;
