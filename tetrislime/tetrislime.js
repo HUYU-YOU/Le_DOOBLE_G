@@ -71,7 +71,7 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 // ==========================================
-// MOTEUR TETRISLIME ET DÉCOUPAGE SKINS PNG
+// MOTEUR TETRISLIME ET MATRICES EXPLICITES
 // ==========================================
 const canvas = document.getElementById('tetris-canvas');
 const ctx = canvas.getContext('2d');
@@ -96,15 +96,39 @@ skinNames.forEach(name => {
     skins[name].src = `assets/${name}.png`;
 });
 
-// LES 5 FORMES UNIQUES DU JEU
-const SHAPES = [
-    [], 
-    [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // 1: BARRE 
-    [[2,0,0], [2,2,2], [0,0,0]],                  // 2: L 
-    [[3,3], [3,3]],                               // 3: CUBE 
-    [[0,4,4], [4,4,0], [0,0,0]],                  // 4: Z 
-    [[0,5,0], [5,5,5], [0,0,0]]                   // 5: CROIX 
-];
+// MATRICES EXPLICITES POUR COLLER 1:1 À LA GRILLE DE TES PNG !
+const SHAPES = {
+    1: [ // BARRE
+        [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], 
+        [[0,1,0,0], [0,1,0,0], [0,1,0,0], [0,1,0,0]],
+        [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
+        [[0,1,0,0], [0,1,0,0], [0,1,0,0], [0,1,0,0]]
+    ],
+    2: [ // L ORANGE (Aligné sur tes PNG)
+        [[2,0,0], [2,2,2], [0,0,0]], // 0
+        [[2,2,0], [2,0,0], [2,0,0]], // 90
+        [[0,0,2], [2,2,2], [0,0,0]], // 180
+        [[2,0,0], [2,0,0], [2,2,0]]  // 270
+    ],
+    3: [ // CUBE
+        [[3,3], [3,3]],
+        [[3,3], [3,3]],
+        [[3,3], [3,3]],
+        [[3,3], [3,3]]
+    ],
+    4: [ // Z
+        [[0,4,4], [4,4,0], [0,0,0]], 
+        [[4,0,0], [4,4,0], [0,4,0]], 
+        [[0,4,4], [4,4,0], [0,0,0]], 
+        [[4,0,0], [4,4,0], [0,4,0]]  
+    ],
+    5: [ // CROIX
+        [[0,5,0], [5,5,5], [0,0,0]], 
+        [[0,5,0], [5,5,0], [0,5,0]], 
+        [[0,0,0], [5,5,5], [0,5,0]], 
+        [[0,5,0], [0,5,5], [0,5,0]]  
+    ]
+};
 
 const COLORS = [ null, '#00f0ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#666666'];
 
@@ -130,48 +154,28 @@ function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill
 function randomPiece() {
     const typeId = Math.floor(Math.random() * 5) + 1;
     return {
-        matrix: SHAPES[typeId],
-        pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0].length/2), y: 0 },
+        matrix: SHAPES[typeId][0],
+        pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0][0].length/2), y: 0 },
         type: typeId,
         rotIndex: 0 
     };
 }
 
 function getImgName(type, rotIndex) {
-    const rot = rotIndex; // 0, 90, 180, 270
-    
     if (type === 3) return 'CUBE';
-    
-    // INVERSION DU SKIN DE LA BARRE ICI
-    if (type === 1) return (rot === 0 || rot === 180) ? 'BARRE90' : 'BARRE';
+    if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE' : 'BARRE90';
     
     if (type === 2) {
-        if (rot === 0) return 'L0';
-        if (rot === 90) return 'L270';  
-        if (rot === 180) return 'L180';
-        if (rot === 270) return 'L90';
+        if (rotIndex === 0) return 'L0';
+        if (rotIndex === 90) return 'L270';  
+        if (rotIndex === 180) return 'L180';
+        if (rotIndex === 270) return 'L90';
     }
     
-    if (type === 4) return rot === 0 ? 'Z' : 'Z' + rot;
-    
-    if (type === 5) return rot === 0 ? 'CROIX' : 'CROIX' + rot;
+    if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
+    if (type === 5) return rotIndex === 0 ? 'CROIX' : 'CROIX' + rotIndex;
     
     return null;
-}
-
-function getBoundingBox(matrix) {
-    let minX = matrix[0].length, maxX = 0, minY = matrix.length, maxY = 0, found = false;
-    for(let y=0; y<matrix.length; y++) {
-        for(let x=0; x<matrix[y].length; x++) {
-            if(matrix[y][x]) {
-                minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-                minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-                found = true;
-            }
-        }
-    }
-    if(!found) return {x:0, y:0, w:0, h:0};
-    return {x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1};
 }
 
 function drawBlock(ctxTarget, x, y, size, colorIndex) {
@@ -212,8 +216,9 @@ function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
     if (img && img.complete && img.naturalWidth > 0) {
-        let box = getBoundingBox(p.matrix);
-        ctxTarget.drawImage(img, (p.pos.x + box.x + offsetX) * size, (p.pos.y + box.y + offsetY) * size, box.w * size, box.h * size);
+        let matrixW = p.matrix[0].length;
+        let matrixH = p.matrix.length;
+        ctxTarget.drawImage(img, (p.pos.x + offsetX) * size, (p.pos.y + offsetY) * size, matrixW * size, matrixH * size);
     } else {
         drawMatrix(p.matrix, {x: p.pos.x + offsetX, y: p.pos.y + offsetY}, ctxTarget, size);
     }
@@ -237,16 +242,19 @@ function draw() {
 function drawPreview(ctxTarget, p, size) {
     ctxTarget.clearRect(0, 0, ctxTarget.canvas.width, ctxTarget.canvas.height);
     if (!p) return;
-    let box = getBoundingBox(p.matrix);
-    let drawX = (ctxTarget.canvas.width - box.w * size) / 2;
-    let drawY = (ctxTarget.canvas.height - box.h * size) / 2;
+    
+    let matrixW = p.matrix[0].length;
+    let matrixH = p.matrix.length;
+    
+    let drawX = (ctxTarget.canvas.width - matrixW * size) / 2;
+    let drawY = (ctxTarget.canvas.height - matrixH * size) / 2;
     
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
     if (img && img.complete && img.naturalWidth > 0) {
-        ctxTarget.drawImage(img, drawX, drawY, box.w * size, box.h * size);
+        ctxTarget.drawImage(img, drawX, drawY, matrixW * size, matrixH * size);
     } else {
-        drawMatrix(p.matrix, {x: (ctxTarget.canvas.width/size - p.matrix[0].length)/2, y: (ctxTarget.canvas.height/size - p.matrix.length)/2}, ctxTarget, size);
+        drawMatrix(p.matrix, {x: (ctxTarget.canvas.width/size - matrixW)/2, y: (ctxTarget.canvas.height/size - matrixH)/2}, ctxTarget, size);
     }
 }
 
@@ -261,7 +269,6 @@ function collide(arena, player) {
 }
 
 function merge(arena, player) {
-    let box = getBoundingBox(player.matrix);
     player.matrix.forEach((row, py) => {
         row.forEach((value, px) => {
             if (value !== 0) {
@@ -269,29 +276,34 @@ function merge(arena, player) {
                     val: value,
                     type: player.type,
                     rot: player.rotIndex,
-                    imgX: px - box.x, 
-                    imgY: py - box.y, 
-                    boxW: box.w,
-                    boxH: box.h
+                    imgX: px, 
+                    imgY: py, 
+                    boxW: player.matrix[0].length,
+                    boxH: player.matrix.length
                 };
             }
         });
     });
 }
 
-function rotateMatrix(matrix) { return matrix.map((row, i) => row.map((val, j) => matrix[matrix.length - 1 - j][i])); }
-
 function playerRotate() {
     const pos = piece.pos.x;
     let offset = 1;
-    piece.matrix = rotateMatrix(piece.matrix);
-    piece.rotIndex = (piece.rotIndex + 90) % 360; 
+    let nextRot = (piece.rotIndex + 90) % 360;
+    let nextMatrix = SHAPES[piece.type][nextRot / 90];
+    
+    let prevMatrix = piece.matrix;
+    let prevRot = piece.rotIndex;
+    
+    piece.matrix = nextMatrix;
+    piece.rotIndex = nextRot;
+    
     while (collide(board, piece)) {
         piece.pos.x += offset;
         offset = -(offset + (offset > 0 ? 1 : -1));
         if (offset > piece.matrix[0].length) {
-            piece.matrix = rotateMatrix(rotateMatrix(rotateMatrix(piece.matrix)));
-            piece.rotIndex = (piece.rotIndex - 90 + 360) % 360;
+            piece.matrix = prevMatrix;
+            piece.rotIndex = prevRot;
             piece.pos.x = pos;
             return;
         }
@@ -315,11 +327,11 @@ function playerDrop() {
 function hold() {
     if (!canHold) return;
     if (holdPiece) {
-        let temp = { matrix: holdPiece.matrix, type: holdPiece.type, rotIndex: holdPiece.rotIndex, pos: {x: Math.floor(COLS/2)-1, y:0} };
-        holdPiece = { matrix: SHAPES[piece.type], type: piece.type, rotIndex: 0 };
+        let temp = { matrix: holdPiece.matrix, type: holdPiece.type, rotIndex: holdPiece.rotIndex, pos: {x: Math.floor(COLS/2) - Math.floor(holdPiece.matrix[0].length/2), y: 0} };
+        holdPiece = { matrix: SHAPES[piece.type][0], type: piece.type, rotIndex: 0 };
         piece = temp;
     } else {
-        holdPiece = { matrix: SHAPES[piece.type], type: piece.type, rotIndex: 0 };
+        holdPiece = { matrix: SHAPES[piece.type][0], type: piece.type, rotIndex: 0 };
         resetPiece();
     }
     canHold = false;
@@ -369,7 +381,7 @@ function receiveGarbage(amount) {
     const hole = Math.floor(Math.random() * COLS);
     for (let i = 0; i < amount; i++) {
         board.shift();
-        let newRow = Array(COLS).fill(6); // Les déchets
+        let newRow = Array(COLS).fill(6); 
         newRow[hole] = 0; board.push(newRow);
     }
 }
@@ -401,7 +413,6 @@ function update(time = 0) {
 document.addEventListener('keydown', event => {
     if (isGameOver || document.getElementById('game-ui').style.display === 'none') return;
     
-    // Ajout d'une condition pour ne pas empêcher le comportement par défaut si l'utilisateur écrit dans un input
     if (document.activeElement.tagName === 'INPUT') return;
 
     if (event.keyCode === 37) { event.preventDefault(); playerMove(-1); } // Gauche
@@ -409,7 +420,7 @@ document.addEventListener('keydown', event => {
     else if (event.keyCode === 40) { event.preventDefault(); playerDrop(); } // Bas
     else if (event.keyCode === 38) { event.preventDefault(); playerRotate(); } // Haut
     else if (event.keyCode === 32) { 
-        event.preventDefault(); // Empêche la page de descendre avec espace
+        event.preventDefault(); 
         while (!collide(board, piece)) { piece.pos.y++; }
         piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); canHold = true; dropCounter = 0;
     } // Espace
