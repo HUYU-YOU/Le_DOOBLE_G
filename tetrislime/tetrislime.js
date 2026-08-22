@@ -82,12 +82,12 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// CHARGEMENT DES NOMS DE FICHIERS AVEC UNDERSCORES
+// CHARGEMENT DES NOMS EXACTS DE TON DOSSIER (Sans underscores !)
 const skinNames = [
-    'BARRE_0', 'BARRE_90', 
-    'L_0', 'L_90', 'L_180', 'L_270', 
-    'Z_0', 'Z_90', 'Z_180', 'Z_270',
-    'CROIX_0', 'CROIX_90', 'CROIX_180', 'CROIX_270',
+    'BARRE', 'BARRE90', 
+    'L0', 'L90', 'L180', 'L270', 
+    'Z', 'Z90', 'Z180', 'Z270',
+    'CROIX', 'CROIX90', 'CROIX180', 'CROIX270',
     'CUBE'
 ];
 
@@ -138,34 +138,26 @@ function randomPiece() {
     };
 }
 
-// SYSTÈME DE NOMMAGE FIXE (Traduction des rotations pour coller à tes fichiers)
+// SYSTÈME DE NOMMAGE FIXE QUI COLLE PARFAITEMENT A TES FICHIERS
 function getImgName(type, rotIndex) {
     const rot = rotIndex; // 0, 90, 180, 270
     
     if (type === 3) return 'CUBE';
-    if (type === 1) return (rot === 0 || rot === 180) ? 'BARRE_0' : 'BARRE_90';
+    if (type === 1) return (rot === 0 || rot === 180) ? 'BARRE' : 'BARRE90';
     
-    // Correction de l'inversion mathématique pour coller au sens de tes dessins
+    // Le L de ton dossier possède un "0"
     if (type === 2) {
-        if (rot === 0) return 'L_0';
-        if (rot === 90) return 'L_270';  
-        if (rot === 180) return 'L_180';
-        if (rot === 270) return 'L_90';
+        if (rot === 0) return 'L0';
+        if (rot === 90) return 'L270';  
+        if (rot === 180) return 'L180';
+        if (rot === 270) return 'L90';
     }
     
-    if (type === 4) {
-        if (rot === 0) return 'Z_0';
-        if (rot === 90) return 'Z_270';
-        if (rot === 180) return 'Z_180';
-        if (rot === 270) return 'Z_90';
-    }
+    // Le Z n'a pas de "0"
+    if (type === 4) return rot === 0 ? 'Z' : 'Z' + rot;
     
-    if (type === 5) {
-        if (rot === 0) return 'CROIX_0';
-        if (rot === 90) return 'CROIX_270';
-        if (rot === 180) return 'CROIX_180';
-        if (rot === 270) return 'CROIX_90';
-    }
+    // La CROIX n'a pas de "0"
+    if (type === 5) return rot === 0 ? 'CROIX' : 'CROIX' + rot;
     
     return null;
 }
