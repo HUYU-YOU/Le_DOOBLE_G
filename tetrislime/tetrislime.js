@@ -82,7 +82,6 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// CHARGEMENT DES NOMS EXACTS DE TON DOSSIER (Sans underscores !)
 const skinNames = [
     'BARRE', 'BARRE90', 
     'L0', 'L90', 'L180', 'L270', 
@@ -101,7 +100,7 @@ skinNames.forEach(name => {
 const SHAPES = [
     [], 
     [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], // 1: BARRE 
-    [[2,0,0], [2,2,2], [0,0,0]],                  // 2: L (Bosse à gauche)
+    [[2,0,0], [2,2,2], [0,0,0]],                  // 2: L 
     [[3,3], [3,3]],                               // 3: CUBE 
     [[0,4,4], [4,4,0], [0,0,0]],                  // 4: Z 
     [[0,5,0], [5,5,5], [0,0,0]]                   // 5: CROIX 
@@ -138,14 +137,14 @@ function randomPiece() {
     };
 }
 
-// SYSTÈME DE NOMMAGE FIXE QUI COLLE PARFAITEMENT A TES FICHIERS
 function getImgName(type, rotIndex) {
     const rot = rotIndex; // 0, 90, 180, 270
     
     if (type === 3) return 'CUBE';
-    if (type === 1) return (rot === 0 || rot === 180) ? 'BARRE' : 'BARRE90';
     
-    // Le L de ton dossier possède un "0"
+    // INVERSION DU SKIN DE LA BARRE ICI
+    if (type === 1) return (rot === 0 || rot === 180) ? 'BARRE90' : 'BARRE';
+    
     if (type === 2) {
         if (rot === 0) return 'L0';
         if (rot === 90) return 'L270';  
@@ -153,10 +152,8 @@ function getImgName(type, rotIndex) {
         if (rot === 270) return 'L90';
     }
     
-    // Le Z n'a pas de "0"
     if (type === 4) return rot === 0 ? 'Z' : 'Z' + rot;
     
-    // La CROIX n'a pas de "0"
     if (type === 5) return rot === 0 ? 'CROIX' : 'CROIX' + rot;
     
     return null;
@@ -403,15 +400,20 @@ function update(time = 0) {
 
 document.addEventListener('keydown', event => {
     if (isGameOver || document.getElementById('game-ui').style.display === 'none') return;
-    if (event.keyCode === 37) { playerMove(-1); } // Gauche
-    else if (event.keyCode === 39) { playerMove(1); } // Droite
-    else if (event.keyCode === 40) { playerDrop(); } // Bas
-    else if (event.keyCode === 38) { playerRotate(); } // Haut
+    
+    // Ajout d'une condition pour ne pas empêcher le comportement par défaut si l'utilisateur écrit dans un input
+    if (document.activeElement.tagName === 'INPUT') return;
+
+    if (event.keyCode === 37) { event.preventDefault(); playerMove(-1); } // Gauche
+    else if (event.keyCode === 39) { event.preventDefault(); playerMove(1); } // Droite
+    else if (event.keyCode === 40) { event.preventDefault(); playerDrop(); } // Bas
+    else if (event.keyCode === 38) { event.preventDefault(); playerRotate(); } // Haut
     else if (event.keyCode === 32) { 
+        event.preventDefault(); // Empêche la page de descendre avec espace
         while (!collide(board, piece)) { piece.pos.y++; }
         piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); canHold = true; dropCounter = 0;
     } // Espace
-    else if (event.keyCode === 16 || event.keyCode === 67) { hold(); } // Shift
+    else if (event.keyCode === 16 || event.keyCode === 67) { event.preventDefault(); hold(); } // Shift
 });
 
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
