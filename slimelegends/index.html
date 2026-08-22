@@ -38,8 +38,8 @@
                     <div class="hp-text" id="p1-hp-txt">1000/1000</div>
                 </div>
                 <div class="cd-container">
-                    <div class="cd-box" id="spell-s1" onclick="prepareSpell('s1')"><span class="key-hint" id="key-s1">A</span></div>
-                    <div class="cd-box" id="spell-s2" onclick="prepareSpell('s2')"><span class="key-hint" id="key-s2">Z</span></div>
+                    <div class="cd-box" id="spell-s1" onclick="prepareSpell('s1')"><span class="key-hint" id="key-s1">Q</span></div>
+                    <div class="cd-box" id="spell-s2" onclick="prepareSpell('s2')"><span class="key-hint" id="key-s2">W</span></div>
                     <div class="cd-box ult-box" id="spell-ult" onclick="prepareSpell('ult')"><span class="key-hint" id="key-ult">E</span></div>
                 </div>
             </div>
@@ -143,7 +143,7 @@
             <div class="controls-info" style="font-size: 1em; max-height: 350px; overflow-y: auto;">
                 <b style="color: var(--p1);">Déplacement :</b> Clic Droit sur le sol<br>
                 <b style="color: var(--p2);">Attaque Auto :</b> Clic Droit ou Clic Gauche sur l'adversaire / tourelle / nexus<br>
-                <b style="color: var(--p4);">Sorts de Combat :</b> Touches A, Z, Ultime E (ou Q, W, E)<br>
+                <b style="color: var(--p4);">Sorts de Combat :</b> Touches Q, W, Ultime E (ou A, Z, E en Azerty)<br>
                 <b style="color: #fff;">Zoom :</b> Molette de la souris pour zoomer/dézoomer<br>
                 <hr style="border-color: #333; margin: 10px 0;">
                 <b style="color: #00ffcc;">Furtivité :</b> Reste dans les flaques de Slime pour devenir invisible !<br>
@@ -177,8 +177,8 @@
             <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 30px;">
                 <span>Disposition Clavier (3 Sorts) ⌨️</span>
                 <select id="keyboard-layout" style="font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em; padding: 8px; border-radius: 5px; background: #222; color: white; border: 1px solid var(--p1); text-align: center;">
+                    <option value="qwerty" selected>QWERTY (Q, W, Ultime: E)</option>
                     <option value="azerty">AZERTY (A, Z, Ultime: E)</option>
-                    <option value="qwerty">QWERTY (Q, W, Ultime: E)</option>
                 </select>
             </div>
             
@@ -195,6 +195,7 @@
             if (forceMode === 'solo') {
                 document.getElementById('main-menu').style.display = 'none';
                 document.getElementById('game-mode-menu').style.display = 'flex';
+                window.currentIsBot = true; // Configuration du mode IA global
             } else if (forceMode === 'multi') {
                 document.getElementById('btn-local-mode').style.display = 'none';
                 document.getElementById('menu-separator').style.display = 'none';
