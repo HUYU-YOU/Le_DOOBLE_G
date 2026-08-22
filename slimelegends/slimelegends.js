@@ -71,11 +71,10 @@ document.addEventListener('fullscreenchange', () => {
 // 2. GESTION DES MODES DE JEU ET MENUS
 // =========================================================
 
-let selectedGameRule = 'nexus'; // 'nexus' ou '3kills'
+let selectedGameRule = 'nexus'; 
 let locSelections = [];
 let killsBlue = 0;
 let killsRed = 0;
-let currentIsBot = true; // AJOUT : Rétabli pour permettre le mode IA
 
 function openMenu(type) {
     document.getElementById('main-menu').style.display = 'none';
@@ -106,48 +105,30 @@ function goToCharSelect() {
 
 function handleRestart() { location.reload(); }
 
-function prepareNetwork(mode) {
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('network-menu').style.display = 'flex';
-}
-function selectNetChar(char, el) {
-    document.querySelectorAll('#net-char-grid .card').forEach(c => c.classList.remove('selected'));
-    if(el) el.classList.add('selected');
-    let nameEl = document.getElementById('net-char-name');
-    if(nameEl) nameEl.innerText = char.toUpperCase();
-}
-function hostGame() {
-    document.getElementById('my-id').innerText = "SERVEUR ARAM";
-    document.getElementById('host-btn').style.display = 'none';
-    document.getElementById('start-net-btn').style.display = 'inline-block';
-}
+function prepareNetwork(mode) { document.getElementById('main-menu').style.display = 'none'; document.getElementById('network-menu').style.display = 'flex'; }
+function selectNetChar(char, el) { document.querySelectorAll('#net-char-grid .card').forEach(c => c.classList.remove('selected')); if(el) el.classList.add('selected'); let nameEl = document.getElementById('net-char-name'); if(nameEl) nameEl.innerText = char.toUpperCase(); }
+function hostGame() { document.getElementById('my-id').innerText = "SERVEUR ARAM"; document.getElementById('host-btn').style.display = 'none'; document.getElementById('start-net-btn').style.display = 'inline-block'; }
 function joinGame() { alert("Mode Réseau en maintenance. Teste le mode Local !"); }
 function startNetworkGameHost() { alert("Mode Réseau en maintenance. Teste le mode Local !"); }
 
 // =========================================================
-// 3. MOTEUR DU MOBA (ARAM, NEXUS, TOURELLES, RESPAWN)
+// 3. MOTEUR DU MOBA ET PIERRE FEUILLE CISEAUX
 // =========================================================
 
 const canvas = document.getElementById('gameCanvas'); 
 const ctx = canvas.getContext('2d');
 
-const MAP_WIDTH = 3500; 
-const MAP_HEIGHT = 1000;
-const mapImg = new Image();
-mapImg.src = 'assets/mapsol.png';
+const MAP_WIDTH = 3500; const MAP_HEIGHT = 1000;
+const mapImg = new Image(); mapImg.src = 'assets/mapsol.png';
 
 const PLAYABLE_X_MIN = 120; const PLAYABLE_X_MAX = 3380;
 const PLAYABLE_Y_MIN = 260; const PLAYABLE_Y_MAX = 740; 
 
 const PUDDLES = [
-    { xMin: 780, xMax: 1080, yMin: 220, yMax: 330 },
-    { xMin: 1150, xMax: 1800, yMin: 220, yMax: 330 },
-    { xMin: 2250, xMax: 2650, yMin: 220, yMax: 330 },
-    { xMin: 2850, xMax: 3150, yMin: 220, yMax: 330 },
-    { xMin: 730, xMax: 1080, yMin: 670, yMax: 780 },
-    { xMin: 1200, xMax: 1800, yMin: 670, yMax: 780 },
-    { xMin: 2200, xMax: 2950, yMin: 670, yMax: 780 },
-    { xMin: 3100, xMax: 3380, yMin: 670, yMax: 780 }
+    { xMin: 780, xMax: 1080, yMin: 220, yMax: 330 }, { xMin: 1150, xMax: 1800, yMin: 220, yMax: 330 },
+    { xMin: 2250, xMax: 2650, yMin: 220, yMax: 330 }, { xMin: 2850, xMax: 3150, yMin: 220, yMax: 330 },
+    { xMin: 730, xMax: 1080, yMin: 670, yMax: 780 }, { xMin: 1200, xMax: 1800, yMin: 670, yMax: 780 },
+    { xMin: 2200, xMax: 2950, yMin: 670, yMax: 780 }, { xMin: 3100, xMax: 3380, yMin: 670, yMax: 780 }
 ];
 
 const skins = {};
@@ -158,10 +139,7 @@ const skinFiles = [
     'scoutnord', 'scoutnordouest', 'scoutouest', 'scoutsud', 'scoutsudouest',
     'setnord', 'setnordouest', 'setouest', 'setsouthest', 'setsud'
 ];
-skinFiles.forEach(file => {
-    skins[file] = new Image();
-    skins[file].src = `assets/skins/${file}.png`;
-});
+skinFiles.forEach(file => { skins[file] = new Image(); skins[file].src = `assets/skins/${file}.png`; });
 
 let CAMERA_ZOOM = 1.0; 
 let cameraX = 0; let cameraY = 0;
@@ -185,7 +163,6 @@ if(layoutSelect) {
     });
 }
 
-// AJOUT : Descriptions pour la prévisualisation des sorts
 const spellDescriptions = {
     ninja: { s1: "Lancer de Shuriken", s2: "Dash Assassin", ult: "Exécution Ciblée" },
     gunner: { s1: "Tir Pénétrant", s2: "Mine Explosive", ult: "Rayon Laser Géant" },
@@ -195,7 +172,6 @@ const spellDescriptions = {
     teemo: { s1: "Fléchette Rapide", s2: "Sprint (+Vitesse)", ult: "Piège Toxique" }
 };
 
-// ZOOM MOLETTE
 window.addEventListener('wheel', e => {
     if(!gameActive) return;
     let zoomAmount = 0.1;
@@ -206,7 +182,6 @@ window.addEventListener('wheel', e => {
     worldMouseY = (mouseY / CAMERA_ZOOM) + cameraY;
 });
 
-// POSITION SOURIS & CIBLAGE (HOVER)
 window.addEventListener('mousemove', e => {
     mouseX = e.clientX; mouseY = e.clientY;
     worldMouseX = (mouseX / CAMERA_ZOOM) + cameraX;
@@ -217,40 +192,33 @@ window.addEventListener('mousemove', e => {
         let enemies = [...players, ...turrets, ...nexuses].filter(ent => ent.team !== players[0].team && !ent.isDead);
         for (let ent of enemies) {
             if(ent.currentPuddle !== -1 && ent.revealTimer === 0 && ent.currentPuddle !== players[0].currentPuddle) continue;
-            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 40) {
-                hoveredEnemy = ent;
-                break;
-            }
+            if(Math.hypot(worldMouseX - ent.x, worldMouseY - ent.y) < ent.radius + 40) { hoveredEnemy = ent; break; }
         }
     }
 });
 
-// CLICS SOURIS
 canvas.addEventListener('mousedown', e => {
     if(!gameActive || (players[0] && players[0].isDead)) return;
 
-    if (e.button === 0) { // CLIC GAUCHE
+    if (e.button === 0) { 
         if (pendingSpell) {
             players[0].castSpell(pendingSpell, worldMouseX, worldMouseY);
             pendingSpell = null; updateSpellUI();
             return;
         }
         if (hoveredEnemy) {
-            players[0].autoAttackTarget = hoveredEnemy;
-            players[0].target = null; 
+            players[0].autoAttackTarget = hoveredEnemy; players[0].target = null; 
             clickMarkers.push({x: hoveredEnemy.x, y: hoveredEnemy.y, life: 20, color: '#ff007f'});
         }
     }
 
-    if (e.button === 2) { // CLIC DROIT
+    if (e.button === 2) { 
         pendingSpell = null; updateSpellUI();
         if (hoveredEnemy) {
-            players[0].autoAttackTarget = hoveredEnemy;
-            players[0].target = null; 
+            players[0].autoAttackTarget = hoveredEnemy; players[0].target = null; 
             clickMarkers.push({x: hoveredEnemy.x, y: hoveredEnemy.y, life: 20, color: '#ff007f'});
         } else {
-            players[0].autoAttackTarget = null;
-            players[0].setMovementTarget(worldMouseX, worldMouseY);
+            players[0].autoAttackTarget = null; players[0].setMovementTarget(worldMouseX, worldMouseY);
             clickMarkers.push({x: worldMouseX, y: worldMouseY, life: 20, color: '#00f0ff'});
         }
     }
@@ -261,7 +229,6 @@ canvas.addEventListener('contextmenu', e => e.preventDefault());
 window.addEventListener('keydown', e => {
     if(!gameActive || (players[0] && players[0].isDead)) return;
     let key = e.key.toLowerCase();
-    
     let chosenSlot = null;
     if(key === keyboardKeys.s1) chosenSlot = 's1';
     if(key === keyboardKeys.s2) chosenSlot = 's2';
@@ -269,8 +236,7 @@ window.addEventListener('keydown', e => {
 
     if (chosenSlot) {
         if (players[0].cds[chosenSlot] === 0 && players[0].stunTimer === 0) {
-            pendingSpell = (pendingSpell === chosenSlot) ? null : chosenSlot; 
-            updateSpellUI();
+            pendingSpell = (pendingSpell === chosenSlot) ? null : chosenSlot; updateSpellUI();
         }
     }
 });
@@ -282,71 +248,44 @@ window.prepareSpell = function(slot) {
 };
 
 const charData = {
-    seth: { name: "Seth", color: '#ff007f', hp: 1600, speed: 6.5, radius: 25, range: 130 },
-    ninja: { name: "Ninja", color: '#00f0ff', hp: 1000, speed: 8.0, radius: 22, range: 130 },
-    slime: { name: "Slime", color: '#00ffcc', hp: 2000, speed: 5.2, radius: 30, range: 350 },
-    teemo: { name: "Scout", color: '#39ff14', hp: 950, speed: 7.0, radius: 20, range: 450 },
-    mage: { name: "Mage", color: '#9d00ff', hp: 850, speed: 5.5, radius: 22, range: 450 },
-    gunner: { name: "ADC", color: '#ffbf00', hp: 900, speed: 6.0, radius: 22, range: 550 }
+    seth: { name: "Seth", role: "bruiser", color: '#ff007f', hp: 1600, speed: 5.2, radius: 25, range: 120 },
+    slime: { name: "Slime", role: "bruiser", color: '#00ffcc', hp: 2200, speed: 4.8, radius: 30, range: 350 },
+    ninja: { name: "Ninja", role: "assassin", color: '#00f0ff', hp: 950, speed: 8.5, radius: 22, range: 120 },
+    mage: { name: "Mage", role: "assassin", color: '#9d00ff', hp: 850, speed: 6.5, radius: 22, range: 450 },
+    gunner: { name: "ADC", role: "marksman", color: '#ffbf00', hp: 800, speed: 6.0, radius: 22, range: 600 },
+    teemo: { name: "Scout", role: "marksman", color: '#39ff14', hp: 850, speed: 7.2, radius: 20, range: 450 }
 };
 
-// --- NEXUS CLASSE ---
 class Nexus {
     constructor(team, x, y, color) {
-        this.team = team; this.x = x; this.y = y;
+        this.team = team; this.x = x; this.y = y; this.role = "building";
         this.radius = 70; this.maxHp = 4500; this.hp = this.maxHp;
         this.color = color; this.isDead = false; this.pulse = 0;
     }
     update() { this.pulse += 0.05; }
     draw() {
         if (this.isDead) return;
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius + Math.sin(this.pulse) * 8, 0, Math.PI*2);
-        ctx.fillStyle = this.team === 1 ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255, 0, 127, 0.2)';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(0, -this.radius);
-        ctx.lineTo(this.radius * 0.7, 0);
-        ctx.lineTo(0, this.radius);
-        ctx.lineTo(-this.radius * 0.7, 0);
-        ctx.closePath();
-        ctx.fillStyle = this.color;
-        ctx.shadowBlur = 25; ctx.shadowColor = this.color;
-        ctx.fill();
-        ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
-        ctx.shadowBlur = 0;
-        ctx.restore();
-
-        ctx.fillStyle = '#222'; ctx.fillRect(this.x - 50, this.y - 95, 100, 10);
-        ctx.fillStyle = this.color; ctx.fillRect(this.x - 50, this.y - 95, 100 * (this.hp / this.maxHp), 10);
-        ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(this.x - 50, this.y - 95, 100, 10);
+        ctx.save(); ctx.translate(this.x, this.y);
+        ctx.beginPath(); ctx.arc(0, 0, this.radius + Math.sin(this.pulse) * 8, 0, Math.PI*2); ctx.fillStyle = this.team === 1 ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255, 0, 127, 0.2)'; ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, -this.radius); ctx.lineTo(this.radius * 0.7, 0); ctx.lineTo(0, this.radius); ctx.lineTo(-this.radius * 0.7, 0); ctx.closePath();
+        ctx.fillStyle = this.color; ctx.shadowBlur = 25; ctx.shadowColor = this.color; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+        ctx.fillStyle = '#222'; ctx.fillRect(this.x - 50, this.y - 95, 100, 10); ctx.fillStyle = this.color; ctx.fillRect(this.x - 50, this.y - 95, 100 * (this.hp / this.maxHp), 10); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.strokeRect(this.x - 50, this.y - 95, 100, 10);
     }
-    takeDamage(amount) {
-        if (selectedGameRule === 'nexus') {
-            let alliedTurret = turrets.find(t => t.team === this.team && !t.isDead);
-            if (alliedTurret) return; 
-        }
-        if (this.isDead) return;
-        this.hp -= amount;
-        if (this.hp <= 0) { this.hp = 0; this.isDead = true; checkWin(); }
+    takeDamage(amount, attacker) {
+        if (selectedGameRule === 'nexus') { let alliedTurret = turrets.find(t => t.team === this.team && !t.isDead); if (alliedTurret) return; }
+        if (this.isDead) return; this.hp -= amount; if (this.hp <= 0) { this.hp = 0; this.isDead = true; checkWin(); }
     }
 }
 
-// --- TOURELLE CLASSE ---
 class Turret {
     constructor(id, team, x, y, color) {
-        this.id = id; this.team = team; this.x = x; this.y = y;
+        this.id = id; this.team = team; this.x = x; this.y = y; this.role = "building";
         this.radius = 45; this.maxHp = 2500; this.hp = this.maxHp;
         this.color = color; this.isDead = false; this.range = 450; this.attackTimer = 0;
     }
     update() {
         if(this.isDead) return;
         if(this.attackTimer > 0) this.attackTimer--;
-        
         let target = null; let minDist = this.range;
         players.forEach(p => {
             if(!p.isDead && p.team !== this.team) {
@@ -355,40 +294,27 @@ class Turret {
                 if(d < minDist) { minDist = d; target = p; }
             }
         });
-        
-        if(target && this.attackTimer === 0) {
-            projectiles.push(new Projectile(this.x, this.y, 0, 0, this, 120, 14, target, this.range / 12, this.color));
-            this.attackTimer = 60; 
-        }
+        if(target && this.attackTimer === 0) { projectiles.push(new Projectile(this.x, this.y, 0, 0, this, 120, 14, target, this.range / 12, this.color)); this.attackTimer = 60; }
     }
     draw() {
         if(this.isDead) return;
-        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        ctx.fillStyle = '#222'; ctx.fill();
-        ctx.lineWidth = 4; ctx.strokeStyle = this.color; ctx.stroke();
-        
-        ctx.fillStyle = '#111'; ctx.fillRect(this.x - 40, this.y - 70, 80, 8);
-        ctx.fillStyle = this.color; ctx.fillRect(this.x - 40, this.y - 70, 80 * (this.hp / this.maxHp), 8);
-        ctx.strokeStyle = '#000'; ctx.strokeRect(this.x - 40, this.y - 70, 80, 8);
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fillStyle = '#222'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = this.color; ctx.stroke();
+        ctx.fillStyle = '#111'; ctx.fillRect(this.x - 40, this.y - 70, 80, 8); ctx.fillStyle = this.color; ctx.fillRect(this.x - 40, this.y - 70, 80 * (this.hp / this.maxHp), 8); ctx.strokeStyle = '#000'; ctx.strokeRect(this.x - 40, this.y - 70, 80, 8);
     }
-    takeDamage(amount) {
-        if (this.isDead) return;
-        this.hp -= amount;
-        if (this.hp <= 0) { this.hp = 0; this.isDead = true; checkWin(); }
+    takeDamage(amount, attacker) {
+        if (this.isDead) return; this.hp -= amount; if (this.hp <= 0) { this.hp = 0; this.isDead = true; checkWin(); }
     }
 }
 
-// --- JOUEUR CLASSE ---
 class Player {
-    // AJOUT : Ajout du paramètre isAI dans le constructeur
     constructor(id, team, x, y, type, isAI = false) {
         this.id = id; this.team = team; this.spawnX = x; this.spawnY = y;
         this.x = x; this.y = y; 
-        this.charType = type; this.color = charData[type].color;
+        this.charType = type; this.color = charData[type].color; this.role = charData[type].role;
         this.baseSpeed = charData[type].speed; this.radius = charData[type].radius;
         this.attackRange = charData[type].range;
         this.maxHp = charData[type].hp; this.hp = this.maxHp; this.shield = 0;
-        this.isAI = isAI; // AJOUT : Enregistrement de isAI
+        this.isAI = isAI; 
         
         this.target = null; this.autoAttackTarget = null; this.angle = 0;
         this.cds = { basic: 0, s1: 0, s2: 0, ult: 0 };
@@ -398,6 +324,9 @@ class Player {
         
         this.currentPuddle = -1; this.revealTimer = 0;
         this.speedBuff = 0;
+
+        // AJOUT DES ANIMATIONS
+        this.attackAnim = 0; 
     }
 
     setMovementTarget(tx, ty) { this.target = { x: tx, y: ty }; }
@@ -408,53 +337,31 @@ class Player {
     }
 
     update() {
-        if (this.isDead) {
-            this.respawnTimer--;
-            if (this.respawnTimer <= 0) {
-                this.respawn();
-            }
-            return;
-        }
+        if (this.isDead) { this.respawnTimer--; if (this.respawnTimer <= 0) { this.respawn(); } return; }
 
         for(let key in this.cds) if(this.cds[key] > 0) this.cds[key]--;
-        if(this.stunTimer > 0) this.stunTimer--;
-        if(this.actionLock > 0) this.actionLock--;
-        if(this.revealTimer > 0) this.revealTimer--;
-        if(this.speedBuff > 0) this.speedBuff--;
+        if(this.stunTimer > 0) this.stunTimer--; if(this.actionLock > 0) this.actionLock--;
+        if(this.revealTimer > 0) this.revealTimer--; if(this.speedBuff > 0) this.speedBuff--;
+        
+        // Timer de l'animation d'attaque
+        if(this.attackAnim > 0) this.attackAnim--;
 
         if (this.autoAttackTarget) {
-            if(this.autoAttackTarget.isDead) {
-                this.autoAttackTarget = null;
-            } else {
-                let dx = this.autoAttackTarget.x - this.x;
-                let dy = this.autoAttackTarget.y - this.y;
-                let dist = Math.hypot(dx, dy);
-                this.angle = Math.atan2(dy, dx); 
-
-                if (dist > this.attackRange) {
-                    this.target = { x: this.autoAttackTarget.x, y: this.autoAttackTarget.y };
-                } else {
-                    this.target = null; 
-                    if (this.cds.basic === 0) {
-                        this.castSpell('basic', this.autoAttackTarget.x, this.autoAttackTarget.y);
-                    }
-                }
+            if(this.autoAttackTarget.isDead) { this.autoAttackTarget = null; } 
+            else {
+                let dx = this.autoAttackTarget.x - this.x; let dy = this.autoAttackTarget.y - this.y;
+                let dist = Math.hypot(dx, dy); this.angle = Math.atan2(dy, dx); 
+                if (dist > this.attackRange) { this.target = { x: this.autoAttackTarget.x, y: this.autoAttackTarget.y }; } 
+                else { this.target = null; if (this.cds.basic === 0) { this.castSpell('basic', this.autoAttackTarget.x, this.autoAttackTarget.y); } }
             }
         }
 
         if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
             let dx = this.target.x - this.x; let dy = this.target.y - this.y;
-            let dist = Math.hypot(dx, dy);
-            this.angle = Math.atan2(dy, dx);
-            
+            let dist = Math.hypot(dx, dy); this.angle = Math.atan2(dy, dx);
             let currentSpeed = this.speedBuff > 0 ? this.baseSpeed * 1.5 : this.baseSpeed;
-
-            if (dist > currentSpeed) {
-                this.x += (dx / dist) * currentSpeed;
-                this.y += (dy / dist) * currentSpeed;
-            } else {
-                this.x = this.target.x; this.y = this.target.y; this.target = null;
-            }
+            if (dist > currentSpeed) { this.x += (dx / dist) * currentSpeed; this.y += (dy / dist) * currentSpeed; } 
+            else { this.x = this.target.x; this.y = this.target.y; this.target = null; }
         }
 
         this.clampPosition();
@@ -462,10 +369,7 @@ class Player {
         this.currentPuddle = -1;
         for (let i = 0; i < PUDDLES.length; i++) {
             let p = PUDDLES[i];
-            if (this.x >= p.xMin && this.x <= p.xMax && this.y >= p.yMin && this.y <= p.yMax) {
-                this.currentPuddle = i; 
-                break;
-            }
+            if (this.x >= p.xMin && this.x <= p.xMax && this.y >= p.yMin && this.y <= p.yMax) { this.currentPuddle = i; break; }
         }
     }
 
@@ -473,56 +377,30 @@ class Player {
         let key = null; let flip = false;
         switch(this.charType) {
             case 'ninja':
-                if(octant===0) { key = 'ninjaouest'; flip = true; }
-                if(octant===1) { key = 'ninjasudouest'; flip = true; }
-                if(octant===2) { key = 'ninjasud'; flip = false; }
-                if(octant===3) { key = 'ninjasudouest'; flip = false; }
-                if(octant===4) { key = 'ninjaouest'; flip = false; }
-                if(octant===5) { key = 'ninjanorthouest'; flip = false; }
-                if(octant===6) { key = 'ninjanorth'; flip = false; }
-                if(octant===7) { key = 'ninjanorthouest'; flip = true; }
-                break;
+                if(octant===0) { key = 'ninjaouest'; flip = true; } if(octant===1) { key = 'ninjasudouest'; flip = true; }
+                if(octant===2) { key = 'ninjasud'; flip = false; } if(octant===3) { key = 'ninjasudouest'; flip = false; }
+                if(octant===4) { key = 'ninjaouest'; flip = false; } if(octant===5) { key = 'ninjanorthouest'; flip = false; }
+                if(octant===6) { key = 'ninjanorth'; flip = false; } if(octant===7) { key = 'ninjanorthouest'; flip = true; } break;
             case 'teemo':
-                if(octant===0) { key = 'scoutouest'; flip = true; }
-                if(octant===1) { key = 'scoutsudouest'; flip = true; }
-                if(octant===2) { key = 'scoutsud'; flip = false; }
-                if(octant===3) { key = 'scoutsudouest'; flip = false; }
-                if(octant===4) { key = 'scoutouest'; flip = false; }
-                if(octant===5) { key = 'scoutnordouest'; flip = false; }
-                if(octant===6) { key = 'scoutnord'; flip = false; }
-                if(octant===7) { key = 'scoutnordouest'; flip = true; }
-                break;
+                if(octant===0) { key = 'scoutouest'; flip = true; } if(octant===1) { key = 'scoutsudouest'; flip = true; }
+                if(octant===2) { key = 'scoutsud'; flip = false; } if(octant===3) { key = 'scoutsudouest'; flip = false; }
+                if(octant===4) { key = 'scoutouest'; flip = false; } if(octant===5) { key = 'scoutnordouest'; flip = false; }
+                if(octant===6) { key = 'scoutnord'; flip = false; } if(octant===7) { key = 'scoutnordouest'; flip = true; } break;
             case 'seth':
-                if(octant===0) { key = 'setouest'; flip = true; }
-                if(octant===1) { key = 'setsouthest'; flip = false; } 
-                if(octant===2) { key = 'setsud'; flip = false; }
-                if(octant===3) { key = 'setsouthest'; flip = true; } 
-                if(octant===4) { key = 'setouest'; flip = false; }
-                if(octant===5) { key = 'setnordouest'; flip = false; }
-                if(octant===6) { key = 'setnord'; flip = false; }
-                if(octant===7) { key = 'setnordouest'; flip = true; }
-                break;
+                if(octant===0) { key = 'setouest'; flip = true; } if(octant===1) { key = 'setsouthest'; flip = false; } 
+                if(octant===2) { key = 'setsud'; flip = false; } if(octant===3) { key = 'setsouthest'; flip = true; } 
+                if(octant===4) { key = 'setouest'; flip = false; } if(octant===5) { key = 'setnordouest'; flip = false; }
+                if(octant===6) { key = 'setnord'; flip = false; } if(octant===7) { key = 'setnordouest'; flip = true; } break;
             case 'gunner':
-                if(octant===0) { key = 'adcouest'; flip = true; }
-                if(octant===1) { key = 'adcsudest'; flip = false; }
-                if(octant===2) { key = 'adcsud'; flip = false; }
-                if(octant===3) { key = 'adcsudouest'; flip = false; }
-                if(octant===4) { key = 'adcouest'; flip = false; }
-                if(octant===5) { key = 'adcouest'; flip = false; } 
-                if(octant===6) { key = 'adcnorth'; flip = false; }
-                if(octant===7) { key = 'adcouest'; flip = true; } 
-                break;
+                if(octant===0) { key = 'adcouest'; flip = true; } if(octant===1) { key = 'adcsudest'; flip = false; }
+                if(octant===2) { key = 'adcsud'; flip = false; } if(octant===3) { key = 'adcsudouest'; flip = false; }
+                if(octant===4) { key = 'adcouest'; flip = false; } if(octant===5) { key = 'adcouest'; flip = false; } 
+                if(octant===6) { key = 'adcnorth'; flip = false; } if(octant===7) { key = 'adcouest'; flip = true; } break;
             case 'mage':
-                // AJOUT : Correction du bug d'inversion pour le Mage
-                if(octant===0) { key = 'mageouest'; flip = false; } // Inversé
-                if(octant===1) { key = 'magesudouest'; flip = false; } // Inversé
-                if(octant===2) { key = 'mangesud'; flip = false; } 
-                if(octant===3) { key = 'magesudouest'; flip = true; } // Inversé
-                if(octant===4) { key = 'mageouest'; flip = true; } // Inversé
-                if(octant===5) { key = 'magenordest'; flip = true; } 
-                if(octant===6) { key = 'magenord'; flip = false; }
-                if(octant===7) { key = 'magenordest'; flip = false; }
-                break;
+                if(octant===0) { key = 'mageouest'; flip = false; } if(octant===1) { key = 'magesudouest'; flip = false; } 
+                if(octant===2) { key = 'mangesud'; flip = false; } if(octant===3) { key = 'magesudouest'; flip = true; }
+                if(octant===4) { key = 'mageouest'; flip = true; } if(octant===5) { key = 'magenordest'; flip = true; } 
+                if(octant===6) { key = 'magenord'; flip = false; } if(octant===7) { key = 'magenordest'; flip = false; } break;
         }
         return { key, flip };
     }
@@ -530,140 +408,104 @@ class Player {
     draw() {
         if (this.isDead) return;
 
-        let alpha = 1.0;
-        let isStealthyToSelf = false;
-
+        let alpha = 1.0; 
         if (this.currentPuddle !== -1 && this.revealTimer === 0) {
-            if (this.id === 1) {
-                alpha = 0.5; isStealthyToSelf = true; 
-            } else {
-                let p1Puddle = players[0].currentPuddle;
-                if (p1Puddle === this.currentPuddle) alpha = 0.5; 
-                else alpha = 0.0; 
-            }
+            if (this.id === 1) { alpha = 0.5; } 
+            else { let p1Puddle = players[0].currentPuddle; if (p1Puddle === this.currentPuddle) alpha = 0.5; else alpha = 0.0; }
         }
 
         if (alpha <= 0) return;
 
-        ctx.save();
-        ctx.globalAlpha = alpha;
+        ctx.save(); 
+        ctx.globalAlpha = alpha; 
         ctx.translate(this.x, this.y);
 
-        if (this.charType !== 'slime') {
-            let deg = (this.angle * 180 / Math.PI + 360) % 360;
-            let octant = Math.floor((deg + 22.5) / 45) % 8; 
+        // --- ANIMATIONS VISUELLES ---
+        ctx.save(); 
+        
+        let pushForward = 0;
+        if (this.attackAnim > 0) {
+            // Effet de recul / coup vers l'avant
+            pushForward = Math.sin((this.attackAnim / 15) * Math.PI) * 15; 
+        }
+        ctx.translate(Math.cos(this.angle) * pushForward, Math.sin(this.angle) * pushForward);
 
-            let frame = this.getSkinFrame(octant);
-            let img = frame ? skins[frame.key] : null;
+        // Effet de rebond (marche)
+        if (this.target && this.stunTimer === 0 && this.actionLock === 0) {
+            let squash = Math.sin(Date.now() / 80) * 0.08;
+            ctx.scale(1 + squash, 1 - squash);
+        }
+
+        if (this.charType !== 'slime') {
+            let deg = (this.angle * 180 / Math.PI + 360) % 360; let octant = Math.floor((deg + 22.5) / 45) % 8; 
+            let frame = this.getSkinFrame(octant); let img = frame ? skins[frame.key] : null;
 
             if (img && img.complete && img.naturalWidth > 0) {
-                ctx.save();
-                if (frame.flip) ctx.scale(-1, 1);
-                let drawSize = this.radius * 2.8;
-                ctx.drawImage(img, -drawSize/2, -drawSize/2, drawSize, drawSize);
-                ctx.restore();
-            } else {
-                ctx.rotate(this.angle);
-                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color; ctx.fill();
-            }
+                ctx.save(); if (frame.flip) ctx.scale(-1, 1);
+                let drawSize = this.radius * 2.8; ctx.drawImage(img, -drawSize/2, -drawSize/2, drawSize, drawSize); ctx.restore();
+            } else { ctx.rotate(this.angle); ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); }
         } else {
-            ctx.rotate(this.angle);
-            ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = this.color; ctx.fill();
-            ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.stroke();
-            ctx.fillStyle = '#fff'; ctx.fillRect(this.radius - 10, -5, 15, 10);
+            ctx.rotate(this.angle); ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill();
+            ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.fillRect(this.radius - 10, -5, 15, 10);
         }
 
-        ctx.restore();
+        ctx.restore(); // Fin des animations pour ne pas déformer la barre de vie
 
-        if(isStealthyToSelf) {
-            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 15, 0, Math.PI * 2);
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.8)"; ctx.textAlign = 'center'; ctx.font = "bold 14px Arial";
-            ctx.fillText("FURTIF", this.x, this.y + this.radius + 30);
-        }
-
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = '#222'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
-        if(this.shield > 0) {
-            ctx.fillStyle = '#00f0ff'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
-        } else {
-            ctx.fillStyle = (this.team === 1) ? '#39ff14' : '#ff007f';
-            ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60 * (this.hp / this.maxHp), 8);
-        }
+        ctx.globalAlpha = alpha; ctx.fillStyle = '#222'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
+        if(this.shield > 0) { ctx.fillStyle = '#00f0ff'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8); } 
+        else { ctx.fillStyle = (this.team === 1) ? '#39ff14' : '#ff007f'; ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60 * (this.hp / this.maxHp), 8); }
+        ctx.textAlign = 'center'; if (this.stunTimer > 0) { ctx.fillStyle = "yellow"; ctx.fillText("STUN", this.x, this.y - this.radius - 35); }
         
-        ctx.textAlign = 'center';
-        if (this.stunTimer > 0) { ctx.fillStyle = "yellow"; ctx.fillText("STUN", this.x, this.y - this.radius - 35); }
-        ctx.globalAlpha = 1.0; 
+        ctx.restore(); 
     }
 
     castSpell(slot, targetX, targetY) {
         if(this.isDead || this.stunTimer > 0 || this.actionLock > 0 || this.cds[slot] > 0) return;
         
-        this.revealTimer = 60; 
-        this.target = null; 
+        this.revealTimer = 60; this.target = null; 
+        this.attackAnim = 15; // DÉCLENCHE L'ANIMATION !
         
         let dx = targetX - this.x; let dy = targetY - this.y;
         let dist = Math.hypot(dx, dy) || 1;
-        this.angle = Math.atan2(dy, dx); 
-        dx /= dist; dy /= dist; 
+        this.angle = Math.atan2(dy, dx); dx /= dist; dy /= dist; 
 
         if (slot === 'basic') {
-            if(this.charType === 'ninja' || this.charType === 'seth') {
-                this.meleeAttack(45, this.attackRange);
-            } else {
-                let speed = 18; let lifeTime = this.attackRange / speed;
-                projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, 50, 10, null, lifeTime, this.color)); 
+            if(this.charType === 'ninja' || this.charType === 'seth') { this.meleeAttack(45, this.attackRange); } 
+            else {
+                let speed = 25; let lifeTime = this.attackRange / speed; let bDmg = (this.charType === 'gunner') ? 35 : 50;
+                projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, bDmg, 8, null, lifeTime, this.color)); 
             }
-            this.cds.basic = 25;
+            this.cds.basic = (this.charType === 'gunner') ? 15 : 25;
             return;
         }
 
         let cooldown = 0;
-
         switch(this.charType) {
             case 'ninja':
                 if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 95, 15, null, 400/22, this.color)); cooldown=120; }
-                if(slot==='s2') { this.x += dx*250; this.y += dy*250; this.clampPosition(); this.meleeAttack(85, 150); cooldown=300; } 
-                if(slot==='ult') { 
-                    let t = this.getClosestEnemy(targetX, targetY);
-                    if(t) { this.x = t.x - dx*50; this.y = t.y - dy*50; this.clampPosition(); this.meleeAttack(260, 150); t.stunTimer = 60; }
-                    cooldown=900; 
-                }
-                break;
-                
+                if(slot==='s2') { this.x += dx*150; this.y += dy*150; this.clampPosition(); this.meleeAttack(70, 120); cooldown=300; } 
+                if(slot==='ult') { let t = this.getClosestEnemy(targetX, targetY); if(t) { this.x = t.x - dx*50; this.y = t.y - dy*50; this.clampPosition(); this.meleeAttack(300, 150); t.stunTimer = 60; } cooldown=900; } break;
             case 'gunner':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*30, dy*30, this, 130, 12, null, 700/30, this.color)); cooldown=180; } 
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*30, dy*30, this, 100, 12, null, 700/30, this.color)); cooldown=180; } 
                 if(slot==='s2') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 150, 40, null, 300, '#ffbf00')); cooldown=400; } 
-                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*35, dy*35, this, 360, 50, null, 800/35, '#ff0000')); cooldown=1000; } 
-                break;
-
+                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*35, dy*35, this, 400, 50, null, 800/35, '#ff0000')); cooldown=1000; } break;
             case 'slime':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*15, dy*15, this, 110, 25, null, 400/15, this.color)); cooldown=150; }
-                if(slot==='s2') { this.hp = Math.min(this.maxHp, this.hp + 250); this.shield += 180; clickMarkers.push({x: this.x, y: this.y, life: 30, color: '#00ffcc', isExplosion: true}); cooldown=500; } 
-                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*10, dy*10, this, 320, 100, null, 600/10, this.color)); cooldown=900; } 
-                break;
-
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*15, dy*15, this, 80, 25, null, 400/15, this.color)); cooldown=150; }
+                if(slot==='s2') { this.hp = Math.min(this.maxHp, this.hp + 150); this.shield += 200; clickMarkers.push({x: this.x, y: this.y, life: 30, color: '#00ffcc', isExplosion: true}); cooldown=500; } 
+                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*10, dy*10, this, 250, 100, null, 600/10, this.color)); cooldown=900; } break;
             case 'seth':
-                if(slot==='s1') { this.meleeAttack(130, 200); clickMarkers.push({x: this.x, y: this.y, life: 20, color: this.color, isExplosion: true}); cooldown=200; } 
-                if(slot==='s2') { this.x += dx*200; this.y += dy*200; this.clampPosition(); this.meleeAttack(90, 120); cooldown=300; } 
-                if(slot==='ult') { this.x = targetX; this.y = targetY; this.clampPosition(); this.meleeAttack(320, 250); clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true}); cooldown=1000; } 
-                break;
-
+                if(slot==='s1') { this.meleeAttack(100, 200); clickMarkers.push({x: this.x, y: this.y, life: 20, color: this.color, isExplosion: true}); cooldown=250; } 
+                if(slot==='s2') { this.x += dx*150; this.y += dy*150; this.clampPosition(); this.meleeAttack(70, 120); cooldown=300; } 
+                if(slot==='ult') { let jumpDist = Math.min(300, dist); this.x += dx * jumpDist; this.y += dy * jumpDist; this.clampPosition(); this.meleeAttack(250, 200); clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true}); cooldown=1200; } break;
             case 'mage':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 140, 20, null, 500/18, '#ff5500')); cooldown=180; } 
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 120, 20, null, 500/18, '#ff5500')); cooldown=180; } 
                 if(slot==='s2') { this.x = targetX; this.y = targetY; this.clampPosition(); clickMarkers.push({x: this.x, y: this.y, life: 15, color: '#9d00ff', isExplosion: true}); cooldown=400; } 
-                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*5, dy*5, this, 500, 60, null, 700/5, '#330066')); cooldown=1100; } 
-                break;
-
+                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*5, dy*5, this, 450, 60, null, 700/5, '#330066')); cooldown=1100; } break;
             case 'teemo':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 95, 10, null, 500/22, this.color)); cooldown=120; } 
+                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 80, 10, null, 500/22, this.color)); cooldown=120; } 
                 if(slot==='s2') { this.speedBuff = 180; cooldown=400; } 
-                if(slot==='ult') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 320, 35, null, 1000, this.color)); cooldown=800; } 
-                break;
+                if(slot==='ult') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 300, 35, null, 1000, this.color)); cooldown=800; } break;
         }
-
         this.cds[slot] = cooldown; 
     }
 
@@ -681,21 +523,33 @@ class Player {
         let targets = [...players, ...turrets, ...nexuses].filter(ent => ent.team !== this.team && !ent.isDead);
         targets.forEach(ent => {
             if (Math.hypot(ent.x - hitX, ent.y - hitY) < ent.radius + (range/2)) {
-                ent.takeDamage(dmg); clickMarkers.push({x: ent.x, y: ent.y, life: 10, color: '#fff', isExplosion: true});
+                ent.takeDamage(dmg, this); clickMarkers.push({x: ent.x, y: ent.y, life: 10, color: '#fff', isExplosion: true});
             }
         });
         clickMarkers.push({x: hitX, y: hitY, life: 10, color: '#fff', isSlash: true, angle: this.angle});
     }
 
-    takeDamage(amount) {
+    takeDamage(amount, attacker) {
         if (this.isDead) return;
-        if(this.shield > 0) { this.shield -= amount; if(this.shield < 0) { amount = Math.abs(this.shield); this.shield = 0; } else return; }
+
+        let multiplier = 1.0; let isCrit = false;
+        if (attacker && attacker.role) {
+            if (attacker.role === 'bruiser' && this.role === 'assassin') { multiplier = 1.30; isCrit = true; }
+            if (attacker.role === 'assassin' && this.role === 'marksman') { multiplier = 1.30; isCrit = true; }
+            if (attacker.role === 'marksman' && this.role === 'bruiser') { multiplier = 1.30; isCrit = true; }
+            if (attacker.role === 'assassin' && this.role === 'bruiser') { multiplier = 0.80; }
+            if (attacker.role === 'marksman' && this.role === 'assassin') { multiplier = 0.80; }
+            if (attacker.role === 'bruiser' && this.role === 'marksman') { multiplier = 0.80; }
+        }
+
+        let finalDamage = amount * multiplier;
+        if(this.shield > 0) { this.shield -= finalDamage; if(this.shield < 0) { finalDamage = Math.abs(this.shield); this.shield = 0; } else return; }
         
-        this.hp -= amount;
+        this.hp -= finalDamage;
+        if (isCrit) { clickMarkers.push({x: this.x, y: this.y - 40, life: 30, color: '#ffbf00', isText: true, text: "EFFICACE!"}); }
+
         if (this.hp <= 0) { 
-            this.hp = 0; 
-            this.isDead = true; 
-            this.respawnTimer = 240; 
+            this.hp = 0; this.isDead = true; this.respawnTimer = 240; 
             if (this.team === 1) killsRed++; else killsBlue++;
             updateScoreHUD(); checkWin(); 
         }
@@ -719,8 +573,7 @@ class Projectile {
     update() {
         if(this.homingTarget && !this.homingTarget.isDead) {
             let dx = this.homingTarget.x - this.x; let dy = this.homingTarget.y - this.y;
-            let dist = Math.hypot(dx, dy);
-            this.vx = (dx/dist) * 12; this.vy = (dy/dist) * 12;
+            let dist = Math.hypot(dx, dy); this.vx = (dx/dist) * 12; this.vy = (dy/dist) * 12;
         }
 
         this.x += this.vx; this.y += this.vy; this.life--;
@@ -730,21 +583,18 @@ class Projectile {
         
         targets.forEach(ent => {
             if (this.active && Math.hypot(ent.x - this.x, ent.y - this.y) < ent.radius + this.radius) {
-                ent.takeDamage(this.dmg); this.active = false;
+                ent.takeDamage(this.dmg, this.owner); this.active = false;
                 clickMarkers.push({x: this.x, y: this.y, life: 15, color: this.owner.color, isExplosion: true});
             }
         });
 
-        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        ctx.fillStyle = this.color; ctx.fill();
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fillStyle = this.color; ctx.fill();
     }
 }
 
-// AJOUT : LE RETOUR DE LA FONCTION UPDATE BOT !
 function updateBot(bot) {
     if (bot.isDead || bot.stunTimer > 0) return;
     
-    // Si le joueur est mort, on attaque les bâtiments
     let target = players[0]; 
     if (target.isDead) {
         let objTarget = turrets.find(t => t.team === 1 && !t.isDead) || nexuses.find(n => n.team === 1 && !n.isDead);
@@ -782,56 +632,34 @@ function chooseChar(type) {
     if(title) title.innerText = "Joueur 2 : Choisis ton Champion";
     
     if (locSelections.length === 2) {
-        let cs = document.getElementById('char-select');
-        let slb = document.getElementById('start-local-btn');
-        if(cs) cs.style.display = 'none';
-        if(slb) slb.style.display = 'block';
+        let cs = document.getElementById('char-select'); let slb = document.getElementById('start-local-btn');
+        if(cs) cs.style.display = 'none'; if(slb) slb.style.display = 'block';
     }
 }
 
 function updateScoreHUD() {
-    let blueScoreEl = document.getElementById('score-team-blue');
-    let redScoreEl = document.getElementById('score-team-red');
-    let titleEl = document.getElementById('score-mode-title');
-    
+    let blueScoreEl = document.getElementById('score-team-blue'); let redScoreEl = document.getElementById('score-team-red'); let titleEl = document.getElementById('score-mode-title');
     if (selectedGameRule === '3kills') {
-        titleEl.innerText = "PREMIER À 3 KILLS";
-        blueScoreEl.innerText = `J1 : ${killsBlue} / 3`;
-        redScoreEl.innerText = `J2 : ${killsRed} / 3`;
+        titleEl.innerText = "PREMIER À 3 KILLS"; blueScoreEl.innerText = `J1 : ${killsBlue} / 3`; redScoreEl.innerText = `${currentIsBot ? 'IA' : 'J2'} : ${killsRed} / 3`;
     } else {
-        titleEl.innerText = "DESTRUCTION DU NEXUS";
-        blueScoreEl.innerText = `J1 : ${killsBlue} Kills`;
-        redScoreEl.innerText = `J2 : ${killsRed} Kills`;
+        titleEl.innerText = "DESTRUCTION DU NEXUS"; blueScoreEl.innerText = `J1 : ${killsBlue} Kills`; redScoreEl.innerText = `${currentIsBot ? 'IA' : 'J2'} : ${killsRed} Kills`;
     }
 }
 
 function startLocalGame() {
-    let lm = document.getElementById('local-menu');
-    let hud = document.getElementById('hud');
-    if(lm) lm.style.display = 'none';
-    if(hud) hud.style.display = 'flex';
+    let lm = document.getElementById('local-menu'); let hud = document.getElementById('hud');
+    if(lm) lm.style.display = 'none'; if(hud) hud.style.display = 'flex';
     
     killsBlue = 0; killsRed = 0; updateScoreHUD();
     
-    // AJOUT : On repasse true en isAI sur le joueur 2 pour qu'il soit contrôlé par l'IA
     players = [
         new Player(1, 1, PLAYABLE_X_MIN + 300, MAP_HEIGHT / 2, locSelections[0], false),
-        new Player(2, 2, PLAYABLE_X_MAX - 300, MAP_HEIGHT / 2, locSelections[1], true) // <--- ICI (true)
+        new Player(2, 2, PLAYABLE_X_MAX - 300, MAP_HEIGHT / 2, locSelections[1], currentIsBot)
     ];
+    nexuses = [ new Nexus(1, PLAYABLE_X_MIN + 60, MAP_HEIGHT / 2, '#00f0ff'), new Nexus(2, PLAYABLE_X_MAX - 60, MAP_HEIGHT / 2, '#ff007f') ];
+    turrets = [ new Turret(3, 1, PLAYABLE_X_MIN + 450, MAP_HEIGHT / 2, '#00f0ff'), new Turret(4, 2, PLAYABLE_X_MAX - 450, MAP_HEIGHT / 2, '#ff007f') ];
 
-    nexuses = [
-        new Nexus(1, PLAYABLE_X_MIN + 60, MAP_HEIGHT / 2, '#00f0ff'),
-        new Nexus(2, PLAYABLE_X_MAX - 60, MAP_HEIGHT / 2, '#ff007f')
-    ];
-
-    turrets = [
-        new Turret(3, 1, PLAYABLE_X_MIN + 450, MAP_HEIGHT / 2, '#00f0ff'),
-        new Turret(4, 2, PLAYABLE_X_MAX - 450, MAP_HEIGHT / 2, '#ff007f')
-    ];
-
-    cameraX = players[0].x - window.innerWidth / 2;
-    cameraY = players[0].y - window.innerHeight / 2;
-
+    cameraX = players[0].x - window.innerWidth / 2; cameraY = players[0].y - window.innerHeight / 2;
     gameActive = true; resizeCanvas(); gameLoop();
 }
 
@@ -845,25 +673,38 @@ function updateSpellUI() {
     ['s1', 's2', 'ult'].forEach(slot => {
         let box = document.getElementById(`spell-${slot}`);
         if (!box) return;
-        
+
+        // AJOUT : Ajoute un span dynamique pour afficher le texte du cooldown
+        let cdText = box.querySelector('.cd-text');
+        if (!cdText) {
+            cdText = document.createElement('div');
+            cdText.className = 'cd-text';
+            cdText.style.position = 'absolute';
+            cdText.style.fontSize = '2em';
+            cdText.style.fontWeight = 'bold';
+            cdText.style.color = '#fff';
+            cdText.style.textShadow = '0 0 10px #ff007f, 0 0 5px #000';
+            cdText.style.zIndex = '10';
+            box.appendChild(cdText);
+        }
+
         if(pendingSpell === slot) box.classList.add('active'); else box.classList.remove('active');
         
         if(p.cds[slot] > 0) {
             box.classList.remove('ready'); box.classList.add('cooldown');
+            cdText.innerText = Math.ceil(p.cds[slot] / 60); // Affiche les secondes
         } else {
             box.classList.add('ready'); box.classList.remove('cooldown');
+            cdText.innerText = ""; // Cache le texte si le sort est dispo
         }
     });
 
-    let bar = document.getElementById(`p1-hp-bar`);
-    let txt = document.getElementById(`p1-hp-txt`);
-    if(bar) bar.style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
-    if(txt) txt.innerText = `${Math.floor(p.hp)} / ${p.maxHp}`;
+    let bar = document.getElementById(`p1-hp-bar`); let txt = document.getElementById(`p1-hp-txt`);
+    if(bar) bar.style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`; if(txt) txt.innerText = `${Math.floor(p.hp)} / ${p.maxHp}`;
 }
 
 function checkWin() {
-    let gameOver = false;
-    let winnerText = ""; let subText = ""; let winColor = "#fff";
+    let gameOver = false; let winnerText = ""; let subText = ""; let winColor = "#fff";
 
     if (selectedGameRule === '3kills') {
         if (killsBlue >= 3) { gameOver = true; winnerText = "VICTOIRE !"; subText = "Tu as obtenu 3 éliminations !"; winColor = "#39ff14"; } 
@@ -876,9 +717,7 @@ function checkWin() {
     
     if (gameOver) {
         gameActive = false;
-        let overlay = document.getElementById('game-over-overlay');
-        let wtext = document.getElementById('winner-text');
-        let stext = document.getElementById('winner-subtext');
+        let overlay = document.getElementById('game-over-overlay'); let wtext = document.getElementById('winner-text'); let stext = document.getElementById('winner-subtext');
         if(overlay) overlay.style.display = 'flex';
         if(wtext) { wtext.innerText = winnerText; wtext.style.color = winColor; }
         if(stext) stext.innerText = subText;
@@ -889,40 +728,27 @@ function gameLoop() {
     if (!gameActive) return;
 
     const panSpeed = 20 / CAMERA_ZOOM; const edgeSize = 50;
-    if (mouseX < edgeSize) cameraX -= panSpeed;
-    if (mouseX > window.innerWidth - edgeSize) cameraX += panSpeed;
-    if (mouseY < edgeSize) cameraY -= panSpeed;
-    if (mouseY > window.innerHeight - edgeSize) cameraY += panSpeed;
+    if (mouseX < edgeSize) cameraX -= panSpeed; if (mouseX > window.innerWidth - edgeSize) cameraX += panSpeed;
+    if (mouseY < edgeSize) cameraY -= panSpeed; if (mouseY > window.innerHeight - edgeSize) cameraY += panSpeed;
 
-    cameraX = Math.max(0, Math.min(MAP_WIDTH - window.innerWidth / CAMERA_ZOOM, cameraX));
-    cameraY = Math.max(0, Math.min(MAP_HEIGHT - window.innerHeight / CAMERA_ZOOM, cameraY));
+    cameraX = Math.max(0, Math.min(MAP_WIDTH - window.innerWidth / CAMERA_ZOOM, cameraX)); cameraY = Math.max(0, Math.min(MAP_HEIGHT - window.innerHeight / CAMERA_ZOOM, cameraY));
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save(); 
-    ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM);
-    ctx.translate(-cameraX, -cameraY);
+    ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save(); ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM); ctx.translate(-cameraX, -cameraY);
+    if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT); else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
 
-    if (mapImg.complete) ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
-    else { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); }
-
-    nexuses.forEach(n => { n.update(); n.draw(); });
-    turrets.forEach(t => { t.update(); t.draw(); });
+    nexuses.forEach(n => { n.update(); n.draw(); }); turrets.forEach(t => { t.update(); t.draw(); });
 
     if (hoveredEnemy && !hoveredEnemy.isDead && !pendingSpell) {
-        ctx.beginPath(); ctx.arc(hoveredEnemy.x, hoveredEnemy.y, hoveredEnemy.radius + 12, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; ctx.lineWidth = 3; ctx.stroke();
-        ctx.beginPath(); ctx.arc(players[0].x, players[0].y, players[0].attackRange, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.3)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.arc(hoveredEnemy.x, hoveredEnemy.y, hoveredEnemy.radius + 12, 0, Math.PI * 2); ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; ctx.lineWidth = 3; ctx.stroke();
+        ctx.beginPath(); ctx.arc(players[0].x, players[0].y, players[0].attackRange, 0, Math.PI * 2); ctx.strokeStyle = "rgba(255, 255, 255, 0.3)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
     }
     
     let p1 = players[0];
     if (p1 && p1.autoAttackTarget && !p1.autoAttackTarget.isDead) {
-        let t = p1.autoAttackTarget;
-        ctx.beginPath(); ctx.arc(t.x, t.y, t.radius + 15, 0, Math.PI * 2);
-        ctx.strokeStyle = "#ff007f"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+        let t = p1.autoAttackTarget; ctx.beginPath(); ctx.arc(t.x, t.y, t.radius + 15, 0, Math.PI * 2); ctx.strokeStyle = "#ff007f"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     }
 
-    // AJOUT : Prévisualisation des sorts avec texte
+    // AJOUT : PRÉVISUALISATION VISUELLE DES SORTS
     if (pendingSpell && !players[0].isDead) {
         let charType = players[0].charType;
         let spellName = spellDescriptions[charType][pendingSpell] || "Attaque";
@@ -946,28 +772,26 @@ function gameLoop() {
         }
         ctx.restore();
 
+        // Texte flottant d'info
         ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; ctx.fillRect(worldMouseX + 15, worldMouseY - 30, spellName.length * 8 + 30, 40);
         ctx.fillStyle = "#00f0ff"; ctx.font = "bold 14px Arial"; ctx.fillText(spellName, worldMouseX + 30 + (spellName.length * 4), worldMouseY - 5);
     }
 
     players[0].update(); 
     if (players[1]) {
-        if (players[1].isAI) updateBot(players[1]); // AJOUT : L'IA se met à jour
+        if (players[1].isAI) updateBot(players[1]);
         players[1].update();
     }
     players.forEach(p => p.draw());
 
     for (let i = clickMarkers.length - 1; i >= 0; i--) {
         let m = clickMarkers[i];
-        if (m.isSlash) {
-            ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
-            ctx.beginPath(); ctx.arc(0, 0, 40, -Math.PI/3, Math.PI/3);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${m.life / 10})`; ctx.lineWidth = 10; ctx.stroke();
-            ctx.restore();
+        if (m.isText) {
+            ctx.fillStyle = m.color; ctx.font = "bold 20px Arial"; ctx.fillText(m.text, m.x, m.y - (30 - m.life)); 
+        } else if (m.isSlash) {
+            ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle); ctx.beginPath(); ctx.arc(0, 0, 40, -Math.PI/3, Math.PI/3); ctx.strokeStyle = `rgba(255, 255, 255, ${m.life / 10})`; ctx.lineWidth = 10; ctx.stroke(); ctx.restore();
         } else {
-            ctx.beginPath(); ctx.arc(m.x, m.y, 30 - m.life, 0, Math.PI*2);
-            ctx.strokeStyle = m.isExplosion ? m.color : (m.color === '#00f0ff' ? `rgba(0,240,255,${m.life/20})` : `rgba(255,0,127,${m.life/20})`);
-            ctx.lineWidth = m.isExplosion ? 4 : 2; ctx.stroke();
+            ctx.beginPath(); ctx.arc(m.x, m.y, 30 - m.life, 0, Math.PI*2); ctx.strokeStyle = m.isExplosion ? m.color : (m.color === '#00f0ff' ? `rgba(0,240,255,${m.life/20})` : `rgba(255,0,127,${m.life/20})`); ctx.lineWidth = m.isExplosion ? 4 : 2; ctx.stroke();
         }
         m.life--; if (m.life <= 0) clickMarkers.splice(i, 1);
     }
