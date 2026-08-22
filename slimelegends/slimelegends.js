@@ -93,11 +93,11 @@ document.addEventListener('fullscreenchange', () => {
 // 2. GESTION DES MODES DE JEU ET MENUS
 // =========================================================
 
-let selectedGameRule = 'nexus'; // 'nexus' ou '3kills'
+let selectedGameRule = 'nexus';
 let locSelections = [];
 let killsBlue = 0;
 let killsRed = 0;
-window.currentIsBot = window.currentIsBot || false; // Sécurité globale pour le bot
+window.currentIsBot = window.currentIsBot || false; 
 
 function openMenu(type) {
     document.getElementById('main-menu').style.display = 'none';
@@ -209,7 +209,7 @@ let nexuses = [];
 let projectiles = []; 
 let clickMarkers = [];
 
-// QWERTY par défaut dans le code (Q, W, E)
+// QWERTY par défaut dans le code
 let keyboardKeys = { s1: 'q', s2: 'w', ult: 'e' };
 let pendingSpell = null; 
 let hoveredEnemy = null; 
@@ -307,8 +307,20 @@ canvas.addEventListener('contextmenu', e => e.preventDefault());
 window.addEventListener('keydown', e => {
     if(!gameActive || (players[0] && players[0].isDead)) return;
     let key = e.key.toLowerCase();
-    let chosenSlot = null;
     
+    // NOUVEAU : TOUCHE ESPACE POUR ATTAQUER LE PLUS PROCHE
+    if (key === ' ') {
+        e.preventDefault(); // Bloque le scroll de la page
+        let closest = players[0].getClosestEnemy(players[0].x, players[0].y);
+        if (closest) {
+            players[0].autoAttackTarget = closest;
+            players[0].target = null;
+            clickMarkers.push({x: closest.x, y: closest.y, life: 20, color: '#ff007f'});
+        }
+        return;
+    }
+
+    let chosenSlot = null;
     if(key === keyboardKeys.s1) chosenSlot = 's1';
     if(key === keyboardKeys.s2) chosenSlot = 's2';
     if(key === keyboardKeys.ult) chosenSlot = 'ult';
@@ -333,7 +345,7 @@ const charData = {
     slime: { name: "Slime", role: "bruiser", color: '#00ffcc', hp: 2200, speed: 4.8, radius: 30, range: 350 },
     ninja: { name: "Ninja", role: "assassin", color: '#00f0ff', hp: 950, speed: 8.5, radius: 22, range: 120 },
     mage: { name: "Mage", role: "assassin", color: '#9d00ff', hp: 850, speed: 6.5, radius: 22, range: 450 },
-    gunner: { name: "ADC", role: "marksman", color: '#ffbf00', hp: 800, speed: 6.0, radius: 22, range: 600 },
+    gunner: { name: "ADC", role: "marksman", color: '#ffbf00', hp: 800, speed: 6.0, radius: 22, range: 500 }, // RANGE 500
     teemo: { name: "Scout", role: "marksman", color: '#39ff14', hp: 850, speed: 7.2, radius: 20, range: 450 }
 };
 
@@ -424,7 +436,7 @@ class Turret {
         this.hp = this.maxHp;
         this.color = color; 
         this.isDead = false; 
-        this.range = 450; 
+        this.range = 500; // RANGE ÉGAL À L'ADC (500)
         this.attackTimer = 0;
     }
     
@@ -662,7 +674,6 @@ class Player {
 
         let alpha = 1.0; 
         
-        // Furtivité : rend simplement transparent !
         if (this.currentPuddle !== -1 && this.revealTimer === 0) {
             if (this.id === 1) { 
                 alpha = 0.4; 
@@ -679,7 +690,6 @@ class Player {
         ctx.globalAlpha = alpha; 
         ctx.translate(this.x, this.y);
 
-        // --- ANIMATIONS VISUELLES ---
         ctx.save(); 
         
         let pushForward = 0;
@@ -727,7 +737,6 @@ class Player {
 
         ctx.restore(); 
 
-        // Dessin des barres de vie
         ctx.globalAlpha = alpha; 
         ctx.fillStyle = '#222'; 
         ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
@@ -770,7 +779,8 @@ class Player {
                 let speed = 25; 
                 let lifeTime = this.attackRange / speed; 
                 let bDmg = (this.charType === 'gunner') ? 35 : 50;
-                projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, bDmg, 8, null, lifeTime, this.color)); 
+                // ON PASSE this.autoAttackTarget POUR QUE LE PROJECTILE CIBLE
+                projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, bDmg, 8, this.autoAttackTarget, lifeTime, this.color)); 
             }
             this.cds.basic = (this.charType === 'gunner') ? 15 : 25;
             return;
@@ -780,34 +790,112 @@ class Player {
         
         switch(this.charType) {
             case 'ninja':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 95, 15, null, 400/22, this.color)); cooldown=120; }
-                if(slot==='s2') { this.x += dx*150; this.y += dy*150; this.clampPosition(); this.meleeAttack(70, 120); cooldown=300; } 
-                if(slot==='ult') { let t = this.getClosestEnemy(targetX, targetY); if(t) { this.x = t.x - dx*50; this.y = t.y - dy*50; this.clampPosition(); this.meleeAttack(300, 150); t.stunTimer = 60; } cooldown=900; } 
+                if(slot==='s1') { 
+                    projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 95, 15, null, 400/22, this.color)); 
+                    cooldown=120; 
+                }
+                if(slot==='s2') { 
+                    this.x += dx*150; 
+                    this.y += dy*150; 
+                    this.clampPosition(); 
+                    this.meleeAttack(70, 120); 
+                    cooldown=300; 
+                } 
+                if(slot==='ult') { 
+                    let t = this.getClosestEnemy(targetX, targetY); 
+                    if(t) { 
+                        this.x = t.x - dx*50; 
+                        this.y = t.y - dy*50; 
+                        this.clampPosition(); 
+                        this.meleeAttack(300, 150); 
+                        t.stunTimer = 60; 
+                    } 
+                    cooldown=900; 
+                } 
                 break;
             case 'gunner':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*30, dy*30, this, 100, 12, null, 700/30, this.color)); cooldown=180; } 
-                if(slot==='s2') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 150, 40, null, 300, '#ffbf00')); cooldown=400; } 
-                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*35, dy*35, this, 400, 50, null, 800/35, '#ff0000')); cooldown=1000; } 
+                if(slot==='s1') { 
+                    projectiles.push(new Projectile(this.x, this.y, dx*30, dy*30, this, 100, 12, null, 700/30, this.color)); 
+                    cooldown=180; 
+                } 
+                if(slot==='s2') { 
+                    projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 150, 40, null, 300, '#ffbf00')); 
+                    cooldown=400; 
+                } 
+                if(slot==='ult') { 
+                    projectiles.push(new Projectile(this.x, this.y, dx*35, dy*35, this, 400, 50, null, 800/35, '#ff0000')); 
+                    cooldown=1000; 
+                } 
                 break;
             case 'slime':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*15, dy*15, this, 80, 25, null, 400/15, this.color)); cooldown=150; }
-                if(slot==='s2') { this.hp = Math.min(this.maxHp, this.hp + 150); this.shield += 200; clickMarkers.push({x: this.x, y: this.y, life: 30, color: '#00ffcc', isExplosion: true}); cooldown=500; } 
-                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*10, dy*10, this, 250, 100, null, 600/10, this.color)); cooldown=900; } 
+                if(slot==='s1') { 
+                    projectiles.push(new Projectile(this.x, this.y, dx*15, dy*15, this, 80, 25, null, 400/15, this.color)); 
+                    cooldown=150; 
+                }
+                if(slot==='s2') { 
+                    this.hp = Math.min(this.maxHp, this.hp + 150); 
+                    this.shield += 200; 
+                    clickMarkers.push({x: this.x, y: this.y, life: 30, color: '#00ffcc', isExplosion: true}); 
+                    cooldown=500; 
+                } 
+                if(slot==='ult') { 
+                    projectiles.push(new Projectile(this.x, this.y, dx*10, dy*10, this, 250, 100, null, 600/10, this.color)); 
+                    cooldown=900; 
+                } 
                 break;
             case 'seth':
-                if(slot==='s1') { this.meleeAttack(100, 200); clickMarkers.push({x: this.x, y: this.y, life: 20, color: this.color, isExplosion: true}); cooldown=250; } 
-                if(slot==='s2') { this.x += dx*150; this.y += dy*150; this.clampPosition(); this.meleeAttack(70, 120); cooldown=300; } 
-                if(slot==='ult') { let jumpDist = Math.min(300, dist); this.x += dx * jumpDist; this.y += dy * jumpDist; this.clampPosition(); this.meleeAttack(250, 200); clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true}); cooldown=1200; } 
+                if(slot==='s1') { 
+                    this.meleeAttack(100, 200); 
+                    clickMarkers.push({x: this.x, y: this.y, life: 20, color: this.color, isExplosion: true}); 
+                    cooldown=250; 
+                } 
+                if(slot==='s2') { 
+                    this.x += dx*150; 
+                    this.y += dy*150; 
+                    this.clampPosition(); 
+                    this.meleeAttack(70, 120); 
+                    cooldown=300; 
+                } 
+                if(slot==='ult') { 
+                    let jumpDist = Math.min(300, dist); 
+                    this.x += dx * jumpDist; 
+                    this.y += dy * jumpDist; 
+                    this.clampPosition(); 
+                    this.meleeAttack(250, 200); 
+                    clickMarkers.push({x: this.x, y: this.y, life: 30, color: this.color, isExplosion: true}); 
+                    cooldown=1200; 
+                } 
                 break;
             case 'mage':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 120, 20, null, 500/18, '#ff5500')); cooldown=180; } 
-                if(slot==='s2') { this.x = targetX; this.y = targetY; this.clampPosition(); clickMarkers.push({x: this.x, y: this.y, life: 15, color: '#9d00ff', isExplosion: true}); cooldown=400; } 
-                if(slot==='ult') { projectiles.push(new Projectile(this.x, this.y, dx*5, dy*5, this, 450, 60, null, 700/5, '#330066')); cooldown=1100; } 
+                if(slot==='s1') { 
+                    projectiles.push(new Projectile(this.x, this.y, dx*18, dy*18, this, 120, 20, null, 500/18, '#ff5500')); 
+                    cooldown=180; 
+                } 
+                if(slot==='s2') { 
+                    this.x = targetX; 
+                    this.y = targetY; 
+                    this.clampPosition(); 
+                    clickMarkers.push({x: this.x, y: this.y, life: 15, color: '#9d00ff', isExplosion: true}); 
+                    cooldown=400; 
+                } 
+                if(slot==='ult') { 
+                    projectiles.push(new Projectile(this.x, this.y, dx*5, dy*5, this, 450, 60, null, 700/5, '#330066')); 
+                    cooldown=1100; 
+                } 
                 break;
             case 'teemo':
-                if(slot==='s1') { projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 80, 10, null, 500/22, this.color)); cooldown=120; } 
-                if(slot==='s2') { this.speedBuff = 180; cooldown=400; } 
-                if(slot==='ult') { projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 300, 35, null, 1000, this.color)); cooldown=800; } 
+                if(slot==='s1') { 
+                    projectiles.push(new Projectile(this.x, this.y, dx*22, dy*22, this, 80, 10, null, 500/22, this.color)); 
+                    cooldown=120; 
+                } 
+                if(slot==='s2') { 
+                    this.speedBuff = 180; 
+                    cooldown=400; 
+                } 
+                if(slot==='ult') { 
+                    projectiles.push(new Projectile(targetX, targetY, 0, 0, this, 300, 35, null, 1000, this.color)); 
+                    cooldown=800; 
+                } 
                 break;
         }
         
@@ -913,6 +1001,7 @@ class Projectile {
         this.active = true; 
         this.life = life; 
         this.color = color;
+        this.hitTargets = []; // Enregistre les cibles déjà touchées (Pour le piercing)
     }
     
     update() {
@@ -920,8 +1009,10 @@ class Projectile {
             let dx = this.homingTarget.x - this.x; 
             let dy = this.homingTarget.y - this.y;
             let dist = Math.hypot(dx, dy); 
-            this.vx = (dx/dist) * 12; 
-            this.vy = (dy/dist) * 12;
+            if (dist > 0) {
+                this.vx = (dx/dist) * 12; 
+                this.vy = (dy/dist) * 12;
+            }
         }
 
         this.x += this.vx; 
@@ -935,10 +1026,21 @@ class Projectile {
         let targets = [...players, ...turrets, ...nexuses].filter(ent => ent.team !== this.owner.team && !ent.isDead);
         
         targets.forEach(ent => {
-            if (this.active && Math.hypot(ent.x - this.x, ent.y - this.y) < ent.radius + this.radius) {
-                ent.takeDamage(this.dmg, this.owner); 
-                this.active = false;
-                clickMarkers.push({x: this.x, y: this.y, life: 15, color: this.owner.color, isExplosion: true});
+            if (this.active && !this.hitTargets.includes(ent) && Math.hypot(ent.x - this.x, ent.y - this.y) < ent.radius + this.radius) {
+                
+                // Si c'est une auto-attaque (homingTarget existe), elle ne touche QUE sa cible et meurt
+                if (this.homingTarget) {
+                    if (ent === this.homingTarget) {
+                        ent.takeDamage(this.dmg, this.owner); 
+                        this.active = false; 
+                        clickMarkers.push({x: this.x, y: this.y, life: 15, color: this.owner.color, isExplosion: true});
+                    }
+                } else {
+                    // Si c'est un SORT, il TRAVERSE et touche tous les ennemis sur son passage (Piercing)
+                    ent.takeDamage(this.dmg, this.owner); 
+                    this.hitTargets.push(ent);
+                    clickMarkers.push({x: this.x, y: this.y, life: 15, color: this.owner.color, isExplosion: true});
+                }
             }
         });
 
@@ -963,7 +1065,10 @@ function updateBot(bot) {
             } else { 
                 bot.target = null; 
                 bot.angle = Math.atan2(objTarget.y - bot.y, objTarget.x - bot.x); 
-                if (bot.cds.basic === 0) bot.castSpell('basic', objTarget.x, objTarget.y); 
+                if (bot.cds.basic === 0) {
+                    bot.autoAttackTarget = objTarget; // Le bot cible le batiment !
+                    bot.castSpell('basic', objTarget.x, objTarget.y); 
+                }
             }
         }
         return;
@@ -985,6 +1090,7 @@ function updateBot(bot) {
         }
         
         if (dist <= bot.attackRange + 40 && bot.cds.basic === 0) { 
+            bot.autoAttackTarget = target; // Le bot cible le joueur !
             bot.castSpell('basic', target.x, target.y); 
         }
 
@@ -1001,7 +1107,6 @@ function updateBot(bot) {
 function chooseChar(type) {
     locSelections.push(type);
     
-    // Si on joue contre l'IA, le jeu choisit automatiquement son perso et se lance !
     if (window.currentIsBot) {
         let pool = ['ninja', 'gunner', 'slime', 'seth', 'mage', 'teemo'];
         let botChar = pool[Math.floor(Math.random() * pool.length)];
@@ -1174,7 +1279,6 @@ function gameLoop() {
     ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM); 
     ctx.translate(-cameraX, -cameraY);
 
-    // SECURITÉ ANTI ECRAN NOIR: on vérifie non seulement "complete" mais aussi que l'image est bien chargée visuellement
     if (mapImg.complete && mapImg.naturalWidth > 0) {
         ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT); 
     } else { 
