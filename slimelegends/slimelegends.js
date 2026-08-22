@@ -75,6 +75,7 @@ let selectedGameRule = 'nexus'; // 'nexus' ou '3kills'
 let locSelections = [];
 let killsBlue = 0;
 let killsRed = 0;
+let currentIsBot = true; // AJOUT : Rétabli pour permettre le mode IA
 
 function openMenu(type) {
     document.getElementById('main-menu').style.display = 'none';
@@ -183,6 +184,16 @@ if(layoutSelect) {
         document.getElementById('key-ult').innerText = keyboardKeys.ult.toUpperCase();
     });
 }
+
+// AJOUT : Descriptions pour la prévisualisation des sorts
+const spellDescriptions = {
+    ninja: { s1: "Lancer de Shuriken", s2: "Dash Assassin", ult: "Exécution Ciblée" },
+    gunner: { s1: "Tir Pénétrant", s2: "Mine Explosive", ult: "Rayon Laser Géant" },
+    slime: { s1: "Jet d'Acide", s2: "Soin & Bouclier", ult: "Tsunami Toxique" },
+    seth: { s1: "Coup de Zone", s2: "Charge Lourde", ult: "Saut Destructeur" },
+    mage: { s1: "Boule de Feu", s2: "Téléportation (TP)", ult: "Trou Noir" },
+    teemo: { s1: "Fléchette Rapide", s2: "Sprint (+Vitesse)", ult: "Piège Toxique" }
+};
 
 // ZOOM MOLETTE
 window.addEventListener('wheel', e => {
@@ -369,13 +380,15 @@ class Turret {
 
 // --- JOUEUR CLASSE ---
 class Player {
-    constructor(id, team, x, y, type) {
+    // AJOUT : Ajout du paramètre isAI dans le constructeur
+    constructor(id, team, x, y, type, isAI = false) {
         this.id = id; this.team = team; this.spawnX = x; this.spawnY = y;
         this.x = x; this.y = y; 
         this.charType = type; this.color = charData[type].color;
         this.baseSpeed = charData[type].speed; this.radius = charData[type].radius;
         this.attackRange = charData[type].range;
         this.maxHp = charData[type].hp; this.hp = this.maxHp; this.shield = 0;
+        this.isAI = isAI; // AJOUT : Enregistrement de isAI
         
         this.target = null; this.autoAttackTarget = null; this.angle = 0;
         this.cds = { basic: 0, s1: 0, s2: 0, ult: 0 };
@@ -500,11 +513,12 @@ class Player {
                 if(octant===7) { key = 'adcouest'; flip = true; } 
                 break;
             case 'mage':
-                if(octant===0) { key = 'mageouest'; flip = true; }
-                if(octant===1) { key = 'magesudouest'; flip = true; } 
+                // AJOUT : Correction du bug d'inversion pour le Mage
+                if(octant===0) { key = 'mageouest'; flip = false; } // Inversé
+                if(octant===1) { key = 'magesudouest'; flip = false; } // Inversé
                 if(octant===2) { key = 'mangesud'; flip = false; } 
-                if(octant===3) { key = 'magesudouest'; flip = false; }
-                if(octant===4) { key = 'mageouest'; flip = false; }
+                if(octant===3) { key = 'magesudouest'; flip = true; } // Inversé
+                if(octant===4) { key = 'mageouest'; flip = true; } // Inversé
                 if(octant===5) { key = 'magenordest'; flip = true; } 
                 if(octant===6) { key = 'magenord'; flip = false; }
                 if(octant===7) { key = 'magenordest'; flip = false; }
@@ -681,7 +695,7 @@ class Player {
         if (this.hp <= 0) { 
             this.hp = 0; 
             this.isDead = true; 
-            this.respawnTimer = 240; // 4s
+            this.respawnTimer = 240; 
             if (this.team === 1) killsRed++; else killsBlue++;
             updateScoreHUD(); checkWin(); 
         }
@@ -726,6 +740,42 @@ class Projectile {
     }
 }
 
+// AJOUT : LE RETOUR DE LA FONCTION UPDATE BOT !
+function updateBot(bot) {
+    if (bot.isDead || bot.stunTimer > 0) return;
+    
+    // Si le joueur est mort, on attaque les bâtiments
+    let target = players[0]; 
+    if (target.isDead) {
+        let objTarget = turrets.find(t => t.team === 1 && !t.isDead) || nexuses.find(n => n.team === 1 && !n.isDead);
+        if (objTarget) {
+            let dist = Math.hypot(objTarget.x - bot.x, objTarget.y - bot.y);
+            if (dist > bot.attackRange) { bot.setMovementTarget(objTarget.x, objTarget.y); }
+            else { bot.target = null; bot.angle = Math.atan2(objTarget.y - bot.y, objTarget.x - bot.x); if (bot.cds.basic === 0) bot.castSpell('basic', objTarget.x, objTarget.y); }
+        }
+        return;
+    }
+
+    let p1Visible = true;
+    if (target.currentPuddle !== -1 && target.revealTimer === 0 && target.currentPuddle !== bot.currentPuddle) { p1Visible = false; }
+
+    if (p1Visible) {
+        let dist = Math.hypot(target.x - bot.x, target.y - bot.y);
+        if (dist > bot.attackRange) { bot.setMovementTarget(target.x, target.y); } 
+        else { bot.target = null; bot.angle = Math.atan2(target.y - bot.y, target.x - bot.x); }
+        
+        if (dist <= bot.attackRange + 40 && bot.cds.basic === 0) { bot.castSpell('basic', target.x, target.y); }
+
+        if (dist < 550) {
+            if (bot.cds.s1 === 0 && Math.random() < 0.08) bot.castSpell('s1', target.x, target.y);
+            else if (bot.cds.s2 === 0 && Math.random() < 0.05) bot.castSpell('s2', target.x, target.y);
+            else if (bot.cds.ult === 0 && (target.hp < target.maxHp * 0.6 || Math.random() < 0.03)) bot.castSpell('ult', target.x, target.y);
+        }
+    } else {
+        bot.target = null; 
+    }
+}
+
 function chooseChar(type) {
     locSelections.push(type);
     let title = document.getElementById('instruction-title');
@@ -763,9 +813,10 @@ function startLocalGame() {
     
     killsBlue = 0; killsRed = 0; updateScoreHUD();
     
+    // AJOUT : On repasse true en isAI sur le joueur 2 pour qu'il soit contrôlé par l'IA
     players = [
-        new Player(1, 1, PLAYABLE_X_MIN + 300, MAP_HEIGHT / 2, locSelections[0]),
-        new Player(2, 2, PLAYABLE_X_MAX - 300, MAP_HEIGHT / 2, locSelections[1])
+        new Player(1, 1, PLAYABLE_X_MIN + 300, MAP_HEIGHT / 2, locSelections[0], false),
+        new Player(2, 2, PLAYABLE_X_MAX - 300, MAP_HEIGHT / 2, locSelections[1], true) // <--- ICI (true)
     ];
 
     nexuses = [
@@ -871,20 +922,37 @@ function gameLoop() {
         ctx.strokeStyle = "#ff007f"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     }
 
+    // AJOUT : Prévisualisation des sorts avec texte
     if (pendingSpell && !players[0].isDead) {
-        let spellRange = players[0].attackRange + 200; 
-        ctx.beginPath(); ctx.arc(players[0].x, players[0].y, spellRange, 0, Math.PI * 2); 
-        ctx.fillStyle = "rgba(0, 240, 255, 0.1)"; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = "rgba(0, 240, 255, 0.5)"; ctx.stroke();
+        let charType = players[0].charType;
+        let spellName = spellDescriptions[charType][pendingSpell] || "Attaque";
+        let dx = worldMouseX - players[0].x; let dy = worldMouseY - players[0].y;
+        let dist = Math.hypot(dx, dy) || 1;
+        
+        ctx.save();
+        ctx.translate(players[0].x, players[0].y);
+        ctx.rotate(Math.atan2(dy, dx));
+        
+        if ((charType === 'mage' && pendingSpell === 's2') || (charType === 'seth' && pendingSpell === 'ult')) {
+            let range = charType === 'mage' ? 400 : 300;
+            let actualDist = Math.min(dist, range);
+            ctx.beginPath(); ctx.arc(actualDist, 0, charType === 'mage' ? 30 : 125, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(255, 0, 127, 0.2)"; ctx.fill();
+            ctx.lineWidth = 2; ctx.strokeStyle = "#ff007f"; ctx.stroke();
+        } else {
+            let spellRange = players[0].attackRange + 200; 
+            ctx.fillStyle = "rgba(0, 240, 255, 0.1)"; ctx.fillRect(0, -15, spellRange, 30);
+            ctx.lineWidth = 2; ctx.strokeStyle = "rgba(0, 240, 255, 0.5)"; ctx.strokeRect(0, -15, spellRange, 30);
+        }
+        ctx.restore();
 
-        ctx.beginPath(); ctx.moveTo(players[0].x, players[0].y); ctx.lineTo(worldMouseX, worldMouseY);
-        ctx.strokeStyle = "#ffbf00"; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; ctx.fillRect(worldMouseX + 15, worldMouseY - 30, spellName.length * 8 + 30, 40);
+        ctx.fillStyle = "#00f0ff"; ctx.font = "bold 14px Arial"; ctx.fillText(spellName, worldMouseX + 30 + (spellName.length * 4), worldMouseY - 5);
     }
 
     players[0].update(); 
     if (players[1]) {
-        // En mode local, c'est du 1v1 sans bot. Si c'est le bot qu'on avait avant, j'ai enlevé la fonction updateBot pour obliger le joueur 2 à jouer
-        // Mais puisqu'on a pas de controles clavier joueur 2 pour l'instant, il restera immobile pour tes tests de tir
+        if (players[1].isAI) updateBot(players[1]); // AJOUT : L'IA se met à jour
         players[1].update();
     }
     players.forEach(p => p.draw());
