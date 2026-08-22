@@ -52,6 +52,7 @@ const ASSETS_PATHS = {
     mean1: 'assets/skins/MEAN1.png',
     mean2: 'assets/skins/MEAN2.png',
     mean3: 'assets/skins/MEAN3.png',
+    treasure: 'assets/skins/coffre.png', // NOUVEAU SKIN POUR LE COFFRE
     river1: 'assets/decoration/river1.png',
     river2: 'assets/decoration/river2.png',
     river3: 'assets/decoration/river3.png',
@@ -192,6 +193,7 @@ let enemies = [];
 let trees = [];
 let rivers = [];
 let decorations = []; 
+let treasures = []; 
 let particles = [];
 let lasers = [];
 let selectedUnits = []; 
@@ -236,6 +238,7 @@ function isPositionFree(x, y, minDistance) {
     for(let r of rivers) if(dist({x,y}, r) < minDistance + r.radius) return false;
     for(let t of trees) if(dist({x,y}, t) < minDistance + 20) return false;
     for(let d of decorations) if(dist({x,y}, d) < minDistance + d.size/2) return false;
+    for(let tr of treasures) if(dist({x,y}, tr) < minDistance + 20) return false;
     if(baseHost && dist({x,y}, baseHost) < minDistance + baseHost.size/2 + 50) return false;
     if(baseGuest && dist({x,y}, baseGuest) < minDistance + baseGuest.size/2 + 50) return false;
     return true;
@@ -331,10 +334,11 @@ function drawMinimap() {
 
     rivers.forEach(r => drawDot(r, '#3388ff', 3));
     trees.forEach(t => drawDot(t, '#ff8c00', 1));
+    treasures.forEach(t => drawDot(t, '#ffd700', 4)); 
     buildings.forEach(b => drawDot(b, b.owner === 'host' ? '#00f0ff' : '#ff007f', 4));
     
-    if (baseHost && baseHost.hp > 0) drawDot(baseHost, '#00f0ff', 6);
-    if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, '#ff007f', 6);
+    if (baseHost && baseHost.hp > 0) drawDot(baseHost, '#00f0ff', baseHost.level === 2 ? 8 : 6);
+    if (baseGuest && baseGuest.hp > 0) drawDot(baseGuest, '#ff007f', baseGuest.level === 2 ? 8 : 6);
     
     units.forEach(u => drawDot(u, u.owner === 'host' ? '#00f0ff' : '#ff007f', 2));
     enemies.forEach(e => drawDot(e, '#ff3333', 3));
@@ -365,6 +369,8 @@ function executeCommand(data) {
     }
     
     if (data.action === 'build') {
+        if (['barracks', 'archery', 'mage', 'tower'].includes(data.bType) && playerBase.level < 2) return;
+
         if(data.bType === 'house' && buildings.filter(b=>b.type==='house' && b.owner===data.owner).length >= 10) return;
         let cost = getBuildingCost(data.bType);
         if(playerRes.gold >= cost.g && playerRes.wood >= cost.w && playerRes.food >= cost.f) {
@@ -390,9 +396,34 @@ function executeCommand(data) {
     }
 
     if (data.action === 'upgrade') {
+        if (data.bId === playerBase.id) {
+            if (playerRes.gold >= 200 && playerRes.wood >= 200 && playerRes.food >= 200 && playerBase.level === 1) {
+                playerRes.gold -= 200; playerRes.wood -= 200; playerRes.food -= 200;
+                playerBase.level = 2;
+                playerBase.size = 160; 
+                playerBase.maxHp += 2500;
+                playerBase.hp += 2500;
+                spawnParticles(playerBase.x, playerBase.y, '#fce803', 50);
+            }
+        } else {
+            let b = buildings.find(b=>b.id === data.bId);
+            if(b && playerRes.gold >= 100 && playerRes.wood >= 100 && b.level === 1) {
+                playerRes.gold -= 100; playerRes.wood -= 100; b.level = 2;
+                spawnParticles(b.x, b.y, '#ffffff', 30);
+            }
+        }
+    }
+
+    if (data.action === 'specialize') {
         let b = buildings.find(b=>b.id === data.bId);
-        if(b && playerRes.gold >= 100 && playerRes.wood >= 100) {
-            playerRes.gold -= 100; playerRes.wood -= 100; b.level = 2;
+        if(b && playerRes.gold >= 200 && playerRes.wood >= 200 && b.level === 2) {
+            playerRes.gold -= 200; playerRes.wood -= 200; 
+            b.level = 3;
+            b.element = data.element;
+            b.maxHp += 500;
+            b.hp += 500;
+            let glow = b.element === 'fire' ? '#ff3333' : b.element === 'water' ? '#3388ff' : '#39ff14';
+            spawnParticles(b.x, b.y, glow, 50);
         }
     }
     
@@ -415,8 +446,9 @@ function executeCommand(data) {
 // --- GENERATION DE LA CARTE ---
 function buildMapElements(seed) {
     mapSeed = seed;
-    trees = []; rivers = []; decorations = [];
+    trees = []; rivers = []; decorations = []; treasures = [];
 
+    // Rivières
     for(let i=0; i<20; i++) {
         let placed = false;
         let attempts = 0;
@@ -425,6 +457,20 @@ function buildMapElements(seed) {
             if (isPositionFree(rx, ry, 50)) {
                 let variant = Math.floor(seededRandom() * 3) + 1; 
                 rivers.push(new River(rx, ry, variant));
+                placed = true;
+            }
+            attempts++;
+        }
+    }
+
+    // NOUVEAU : Trésors cachés (10 COFFRES MAXIMUM)
+    for(let i=0; i<10; i++) {
+        let placed = false;
+        let attempts = 0;
+        while(!placed && attempts < 10) {
+            let rx = seededRandom() * MAP_WIDTH; let ry = seededRandom() * MAP_HEIGHT;
+            if (dist({x:rx,y:ry}, baseHost) > 1500 && dist({x:rx,y:ry}, baseGuest) > 1500 && isPositionFree(rx, ry, 50)) {
+                treasures.push(new Treasure(rx, ry));
                 placed = true;
             }
             attempts++;
@@ -525,6 +571,7 @@ function initGameClient(seed, mapTheme = 'classic') {
     survivalTimer = 0;
     resHost = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 }; 
     resGuest = { gold: 0, wood: 0, food: 10, pop: 0, maxPop: 0 };
+    treasures = [];
     
     document.getElementById('screen-lobby').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
@@ -548,19 +595,29 @@ function syncClientState(data) {
     
     survivalTimer = data.st; 
     resHost = data.resH; resGuest = data.resG;
+    
     baseHost.hp = data.bH.hp;
+    baseHost.level = data.bH.l;
+    baseHost.size = data.bH.s;
+    
     baseGuest.hp = data.bG.hp;
+    baseGuest.level = data.bG.l;
+    baseGuest.size = data.bG.s;
     
     trees = data.t.map(t => { let r = new ResourceNode(t.x, t.y, 'tree', t.s); r.id = t.id; r.amount = t.a; return r; });
     enemies = data.en.map(e => { let en = new Enemy(e.x, e.y); en.id=e.id; en.hp=e.hp; en.skinNum=e.s; en.slowTimer=e.st; return en; });
     
     buildings = data.b.map(b => {
-        let build = new Building(b.x, b.y, b.t, b.o); build.id = b.id; build.hp = b.hp; build.maxHp = b.mHp; build.level = b.l; build.farmersInside = b.fi; return build;
+        let build = new Building(b.x, b.y, b.t, b.o); 
+        build.id = b.id; build.hp = b.hp; build.maxHp = b.mHp; build.level = b.l; build.farmersInside = b.fi; build.element = b.e; 
+        return build;
     });
 
     units = data.u.map(u => {
         let un = new Unit(u.x, u.y, u.t, u.e, u.o); un.id = u.id; un.hp = u.hp; un.maxHp = u.mHp; un.state = u.s; un.payload = u.p; un.slowTimer = u.st; return un;
     });
+
+    treasures = data.tr.map(t => { let tr = new Treasure(t.x, t.y); tr.id = t.id; return tr; });
 
     updateUI();
 }
@@ -684,6 +741,7 @@ canvas.addEventListener('contextmenu', (e) => {
         || trees.find(t=>dist(wPos, t)<40) 
         || rivers.find(r=>dist(wPos, r)<r.radius) 
         || enemies.find(en=>dist(wPos, en)<25) 
+        || treasures.find(tr=>dist(wPos, tr)<20) // NOUVEAU: Permet de cliquer sur les coffres !
         || (dist(wPos, baseHost)<baseHost.size/2 + 20 ? baseHost : null) 
         || (dist(wPos, baseGuest)<baseGuest.size/2 + 20 ? baseGuest : null);
 
@@ -714,39 +772,83 @@ function getBuildingCost(type) {
     return {g:0,w:0,f:0};
 }
 
+function createBtn(colorClass, title, costText, onClick, overrideColor=null, id=null, iconSrc=null, disabled=false) {
+    let b = document.createElement('button'); b.className = `build-btn ${colorClass}`;
+    if(id) b.id = id;
+    if(overrideColor) { b.style.borderColor = overrideColor; b.style.color = overrideColor; }
+    let imgHtml = iconSrc ? `<img src="${iconSrc}">` : '';
+    b.innerHTML = `${imgHtml}<div>${title}</div><span>${costText}</span>`;
+    
+    if (disabled) {
+        b.style.opacity = '0.4';
+        b.style.cursor = 'not-allowed';
+        b.onclick = () => {};
+    } else {
+        b.onclick = onClick;
+    }
+    return b;
+}
+
+function createDivider() {
+    let d = document.createElement('div');
+    d.style.width = '2px'; d.style.background = 'rgba(255,255,255,0.2)'; d.style.margin = '0 5px';
+    return d;
+}
+
 function renderBottomUI() {
     uiBottom.innerHTML = ""; 
     if (!selectedBuilding) { uiBottom.innerHTML = "<div style='color:#aaa;'>Sélectionnez votre Hôtel de Ville ou un Bâtiment.</div>"; return; }
 
     let bTitle = selectedBuilding.type === 'hdv' ? 'HÔTEL DE VILLE' : selectedBuilding.type.toUpperCase();
     let title = document.createElement('div');
-    title.style.color = 'white'; title.style.marginRight = '15px'; title.innerHTML = `<b>${bTitle}</b>` + (selectedBuilding.level ? ` Lv.${selectedBuilding.level}` : '');
+    title.style.color = 'white'; title.style.marginRight = '15px'; 
+    title.innerHTML = `<b>${bTitle}</b>` + (selectedBuilding.level ? ` Lv.${selectedBuilding.level}` : '');
     uiBottom.appendChild(title);
 
     if (selectedBuilding.type === 'hdv') {
+        let isLvl1 = selectedBuilding.level === 1;
+
+        if (isLvl1) {
+            uiBottom.appendChild(createBtn('color-upgrade', 'AMÉLIORER HDV', '200💰 200🪵 200🍞', () => sendAction('upgrade', {bId:selectedBuilding.id}), '#fce803'));
+            uiBottom.appendChild(createDivider());
+        }
+
         uiBottom.appendChild(createBtn('color-build', 'MAISON', '10🪵', () => setBuildMode('house'), null, 'btn-b-house', ASSETS_PATHS.house));
         uiBottom.appendChild(createBtn('color-build', 'SCIERIE', '50🍞', () => setBuildMode('sawmill'), null, 'btn-b-sawmill', ASSETS_PATHS.sawmill));
         uiBottom.appendChild(createBtn('color-build', 'FERME', '30🪵', () => setBuildMode('farm'), null, 'btn-b-farm', ASSETS_PATHS.farm));
         uiBottom.appendChild(createBtn('color-build', 'MINE', '50🪵 50🍞', () => setBuildMode('mine'), null, 'btn-b-mine', ASSETS_PATHS.mine));
         uiBottom.appendChild(createDivider());
-        uiBottom.appendChild(createBtn('color-build', 'CASERNE', '250💰/🪵/🍞', () => setBuildMode('barracks'), null, 'btn-b-barracks', ASSETS_PATHS.barracks));
-        uiBottom.appendChild(createBtn('color-build', 'STAND TIR', '250💰/🪵/🍞', () => setBuildMode('archery'), null, 'btn-b-archery', ASSETS_PATHS.archery));
-        uiBottom.appendChild(createBtn('color-build', 'T. MAGE', '250💰/🪵/🍞', () => setBuildMode('mage'), null, 'btn-b-mage', ASSETS_PATHS.mageTower));
-        uiBottom.appendChild(createBtn('color-build', 'TOUR DEF', '100💰 50🪵', () => setBuildMode('tower'), null, 'btn-b-tower', ASSETS_PATHS.tower));
+        
+        let lockText = isLvl1 ? '🔒 HDV LV.2' : '250💰/🪵/🍞';
+        uiBottom.appendChild(createBtn('color-build', 'CASERNE', lockText, () => setBuildMode('barracks'), null, 'btn-b-barracks', ASSETS_PATHS.barracks, isLvl1));
+        uiBottom.appendChild(createBtn('color-build', 'STAND TIR', lockText, () => setBuildMode('archery'), null, 'btn-b-archery', ASSETS_PATHS.archery, isLvl1));
+        uiBottom.appendChild(createBtn('color-build', 'T. MAGE', lockText, () => setBuildMode('mage'), null, 'btn-b-mage', ASSETS_PATHS.mageTower, isLvl1));
+        
+        let towerLockText = isLvl1 ? '🔒 HDV LV.2' : '100💰 50🪵';
+        uiBottom.appendChild(createBtn('color-build', 'TOUR DEF', towerLockText, () => setBuildMode('tower'), null, 'btn-b-tower', ASSETS_PATHS.tower, isLvl1));
+        
         uiBottom.appendChild(createDivider());
         uiBottom.appendChild(createBtn('color-recruit', 'FERMIER', '10🍞', () => sendAction('recruit', {uType:'farmer', element:'normal', bId:selectedBuilding.id}), null, null, ASSETS_PATHS.farmer));
     } 
     else if (['barracks', 'archery', 'mage'].includes(selectedBuilding.type)) {
+        let uType = selectedBuilding.type === 'barracks' ? 'warrior' : selectedBuilding.type === 'archery' ? 'archer' : 'mage';
+        
         if (selectedBuilding.level === 1) {
             uiBottom.appendChild(createBtn('color-upgrade', 'AMÉLIORER', '100💰 100🪵', () => sendAction('upgrade', {bId:selectedBuilding.id})));
             uiBottom.appendChild(createDivider());
+            uiBottom.appendChild(createBtn('color-recruit', 'NORMAL', '20💰 20🍞', () => sendAction('recruit', {uType:uType, element:'normal', bId:selectedBuilding.id}), null, null, ASSETS_PATHS[uType]));
         }
-        let uType = selectedBuilding.type === 'barracks' ? 'warrior' : selectedBuilding.type === 'archery' ? 'archer' : 'mage';
-        uiBottom.appendChild(createBtn('color-recruit', 'NORMAL', '20💰 20🍞', () => sendAction('recruit', {uType:uType, element:'normal', bId:selectedBuilding.id}), null, null, ASSETS_PATHS[uType]));
-        if (selectedBuilding.level > 1) {
-            uiBottom.appendChild(createBtn('color-recruit', '🔥 FEU', '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:'fire', bId:selectedBuilding.id}), 'var(--neon-red)', null, ASSETS_PATHS[uType]));
-            uiBottom.appendChild(createBtn('color-recruit', '💧 EAU', '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:'water', bId:selectedBuilding.id}), 'var(--neon-water)', null, ASSETS_PATHS[uType]));
-            uiBottom.appendChild(createBtn('color-recruit', '🌿 PLANTE', '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:'plant', bId:selectedBuilding.id}), 'var(--neon-green)', null, ASSETS_PATHS[uType]));
+        else if (selectedBuilding.level === 2) {
+            uiBottom.appendChild(createBtn('color-upgrade', 'SPÉ. FEU 🔥', '200💰 200🪵', () => sendAction('specialize', {bId:selectedBuilding.id, element:'fire'}), '#ff3333'));
+            uiBottom.appendChild(createBtn('color-upgrade', 'SPÉ. EAU 💧', '200💰 200🪵', () => sendAction('specialize', {bId:selectedBuilding.id, element:'water'}), '#3388ff'));
+            uiBottom.appendChild(createBtn('color-upgrade', 'SPÉ. PLANTE 🌿', '200💰 200🪵', () => sendAction('specialize', {bId:selectedBuilding.id, element:'plant'}), '#39ff14'));
+            uiBottom.appendChild(createDivider());
+            uiBottom.appendChild(createBtn('color-recruit', 'NORMAL', '20💰 20🍞', () => sendAction('recruit', {uType:uType, element:'normal', bId:selectedBuilding.id}), null, null, ASSETS_PATHS[uType]));
+        }
+        else if (selectedBuilding.level === 3) {
+            let elColor = selectedBuilding.element === 'fire' ? '#ff3333' : selectedBuilding.element === 'water' ? '#3388ff' : '#39ff14';
+            let elIcon = selectedBuilding.element === 'fire' ? '🔥 FEU' : selectedBuilding.element === 'water' ? '💧 EAU' : '🌿 PLANTE';
+            uiBottom.appendChild(createBtn('color-recruit', elIcon, '40💰 40🍞', () => sendAction('recruit', {uType:uType, element:selectedBuilding.element, bId:selectedBuilding.id}), elColor, null, ASSETS_PATHS[uType]));
         }
     } 
     else if (['sawmill', 'mine', 'farm'].includes(selectedBuilding.type)) {
@@ -755,20 +857,11 @@ function renderBottomUI() {
     
     if(selectedBuilding.type !== 'hdv') {
         uiBottom.appendChild(createDivider());
-        uiBottom.appendChild(createBtn('color-build', 'DÉPLACER', '', () => startMoveBuilding(selectedBuilding), 'var(--neon-cyan)'));
+        uiBottom.appendChild(createBtn('color-build', 'DÉPLACER', '', () => startMoveBuilding(selectedBuilding), '#00f0ff')); 
         uiBottom.appendChild(createBtn('color-destroy', 'DÉTRUIRE', 'Gains 50%', () => sendAction('destroy', {bId:selectedBuilding.id})));
     }
     uiBottom.appendChild(createDivider());
     uiBottom.appendChild(createBtn('color-build', 'FERMER', '', () => { selectedBuilding = null; renderBottomUI(); }));
-}
-
-function createBtn(colorClass, title, costText, onClick, overrideColor=null, id=null, iconSrc=null) {
-    let b = document.createElement('button'); b.className = `build-btn ${colorClass}`;
-    if(id) b.id = id;
-    if(overrideColor) { b.style.borderColor = overrideColor; b.style.color = overrideColor; }
-    let imgHtml = iconSrc ? `<img src="${iconSrc}">` : '';
-    b.innerHTML = `${imgHtml}<div>${title}</div><span>${costText}</span>`;
-    b.onclick = onClick; return b;
 }
 
 function sendAction(action, data) {
@@ -824,6 +917,17 @@ function hostUpdate(dt) {
         resGuest.gold += p2Mine; resGuest.wood += p2Saw; resGuest.food += p2Farm; 
     }
 
+    for(let i = treasures.length - 1; i >= 0; i--) {
+        let t = treasures[i];
+        let collector = units.find(u => dist(u, t) < 30);
+        if (collector) {
+            let pRes = collector.owner === 'host' ? resHost : resGuest;
+            pRes.gold += 200; pRes.wood += 200; pRes.food += 200;
+            spawnParticles(t.x, t.y, '#ffd700', 30);
+            treasures.splice(i, 1);
+        }
+    }
+
     if (baseHost.hp <= 0 || baseGuest.hp <= 0) {
         gameState = 'GAMEOVER';
         let winText = baseHost.hp <= 0 ? "P2 REMPORTE LA GUERRE" : "P1 REMPORTE LA GUERRE";
@@ -839,12 +943,13 @@ function hostUpdate(dt) {
     let pack = {
         type: 'sync',
         u: units.map(u => ({ id: u.id, x: u.x, y: u.y, t: u.type, e: u.element, o: u.owner, hp: u.hp, mHp: u.maxHp, s: u.state, p: u.payload, st: u.slowTimer })),
-        b: buildings.map(b => ({ id: b.id, x: b.x, y: b.y, t: b.type, o: b.owner, hp: b.hp, mHp: b.maxHp, l: b.level, fi: b.farmersInside })),
+        b: buildings.map(b => ({ id: b.id, x: b.x, y: b.y, t: b.type, o: b.owner, hp: b.hp, mHp: b.maxHp, l: b.level, fi: b.farmersInside, e: b.element })),
         t: trees.map(t => ({ id: t.id, x: t.x, y: t.y, a: t.amount, s: t.skin })), 
         en: enemies.map(e => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, s: e.skinNum, st: e.slowTimer })),
         rv: rivers.map(r => ({ id: r.id, x: r.x, y: r.y, v: r.variant })),
-        bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp },
-        bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp },
+        tr: treasures.map(t => ({ id: t.id, x: t.x, y: t.y })),
+        bH: { id: baseHost.id, x: baseHost.x, y: baseHost.y, hp: baseHost.hp, l: baseHost.level, s: baseHost.size },
+        bG: { id: baseGuest.id, x: baseGuest.x, y: baseGuest.y, hp: baseGuest.hp, l: baseGuest.level, s: baseGuest.size },
         resH: resHost, resG: resGuest, st: survivalTimer
     };
     if (connToGuest) connToGuest.send(pack);
@@ -862,7 +967,6 @@ function draw() {
 
     ctx.fillStyle = '#0a0d14'; ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     
-    // CORRECTION RAM : Utilisation des 4 morceaux pour éviter le crash du navigateur
     if (!isDarkMode) {
         let prefix = currentMapTheme === 'hell' ? 'hell' : 'map';
         const halfW = MAP_WIDTH / 2;
@@ -887,6 +991,7 @@ function draw() {
         decorations.forEach(d => d.draw(ctx, images)); 
         rivers.forEach(r => r.draw(ctx, images));
         trees.forEach(t => t.draw(ctx, images)); 
+        treasures.forEach(t => t.draw(ctx, images)); // RENDU DES COFFRES
         buildings.forEach(b => b.draw(ctx, images));
         
         if (baseHost && baseHost.hp > 0) baseHost.draw(ctx, images);
