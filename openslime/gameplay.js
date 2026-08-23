@@ -14,23 +14,50 @@ let entities = [];
 let selectedEntity = null; 
 let actionState = 'NORMAL'; 
 
-// --- 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES ---
-const settingImages = ['../img/setting.png', '../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
-let currentSettingIndex = 0;
+// --- 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES (TON CODE DE BASE) ---
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
+let hoverInterval; 
+let currentFrame = 0;
 
-window.toggleSettings = function() {
-    const modal = document.getElementById('settings-modal');
-    modal.classList.toggle('show');
-
-    currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
-    document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
+function startSettingsAnim() {
+    if (hoverInterval) return;
+    currentFrame = 0;
+    const btn = document.getElementById('settings-btn-img');
+    if(btn) btn.src = animFrames[currentFrame];
+    hoverInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % animFrames.length;
+        if(btn) btn.src = animFrames[currentFrame];
+    }, 100); 
 }
 
-window.toggleTheme = function() {
+function stopSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    const btn = document.getElementById('settings-btn-img');
+    if (btn && !btn.src.includes('settings4.png')) { 
+        btn.src = '../img/setting.png'; 
+    }
+}
+
+function clickSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    const btn = document.getElementById('settings-btn-img');
+    if(btn) btn.src = '../img/settings4.png';
+    toggleSettings();
+    setTimeout(() => { 
+        if(btn) btn.src = '../img/setting.png'; 
+    }, 300);
+}
+
+function toggleSettings() {
+    const modal = document.getElementById('settings-modal');
+    if(modal) modal.classList.toggle('show');
+}
+
+function toggleTheme() {
     document.body.classList.toggle('dark-mode');
 }
 
-window.toggleFullscreen = function() {
+function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => console.log(err));
     } else {
@@ -38,7 +65,7 @@ window.toggleFullscreen = function() {
     }
 }
 
-window.setGameSize = function(size) {
+function setGameSize(size) {
     const container = document.getElementById('game-container');
     if (!container) return;
     document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active'));
@@ -58,7 +85,7 @@ const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
 
-// Chargement exact du nom de ton fichier radar !
+// Charge l'image EXACTE pour le Radar Noir !
 terrainImg.src = 'assets/map_globe_terreste.png'; 
 
 terrainImg.onload = () => {
@@ -68,12 +95,12 @@ terrainImg.onload = () => {
 };
 
 function isWater(r, g, b) {
-    if (r < 20 && g < 20 && b < 20) return true; // Si c'est très sombre = Eau
-    return false; // Sinon = Terre
+    if (r < 20 && g < 20 && b < 20) return true; // Noir = Eau
+    return false; // Couleurs = Terre
 }
 
 // --- 3. MENUS ET RÉSEAU ---
-window.openMenu = function(menuId) {
+function openMenu(menuId) {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('network-menu').style.display = 'none';
@@ -82,7 +109,7 @@ window.openMenu = function(menuId) {
     else document.getElementById('main-menu').style.display = 'flex';
 }
 
-window.joinNetworkGame = function() {
+function joinNetworkGame() {
     let input = document.getElementById('ops-input').value.toUpperCase();
     let errorMsg = document.getElementById('network-error');
     let regex = /^OPS\d{4}$/;
@@ -97,7 +124,7 @@ window.joinNetworkGame = function() {
 }
 
 // --- 4. LANCEMENT DU JEU ET CHRONO ---
-window.startGame = function(mode) {
+function startGame(mode) {
     aiMode = mode;
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('ui-container').style.display = 'flex';
@@ -130,12 +157,12 @@ function finishSpawningPhase() {
 // --- 5. RAYCASTING 3D ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-const container3D = document.getElementById('webgl-container');
 
 function onMouseClick(event) {
     if (gameState === 'MENU') return;
     if (event.target.closest('#ui-container') || event.target.closest('#action-menu') || event.target.closest('.settings-btn-wrapper')) return;
 
+    const container3D = document.getElementById('webgl-container');
     const rect = container3D.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -202,11 +229,11 @@ function onMouseClick(event) {
         closeActionMenu(); 
     }
 }
-container3D.addEventListener('click', onMouseClick);
+document.getElementById('webgl-container').addEventListener('click', onMouseClick);
 
 
 // --- 6. ACTION ET CONSTRUCTION ---
-window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = null) {
+function openActionMenu(mouseX, mouseY, entity = null, terrainType = null) {
     const menu = document.getElementById('action-menu');
     const header = document.getElementById('action-title');
     const subheader = document.getElementById('action-subtitle');
@@ -247,12 +274,12 @@ window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = nu
     }
 }
 
-window.closeActionMenu = function() {
+function closeActionMenu() {
     document.getElementById('action-menu').style.display = 'none';
     if(actionState === 'NORMAL') selectedEntity = null; 
 }
 
-window.executeAction = function(action, isCapital = false) {
+function executeAction(action, isCapital = false) {
     closeActionMenu();
     if (action === 'launch_icbm') { actionState = 'TARGETING_ICBM'; return; }
     if (action === 'establish_route') { actionState = 'TARGETING_ROUTE'; return; }
@@ -337,7 +364,7 @@ function createSeaRoute(startPos, endPos) {
     window.scene.add(route);
 }
 
-window.updateTroopVal = function(val) {
+function updateTroopVal(val) {
     troopPercentage = val;
     let elem = document.getElementById('troop-val');
     if(elem) elem.innerText = val + "%";
