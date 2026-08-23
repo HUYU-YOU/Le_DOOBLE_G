@@ -3,29 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Card of Slime - V4</title>
+    <title>Card of Slime - Edition Finale</title>
+    <!-- PeerJS pour le multijoueur COS -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body onclick="startMusic()"> <!-- Démarre la musique au 1er clic sur la page -->
+<body onclick="startMusic()">
     
     <h1 class="game-title">Card of Slime</h1>
+    
+    <!-- Bouton Retour au Hub -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     
+    <!-- Bouton Paramètres avec ton image par défaut -->
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
-        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
-    <div id="game-container" class="size-classic">
+    <!-- CONTENEUR DU JEU (Large par défaut) -->
+    <div id="game-container" class="size-wide">
         
-        <div id="arena">
+        <!-- MENU PRINCIPAL -->
+        <div id="main-menu" class="menu-overlay">
+            <h2 class="menu-subtitle">Choisis ton mode</h2>
+            <button class="btn-main" onclick="openDeckBuilder()">🃏 Composer mon Deck</button>
+            <button class="btn-main green" onclick="startSoloGame()">🎮 Mode Solo (vs IA)</button>
+            <button class="btn-main red" onclick="openMultiMenu()">🌐 Multijoueur (Code COS)</button>
+        </div>
+
+        <!-- MENU MULTIJOUEUR (COS CODE) -->
+        <div id="multi-menu" class="menu-overlay" style="display: none;">
+            <h2 class="menu-subtitle">Multijoueur COS</h2>
+            <p style="margin-bottom: 15px; color: #aaa;">Ton Code de Partie : <br><span id="cos-code-display" style="color: #0ff; font-weight: bold; font-size: 2em; letter-spacing: 2px;">Génération...</span></p>
+            <button class="btn-main" onclick="hostGame()">Héberger la Partie</button>
+            <div style="margin: 15px 0; color: #888;">OU</div>
+            <input type="text" id="join-code-input" placeholder="Entrer le code COSXXXX" style="padding: 10px; font-family: 'Rajdhani'; font-size: 1.2em; border-radius: 5px; border: 1px solid #39ff14; background: #111; color: white; text-align: center; width: 260px;">
+            <button class="btn-main red" onclick="joinGame()" style="margin-top: 10px;">Rejoindre</button>
+            <p id="net-status" style="margin-top: 10px; color: #ff3366; font-weight: bold;"></p>
+            <button class="btn-main" style="background:#333; margin-top:20px;" onclick="closeMultiMenu()">Retour</button>
+        </div>
+
+        <!-- MENU CRÉATION DE DECK -->
+        <div id="deck-builder-menu" class="menu-overlay" style="display: none;">
+            <h2 class="menu-subtitle">Compose ton Deck</h2>
+            <div id="deck-pool" class="card-grid"></div>
+            <p id="deck-counter" style="margin: 10px 0; font-weight: bold; color: #39ff14;">Sélectionnées : 0 / 6</p>
+            <button class="btn-main" id="validate-deck-btn" onclick="saveCustomDeck()" disabled>Valider</button>
+            <button class="btn-main" style="background:#333;" onclick="closeDeckBuilder()">Retour</button>
+        </div>
+
+        <!-- L'ARÈNE DE JEU -->
+        <div id="arena" style="display: none;">
             <div id="river"></div>
             <div class="bridge left-bridge"></div>
             <div class="bridge right-bridge"></div>
-            <div id="deploy-zone" style="display: none;">Zone de Déploiement</div>
+            <div id="deploy-zone" style="display: none;">Cliquer pour Déployer</div>
         </div>
 
-        <div id="ui-container">
+        <!-- UI DES CARTES (En jeu) -->
+        <div id="ui-container" style="display: none;">
             <div id="next-card-zone"><span>Suivante</span><div id="next-card" class="card mini"></div></div>
             <div id="hand"></div>
             <div id="slime-bar-container"><div id="slime-bar-fill"></div><div id="slime-count">0 / 10 Slimes</div></div>
@@ -36,28 +73,38 @@
             <div class="game-over-content">
                 <h1 id="game-over-title">VICTOIRE !</h1>
                 <button class="btn-main" onclick="restartGame()">Rejouer</button>
-                <button class="btn-main" style="background:#333; margin-top:10px;" onclick="window.location.href='../index.html'">Quitter</button>
+                <button class="btn-main" style="background:#333; margin-top:10px;" onclick="location.reload()">Menu Principal</button>
             </div>
         </div>
         
     </div>
 
-    <!-- PARAMÈTRES -->
-    <div id="settings-modal" style="display: none;">
+    <!-- MODAL PARAMÈTRES -->
+    <div id="settings-modal" class="settings-modal">
         <div class="settings-content">
-            <h2 style="margin-top: 0; color: #39ff14;">Paramètres</h2>
+            <h2 style="margin-top: 0; color: #39ff14; text-transform: uppercase;">Paramètres</h2>
+            
+            <div class="setting-item" style="margin-bottom: 20px;">
+                <label style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.2em;">
+                    <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()" style="transform: scale(1.5);"> 
+                    <span>Activer le Son 🔊</span>
+                </label>
+            </div>
+
             <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
-                    <button id="btn-sz-classic" class="btn-size active" onclick="setGameSize('classic')">Standard</button>
-                    <button id="btn-sz-wide" class="btn-size" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Large</button>
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
                 </div>
             </div>
+            
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <!-- GESTION AUDIO (Remplace les src par tes mp3) -->
+    <!-- AUDIO (Liens vers tes assets) -->
     <audio id="bg-music" src="assets/audio/clash_music.mp3" loop></audio>
     <audio id="sfx-spawn" src="assets/audio/spawn.mp3"></audio>
     <audio id="sfx-hit" src="assets/audio/hit.mp3"></audio>
