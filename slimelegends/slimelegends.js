@@ -548,24 +548,26 @@ class Player {
     }
 
     update() {
-        if (this.isDead) { 
-            this.respawnTimer--; 
-            if (this.respawnTimer <= 0) { 
-                this.respawn(); 
-            } 
-            return; 
-        }
-
+        // --- 1. TOUS les temps baissent même si tu es mort (cooldowns, stun, etc) ---
         for(let key in this.cds) {
             if(this.cds[key] > 0) this.cds[key]--;
         }
-        
         if(this.stunTimer > 0) this.stunTimer--; 
         if(this.actionLock > 0) this.actionLock--;
         if(this.revealTimer > 0) this.revealTimer--; 
         if(this.speedBuff > 0) this.speedBuff--;
         if(this.attackAnim > 0) this.attackAnim--;
 
+        // --- 2. Si le joueur est mort, on gère son respawn et on stop l'update ---
+        if (this.isDead) { 
+            this.respawnTimer--; 
+            if (this.respawnTimer <= 0) { 
+                this.respawn(); 
+            } 
+            return; // Bloque les actions (mouvements, clics, sorts) pendant la mort
+        }
+
+        // --- 3. Si le joueur est vivant, il fait ses actions normales ---
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) { 
                 this.autoAttackTarget = null; 
@@ -1035,21 +1037,16 @@ class Projectile {
             if (this.active && !this.hitTargets.includes(ent) && Math.hypot(ent.x - this.x, ent.y - this.y) < ent.radius + this.radius) {
                 
                 if (this.homingTarget) {
-                    // Cible auto-attaque : On passe à travers tout le reste et on s'arrête uniquement sur la cible !
                     if (ent === this.homingTarget) {
                         ent.takeDamage(this.dmg, this.owner); 
-                        this.active = false; // S'arrête exactement sur sa cible
+                        this.active = false;
                         clickMarkers.push({x: this.x, y: this.y, life: 15, color: this.owner.color, isExplosion: true});
                     }
                 } else {
-                    // C'est un Sort (Skillshot)
                     ent.takeDamage(this.dmg, this.owner); 
-                    
-                    // Si le sort touche un champion ennemi, on stoppe net l'attaque
                     if (ent instanceof Player) {
                         this.active = false;
                     } else {
-                        // Sinon (c'est une tour/nexus), le sort continue de traverser
                         this.hitTargets.push(ent); 
                     }
                     clickMarkers.push({x: this.x, y: this.y, life: 15, color: this.owner.color, isExplosion: true});
@@ -1075,12 +1072,12 @@ function updateBot(bot) {
             let dist = Math.hypot(objTarget.x - bot.x, objTarget.y - bot.y);
             if (dist > bot.attackRange) { 
                 bot.setMovementTarget(objTarget.x, objTarget.y); 
-                bot.autoAttackTarget = null; // Retire la cible en mêlée pour permettre le mouvement
+                bot.autoAttackTarget = null;
             } else { 
                 bot.target = null; 
                 bot.angle = Math.atan2(objTarget.y - bot.y, objTarget.x - bot.x); 
                 if (bot.cds.basic === 0) {
-                    bot.autoAttackTarget = objTarget; // Le bot cible le batiment !
+                    bot.autoAttackTarget = objTarget; 
                     bot.castSpell('basic', objTarget.x, objTarget.y); 
                 }
             }
@@ -1098,14 +1095,14 @@ function updateBot(bot) {
         
         if (dist > bot.attackRange) { 
             bot.setMovementTarget(target.x, target.y); 
-            bot.autoAttackTarget = null; // Retire la cible d'attaque automatique quand il faut pourchasser !
+            bot.autoAttackTarget = null; 
         } else { 
             bot.target = null; 
             bot.angle = Math.atan2(target.y - bot.y, target.x - bot.x); 
         }
         
         if (dist <= bot.attackRange + 40 && bot.cds.basic === 0) { 
-            bot.autoAttackTarget = target; // Le bot cible le joueur !
+            bot.autoAttackTarget = target; 
             bot.castSpell('basic', target.x, target.y); 
         }
 
@@ -1116,7 +1113,7 @@ function updateBot(bot) {
         }
     } else {
         bot.target = null; 
-        bot.autoAttackTarget = null; // Oublie complètement le joueur invisible
+        bot.autoAttackTarget = null; 
     }
 }
 
@@ -1198,7 +1195,7 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 
 function updateSpellUI() {
-    if(players.length === 0 || players[0].isDead) return;
+    if(players.length === 0) return; // Retiré le blocage "isDead" pour voir ses sorts mort !
     let p = players[0];
     
     ['s1', 's2', 'ult'].forEach(slot => {
