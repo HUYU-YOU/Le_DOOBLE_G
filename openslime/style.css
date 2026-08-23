@@ -1,0 +1,118 @@
+:root { 
+    --bg: #020308; /* Espace profond */
+    --panel: rgba(10, 15, 28, 0.7); 
+    --p1: #00f0ff; 
+    --p2: #ff007f; 
+    --p3: #39ff14; 
+    --p4: #ffbf00; 
+}
+
+body, html { 
+    font-family: 'Rajdhani', sans-serif; 
+    background-color: var(--bg); color: #fff; 
+    margin: 0; padding: 0; 
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden; user-select: none;
+}
+
+/* =======================================================
+   CONTENEUR DU JEU (Gestion des Tailles)
+   ======================================================= */
+#game-container { 
+    position: relative; 
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden; 
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+}
+
+/* Mode "Petit" */
+#game-container.size-classic { 
+    width: 1000px; height: 600px; 
+    border-radius: 15px; 
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+}
+
+/* Mode Plein Page / Plein Écran */
+#game-container.size-wide, #game-container.size-full {
+    position: fixed !important; top: 0; left: 0; 
+    width: 100vw !important; height: 100vh !important;
+    max-width: none; border-radius: 0; border: none; padding: 0; 
+    z-index: 999; 
+}
+
+/* Le conteneur du moteur 3D en arrière-plan */
+#webgl-container {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1; /* Derrière l'UI */
+}
+
+/* =======================================================
+   BOUTONS FLOTTANTS ET HUB
+   ======================================================= */
+.hub-link { 
+    position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem;
+    background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
+    transition: all 0.3s ease; z-index: 100;
+}
+.hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
+
+.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); }
+.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+
+/* =======================================================
+   MODAL DES PARAMÈTRES
+   ======================================================= */
+#settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+#settings-modal.show { opacity: 1; pointer-events: auto; }
+.settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 420px; }
+
+.size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+.btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+.btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+
+.close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+.close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+/* =======================================================
+   INTERFACE EN JEU (TITRE & PHASE)
+   ======================================================= */
+#ui-container {
+    position: absolute;
+    top: 20px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+    pointer-events: none; /* Laisse passer les clics vers le globe 3D */
+}
+
+.game-title { 
+    margin: 0;
+    letter-spacing: 8px; 
+    text-shadow: 0 0 20px #000, 0 0 30px var(--p1); 
+    font-size: 3rem; 
+}
+
+#status-panel {
+    background: var(--panel);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    padding: 10px 30px;
+    border-radius: 30px;
+    margin-top: 10px;
+    display: flex;
+    gap: 30px;
+    backdrop-filter: blur(5px);
+    pointer-events: auto; /* Active les clics sur ce panneau */
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+#status-panel p { margin: 0; }
