@@ -2,10 +2,12 @@ const container3D = document.getElementById('webgl-container');
 window.scene = new THREE.Scene();
 window.camera = new THREE.PerspectiveCamera(45, container3D.clientWidth / container3D.clientHeight, 0.1, 1000);
 window.camera.position.set(0, 0, 15); 
+
 window.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 window.renderer.setSize(container3D.clientWidth, container3D.clientHeight);
 window.renderer.setPixelRatio(window.devicePixelRatio); 
 container3D.appendChild(window.renderer.domElement);
+
 window.controls = new THREE.OrbitControls(window.camera, window.renderer.domElement);
 window.controls.enableDamping = true;
 window.controls.dampingFactor = 0.05;
@@ -36,10 +38,12 @@ function animate() {
     window.renderer.render(window.scene, window.camera);
 }
 
-window.addEventListener('resize', () => {
+window.resize3DEnvironment = function() {
     if(!container3D) return;
     window.camera.aspect = container3D.clientWidth / container3D.clientHeight;
     window.camera.updateProjectionMatrix();
     window.renderer.setSize(container3D.clientWidth, container3D.clientHeight);
-});
+}
+
+window.addEventListener('resize', window.resize3DEnvironment);
 animate();
