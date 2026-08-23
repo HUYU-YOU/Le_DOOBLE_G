@@ -1,3 +1,235 @@
+@import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+body {
+    background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%);
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.game-title {
+    font-family: 'Luckiest Guy', cursive;
+    color: #39ff14;
+    text-shadow: 2px 2px 0px #000;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    z-index: 10;
+}
+
+/* --- BOUTONS HUB ET PARAMÈTRES --- */
+.hub-link {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #39ff14;
+    text-decoration: none;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: bold;
+    font-size: 1.2em;
+    background: rgba(0,0,0,0.5);
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: 1px solid #39ff14;
+    transition: 0.2s;
+    z-index: 100;
+}
+.hub-link:hover { background: #39ff14; color: black; }
+
+.settings-btn-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+    z-index: 100;
+}
+.settings-btn {
+    width: 40px;
+    height: 40px;
+    transition: transform 0.3s;
+}
+
+/* --- GESTION DES TAILLES (Responsive) --- */
+#game-container {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #39ff14;
+    border-radius: 20px;
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.size-classic { width: 400px; height: 700px; }
+.size-wide { width: 80%; height: 85vh; border-radius: 10px; }
+.size-full { width: 100vw; height: 100vh; border: none; border-radius: 0; }
+
+/* --- L'ARÈNE --- */
+#arena {
+    flex: 1;
+    position: relative;
+    background: url('data:image/svg+xml;utf8,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></svg>');
+    margin: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.base {
+    position: absolute;
+    width: 120px;
+    height: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid #fff;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.2em;
+}
+#enemy-base { top: 10px; border-color: #ff3366; color: #ff3366; }
+#player-base { bottom: 10px; border-color: #33ccff; color: #33ccff; }
+
+/* --- ENTITÉS SPAWNÉES --- */
+.entity {
+    position: absolute;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 12px;
+    color: #000;
+    transform: translate(-50%, -50%);
+    animation: spawn 0.3s ease-out;
+}
+@keyframes spawn { 0% { transform: translate(-50%, -50%) scale(0); } 100% { transform: translate(-50%, -50%) scale(1); } }
+
+/* --- UI DES CARTES --- */
+#ui-container {
+    height: 220px;
+    background: rgba(17, 14, 45, 0.9);
+    border-top: 2px solid #39ff14;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+#next-card-zone {
+    position: absolute;
+    bottom: 230px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    padding: 5px;
+    border-radius: 10px;
+    font-size: 12px;
+    text-align: center;
+    font-family: 'Rajdhani', sans-serif;
+    color: #ccc;
+}
+
+#hand {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 120px;
+}
+
+.card {
+    width: 75px;
+    height: 110px;
+    background: linear-gradient(135deg, #444, #222);
+    border: 2px solid #888;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 5px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
+.card:active { transform: scale(0.95); }
+.card.disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
+.card.mini { width: 50px; height: 75px; font-size: 10px; margin-top: 5px; }
+
+.card .cost {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    background: #39ff14;
+    color: #000;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-family: 'Luckiest Guy', cursive;
+    border: 2px solid #111;
+}
+.card .name { margin-top: 15px; text-align: center; font-size: 12px; font-weight: bold; }
+
+/* --- JAUGE SLIME --- */
+#slime-bar-container {
+    height: 30px;
+    background: #222;
+    border-radius: 15px;
+    border: 2px solid #555;
+    position: relative;
+    overflow: hidden;
+}
+#slime-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #1f8a0e, #39ff14);
+    transition: width 0.3s linear;
+}
+#slime-count {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; justify-content: center; align-items: center;
+    font-weight: bold; text-shadow: 1px 1px 2px #000;
+    font-family: 'Luckiest Guy', cursive; letter-spacing: 1px;
+}
+
+/* --- MODAL PARAMÈTRES --- */
+#settings-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000; font-family: 'Rajdhani', sans-serif;
+}
+.settings-content {
+    background: #1a1a2e; padding: 30px; border-radius: 10px;
+    border: 2px solid #39ff14; text-align: center; color: white;
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); width: 350px;
+}
+.size-options { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.btn-size {
+    background: #222; border: 1px solid #39ff14; color: #fff;
+    padding: 10px 15px; border-radius: 5px; cursor: pointer;
+    font-family: 'Rajdhani', sans-serif; font-weight: bold; transition: 0.2s;
+}
+.btn-size:hover { background: rgba(57, 255, 20, 0.2); }
+.btn-size.active { background: #39ff14; color: #000; }
+.close-btn {
+    background: #ff3366; border: none; color: white;
+    padding: 10px 20px; border-radius: 5px; cursor: pointer;
+    font-weight: bold; font-family: 'Rajdhani', sans-serif; font-size: 1.1em;
+}
 /* --- BARRES DE VIE DES UNITÉS --- */
 .entity-hp-container {
     position: absolute;
