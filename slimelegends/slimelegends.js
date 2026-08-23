@@ -41,6 +41,13 @@ function clickSettingsAnim() {
     }, 300);
 }
 
+// AJOUT CRUCIAL : Attacher les événements au bouton pour que l'animation se lance
+if (settingsBtnImg) {
+    settingsBtnImg.addEventListener('mouseenter', startSettingsAnim);
+    settingsBtnImg.addEventListener('mouseleave', stopSettingsAnim);
+    settingsBtnImg.addEventListener('click', clickSettingsAnim);
+}
+
 function toggleSettings() {
     let modal = document.getElementById('settings-modal');
     if (modal) modal.classList.toggle('show');
@@ -735,26 +742,29 @@ class Player {
             ctx.fillRect(this.radius - 10, -5, 15, 10);
         }
 
-        ctx.restore(); 
+        ctx.restore(); // On restaure uniquement l'échelle et la rotation du perso pour que la vie reste droite !
 
+        // === MODIFICATION ICI : On dessine la barre de vie AVANT de restaurer la position X/Y globale ===
         ctx.globalAlpha = alpha; 
         ctx.fillStyle = '#222'; 
-        ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8);
+        // Note qu'ici on remplace "this.x - 30" par "-30" car on est déjà translaté au centre du joueur !
+        ctx.fillRect(-30, -this.radius - 20, 60, 8);
         
         if(this.shield > 0) { 
             ctx.fillStyle = '#00f0ff'; 
-            ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60, 8); 
+            ctx.fillRect(-30, -this.radius - 20, 60, 8); 
         } else { 
             ctx.fillStyle = (this.team === 1) ? '#39ff14' : '#ff007f'; 
-            ctx.fillRect(this.x - 30, this.y - this.radius - 20, 60 * (this.hp / this.maxHp), 8); 
+            ctx.fillRect(-30, -this.radius - 20, 60 * (this.hp / this.maxHp), 8); 
         }
         
         ctx.textAlign = 'center'; 
         if (this.stunTimer > 0) { 
             ctx.fillStyle = "yellow"; 
-            ctx.fillText("STUN", this.x, this.y - this.radius - 35); 
+            ctx.fillText("STUN", 0, -this.radius - 35); 
         }
         
+        // Et maintenant on restaure pour revenir aux coordonnées globales
         ctx.restore(); 
     }
 
