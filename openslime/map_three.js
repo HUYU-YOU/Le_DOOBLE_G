@@ -24,7 +24,7 @@ const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.
 window.earth = new THREE.Mesh(geometry, material);
 window.scene.add(window.earth);
 
-// CHARGEMENT DE L'IMAGE CORRECTE
+// CHARGEMENT DE LA JOLIE CARTE
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load('assets/map_globe.png', (texture) => {
     material.map = texture;
