@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Card of Slime - Edition Finale</title>
-    <!-- PeerJS pour le multijoueur COS -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -13,18 +12,28 @@
     
     <h1 class="game-title">Card of Slime</h1>
     
-    <!-- Bouton Retour au Hub -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     
-    <!-- Bouton Paramètres avec ton image par défaut -->
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
         <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
-    <!-- CONTENEUR DU JEU (Large par défaut) -->
     <div id="game-container" class="size-wide">
         
-        <!-- MENU PRINCIPAL -->
+        <!-- CHRONOMÈTRE -->
+        <div id="game-timer" style="display: none;">3:00</div>
+        
+        <!-- MESSAGE ALERTE (Double Slime) -->
+        <div id="alert-message" style="display: none;">DOUBLE SLIME !</div>
+
+        <!-- PANNEAU DES ÉMOTES -->
+        <div id="emote-panel" style="display: none;">
+            <button onclick="sendEmote('😂')">😂</button>
+            <button onclick="sendEmote('😡')">😡</button>
+            <button onclick="sendEmote('😭')">😭</button>
+            <button onclick="sendEmote('👍')">👍</button>
+        </div>
+
         <div id="main-menu" class="menu-overlay">
             <h2 class="menu-subtitle">Choisis ton mode</h2>
             <button class="btn-main" onclick="openDeckBuilder()">🃏 Composer mon Deck</button>
@@ -32,10 +41,9 @@
             <button class="btn-main red" onclick="openMultiMenu()">🌐 Multijoueur (Code COS)</button>
         </div>
 
-        <!-- MENU MULTIJOUEUR (COS CODE) -->
         <div id="multi-menu" class="menu-overlay" style="display: none;">
             <h2 class="menu-subtitle">Multijoueur COS</h2>
-            <p style="margin-bottom: 15px; color: #aaa;">Ton Code de Partie : <br><span id="cos-code-display" style="color: #0ff; font-weight: bold; font-size: 2em; letter-spacing: 2px;">Génération...</span></p>
+            <p style="margin-bottom: 15px; color: #aaa;">Ton Code de Partie : <br><span id="cos-code-display" style="color: #0ff; font-weight: bold; font-size: 2em; letter-spacing: 2px;"></span></p>
             <button class="btn-main" onclick="hostGame()">Héberger la Partie</button>
             <div style="margin: 15px 0; color: #888;">OU</div>
             <input type="text" id="join-code-input" placeholder="Entrer le code COSXXXX" style="padding: 10px; font-family: 'Rajdhani'; font-size: 1.2em; border-radius: 5px; border: 1px solid #39ff14; background: #111; color: white; text-align: center; width: 260px;">
@@ -44,7 +52,6 @@
             <button class="btn-main" style="background:#333; margin-top:20px;" onclick="closeMultiMenu()">Retour</button>
         </div>
 
-        <!-- MENU CRÉATION DE DECK -->
         <div id="deck-builder-menu" class="menu-overlay" style="display: none;">
             <h2 class="menu-subtitle">Compose ton Deck</h2>
             <div id="deck-pool" class="card-grid"></div>
@@ -53,7 +60,6 @@
             <button class="btn-main" style="background:#333;" onclick="closeDeckBuilder()">Retour</button>
         </div>
 
-        <!-- L'ARÈNE DE JEU -->
         <div id="arena" style="display: none;">
             <div id="river"></div>
             <div class="bridge left-bridge"></div>
@@ -61,14 +67,12 @@
             <div id="deploy-zone" style="display: none;">Cliquer pour Déployer</div>
         </div>
 
-        <!-- UI DES CARTES (En jeu) -->
         <div id="ui-container" style="display: none;">
             <div id="next-card-zone"><span>Suivante</span><div id="next-card" class="card mini"></div></div>
             <div id="hand"></div>
             <div id="slime-bar-container"><div id="slime-bar-fill"></div><div id="slime-count">0 / 10 Slimes</div></div>
         </div>
 
-        <!-- ÉCRAN DE FIN DE PARTIE -->
         <div id="game-over-overlay" style="display: none;">
             <div class="game-over-content">
                 <h1 id="game-over-title">VICTOIRE !</h1>
@@ -104,7 +108,6 @@
         </div>
     </div>
 
-    <!-- AUDIO (Liens vers tes assets) -->
     <audio id="bg-music" src="assets/audio/clash_music.mp3" loop></audio>
     <audio id="sfx-spawn" src="assets/audio/spawn.mp3"></audio>
     <audio id="sfx-hit" src="assets/audio/hit.mp3"></audio>
