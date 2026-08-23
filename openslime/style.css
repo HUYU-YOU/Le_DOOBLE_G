@@ -159,4 +159,56 @@ body, html {
 
 #status-panel p { 
     margin: 0; 
+
+   /* =======================================================
+   MENU DE CONSTRUCTION & SLIDER
+   ======================================================= */
+.troop-slider-container { 
+    display: flex; align-items: center; gap: 10px; 
+}
+#troop-slider {
+    width: 150px; cursor: pointer;
+}
+
+#build-menu {
+    position: absolute;
+    background: rgba(10, 15, 28, 0.95);
+    border: 2px solid var(--p1);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+    backdrop-filter: blur(8px);
+    transform: translate(-50%, -50%); /* Centre le menu sur la souris */
+    z-index: 50;
+    min-width: 180px;
+}
+
+.build-header {
+    color: #fff; text-align: center; font-weight: bold; margin-bottom: 5px;
+    font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px;
+}
+
+.btn-build {
+    background: rgba(0,0,0,0.6); color: white; border: 1px solid var(--p1);
+    padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: 0.2s;
+    text-align: left; font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em;
+}
+
+.btn-build:hover:not(:disabled) { 
+    background: var(--p1); color: #000; 
+}
+
+.btn-build:disabled {
+    opacity: 0.3; cursor: not-allowed; border-color: #555; filter: grayscale(100%);
+}
+
+.btn-build.cancel { 
+    border-color: var(--p2); text-align: center; margin-top: 5px; 
+}
+.btn-build.cancel:hover { 
+    background: var(--p2); color: #fff; 
+}
 }
