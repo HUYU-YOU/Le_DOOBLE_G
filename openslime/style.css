@@ -162,3 +162,24 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 .btn-action.attack:hover:not(:disabled) { background: var(--p2); color: #fff; }
 .btn-action.cancel { border-color: #555; text-align: center; margin-top: 5px; color: #aaa;}
 .btn-action.cancel:hover { background: #333; color: #fff; border-color: #fff;}
+/* =======================================================
+   PANNEAU D'ÉCONOMIE (NOUVEAU)
+   ======================================================= */
+#economy-panel {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--p1);
+    border-radius: 10px;
+    padding: 10px 20px;
+    display: flex;
+    gap: 20px;
+    margin-bottom: 5px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+.resource-item {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #ccc;
+    text-transform: uppercase;
+}
