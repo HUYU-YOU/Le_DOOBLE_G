@@ -1,4 +1,9 @@
+// =========================================================
+// MOTEUR 3D - GESTION DU GLOBE ET DE L'ENVIRONNEMENT
+// =========================================================
+
 const container3D = document.getElementById('webgl-container');
+
 window.scene = new THREE.Scene();
 window.camera = new THREE.PerspectiveCamera(45, container3D.clientWidth / container3D.clientHeight, 0.1, 1000);
 window.camera.position.set(0, 0, 15); 
@@ -19,8 +24,9 @@ const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.
 window.earth = new THREE.Mesh(geometry, material);
 window.scene.add(window.earth);
 
+// CHARGEMENT DE L'IMAGE CORRECTE
 const textureLoader = new THREE.TextureLoader();
-textureLoader.load('assets/map.jpg', (texture) => {
+textureLoader.load('assets/map_globe.png', (texture) => {
     material.map = texture;
     material.needsUpdate = true;
 });
