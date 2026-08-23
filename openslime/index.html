@@ -18,7 +18,8 @@
         <!-- BOUTONS FLOTTANTS -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
-        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <!-- TON BOUTON PARAMÈTRES CORRIGÉ -->
+        <div class="settings-btn-wrapper" onclick="toggleSettings()">
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
 
@@ -56,10 +57,10 @@
             <p style="color: #aaa; margin-bottom: 20px;">Choisis ton type d'adversaire :</p>
             
             <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="startGame('dumb_bots')">
-                🤖 IA TRIBALES<br><span style="font-size: 0.6em; color:#ccc;">Les bots commencent de zéro, comme toi.</span>
+                🤖 IA TRIBALES<br><span style="font-size: 0.6em; color:#ccc;">Les bots commencent de zéro.</span>
             </button>
             <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="startGame('smart_bots')">
-                🏛️ IA EMPIRES (PAYS)<br><span style="font-size: 0.6em; color:#ccc;">Les bots contrôlent déjà des nations entières.</span>
+                🏛️ IA EMPIRES<br><span style="font-size: 0.6em; color:#ccc;">Les bots contrôlent déjà des pays.</span>
             </button>
             
             <button class="btn-main cancel" style="margin-top: 30px;" onclick="openMenu('main')">Retour</button>
@@ -89,7 +90,7 @@
                 <button class="btn-action" id="btn-anti-missile" onclick="executeAction('build_anti_missile')">🛡️ Anti-Missile</button>
             </div>
 
-            <!-- Actions de Bâtiments Spécifiques (Tirs, Routes) -->
+            <!-- Actions de Bâtiments Spécifiques -->
             <div id="command-options" style="display: none;">
                 <button class="btn-action attack" id="btn-launch-icbm" onclick="executeAction('launch_icbm')">💥 Lancer Frappe Nucléaire</button>
                 <button class="btn-action" id="btn-establish-route" onclick="executeAction('establish_route')">🚢 Établir Route Maritime</button>
@@ -106,15 +107,11 @@
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
-            <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-                <span>Format de l'Écran 🖥️</span>
-                <div class="size-options">
-                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
-                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
-                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
-                </div>
-            </div>
-            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+            
+            <button class="btn-main gold" onclick="toggleFullscreen()" style="width: 100%; margin: 10px 0;">📺 Plein Écran</button>
+            <button class="btn-main" onclick="toggleTheme()" style="width: 100%; margin: 10px 0;">🌙 Changer de Thème</button>
+            
+            <button onclick="toggleSettings()" class="close-btn" style="margin-top: 20px;">Fermer</button>
         </div>
     </div>
 
