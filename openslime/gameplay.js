@@ -14,31 +14,38 @@ let entities = [];
 let selectedEntity = null; 
 let actionState = 'NORMAL'; 
 
-// --- 1. PARAMÈTRES ET ANIMATIONS ---
-const settingImages = ['../img/setting.png', '../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
-let currentSettingIndex = 0;
-let hoverInterval;
+// --- 1. PARAMÈTRES ET ANIMATIONS DU BOUTON ---
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
+let hoverInterval; 
+let currentFrame = 0;
 
 window.startSettingsAnim = function() {
     if (hoverInterval) return;
-    currentSettingIndex = 0;
-    document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
+    currentFrame = 0;
+    const settingsBtnImg = document.getElementById('settings-btn-img');
+    if(settingsBtnImg) settingsBtnImg.src = animFrames[currentFrame];
     hoverInterval = setInterval(() => {
-        currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
-        document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
+        currentFrame = (currentFrame + 1) % animFrames.length;
+        if(settingsBtnImg) settingsBtnImg.src = animFrames[currentFrame];
     }, 100); 
 }
 
 window.stopSettingsAnim = function() {
     clearInterval(hoverInterval); hoverInterval = null;
-    document.getElementById('settings-btn-img').src = '../img/setting.png';
+    const settingsBtnImg = document.getElementById('settings-btn-img');
+    if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
+        settingsBtnImg.src = '../img/setting.png'; 
+    }
 }
 
 window.clickSettingsAnim = function() {
     clearInterval(hoverInterval); hoverInterval = null;
-    document.getElementById('settings-btn-img').src = '../img/settings4.png';
+    const settingsBtnImg = document.getElementById('settings-btn-img');
+    if(settingsBtnImg) settingsBtnImg.src = '../img/settings4.png';
     window.toggleSettings();
-    setTimeout(() => { document.getElementById('settings-btn-img').src = '../img/setting.png'; }, 300);
+    setTimeout(() => { 
+        if(settingsBtnImg) settingsBtnImg.src = '../img/setting.png'; 
+    }, 300);
 }
 
 window.toggleSettings = function() {
@@ -66,19 +73,20 @@ window.setGameSize = function(size) {
     
     let btnClassic = document.getElementById('btn-sz-classic');
     let btnWide = document.getElementById('btn-sz-wide');
+    let btnFull = document.getElementById('btn-sz-full');
     
     if (size === 'classic') { container.classList.add('size-classic'); if(btnClassic) btnClassic.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } 
     else if (size === 'wide') { container.classList.add('size-wide'); if(btnWide) btnWide.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } 
+    else if (size === 'full') { container.classList.add('size-full'); if(btnFull) btnFull.classList.add('active'); if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e)); } 
     
     if (typeof window.resize3DEnvironment === "function") { setTimeout(window.resize3DEnvironment, 50); setTimeout(window.resize3DEnvironment, 400); }
 }
 
-// --- 2. DÉTECTION DU TERRAIN (MAP NOIRE) ---
+// --- 2. DÉTECTION DU TERRAIN (MAP NOIRE: map_globe_terreste.png) ---
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
 
-// CHARGEMENT DE L'IMAGE RADAR CORRECTE
 terrainImg.src = 'assets/map_globe_terreste.png'; 
 
 terrainImg.onload = () => {
@@ -93,7 +101,7 @@ function isWater(r, g, b) {
 }
 
 // --- 3. MENUS ET RÉSEAU ---
-window.startGameMode = function(menuId) {
+window.openMenu = function(menuId) {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('network-menu').style.display = 'none';
@@ -112,12 +120,12 @@ window.joinNetworkGame = function() {
         setTimeout(() => { alert("Le multijoueur est en développement !"); errorMsg.innerText = ""; }, 1000);
     } else {
         errorMsg.style.color = "#ff007f";
-        errorMsg.innerText = "Code invalide. Format requis : OPS suivi de 4 chiffres.";
+        errorMsg.innerText = "Code invalide. Format requis : OPS + 4 chiffres.";
     }
 }
 
 // --- 4. LANCEMENT DU JEU ET CHRONO ---
-window.launchDeployment = function(mode) {
+window.startGame = function(mode) {
     aiMode = mode;
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('ui-container').style.display = 'flex';
@@ -274,11 +282,10 @@ window.closeActionMenu = function() {
 
 window.executeAction = function(action, isCapital = false) {
     closeActionMenu();
-
     if (action === 'launch_icbm') { actionState = 'TARGETING_ICBM'; return; }
     if (action === 'establish_route') { actionState = 'TARGETING_ROUTE'; return; }
-
     if (!buildTargetPosition) return;
+    
     let type = action.replace('build_', '');
     let color, geometry;
 
@@ -289,12 +296,10 @@ window.executeAction = function(action, isCapital = false) {
 
     const material = new THREE.MeshStandardMaterial({ color: color });
     const structure = new THREE.Mesh(geometry, material);
-
     structure.position.copy(buildTargetPosition);
     structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), buildTargetPosition.clone().normalize());
     if(type === 'missile') structure.translateY(0.15);
     window.scene.add(structure);
-
     entities.push({ type: type, owner: 'player', mesh: structure });
 }
 
