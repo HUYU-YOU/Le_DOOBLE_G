@@ -18,6 +18,7 @@
         <!-- BOUTONS FLOTTANTS -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
+        <!-- TON BOUTON SETTINGS EXACTEMENT COMME AVANT -->
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
@@ -46,8 +47,8 @@
             <h1 class="game-title" style="font-size: 4em; margin-bottom: 30px;">OPEN <span style="color: var(--p1);">FRONT</span></h1>
             <div class="menu-title">CENTRE DE COMMANDEMENT</div>
             
-            <button class="btn-main" onclick="startGameMode('local')">🎮 Lancer Partie Solo</button>
-            <button class="btn-main gold" onclick="startGameMode('network')">🌐 Multijoueur (Code OPS)</button>
+            <button class="btn-main" onclick="openMenu('local')">🎮 Lancer Partie Solo</button>
+            <button class="btn-main gold" onclick="openMenu('network')">🌐 Multijoueur (Code OPS)</button>
         </div>
 
         <!-- MENU SOLO (CHOIX IA) -->
@@ -55,14 +56,14 @@
             <div class="menu-title">CONFIGURATION DU CONFLIT</div>
             <p style="color: #aaa; margin-bottom: 20px;">Choisis ton type d'adversaire :</p>
             
-            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="launchDeployment('dumb_bots')">
+            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="startGame('dumb_bots')">
                 🤖 IA TRIBALES<br><span style="font-size: 0.6em; color:#ccc;">Les bots commencent de zéro.</span>
             </button>
-            <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="launchDeployment('smart_bots')">
+            <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="startGame('smart_bots')">
                 🏛️ IA EMPIRES<br><span style="font-size: 0.6em; color:#ccc;">Les bots contrôlent déjà des pays.</span>
             </button>
             
-            <button class="btn-main cancel" style="margin-top: 30px;" onclick="startGameMode('main')">Retour</button>
+            <button class="btn-main cancel" style="margin-top: 30px;" onclick="openMenu('main')">Retour</button>
         </div>
 
         <!-- MENU RÉSEAU (CODE OPS) -->
@@ -73,7 +74,7 @@
             <button class="btn-main gold" onclick="joinNetworkGame()">🚀 S'engager</button>
             <p id="network-error" style="color: #ff007f; font-weight: bold; height: 20px;"></p>
             
-            <button class="btn-main cancel" style="margin-top: 20px;" onclick="startGameMode('main')">Retour</button>
+            <button class="btn-main cancel" style="margin-top: 20px;" onclick="openMenu('main')">Retour</button>
         </div>
 
         <!-- MENU CONTEXTUEL D'ACTION -->
@@ -89,7 +90,7 @@
                 <button class="btn-action" id="btn-anti-missile" onclick="executeAction('build_anti_missile')">🛡️ Anti-Missile</button>
             </div>
 
-            <!-- Actions de Bâtiments -->
+            <!-- Actions de Commandement -->
             <div id="command-options" style="display: none;">
                 <button class="btn-action attack" id="btn-launch-icbm" onclick="executeAction('launch_icbm')">💥 Lancer Frappe Nucléaire</button>
                 <button class="btn-action" id="btn-establish-route" onclick="executeAction('establish_route')">🚢 Établir Route Maritime</button>
@@ -113,11 +114,52 @@
             <div class="size-options">
                 <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
                 <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
             </div>
             
             <button onclick="toggleSettings()" class="close-btn" style="margin-top: 20px;">Fermer</button>
         </div>
     </div>
+
+    <!-- SCRIPT URL HUB -->
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const forceMode = params.get('mode');
+        window.addEventListener('DOMContentLoaded', () => {
+            if (forceMode === 'solo') {
+                openMenu('local');
+            } else if (forceMode === 'multi') {
+                openMenu('network');
+            }
+        });
+    </script>
+    
+    <!-- SCRIPT SWIPE HUB -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+            "../worms/index.html"
+        ];
+        let touchstartX = 0; let touchendX = 0; let swipeMouseX = 0; let endSwipeMouseX = 0;
+        function handleSwipeGesture(start, end) {
+            const swipeThreshold = 75; 
+            if (end < start - swipeThreshold) navigateGames(1);
+            if (end > start + swipeThreshold) navigateGames(-1);
+        }
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
+            if (currentIndex === -1) return;
+            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
+        }
+        function isProtectedElement(e) { return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select' || e.target.closest('#ui-container') || e.target.closest('#action-menu'); }
+        document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
+        document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
+        document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; swipeMouseX = e.screenX; });
+        document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endSwipeMouseX = e.screenX; handleSwipeGesture(swipeMouseX, endSwipeMouseX); });
+    </script>
 
     <script src="map_three.js"></script>
     <script src="gameplay.js"></script>
