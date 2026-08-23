@@ -4,7 +4,7 @@
 
 const container3D = document.getElementById('webgl-container');
 
-// On attache ces variables à "window" pour pouvoir s'en servir dans gameplay.js plus tard !
+// Variables attachées à "window" pour pouvoir s'en servir dans gameplay.js
 window.scene = new THREE.Scene();
 window.camera = new THREE.PerspectiveCamera(45, container3D.clientWidth / container3D.clientHeight, 0.1, 1000);
 window.camera.position.set(0, 0, 15); 
@@ -31,9 +31,9 @@ const material = new THREE.MeshStandardMaterial({
 window.earth = new THREE.Mesh(geometry, material);
 window.scene.add(window.earth);
 
-// Chargement de ta texture .JPEG
+// Chargement de ta texture (Celle qui a les jolies couleurs, PAS la noire)
 const textureLoader = new THREE.TextureLoader();
-textureLoader.load('assets/map_globe.png', (texture) => {
+textureLoader.load('assets/map.jpg', (texture) => {
     material.map = texture;
     material.needsUpdate = true;
 });
@@ -49,10 +49,7 @@ window.scene.add(sunLight);
 // --- BOUCLE D'ANIMATION ---
 function animate() {
     requestAnimationFrame(animate);
-    
-    // Rotation lente du globe
     window.earth.rotation.y += 0.0005; 
-    
     window.controls.update();
     window.renderer.render(window.scene, window.camera);
 }
