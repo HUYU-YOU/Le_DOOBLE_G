@@ -1,31 +1,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
 
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-
-body {
-    background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%);
-    color: white; font-family: 'Roboto', sans-serif;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    height: 100vh; overflow: hidden;
-}
-
+body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); color: white; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
 .game-title { font-family: 'Luckiest Guy', cursive; color: #39ff14; text-shadow: 2px 2px 0px #000; margin-bottom: 10px; z-index: 10; font-size: 2.5em; letter-spacing: 2px; }
 
-/* BOUTONS HUB ET PARAMÈTRES */
 .hub-link { position: absolute; top: 20px; left: 20px; color: #39ff14; text-decoration: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; font-size: 1.2em; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 5px; border: 1px solid #39ff14; z-index: 100; transition: 0.2s; }
 .hub-link:hover { background: #39ff14; color: black; }
-
 .settings-btn-wrapper { position: absolute; top: 20px; right: 20px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 40px; height: 40px; transition: transform 0.3s; }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.1); }
 
-/* CONTENEUR PRINCIPAL ET TAILLES */
 #game-container { background: rgba(0, 0, 0, 0.4); border: 2px solid #39ff14; border-radius: 20px; display: flex; flex-direction: column; position: relative; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
 .size-classic { width: 400px; height: 700px; }
 .size-wide { width: 85vw; height: 85vh; border-radius: 10px; max-width: 900px; max-height: 800px; }
 .size-full { width: 100vw; height: 100vh; border: none; border-radius: 0; }
 
-/* MENUS OVERLAY (Main, Deck, Multi) */
+/* CHRONO ET ALERTE */
+#game-timer { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 10px; border: 2px solid #fff; font-family: 'Luckiest Guy', cursive; font-size: 1.5em; z-index: 20; color: white; }
+.timer-danger { color: #ff3366 !important; border-color: #ff3366 !important; animation: pulse 1s infinite; }
+#alert-message { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-family: 'Luckiest Guy', cursive; font-size: 3em; color: #ff3366; text-shadow: 0 0 20px #000; z-index: 50; animation: flash 2s ease-out forwards; pointer-events: none; }
+@keyframes flash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
+@keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); } }
+
+/* ÉMOTES */
+#emote-panel { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 20; }
+#emote-panel button { background: rgba(0,0,0,0.6); border: 2px solid #888; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5em; cursor: pointer; transition: 0.2s; }
+#emote-panel button:hover { background: #39ff14; transform: scale(1.2); }
+.emote-bubble { position: absolute; font-size: 2em; background: white; border-radius: 50%; padding: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); z-index: 30; animation: floatEmote 2s forwards; pointer-events: none; }
+@keyframes floatEmote { 0% { opacity: 0; transform: translate(-50%, 0) scale(0); } 20% { opacity: 1; transform: translate(-50%, -30px) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -40px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(0.5); } }
+
 .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 25, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; text-align: center; }
 .menu-subtitle { font-family: 'Luckiest Guy', cursive; font-size: 2.5em; color: #39ff14; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -35,19 +38,16 @@ body {
 .btn-main:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
 .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* GRILLE DU DECK BUILDER */
 .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 15px; }
 .card-select-item { width: 80px; height: 110px; background: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: cover; background-position: center; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
-/* L'ARÈNE ET LE TERRAIN */
 #arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #3b522b; overflow: hidden; cursor: crosshair; }
 #river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: rgba(57, 255, 20, 0.3); border-top: 2px solid #39ff14; border-bottom: 2px solid #39ff14; z-index: 1; }
 .bridge { position: absolute; top: 45%; height: 10%; width: 15%; background: #5c4033; border-left: 2px solid #3e2723; border-right: 2px solid #3e2723; z-index: 2; }
 .left-bridge { left: 20%; } .right-bridge { right: 20%; }
 #deploy-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 45%; background: rgba(57, 255, 20, 0.15); border-top: 2px dashed #39ff14; z-index: 10; display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.7); font-family: 'Rajdhani'; font-size: 1.5em; pointer-events: none; }
 
-/* UI DES CARTES (EN JEU) */
 #ui-container { height: 180px; background: rgba(17, 14, 45, 0.9); border-top: 2px solid #39ff14; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10; }
 #next-card-zone { position: absolute; bottom: 190px; left: 10px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 10px; font-size: 12px; text-align: center; color: #ccc; z-index: 10; font-family: 'Rajdhani'; }
 #hand { display: flex; justify-content: space-around; align-items: flex-end; height: 100px; }
@@ -59,21 +59,18 @@ body {
 .card .cost { position: absolute; top: -8px; left: -8px; background: #39ff14; color: #000; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-family: 'Luckiest Guy', cursive; border: 2px solid #111; z-index: 2; }
 .card .name { margin-top: auto; text-align: center; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.8); border-radius: 4px; padding: 2px; }
 
-/* JAUGE SLIME */
 #slime-bar-container { height: 25px; background: #222; border-radius: 12px; border: 2px solid #555; position: relative; overflow: hidden; margin-top: 10px; }
 #slime-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #1f8a0e, #39ff14); transition: width 0.3s linear; }
 #slime-count { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-weight: bold; text-shadow: 1px 1px 2px #000; font-family: 'Luckiest Guy', cursive; font-size: 14px; letter-spacing: 1px; }
 
-/* MODAL PARAMÈTRES (Avec ta classe .show) */
 .settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 3000; font-family: 'Rajdhani', sans-serif; }
-.settings-modal.show { display: flex; } /* Géré par JS */
+.settings-modal.show { display: flex; } 
 .settings-content { background: #1a1a2e; padding: 30px; border-radius: 10px; border: 2px solid #39ff14; text-align: center; color: white; width: 350px; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
 .size-options { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .btn-size { background: #222; border: 1px solid #39ff14; color: #fff; padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: 0.2s; font-size: 0.9em; font-family: 'Rajdhani'; font-weight: bold; }
 .btn-size.active { background: #39ff14; color: #000; }
 .close-btn { background: #ff3366; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; font-family: 'Rajdhani'; font-size: 1.1em; }
 
-/* ENTITÉS & COMBAT */
 .entity { position: absolute; width: 45px; height: 45px; border-radius: 50%; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; }
 .entity.building { border-radius: 10px; border: 2px solid #fff; background-color: rgba(0,0,0,0.8) !important; color: white; display: flex; justify-content: center; align-items: center; font-family: 'Rajdhani'; font-size: 1.2em; font-weight: bold; z-index: 3;}
 .entity[data-id="mega"] { width: 70px; height: 70px; z-index: 5; }
@@ -97,10 +94,12 @@ body {
 .is-attacking { animation: attackAnim 0.4s ease-in-out; }
 .entity.dead { opacity: 0; transform: translate(-50%, -50%) scale(1.5); transition: all 0.3s ease-out; }
 
-/* ÉCRAN DE FIN & FX */
 #game-over-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
 .game-over-content { text-align: center; }
 #game-over-title { font-family: 'Luckiest Guy', cursive; font-size: 4em; margin-bottom: 20px; text-shadow: 2px 2px 10px #000; letter-spacing: 2px; }
 
 .particle { position: absolute; width: 12px; height: 12px; border-radius: 50%; pointer-events: none; z-index: 5; animation: splatter 0.5s ease-out forwards; }
 @keyframes splatter { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+
+/* EFFET DE ZONE DU MARAIS */
+.spell-puddle { position: absolute; background: radial-gradient(circle, rgba(138, 43, 226, 0.6) 0%, rgba(138, 43, 226, 0) 70%); border-radius: 50%; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; animation: pulse 2s infinite; }
