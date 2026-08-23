@@ -11,7 +11,7 @@ let buildTargetTerrain = null;
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
-terrainImg.src = 'assets/map.jpg'; // Chargement de ta carte
+terrainImg.src = 'assets/map_globe.png'; // Chargement de ta carte
 
 terrainImg.onload = () => {
     terrainCanvas.width = terrainImg.width;
