@@ -18,7 +18,7 @@
         <!-- BOUTONS FLOTTANTS -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
-        <div class="settings-btn-wrapper" onclick="toggleSettings()">
+        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
 
@@ -46,8 +46,8 @@
             <h1 class="game-title" style="font-size: 4em; margin-bottom: 30px;">OPEN <span style="color: var(--p1);">FRONT</span></h1>
             <div class="menu-title">CENTRE DE COMMANDEMENT</div>
             
-            <button class="btn-main" onclick="openMenu('local')">🎮 Lancer Partie Solo</button>
-            <button class="btn-main gold" onclick="openMenu('network')">🌐 Multijoueur (Code OPS)</button>
+            <button class="btn-main" onclick="startGameMode('local')">🎮 Lancer Partie Solo</button>
+            <button class="btn-main gold" onclick="startGameMode('network')">🌐 Multijoueur (Code OPS)</button>
         </div>
 
         <!-- MENU SOLO (CHOIX IA) -->
@@ -55,14 +55,14 @@
             <div class="menu-title">CONFIGURATION DU CONFLIT</div>
             <p style="color: #aaa; margin-bottom: 20px;">Choisis ton type d'adversaire :</p>
             
-            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="startGame('dumb_bots')">
+            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="launchDeployment('dumb_bots')">
                 🤖 IA TRIBALES<br><span style="font-size: 0.6em; color:#ccc;">Les bots commencent de zéro.</span>
             </button>
-            <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="startGame('smart_bots')">
+            <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="launchDeployment('smart_bots')">
                 🏛️ IA EMPIRES<br><span style="font-size: 0.6em; color:#ccc;">Les bots contrôlent déjà des pays.</span>
             </button>
             
-            <button class="btn-main cancel" style="margin-top: 30px;" onclick="openMenu('main')">Retour</button>
+            <button class="btn-main cancel" style="margin-top: 30px;" onclick="startGameMode('main')">Retour</button>
         </div>
 
         <!-- MENU RÉSEAU (CODE OPS) -->
@@ -73,10 +73,10 @@
             <button class="btn-main gold" onclick="joinNetworkGame()">🚀 S'engager</button>
             <p id="network-error" style="color: #ff007f; font-weight: bold; height: 20px;"></p>
             
-            <button class="btn-main cancel" style="margin-top: 20px;" onclick="openMenu('main')">Retour</button>
+            <button class="btn-main cancel" style="margin-top: 20px;" onclick="startGameMode('main')">Retour</button>
         </div>
 
-        <!-- MENU CONTEXTUEL D'ACTION (Caché par défaut) -->
+        <!-- MENU CONTEXTUEL D'ACTION -->
         <div id="action-menu" style="display: none;">
             <div class="action-header" id="action-title">TERRAIN</div>
             <div class="action-subheader" id="action-subtitle">Sélectionnez une action</div>
@@ -89,7 +89,7 @@
                 <button class="btn-action" id="btn-anti-missile" onclick="executeAction('build_anti_missile')">🛡️ Anti-Missile</button>
             </div>
 
-            <!-- Actions de Bâtiments Spécifiques -->
+            <!-- Actions de Bâtiments -->
             <div id="command-options" style="display: none;">
                 <button class="btn-action attack" id="btn-launch-icbm" onclick="executeAction('launch_icbm')">💥 Lancer Frappe Nucléaire</button>
                 <button class="btn-action" id="btn-establish-route" onclick="executeAction('establish_route')">🚢 Établir Route Maritime</button>
@@ -119,7 +119,6 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="map_three.js"></script>
     <script src="gameplay.js"></script>
 </body>
