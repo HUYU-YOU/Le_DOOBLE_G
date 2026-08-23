@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Card of Slime</title>
+    <!-- Polices -->
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <h1 class="game-title">Card of Slime</h1>
+    
+    <!-- BOUTONS FLOTTANTS DU HUB -->
+    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="toggleSettings()">
+        <!-- Assure-toi que le chemin de ton image est correct par rapport à ton dossier -->
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- CONTENEUR PRINCIPAL DU JEU -->
+    <div id="game-container" class="size-classic">
+        
+        <!-- L'Arène (Terrain de jeu) -->
+        <div id="arena">
+            <div id="enemy-base" class="base">Tour Ennemie</div>
+            <div id="player-base" class="base">Ta Base</div>
+        </div>
+
+        <!-- Interface utilisateur (UI des cartes) -->
+        <div id="ui-container">
+            <!-- Carte Suivante -->
+            <div id="next-card-zone">
+                <span>Suivante</span>
+                <div id="next-card" class="card mini"></div>
+            </div>
+
+            <!-- Main du joueur (4 cartes) -->
+            <div id="hand"></div>
+
+            <!-- Jauge de Slime -->
+            <div id="slime-bar-container">
+                <div id="slime-bar-fill"></div>
+                <div id="slime-count">0 / 10 Slimes</div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- MODAL PARAMÈTRES -->
+    <div id="settings-modal" style="display: none;">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: #39ff14; text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size active" onclick="setGameSize('classic')">Standard</button>
+                    <button id="btn-sz-wide" class="btn-size" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <!-- SCRIPT URL HUB (Exemple pour les modes de jeu si tu veux en rajouter plus tard) -->
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const forceMode = params.get('mode');
+        // Tu peux rajouter la logique de menus ici si tu veux faire un mode PVE et PVP plus tard
+    </script>
+    
+    <!-- SCRIPT SWIPE HUB -->
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+            "../worms/index.html", "../card_of_slime/index.html" // <- Ajout de ton jeu ici !
+        ];
+        let touchstartX = 0; let touchendX = 0; let swipeMouseX = 0; let endSwipeMouseX = 0;
+        function handleSwipeGesture(start, end) {
+            const swipeThreshold = 75; 
+            if (end < start - swipeThreshold) navigateGames(1);
+            if (end > start + swipeThreshold) navigateGames(-1);
+        }
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
+            if (currentIndex === -1) return;
+            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
+        }
+        function isProtectedElement(e) { 
+            const tag = e.target.tagName.toLowerCase();
+            return tag === 'canvas' || tag === 'button' || tag === 'input' || tag === 'select' || e.target.closest('.card'); 
+        }
+        document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
+        document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
+        document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; swipeMouseX = e.screenX; });
+        document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endSwipeMouseX = e.screenX; handleSwipeGesture(swipeMouseX, endSwipeMouseX); });
+    </script>
+    
+    <!-- SCRIPT PRINCIPAL DU JEU -->
+    <script src="script.js"></script>
+</body>
+</html>
