@@ -17,7 +17,7 @@ terrainImg.onload = () => {
     terrainCanvas.width = terrainImg.width;
     terrainCanvas.height = terrainImg.height;
     terrainCtx.drawImage(terrainImg, 0, 0);
-    console.log("Radar de terrain initialisé avec succès depuis map.jpg !");
+    console.log("Radar de terrain initialisé avec succès depuis map_globe.png !");
 };
 
 // Fonction d'analyse de pixel pour différencier l'Océan des Continents
