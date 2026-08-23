@@ -1,0 +1,51 @@
+/* --- BARRES DE VIE DES UNITÉS --- */
+.entity-hp-container {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120%;
+    height: 6px;
+    background: #222;
+    border: 1px solid #000;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.entity-hp-fill {
+    height: 100%;
+    background: #39ff14;
+    width: 100%;
+    transition: width 0.1s linear, background-color 0.2s;
+}
+
+/* Couleur de vie ennemie */
+.team-enemy .entity-hp-fill { background: #ff3366; }
+
+/* --- ANIMATIONS DE COMBAT --- */
+/* Animation de marche (petit rebond) */
+@keyframes walkAnim {
+    0%, 100% { transform: translate(-50%, -50%) rotate(-5deg) translateY(0); }
+    50% { transform: translate(-50%, -50%) rotate(5deg) translateY(-5px); }
+}
+
+/* Animation d'attaque (coup vers l'avant) */
+@keyframes attackAnim {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    40% { transform: translate(-50%, -60%) scale(1.2); filter: brightness(1.5); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.is-walking {
+    animation: walkAnim 0.5s infinite;
+}
+
+.is-attacking {
+    animation: attackAnim 0.4s ease-in-out;
+}
+
+.entity.dead {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+    transition: all 0.3s ease-out;
+}
