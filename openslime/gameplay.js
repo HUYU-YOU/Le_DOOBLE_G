@@ -10,28 +10,26 @@ let spawnCountdown = 10;
 let aiMode = 'dumb_bots'; 
 let myCapitalPlaced = false;
 
-// --- SYSTÈME D'ENTITÉS ---
 let entities = []; 
 let selectedEntity = null; 
 let actionState = 'NORMAL'; 
 
-// --- 1. GESTION DES PARAMÈTRES ET DU CYCLE D'IMAGES (TON CODE) ---
+// --- 1. PARAMÈTRES ET THÈMES ---
 const settingImages = ['../img/setting.png', '../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
 let currentSettingIndex = 0;
 
-function toggleSettings() {
+window.toggleSettings = function() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('show');
-
     currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
     document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
 }
 
-function toggleTheme() {
+window.toggleTheme = function() {
     document.body.classList.toggle('dark-mode');
 }
 
-function toggleFullscreen() {
+window.toggleFullscreen = function() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => console.log(err));
     } else {
@@ -39,8 +37,22 @@ function toggleFullscreen() {
     }
 }
 
+window.setGameSize = function(size) {
+    const container = document.getElementById('game-container');
+    if (!container) return;
+    document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active'));
+    container.classList.remove('size-classic', 'size-wide', 'size-full');
+    
+    let btnClassic = document.getElementById('btn-sz-classic');
+    let btnWide = document.getElementById('btn-sz-wide');
+    
+    if (size === 'classic') { container.classList.add('size-classic'); if(btnClassic) btnClassic.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } 
+    else if (size === 'wide') { container.classList.add('size-wide'); if(btnWide) btnWide.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } 
+    
+    if (typeof window.resize3DEnvironment === "function") { setTimeout(window.resize3DEnvironment, 50); setTimeout(window.resize3DEnvironment, 400); }
+}
 
-// --- 2. DÉTECTION DU TERRAIN (RADAR AVEC MAP SUR FOND NOIR) ---
+// --- 2. DÉTECTION DU TERRAIN (MAP NOIRE) ---
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
@@ -53,12 +65,11 @@ terrainImg.onload = () => {
 };
 
 function isWater(r, g, b) {
-    if (r < 15 && g < 15 && b < 15) return true; // Noir = Eau
-    return false; // Reste = Terre
+    if (r < 15 && g < 15 && b < 15) return true;
+    return false;
 }
 
-
-// --- 3. GESTION DES MENUS ET DU RÉSEAU ---
+// --- 3. MENUS ET RÉSEAU ---
 window.openMenu = function(menuId) {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('local-menu').style.display = 'none';
@@ -71,7 +82,6 @@ window.openMenu = function(menuId) {
 window.joinNetworkGame = function() {
     let input = document.getElementById('ops-input').value.toUpperCase();
     let errorMsg = document.getElementById('network-error');
-    
     let regex = /^OPS\d{4}$/;
     if(regex.test(input)) {
         errorMsg.innerText = "Connexion au serveur " + input + "...";
@@ -83,8 +93,7 @@ window.joinNetworkGame = function() {
     }
 }
 
-
-// --- 4. LANCEMENT DU JEU ET CHRONO ---
+// --- 4. LANCEMENT ET CHRONO ---
 window.startGame = function(mode) {
     aiMode = mode;
     document.getElementById('local-menu').style.display = 'none';
@@ -100,7 +109,6 @@ window.startGame = function(mode) {
     let timerInterval = setInterval(() => {
         spawnCountdown--;
         document.getElementById('spawn-timer').innerText = spawnCountdown;
-
         if (spawnCountdown <= 0) {
             clearInterval(timerInterval);
             finishSpawningPhase();
@@ -112,14 +120,10 @@ function finishSpawningPhase() {
     gameState = 'PLAYING';
     document.getElementById('spawn-timer-container').style.display = 'none';
     document.getElementById('game-phase-text').innerText = "EXPANSION (Guerre)";
-    
-    if (!myCapitalPlaced) {
-        alert("Temps écoulé ! La partie commence.");
-    }
+    if (!myCapitalPlaced) alert("Temps écoulé ! La partie commence.");
 }
 
-
-// --- 5. RAYCASTING (CLIC SUR LE GLOBE 3D) ---
+// --- 5. RAYCASTING 3D ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const container3D = document.getElementById('webgl-container');
@@ -134,21 +138,18 @@ function onMouseClick(event) {
 
     raycaster.setFromCamera(mouse, window.camera);
     
-    // Clic sur Bâtiment existant
     const entityMeshes = entities.map(e => e.mesh);
     const entityIntersects = raycaster.intersectObjects(entityMeshes);
 
     if (entityIntersects.length > 0 && actionState === 'NORMAL' && gameState === 'PLAYING') {
         const hitEntityMesh = entityIntersects[0].object;
         const clickedEntity = entities.find(e => e.mesh === hitEntityMesh);
-        
         if(clickedEntity && clickedEntity.owner === 'player') {
             openActionMenu(event.clientX, event.clientY, clickedEntity, null);
             return; 
         }
     }
 
-    // Modes Ciblages
     if (actionState === 'TARGETING_ICBM' && selectedEntity) {
         const earthIntersects = raycaster.intersectObject(window.earth);
         if(earthIntersects.length > 0) {
@@ -169,7 +170,6 @@ function onMouseClick(event) {
         }
     }
 
-    // Clic sur la Terre pour Construire
     const intersects = raycaster.intersectObject(window.earth);
 
     if (intersects.length > 0) {
@@ -179,7 +179,6 @@ function onMouseClick(event) {
         if (hit.uv && terrainImg.complete) {
             let px = Math.floor(hit.uv.x * terrainCanvas.width);
             let py = Math.floor((1 - hit.uv.y) * terrainCanvas.height); 
-            
             let pixel = terrainCtx.getImageData(px, py, 1, 1).data;
             let terrainType = isWater(pixel[0], pixel[1], pixel[2]) ? 'Eau' : 'Terre';
             buildTargetTerrain = terrainType;
@@ -191,8 +190,7 @@ function onMouseClick(event) {
                     document.getElementById('spawn-timer-container').querySelector('h2').innerText = "CAPITALE PLACÉE !";
                     document.getElementById('spawn-timer-container').querySelector('p').innerText = "En attente des autres joueurs...";
                 }
-            } 
-            else if (gameState === 'PLAYING') {
+            } else if (gameState === 'PLAYING') {
                 openActionMenu(event.clientX, event.clientY, null, terrainType);
             }
         }
@@ -200,11 +198,10 @@ function onMouseClick(event) {
         closeActionMenu(); 
     }
 }
-
 container3D.addEventListener('click', onMouseClick);
 
 
-// --- 6. GESTION DU MENU D'ACTION ---
+// --- 6. ACTION ET CONSTRUCTION ---
 window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = null) {
     const menu = document.getElementById('action-menu');
     const header = document.getElementById('action-title');
@@ -223,17 +220,11 @@ window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = nu
         selectedEntity = entity;
 
         if (entity.type === 'missile') {
-            header.innerText = "🚀 SILO NUCLÉAIRE";
-            header.style.color = "#ff007f";
-            subheader.innerText = "En attente d'ordres";
-            document.getElementById('btn-launch-icbm').style.display = 'block';
-            document.getElementById('btn-establish-route').style.display = 'none';
+            header.innerText = "🚀 SILO NUCLÉAIRE"; header.style.color = "#ff007f"; subheader.innerText = "En attente d'ordres";
+            document.getElementById('btn-launch-icbm').style.display = 'block'; document.getElementById('btn-establish-route').style.display = 'none';
         } else if (entity.type === 'port') {
-            header.innerText = "⚓ PORT MILITAIRE";
-            header.style.color = "#00f0ff";
-            subheader.innerText = "Gestion flotte navale";
-            document.getElementById('btn-launch-icbm').style.display = 'none';
-            document.getElementById('btn-establish-route').style.display = 'block';
+            header.innerText = "⚓ PORT MILITAIRE"; header.style.color = "#00f0ff"; subheader.innerText = "Gestion flotte navale";
+            document.getElementById('btn-launch-icbm').style.display = 'none'; document.getElementById('btn-establish-route').style.display = 'block';
         } else {
             closeActionMenu(); 
         }
@@ -243,21 +234,11 @@ window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = nu
         commandOptions.style.display = 'none';
 
         if (terrainType === 'Eau') {
-            header.innerText = "🌊 ZONE MARITIME";
-            header.style.color = "#00f0ff";
-            subheader.innerText = "Construction navale";
-            document.getElementById('btn-city').disabled = true; 
-            document.getElementById('btn-missile').disabled = true; 
-            document.getElementById('btn-anti-missile').disabled = true;
-            document.getElementById('btn-port').disabled = false; 
+            header.innerText = "🌊 ZONE MARITIME"; header.style.color = "#00f0ff"; subheader.innerText = "Construction navale";
+            document.getElementById('btn-city').disabled = true; document.getElementById('btn-missile').disabled = true; document.getElementById('btn-anti-missile').disabled = true; document.getElementById('btn-port').disabled = false; 
         } else {
-            header.innerText = "⛰️ ZONE TERRESTRE";
-            header.style.color = "#39ff14";
-            subheader.innerText = "Déploiement terrestre";
-            document.getElementById('btn-city').disabled = false;
-            document.getElementById('btn-missile').disabled = false;
-            document.getElementById('btn-anti-missile').disabled = false;
-            document.getElementById('btn-port').disabled = true; 
+            header.innerText = "⛰️ ZONE TERRESTRE"; header.style.color = "#39ff14"; subheader.innerText = "Déploiement terrestre";
+            document.getElementById('btn-city').disabled = false; document.getElementById('btn-missile').disabled = false; document.getElementById('btn-anti-missile').disabled = false; document.getElementById('btn-port').disabled = true; 
         }
     }
 }
@@ -269,42 +250,29 @@ window.closeActionMenu = function() {
 
 window.executeAction = function(action, isCapital = false) {
     closeActionMenu();
-
     if (action === 'launch_icbm') { actionState = 'TARGETING_ICBM'; return; }
     if (action === 'establish_route') { actionState = 'TARGETING_ROUTE'; return; }
-
     if (!buildTargetPosition) return;
+    
     let type = action.replace('build_', '');
     let color, geometry;
 
-    if (type === 'city') {
-        geometry = new THREE.BoxGeometry(0.25, 0.25, 0.25); 
-        color = isCapital ? 0xffbf00 : 0x00f0ff; 
-        if(isCapital) geometry.scale(1.5, 1.5, 1.5); 
-    } else if (type === 'port') {
-        geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16); 
-        color = 0x00f0ff; 
-    } else if (type === 'missile') {
-        geometry = new THREE.ConeGeometry(0.08, 0.35, 8); 
-        color = 0xff007f; 
-    } else if (type === 'anti_missile') { 
-        geometry = new THREE.SphereGeometry(0.18, 8, 8, 0, Math.PI*2, 0, Math.PI/2); 
-        color = 0x39ff14; 
-    }
+    if (type === 'city') { geometry = new THREE.BoxGeometry(0.25, 0.25, 0.25); color = isCapital ? 0xffbf00 : 0x00f0ff; if(isCapital) geometry.scale(1.5, 1.5, 1.5); } 
+    else if (type === 'port') { geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16); color = 0x00f0ff; } 
+    else if (type === 'missile') { geometry = new THREE.ConeGeometry(0.08, 0.35, 8); color = 0xff007f; } 
+    else if (type === 'anti_missile') { geometry = new THREE.SphereGeometry(0.18, 8, 8, 0, Math.PI*2, 0, Math.PI/2); color = 0x39ff14; }
 
     const material = new THREE.MeshStandardMaterial({ color: color });
     const structure = new THREE.Mesh(geometry, material);
-
     structure.position.copy(buildTargetPosition);
     structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), buildTargetPosition.clone().normalize());
     if(type === 'missile') structure.translateY(0.15);
     window.scene.add(structure);
-
     entities.push({ type: type, owner: 'player', mesh: structure });
 }
 
 
-// --- 7. ANIMATIONS (MISSILES & ROUTES) ---
+// --- 7. ANIMATIONS ---
 function launchMissile(siloEntity, targetPos) {
     const missileGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.2, 8);
     const missileMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -367,5 +335,6 @@ function createSeaRoute(startPos, endPos) {
 
 window.updateTroopVal = function(val) {
     troopPercentage = val;
-    document.getElementById('troop-val').innerText = val + "%";
+    let elem = document.getElementById('troop-val');
+    if(elem) elem.innerText = val + "%";
 }
