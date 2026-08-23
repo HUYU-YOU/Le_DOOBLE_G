@@ -41,7 +41,6 @@ function clickSettingsAnim() {
     }, 300);
 }
 
-// AJOUT CRUCIAL : Attacher les événements au bouton pour que l'animation se lance
 if (settingsBtnImg) {
     settingsBtnImg.addEventListener('mouseenter', startSettingsAnim);
     settingsBtnImg.addEventListener('mouseleave', stopSettingsAnim);
@@ -104,7 +103,9 @@ let selectedGameRule = 'nexus';
 let locSelections = [];
 let killsBlue = 0;
 let killsRed = 0;
-window.currentIsBot = window.currentIsBot || false; 
+
+// FORCÉ A TRUE POUR QUE L'IA SOIT ACTIVE PAR DÉFAUT
+window.currentIsBot = true; 
 
 function openMenu(type) {
     document.getElementById('main-menu').style.display = 'none';
@@ -315,9 +316,8 @@ window.addEventListener('keydown', e => {
     if(!gameActive || (players[0] && players[0].isDead)) return;
     let key = e.key.toLowerCase();
     
-    // NOUVEAU : TOUCHE ESPACE POUR ATTAQUER LE PLUS PROCHE
     if (key === ' ') {
-        e.preventDefault(); // Bloque le scroll de la page
+        e.preventDefault(); 
         let closest = players[0].getClosestEnemy(players[0].x, players[0].y);
         if (closest) {
             players[0].autoAttackTarget = closest;
@@ -352,7 +352,7 @@ const charData = {
     slime: { name: "Slime", role: "bruiser", color: '#00ffcc', hp: 2200, speed: 4.8, radius: 30, range: 350 },
     ninja: { name: "Ninja", role: "assassin", color: '#00f0ff', hp: 950, speed: 8.5, radius: 22, range: 120 },
     mage: { name: "Mage", role: "assassin", color: '#9d00ff', hp: 850, speed: 6.5, radius: 22, range: 450 },
-    gunner: { name: "ADC", role: "marksman", color: '#ffbf00', hp: 800, speed: 6.0, radius: 22, range: 500 }, // RANGE 500
+    gunner: { name: "ADC", role: "marksman", color: '#ffbf00', hp: 800, speed: 6.0, radius: 22, range: 500 },
     teemo: { name: "Scout", role: "marksman", color: '#39ff14', hp: 850, speed: 7.2, radius: 20, range: 450 }
 };
 
@@ -443,7 +443,7 @@ class Turret {
         this.hp = this.maxHp;
         this.color = color; 
         this.isDead = false; 
-        this.range = 500; // RANGE ÉGAL À L'ADC (500)
+        this.range = 500; 
         this.attackTimer = 0;
     }
     
@@ -742,12 +742,10 @@ class Player {
             ctx.fillRect(this.radius - 10, -5, 15, 10);
         }
 
-        ctx.restore(); // On restaure uniquement l'échelle et la rotation du perso pour que la vie reste droite !
+        ctx.restore(); 
 
-        // === MODIFICATION ICI : On dessine la barre de vie AVANT de restaurer la position X/Y globale ===
         ctx.globalAlpha = alpha; 
         ctx.fillStyle = '#222'; 
-        // Note qu'ici on remplace "this.x - 30" par "-30" car on est déjà translaté au centre du joueur !
         ctx.fillRect(-30, -this.radius - 20, 60, 8);
         
         if(this.shield > 0) { 
@@ -764,7 +762,6 @@ class Player {
             ctx.fillText("STUN", 0, -this.radius - 35); 
         }
         
-        // Et maintenant on restaure pour revenir aux coordonnées globales
         ctx.restore(); 
     }
 
@@ -789,7 +786,6 @@ class Player {
                 let speed = 25; 
                 let lifeTime = this.attackRange / speed; 
                 let bDmg = (this.charType === 'gunner') ? 35 : 50;
-                // ON PASSE this.autoAttackTarget POUR QUE LE PROJECTILE CIBLE
                 projectiles.push(new Projectile(this.x, this.y, dx*speed, dy*speed, this, bDmg, 8, this.autoAttackTarget, lifeTime, this.color)); 
             }
             this.cds.basic = (this.charType === 'gunner') ? 15 : 25;
@@ -1011,7 +1007,7 @@ class Projectile {
         this.active = true; 
         this.life = life; 
         this.color = color;
-        this.hitTargets = []; // Enregistre les cibles déjà touchées (Pour le piercing)
+        this.hitTargets = []; 
     }
     
     update() {
@@ -1038,17 +1034,24 @@ class Projectile {
         targets.forEach(ent => {
             if (this.active && !this.hitTargets.includes(ent) && Math.hypot(ent.x - this.x, ent.y - this.y) < ent.radius + this.radius) {
                 
-                // Si c'est une auto-attaque (homingTarget existe), elle ne touche QUE sa cible et meurt
                 if (this.homingTarget) {
+                    // Cible auto-attaque : On passe à travers tout le reste et on s'arrête uniquement sur la cible !
                     if (ent === this.homingTarget) {
                         ent.takeDamage(this.dmg, this.owner); 
-                        this.active = false; 
+                        this.active = false; // S'arrête exactement sur sa cible
                         clickMarkers.push({x: this.x, y: this.y, life: 15, color: this.owner.color, isExplosion: true});
                     }
                 } else {
-                    // Si c'est un SORT, il TRAVERSE et touche tous les ennemis sur son passage (Piercing)
+                    // C'est un Sort (Skillshot)
                     ent.takeDamage(this.dmg, this.owner); 
-                    this.hitTargets.push(ent);
+                    
+                    // Si le sort touche un champion ennemi, on stoppe net l'attaque
+                    if (ent instanceof Player) {
+                        this.active = false;
+                    } else {
+                        // Sinon (c'est une tour/nexus), le sort continue de traverser
+                        this.hitTargets.push(ent); 
+                    }
                     clickMarkers.push({x: this.x, y: this.y, life: 15, color: this.owner.color, isExplosion: true});
                 }
             }
@@ -1072,6 +1075,7 @@ function updateBot(bot) {
             let dist = Math.hypot(objTarget.x - bot.x, objTarget.y - bot.y);
             if (dist > bot.attackRange) { 
                 bot.setMovementTarget(objTarget.x, objTarget.y); 
+                bot.autoAttackTarget = null; // Retire la cible en mêlée pour permettre le mouvement
             } else { 
                 bot.target = null; 
                 bot.angle = Math.atan2(objTarget.y - bot.y, objTarget.x - bot.x); 
@@ -1094,6 +1098,7 @@ function updateBot(bot) {
         
         if (dist > bot.attackRange) { 
             bot.setMovementTarget(target.x, target.y); 
+            bot.autoAttackTarget = null; // Retire la cible d'attaque automatique quand il faut pourchasser !
         } else { 
             bot.target = null; 
             bot.angle = Math.atan2(target.y - bot.y, target.x - bot.x); 
@@ -1111,6 +1116,7 @@ function updateBot(bot) {
         }
     } else {
         bot.target = null; 
+        bot.autoAttackTarget = null; // Oublie complètement le joueur invisible
     }
 }
 
