@@ -14,58 +14,40 @@ let entities = [];
 let selectedEntity = null; 
 let actionState = 'NORMAL'; 
 
-// --- 1. PARAMÈTRES ET ANIMATIONS DU BOUTON ---
-const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
-let hoverInterval; 
-let currentFrame = 0;
+// --- 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES (TON CODE) ---
+const settingImages = ['../img/setting.png', '../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+let currentSettingIndex = 0;
 
-window.startSettingsAnim = function() {
-    if (hoverInterval) return;
-    currentFrame = 0;
-    const settingsBtnImg = document.getElementById('settings-btn-img');
-    if(settingsBtnImg) settingsBtnImg.src = animFrames[currentFrame];
-    hoverInterval = setInterval(() => {
-        currentFrame = (currentFrame + 1) % animFrames.length;
-        if(settingsBtnImg) settingsBtnImg.src = animFrames[currentFrame];
-    }, 100); 
-}
-
-window.stopSettingsAnim = function() {
-    clearInterval(hoverInterval); hoverInterval = null;
-    const settingsBtnImg = document.getElementById('settings-btn-img');
-    if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = '../img/setting.png'; 
-    }
-}
-
-window.clickSettingsAnim = function() {
-    clearInterval(hoverInterval); hoverInterval = null;
-    const settingsBtnImg = document.getElementById('settings-btn-img');
-    if(settingsBtnImg) settingsBtnImg.src = '../img/settings4.png';
-    window.toggleSettings();
-    setTimeout(() => { 
-        if(settingsBtnImg) settingsBtnImg.src = '../img/setting.png'; 
-    }, 300);
-}
-
-window.toggleSettings = function() {
+function toggleSettings() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('show');
-}
 
-window.toggleTheme = function() {
+    currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
+    document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
+}
+window.toggleSettings = toggleSettings; // Expose la fonction globalement
+
+function toggleTheme() {
     document.body.classList.toggle('dark-mode');
 }
+window.toggleTheme = toggleTheme;
 
-window.toggleFullscreen = function() {
+function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => console.log(err));
     } else {
         if (document.exitFullscreen) document.exitFullscreen();
     }
 }
+window.toggleFullscreen = toggleFullscreen;
 
-window.setGameSize = function(size) {
+document.addEventListener('fullscreenchange', () => {
+    const fsToggle = document.getElementById('fs-toggle');
+    if (fsToggle) fsToggle.checked = !!document.fullscreenElement;
+});
+
+// Redimensionnement propre
+function setGameSize(size) {
     const container = document.getElementById('game-container');
     if (!container) return;
     document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active'));
@@ -73,20 +55,20 @@ window.setGameSize = function(size) {
     
     let btnClassic = document.getElementById('btn-sz-classic');
     let btnWide = document.getElementById('btn-sz-wide');
-    let btnFull = document.getElementById('btn-sz-full');
     
     if (size === 'classic') { container.classList.add('size-classic'); if(btnClassic) btnClassic.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } 
     else if (size === 'wide') { container.classList.add('size-wide'); if(btnWide) btnWide.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } 
-    else if (size === 'full') { container.classList.add('size-full'); if(btnFull) btnFull.classList.add('active'); if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e)); } 
     
     if (typeof window.resize3DEnvironment === "function") { setTimeout(window.resize3DEnvironment, 50); setTimeout(window.resize3DEnvironment, 400); }
 }
+window.setGameSize = setGameSize;
 
-// --- 2. DÉTECTION DU TERRAIN (MAP NOIRE: map_globe_terreste.png) ---
+// --- 2. DÉTECTION DU TERRAIN (MAP NOIRE) ---
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
 
+// Le Radar invisible utilise ton image à fond noir
 terrainImg.src = 'assets/map_globe_terreste.png'; 
 
 terrainImg.onload = () => {
@@ -95,13 +77,14 @@ terrainImg.onload = () => {
     terrainCtx.drawImage(terrainImg, 0, 0);
 };
 
+// Si le pixel est presque noir, c'est l'eau !
 function isWater(r, g, b) {
-    if (r < 15 && g < 15 && b < 15) return true; // Noir = Eau
-    return false; // Reste = Terre
+    if (r < 20 && g < 20 && b < 20) return true; 
+    return false; 
 }
 
 // --- 3. MENUS ET RÉSEAU ---
-window.openMenu = function(menuId) {
+function openMenu(menuId) {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('network-menu').style.display = 'none';
@@ -109,8 +92,9 @@ window.openMenu = function(menuId) {
     if(menuId !== 'main') document.getElementById(menuId + '-menu').style.display = 'flex';
     else document.getElementById('main-menu').style.display = 'flex';
 }
+window.openMenu = openMenu;
 
-window.joinNetworkGame = function() {
+function joinNetworkGame() {
     let input = document.getElementById('ops-input').value.toUpperCase();
     let errorMsg = document.getElementById('network-error');
     let regex = /^OPS\d{4}$/;
@@ -123,9 +107,10 @@ window.joinNetworkGame = function() {
         errorMsg.innerText = "Code invalide. Format requis : OPS + 4 chiffres.";
     }
 }
+window.joinNetworkGame = joinNetworkGame;
 
 // --- 4. LANCEMENT DU JEU ET CHRONO ---
-window.startGame = function(mode) {
+function startGame(mode) {
     aiMode = mode;
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('ui-container').style.display = 'flex';
@@ -147,6 +132,7 @@ window.startGame = function(mode) {
         }
     }, 1000);
 }
+window.startGame = startGame;
 
 function finishSpawningPhase() {
     gameState = 'PLAYING';
@@ -168,7 +154,7 @@ function onMouseClick(event) {
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, window.camera);
+    raycaster.setFromCamera(mouse, window.gameCamera);
     
     const entityMeshes = entities.map(e => e.mesh);
     const entityIntersects = raycaster.intersectObjects(entityMeshes);
@@ -183,7 +169,7 @@ function onMouseClick(event) {
     }
 
     if (actionState === 'TARGETING_ICBM' && selectedEntity) {
-        const earthIntersects = raycaster.intersectObject(window.earth);
+        const earthIntersects = raycaster.intersectObject(window.gameEarth);
         if(earthIntersects.length > 0) {
             launchMissile(selectedEntity, earthIntersects[0].point);
             actionState = 'NORMAL';
@@ -193,7 +179,7 @@ function onMouseClick(event) {
     }
 
     if (actionState === 'TARGETING_ROUTE' && selectedEntity) {
-        const earthIntersects = raycaster.intersectObject(window.earth);
+        const earthIntersects = raycaster.intersectObject(window.gameEarth);
         if(earthIntersects.length > 0) {
             createSeaRoute(selectedEntity.mesh.position, earthIntersects[0].point);
             actionState = 'NORMAL';
@@ -202,7 +188,7 @@ function onMouseClick(event) {
         }
     }
 
-    const intersects = raycaster.intersectObject(window.earth);
+    const intersects = raycaster.intersectObject(window.gameEarth);
 
     if (intersects.length > 0) {
         const hit = intersects[0];
@@ -234,7 +220,7 @@ container3D.addEventListener('click', onMouseClick);
 
 
 // --- 6. ACTION ET CONSTRUCTION ---
-window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = null) {
+function openActionMenu(mouseX, mouseY, entity = null, terrainType = null) {
     const menu = document.getElementById('action-menu');
     const header = document.getElementById('action-title');
     const subheader = document.getElementById('action-subtitle');
@@ -274,13 +260,15 @@ window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = nu
         }
     }
 }
+window.openActionMenu = openActionMenu;
 
-window.closeActionMenu = function() {
+function closeActionMenu() {
     document.getElementById('action-menu').style.display = 'none';
     if(actionState === 'NORMAL') selectedEntity = null; 
 }
+window.closeActionMenu = closeActionMenu;
 
-window.executeAction = function(action, isCapital = false) {
+function executeAction(action, isCapital = false) {
     closeActionMenu();
     if (action === 'launch_icbm') { actionState = 'TARGETING_ICBM'; return; }
     if (action === 'establish_route') { actionState = 'TARGETING_ROUTE'; return; }
@@ -299,9 +287,10 @@ window.executeAction = function(action, isCapital = false) {
     structure.position.copy(buildTargetPosition);
     structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), buildTargetPosition.clone().normalize());
     if(type === 'missile') structure.translateY(0.15);
-    window.scene.add(structure);
+    window.gameScene.add(structure);
     entities.push({ type: type, owner: 'player', mesh: structure });
 }
+window.executeAction = executeAction;
 
 
 // --- 7. ANIMATIONS (MISSILES & ROUTES) ---
@@ -310,7 +299,7 @@ function launchMissile(siloEntity, targetPos) {
     const missileMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const missile = new THREE.Mesh(missileGeo, missileMat);
     missile.position.copy(siloEntity.mesh.position);
-    window.scene.add(missile);
+    window.gameScene.add(missile);
 
     const start = siloEntity.mesh.position.clone();
     const end = targetPos.clone();
@@ -329,7 +318,7 @@ function launchMissile(siloEntity, targetPos) {
             index++;
             requestAnimationFrame(animateMissile);
         } else {
-            window.scene.remove(missile);
+            window.gameScene.remove(missile);
             createExplosion(end);
         }
     }
@@ -341,7 +330,7 @@ function createExplosion(pos) {
     const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.8 });
     const explosion = new THREE.Mesh(geo, mat);
     explosion.position.copy(pos);
-    window.scene.add(explosion);
+    window.gameScene.add(explosion);
 
     let scale = 1;
     function animateBoom() {
@@ -349,7 +338,7 @@ function createExplosion(pos) {
         explosion.scale.set(scale, scale, scale);
         mat.opacity -= 0.05;
         if (mat.opacity > 0) requestAnimationFrame(animateBoom);
-        else window.scene.remove(explosion);
+        else window.gameScene.remove(explosion);
     }
     animateBoom();
 }
@@ -362,7 +351,7 @@ function createSeaRoute(startPos, endPos) {
     const material = new THREE.LineDashedMaterial({ color: 0x00f0ff, linewidth: 2, scale: 1, dashSize: 0.2, gapSize: 0.1 });
     const route = new THREE.Line(geometry, material);
     route.computeLineDistances(); 
-    window.scene.add(route);
+    window.gameScene.add(route);
 }
 
 window.updateTroopVal = function(val) {
