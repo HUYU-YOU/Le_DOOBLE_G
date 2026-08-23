@@ -14,15 +14,36 @@ let entities = [];
 let selectedEntity = null; 
 let actionState = 'NORMAL'; 
 
-// --- 1. PARAMÈTRES ET THÈMES ---
+// --- 1. PARAMÈTRES ET ANIMATIONS ---
 const settingImages = ['../img/setting.png', '../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
 let currentSettingIndex = 0;
+let hoverInterval;
+
+window.startSettingsAnim = function() {
+    if (hoverInterval) return;
+    currentSettingIndex = 0;
+    document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
+    hoverInterval = setInterval(() => {
+        currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
+        document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
+    }, 100); 
+}
+
+window.stopSettingsAnim = function() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    document.getElementById('settings-btn-img').src = '../img/setting.png';
+}
+
+window.clickSettingsAnim = function() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    document.getElementById('settings-btn-img').src = '../img/settings4.png';
+    window.toggleSettings();
+    setTimeout(() => { document.getElementById('settings-btn-img').src = '../img/setting.png'; }, 300);
+}
 
 window.toggleSettings = function() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('show');
-    currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
-    document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
 }
 
 window.toggleTheme = function() {
@@ -56,7 +77,9 @@ window.setGameSize = function(size) {
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
-terrainImg.src = 'assets/map_radar.jpg'; 
+
+// CHARGEMENT DE L'IMAGE RADAR CORRECTE
+terrainImg.src = 'assets/map_globe_terreste.png'; 
 
 terrainImg.onload = () => {
     terrainCanvas.width = terrainImg.width;
@@ -65,12 +88,12 @@ terrainImg.onload = () => {
 };
 
 function isWater(r, g, b) {
-    if (r < 15 && g < 15 && b < 15) return true;
-    return false;
+    if (r < 15 && g < 15 && b < 15) return true; // Noir = Eau
+    return false; // Reste = Terre
 }
 
 // --- 3. MENUS ET RÉSEAU ---
-window.openMenu = function(menuId) {
+window.startGameMode = function(menuId) {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('network-menu').style.display = 'none';
@@ -93,8 +116,8 @@ window.joinNetworkGame = function() {
     }
 }
 
-// --- 4. LANCEMENT ET CHRONO ---
-window.startGame = function(mode) {
+// --- 4. LANCEMENT DU JEU ET CHRONO ---
+window.launchDeployment = function(mode) {
     aiMode = mode;
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('ui-container').style.display = 'flex';
@@ -109,6 +132,7 @@ window.startGame = function(mode) {
     let timerInterval = setInterval(() => {
         spawnCountdown--;
         document.getElementById('spawn-timer').innerText = spawnCountdown;
+
         if (spawnCountdown <= 0) {
             clearInterval(timerInterval);
             finishSpawningPhase();
@@ -250,10 +274,11 @@ window.closeActionMenu = function() {
 
 window.executeAction = function(action, isCapital = false) {
     closeActionMenu();
+
     if (action === 'launch_icbm') { actionState = 'TARGETING_ICBM'; return; }
     if (action === 'establish_route') { actionState = 'TARGETING_ROUTE'; return; }
+
     if (!buildTargetPosition) return;
-    
     let type = action.replace('build_', '');
     let color, geometry;
 
@@ -264,15 +289,17 @@ window.executeAction = function(action, isCapital = false) {
 
     const material = new THREE.MeshStandardMaterial({ color: color });
     const structure = new THREE.Mesh(geometry, material);
+
     structure.position.copy(buildTargetPosition);
     structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), buildTargetPosition.clone().normalize());
     if(type === 'missile') structure.translateY(0.15);
     window.scene.add(structure);
+
     entities.push({ type: type, owner: 'player', mesh: structure });
 }
 
 
-// --- 7. ANIMATIONS ---
+// --- 7. ANIMATIONS (MISSILES & ROUTES) ---
 function launchMissile(siloEntity, targetPos) {
     const missileGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.2, 8);
     const missileMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
