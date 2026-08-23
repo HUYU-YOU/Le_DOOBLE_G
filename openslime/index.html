@@ -15,13 +15,15 @@
 
     <div id="game-container" class="size-wide">
         
-        <!-- BOUTONS FLOTTANTS -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
-        <!-- TON BOUTON SETTINGS EXACTEMENT COMME AVANT -->
-        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <!-- TON BOUTON SETTINGS EXACT -->
+        <div class="settings-btn-wrapper" onclick="toggleSettings()">
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
+
+        <!-- Checkbox cachée pour ton script de Fullscreen -->
+        <input type="checkbox" id="fs-toggle" style="display: none;">
 
         <!-- UI EN JEU (Interface principale) -->
         <div id="ui-container" style="display: none;">
@@ -90,7 +92,7 @@
                 <button class="btn-action" id="btn-anti-missile" onclick="executeAction('build_anti_missile')">🛡️ Anti-Missile</button>
             </div>
 
-            <!-- Actions de Commandement -->
+            <!-- Actions de Bâtiments -->
             <div id="command-options" style="display: none;">
                 <button class="btn-action attack" id="btn-launch-icbm" onclick="executeAction('launch_icbm')">💥 Lancer Frappe Nucléaire</button>
                 <button class="btn-action" id="btn-establish-route" onclick="executeAction('establish_route')">🚢 Établir Route Maritime</button>
@@ -103,7 +105,7 @@
         <div id="webgl-container"></div>
     </div>
 
-    <!-- MODAL PARAMÈTRES -->
+    <!-- MODAL PARAMÈTRES (Ton Code Exact Intégré) -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
@@ -114,14 +116,13 @@
             <div class="size-options">
                 <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
                 <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
-                <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
             </div>
             
             <button onclick="toggleSettings()" class="close-btn" style="margin-top: 20px;">Fermer</button>
         </div>
     </div>
 
-    <!-- SCRIPT URL HUB -->
+    <!-- SCRIPT URL HUB RÉPARÉ (Il pointait vers de mauvais IDs) -->
     <script>
         const params = new URLSearchParams(window.location.search);
         const forceMode = params.get('mode');
@@ -154,7 +155,8 @@
             if (currentIndex === -1) return;
             window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
         }
-        function isProtectedElement(e) { return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select' || e.target.closest('#ui-container') || e.target.closest('#action-menu'); }
+        // Sécurité Swipe étendue pour Open Front
+        function isProtectedElement(e) { return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select' || e.target.closest('#ui-container') || e.target.closest('#action-menu') || e.target.closest('.overlay'); }
         document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
         document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
         document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; swipeMouseX = e.screenX; });
