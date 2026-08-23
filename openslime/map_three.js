@@ -2,14 +2,16 @@
 // MOTEUR 3D - GESTION DU GLOBE ET DE L'ENVIRONNEMENT
 // =========================================================
 
+const container3D = document.getElementById('webgl-container');
+
 window.scene = new THREE.Scene();
-window.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+window.camera = new THREE.PerspectiveCamera(45, container3D.clientWidth / container3D.clientHeight, 0.1, 1000);
 window.camera.position.set(0, 0, 15); 
 
 window.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-window.renderer.setSize(window.innerWidth, window.innerHeight);
+window.renderer.setSize(container3D.clientWidth, container3D.clientHeight);
 window.renderer.setPixelRatio(window.devicePixelRatio); 
-document.getElementById('webgl-container').appendChild(window.renderer.domElement);
+container3D.appendChild(window.renderer.domElement);
 
 window.controls = new THREE.OrbitControls(window.camera, window.renderer.domElement);
 window.controls.enableDamping = true;
@@ -22,7 +24,7 @@ const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.
 window.earth = new THREE.Mesh(geometry, material);
 window.scene.add(window.earth);
 
-// L'IMAGE COLOREE DE TA MAP POUR LE VISUEL
+// CHARGEMENT DE LA JOLIE CARTE
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load('assets/map_globe.png', (texture) => {
     material.map = texture;
@@ -37,15 +39,19 @@ window.scene.add(sunLight);
 
 function animate() {
     requestAnimationFrame(animate);
-    window.earth.rotation.y += 0.0005; 
+    
+    // --> ROTATION AUTOMATIQUE SUPPRIMÉE ICI <--
+    // La terre ne tournera que si tu utilises ta souris grâce aux OrbitControls !
+    
     window.controls.update();
     window.renderer.render(window.scene, window.camera);
 }
 
 window.resize3DEnvironment = function() {
-    window.camera.aspect = window.innerWidth / window.innerHeight;
+    if(!container3D) return;
+    window.camera.aspect = container3D.clientWidth / container3D.clientHeight;
     window.camera.updateProjectionMatrix();
-    window.renderer.setSize(window.innerWidth, window.innerHeight);
+    window.renderer.setSize(container3D.clientWidth, container3D.clientHeight);
 }
 
 window.addEventListener('resize', window.resize3DEnvironment);
