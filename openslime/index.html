@@ -14,34 +14,41 @@
 </head>
 <body>
 
-    <!-- CONTENEUR PRINCIPAL -->
     <div id="game-container" class="size-wide">
-        
-        <!-- BOUTONS FLOTTANTS -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
 
-        <!-- L'UI SPATIALE -->
         <div id="ui-container">
             <h1 class="game-title">OPEN <span style="color: var(--p1);">FRONT</span></h1>
             <div id="status-panel">
                 <p>Phase : <span style="color: var(--p3);">Déploiement</span></p>
-                <p>Taux d'expansion : <span style="color: var(--p4);">50%</span></p>
+                <div class="troop-slider-container">
+                    <label for="troop-slider">Troupes : <span id="troop-val" style="color: var(--p4);">50%</span></label>
+                    <input type="range" id="troop-slider" min="1" max="100" value="50" oninput="updateTroopVal(this.value)">
+                </div>
             </div>
         </div>
 
-        <!-- LE MOTEUR 3D -->
+        <!-- MENU CONTEXTUEL DE CONSTRUCTION (Caché par défaut) -->
+        <div id="build-menu" style="display: none;">
+            <div class="build-header" id="build-terrain-type">TERRAIN</div>
+            <button class="btn-build" id="btn-city" onclick="buildStructure('city')">🏙️ Fonder une Ville</button>
+            <button class="btn-build" id="btn-port" onclick="buildStructure('port')">⚓ Créer un Port</button>
+            <button class="btn-build" id="btn-missile" onclick="buildStructure('missile')">🚀 Base de Missiles</button>
+            <button class="btn-build" id="btn-anti-missile" onclick="buildStructure('anti-missile')">🛡️ Anti-Missile</button>
+            <button class="btn-build cancel" onclick="closeBuildMenu()">✖ Annuler</button>
+        </div>
+
         <div id="webgl-container"></div>
     </div>
 
-    <!-- MODAL PARAMÈTRES -->
+    <!-- MODAL PARAMÈTRES (inchangée) -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
-            
             <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
@@ -50,12 +57,10 @@
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
                 </div>
             </div>
-            
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <!-- ORDRE TRÈS IMPORTANT : La 3D d'abord, le Gameplay ensuite -->
     <script src="map_three.js"></script>
     <script src="gameplay.js"></script>
 </body>
