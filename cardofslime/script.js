@@ -1,61 +1,41 @@
 // ==========================================
-// 1. GESTION DES PARAMÈTRES ET AUDIO
+// 1. PARAMÈTRES ET AUDIO
 // ==========================================
 const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
 let currentSettingIndex = 0;
-let soundEnabled = true;
-let musicStarted = false;
+let soundEnabled = true; let musicStarted = false;
 
-// Ouvre la modale et cycle l'image (Exactement ton système)
 function toggleSettings() {
-    const modal = document.getElementById('settings-modal');
-    modal.classList.toggle('show');
-
+    document.getElementById('settings-modal').classList.toggle('show');
     currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
-    const imgEl = document.getElementById('settings-btn-img');
-    if(imgEl) imgEl.src = settingImages[currentSettingIndex];
+    if(document.getElementById('settings-btn-img')) document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
 }
 
-// Active / Désactive le son
 function toggleSound() {
     soundEnabled = document.getElementById('sound-toggle').checked;
     const bgm = document.getElementById('bg-music');
-    if (bgm) {
-        if (soundEnabled) bgm.play().catch(()=>{});
-        else bgm.pause();
-    }
+    if (bgm) { if (soundEnabled) bgm.play().catch(()=>{}); else bgm.pause(); }
 }
-
 function startMusic() {
     if(!musicStarted && soundEnabled) {
         const bgm = document.getElementById('bg-music');
-        if(bgm) { bgm.volume = 0.3; bgm.play().catch(() => {}); }
+        if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
         musicStarted = true;
     }
 }
-
 function playSound(id) {
     if (!soundEnabled) return;
     const sound = document.getElementById(id);
     if(sound) { sound.currentTime = 0; sound.volume = 0.5; sound.play().catch(()=>{}); }
 }
-
-// Gère la taille du conteneur du jeu
 function setGameSize(sizeType) {
     document.getElementById('game-container').className = `size-${sizeType}`;
     document.querySelectorAll('.btn-size').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`btn-sz-${sizeType}`).classList.add('active');
-    
-    if (sizeType === 'full') {
-        if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
-    } else {
-        if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-    }
 }
 
-
 // ==========================================
-// 2. CONFIGURATION DES CARTES & DECK BUILDER
+// 2. BASE DE DONNÉES DES CARTES & DECK
 // ==========================================
 const cardDatabase = {
     slime: { id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, color: "#4CAF50", img: "img/SLIME.png" },
@@ -63,10 +43,15 @@ const cardDatabase = {
     mage: { id: "mage", type: "troop", name: "Mage", cost: 4, hp: 350, dmg: 60, range: 25, speed: 4, atkSpeed: 1200, isRanged: true, color: "#03A9F4", img: "assets/skins/mangesud.png" },
     boule: { id: "boule", type: "troop", name: "La Boule", cost: 4, hp: 800, dmg: 100, range: 4, speed: 7, atkSpeed: 1500, targetBuilding: true, color: "#FF9800", img: "assets/skins/setsud.png" },
     mega: { id: "mega", type: "troop", name: "MEGA Slime", cost: 8, hp: 2500, dmg: 150, range: 5, speed: 2, atkSpeed: 2000, color: "#9C27B0", img: "assets/skins/ninjasud.png" },
-    tornade: { id: "tornade", type: "spell", name: "Tornade", cost: 3, dmg: 150, radius: 15, color: "#9E9E9E", img: "" }
+    
+    // NOUVELLES CARTES !
+    tornade: { id: "tornade", type: "spell", name: "Tornade", cost: 3, dmg: 150, radius: 15, color: "#9E9E9E", img: "" },
+    marais: { id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 8000, spawnRate: 1500, spawnId: "slime", color: "#8A2BE2", img: "" },
+    usine: { id: "usine", type: "building", name: "Usine", cost: 4, hp: 1000, lifetime: 30, spawnRate: 4000, spawnId: "slime", speed: 0, range: 0, color: "#5c4033", img: "" },
+    canon: { id: "canon", type: "building", name: "Canon", cost: 3, hp: 800, lifetime: 30, dmg: 80, range: 30, speed: 0, atkSpeed: 1000, isRanged: true, color: "#888", img: "" }
 };
 
-let playerDeck = ["slime", "slimeuse", "mage", "boule", "mega", "tornade"];
+let playerDeck = ["slime", "slimeuse", "mage", "marais", "canon", "usine"]; // Deck de test avec les nouveautés
 let tempSelectedDeck = [...playerDeck];
 
 function openDeckBuilder() {
@@ -74,112 +59,69 @@ function openDeckBuilder() {
     document.getElementById('deck-builder-menu').style.display = 'flex';
     renderDeckPool();
 }
-
 function closeDeckBuilder() {
     document.getElementById('deck-builder-menu').style.display = 'none';
     document.getElementById('main-menu').style.display = 'flex';
 }
-
 function renderDeckPool() {
     const pool = document.getElementById('deck-pool');
     pool.innerHTML = '';
-    
     Object.keys(cardDatabase).forEach(cardId => {
         const card = cardDatabase[cardId];
         const div = document.createElement('div');
         div.className = `card-select-item ${tempSelectedDeck.includes(cardId) ? 'selected' : ''}`;
-        
         if(card.img) div.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.8)), url('${card.img}')`;
-        
-        div.innerHTML = `
-            <span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>
-            <span style="margin-top:auto; background:rgba(0,0,0,0.8); padding:2px; border-radius:3px; text-align:center; width:100%;">${card.name}</span>
-        `;
-        
+        div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>
+                         <span style="margin-top:auto; background:rgba(0,0,0,0.8); padding:2px; border-radius:3px; text-align:center; width:100%;">${card.name}</span>`;
         div.onclick = () => {
-            if (tempSelectedDeck.includes(cardId)) {
-                if(tempSelectedDeck.length > 1) tempSelectedDeck = tempSelectedDeck.filter(id => id !== cardId);
-            } else {
-                if (tempSelectedDeck.length < 6) tempSelectedDeck.push(cardId);
-            }
+            if (tempSelectedDeck.includes(cardId)) { if(tempSelectedDeck.length > 1) tempSelectedDeck = tempSelectedDeck.filter(id => id !== cardId); } 
+            else { if (tempSelectedDeck.length < 6) tempSelectedDeck.push(cardId); }
             renderDeckPool();
         };
         pool.appendChild(div);
     });
-
     document.getElementById('deck-counter').innerText = `Sélectionnées : ${tempSelectedDeck.length} / 6`;
     document.getElementById('validate-deck-btn').disabled = tempSelectedDeck.length !== 6;
 }
-
-function saveCustomDeck() {
-    playerDeck = [...tempSelectedDeck];
-    closeDeckBuilder();
-}
-
+function saveCustomDeck() { playerDeck = [...tempSelectedDeck]; closeDeckBuilder(); }
 
 // ==========================================
-// 3. MULTIJOUEUR (PEERJS - CODE COS)
+// 3. MULTIJOUEUR ET ÉMOTES (PeerJS)
 // ==========================================
-let peer = null;
-let conn = null;
-let isHost = false;
-let currentCOSCode = "";
+let peer = null, conn = null, isHost = false, currentCOSCode = "";
 
-function generateCOSCode() {
-    return "COS" + Math.floor(1000 + Math.random() * 9000);
-}
-
+function generateCOSCode() { return "COS" + Math.floor(1000 + Math.random() * 9000); }
 function openMultiMenu() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('multi-menu').style.display = 'flex';
     currentCOSCode = generateCOSCode();
     document.getElementById('cos-code-display').innerText = currentCOSCode;
 }
-
 function closeMultiMenu() {
     document.getElementById('multi-menu').style.display = 'none';
     document.getElementById('main-menu').style.display = 'flex';
     if(peer) peer.destroy();
 }
-
 function hostGame() {
     document.getElementById('net-status').innerText = "Ouverture du salon " + currentCOSCode + "...";
-    peer = new Peer(currentCOSCode); // Création du Peer avec l'ID COS
-    
-    peer.on('open', (id) => {
-        isHost = true;
-        document.getElementById('net-status').innerText = "En attente d'un adversaire...";
-    });
-
+    peer = new Peer(currentCOSCode);
+    peer.on('open', () => { isHost = true; document.getElementById('net-status').innerText = "En attente d'un adversaire..."; });
     peer.on('connection', (connection) => {
-        conn = connection;
-        setupConnectionEvents();
+        conn = connection; setupConnectionEvents();
         document.getElementById('net-status').innerText = "Adversaire connecté ! Lancement...";
         setTimeout(startMultiplayerGame, 1000);
     });
 }
-
 function joinGame() {
     const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-    if (!code.startsWith("COS") || code.length !== 7) {
-        document.getElementById('net-status').innerText = "Format invalide (Exemple: COS4829)";
-        return;
-    }
-    
+    if (!code.startsWith("COS") || code.length !== 7) { document.getElementById('net-status').innerText = "Format invalide (Ex: COS4829)"; return; }
     document.getElementById('net-status').innerText = "Recherche de " + code + "...";
     peer = new Peer();
-    
     peer.on('open', () => {
-        isHost = false;
-        conn = peer.connect(code);
-        setupConnectionEvents();
+        isHost = false; conn = peer.connect(code); setupConnectionEvents();
         setTimeout(() => {
-            if(conn && conn.open) {
-                document.getElementById('net-status').innerText = "Connecté ! Lancement...";
-                startMultiplayerGame();
-            } else {
-                document.getElementById('net-status').innerText = "Impossible de joindre la partie.";
-            }
+            if(conn && conn.open) { document.getElementById('net-status').innerText = "Connecté !"; startMultiplayerGame(); } 
+            else { document.getElementById('net-status').innerText = "Impossible de joindre la partie."; }
         }, 1500);
     });
 }
@@ -187,22 +129,32 @@ function joinGame() {
 function setupConnectionEvents() {
     conn.on('data', (data) => {
         if (data.type === 'spawn') {
-            // Le X et Y sont inversés car l'ennemi est de l'autre côté de l'écran
-            spawnEntity(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            if (data.spellType === 'spell') castSpell(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            else if (data.spellType === 'spell_spawn') castSpellSpawn(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            else spawnEntity(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+        } else if (data.type === 'emote') {
+            showEmote(data.emote, 'enemy');
         }
     });
 }
 
-function startMultiplayerGame() {
-    document.getElementById('multi-menu').style.display = 'none';
-    initGameEngine();
+// SYSTÈME D'ÉMOTES
+function sendEmote(emoji) {
+    showEmote(emoji, 'player');
+    if(conn && conn.open) conn.send({type: 'emote', emote: emoji});
+}
+function showEmote(emoji, team) {
+    const base = activeEntities.find(e => e.id === (team === 'player' ? 'base_p' : 'base_e'));
+    if(!base) return;
+    const b = document.createElement('div');
+    b.className = 'emote-bubble'; b.innerText = emoji;
+    b.style.left = `${base.x}%`; b.style.top = `${base.y}%`;
+    arena.appendChild(b);
+    setTimeout(() => b.remove(), 2000);
 }
 
-function startSoloGame() {
-    document.getElementById('main-menu').style.display = 'none';
-    initGameEngine();
-    setInterval(enemyAI, 2000); // Démarre l'IA si on est en solo
-}
+function startMultiplayerGame() { document.getElementById('multi-menu').style.display = 'none'; initGameEngine(); }
+function startSoloGame() { document.getElementById('main-menu').style.display = 'none'; initGameEngine(); setInterval(enemyAI, 2000); }
 
 
 // ==========================================
@@ -211,10 +163,16 @@ function startSoloGame() {
 const MAX_SLIME = 10;
 let currentSlime = 5; let enemySlime = 5; 
 let hand = [], drawPile = [], nextCard = null;
-let activeEntities = [], activeProjectiles = [];
+let activeEntities = [], activeProjectiles = [], activeSpells = [];
 let lastTime = performance.now();
 let selectedCardIndex = null; 
 let isGameOver = false;
+
+// VARIABLES DE PARTIE (TIMER)
+let gameTime = 180; // 3 minutes
+let slimeRate = 1.5; // 1 slime toutes les 1.5s
+let slimeAcc = 0; let enemySlimeAcc = 0;
+let doubleSlimeActive = false;
 
 const arena = document.getElementById('arena');
 const deployZone = document.getElementById('deploy-zone');
@@ -222,6 +180,8 @@ const deployZone = document.getElementById('deploy-zone');
 function initGameEngine() {
     arena.style.display = 'block';
     document.getElementById('ui-container').style.display = 'flex';
+    document.getElementById('game-timer').style.display = 'block';
+    document.getElementById('emote-panel').style.display = 'flex';
 
     drawPile = [...playerDeck].sort(() => Math.random() - 0.5);
     for(let i = 0; i < 4; i++) hand.push(drawPile.shift());
@@ -229,14 +189,9 @@ function initGameEngine() {
 
     setupTowers();
     updateUI();
-
-    setInterval(() => {
-        if (!isGameOver && currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); }
-        if (!isGameOver && enemySlime < MAX_SLIME && !conn) enemySlime++; // L'IA gagne de l'énergie si pas de multi
-    }, 1500);
-    setInterval(updateCardsAffordability, 100);
     
     arena.addEventListener('click', handleArenaClick);
+    lastTime = performance.now();
     requestAnimationFrame(gameLoop);
 }
 
@@ -253,25 +208,23 @@ function setupTowers() {
 function restartGame() {
     isGameOver = false;
     document.getElementById('game-over-overlay').style.display = 'none';
-    document.querySelectorAll('.entity, .projectile, .particle, .dmg-text').forEach(e => e.remove());
-    activeEntities = []; activeProjectiles = [];
+    document.querySelectorAll('.entity, .projectile, .particle, .dmg-text, .spell-puddle').forEach(e => e.remove());
+    
+    activeEntities = []; activeProjectiles = []; activeSpells = [];
     currentSlime = 5; enemySlime = 5; updateSlimeUI();
+    gameTime = 180; slimeRate = 1.5; doubleSlimeActive = false;
+    document.getElementById('game-timer').classList.remove('timer-danger');
+    
     setupTowers();
 }
 
 function endGame(winnerTeam) {
     isGameOver = true;
-    const overlay = document.getElementById('game-over-overlay');
+    document.getElementById('game-over-overlay').style.display = 'flex';
     const title = document.getElementById('game-over-title');
-    overlay.style.display = 'flex';
-    
-    if (winnerTeam === 'player') { 
-        title.innerText = "VICTOIRE !"; 
-        title.style.color = "#39ff14"; 
-    } else { 
-        title.innerText = "DÉFAITE !"; 
-        title.style.color = "#ff3366"; 
-    }
+    if (winnerTeam === 'player') { title.innerText = "VICTOIRE !"; title.style.color = "#39ff14"; } 
+    else if (winnerTeam === 'enemy') { title.innerText = "DÉFAITE !"; title.style.color = "#ff3366"; }
+    else { title.innerText = "ÉGALITÉ !"; title.style.color = "#fff"; }
 }
 
 function createTower(id, team, x, y, hp, name, width, height) {
@@ -281,15 +234,9 @@ function createTower(id, team, x, y, hp, name, width, height) {
     el.style.width = `${width}px`; el.style.height = `${height}px`;
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>${name}`;
     arena.appendChild(el);
-
-    activeEntities.push({
-        id: id, team: team, x: x, y: y, hp: hp, maxHp: hp, 
-        dmg: 50, range: 25, speed: 0, atkSpeed: 1000, isRanged: true, targetBuilding: false,
-        lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill')
-    });
+    activeEntities.push({ id: id, team: team, x: x, y: y, hp: hp, maxHp: hp, dmg: 50, range: 25, speed: 0, atkSpeed: 1000, isRanged: true, targetBuilding: false, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
 }
 
-// UI DES CARTES ET DE L'ÉNERGIE
 function updateSlimeUI() {
     document.getElementById('slime-bar-fill').style.width = `${(currentSlime / MAX_SLIME) * 100}%`;
     document.getElementById('slime-count').innerText = `${currentSlime} / 10`;
@@ -298,24 +245,17 @@ function updateSlimeUI() {
 function updateUI() {
     const handContainer = document.getElementById('hand');
     handContainer.innerHTML = '';
-    
     hand.forEach((cardId, index) => {
         const div = document.createElement('div');
-        div.className = `card ${selectedCardIndex === index ? 'selected' : ''}`;
+        div.className = `card ${selectedCardIndex === index ? 'selected' : ''} ${currentSlime < cardDatabase[cardId].cost ? 'disabled' : ''}`;
         const data = cardDatabase[cardId];
-        
         if(data.img) div.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.8)), url('${data.img}')`;
         div.dataset.cost = data.cost;
         div.innerHTML = `<div class="cost">${data.cost}</div><div class="name" style="color:${data.color}">${data.name}</div>`;
-        
         div.addEventListener('click', () => selectCard(index));
         handContainer.appendChild(div);
     });
     document.getElementById('next-card').innerHTML = `<div class="cost">${cardDatabase[nextCard].cost}</div><div class="name">${cardDatabase[nextCard].name}</div>`;
-}
-
-function updateCardsAffordability() {
-    document.querySelectorAll('#hand .card').forEach(card => card.classList.toggle('disabled', currentSlime < parseInt(card.dataset.cost)));
 }
 
 function selectCard(index) {
@@ -327,61 +267,50 @@ function selectCard(index) {
 
 function handleArenaClick(e) {
     if (selectedCardIndex === null || isGameOver) return;
-
     const rect = arena.getBoundingClientRect();
     const clickX = ((e.clientX - rect.left) / rect.width) * 100;
     const clickY = ((e.clientY - rect.top) / rect.height) * 100;
     const cardData = cardDatabase[hand[selectedCardIndex]];
 
-    // Si c'est une troupe, on ne peut la poser que sur sa moitié (Y > 50)
-    if (cardData.type !== 'spell' && clickY < 50) return;
+    if (cardData.type !== 'spell' && cardData.type !== 'spell_spawn' && clickY < 50) return;
 
     currentSlime -= cardData.cost; updateSlimeUI();
     playSound('sfx-spawn');
 
-    // Invocation
-    if (cardData.type === 'spell') {
-        castSpell(cardData, 'enemy', clickX, clickY);
-    } else {
-        spawnEntity(cardData, 'player', clickX, clickY);
-        // Si multijoueur, on envoi la donnée
-        if (conn && conn.open) {
-            conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY });
-        }
-    }
+    if (cardData.type === 'spell') castSpell(cardData, 'player', clickX, clickY);
+    else if (cardData.type === 'spell_spawn') castSpellSpawn(cardData, 'player', clickX, clickY);
+    else spawnEntity(cardData, 'player', clickX, clickY);
 
-    // Rotation du deck
-    drawPile.push(hand[selectedCardIndex]);
-    hand[selectedCardIndex] = nextCard;
-    nextCard = drawPile.shift();
+    if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY, spellType: cardData.type });
+
+    drawPile.push(hand[selectedCardIndex]); hand[selectedCardIndex] = nextCard; nextCard = drawPile.shift();
     selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
 }
 
-
-// ==========================================
-// 5. COMBAT, PHYSIQUE ET IA
-// ==========================================
+// INVOCATIONS ET SORTS
 function spawnEntity(data, team, x, y) {
     const el = document.createElement('div');
-    el.className = `entity team-${team}`;
+    el.className = `entity team-${team} ${data.type === 'building' ? 'building' : ''}`;
     el.dataset.id = data.id;
     if (data.img) el.style.backgroundImage = `url('${data.img}')`;
     else el.style.backgroundColor = data.color;
     
     el.style.left = `${x}%`; el.style.top = `${y}%`;
-    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
+    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>${data.type === 'building' ? data.name : ''}`;
     arena.appendChild(el);
 
     activeEntities.push({
         id: Math.random().toString(36).substr(2, 9),
         team: team, x: x, y: y, color: data.color,
-        hp: data.hp, maxHp: data.hp, dmg: data.dmg, range: data.range, speed: data.speed, 
-        atkSpeed: data.atkSpeed, isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
+        hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, range: data.range, speed: data.speed, 
+        atkSpeed: data.atkSpeed || 1000, isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
+        lifetime: data.lifetime || null, // Durée de vie des bâtiments
+        spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0, // Pour les usines
         lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill')
     });
 }
 
-function castSpell(spellData, targetTeam, targetX, targetY) {
+function castSpell(spellData, casterTeam, targetX, targetY) {
     const fx = document.createElement('div');
     fx.style.position = 'absolute'; fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`;
     fx.style.width = '120px'; fx.style.height = '120px';
@@ -389,95 +318,119 @@ function castSpell(spellData, targetTeam, targetX, targetY) {
     fx.style.transform = 'translate(-50%, -50%)'; fx.style.zIndex = '10'; arena.appendChild(fx);
     setTimeout(() => fx.remove(), 800);
 
+    const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
     activeEntities.forEach(ent => {
-        if (ent.team === targetTeam && Math.sqrt(Math.pow(ent.x - targetX, 2) + Math.pow(ent.y - targetY, 2)) < 15) takeDamage(ent, spellData.dmg);
+        if (ent.team === targetTeam && Math.sqrt(Math.pow(ent.x - targetX, 2) + Math.pow(ent.y - targetY, 2)) < spellData.radius) takeDamage(ent, spellData.dmg);
     });
 }
 
-function createParticles(x, y, color) {
-    for(let i=0; i<6; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.backgroundColor = color || '#39ff14';
-        p.style.left = `${x}%`; p.style.top = `${y}%`;
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 15 + Math.random() * 40;
-        p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
-        p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
-        arena.appendChild(p);
-        setTimeout(() => p.remove(), 500);
-    }
+function castSpellSpawn(spellData, casterTeam, targetX, targetY) {
+    const puddle = document.createElement('div');
+    puddle.className = 'spell-puddle';
+    puddle.style.left = `${targetX}%`; puddle.style.top = `${targetY}%`;
+    puddle.style.width = `${spellData.radius * 4}px`; puddle.style.height = `${spellData.radius * 4}px`;
+    arena.appendChild(puddle);
+    
+    activeSpells.push({
+        team: casterTeam, x: targetX, y: targetY, radius: spellData.radius,
+        duration: spellData.duration, spawnRate: spellData.spawnRate, spawnId: spellData.spawnId,
+        lastSpawn: 0, element: puddle
+    });
 }
 
+// IA
 function enemyAI() {
-    if (isGameOver || conn) return; // Pas d'IA en multijoueur
-    const troopCards = Object.values(cardDatabase).filter(c => c.type === 'troop');
-    const affordableCards = troopCards.filter(c => c.cost <= enemySlime);
-    
-    if (affordableCards.length > 0 && Math.random() > 0.3) {
-        const cardToPlay = affordableCards[Math.floor(Math.random() * affordableCards.length)];
+    if (isGameOver || conn) return;
+    const playableCards = Object.values(cardDatabase).filter(c => c.cost <= enemySlime && c.id !== 'tornade');
+    if (playableCards.length > 0 && Math.random() > 0.4) {
+        const cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
         enemySlime -= cardToPlay.cost;
-        spawnEntity(cardToPlay, 'enemy', Math.random() > 0.5 ? 25 : 75, 15);
+        if(cardToPlay.type === 'spell_spawn') castSpellSpawn(cardToPlay, 'enemy', 20 + Math.random()*60, 75); // Marais posé chez le joueur
+        else spawnEntity(cardToPlay, 'enemy', Math.random() > 0.5 ? 25 : 75, 15);
         playSound('sfx-spawn');
     }
 }
 
+// OUTILS DE COMBAT
+function createParticles(x, y, color) {
+    for(let i=0; i<6; i++) {
+        const p = document.createElement('div'); p.className = 'particle'; p.style.backgroundColor = color || '#39ff14'; p.style.left = `${x}%`; p.style.top = `${y}%`;
+        const angle = Math.random() * Math.PI * 2; const dist = 15 + Math.random() * 40;
+        p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`); p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+        arena.appendChild(p); setTimeout(() => p.remove(), 500);
+    }
+}
 function takeDamage(entity, amount) {
-    if (entity.hp <= 0) return; 
-    entity.hp -= amount;
-    playSound('sfx-hit');
-    
-    const txt = document.createElement('div');
-    txt.className = `dmg-text team-${entity.team}`;
-    txt.innerText = `-${amount}`;
-    txt.style.left = `${entity.x}%`; txt.style.top = `${entity.y}%`;
-    arena.appendChild(txt);
-    setTimeout(() => txt.remove(), 1000);
-
+    if (entity.hp <= 0) return; entity.hp -= amount; playSound('sfx-hit');
+    const txt = document.createElement('div'); txt.className = `dmg-text team-${entity.team}`; txt.innerText = `-${Math.round(amount)}`; txt.style.left = `${entity.x}%`; txt.style.top = `${entity.y}%`;
+    arena.appendChild(txt); setTimeout(() => txt.remove(), 1000);
     if(entity.element) {
-        entity.element.style.filter = 'brightness(2) contrast(1.5)';
-        setTimeout(() => { if(entity.element) entity.element.style.filter = 'none'; }, 100);
+        entity.element.style.filter = 'brightness(2) contrast(1.5)'; setTimeout(() => { if(entity.element) entity.element.style.filter = 'none'; }, 100);
         if (entity.hpBar) entity.hpBar.style.width = `${Math.max(0, (entity.hp / entity.maxHp) * 100)}%`;
     }
 }
-
 function shootProjectile(attacker, target) {
-    const proj = document.createElement('div');
-    proj.className = 'projectile';
-    proj.style.left = `${attacker.x}%`; proj.style.top = `${attacker.y}%`;
-    arena.appendChild(proj);
+    const proj = document.createElement('div'); proj.className = 'projectile'; proj.style.left = `${attacker.x}%`; proj.style.top = `${attacker.y}%`; arena.appendChild(proj);
     activeProjectiles.push({ x: attacker.x, y: attacker.y, target: target, dmg: attacker.dmg, team: attacker.team, element: proj, speed: 40 });
 }
 
-// LA BOUCLE TEMPORELLE
+// ==========================================
+// 6. BOUCLE PRINCIPALE (GAME LOOP)
+// ==========================================
 function gameLoop(currentTime) {
     if (isGameOver) { requestAnimationFrame(gameLoop); return; }
-
     const dt = (currentTime - lastTime) / 1000; 
     lastTime = currentTime;
 
-    // --- NETTOYAGE DES MORTS ---
+    // 1. TIMER ET DOUBLE SLIME
+    gameTime -= dt;
+    if (gameTime <= 60 && !doubleSlimeActive) {
+        doubleSlimeActive = true; slimeRate = 0.75; // Energie 2x plus vite !
+        document.getElementById('game-timer').classList.add('timer-danger');
+        document.getElementById('alert-message').style.display = 'block';
+    }
+    if (gameTime <= 0) { endGame('tie'); return; } // Fin du temps
+    
+    // Affichage Timer
+    const mins = Math.floor(gameTime / 60); const secs = Math.floor(gameTime % 60);
+    document.getElementById('game-timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+    // 2. RÉGÉNÉRATION ÉNERGIE FLUIDE
+    slimeAcc += dt; enemySlimeAcc += dt;
+    if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
+    if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
+
+    // 3. SORTS CONTINUS (MARAIS)
+    activeSpells = activeSpells.filter(spell => {
+        spell.duration -= dt * 1000; spell.lastSpawn += dt * 1000;
+        if(spell.lastSpawn >= spell.spawnRate) {
+            spell.lastSpawn = 0;
+            // Spawn aléatoire dans le cercle
+            const angle = Math.random() * Math.PI * 2; const dist = Math.random() * spell.radius;
+            const spawnX = spell.x + Math.cos(angle) * dist; const spawnY = spell.y + Math.sin(angle) * dist;
+            spawnEntity(cardDatabase[spell.spawnId], spell.team, spawnX, spawnY);
+        }
+        if(spell.duration <= 0) { spell.element.remove(); return false; }
+        return true;
+    });
+
+    // 4. NETTOYAGE MORTS
     activeEntities = activeEntities.filter(ent => {
         if (ent.hp <= 0) {
-            playSound('sfx-die');
-            createParticles(ent.x, ent.y, ent.color || '#fff');
+            playSound('sfx-die'); createParticles(ent.x, ent.y, ent.color || '#fff');
             if (ent.element) ent.element.remove();
-            
-            if(ent.id === 'base_p') endGame('enemy');
-            if(ent.id === 'base_e') endGame('player');
+            if(ent.id === 'base_p') endGame('enemy'); if(ent.id === 'base_e') endGame('player');
             return false;
         }
         return true;
     });
 
-    // --- PROJECTILES ---
+    // 5. PROJECTILES
     activeProjectiles = activeProjectiles.filter(p => {
         if(p.target.hp <= 0) { p.element.remove(); return false; } 
         const dx = p.target.x - p.x; const dy = p.target.y - p.y;
-        if (Math.sqrt(dx*dx + dy*dy) < 2) {
-            takeDamage(p.target, p.dmg);
-            p.element.remove(); return false;
-        } else {
+        if (Math.sqrt(dx*dx + dy*dy) < 2) { takeDamage(p.target, p.dmg); p.element.remove(); return false; } 
+        else {
             const angle = Math.atan2(dy, dx);
             p.x += Math.cos(angle) * p.speed * dt; p.y += Math.sin(angle) * p.speed * dt;
             p.element.style.left = `${p.x}%`; p.element.style.top = `${p.y}%`;
@@ -485,27 +438,29 @@ function gameLoop(currentTime) {
         }
     });
 
-    // --- UNITÉS ---
+    // 6. UNITÉS & BÂTIMENTS
     activeEntities.forEach(unit => {
-        if (unit.speed === 0) { // Tours
-            let closestTarget = null; let minDistance = 999;
-            activeEntities.forEach(target => {
-                if (target.team !== unit.team) {
-                    let dist = Math.sqrt(Math.pow(unit.x - target.x, 2) + Math.pow(unit.y - target.y, 2));
-                    if (dist < minDistance) { minDistance = dist; closestTarget = target; }
-                }
-            });
-            if (closestTarget && minDistance <= unit.range && currentTime - unit.lastAttack >= unit.atkSpeed) {
-                shootProjectile(unit, closestTarget); unit.lastAttack = currentTime;
+        // Usine à slime
+        if (unit.spawnRate) {
+            unit.lastSpawn += dt * 1000;
+            if (unit.lastSpawn >= unit.spawnRate) {
+                unit.lastSpawn = 0;
+                spawnEntity(cardDatabase[unit.spawnId], unit.team, unit.x, unit.y + (unit.team === 'player' ? -5 : 5));
             }
-            return; 
+        }
+        // Dégâts sur la durée pour les bâtiments
+        if (unit.lifetime) {
+            unit.hp -= (unit.maxHp / unit.lifetime) * dt; 
+            if (unit.hpBar) unit.hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`;
         }
 
-        // Troupes
+        // CIBLAGE
+        if (unit.speed === 0 && !unit.isRanged) return; // Si bâtiment non armé (Usine), on passe
+
         let closestTarget = null; let minDistance = 999;
         activeEntities.forEach(target => {
             if (target.team !== unit.team) {
-                if (unit.targetBuilding && target.speed !== 0) return; // Ignorer les unités si targetBuilding
+                if (unit.targetBuilding && target.speed !== 0) return; 
                 let dist = Math.sqrt(Math.pow(unit.x - target.x, 2) + Math.pow(unit.y - target.y, 2));
                 if (dist < minDistance) { minDistance = dist; closestTarget = target; }
             }
@@ -514,27 +469,20 @@ function gameLoop(currentTime) {
         if (closestTarget) {
             let distToTarget = Math.sqrt(Math.pow(unit.x - closestTarget.x, 2) + Math.pow(unit.y - closestTarget.y, 2));
             if (distToTarget <= unit.range) {
-                // Attaque
-                unit.element.classList.remove('is-walking');
+                if(unit.speed > 0) unit.element.classList.remove('is-walking');
                 if (currentTime - unit.lastAttack >= unit.atkSpeed) {
-                    unit.element.classList.remove('is-attacking');
-                    void unit.element.offsetWidth; 
-                    unit.element.classList.add('is-attacking');
+                    if(unit.speed > 0) { unit.element.classList.remove('is-attacking'); void unit.element.offsetWidth; unit.element.classList.add('is-attacking'); }
                     if (unit.isRanged) shootProjectile(unit, closestTarget);
                     else takeDamage(closestTarget, unit.dmg);
                     unit.lastAttack = currentTime;
                 }
-            } else {
-                // Mouvement et Ponts
-                unit.element.classList.add('is-walking');
-                unit.element.classList.remove('is-attacking');
-                
+            } else if (unit.speed > 0) {
+                unit.element.classList.add('is-walking'); unit.element.classList.remove('is-attacking');
                 let targetX = closestTarget.x; let targetY = closestTarget.y;
                 if ((unit.y > 50 && targetY < 50) || (unit.y < 50 && targetY > 50)) {
                     let targetBridgeX = (unit.x < 50) ? 25 : 75; 
                     if (Math.abs(unit.x - targetBridgeX) > 2) { targetX = targetBridgeX; targetY = unit.y; }
                 }
-                
                 const dx = targetX - unit.x; const dy = targetY - unit.y;
                 const angle = Math.atan2(dy, dx);
                 unit.x += Math.cos(angle) * unit.speed * dt * (arena.offsetHeight / arena.offsetWidth);
