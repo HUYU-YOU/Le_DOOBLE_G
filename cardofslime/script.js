@@ -1,9 +1,23 @@
 // ==========================================
-// 1. GESTION UI / PARAMÈTRES
+// 1. UI & AUDIO
 // ==========================================
+let musicStarted = false;
+
+function startMusic() {
+    if(!musicStarted) {
+        const bgm = document.getElementById('bg-music');
+        if(bgm) { bgm.volume = 0.3; bgm.play().catch(e => console.log("Audio autoplay bloqué")); }
+        musicStarted = true;
+    }
+}
+
+function playSound(id) {
+    const sound = document.getElementById(id);
+    if(sound) { sound.currentTime = 0; sound.volume = 0.5; sound.play().catch(()=>{}); }
+}
+
 function toggleSettings() {
-    const modal = document.getElementById('settings-modal');
-    modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+    document.getElementById('settings-modal').style.display = document.getElementById('settings-modal').style.display === 'none' ? 'flex' : 'none';
 }
 function setGameSize(sizeType) {
     document.getElementById('game-container').className = `size-${sizeType}`;
@@ -12,7 +26,7 @@ function setGameSize(sizeType) {
 }
 
 // ==========================================
-// 2. CONFIGURATION & STATS
+// 2. CONFIGURATION DES CARTES
 // ==========================================
 const cardDatabase = {
     slime: { id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, color: "#4CAF50", img: "../img/SLIME.png" },
@@ -25,28 +39,40 @@ const cardDatabase = {
 
 const myDeck = ["slime", "slimeuse", "mage", "boule", "mega", "tornade"];
 const MAX_SLIME = 10;
-let currentSlime = 5;
-let enemySlime = 5; 
-
+let currentSlime = 5; let enemySlime = 5; 
 let hand = [], drawPile = [], nextCard = null;
-let activeEntities = [];
-let activeProjectiles = [];
+let activeEntities = [], activeProjectiles = [];
 let lastTime = performance.now();
-let selectedCardIndex = null; // Carte en cours de placement
+let selectedCardIndex = null; 
+let isGameOver = false;
 
 const arena = document.getElementById('arena');
 const deployZone = document.getElementById('deploy-zone');
 
 // ==========================================
-// 3. INITIALISATION DU JEU & TOURS
+// 3. INITIALISATION ET RELANCE (RESTART)
 // ==========================================
 function initGame() {
-    // Piocher
     drawPile = [...myDeck].sort(() => Math.random() - 0.5);
     for(let i = 0; i < 4; i++) hand.push(drawPile.shift());
     nextCard = drawPile.shift();
 
-    // Création des 6 Tours
+    setupTowers();
+    updateUI();
+
+    // Génération de ressources globale
+    setInterval(() => {
+        if (!isGameOver && currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); }
+        if (!isGameOver && enemySlime < MAX_SLIME) enemySlime++;
+    }, 1500);
+    setInterval(updateCardsAffordability, 100);
+    setInterval(enemyAI, 2000); 
+    
+    arena.addEventListener('click', handleArenaClick);
+    requestAnimationFrame(gameLoop);
+}
+
+function setupTowers() {
     createTower('base_p', 'player', 50, 92, 3000, "Base", 80, 50);
     createTower('tower_p_l', 'player', 25, 75, 1500, "Tour", 60, 60);
     createTower('tower_p_r', 'player', 75, 75, 1500, "Tour", 60, 60);
@@ -54,19 +80,33 @@ function initGame() {
     createTower('base_e', 'enemy', 50, 8, 3000, "Base", 80, 50);
     createTower('tower_e_l', 'enemy', 25, 25, 1500, "Tour", 60, 60);
     createTower('tower_e_r', 'enemy', 75, 25, 1500, "Tour", 60, 60);
+}
 
-    updateUI();
-    setInterval(() => {
-        if (currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); }
-        if (enemySlime < MAX_SLIME) enemySlime++;
-    }, 1500);
-    setInterval(updateCardsAffordability, 100);
+function restartGame() {
+    isGameOver = false;
+    document.getElementById('game-over-overlay').style.display = 'none';
     
-    // Clic sur l'arène pour placer l'unité
-    arena.addEventListener('click', handleArenaClick);
+    // Nettoyer l'arène
+    document.querySelectorAll('.entity, .projectile, .particle, .dmg-text').forEach(e => e.remove());
+    activeEntities = []; activeProjectiles = [];
+    currentSlime = 5; enemySlime = 5; updateSlimeUI();
     
-    requestAnimationFrame(gameLoop);
-    setInterval(enemyAI, 2000); // L'IA réfléchit toutes les 2s
+    setupTowers();
+}
+
+function endGame(winnerTeam) {
+    isGameOver = true;
+    const overlay = document.getElementById('game-over-overlay');
+    const title = document.getElementById('game-over-title');
+    
+    overlay.style.display = 'flex';
+    if (winnerTeam === 'player') {
+        title.innerText = "VICTOIRE !";
+        title.style.color = "#39ff14";
+    } else {
+        title.innerText = "DÉFAITE !";
+        title.style.color = "#ff3366";
+    }
 }
 
 function createTower(id, team, x, y, hp, name, width, height) {
@@ -85,7 +125,7 @@ function createTower(id, team, x, y, hp, name, width, height) {
 }
 
 // ==========================================
-// 4. INTERFACE & PLACEMENT (Drag/Click)
+// 4. INTERFACE ET PLACEMENT
 // ==========================================
 function updateSlimeUI() {
     document.getElementById('slime-bar-fill').style.width = `${(currentSlime / MAX_SLIME) * 100}%`;
@@ -97,78 +137,53 @@ function updateUI() {
     handContainer.innerHTML = '';
     hand.forEach((cardId, index) => {
         const div = document.createElement('div');
-        div.className = 'card';
-        if (index === selectedCardIndex) div.classList.add('selected');
-        
+        div.className = `card ${selectedCardIndex === index ? 'selected' : ''}`;
         const data = cardDatabase[cardId];
         if(data.img) div.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.8)), url('${data.img}')`;
         div.dataset.cost = data.cost;
         div.innerHTML = `<div class="cost">${data.cost}</div><div class="name" style="color:${data.color}">${data.name}</div>`;
-        
         div.addEventListener('click', () => selectCard(index));
         handContainer.appendChild(div);
     });
-    
     document.getElementById('next-card').innerHTML = `<div class="cost">${cardDatabase[nextCard].cost}</div><div class="name">${cardDatabase[nextCard].name}</div>`;
 }
 
 function updateCardsAffordability() {
-    document.querySelectorAll('#hand .card').forEach(card => {
-        card.classList.toggle('disabled', currentSlime < parseInt(card.dataset.cost));
-    });
+    document.querySelectorAll('#hand .card').forEach(card => card.classList.toggle('disabled', currentSlime < parseInt(card.dataset.cost)));
 }
 
 function selectCard(index) {
-    const cost = cardDatabase[hand[index]].cost;
-    if (currentSlime < cost) return; // Trop cher
-    
-    if (selectedCardIndex === index) {
-        // Désélectionner
-        selectedCardIndex = null;
-        deployZone.style.display = 'none';
-    } else {
-        // Sélectionner
-        selectedCardIndex = index;
-        deployZone.style.display = 'flex';
-    }
+    if (currentSlime < cardDatabase[hand[index]].cost) return; 
+    selectedCardIndex = selectedCardIndex === index ? null : index;
+    deployZone.style.display = selectedCardIndex !== null ? 'flex' : 'none';
     updateUI();
 }
 
 function handleArenaClick(e) {
-    if (selectedCardIndex === null) return; // Aucune carte sélectionnée
+    if (selectedCardIndex === null || isGameOver) return;
 
-    // Récupérer les coordonnées du clic en %
     const rect = arena.getBoundingClientRect();
     const clickX = ((e.clientX - rect.left) / rect.width) * 100;
     const clickY = ((e.clientY - rect.top) / rect.height) * 100;
-
     const cardData = cardDatabase[hand[selectedCardIndex]];
 
-    // Vérifier si le placement est valide (moitié sud pour les troupes, n'importe où pour le sort)
-    if (cardData.type !== 'spell' && clickY < 50) {
-        // Optionnel : petit effet rouge pour dire "Action impossible"
-        return; 
-    }
+    if (cardData.type !== 'spell' && clickY < 50) return; // Limite de placement
 
-    // On paye et on place
-    currentSlime -= cardData.cost;
-    updateSlimeUI();
+    currentSlime -= cardData.cost; updateSlimeUI();
+    playSound('sfx-spawn'); // FX AUDIO
 
     if (cardData.type === 'spell') castSpell(cardData, 'enemy', clickX, clickY);
     else spawnEntity(cardData, 'player', clickX, clickY);
 
-    // Rotation du deck
     drawPile.push(hand[selectedCardIndex]);
     hand[selectedCardIndex] = nextCard;
     nextCard = drawPile.shift();
     
-    selectedCardIndex = null;
-    deployZone.style.display = 'none';
-    updateUI();
+    selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
 }
 
 // ==========================================
-// 5. INVOCATION & INTELLIGENCE ARTIFICIELLE
+// 5. INVOCATION, PARTICULES & IA
 // ==========================================
 function spawnEntity(data, team, x, y) {
     const el = document.createElement('div');
@@ -183,7 +198,7 @@ function spawnEntity(data, team, x, y) {
 
     activeEntities.push({
         id: Math.random().toString(36).substr(2, 9),
-        team: team, x: x, y: y,
+        team: team, x: x, y: y, color: data.color, // pour les particules
         hp: data.hp, maxHp: data.hp, dmg: data.dmg, range: data.range, speed: data.speed, 
         atkSpeed: data.atkSpeed, isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
         lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill')
@@ -196,53 +211,63 @@ function castSpell(spellData, targetTeam, targetX, targetY) {
     fx.style.width = '120px'; fx.style.height = '120px';
     fx.style.background = 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(158,158,158,0) 70%)';
     fx.style.transform = 'translate(-50%, -50%)'; fx.style.animation = 'spawn 0.3s ease-out';
-    fx.style.zIndex = '10';
-    arena.appendChild(fx);
-
+    fx.style.zIndex = '10'; arena.appendChild(fx);
     setTimeout(() => fx.remove(), 800);
 
-    // Dégâts de zone (distance approximative)
     activeEntities.forEach(ent => {
-        if (ent.team === targetTeam) {
-            const dx = ent.x - targetX; const dy = ent.y - targetY;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if(dist < 15) takeDamage(ent, spellData.dmg);
-        }
+        if (ent.team === targetTeam && getDistance({x:targetX, y:targetY}, ent) < 15) takeDamage(ent, spellData.dmg);
     });
 }
 
+// EXPLOSION DE PARTICULES
+function createParticles(x, y, color) {
+    for(let i=0; i<6; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.backgroundColor = color || '#39ff14';
+        p.style.left = `${x}%`; p.style.top = `${y}%`;
+        
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 15 + Math.random() * 40; // distance d'éjection
+        p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+        p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+        
+        arena.appendChild(p);
+        setTimeout(() => p.remove(), 500);
+    }
+}
+
 function enemyAI() {
-    // Le bot regarde ce qu'il peut acheter
-    const affordableCards = Object.values(cardDatabase).filter(c => c.cost <= enemySlime && c.type !== 'spell');
+    if (isGameOver) return;
+    const troopCards = Object.values(cardDatabase).filter(c => c.type === 'troop');
+    const affordableCards = troopCards.filter(c => c.cost <= enemySlime);
+    
     if (affordableCards.length > 0) {
-        // Bot tire à pile ou face pour jouer ou économiser
-        if(Math.random() > 0.4) {
+        // L'IA économise parfois pour de grosses unités (30% de chances de ne rien faire)
+        if(Math.random() > 0.3) {
             const cardToPlay = affordableCards[Math.floor(Math.random() * affordableCards.length)];
             enemySlime -= cardToPlay.cost;
-            // Bot choisit une ligne gauche (25%) ou droite (75%)
-            const spawnX = Math.random() > 0.5 ? 25 : 75;
+            const spawnX = Math.random() > 0.5 ? 25 : 75; // Lane gauche ou droite
             spawnEntity(cardToPlay, 'enemy', spawnX, 15);
+            playSound('sfx-spawn');
         }
     }
 }
 
 // ==========================================
-// 6. SYSTÈME DE COMBAT ET PHYSIQUE
+// 6. SYSTÈME DE COMBAT & BOUCLE
 // ==========================================
-function getDistance(ent1, ent2) {
-    return Math.sqrt(Math.pow(ent1.x - ent2.x, 2) + Math.pow(ent1.y - ent2.y, 2));
-}
+function getDistance(ent1, ent2) { return Math.sqrt(Math.pow(ent1.x - ent2.x, 2) + Math.pow(ent1.y - ent2.y, 2)); }
 
 function takeDamage(entity, amount) {
     if (entity.hp <= 0) return; 
     entity.hp -= amount;
+    playSound('sfx-hit'); // AUDIO IMPACT
     
-    // Texte de dégât flottant
     const txt = document.createElement('div');
     txt.className = `dmg-text team-${entity.team}`;
     txt.innerText = `-${amount}`;
-    txt.style.left = `${entity.x}%`;
-    txt.style.top = `${entity.y}%`;
+    txt.style.left = `${entity.x}%`; txt.style.top = `${entity.y}%`;
     arena.appendChild(txt);
     setTimeout(() => txt.remove(), 1000);
 
@@ -258,27 +283,28 @@ function shootProjectile(attacker, target) {
     proj.className = 'projectile';
     proj.style.left = `${attacker.x}%`; proj.style.top = `${attacker.y}%`;
     arena.appendChild(proj);
-
-    activeProjectiles.push({
-        x: attacker.x, y: attacker.y,
-        target: target, dmg: attacker.dmg,
-        team: attacker.team, element: proj, speed: 40
-    });
+    activeProjectiles.push({ x: attacker.x, y: attacker.y, target: target, dmg: attacker.dmg, team: attacker.team, element: proj, speed: 40 });
 }
 
 function gameLoop(currentTime) {
+    if (isGameOver) {
+        requestAnimationFrame(gameLoop);
+        return; 
+    }
+
     const dt = (currentTime - lastTime) / 1000; 
     lastTime = currentTime;
 
     // --- NETTOYAGE DES MORTS ---
     activeEntities = activeEntities.filter(ent => {
         if (ent.hp <= 0) {
-            if (ent.element && !ent.element.classList.contains('dead')) {
-                ent.element.classList.add('dead');
-                setTimeout(() => ent.element.remove(), 300);
-            }
-            if(ent.id === 'base_p') { alert("DÉFAITE !"); location.reload(); }
-            if(ent.id === 'base_e') { alert("VICTOIRE MAGISTRALE !"); location.reload(); }
+            playSound('sfx-die'); // FX AUDIO MORT
+            createParticles(ent.x, ent.y, ent.color || '#fff'); // FX VISUEL MORT
+            
+            if (ent.element) ent.element.remove();
+            
+            if(ent.id === 'base_p') endGame('enemy');
+            if(ent.id === 'base_e') endGame('player');
             return false;
         }
         return true;
@@ -286,24 +312,15 @@ function gameLoop(currentTime) {
 
     // --- GESTION DES PROJECTILES ---
     activeProjectiles = activeProjectiles.filter(p => {
-        if(p.target.hp <= 0) { p.element.remove(); return false; } // Cible morte pendant le vol
-        
-        const dx = p.target.x - p.x;
-        const dy = p.target.y - p.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        
-        if (dist < 2) {
-            // Impact !
+        if(p.target.hp <= 0) { p.element.remove(); return false; } 
+        const dx = p.target.x - p.x; const dy = p.target.y - p.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 2) {
             takeDamage(p.target, p.dmg);
-            p.element.remove();
-            return false;
+            p.element.remove(); return false;
         } else {
-            // Vol
             const angle = Math.atan2(dy, dx);
-            p.x += Math.cos(angle) * p.speed * dt;
-            p.y += Math.sin(angle) * p.speed * dt;
-            p.element.style.left = `${p.x}%`;
-            p.element.style.top = `${p.y}%`;
+            p.x += Math.cos(angle) * p.speed * dt; p.y += Math.sin(angle) * p.speed * dt;
+            p.element.style.left = `${p.x}%`; p.element.style.top = `${p.y}%`;
             return true;
         }
     });
@@ -311,7 +328,6 @@ function gameLoop(currentTime) {
     // --- COMPORTEMENT DES UNITÉS ---
     activeEntities.forEach(unit => {
         if (unit.speed === 0) {
-            // C'EST UNE TOUR (Elle attaque juste)
             let closestTarget = null; let minDistance = 999;
             activeEntities.forEach(target => {
                 if (target.team !== unit.team) {
@@ -320,17 +336,15 @@ function gameLoop(currentTime) {
                 }
             });
             if (closestTarget && minDistance <= unit.range && currentTime - unit.lastAttack >= unit.atkSpeed) {
-                shootProjectile(unit, closestTarget);
-                unit.lastAttack = currentTime;
+                shootProjectile(unit, closestTarget); unit.lastAttack = currentTime;
             }
             return; 
         }
 
-        // C'EST UNE TROUPE (Cherche cible et se déplace)
         let closestTarget = null; let minDistance = 999;
         activeEntities.forEach(target => {
             if (target.team !== unit.team) {
-                if (unit.targetBuilding && target.speed !== 0) return; // Le chevaucheur ignore les troupes
+                if (unit.targetBuilding && target.speed !== 0) return; 
                 let dist = getDistance(unit, target);
                 if (dist < minDistance) { minDistance = dist; closestTarget = target; }
             }
@@ -338,7 +352,6 @@ function gameLoop(currentTime) {
 
         if (closestTarget) {
             if (minDistance <= unit.range) {
-                // ATTAQUE !
                 unit.element.classList.remove('is-walking');
                 if (currentTime - unit.lastAttack >= unit.atkSpeed) {
                     unit.element.classList.remove('is-attacking');
@@ -351,34 +364,22 @@ function gameLoop(currentTime) {
                     unit.lastAttack = currentTime;
                 }
             } else {
-                // DÉPLACEMENT AVEC GESTION DE LA RIVIÈRE
                 unit.element.classList.add('is-walking');
                 unit.element.classList.remove('is-attacking');
                 
-                let targetX = closestTarget.x;
-                let targetY = closestTarget.y;
-
-                // Pathfinding du pauvre : Si je dois traverser la rivière, je vise le pont le plus proche
+                let targetX = closestTarget.x; let targetY = closestTarget.y;
                 if ((unit.y > 50 && targetY < 50) || (unit.y < 50 && targetY > 50)) {
-                    // Je suis d'un côté et la cible de l'autre
-                    let targetBridgeX = (unit.x < 50) ? 25 : 75; // Pont gauche ou droit
-                    
-                    // Si je ne suis pas encore aligné avec le pont
-                    if (Math.abs(unit.x - targetBridgeX) > 2) {
-                        targetX = targetBridgeX;
-                        targetY = unit.y; // Marche à l'horizontale d'abord
-                    }
+                    let targetBridgeX = (unit.x < 50) ? 25 : 75; 
+                    if (Math.abs(unit.x - targetBridgeX) > 2) { targetX = targetBridgeX; targetY = unit.y; }
                 }
                 
-                const dx = targetX - unit.x;
-                const dy = targetY - unit.y;
+                const dx = targetX - unit.x; const dy = targetY - unit.y;
                 const angle = Math.atan2(dy, dx);
                 
                 unit.x += Math.cos(angle) * unit.speed * dt * (arena.offsetHeight / arena.offsetWidth);
                 unit.y += Math.sin(angle) * unit.speed * dt;
                 
-                unit.element.style.left = `${unit.x}%`;
-                unit.element.style.top = `${unit.y}%`;
+                unit.element.style.left = `${unit.x}%`; unit.element.style.top = `${unit.y}%`;
             }
         }
     });
@@ -386,6 +387,5 @@ function gameLoop(currentTime) {
     requestAnimationFrame(gameLoop);
 }
 
-// Lancement
-if(document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initGame); } 
-else { initGame(); }
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGame); 
+else initGame();
