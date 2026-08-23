@@ -80,6 +80,7 @@ body {
     margin: 10px;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
 }
 
 .base {
@@ -97,22 +98,10 @@ body {
     font-weight: bold;
     font-family: 'Rajdhani', sans-serif;
     font-size: 1.2em;
+    z-index: 5;
 }
 #enemy-base { top: 10px; border-color: #ff3366; color: #ff3366; }
 #player-base { bottom: 10px; border-color: #33ccff; color: #33ccff; }
-
-/* --- ENTITÉS SPAWNÉES --- */
-.entity {
-    position: absolute;
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 12px;
-    color: #000;
-    transform: translate(-50%, -50%);
-    animation: spawn 0.3s ease-out;
-}
-@keyframes spawn { 0% { transform: translate(-50%, -50%) scale(0); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
 /* --- UI DES CARTES --- */
 #ui-container {
@@ -123,6 +112,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    z-index: 10;
 }
 
 #next-card-zone {
@@ -136,6 +126,7 @@ body {
     text-align: center;
     font-family: 'Rajdhani', sans-serif;
     color: #ccc;
+    z-index: 10;
 }
 
 #hand {
@@ -159,6 +150,8 @@ body {
     transition: transform 0.1s;
     position: relative;
     box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    background-size: cover;
+    background-position: center;
 }
 .card:active { transform: scale(0.95); }
 .card.disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
@@ -179,8 +172,17 @@ body {
     font-weight: bold;
     font-family: 'Luckiest Guy', cursive;
     border: 2px solid #111;
+    z-index: 2;
 }
-.card .name { margin-top: 15px; text-align: center; font-size: 12px; font-weight: bold; }
+.card .name { 
+    margin-top: auto; 
+    text-align: center; 
+    font-size: 12px; 
+    font-weight: bold; 
+    background: rgba(0,0,0,0.7); 
+    border-radius: 4px; 
+    padding: 2px; 
+}
 
 /* --- JAUGE SLIME --- */
 #slime-bar-container {
@@ -229,55 +231,68 @@ body {
     background: #ff3366; border: none; color: white;
     padding: 10px 20px; border-radius: 5px; cursor: pointer;
     font-weight: bold; font-family: 'Rajdhani', sans-serif; font-size: 1.1em;
+    margin-top: 20px;
 }
-/* --- BARRES DE VIE DES UNITÉS --- */
+
+/* --- ENTITÉS ET COMBAT (NOUVEAU) --- */
+.entity {
+    position: absolute;
+    width: 45px; /* Taille de base du sprite */
+    height: 45px;
+    border-radius: 50%; /* Arrondi pour faire "Slime" */
+    font-weight: bold;
+    font-size: 10px;
+    color: transparent; /* Cache le texte s'il y a une image */
+    transform: translate(-50%, -50%);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    animation: spawn 0.3s ease-out;
+    z-index: 4;
+}
+
+/* On grossit le Mega Slime */
+.entity[data-id="mega"] {
+    width: 70px;
+    height: 70px;
+    z-index: 3;
+}
+
+/* BARRES DE VIE DES UNITÉS */
 .entity-hp-container {
     position: absolute;
     top: -12px;
     left: 50%;
     transform: translateX(-50%);
-    width: 120%;
+    width: 40px;
     height: 6px;
     background: #222;
     border: 1px solid #000;
     border-radius: 3px;
     overflow: hidden;
 }
-
 .entity-hp-fill {
     height: 100%;
     background: #39ff14;
     width: 100%;
     transition: width 0.1s linear, background-color 0.2s;
 }
+.team-enemy .entity-hp-fill { background: #ff3366; } /* Barre rouge pour l'ennemi */
 
-/* Couleur de vie ennemie */
-.team-enemy .entity-hp-fill { background: #ff3366; }
+/* ANIMATIONS DE COMBAT */
+@keyframes spawn { 0% { transform: translate(-50%, -50%) scale(0); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
-/* --- ANIMATIONS DE COMBAT --- */
-/* Animation de marche (petit rebond) */
 @keyframes walkAnim {
     0%, 100% { transform: translate(-50%, -50%) rotate(-5deg) translateY(0); }
     50% { transform: translate(-50%, -50%) rotate(5deg) translateY(-5px); }
 }
 
-/* Animation d'attaque (coup vers l'avant) */
 @keyframes attackAnim {
     0% { transform: translate(-50%, -50%) scale(1); }
     40% { transform: translate(-50%, -60%) scale(1.2); filter: brightness(1.5); }
     100% { transform: translate(-50%, -50%) scale(1); }
 }
 
-.is-walking {
-    animation: walkAnim 0.5s infinite;
-}
-
-.is-attacking {
-    animation: attackAnim 0.4s ease-in-out;
-}
-
-.entity.dead {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.5);
-    transition: all 0.3s ease-out;
-}
+.is-walking { animation: walkAnim 0.5s infinite; }
+.is-attacking { animation: attackAnim 0.4s ease-in-out; }
+.entity.dead { opacity: 0; transform: translate(-50%, -50%) scale(1.5); transition: all 0.3s ease-out; }
