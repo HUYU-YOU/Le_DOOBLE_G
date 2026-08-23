@@ -33,7 +33,7 @@ window.scene.add(window.earth);
 
 // Chargement de ta texture .JPEG
 const textureLoader = new THREE.TextureLoader();
-textureLoader.load('assets/map.jpeg', (texture) => {
+textureLoader.load('assets/map_globe.png', (texture) => {
     material.map = texture;
     material.needsUpdate = true;
 });
