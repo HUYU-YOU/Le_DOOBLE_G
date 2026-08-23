@@ -103,7 +103,7 @@ body, html {
 .btn-main.cancel { background: transparent; border: 1px solid #555; color: #aaa; font-size: 1em; padding: 10px 20px; box-shadow: none; }
 .btn-main.cancel:hover { background: #333; color: #fff; border-color: #fff; transform: none; box-shadow: none; }
 
-input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
+input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px; position: relative; z-index: 100;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 /* =======================================================
