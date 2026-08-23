@@ -14,7 +14,7 @@
 </head>
 <body>
 
-    <!-- CONTENEUR PRINCIPAL (Gère la taille de l'écran) -->
+    <!-- CONTENEUR PRINCIPAL -->
     <div id="game-container" class="size-wide">
         
         <!-- BOUTONS FLOTTANTS -->
@@ -55,6 +55,8 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- ORDRE TRÈS IMPORTANT : La 3D d'abord, le Gameplay ensuite -->
+    <script src="map_three.js"></script>
+    <script src="gameplay.js"></script>
 </body>
 </html>
