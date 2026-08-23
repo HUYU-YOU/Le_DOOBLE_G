@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Open Front - Global Conquest</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
+    
     <!-- Chargement de Three.js et des contrôles de caméra -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -15,16 +14,19 @@
 <body>
 
     <div id="game-container" class="size-wide">
+        
+        <!-- BOUTONS FLOTTANTS -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
 
-        <div id="ui-container">
+        <!-- UI EN JEU (Interface principale) -->
+        <div id="ui-container" style="display: none;">
             <h1 class="game-title">OPEN <span style="color: var(--p1);">FRONT</span></h1>
             <div id="status-panel">
-                <p>Phase : <span style="color: var(--p3);">Déploiement</span></p>
+                <p>Phase : <span id="game-phase-text" style="color: var(--p3);">Déploiement</span></p>
                 <div class="troop-slider-container">
                     <label for="troop-slider">Troupes : <span id="troop-val" style="color: var(--p4);">50%</span></label>
                     <input type="range" id="troop-slider" min="1" max="100" value="50" oninput="updateTroopVal(this.value)">
@@ -32,20 +34,75 @@
             </div>
         </div>
 
-        <!-- MENU CONTEXTUEL DE CONSTRUCTION (Caché par défaut) -->
-        <div id="build-menu" style="display: none;">
-            <div class="build-header" id="build-terrain-type">TERRAIN</div>
-            <button class="btn-build" id="btn-city" onclick="buildStructure('city')">🏙️ Fonder une Ville</button>
-            <button class="btn-build" id="btn-port" onclick="buildStructure('port')">⚓ Créer un Port</button>
-            <button class="btn-build" id="btn-missile" onclick="buildStructure('missile')">🚀 Base de Missiles</button>
-            <button class="btn-build" id="btn-anti-missile" onclick="buildStructure('anti-missile')">🛡️ Anti-Missile</button>
-            <button class="btn-build cancel" onclick="closeBuildMenu()">✖ Annuler</button>
+        <!-- GROS CHRONO DE SPAWN -->
+        <div id="spawn-timer-container" style="display: none;">
+            <h2>CHOISIS TA CAPITALE</h2>
+            <div id="spawn-timer">10</div>
+            <p style="font-size: 1.2em; margin-top: 10px;">Clique sur la terre ferme pour te déployer !</p>
         </div>
 
+        <!-- MENU PRINCIPAL -->
+        <div class="overlay" id="main-menu">
+            <h1 class="game-title" style="font-size: 4em; margin-bottom: 30px;">OPEN <span style="color: var(--p1);">FRONT</span></h1>
+            <div class="menu-title">CENTRE DE COMMANDEMENT</div>
+            
+            <button class="btn-main" onclick="openMenu('local')">🎮 Lancer Partie Solo</button>
+            <button class="btn-main gold" onclick="openMenu('network')">🌐 Multijoueur (Code OPS)</button>
+        </div>
+
+        <!-- MENU SOLO (CHOIX IA) -->
+        <div class="overlay" id="local-menu" style="display: none;">
+            <div class="menu-title">CONFIGURATION DU CONFLIT</div>
+            <p style="color: #aaa; margin-bottom: 20px;">Choisis ton type d'adversaire :</p>
+            
+            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="startGame('dumb_bots')">
+                🤖 IA TRIBALES<br><span style="font-size: 0.6em; color:#ccc;">Les bots commencent de zéro, comme toi.</span>
+            </button>
+            <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="startGame('smart_bots')">
+                🏛️ IA EMPIRES (PAYS)<br><span style="font-size: 0.6em; color:#ccc;">Les bots contrôlent déjà des nations entières.</span>
+            </button>
+            
+            <button class="btn-main cancel" style="margin-top: 30px;" onclick="openMenu('main')">Retour</button>
+        </div>
+
+        <!-- MENU RÉSEAU (CODE OPS) -->
+        <div class="overlay" id="network-menu" style="display: none;">
+            <div class="menu-title" style="color: var(--p4);">REJOINDRE LE FRONT</div>
+            <p>Entre le code d'opération (ex: OPS1234) :</p>
+            <input type="text" id="ops-input" placeholder="OPS____" maxlength="7" style="text-transform: uppercase;">
+            <button class="btn-main gold" onclick="joinNetworkGame()">🚀 S'engager</button>
+            <p id="network-error" style="color: #ff007f; font-weight: bold; height: 20px;"></p>
+            
+            <button class="btn-main cancel" style="margin-top: 20px;" onclick="openMenu('main')">Retour</button>
+        </div>
+
+        <!-- MENU CONTEXTUEL D'ACTION (Caché par défaut) -->
+        <div id="action-menu" style="display: none;">
+            <div class="action-header" id="action-title">TERRAIN</div>
+            <div class="action-subheader" id="action-subtitle">Sélectionnez une action</div>
+            
+            <!-- Actions de Construction -->
+            <div id="build-options">
+                <button class="btn-action" id="btn-city" onclick="executeAction('build_city')">🏙️ Fonder une Ville</button>
+                <button class="btn-action" id="btn-port" onclick="executeAction('build_port')">⚓ Créer un Port</button>
+                <button class="btn-action" id="btn-missile" onclick="executeAction('build_missile')">🚀 Base de Missiles</button>
+                <button class="btn-action" id="btn-anti-missile" onclick="executeAction('build_anti_missile')">🛡️ Anti-Missile</button>
+            </div>
+
+            <!-- Actions de Bâtiments Spécifiques (Tirs, Routes) -->
+            <div id="command-options" style="display: none;">
+                <button class="btn-action attack" id="btn-launch-icbm" onclick="executeAction('launch_icbm')">💥 Lancer Frappe Nucléaire</button>
+                <button class="btn-action" id="btn-establish-route" onclick="executeAction('establish_route')">🚢 Établir Route Maritime</button>
+            </div>
+
+            <button class="btn-action cancel" onclick="closeActionMenu()">✖ Annuler</button>
+        </div>
+
+        <!-- CONTENEUR DU MOTEUR 3D -->
         <div id="webgl-container"></div>
     </div>
 
-    <!-- MODAL PARAMÈTRES (inchangée) -->
+    <!-- MODAL PARAMÈTRES -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
@@ -61,6 +118,7 @@
         </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script src="map_three.js"></script>
     <script src="gameplay.js"></script>
 </body>
