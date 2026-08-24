@@ -1,7 +1,3 @@
-// =========================================================
-// MOTEUR 3D - GESTION DU GLOBE ET DE L'ENVIRONNEMENT
-// =========================================================
-
 const container3D = document.getElementById('webgl-container');
 
 window.gameScene = new THREE.Scene();
@@ -25,7 +21,6 @@ const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.
 window.gameEarth = new THREE.Mesh(geometry, material);
 window.gameScene.add(window.gameEarth);
 
-// L'IMAGE COLOREE DE TA MAP
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load('assets/map_globe.png', (texture) => {
     material.map = texture;
@@ -40,7 +35,6 @@ window.gameScene.add(sunLight);
 
 function animate() {
     requestAnimationFrame(animate);
-    // Plus de rotation automatique !
     controls.update();
     renderer.render(window.gameScene, window.gameCamera);
 }
@@ -51,6 +45,5 @@ window.resize3DEnvironment = function() {
     window.gameCamera.updateProjectionMatrix();
     renderer.setSize(container3D.clientWidth, container3D.clientHeight);
 }
-
 window.addEventListener('resize', window.resize3DEnvironment);
 animate();
