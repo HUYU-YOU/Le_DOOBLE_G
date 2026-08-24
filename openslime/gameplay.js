@@ -4,26 +4,27 @@
 
 let troopPercentage = 50;
 let buildTargetPosition = null; 
-let buildTargetUV = null; // On a besoin des UV pour peindre la carte
 let buildTargetTerrain = null; 
 let gameState = 'MENU'; 
 let spawnCountdown = 10;
 let aiMode = 'dumb_bots'; 
 let myCapitalPlaced = false;
 
+// VARIABLES D'EXPANSION
+let playerCapitalUV = null; // Coordonnées du centre de ton empire
+let playerTerritoryRadius = 5; // Taille de base de l'empire
+
 let entities = []; 
 let selectedEntity = null; 
 let actionState = 'NORMAL'; 
 
-// --- NOUVEAU : SYSTÈME D'ÉCONOMIE ET DE TERRITOIRE ---
 let playerStats = {
-    pop: 10,        // Troupes de départ
-    maxPop: 100,    // Capacité max de base
+    pop: 10,       
+    maxPop: 100,    
     gold: 0,
-    territory: 1    // Multiplicateur de puissance
+    territory: 1    
 };
 
-// Création du Calque de Peinture (Overlay) pour le globe !
 const overlayCanvas = document.createElement('canvas');
 overlayCanvas.width = 2048;
 overlayCanvas.height = 1024;
@@ -41,7 +42,7 @@ window.toggleTheme = function() { document.body.classList.toggle('dark-mode'); }
 window.toggleFullscreen = function() { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.log(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } }
 window.setGameSize = function(size) { const container = document.getElementById('game-container'); if (!container) return; document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active')); container.classList.remove('size-classic', 'size-wide', 'size-full'); let btnClassic = document.getElementById('btn-sz-classic'); let btnWide = document.getElementById('btn-sz-wide'); if (size === 'classic') { container.classList.add('size-classic'); if(btnClassic) btnClassic.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } else if (size === 'wide') { container.classList.add('size-wide'); if(btnWide) btnWide.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } if (typeof window.resize3DEnvironment === "function") { setTimeout(window.resize3DEnvironment, 50); setTimeout(window.resize3DEnvironment, 400); } }
 
-// --- 2. DÉTECTION DU TERRAIN (MAP NOIRE) ---
+// --- 2. DÉTECTION DU TERRAIN ---
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
@@ -79,13 +80,12 @@ window.startGame = function(mode) {
     spawnCountdown = 10;
     document.getElementById('spawn-timer').innerText = spawnCountdown;
 
-    // Initialisation de la surcouche (Overlay) de couleur sur le globe
-    if(!overlayTexture && window.scene) {
+    if(!overlayTexture && window.gameScene) {
         overlayTexture = new THREE.CanvasTexture(overlayCanvas);
-        const overlayGeo = new THREE.SphereGeometry(5.02, 64, 64); // Juste au dessus de la Terre
+        const overlayGeo = new THREE.SphereGeometry(5.02, 64, 64);
         const overlayMat = new THREE.MeshBasicMaterial({ map: overlayTexture, transparent: true, opacity: 0.65 });
         const overlaySphere = new THREE.Mesh(overlayGeo, overlayMat);
-        window.scene.add(overlaySphere);
+        window.gameScene.add(overlaySphere);
     }
 
     let timerInterval = setInterval(() => {
@@ -102,18 +102,12 @@ function finishSpawningPhase() {
     
     if (!myCapitalPlaced) alert("Temps écoulé ! La partie commence.");
 
-    // NOUVEAU : LA BOUCLE ÉCONOMIQUE (Chaque seconde)
     setInterval(() => {
         if(gameState === 'PLAYING' && myCapitalPlaced) {
-            // Plus on a de peuple, plus on en produit (max 10% par seconde)
             let popGrowth = Math.max(1, Math.floor(playerStats.pop * 0.05));
-            
             playerStats.pop += popGrowth;
-            if(playerStats.pop > playerStats.maxPop) playerStats.pop = playerStats.maxPop; // Capacité max
-
-            // Or généré en fonction du territoire
+            if(playerStats.pop > playerStats.maxPop) playerStats.pop = playerStats.maxPop; 
             playerStats.gold += Math.floor(playerStats.territory * 2);
-
             updateHUD();
         }
     }, 1000);
@@ -126,20 +120,32 @@ function updateHUD() {
     document.getElementById('ui-gold').innerText = playerStats.gold;
 }
 
-// --- 5. RAYCASTING 3D ---
+// --- 5. INTERACTIONS CLAVIER / SOURIS ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+const container3D = document.getElementById('webgl-container');
 
-function onMouseClick(event) {
+// A. DOUBLE CLIC (Expansion de Territoire)
+function onDoubleClick(event) {
+    event.preventDefault(); // Evite le zoom plein écran par défaut du navigateur
+    if (gameState !== 'PLAYING' || !myCapitalPlaced) return;
+    if (event.target.closest('#ui-container') || event.target.closest('#action-menu')) return;
+    
+    expandTerritory();
+}
+
+// B. CLIC DROIT (Menu de Construction / Action)
+function onRightClick(event) {
+    event.preventDefault(); // Désactive le menu de base du navigateur (Inspecter, etc.)
+    
     if (gameState === 'MENU') return;
     if (event.target.closest('#ui-container') || event.target.closest('#action-menu') || event.target.closest('.settings-btn-wrapper')) return;
 
-    const container3D = document.getElementById('webgl-container');
     const rect = container3D.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, window.camera);
+    raycaster.setFromCamera(mouse, window.gameCamera);
     
     const entityMeshes = entities.map(e => e.mesh);
     const entityIntersects = raycaster.intersectObjects(entityMeshes);
@@ -154,7 +160,7 @@ function onMouseClick(event) {
     }
 
     if (actionState === 'TARGETING_ICBM' && selectedEntity) {
-        const earthIntersects = raycaster.intersectObject(window.earth);
+        const earthIntersects = raycaster.intersectObject(window.gameEarth);
         if(earthIntersects.length > 0) {
             launchMissile(selectedEntity, earthIntersects[0].point);
             actionState = 'NORMAL'; selectedEntity = null; return;
@@ -162,19 +168,18 @@ function onMouseClick(event) {
     }
 
     if (actionState === 'TARGETING_ROUTE' && selectedEntity) {
-        const earthIntersects = raycaster.intersectObject(window.earth);
+        const earthIntersects = raycaster.intersectObject(window.gameEarth);
         if(earthIntersects.length > 0) {
             createSeaRoute(selectedEntity.mesh.position, earthIntersects[0].point);
             actionState = 'NORMAL'; selectedEntity = null; return;
         }
     }
 
-    const intersects = raycaster.intersectObject(window.earth);
+    const intersects = raycaster.intersectObject(window.gameEarth);
 
     if (intersects.length > 0) {
         const hit = intersects[0];
         buildTargetPosition = hit.point; 
-        buildTargetUV = hit.uv; // Sauvegarde pour la peinture du territoire
         
         if (hit.uv && terrainImg.complete) {
             let px = Math.floor(hit.uv.x * terrainCanvas.width);
@@ -187,7 +192,8 @@ function onMouseClick(event) {
                 if (terrainType === 'Terre' && !myCapitalPlaced) {
                     executeAction('build_city', true); 
                     myCapitalPlaced = true;
-                    // Boost initial du joueur
+                    playerCapitalUV = hit.uv.clone(); // ON SAUVEGARDE L'ÉPICENTRE !
+                    
                     playerStats.pop = 500; 
                     playerStats.maxPop = 1000;
                     playerStats.gold = 500;
@@ -204,7 +210,10 @@ function onMouseClick(event) {
         closeActionMenu(); 
     }
 }
-document.getElementById('webgl-container').addEventListener('click', onMouseClick);
+
+// On attache les nouveaux événements !
+container3D.addEventListener('contextmenu', onRightClick);
+container3D.addEventListener('dblclick', onDoubleClick);
 
 
 // --- 6. ACTION ET CONSTRUCTION ---
@@ -232,11 +241,9 @@ window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = nu
 
         if (terrainType === 'Eau') {
             header.innerText = "🌊 ZONE MARITIME"; header.style.color = "#00f0ff"; subheader.innerText = "Construction navale";
-            document.getElementById('btn-expand').disabled = true; // Pas d'expansion de territoire dans l'eau
             document.getElementById('btn-city').disabled = true; document.getElementById('btn-missile').disabled = true; document.getElementById('btn-anti-missile').disabled = true; document.getElementById('btn-port').disabled = false; 
         } else {
             header.innerText = "⛰️ ZONE TERRESTRE"; header.style.color = "#39ff14"; subheader.innerText = "Déploiement terrestre";
-            document.getElementById('btn-expand').disabled = false;
             document.getElementById('btn-city').disabled = false; document.getElementById('btn-missile').disabled = false; document.getElementById('btn-anti-missile').disabled = false; document.getElementById('btn-port').disabled = true; 
         }
     }
@@ -247,46 +254,44 @@ window.closeActionMenu = function() {
     if(actionState === 'NORMAL') selectedEntity = null; 
 }
 
+// Fonction d'expansion depuis la Capitale !
+function expandTerritory() {
+    if (!playerCapitalUV) return;
+    
+    let troopsSent = Math.floor(playerStats.pop * (troopPercentage / 100));
+    if(troopsSent <= 0) return;
+    
+    playerStats.pop -= troopsSent; 
+    
+    let growth = Math.sqrt(troopsSent) * 1.5;
+    playerTerritoryRadius += growth;
+    
+    // Le dessin part toujours de la Capitale
+    let px = playerCapitalUV.x * overlayCanvas.width;
+    let py = (1 - playerCapitalUV.y) * overlayCanvas.height;
+    
+    overlayCtx.beginPath();
+    overlayCtx.arc(px, py, playerTerritoryRadius, 0, Math.PI * 2);
+    overlayCtx.fillStyle = 'rgba(0, 240, 255, 1)'; 
+    overlayCtx.shadowBlur = 15;
+    overlayCtx.shadowColor = '#00f0ff';
+    overlayCtx.fill();
+    overlayTexture.needsUpdate = true; 
+
+    let gainedTerritory = Math.floor(growth);
+    playerStats.territory += gainedTerritory;
+    playerStats.maxPop += (gainedTerritory * 20); 
+    
+    updateHUD();
+}
+
 window.executeAction = function(action, isCapital = false) {
     closeActionMenu();
 
     if (action === 'launch_icbm') { actionState = 'TARGETING_ICBM'; return; }
     if (action === 'establish_route') { actionState = 'TARGETING_ROUTE'; return; }
-    
-    // NOUVEAU : LOGIQUE D'EXPANSION TERRITORIALE !
-    if (action === 'expand') {
-        if (!buildTargetUV) return;
-        
-        let troopsSent = Math.floor(playerStats.pop * (troopPercentage / 100));
-        if(troopsSent <= 0) return;
-        
-        playerStats.pop -= troopsSent; // On dépense les troupes
-        
-        // On peint sur la carte !
-        let px = buildTargetUV.x * overlayCanvas.width;
-        let py = (1 - buildTargetUV.y) * overlayCanvas.height;
-        let radius = Math.max(5, Math.sqrt(troopsSent) * 1.5); // La taille de la tache dépend des troupes
-        
-        overlayCtx.beginPath();
-        overlayCtx.arc(px, py, radius, 0, Math.PI * 2);
-        overlayCtx.fillStyle = 'rgba(0, 240, 255, 1)'; // Cyan pour le joueur 1
-        overlayCtx.shadowBlur = 15;
-        overlayCtx.shadowColor = '#00f0ff';
-        overlayCtx.fill();
-        overlayTexture.needsUpdate = true; // Demande à la 3D de rafraichir !
-
-        // On gagne du territoire ! (+ de max pop, + d'or généré)
-        let gainedTerritory = Math.floor(radius);
-        playerStats.territory += gainedTerritory;
-        playerStats.maxPop += (gainedTerritory * 20); // Plus on a de place, plus on peut loger de monde
-        
-        updateHUD();
-        return;
-    }
-
     if (!buildTargetPosition) return;
     
-    // VÉRIFICATION DES PRIX EN OR
     let cost = 0;
     let type = action.replace('build_', '');
     if (type === 'city') cost = 500;
@@ -302,7 +307,6 @@ window.executeAction = function(action, isCapital = false) {
     if(!isCapital) playerStats.gold -= cost;
     updateHUD();
 
-    // CONSTRUCTION 3D
     let color, geometry;
     if (type === 'city') { geometry = new THREE.BoxGeometry(0.25, 0.25, 0.25); color = isCapital ? 0xffbf00 : 0x00f0ff; if(isCapital) geometry.scale(1.5, 1.5, 1.5); } 
     else if (type === 'port') { geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16); color = 0x00f0ff; } 
@@ -314,9 +318,10 @@ window.executeAction = function(action, isCapital = false) {
     structure.position.copy(buildTargetPosition);
     structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), buildTargetPosition.clone().normalize());
     if(type === 'missile') structure.translateY(0.15);
-    window.scene.add(structure);
+    window.gameScene.add(structure);
     entities.push({ type: type, owner: 'player', mesh: structure });
 }
+
 
 // --- 7. ANIMATIONS ---
 function launchMissile(siloEntity, targetPos) {
@@ -324,7 +329,7 @@ function launchMissile(siloEntity, targetPos) {
     const missileMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const missile = new THREE.Mesh(missileGeo, missileMat);
     missile.position.copy(siloEntity.mesh.position);
-    window.scene.add(missile);
+    window.gameScene.add(missile);
 
     const start = siloEntity.mesh.position.clone();
     const end = targetPos.clone();
@@ -343,7 +348,7 @@ function launchMissile(siloEntity, targetPos) {
             index++;
             requestAnimationFrame(animateMissile);
         } else {
-            window.scene.remove(missile);
+            window.gameScene.remove(missile);
             createExplosion(end);
         }
     }
@@ -355,7 +360,7 @@ function createExplosion(pos) {
     const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.8 });
     const explosion = new THREE.Mesh(geo, mat);
     explosion.position.copy(pos);
-    window.scene.add(explosion);
+    window.gameScene.add(explosion);
 
     let scale = 1;
     function animateBoom() {
@@ -363,7 +368,7 @@ function createExplosion(pos) {
         explosion.scale.set(scale, scale, scale);
         mat.opacity -= 0.05;
         if (mat.opacity > 0) requestAnimationFrame(animateBoom);
-        else window.scene.remove(explosion);
+        else window.gameScene.remove(explosion);
     }
     animateBoom();
 }
@@ -376,7 +381,7 @@ function createSeaRoute(startPos, endPos) {
     const material = new THREE.LineDashedMaterial({ color: 0x00f0ff, linewidth: 2, scale: 1, dashSize: 0.2, gapSize: 0.1 });
     const route = new THREE.Line(geometry, material);
     route.computeLineDistances(); 
-    window.scene.add(route);
+    window.gameScene.add(route);
 }
 
 window.updateTroopVal = function(val) {
