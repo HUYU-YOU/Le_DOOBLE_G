@@ -14,6 +14,7 @@
     <div id="game-container" class="size-wide">
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
+        <!-- TON BOUTON SETTINGS AVEC ANIMATION -->
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
         </div>
@@ -42,26 +43,29 @@
             <p style="font-size: 1.2em; margin-top: 10px;">Clic Droit sur la terre ferme pour te déployer !</p>
         </div>
 
+        <!-- MENU PRINCIPAL CORRIGÉ -->
         <div class="overlay" id="main-menu">
             <h1 class="game-title" style="font-size: 4em; margin-bottom: 30px;">OPEN <span style="color: var(--p1);">FRONT</span></h1>
             <div class="menu-title">CENTRE DE COMMANDEMENT</div>
-            <button class="btn-main" onclick="startGameMode('local')">🎮 Lancer Partie Solo</button>
-            <button class="btn-main gold" onclick="startGameMode('network')">🌐 Multijoueur (Code OPS)</button>
+            <button class="btn-main" onclick="openMenu('local')">🎮 Lancer Partie Solo</button>
+            <button class="btn-main gold" onclick="openMenu('network')">🌐 Multijoueur (Code OPS)</button>
         </div>
 
+        <!-- MENU SOLO CORRIGÉ -->
         <div class="overlay" id="local-menu" style="display: none;">
             <div class="menu-title">CONFIGURATION DU CONFLIT</div>
-            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="launchDeployment('dumb_bots')">🤖 IA TRIBALES</button>
-            <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="launchDeployment('smart_bots')">🏛️ IA EMPIRES</button>
-            <button class="btn-main cancel" style="margin-top: 30px;" onclick="startGameMode('main')">Retour</button>
+            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="startGame('dumb_bots')">🤖 IA TRIBALES</button>
+            <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="startGame('smart_bots')">🏛️ IA EMPIRES</button>
+            <button class="btn-main cancel" style="margin-top: 30px;" onclick="openMenu('main')">Retour</button>
         </div>
 
+        <!-- MENU RÉSEAU CORRIGÉ -->
         <div class="overlay" id="network-menu" style="display: none;">
             <div class="menu-title" style="color: var(--p4);">REJOINDRE LE FRONT</div>
             <input type="text" id="ops-input" placeholder="OPS____" maxlength="7" style="text-transform: uppercase;">
             <button class="btn-main gold" onclick="joinNetworkGame()">🚀 S'engager</button>
             <p id="network-error" style="color: #ff007f; font-weight: bold; height: 20px;"></p>
-            <button class="btn-main cancel" style="margin-top: 20px;" onclick="startGameMode('main')">Retour</button>
+            <button class="btn-main cancel" style="margin-top: 20px;" onclick="openMenu('main')">Retour</button>
         </div>
 
         <div id="action-menu" style="display: none;">
@@ -86,6 +90,7 @@
         <div id="webgl-container"></div>
     </div>
 
+    <!-- PARAMÈTRES CORRIGÉS -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
@@ -99,17 +104,15 @@
         </div>
     </div>
 
-    <!-- SCRIPT URL HUB -->
     <script>
         const params = new URLSearchParams(window.location.search);
         const forceMode = params.get('mode');
         window.addEventListener('DOMContentLoaded', () => {
-            if (forceMode === 'solo') startGameMode('local');
-            else if (forceMode === 'multi') startGameMode('network');
+            if (forceMode === 'solo') openMenu('local');
+            else if (forceMode === 'multi') openMenu('network');
         });
     </script>
     
-    <!-- SCRIPT SWIPE HUB -->
     <script>
         const gamesHubList = ["../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html", "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html", "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html", "../worms/index.html"];
         let touchstartX = 0; let touchendX = 0; let swipeMouseX = 0; let endSwipeMouseX = 0;
