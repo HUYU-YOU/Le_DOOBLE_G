@@ -11,7 +11,6 @@
 <body onclick="startMusic()">
     
     <h1 class="game-title">Card of Slime</h1>
-    
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
@@ -19,14 +18,11 @@
     </div>
 
     <div id="game-container" class="size-wide">
-        
-        <!-- CHRONOMÈTRE -->
+        <!-- CHRONO ET ALERTES -->
         <div id="game-timer" style="display: none;">3:00</div>
-        
-        <!-- MESSAGE ALERTE (Double Slime) -->
         <div id="alert-message" style="display: none;">DOUBLE SLIME !</div>
 
-        <!-- PANNEAU DES ÉMOTES -->
+        <!-- ÉMOTES -->
         <div id="emote-panel" style="display: none;">
             <button onclick="sendEmote('😂')">😂</button>
             <button onclick="sendEmote('😡')">😡</button>
@@ -34,6 +30,7 @@
             <button onclick="sendEmote('👍')">👍</button>
         </div>
 
+        <!-- MENUS -->
         <div id="main-menu" class="menu-overlay">
             <h2 class="menu-subtitle">Choisis ton mode</h2>
             <button class="btn-main" onclick="openDeckBuilder()">🃏 Composer mon Deck</button>
@@ -53,13 +50,14 @@
         </div>
 
         <div id="deck-builder-menu" class="menu-overlay" style="display: none;">
-            <h2 class="menu-subtitle">Compose ton Deck</h2>
+            <h2 class="menu-subtitle">Compose ton Deck (6 Cartes)</h2>
             <div id="deck-pool" class="card-grid"></div>
             <p id="deck-counter" style="margin: 10px 0; font-weight: bold; color: #39ff14;">Sélectionnées : 0 / 6</p>
             <button class="btn-main" id="validate-deck-btn" onclick="saveCustomDeck()" disabled>Valider</button>
             <button class="btn-main" style="background:#333;" onclick="closeDeckBuilder()">Retour</button>
         </div>
 
+        <!-- JEU -->
         <div id="arena" style="display: none;">
             <div id="river"></div>
             <div class="bridge left-bridge"></div>
@@ -80,21 +78,18 @@
                 <button class="btn-main" style="background:#333; margin-top:10px;" onclick="location.reload()">Menu Principal</button>
             </div>
         </div>
-        
     </div>
 
-    <!-- MODAL PARAMÈTRES -->
+    <!-- PARAMÈTRES -->
     <div id="settings-modal" class="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: #39ff14; text-transform: uppercase;">Paramètres</h2>
-            
             <div class="setting-item" style="margin-bottom: 20px;">
                 <label style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.2em;">
                     <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()" style="transform: scale(1.5);"> 
                     <span>Activer le Son 🔊</span>
                 </label>
             </div>
-
             <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
@@ -103,7 +98,6 @@
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
                 </div>
             </div>
-            
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
