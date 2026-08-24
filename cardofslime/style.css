@@ -15,14 +15,12 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 .size-wide { width: 85vw; height: 85vh; border-radius: 10px; max-width: 900px; max-height: 800px; }
 .size-full { width: 100vw; height: 100vh; border: none; border-radius: 0; }
 
-/* CHRONO ET ALERTE */
 #game-timer { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 10px; border: 2px solid #fff; font-family: 'Luckiest Guy', cursive; font-size: 1.5em; z-index: 20; color: white; }
 .timer-danger { color: #ff3366 !important; border-color: #ff3366 !important; animation: pulse 1s infinite; }
 #alert-message { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-family: 'Luckiest Guy', cursive; font-size: 3em; color: #ff3366; text-shadow: 0 0 20px #000; z-index: 50; animation: flash 2s ease-out forwards; pointer-events: none; }
 @keyframes flash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
 @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); } }
 
-/* ÉMOTES */
 #emote-panel { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 20; }
 #emote-panel button { background: rgba(0,0,0,0.6); border: 2px solid #888; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5em; cursor: pointer; transition: 0.2s; }
 #emote-panel button:hover { background: #39ff14; transform: scale(1.2); }
@@ -38,8 +36,8 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 .btn-main:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
 .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
-.card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 15px; }
-.card-select-item { width: 80px; height: 110px; background: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: cover; background-position: center; }
+.card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; max-height: 400px; overflow-y: auto; }
+.card-select-item { width: 70px; height: 100px; background: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: cover; background-position: center; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
 #arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #3b522b; overflow: hidden; cursor: crosshair; }
@@ -71,9 +69,13 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 .btn-size.active { background: #39ff14; color: #000; }
 .close-btn { background: #ff3366; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; font-family: 'Rajdhani'; font-size: 1.1em; }
 
-.entity { position: absolute; width: 45px; height: 45px; border-radius: 50%; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; }
+/* === ENTITÉS ET STATUTS (VOL, STUN, SLOW) === */
+.entity { position: absolute; width: 45px; height: 45px; border-radius: 50%; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
 .entity.building { border-radius: 10px; border: 2px solid #fff; background-color: rgba(0,0,0,0.8) !important; color: white; display: flex; justify-content: center; align-items: center; font-family: 'Rajdhani'; font-size: 1.2em; font-weight: bold; z-index: 3;}
 .entity[data-id="mega"] { width: 70px; height: 70px; z-index: 5; }
+.entity.is-flying { box-shadow: 0 15px 10px rgba(0,0,0,0.5); z-index: 6; } /* Fait flotter l'unité */
+.entity.stunned { filter: brightness(1.5) drop-shadow(0 0 10px yellow); animation: shake 0.2s infinite; }
+.entity.slowed { filter: sepia(1) hue-rotate(180deg) saturate(3); /* Teinte bleutée givrée */ }
 
 .entity-hp-container { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 40px; height: 6px; background: #222; border: 1px solid #000; border-radius: 3px; overflow: hidden; }
 .entity-hp-fill { height: 100%; background: #39ff14; width: 100%; transition: width 0.1s linear; }
@@ -89,6 +91,7 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
 @keyframes walkAnim { 0%, 100% { transform: translate(-50%, -50%) rotate(-5deg) translateY(0); } 50% { transform: translate(-50%, -50%) rotate(5deg) translateY(-5px); } }
 @keyframes attackAnim { 0% { transform: translate(-50%, -50%) scale(1); } 40% { transform: translate(-50%, -60%) scale(1.2); filter: brightness(1.5); } 100% { transform: translate(-50%, -50%) scale(1); } }
+@keyframes shake { 0% { transform: translate(-52%, -50%); } 50% { transform: translate(-48%, -50%); } 100% { transform: translate(-50%, -50%); } }
 
 .is-walking { animation: walkAnim 0.5s infinite; }
 .is-attacking { animation: attackAnim 0.4s ease-in-out; }
@@ -100,6 +103,4 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 
 .particle { position: absolute; width: 12px; height: 12px; border-radius: 50%; pointer-events: none; z-index: 5; animation: splatter 0.5s ease-out forwards; }
 @keyframes splatter { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
-
-/* EFFET DE ZONE DU MARAIS */
 .spell-puddle { position: absolute; background: radial-gradient(circle, rgba(138, 43, 226, 0.6) 0%, rgba(138, 43, 226, 0) 70%); border-radius: 50%; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; animation: pulse 2s infinite; }
