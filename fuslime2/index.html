@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuslime 2</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Moteur physique Matter.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+    <div id="game-ui">
+        <h1>Fuslime 2</h1>
+        <div class="score-container">Score: <span id="score">0</span></div>
+        <!-- Bouton de réglage / Plein écran -->
+        <button id="fullscreen-btn">🔲 Plein Écran</button>
+    </div>
+    
+    <div id="game-container">
+        <!-- Conteneur superposé pour les animations (particules, textes) -->
+        <div id="effects-container"></div>
+    </div>
+
+    <!-- Écran de fin de partie -->
+    <div id="game-over" class="hidden">
+        <h2>Le seau déborde !</h2>
+        <button onclick="location.reload()">Rejouer</button>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
