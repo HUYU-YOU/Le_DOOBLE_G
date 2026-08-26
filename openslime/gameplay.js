@@ -1,5 +1,5 @@
 // =========================================================
-// LOGIQUE DE JEU - OPEN FRONT (MODE CARTE PLATE)
+// LOGIQUE DE JEU - OPEN FRONT (MODE GLOBE 3D)
 // =========================================================
 
 let troopPercentage = 50;
@@ -43,7 +43,7 @@ window.setGameSize = function(size) { const container = document.getElementById(
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
-terrainImg.src = 'assets/map_globe_terreste.png'; 
+terrainImg.src = 'assets/map_globe.jpg'; 
 terrainImg.onload = () => { terrainCanvas.width = terrainImg.width; terrainCanvas.height = terrainImg.height; terrainCtx.drawImage(terrainImg, 0, 0); };
 function isWater(r, g, b) { return (r < 20 && g < 20 && b < 20); }
 
@@ -61,14 +61,14 @@ window.startGame = function(mode) {
     gameState = 'SPAWNING'; myCapitalPlaced = false; spawnCountdown = 10;
     document.getElementById('spawn-timer').innerText = spawnCountdown;
 
-    // LA SURCOUCHE (TERRITOIRES) EST AUSSI UNE CARTE PLATE !
+    // LA SURCOUCHE (TERRITOIRES) EST UNE SPHÈRE !
     if(!overlayTexture && window.gameScene) {
         overlayTexture = new THREE.CanvasTexture(overlayCanvas);
-        const overlayGeo = new THREE.PlaneGeometry(22, 12);
+        const overlayGeo = new THREE.SphereGeometry(5.02, 64, 64); // Légèrement plus grande que la terre
         const overlayMat = new THREE.MeshBasicMaterial({ map: overlayTexture, transparent: true, opacity: 0.65 });
-        const overlayPlane = new THREE.Mesh(overlayGeo, overlayMat);
-        overlayPlane.position.z = 0.05; // Légèrement au dessus de la carte pour éviter le z-fighting
-        window.gameScene.add(overlayPlane);
+        const overlaySphere = new THREE.Mesh(overlayGeo, overlayMat);
+        overlaySphere.rotation.y = -Math.PI / 2; // On l'aligne avec la Terre !
+        window.gameScene.add(overlaySphere);
     }
 
     let timerInterval = setInterval(() => {
@@ -130,11 +130,16 @@ function getRandomLandUV() {
     return new THREE.Vector2(Math.random(), Math.random());
 }
 
-// NOUVEAU: Convertit les coordonnées de l'image en position sur la CARTE PLATE
+// Calcule la position sur la SPHÈRE 3D
 function get3DPosFromUV(u, v) {
-    let x = (u - 0.5) * 22; // 22 de large
-    let y = (v - 0.5) * 12; // 12 de haut
-    return new THREE.Vector3(x, y, 0); // Z=0 car c'est plat !
+    let phi = (1 - v) * Math.PI; 
+    let theta = u * Math.PI * 2; 
+    let x = -5 * Math.sin(phi) * Math.cos(theta);
+    let y = 5 * Math.cos(phi);
+    let z = 5 * Math.sin(phi) * Math.sin(theta);
+    let pos = new THREE.Vector3(x, y, z);
+    pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2); // Aligné avec la Terre
+    return pos;
 }
 
 function initAIs() {
@@ -199,8 +204,8 @@ function buildAIStructure(ai, type, isCapital, pos) {
     const structure = new THREE.Mesh(geometry, material);
     structure.position.copy(pos);
     
-    // Oriente le batiment vers l'écran (+Z) car la carte est plate
-    structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1));
+    // Oriente le batiment vers l'extérieur de la SPHERE
+    structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos.clone().normalize());
     if(type === 'missile') structure.translateY(0.15); 
     
     window.gameScene.add(structure);
@@ -338,22 +343,23 @@ window.executeAction = function(action, isCapital = false) {
     const structure = new THREE.Mesh(geometry, material);
     structure.position.copy(buildTargetPosition);
     
-    // Oriente le batiment vers l'écran (+Z)
-    structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1));
+    // Oriente le batiment vers l'extérieur de la sphère
+    structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), buildTargetPosition.clone().normalize());
     if(type === 'missile') structure.translateY(0.15);
     window.gameScene.add(structure);
     entities.push({ type: type, owner: 'player', mesh: structure });
 }
 
-// --- 7. ANIMATIONS ---
+// --- 7. ANIMATIONS (Arcs de Sphère) ---
 function launchMissile(siloEntity, targetPos) {
     const missileGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.2, 8); const missileMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); const missile = new THREE.Mesh(missileGeo, missileMat);
     missile.position.copy(siloEntity.mesh.position); window.gameScene.add(missile);
+    
     const start = siloEntity.mesh.position.clone(); const end = targetPos.clone();
     const midPoint = start.clone().add(end).multiplyScalar(0.5); 
     
-    // Arc de cercle qui "sort" de la carte plate (vers nous en +Z)
-    midPoint.z += start.distanceTo(end) * 0.4; 
+    // Le missile fait un arc autour du globe !
+    midPoint.normalize().multiplyScalar(5 + start.distanceTo(end) * 0.5);
     
     const curve = new THREE.QuadraticBezierCurve3(start, midPoint, end); const points = curve.getPoints(60); 
     let index = 0;
@@ -376,8 +382,7 @@ function createExplosion(pos) {
 }
 
 function createSeaRoute(startPos, endPos) {
-    const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5);
-    midPoint.z += 0.2; // Légèrement surélevé de la carte plate
+    const midPoint = startPos.clone().add(endPos).multiplyScalar(0.5).normalize().multiplyScalar(5.05); 
     const curve = new THREE.QuadraticBezierCurve3(startPos, midPoint, endPos); const points = curve.getPoints(50);
     const geometry = new THREE.BufferGeometry().setFromPoints(points); const material = new THREE.LineDashedMaterial({ color: 0x00f0ff, linewidth: 2, scale: 1, dashSize: 0.2, gapSize: 0.1 });
     const route = new THREE.Line(geometry, material); route.computeLineDistances(); window.gameScene.add(route);
