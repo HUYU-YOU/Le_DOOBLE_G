@@ -16,63 +16,81 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Thème clair via la fonction toggleTheme() */
+/* Thème clair / sombre */
 body.dark-mode { background-color: #f0f0f0; color: #111; }
 body.dark-mode #game-container { background-color: #e0e0e0; border-color: #ccc; }
 
-/* --- BOUTONS HUB & PARAMETRES --- */
+/* Bouton Retour Hub */
 .btn-hub {
     position: absolute;
     top: 20px; left: 20px;
     background-color: #1a1a2e; color: white; text-decoration: none;
-    border: 1px solid #00f0ff; padding: 8px 15px; border-radius: 8px;
+    border: 1px solid #00e5ff; padding: 8px 15px; border-radius: 8px;
     font-weight: bold; font-size: 14px; transition: 0.3s; z-index: 100;
 }
 .btn-hub:hover {
-    background-color: rgba(0, 240, 255, 0.2);
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    background-color: rgba(0, 229, 255, 0.2);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
-.btn-settings {
+/* Bouton Paramètres (Engrenage) */
+.settings-btn-wrapper {
     position: absolute;
-    top: 20px; right: 20px;
-    width: 45px; cursor: pointer; z-index: 100;
+    top: 20px; right: 25px;
+    width: 45px; height: 45px;
+    cursor: pointer; z-index: 100;
 }
+.settings-btn {
+    width: 100%; height: 100%; object-fit: contain;
+    transition: transform 0.2s ease;
+    filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
+}
+.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-/* --- MODAL PARAMETRES --- */
-.modal {
-    display: none; position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); z-index: 200;
-    align-items: center; justify-content: center;
+/* Modal Paramètres */
+#settings-modal {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.85); z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    backdrop-filter: blur(5px);
 }
-.modal.show { display: flex; }
-.modal-content {
-    background: #16213e; color: white; padding: 30px;
-    border-radius: 10px; border: 2px solid #00f0ff; display: flex;
-    flex-direction: column; gap: 15px; min-width: 300px;
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+#settings-modal.show { opacity: 1; pointer-events: auto; }
+
+.settings-content {
+    background: rgba(15, 20, 30, 0.95);
+    border: 2px solid #00e5ff; border-radius: 15px;
+    padding: 30px 40px; color: white; text-align: center;
+    box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 320px;
 }
-.modal-content h2 { text-align: center; margin-bottom: 10px; color: #00f0ff; }
-.modal-content label { font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 10px;}
+.settings-content h2 { margin-top: 0; color: #00e5ff; text-transform: uppercase; letter-spacing: 2px; }
+.setting-item {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 25px 0; font-size: 1.2rem; font-weight: bold;
+}
+.switch { position: relative; display: inline-block; width: 54px; height: 28px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #00e5ff; box-shadow: 0 0 10px #00e5ff; }
+input:checked + .slider:before { transform: translateX(26px); }
+
 .close-btn {
-    margin-top: 15px; padding: 10px; background: #00f0ff;
-    border: none; border-radius: 5px; color: #1a1a2e; font-weight: bold; cursor: pointer;
+    margin-top: 15px; background: #00e5ff; color: #000; border: none;
+    padding: 10px 25px; font-size: 1.1rem; font-weight: bold;
+    border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase;
 }
-.close-btn:hover { background: #5ef1c2; }
+.close-btn:hover { box-shadow: 0 0 20px #00e5ff; transform: scale(1.05); }
 
-/* --- INTERFACE JEU (SCORES) --- */
+/* Interface du Jeu & Scores */
 #game-ui { text-align: center; margin-top: 10px; margin-bottom: 10px; }
-h1 { font-size: 32px; color: #00f0ff; margin-bottom: 5px; }
-
-.scores-wrapper {
-    display: flex; justify-content: center; gap: 20px; align-items: baseline;
-}
-.score-container { font-size: 28px; font-weight: bold; color: #4ecca3; transition: transform 0.1s; }
+h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
+.scores-wrapper { display: flex; justify-content: center; gap: 25px; align-items: baseline; }
+.score-container { font-size: 26px; font-weight: bold; color: #4ecca3; transition: transform 0.1s; }
 .best-score-container { font-size: 18px; color: #f39c12; font-weight: bold; }
 .score-bump { transform: scale(1.4); color: #fff; }
 
-/* --- LE SEAU --- */
+/* Le Seau */
 #game-container {
     position: relative;
     border-left: 10px solid #16213e;
@@ -80,23 +98,22 @@ h1 { font-size: 32px; color: #00f0ff; margin-bottom: 5px; }
     border-bottom: 10px solid #16213e;
     border-radius: 0 0 20px 20px;
     background-color: #0f172a;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.5); /* Donne de la profondeur au seau */
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
 }
 canvas { display: block; }
 
-/* --- EFFETS VISUELS --- */
+/* Effets Visuels (Particules et Textes) */
 #effects-container {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; overflow: hidden; z-index: 10;
 }
 .floating-text {
-    position: absolute; font-weight: bold; font-size: 28px;
+    position: absolute; font-weight: bold; font-size: 26px;
     text-shadow: 0 0 5px rgba(0,0,0,1); animation: floatUp 0.8s ease-out forwards;
 }
 .particle {
     position: absolute; border-radius: 50%; animation: splash 0.5s ease-out forwards;
 }
-
 @keyframes floatUp {
     0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
     50% { transform: translate(-50%, -100%) scale(1.2); opacity: 1; }
@@ -107,134 +124,13 @@ canvas { display: block; }
     100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
 }
 
-/* --- GAME OVER --- */
+/* Game Over */
 #game-over {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; text-align: center;
     border: 3px solid #e94560; z-index: 100; box-shadow: 0 0 30px #e94560;
 }
-#game-over h2 { color: #e94560; margin-bottom: 20px; font-size: 32px;}
-#game-over button {
-    padding: 12px 25px; font-size: 18px; background: #e94560;
-    color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
-}
-#game-over button:hover { background: #ff5277; }
-.hidden { display: none !important; }* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background-color: #0b0f19;
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100vh;
-    overflow: hidden;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-/* Thème clair via la fonction toggleTheme() */
-body.dark-mode { background-color: #f0f0f0; color: #111; }
-body.dark-mode #game-container { background-color: #e0e0e0; border-color: #ccc; }
-
-/* --- BOUTONS HUB & PARAMETRES --- */
-.btn-hub {
-    position: absolute;
-    top: 20px; left: 20px;
-    background-color: #1a1a2e; color: white; text-decoration: none;
-    border: 1px solid #00f0ff; padding: 8px 15px; border-radius: 8px;
-    font-weight: bold; font-size: 14px; transition: 0.3s; z-index: 100;
-}
-.btn-hub:hover {
-    background-color: rgba(0, 240, 255, 0.2);
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-}
-
-.btn-settings {
-    position: absolute;
-    top: 20px; right: 20px;
-    width: 45px; cursor: pointer; z-index: 100;
-}
-
-/* --- MODAL PARAMETRES --- */
-.modal {
-    display: none; position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); z-index: 200;
-    align-items: center; justify-content: center;
-}
-.modal.show { display: flex; }
-.modal-content {
-    background: #16213e; color: white; padding: 30px;
-    border-radius: 10px; border: 2px solid #00f0ff; display: flex;
-    flex-direction: column; gap: 15px; min-width: 300px;
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-}
-.modal-content h2 { text-align: center; margin-bottom: 10px; color: #00f0ff; }
-.modal-content label { font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 10px;}
-.close-btn {
-    margin-top: 15px; padding: 10px; background: #00f0ff;
-    border: none; border-radius: 5px; color: #1a1a2e; font-weight: bold; cursor: pointer;
-}
-.close-btn:hover { background: #5ef1c2; }
-
-/* --- INTERFACE JEU (SCORES) --- */
-#game-ui { text-align: center; margin-top: 10px; margin-bottom: 10px; }
-h1 { font-size: 32px; color: #00f0ff; margin-bottom: 5px; }
-
-.scores-wrapper {
-    display: flex; justify-content: center; gap: 20px; align-items: baseline;
-}
-.score-container { font-size: 28px; font-weight: bold; color: #4ecca3; transition: transform 0.1s; }
-.best-score-container { font-size: 18px; color: #f39c12; font-weight: bold; }
-.score-bump { transform: scale(1.4); color: #fff; }
-
-/* --- LE SEAU --- */
-#game-container {
-    position: relative;
-    border-left: 10px solid #16213e;
-    border-right: 10px solid #16213e;
-    border-bottom: 10px solid #16213e;
-    border-radius: 0 0 20px 20px;
-    background-color: #0f172a;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.5); /* Donne de la profondeur au seau */
-}
-canvas { display: block; }
-
-/* --- EFFETS VISUELS --- */
-#effects-container {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; overflow: hidden; z-index: 10;
-}
-.floating-text {
-    position: absolute; font-weight: bold; font-size: 28px;
-    text-shadow: 0 0 5px rgba(0,0,0,1); animation: floatUp 0.8s ease-out forwards;
-}
-.particle {
-    position: absolute; border-radius: 50%; animation: splash 0.5s ease-out forwards;
-}
-
-@keyframes floatUp {
-    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-    50% { transform: translate(-50%, -100%) scale(1.2); opacity: 1; }
-    100% { transform: translate(-50%, -150%) scale(1); opacity: 0; }
-}
-@keyframes splash {
-    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
-}
-
-/* --- GAME OVER --- */
-#game-over {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; text-align: center;
-    border: 3px solid #e94560; z-index: 100; box-shadow: 0 0 30px #e94560;
-}
-#game-over h2 { color: #e94560; margin-bottom: 20px; font-size: 32px;}
+#game-over h2 { color: #e94560; margin-bottom: 20px; font-size: 32px; }
 #game-over button {
     padding: 12px 25px; font-size: 18px; background: #e94560;
     color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
