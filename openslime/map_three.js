@@ -1,3 +1,7 @@
+// =========================================================
+// MOTEUR 3D - GESTION DU GLOBE ET DE L'ENVIRONNEMENT
+// =========================================================
+
 const container3D = document.getElementById('webgl-container');
 
 window.gameScene = new THREE.Scene();
@@ -14,13 +18,32 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.minDistance = 6; 
 controls.maxDistance = 30; 
-controls.enablePan = false; // DESACTIVE LE GLISSEMENT AU CLIC DROIT !
+controls.enablePan = false; // DESACTIVE LE GLISSEMENT AU CLIC DROIT
 
+// --- 1. LA SPHÈRE DE TA CARTE ---
 const geometry = new THREE.SphereGeometry(5, 64, 64);
-const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6, metalness: 0.1 });
+const material = new THREE.MeshStandardMaterial({ 
+    color: 0xffffff, 
+    roughness: 0.6, 
+    metalness: 0.1,
+    transparent: true // IMPORTANT: Permet de voir à travers les trous de l'image
+});
 window.gameEarth = new THREE.Mesh(geometry, material);
 window.gameScene.add(window.gameEarth);
 
+// --- 2. LE CORRECTIF : LE NOYAU OCÉANIQUE ---
+// Une sphère bleue placée juste en dessous pour boucher les trous !
+const oceanGeometry = new THREE.SphereGeometry(4.98, 64, 64); // Légèrement plus petite (4.98)
+const oceanMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x004477, // Un beau bleu océan
+    roughness: 0.1,  // Assez lisse
+    metalness: 0.3   // Légèrement brillant pour l'effet d'eau
+});
+const oceanCore = new THREE.Mesh(oceanGeometry, oceanMaterial);
+window.gameScene.add(oceanCore);
+
+
+// --- CHARGEMENT DE LA JOLIE CARTE ---
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load('assets/map_globe.png', (texture) => {
     material.map = texture;
@@ -45,5 +68,6 @@ window.resize3DEnvironment = function() {
     window.gameCamera.updateProjectionMatrix();
     renderer.setSize(container3D.clientWidth, container3D.clientHeight);
 }
+
 window.addEventListener('resize', window.resize3DEnvironment);
 animate();
