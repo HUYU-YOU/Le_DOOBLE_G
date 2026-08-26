@@ -5,27 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fuslime 2</title>
     <link rel="stylesheet" href="style.css">
+    
     <!-- Moteur physique Matter.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    
+    <!-- API YouTube pour la musique -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
+    <!-- Boutons d'interface Globale (Hub & Paramètres) -->
+    <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
+    <img src="img/setting.png" id="settings-btn-img" class="btn-settings" alt="Paramètres">
+
+    <!-- Fenêtre Modale des Paramètres -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2>Paramètres</h2>
+            <label>
+                <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()"> Plein Écran
+            </label>
+            <label>
+                <input type="checkbox" id="music-toggle" onchange="toggleMusic()"> Musique (YouTube)
+            </label>
+            <label>
+                <input type="checkbox" onchange="toggleTheme()"> Mode Clair / Sombre
+            </label>
+            <button class="close-btn" onclick="toggleSettings()">Fermer</button>
+        </div>
+    </div>
+
+    <!-- Interface du jeu -->
     <div id="game-ui">
         <h1>Fuslime 2</h1>
         <div class="score-container">Score: <span id="score">0</span></div>
-        <!-- Bouton de réglage / Plein écran -->
-        <button id="fullscreen-btn">🔲 Plein Écran</button>
     </div>
     
+    <!-- Zone de jeu (Seau et Particules) -->
     <div id="game-container">
-        <!-- Conteneur superposé pour les animations (particules, textes) -->
         <div id="effects-container"></div>
     </div>
 
-    <!-- Écran de fin de partie -->
+    <!-- Écran de Game Over -->
     <div id="game-over" class="hidden">
         <h2>Le seau déborde !</h2>
         <button onclick="location.reload()">Rejouer</button>
     </div>
+
+    <!-- Lecteur YouTube invisible -->
+    <div id="youtube-audio"></div>
 
     <script src="game.js"></script>
 </body>
