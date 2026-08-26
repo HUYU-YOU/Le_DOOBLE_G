@@ -28,7 +28,7 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 // --- GESTION AUDIO GLOBALE ---
-let ytPlayer; // Compatible avec ton système Youtube éventuel
+let ytPlayer; 
 let isMuted = localStorage.getItem('isMuted') === 'true';
 let musicStarted = false;
 
@@ -70,7 +70,6 @@ function setGameSize(sizeType) {
 // 2. BASE DE DONNÉES EXACTE DES SKINS
 // ==========================================
 const cardDatabase = {
-    // UNITÉS SOL
     slime: { 
         id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, targetsAir: false,
         skins: { 
@@ -99,8 +98,6 @@ const cardDatabase = {
             back:  { idle: ['assets/skins/bouleback.png'], attack: ['assets/skins/bouleback.png'] }
         }
     },
-    
-    // VOLANTS
     helicoton: { 
         id: "helicoton", type: "troop", name: "Hélicoton", cost: 3, hp: 300, dmg: 50, range: 20, speed: 5, atkSpeed: 900, isRanged: true, isFlying: true, targetsAir: true,
         skins: {
@@ -115,14 +112,12 @@ const cardDatabase = {
             back:  { idle: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'], attack: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'] }
         }
     },
-    
-    // BÂTIMENTS (USINE EMPILÉE / CANON ROTATIF)
     usine: { 
         id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0,
-        isStacked: true, // Mécanique d'empilage spécifique sans rotation
+        isStacked: true,
         skins: {
-            front: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }, 
-            back: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }
+            front: { base: 'assets/skins/tourback.png', top: 'assets/skins/tour.png' }, 
+            back: { base: 'assets/skins/tourback.png', top: 'assets/skins/tour.png' }
         }
     },
     barriere: { 
@@ -139,8 +134,6 @@ const cardDatabase = {
             back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' }
         }
     },
-    
-    // SORTS
     tornade: { 
         id: "tornade", type: "spell", name: "Tornade", cost: 3, dmg: 150, radius: 15,
         anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png']
@@ -153,8 +146,6 @@ const cardDatabase = {
         id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "mini_slime", radius: 15,
         anim: ['assets/skins/marais1.png', 'assets/skins/marais2.png', 'assets/skins/marais3.png']
     },
-    
-    // CACHÉS
     mini_slime: { 
         id: "mini_slime", type: "troop", name: "Mini", hp: 150, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true,
         skins: {
@@ -183,8 +174,7 @@ function renderDeckPool() {
         let bgImg = (card.hasTurret || card.isStacked) ? card.skins.front.base : (card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]));
         div.style.backgroundImage = `url('${bgImg}')`;
         
-        div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>
-                         <span style="margin-top:auto; padding:2px; text-align:center; width:100%; font-size: 10px;">${card.name}</span>`;
+        div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>`;
         div.onclick = () => {
             if (tempSelectedDeck.includes(cardId)) { if(tempSelectedDeck.length > 1) tempSelectedDeck = tempSelectedDeck.filter(id => id !== cardId); } 
             else { if (tempSelectedDeck.length < 6) tempSelectedDeck.push(cardId); }
@@ -268,7 +258,6 @@ function initGameEngine() {
     lastTime = performance.now(); requestAnimationFrame(gameLoop);
 }
 
-// Les tours sont augmentées de 20% (80 -> 96, 60 -> 72)
 function setupTowers() {
     createTower('base_p', 'player', 50, 92, 3000, "assets/skins/tourroyaleback.png", 96, 96);
     createTower('tower_p_l', 'player', 25, 75, 1500, "assets/skins/tourback.png", 72, 72);
@@ -284,7 +273,7 @@ function createTower(id, team, x, y, hp, img, width, height) {
     el.className = `entity building team-${team}`;
     el.style.left = `${x}%`; el.style.top = `${y}%`; el.style.width = `${width}px`; el.style.height = `${height}px`;
     el.style.backgroundImage = `url('${img}')`;
-    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
+    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`; // Plus de texte dégueulasse !
     arena.appendChild(el);
     activeEntities.push({ id: id, team: team, x: x, y: y, hp: hp, maxHp: hp, dmg: 50, range: 25, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
 }
@@ -319,14 +308,14 @@ function updateUI() {
         const data = cardDatabase[cardId];
         let bgImg = (data.hasTurret || data.isStacked) ? data.skins.front.base : (data.skins ? data.skins.front.idle[0] : (data.projectile || data.anim[0]));
         div.style.backgroundImage = `url('${bgImg}')`;
-        div.dataset.cost = data.cost; div.innerHTML = `<div class="cost">${data.cost}</div><div class="name" style="color:${data.color}">${data.name}</div>`;
+        div.dataset.cost = data.cost; div.innerHTML = `<div class="cost">${data.cost}</div>`;
         div.addEventListener('click', () => selectCard(index)); handContainer.appendChild(div);
     });
     
     let nextData = cardDatabase[nextCard];
     let nextBg = (nextData.hasTurret || nextData.isStacked) ? nextData.skins.front.base : (nextData.skins ? nextData.skins.front.idle[0] : (nextData.projectile || nextData.anim[0]));
     document.getElementById('next-card').style.backgroundImage = `url('${nextBg}')`;
-    document.getElementById('next-card').innerHTML = `<div class="cost">${nextData.cost}</div><div class="name">${nextData.name}</div>`;
+    document.getElementById('next-card').innerHTML = `<div class="cost">${nextData.cost}</div>`;
 }
 
 function selectCard(index) {
@@ -355,12 +344,10 @@ function handleArenaClick(e) {
     selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
 }
 
-// INVOCATIONS AVEC SKINS ET DIRECTIONS
 function spawnEntity(data, team, x, y) {
     const el = document.createElement('div');
     el.className = `entity team-${team} ${data.type === 'building' ? 'building' : ''} ${data.isFlying ? 'is-flying' : ''}`;
     el.dataset.id = data.id;
-    
     let initFacing = team === 'player' ? 'back' : 'front';
     el.style.left = `${x}%`; el.style.top = `${y}%`;
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
@@ -368,30 +355,23 @@ function spawnEntity(data, team, x, y) {
     let turretEl = null; let topEl = null;
     
     if (data.hasTurret) {
-        // Canon avec tourelle rotative
         el.style.backgroundImage = `url('${data.skins[initFacing].base}')`;
-        turretEl = document.createElement('div');
-        turretEl.className = 'turret';
-        turretEl.style.backgroundImage = `url('${data.skins[initFacing].turret}')`;
-        el.appendChild(turretEl);
+        turretEl = document.createElement('div'); turretEl.className = 'turret';
+        turretEl.style.backgroundImage = `url('${data.skins[initFacing].turret}')`; el.appendChild(turretEl);
     } else if (data.isStacked) {
-        // Usine (Image Top empilée sur la Base sans rotation)
         el.style.backgroundImage = `url('${data.skins[initFacing].base}')`;
-        topEl = document.createElement('div');
-        topEl.className = 'stacked-top';
-        topEl.style.backgroundImage = `url('${data.skins[initFacing].top}')`;
-        el.appendChild(topEl);
+        topEl = document.createElement('div'); topEl.className = 'stacked-top';
+        topEl.style.backgroundImage = `url('${data.skins[initFacing].top}')`; el.appendChild(topEl);
     }
 
     arena.appendChild(el);
-
     activeEntities.push({
         id: Math.random().toString(36).substr(2, 9),
         team: team, x: x, y: y, color: data.color, hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, 
         range: data.range, speed: data.speed, atkSpeed: data.atkSpeed || 1000, 
         isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
         isFlying: data.isFlying || false, targetsAir: data.targetsAir || false,
-        hasTurret: data.hasTurret || false, skins: data.skins, facing: initFacing,
+        hasTurret: data.hasTurret || false, isStacked: data.isStacked || false, skins: data.skins, facing: initFacing,
         state: 'idle', animTimer: 0, animFrame: 0,
         stunDuration: data.stunDuration || null, lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0,
         stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, turretElement: turretEl, hpBar: el.querySelector('.entity-hp-fill')
@@ -410,12 +390,15 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
     });
 }
 
-// Gère le sort Boule et le sort Marais (flaques au sol)
 function castSpellPuddle(spellData, casterTeam, targetX, targetY) {
     const puddle = document.createElement('div'); puddle.className = 'spell-puddle';
     puddle.style.left = `${targetX}%`; puddle.style.top = `${targetY}%`;
     puddle.style.width = `${spellData.radius * 4}px`; puddle.style.height = `${spellData.radius * 4}px`;
-    if(spellData.anim.length === 1) puddle.style.backgroundImage = `url('${spellData.anim[0]}')`;
+    
+    // Assure l'affichage direct de la frame 0 (Bug du Marais invisible résolu)
+    if(spellData.anim && spellData.anim.length > 0) {
+        puddle.style.backgroundImage = `url('${spellData.anim[0]}')`;
+    }
     arena.appendChild(puddle);
     
     activeSpells.push({
@@ -494,7 +477,7 @@ function gameLoop(currentTime) {
     // ANIMATIONS DES SORTS ET FLAQUES
     activeSpells = activeSpells.filter(spell => {
         spell.timer += dt;
-        if(spell.timer > 0.15 && spell.anim.length > 1) { 
+        if(spell.timer > 0.15 && spell.anim && spell.anim.length > 1) { 
             spell.timer = 0; spell.frame++;
             spell.element.style.backgroundImage = `url('${spell.anim[spell.frame % spell.anim.length]}')`;
         }
@@ -503,7 +486,6 @@ function gameLoop(currentTime) {
             spell.maxTime -= dt; if(spell.maxTime <= 0) { spell.element.remove(); return false; }
         } else {
             spell.duration -= dt * 1000;
-            // Impact unique (Boule sort)
             if (spell.type === 'puddle' && !spell.triggered) {
                 spell.triggered = true;
                 const targetTeam = spell.team === 'player' ? 'enemy' : 'player';
@@ -519,7 +501,6 @@ function gameLoop(currentTime) {
                     }
                 });
             }
-            // Spawner (Marais)
             if (spell.type === 'spawner') {
                 spell.lastSpawn += dt * 1000;
                 if(spell.lastSpawn >= spell.spawnRate) {
@@ -610,13 +591,15 @@ function gameLoop(currentTime) {
             }
         } else { unit.state = 'idle'; }
 
-        // CYCLE D'ANIMATIONS (FRONT/BACK/ATTACK)
-        if (unit.skins && !unit.hasTurret && !unit.id.includes('base') && !unit.id.includes('tower')) {
+        // CYCLE D'ANIMATIONS (Crash de l'usine résolu ici)
+        if (unit.skins && !unit.hasTurret && !unit.isStacked && !unit.id.includes('base') && !unit.id.includes('tower')) {
             unit.animTimer += dt;
             if (unit.animTimer > 0.15) { 
                 unit.animTimer = 0; unit.animFrame++;
                 let skinState = unit.skins[unit.facing][unit.state] || unit.skins[unit.facing]['idle'];
-                unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`;
+                if(skinState) {
+                    unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`;
+                }
             }
         }
     });
