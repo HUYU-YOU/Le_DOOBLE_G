@@ -5,11 +5,11 @@
 const container3D = document.getElementById('webgl-container');
 
 window.gameScene = new THREE.Scene();
-window.gameCamera = new THREE.PerspectiveCamera(45, container3D.clientWidth / container3D.clientHeight, 0.1, 1000);
+window.gameCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 window.gameCamera.position.set(0, 0, 15); 
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(container3D.clientWidth, container3D.clientHeight);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio); 
 container3D.appendChild(renderer.domElement);
 
@@ -20,30 +20,19 @@ controls.minDistance = 6;
 controls.maxDistance = 30; 
 controls.enablePan = false; // Désactive le glissement au clic droit
 
-// On crée un "Groupe" pour attacher la Terre et l'Océan ensemble
-window.planetGroup = new THREE.Group();
-window.gameScene.add(window.planetGroup);
-
-// --- 1. LA TERRE (Transparente pour les bords de la carte) ---
+// --- LA TERRE ---
 const geometry = new THREE.SphereGeometry(5, 64, 64);
 const material = new THREE.MeshStandardMaterial({ 
     color: 0xffffff, 
     roughness: 0.6, 
-    metalness: 0.1, 
-    transparent: true // Laisse passer le noyau océanique en dessous !
+    metalness: 0.1
+    // La transparence a été retirée. Si tu vois du noir, c'est qu'il faut peindre ton PNG en bleu !
 });
-window.gameEarth = new THREE.Mesh(geometry, material);
-window.planetGroup.add(window.gameEarth);
 
-// --- 2. LE NOYAU OCÉANIQUE (Pour corriger le trou noir en V) ---
-const oceanGeo = new THREE.SphereGeometry(4.98, 64, 64); // Légèrement plus petite
-const oceanMat = new THREE.MeshStandardMaterial({ 
-    color: 0x02b3e8, // Bleu Cyan pour se fondre avec ton océan
-    roughness: 0.3, 
-    metalness: 0.2 
-});
-const oceanCore = new THREE.Mesh(oceanGeo, oceanMat);
-window.planetGroup.add(oceanCore);
+window.gameEarth = new THREE.Mesh(geometry, material);
+// Tourne la Terre pour que le centre de ta carte te regarde au début
+window.gameEarth.rotation.y = -Math.PI / 2; 
+window.gameScene.add(window.gameEarth);
 
 // --- CHARGEMENT DE LA CARTE ---
 const textureLoader = new THREE.TextureLoader();
@@ -52,7 +41,6 @@ textureLoader.load('assets/map_globe.png', (texture) => {
     material.needsUpdate = true;
 });
 
-// --- LUMIÈRES ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 window.gameScene.add(ambientLight);
 
@@ -67,11 +55,9 @@ function animate() {
 }
 
 window.resize3DEnvironment = function() {
-    if(!container3D) return;
-    window.gameCamera.aspect = container3D.clientWidth / container3D.clientHeight;
+    window.gameCamera.aspect = window.innerWidth / window.innerHeight;
     window.gameCamera.updateProjectionMatrix();
-    renderer.setSize(container3D.clientWidth, container3D.clientHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
 }
-
 window.addEventListener('resize', window.resize3DEnvironment);
 animate();
