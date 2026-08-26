@@ -8,9 +8,65 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 
 .hub-link { position: absolute; top: 20px; left: 20px; color: #39ff14; text-decoration: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; font-size: 1.2em; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 5px; border: 1px solid #39ff14; z-index: 100; transition: 0.2s; }
 .hub-link:hover { background: #39ff14; color: black; }
-.settings-btn-wrapper { position: absolute; top: 20px; right: 20px; cursor: pointer; z-index: 100; }
-.settings-btn { width: 40px; height: 40px; transition: transform 0.3s; }
-.settings-btn-wrapper:hover .settings-btn { transform: scale(1.1); }
+
+/* --- BOUTON PARAMÈTRES (En haut à droite) --- */
+.settings-btn-wrapper {
+    position: absolute;
+    top: 20px; right: 25px;
+    width: 45px; 
+    height: 45px;
+    cursor: pointer;
+    z-index: 100;
+}
+
+.settings-btn {
+    width: 100%; 
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+    filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
+    position: relative;
+    z-index: 2;
+}
+.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+
+/* --- MODAL DES PARAMÈTRES (Ton CSS) --- */
+#settings-modal {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.85); z-index: 3000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+#settings-modal.show { opacity: 1; pointer-events: auto; }
+
+.settings-content {
+    background: rgba(15, 20, 30, 0.95);
+    border: 2px solid #00e5ff; border-radius: 15px;
+    padding: 30px 40px; color: white; text-align: center;
+    box-shadow: 0 0 30px rgba(0,229,255,0.4);
+    min-width: 320px; font-family: sans-serif;
+    transition: all 0.3s ease;
+}
+
+.settings-content h2 { margin-top: 0; color: #00e5ff; text-transform: uppercase; letter-spacing: 2px; }
+
+.setting-item {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 25px 0; font-size: 1.2rem; font-weight: bold;
+}
+
+.close-btn { background: #00e5ff; border: none; color: #000; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; font-size: 1.1em; width: 100%; transition: 0.2s; }
+.close-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px #00e5ff; }
+
+/* CSS DES BOUTONS À BASCULE (SWITCH ON/OFF) */
+.switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #00e5ff; }
+input:checked + .slider:before { transform: translateX(24px); }
+
 
 #game-container { background: rgba(0, 0, 0, 0.4); border: 2px solid #39ff14; border-radius: 20px; display: flex; flex-direction: column; position: relative; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
 .size-classic { width: 400px; height: 700px; }
@@ -39,11 +95,10 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; max-height: 400px; overflow-y: auto; }
-.card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
+.card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: 80%; background-repeat: no-repeat; background-position: center 20%; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
-/* --- L'ARÈNE ET LA MAP --- */
-/* Map redescendue avec "center 30%" */
+/* --- L'ARÈNE --- */
 #arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center 30% / cover no-repeat; overflow: hidden; cursor: crosshair; transition: background 0.3s; }
 body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 30% / cover no-repeat; }
 
@@ -67,14 +122,6 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 30% 
 #slime-bar-container { height: 25px; background: #222; border-radius: 12px; border: 2px solid #555; position: relative; overflow: hidden; margin-top: 10px; }
 #slime-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #1f8a0e, #39ff14); transition: width 0.3s linear; }
 #slime-count { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-weight: bold; text-shadow: 1px 1px 2px #000; font-family: 'Luckiest Guy', cursive; font-size: 14px; letter-spacing: 1px; }
-
-.settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 3000; font-family: 'Rajdhani', sans-serif; }
-.settings-modal.show { display: flex; } 
-.settings-content { background: #1a1a2e; padding: 30px; border-radius: 10px; border: 2px solid #39ff14; text-align: center; color: white; width: 350px; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
-.size-options { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-.btn-size { background: #222; border: 1px solid #39ff14; color: #fff; padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: 0.2s; font-size: 0.9em; font-family: 'Rajdhani'; font-weight: bold; }
-.btn-size.active { background: #39ff14; color: #000; }
-.close-btn { background: #ff3366; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; font-family: 'Rajdhani'; font-size: 1.1em; }
 
 /* === ENTITÉS ET SKINS === */
 .entity { position: absolute; width: 55px; height: 55px; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
