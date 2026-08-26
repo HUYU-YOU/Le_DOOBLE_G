@@ -33,35 +33,102 @@ function setGameSize(sizeType) {
 }
 
 // ==========================================
-// 2. BASE DE DONNÉES (UNITÉS, SORTS, VOL, CIBLAGE)
+// 2. BASE DE DONNÉES ULTRA-DÉTAILLÉE (SKINS)
 // ==========================================
-// isFlying: true (Vole), targetsAir: true (Peut taper en l'air)
 const cardDatabase = {
-    // Unités Sol
-    slime: { id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, isFlying: false, targetsAir: false, color: "#4CAF50", img: "assets/skins/slime.png" },
-    slimeuse: { id: "slimeuse", type: "troop", name: "Slimeuse", cost: 3, hp: 200, dmg: 90, range: 30, speed: 5, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, color: "#8BC34A", img: "assets/skins/slimeuse.png" },
-    mega: { id: "mega", type: "troop", name: "MEGA Slime", cost: 8, hp: 2500, dmg: 150, range: 5, speed: 2, atkSpeed: 2000, isFlying: false, targetsAir: false, color: "#9C27B0", img: "assets/skins/mega.png" },
-    boule: { id: "boule", type: "troop", name: "La Boule", cost: 4, hp: 800, dmg: 100, range: 4, speed: 7, atkSpeed: 1500, targetBuilding: true, isFlying: false, targetsAir: false, color: "#FF9800", img: "assets/skins/boule.png" },
+    // UNITÉS SOL
+    slime: { 
+        id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, targetsAir: false,
+        skins: { 
+            front: { idle: ['assets/skins/slime.png'], attack: ['assets/skins/slimeattack1.png', 'assets/skins/slimeattack2.png'] },
+            back:  { idle: ['assets/skins/slimeback.png'], attack: ['assets/skins/slimeback.png'] }
+        }
+    },
+    slimeuse: { 
+        id: "slimeuse", type: "troop", name: "Slimeuse", cost: 3, hp: 200, dmg: 90, range: 30, speed: 5, atkSpeed: 1000, isRanged: true, targetsAir: true,
+        skins: {
+            front: { idle: ['assets/skins/slimeuse.png'], attack: ['assets/skins/slimeuseattack.png'] },
+            back:  { idle: ['assets/skins/slimeuseback.png'], attack: ['assets/skins/slimeuseback.png'] }
+        }
+    },
+    mega: { 
+        id: "mega", type: "troop", name: "MEGA", cost: 8, hp: 2500, dmg: 150, range: 5, speed: 2, atkSpeed: 2000, targetsAir: false,
+        skins: {
+            front: { idle: ['assets/skins/golem.png'], attack: ['assets/skins/golemattack.png'] },
+            back:  { idle: ['assets/skins/golemback.png'], attack: ['assets/skins/golemattackback.png'] }
+        }
+    },
+    boule: { 
+        id: "boule", type: "troop", name: "La Boule", cost: 4, hp: 800, dmg: 100, range: 4, speed: 7, atkSpeed: 1500, targetBuilding: true, targetsAir: false,
+        skins: {
+            front: { idle: ['assets/skins/boule.png'], attack: ['assets/skins/boule.png'] },
+            back:  { idle: ['assets/skins/bouleback.png'], attack: ['assets/skins/bouleback.png'] }
+        }
+    },
     
-    // Unités Volantes
-    helicoton: { id: "helicoton", type: "troop", name: "Hélicoton", cost: 3, hp: 300, dmg: 50, range: 20, speed: 5, atkSpeed: 900, isRanged: true, isFlying: true, targetsAir: true, color: "#fff", img: "assets/skins/helicoton.png" },
-    dragon: { id: "dragon", type: "troop", name: "Dragon", cost: 4, hp: 800, dmg: 80, range: 15, speed: 4, atkSpeed: 1200, isRanged: true, isFlying: true, targetsAir: true, color: "#1e90ff", img: "assets/skins/dragon.png" },
+    // VOLANTS
+    helicoton: { 
+        id: "helicoton", type: "troop", name: "Hélicoton", cost: 3, hp: 300, dmg: 50, range: 20, speed: 5, atkSpeed: 900, isRanged: true, isFlying: true, targetsAir: true,
+        skins: {
+            front: { idle: ['assets/skins/helicoton.png'], attack: ['assets/skins/helicotonattack.png'] },
+            back:  { idle: ['assets/skins/helictonback.png'], attack: ['assets/skins/helictonback.png'] }
+        }
+    },
+    dragon: { 
+        id: "dragon", type: "troop", name: "Dragon", cost: 4, hp: 800, dmg: 80, range: 15, speed: 4, atkSpeed: 1200, isRanged: true, isFlying: true, targetsAir: true,
+        skins: {
+            front: { idle: ['assets/skins/drake1.png', 'assets/skins/drake2.png'], attack: ['assets/skins/drake1.png', 'assets/skins/drake2.png'] },
+            back:  { idle: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'], attack: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'] }
+        }
+    },
     
-    // Bâtiments
-    usine: { id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0, color: "#5c4033", img: "assets/skins/usine.png" },
-    canon: { id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 35, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, color: "#888", img: "assets/skins/canon.png" },
-    barriere: { id: "barriere", type: "building", name: "Barrière", cost: 4, hp: 1000, lifetime: 40, dmg: 20, range: 15, speed: 0, atkSpeed: 1000, stunDuration: 0.5, isRanged: true, targetsAir: false, color: "#ffd700", img: "assets/skins/barriere.png" },
+    // BÂTIMENTS
+    usine: { 
+        id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0,
+        skins: { // On utilise temporairement un design générique ou un asset que tu as
+            front: { idle: ['assets/skins/tour.png'] }, back: { idle: ['assets/skins/tourback.png'] }
+        }
+    },
+    barriere: { 
+        id: "barriere", type: "building", name: "Barrière", cost: 4, hp: 1000, lifetime: 40, dmg: 20, range: 15, speed: 0, atkSpeed: 1000, stunDuration: 0.5, isRanged: true, targetsAir: false,
+        skins: {
+            front: { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] },
+            back:  { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] }
+        }
+    },
+    canon: { 
+        id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 35, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, hasTurret: true,
+        skins: {
+            front: { base: 'assets/skins/supportcanon.png', turret: 'assets/skins/canon.png' },
+            back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' }
+        }
+    },
     
-    // Sorts
-    tornade: { id: "tornade", type: "spell", name: "Tornade", cost: 3, dmg: 150, radius: 15, color: "#9E9E9E", img: "assets/skins/tornade.png" },
-    boule_sort: { id: "boule_sort", type: "spell", name: "Boule Sort", cost: 2, dmg: 50, radius: 15, pushback: true, slowDuration: 3, color: "#32cd32", img: "assets/skins/boule_sort.png" },
-    marais: { id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "mini_slime", radius: 15, color: "#8A2BE2", img: "assets/skins/marais.png" },
+    // SORTS
+    tornade: { 
+        id: "tornade", type: "spell", name: "Tornade", cost: 3, dmg: 150, radius: 15,
+        anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png']
+    },
+    boule_sort: { 
+        id: "boule_sort", type: "spell", name: "Boule Sort", cost: 2, dmg: 50, radius: 15, pushback: true, slowDuration: 3,
+        anim: ['assets/skins/boulespell.png'], impact: 'assets/skins/splashboule.png'
+    },
+    marais: { 
+        id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "mini_slime", radius: 15,
+        anim: ['assets/skins/marais1.png', 'assets/skins/marais2.png', 'assets/skins/marais3.png']
+    },
     
-    // Unités cachées (Invoquées)
-    mini_slime: { id: "mini_slime", type: "troop", name: "Mini", hp: 150, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, isFlying: false, targetsAir: false, color: "#8A2BE2", hidden: true }
+    // INVOQUÉS (Cachés du menu)
+    mini_slime: { 
+        id: "mini_slime", type: "troop", name: "Mini", hp: 150, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true,
+        skins: {
+            front: { idle: ['assets/skins/slime.png'], attack: ['assets/skins/slimeattack1.png'] },
+            back:  { idle: ['assets/skins/slimeback.png'], attack: ['assets/skins/slimeback.png'] }
+        }
+    }
 };
 
-let playerDeck = ["slime", "slimeuse", "helicoton", "barriere", "boule_sort", "marais"];
+let playerDeck = ["slime", "slimeuse", "helicoton", "canon", "boule_sort", "marais"];
 let tempSelectedDeck = [...playerDeck];
 
 function openDeckBuilder() {
@@ -76,14 +143,17 @@ function closeDeckBuilder() {
 function renderDeckPool() {
     const pool = document.getElementById('deck-pool');
     pool.innerHTML = '';
-    // Affiche toutes les cartes sauf les cartes "cachées" comme le mini slime
     Object.keys(cardDatabase).filter(k => !cardDatabase[k].hidden).forEach(cardId => {
         const card = cardDatabase[cardId];
         const div = document.createElement('div');
         div.className = `card-select-item ${tempSelectedDeck.includes(cardId) ? 'selected' : ''}`;
-        if(card.img) div.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.8)), url('${card.img}')`;
+        
+        // Prendre la première frame de l'animation comme icône
+        let bgImg = card.hasTurret ? card.skins.front.base : (card.skins ? card.skins.front.idle[0] : card.anim[0]);
+        div.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.8)), url('${bgImg}')`;
+        
         div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>
-                         <span style="margin-top:auto; background:rgba(0,0,0,0.8); padding:2px; border-radius:3px; text-align:center; width:100%; font-size: 10px;">${card.name}</span>`;
+                         <span style="margin-top:auto; padding:2px; text-align:center; width:100%; font-size: 10px;">${card.name}</span>`;
         div.onclick = () => {
             if (tempSelectedDeck.includes(cardId)) { if(tempSelectedDeck.length > 1) tempSelectedDeck = tempSelectedDeck.filter(id => id !== cardId); } 
             else { if (tempSelectedDeck.length < 6) tempSelectedDeck.push(cardId); }
@@ -153,7 +223,7 @@ function startSoloGame() { document.getElementById('main-menu').style.display = 
 
 
 // ==========================================
-// 4. MOTEUR DE JEU (GAME ENGINE)
+// 4. MOTEUR DE JEU ET ANIMATIONS (SKINS)
 // ==========================================
 const MAX_SLIME = 10;
 let currentSlime = 5; let enemySlime = 5; 
@@ -162,7 +232,6 @@ let activeEntities = [], activeProjectiles = [], activeSpells = [];
 let lastTime = performance.now();
 let selectedCardIndex = null; let isGameOver = false;
 
-// TIMER ET MORT SUBITE
 let gameTime = 180; let slimeRate = 1.5; let slimeAcc = 0; let enemySlimeAcc = 0; let doubleSlimeActive = false;
 const arena = document.getElementById('arena'); const deployZone = document.getElementById('deploy-zone');
 
@@ -177,22 +246,34 @@ function initGameEngine() {
 }
 
 function setupTowers() {
-    createTower('base_p', 'player', 50, 92, 3000, "Base", 80, 50);
-    createTower('tower_p_l', 'player', 25, 75, 1500, "Tour", 60, 60);
-    createTower('tower_p_r', 'player', 75, 75, 1500, "Tour", 60, 60);
+    createTower('base_p', 'player', 50, 92, 3000, "assets/skins/tourroyaleback.png", 80, 80);
+    createTower('tower_p_l', 'player', 25, 75, 1500, "assets/skins/tourback.png", 60, 60);
+    createTower('tower_p_r', 'player', 75, 75, 1500, "assets/skins/tourback.png", 60, 60);
 
-    createTower('base_e', 'enemy', 50, 8, 3000, "Base", 80, 50);
-    createTower('tower_e_l', 'enemy', 25, 25, 1500, "Tour", 60, 60);
-    createTower('tower_e_r', 'enemy', 75, 25, 1500, "Tour", 60, 60);
+    createTower('base_e', 'enemy', 50, 8, 3000, "assets/skins/tourroyale.png", 80, 80);
+    createTower('tower_e_l', 'enemy', 25, 25, 1500, "assets/skins/tour.png", 60, 60);
+    createTower('tower_e_r', 'enemy', 75, 25, 1500, "assets/skins/tour.png", 60, 60);
 }
+
+function createTower(id, team, x, y, hp, img, width, height) {
+    const el = document.createElement('div');
+    el.className = `entity building team-${team}`;
+    el.style.left = `${x}%`; el.style.top = `${y}%`; el.style.width = `${width}px`; el.style.height = `${height}px`;
+    el.style.backgroundImage = `url('${img}')`;
+    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
+    arena.appendChild(el);
+    activeEntities.push({ id: id, team: team, x: x, y: y, hp: hp, maxHp: hp, dmg: 50, range: 25, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
+}
+
 function restartGame() {
     isGameOver = false; document.getElementById('game-over-overlay').style.display = 'none';
-    document.querySelectorAll('.entity, .projectile, .particle, .dmg-text, .spell-puddle').forEach(e => e.remove());
+    document.querySelectorAll('.entity, .projectile, .particle, .dmg-text, .spell-puddle, .spell-anim').forEach(e => e.remove());
     activeEntities = []; activeProjectiles = []; activeSpells = [];
     currentSlime = 5; enemySlime = 5; updateSlimeUI();
     gameTime = 180; slimeRate = 1.5; doubleSlimeActive = false; document.getElementById('game-timer').classList.remove('timer-danger');
     setupTowers();
 }
+
 function endGame(winnerTeam) {
     isGameOver = true; document.getElementById('game-over-overlay').style.display = 'flex';
     const title = document.getElementById('game-over-title');
@@ -201,32 +282,29 @@ function endGame(winnerTeam) {
     else { title.innerText = "ÉGALITÉ !"; title.style.color = "#fff"; }
 }
 
-function createTower(id, team, x, y, hp, name, width, height) {
-    const el = document.createElement('div');
-    el.className = `entity building team-${team}`;
-    el.style.left = `${x}%`; el.style.top = `${y}%`; el.style.width = `${width}px`; el.style.height = `${height}px`;
-    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>${name}`;
-    arena.appendChild(el);
-    // Les tours tapent en l'air et au sol (targetsAir: true)
-    activeEntities.push({ id: id, team: team, x: x, y: y, hp: hp, maxHp: hp, dmg: 50, range: 25, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
-}
-
 function updateSlimeUI() {
     document.getElementById('slime-bar-fill').style.width = `${(currentSlime / MAX_SLIME) * 100}%`;
     document.getElementById('slime-count').innerText = `${currentSlime} / 10`;
 }
+
 function updateUI() {
     const handContainer = document.getElementById('hand'); handContainer.innerHTML = '';
     hand.forEach((cardId, index) => {
         const div = document.createElement('div');
         div.className = `card ${selectedCardIndex === index ? 'selected' : ''} ${currentSlime < cardDatabase[cardId].cost ? 'disabled' : ''}`;
         const data = cardDatabase[cardId];
-        if(data.img) div.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.8)), url('${data.img}')`;
+        let bgImg = data.hasTurret ? data.skins.front.base : (data.skins ? data.skins.front.idle[0] : data.anim[0]);
+        div.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.8)), url('${bgImg}')`;
         div.dataset.cost = data.cost; div.innerHTML = `<div class="cost">${data.cost}</div><div class="name" style="color:${data.color}">${data.name}</div>`;
         div.addEventListener('click', () => selectCard(index)); handContainer.appendChild(div);
     });
-    document.getElementById('next-card').innerHTML = `<div class="cost">${cardDatabase[nextCard].cost}</div><div class="name">${cardDatabase[nextCard].name}</div>`;
+    
+    let nextData = cardDatabase[nextCard];
+    let nextBg = nextData.hasTurret ? nextData.skins.front.base : (nextData.skins ? nextData.skins.front.idle[0] : nextData.anim[0]);
+    document.getElementById('next-card').style.backgroundImage = `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.8)), url('${nextBg}')`;
+    document.getElementById('next-card').innerHTML = `<div class="cost">${nextData.cost}</div><div class="name">${nextData.name}</div>`;
 }
+
 function selectCard(index) {
     if (currentSlime < cardDatabase[hand[index]].cost) return; 
     selectedCardIndex = selectedCardIndex === index ? null : index;
@@ -253,15 +331,27 @@ function handleArenaClick(e) {
     selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
 }
 
-// INVOCATIONS
+// INVOCATIONS AVEC SKINS
 function spawnEntity(data, team, x, y) {
     const el = document.createElement('div');
     el.className = `entity team-${team} ${data.type === 'building' ? 'building' : ''} ${data.isFlying ? 'is-flying' : ''}`;
     el.dataset.id = data.id;
-    if (data.img) el.style.backgroundImage = `url('${data.img}')`; else el.style.backgroundColor = data.color;
+    
+    // Le joueur est en bas (regarde vers le haut = back), l'ennemi est en haut (regarde en bas = front)
+    let initFacing = team === 'player' ? 'back' : 'front';
     
     el.style.left = `${x}%`; el.style.top = `${y}%`;
-    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>${data.type === 'building' ? data.name : ''}`;
+    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
+    
+    let turretEl = null;
+    if (data.hasTurret) {
+        el.style.backgroundImage = `url('${data.skins[initFacing].base}')`;
+        turretEl = document.createElement('div');
+        turretEl.className = 'turret';
+        turretEl.style.backgroundImage = `url('${data.skins[initFacing].turret}')`;
+        el.appendChild(turretEl);
+    }
+
     arena.appendChild(el);
 
     activeEntities.push({
@@ -270,39 +360,35 @@ function spawnEntity(data, team, x, y) {
         range: data.range, speed: data.speed, atkSpeed: data.atkSpeed || 1000, 
         isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
         isFlying: data.isFlying || false, targetsAir: data.targetsAir || false,
-        stunDuration: data.stunDuration || null, // Si c'est la barrière
-        lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0,
-        stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill')
+        hasTurret: data.hasTurret || false, skins: data.skins, facing: initFacing,
+        state: 'idle', animTimer: 0, animFrame: 0,
+        stunDuration: data.stunDuration || null, lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0,
+        stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, turretElement: turretEl, hpBar: el.querySelector('.entity-hp-fill')
     });
 }
 
 function castSpell(spellData, casterTeam, targetX, targetY) {
-    // Visuel
     const fx = document.createElement('div');
-    fx.style.position = 'absolute'; fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`;
+    fx.className = 'spell-anim';
+    fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`;
     fx.style.width = `${spellData.radius*4}px`; fx.style.height = `${spellData.radius*4}px`;
-    fx.style.background = `radial-gradient(circle, ${spellData.color} 0%, rgba(158,158,158,0) 70%)`;
-    fx.style.transform = 'translate(-50%, -50%)'; fx.style.zIndex = '10'; arena.appendChild(fx);
-    setTimeout(() => fx.remove(), 800);
+    arena.appendChild(fx);
+
+    activeSpells.push({
+        type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, 
+        timer: 0, frame: 0, maxTime: 0.8 // Dure 0.8s
+    });
 
     const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
-    
     activeEntities.forEach(ent => {
         if (ent.team === targetTeam) {
             const dx = ent.x - targetX; const dy = ent.y - targetY;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            
-            if (dist < spellData.radius) {
+            if (Math.sqrt(dx*dx + dy*dy) < spellData.radius) {
                 takeDamage(ent, spellData.dmg);
-                // Si boule de slime : Ralentit et repousse (Pushback)
                 if(spellData.pushback && !ent.id.includes('base') && !ent.id.includes('tower')) {
                     const angle = Math.atan2(dy, dx);
-                    ent.x += Math.cos(angle) * 8; // Repoussé de 8%
-                    ent.y += Math.sin(angle) * 8;
-                    // Garder dans l'arène
-                    ent.x = Math.max(5, Math.min(95, ent.x));
-                    ent.y = Math.max(5, Math.min(95, ent.y));
-                    ent.slowTimer = spellData.slowDuration; // Ralentit
+                    ent.x += Math.cos(angle) * 8; ent.y += Math.sin(angle) * 8;
+                    ent.slowTimer = spellData.slowDuration;
                 }
             }
         }
@@ -316,8 +402,8 @@ function castSpellSpawn(spellData, casterTeam, targetX, targetY) {
     arena.appendChild(puddle);
     
     activeSpells.push({
-        team: casterTeam, x: targetX, y: targetY, radius: spellData.radius, duration: spellData.duration, 
-        spawnRate: spellData.spawnRate, spawnId: spellData.spawnId, lastSpawn: 0, element: puddle
+        type: 'spawner', team: casterTeam, x: targetX, y: targetY, radius: spellData.radius, duration: spellData.duration, 
+        spawnRate: spellData.spawnRate, spawnId: spellData.spawnId, lastSpawn: 0, anim: spellData.anim, element: puddle, timer: 0, frame: 0
     });
 }
 
@@ -329,7 +415,7 @@ function enemyAI() {
         enemySlime -= cardToPlay.cost;
         if(cardToPlay.type === 'spell' || cardToPlay.type === 'spell_spawn') {
             const spellFn = cardToPlay.type === 'spell' ? castSpell : castSpellSpawn;
-            spellFn(cardToPlay, 'enemy', 20 + Math.random()*60, 65 + Math.random()*20); // Vise le côté joueur
+            spellFn(cardToPlay, 'enemy', 20 + Math.random()*60, 65 + Math.random()*20);
         } else {
             spawnEntity(cardToPlay, 'enemy', Math.random() > 0.5 ? 25 : 75, 15);
         }
@@ -356,23 +442,32 @@ function takeDamage(entity, amount) {
     }
 }
 function shootProjectile(attacker, target) {
-    const proj = document.createElement('div'); proj.className = 'projectile'; proj.style.left = `${attacker.x}%`; proj.style.top = `${attacker.y}%`; arena.appendChild(proj);
+    const proj = document.createElement('div'); proj.className = 'projectile'; 
+    proj.style.left = `${attacker.x}%`; proj.style.top = `${attacker.y}%`; 
+    
+    // Si c'est la boule spell (utilisé comme munition)
+    if(cardDatabase['boule_sort'] && cardDatabase['boule_sort'].anim) {
+        proj.style.backgroundImage = `url('${cardDatabase['boule_sort'].anim[0]}')`;
+        proj.style.backgroundColor = 'transparent';
+        proj.style.width = '20px'; proj.style.height = '20px';
+    }
+    
+    arena.appendChild(proj);
     activeProjectiles.push({ 
         x: attacker.x, y: attacker.y, target: target, dmg: attacker.dmg, 
-        team: attacker.team, stunDuration: attacker.stunDuration, // On transmet le Stun !
-        element: proj, speed: 40 
+        team: attacker.team, stunDuration: attacker.stunDuration, element: proj, speed: 40 
     });
 }
 
 // ==========================================
-// 6. BOUCLE PRINCIPALE (GAME LOOP)
+// 6. BOUCLE PRINCIPALE (GAME LOOP ET ANIMATIONS)
 // ==========================================
 function gameLoop(currentTime) {
     if (isGameOver) { requestAnimationFrame(gameLoop); return; }
     const dt = (currentTime - lastTime) / 1000; 
     lastTime = currentTime;
 
-    // TIMER ET DOUBLE SLIME
+    // TIMER ET ÉNERGIE
     gameTime -= dt;
     if (gameTime <= 60 && !doubleSlimeActive) {
         doubleSlimeActive = true; slimeRate = 0.75; 
@@ -383,20 +478,30 @@ function gameLoop(currentTime) {
     const mins = Math.floor(gameTime / 60); const secs = Math.floor(gameTime % 60);
     document.getElementById('game-timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
-    // RÉGÉNÉRATION ÉNERGIE
     slimeAcc += dt; enemySlimeAcc += dt;
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
-    // SORTS CONTINUS (MARAIS)
+    // ANIMATIONS DES SORTS (Tornade, Marais)
     activeSpells = activeSpells.filter(spell => {
-        spell.duration -= dt * 1000; spell.lastSpawn += dt * 1000;
-        if(spell.lastSpawn >= spell.spawnRate) {
-            spell.lastSpawn = 0;
-            const angle = Math.random() * Math.PI * 2; const dist = Math.random() * spell.radius;
-            spawnEntity(cardDatabase[spell.spawnId], spell.team, spell.x + Math.cos(angle) * dist, spell.y + Math.sin(angle) * dist);
+        spell.timer += dt;
+        if(spell.timer > 0.1) { // 10 FPS
+            spell.timer = 0; spell.frame++;
+            if(spell.anim) spell.element.style.backgroundImage = `url('${spell.anim[spell.frame % spell.anim.length]}')`;
         }
-        if(spell.duration <= 0) { spell.element.remove(); return false; }
+        
+        if (spell.type === 'instant') {
+            spell.maxTime -= dt;
+            if(spell.maxTime <= 0) { spell.element.remove(); return false; }
+        } else if (spell.type === 'spawner') {
+            spell.duration -= dt * 1000; spell.lastSpawn += dt * 1000;
+            if(spell.lastSpawn >= spell.spawnRate) {
+                spell.lastSpawn = 0;
+                const angle = Math.random() * Math.PI * 2; const dist = Math.random() * spell.radius;
+                spawnEntity(cardDatabase[spell.spawnId], spell.team, spell.x + Math.cos(angle) * dist, spell.y + Math.sin(angle) * dist);
+            }
+            if(spell.duration <= 0) { spell.element.remove(); return false; }
+        }
         return true;
     });
 
@@ -417,7 +522,7 @@ function gameLoop(currentTime) {
         const dx = p.target.x - p.x; const dy = p.target.y - p.y;
         if (Math.sqrt(dx*dx + dy*dy) < 2) { 
             takeDamage(p.target, p.dmg); 
-            if(p.stunDuration) p.target.stunTimer = p.stunDuration; // Appliquer le STUN
+            if(p.stunDuration) p.target.stunTimer = p.stunDuration;
             p.element.remove(); return false; 
         } 
         else {
@@ -428,51 +533,33 @@ function gameLoop(currentTime) {
 
     // UNITÉS & BÂTIMENTS
     activeEntities.forEach(unit => {
-        // GESTION DU STUN (Étourdissement)
+        // GESTION DU STUN & SLOW
+        let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
         if (unit.stunTimer > 0) {
-            unit.stunTimer -= dt;
-            unit.element.classList.remove('is-walking', 'is-attacking');
-            unit.element.classList.add('stunned');
-            return; // L'unité passe son tour
-        } else {
-            unit.element.classList.remove('stunned');
-        }
+            unit.stunTimer -= dt; unit.state = 'idle';
+            unit.element.classList.add('stunned'); return; 
+        } else { unit.element.classList.remove('stunned'); }
 
-        // GESTION DU SLOW (Ralentissement)
-        let currentSpeed = unit.speed;
-        let currentAtkSpeed = unit.atkSpeed;
         if (unit.slowTimer > 0) {
-            unit.slowTimer -= dt;
-            currentSpeed *= 0.5; // Va deux fois moins vite
-            currentAtkSpeed *= 2; // Met deux fois plus de temps à taper
+            unit.slowTimer -= dt; currentSpeed *= 0.5; currentAtkSpeed *= 2;
             unit.element.classList.add('slowed');
-        } else {
-            unit.element.classList.remove('slowed');
-        }
+        } else { unit.element.classList.remove('slowed'); }
 
-        // Usine à slime
+        // Bâtiments Usines
         if (unit.spawnRate) {
             unit.lastSpawn += dt * 1000;
             if (unit.lastSpawn >= unit.spawnRate) {
                 unit.lastSpawn = 0; spawnEntity(cardDatabase[unit.spawnId], unit.team, unit.x, unit.y + (unit.team === 'player' ? -5 : 5));
             }
         }
-        
-        // Vieillerie des bâtiments
-        if (unit.lifetime) {
-            unit.hp -= (unit.maxHp / unit.lifetime) * dt; 
-            if (unit.hpBar) unit.hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`;
-        }
+        if (unit.lifetime) { unit.hp -= (unit.maxHp / unit.lifetime) * dt; if (unit.hpBar) unit.hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`; }
 
-        if (unit.speed === 0 && !unit.isRanged) return; // Si bâtiment non armé, on passe
-
-        // CIBLAGE (Prend en compte cible Air/Sol)
+        // CIBLAGE
         let closestTarget = null; let minDistance = 999;
         activeEntities.forEach(target => {
             if (target.team !== unit.team) {
-                if (target.isFlying && !unit.targetsAir) return; // Ignore l'aérien si on ne tape qu'au sol
-                if (unit.targetBuilding && target.speed !== 0) return; // La boule ignore les troupes
-                
+                if (target.isFlying && !unit.targetsAir) return; 
+                if (unit.targetBuilding && target.speed !== 0) return; 
                 let dist = Math.sqrt(Math.pow(unit.x - target.x, 2) + Math.pow(unit.y - target.y, 2));
                 if (dist < minDistance) { minDistance = dist; closestTarget = target; }
             }
@@ -480,31 +567,54 @@ function gameLoop(currentTime) {
 
         if (closestTarget) {
             let distToTarget = Math.sqrt(Math.pow(unit.x - closestTarget.x, 2) + Math.pow(unit.y - closestTarget.y, 2));
+            
+            // Mise à jour de l'orientation dynamique en fonction de la cible
+            if(!unit.id.includes('base') && !unit.id.includes('tower')) {
+                unit.facing = (closestTarget.y < unit.y) ? 'back' : 'front';
+            }
+
+            // ROTATION DU CANON 
+            if (unit.hasTurret) {
+                let dx = closestTarget.x - unit.x; let dy = closestTarget.y - unit.y;
+                let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+                // Le canon dans l'image pointe généralement vers le haut, donc on ajoute 90°
+                unit.turretElement.style.transform = `translate(-50%, -50%) rotate(${angleDeg + 90}deg)`;
+            }
+
             if (distToTarget <= unit.range) {
-                if(unit.speed > 0) unit.element.classList.remove('is-walking');
+                unit.state = 'attack';
                 if (currentTime - unit.lastAttack >= currentAtkSpeed) {
-                    if(unit.speed > 0) { unit.element.classList.remove('is-attacking'); void unit.element.offsetWidth; unit.element.classList.add('is-attacking'); }
                     if (unit.isRanged) shootProjectile(unit, closestTarget);
                     else takeDamage(closestTarget, unit.dmg);
                     unit.lastAttack = currentTime;
                 }
             } else if (unit.speed > 0) {
-                unit.element.classList.add('is-walking'); unit.element.classList.remove('is-attacking');
+                unit.state = 'idle'; // walking animation handled by background swap
                 let targetX = closestTarget.x; let targetY = closestTarget.y;
-                
-                // Ponts pour les unités AU SOL
                 if (!unit.isFlying && ((unit.y > 50 && targetY < 50) || (unit.y < 50 && targetY > 50))) {
                     let targetBridgeX = (unit.x < 50) ? 25 : 75; 
                     if (Math.abs(unit.x - targetBridgeX) > 2) { targetX = targetBridgeX; targetY = unit.y; }
                 }
-                
                 const dx = targetX - unit.x; const dy = targetY - unit.y;
                 const angle = Math.atan2(dy, dx);
                 unit.x += Math.cos(angle) * currentSpeed * dt * (arena.offsetHeight / arena.offsetWidth);
                 unit.y += Math.sin(angle) * currentSpeed * dt;
                 unit.element.style.left = `${unit.x}%`; unit.element.style.top = `${unit.y}%`;
             }
+        } else {
+            unit.state = 'idle';
         }
+
+        // ANIMATION DU SPRITE (Changement d'image)
+        if (unit.skins && !unit.hasTurret && !unit.id.includes('base') && !unit.id.includes('tower')) {
+            unit.animTimer += dt;
+            if (unit.animTimer > 0.15) { // ~6 FPS
+                unit.animTimer = 0; unit.animFrame++;
+                let skinState = unit.skins[unit.facing][unit.state] || unit.skins[unit.facing]['idle'];
+                unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`;
+            }
+        }
+
     });
     requestAnimationFrame(gameLoop);
 }
