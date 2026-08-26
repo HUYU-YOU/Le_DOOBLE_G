@@ -4,23 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Open Front - Global Conquest</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Chargement de Three.js et des contrôles de caméra -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
     <div id="game-container" class="size-wide">
+        
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
-        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()"><img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn"></div>
+        
+        <!-- Bouton Paramètres -->
+        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+            <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        </div>
+
+        <!-- UI EN JEU (Interface principale) -->
         <div id="ui-container" style="display: none;">
             <h1 class="game-title">OPEN <span style="color: var(--p1);">FRONT</span></h1>
+            
             <div id="economy-panel">
                 <div class="resource-item">👥 Troupes: <span id="ui-pop" style="color: #fff;">0</span> <span id="ui-max-pop" style="font-size:0.6em; color:#888;">/ 1000</span></div>
                 <div class="resource-item">🌍 Territoire: <span id="ui-ter" style="color: var(--p1);">0</span></div>
                 <div class="resource-item">💰 Or: <span id="ui-gold" style="color: var(--p4);">0</span></div>
             </div>
+
             <div id="status-panel">
                 <p>Phase : <span id="game-phase-text" style="color: var(--p3);">Déploiement</span></p>
                 <div class="troop-slider-container">
@@ -29,41 +41,143 @@
                 </div>
             </div>
         </div>
+
+        <!-- GROS CHRONO DE SPAWN -->
         <div id="spawn-timer-container" style="display: none;">
-            <h2>CHOISIS TA CAPITALE</h2><div id="spawn-timer">10</div><p style="font-size: 1.2em; margin-top: 10px;">Clic Droit sur la terre ferme pour te déployer !</p>
+            <h2>CHOISIS TA CAPITALE</h2>
+            <div id="spawn-timer">10</div>
+            <p style="font-size: 1.2em; margin-top: 10px;">Clic Droit sur la terre ferme pour te déployer !</p>
         </div>
+
+        <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <h1 class="game-title" style="font-size: 4em; margin-bottom: 30px;">OPEN <span style="color: var(--p1);">FRONT</span></h1><div class="menu-title">CENTRE DE COMMANDEMENT</div>
-            <button class="btn-main" onclick="openMenu('local')">🎮 Lancer Partie Solo</button><button class="btn-main gold" onclick="openMenu('network')">🌐 Multijoueur (Code OPS)</button>
+            <h1 class="game-title" style="font-size: 4em; margin-bottom: 30px;">OPEN <span style="color: var(--p1);">FRONT</span></h1>
+            <div class="menu-title">CENTRE DE COMMANDEMENT</div>
+            
+            <button class="btn-main" onclick="openMenu('local')">🎮 Lancer Partie Solo</button>
+            <button class="btn-main gold" onclick="openMenu('network')">🌐 Multijoueur (Code OPS)</button>
         </div>
+
+        <!-- MENU SOLO (CHOIX IA) -->
         <div class="overlay" id="local-menu" style="display: none;">
             <div class="menu-title">CONFIGURATION DU CONFLIT</div>
-            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="startGame('dumb_bots')">🤖 IA TRIBALES</button><button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="startGame('smart_bots')">🏛️ IA EMPIRES</button>
+            
+            <button class="btn-main" style="background: rgba(0,240,255,0.1); border-color: var(--p1);" onclick="startGame('dumb_bots')">
+                🤖 IA TRIBALES
+            </button>
+            <button class="btn-main" style="background: rgba(255,0,127,0.1); border-color: var(--p2);" onclick="startGame('smart_bots')">
+                🏛️ IA EMPIRES
+            </button>
+            
             <button class="btn-main cancel" style="margin-top: 30px;" onclick="openMenu('main')">Retour</button>
         </div>
+
+        <!-- MENU RÉSEAU (CODE OPS) -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <div class="menu-title" style="color: var(--p4);">REJOINDRE LE FRONT</div><input type="text" id="ops-input" placeholder="OPS____" maxlength="7" style="text-transform: uppercase;">
-            <button class="btn-main gold" onclick="joinNetworkGame()">🚀 S'engager</button><p id="network-error" style="color: #ff007f; font-weight: bold; height: 20px;"></p>
+            <div class="menu-title" style="color: var(--p4);">REJOINDRE LE FRONT</div>
+            <input type="text" id="ops-input" placeholder="OPS____" maxlength="7" style="text-transform: uppercase;">
+            <button class="btn-main gold" onclick="joinNetworkGame()">🚀 S'engager</button>
+            <p id="network-error" style="color: #ff007f; font-weight: bold; height: 20px;"></p>
             <button class="btn-main cancel" style="margin-top: 20px;" onclick="openMenu('main')">Retour</button>
         </div>
+
+        <!-- MENU CONTEXTUEL D'ACTION -->
         <div id="action-menu" style="display: none;">
-            <div class="action-header" id="action-title">TERRAIN</div><div class="action-subheader" id="action-subtitle">Sélectionnez une action</div>
-            <div id="build-options"><button class="btn-action" id="btn-city" onclick="executeAction('build_city')">🏙️ Fonder une Ville (500 Or)</button><button class="btn-action" id="btn-port" onclick="executeAction('build_port')">⚓ Créer un Port (800 Or)</button><button class="btn-action" id="btn-missile" onclick="executeAction('build_missile')">🚀 Base Missiles (2000 Or)</button><button class="btn-action" id="btn-anti-missile" onclick="executeAction('build_anti_missile')">🛡️ Anti-Missile (1500 Or)</button></div>
-            <div id="command-options" style="display: none;"><button class="btn-action attack" id="btn-launch-icbm" onclick="executeAction('launch_icbm')">💥 Lancer Frappe Nucléaire</button><button class="btn-action" id="btn-establish-route" onclick="executeAction('establish_route')">🚢 Établir Route Maritime</button></div>
+            <div class="action-header" id="action-title">TERRAIN</div>
+            <div class="action-subheader" id="action-subtitle">Sélectionnez une action</div>
+            
+            <div id="build-options">
+                <button class="btn-action" id="btn-city" onclick="executeAction('build_city')">🏙️ Fonder une Ville (500 Or)</button>
+                <button class="btn-action" id="btn-port" onclick="executeAction('build_port')">⚓ Créer un Port (800 Or)</button>
+                <button class="btn-action" id="btn-missile" onclick="executeAction('build_missile')">🚀 Base Missiles (2000 Or)</button>
+                <button class="btn-action" id="btn-anti-missile" onclick="executeAction('build_anti_missile')">🛡️ Anti-Missile (1500 Or)</button>
+            </div>
+
+            <div id="command-options" style="display: none;">
+                <button class="btn-action attack" id="btn-launch-icbm" onclick="executeAction('launch_icbm')">💥 Lancer Frappe Nucléaire</button>
+                <button class="btn-action" id="btn-establish-route" onclick="executeAction('establish_route')">🚢 Établir Route Maritime</button>
+            </div>
+
             <button class="btn-action cancel" onclick="closeActionMenu()">✖ Annuler</button>
         </div>
+
+        <!-- CONTENEUR DU MOTEUR 3D -->
         <div id="webgl-container"></div>
     </div>
+
+    <!-- MODAL PARAMÈTRES -->
     <div id="settings-modal">
         <div class="settings-content">
-            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2><button class="btn-main gold" onclick="toggleFullscreen()" style="width: 100%; margin: 10px 0;">📺 Plein Écran</button><button class="btn-main" onclick="toggleTheme()" style="width: 100%; margin: 10px 0;">🌙 Changer de Thème</button>
-            <div class="size-options"><button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button><button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button></div>
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <button class="btn-main gold" onclick="toggleFullscreen()" style="width: 100%; margin: 10px 0;">📺 Plein Écran</button>
+            <button class="btn-main" onclick="toggleTheme()" style="width: 100%; margin: 10px 0;">🌙 Changer de Thème</button>
+            
+            <div class="size-options">
+                <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+            </div>
+            
             <button onclick="toggleSettings()" class="close-btn" style="margin-top: 20px;">Fermer</button>
         </div>
     </div>
 
-    <script>const params = new URLSearchParams(window.location.search); const forceMode = params.get('mode'); window.addEventListener('DOMContentLoaded', () => { if (forceMode === 'solo') openMenu('local'); else if (forceMode === 'multi') openMenu('network'); });</script>
-    <script>const gamesHubList = ["../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html", "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html", "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html", "../worms/index.html"]; let touchstartX = 0; let touchendX = 0; let swipeMouseX = 0; let endSwipeMouseX = 0; function handleSwipeGesture(start, end) { const swipeThreshold = 75; if (end < start - swipeThreshold) navigateGames(1); if (end > start + swipeThreshold) navigateGames(-1); } function navigateGames(direction) { const currentPath = window.location.pathname; let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1])); if (currentIndex === -1) return; window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length]; } function isProtectedElement(e) { return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'img' || e.target.closest('#ui-container') || e.target.closest('#action-menu') || e.target.closest('.overlay'); } document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true }); document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true }); document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; swipeMouseX = e.screenX; }); document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endSwipeMouseX = e.screenX; handleSwipeGesture(swipeMouseX, endSwipeMouseX); });</script>
+    <!-- SCRIPTS UTILES (Désormais aérés !) -->
+    <script>
+        const params = new URLSearchParams(window.location.search); 
+        const forceMode = params.get('mode'); 
+        
+        window.addEventListener('DOMContentLoaded', () => { 
+            if (forceMode === 'solo') openMenu('local'); 
+            else if (forceMode === 'multi') openMenu('network'); 
+        });
+    </script>
+    
+    <script>
+        const gamesHubList = [
+            "../cybertank/index.html", 
+            "../tower_defense/index.html", 
+            "../edgeofwar/index.html", 
+            "../cyber_smash/index.html", 
+            "../guessthemanga/index.html", 
+            "../drawer/index.html", 
+            "../texas_poker/index.html", 
+            "../blindtest/index.html", 
+            "../2048slime/index.html", 
+            "../worms/index.html"
+        ]; 
+        
+        let touchstartX = 0; let touchendX = 0; let swipeMouseX = 0; let endSwipeMouseX = 0; 
+        
+        function handleSwipeGesture(start, end) { 
+            const swipeThreshold = 75; 
+            if (end < start - swipeThreshold) navigateGames(1); 
+            if (end > start + swipeThreshold) navigateGames(-1); 
+        } 
+        
+        function navigateGames(direction) { 
+            const currentPath = window.location.pathname; 
+            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1])); 
+            if (currentIndex === -1) return; 
+            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length]; 
+        } 
+        
+        function isProtectedElement(e) { 
+            return e.target.tagName.toLowerCase() === 'canvas' || 
+                   e.target.tagName.toLowerCase() === 'button' || 
+                   e.target.tagName.toLowerCase() === 'input' || 
+                   e.target.tagName.toLowerCase() === 'select' || 
+                   e.target.tagName.toLowerCase() === 'img' || 
+                   e.target.closest('#ui-container') || 
+                   e.target.closest('#action-menu') || 
+                   e.target.closest('.overlay'); 
+        } 
+        
+        document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true }); 
+        document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true }); 
+        document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; swipeMouseX = e.screenX; }); 
+        document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endSwipeMouseX = e.screenX; handleSwipeGesture(swipeMouseX, endSwipeMouseX); });
+    </script>
 
     <script src="map_three.js"></script>
     <script src="gameplay.js"></script>
