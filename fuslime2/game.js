@@ -1,5 +1,5 @@
 // =========================================================
-// 1. GESTION DES PARAMÈTRES ET DU CYCLE D'IMAGES
+// 1. GESTION DES PARAMÈTRES ET DE L'INTERFACE
 // =========================================================
 
 const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
@@ -35,7 +35,6 @@ function clickSettingsAnim() {
     }, 300);
 }
 
-// Attacher les événements d'animation
 if (settingsBtnImg) {
     settingsBtnImg.addEventListener('mouseenter', startSettingsAnim);
     settingsBtnImg.addEventListener('mouseleave', stopSettingsAnim);
@@ -64,7 +63,7 @@ document.addEventListener('fullscreenchange', () => {
     if(fsToggle) fsToggle.checked = !!document.fullscreenElement;
 });
 
-// --- GESTION AUDIO GLOBALE (YOUTUBE) ---
+// --- YOUTUBE AUDIO ---
 let ytPlayer;
 let isMuted = localStorage.getItem('isMuted') === 'true';
 
@@ -73,11 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if(musicToggle) musicToggle.checked = !isMuted;
 });
 
-// Fonction appelée par le checkbox du modal
 function toggleMusic() {
     let musicToggle = document.getElementById('music-toggle');
     if(!musicToggle) return;
-    isMuted = !musicToggle.checked; // Si c'est checké, on dé-mute (isMuted = false)
+    isMuted = !musicToggle.checked;
     localStorage.setItem('isMuted', isMuted);
     
     if (ytPlayer && ytPlayer.mute) {
@@ -88,23 +86,9 @@ function toggleMusic() {
 
 function onYouTubeIframeAPIReady() {
     ytPlayer = new YT.Player('youtube-audio', {
-        height: '0',
-        width: '0',
-        videoId: '4RaguYU_SQI',
-        playerVars: {
-            'autoplay': 1,
-            'controls': 0,
-            'showinfo': 0,
-            'autohide': 1,
-            'loop': 1,
-            'playlist': '4RaguYU_SQI'
-        },
-        events: {
-            'onReady': (e) => {
-                if (isMuted) e.target.mute();
-                else e.target.unMute();
-            }
-        }
+        height: '0', width: '0', videoId: '4RaguYU_SQI',
+        playerVars: { 'autoplay': 1, 'controls': 0, 'showinfo': 0, 'autohide': 1, 'loop': 1, 'playlist': '4RaguYU_SQI' },
+        events: { 'onReady': (e) => { if (isMuted) e.target.mute(); else e.target.unMute(); } }
     });
 }
 
@@ -113,20 +97,23 @@ function onYouTubeIframeAPIReady() {
 // 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS)
 // =========================================================
 
+// ⚠️ IMPORTANT : Modifie ceci selon l'emplacement exact de tes images !
+// Si elles sont dans un dossier img : 'img/slime1.png'
+// Si elles sont à côté du HTML : 'slime1.png'
 const SLIMES = [
-    { level: 1, radius: 20, points: 2, texture: 'img/slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 30, points: 4, texture: 'img/slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 42, points: 8, texture: 'img/slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 56, points: 16, texture: 'img/slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 72, points: 32, texture: 'img/slime5.png', color: '#ffaaff' },
-    { level: 6, radius: 90, points: 64, texture: 'img/slime6.png', color: '#aaffff' },
-    { level: 7, radius: 110, points: 128, texture: 'img/slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 135, points: 256, texture: 'img/slime8.png', color: '#aaccff' },
-    { level: 9, radius: 160, points: 512, texture: 'img/slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 190, points: 1024, texture: 'img/slime10.png', color: '#ff9999' },
-    { level: 11, radius: 220, points: 2048, texture: 'img/slime11.png', color: '#99ff99' },
-    { level: 12, radius: 250, points: 4096, texture: 'img/slime12.png', color: '#9999ff' },
-    { level: 13, radius: 280, points: 8192, texture: 'img/slime13.png', color: '#ffffff' }
+    { level: 1, radius: 22, points: 2, texture: 'img/slime1.png', color: '#ffaaaa' },
+    { level: 2, radius: 32, points: 4, texture: 'img/slime2.png', color: '#aaffaa' },
+    { level: 3, radius: 45, points: 8, texture: 'img/slime3.png', color: '#aaaaff' },
+    { level: 4, radius: 60, points: 16, texture: 'img/slime4.png', color: '#ffffaa' },
+    { level: 5, radius: 75, points: 32, texture: 'img/slime5.png', color: '#ffaaff' },
+    { level: 6, radius: 95, points: 64, texture: 'img/slime6.png', color: '#aaffff' },
+    { level: 7, radius: 115, points: 128, texture: 'img/slime7.png', color: '#ffccaa' },
+    { level: 8, radius: 140, points: 256, texture: 'img/slime8.png', color: '#aaccff' },
+    { level: 9, radius: 165, points: 512, texture: 'img/slime9.png', color: '#ccaaff' },
+    { level: 10, radius: 195, points: 1024, texture: 'img/slime10.png', color: '#ff9999' },
+    { level: 11, radius: 225, points: 2048, texture: 'img/slime11.png', color: '#99ff99' },
+    { level: 12, radius: 255, points: 4096, texture: 'img/slime12.png', color: '#9999ff' },
+    { level: 13, radius: 285, points: 8192, texture: 'img/slime13.png', color: '#ffffff' }
 ];
 
 const Engine = Matter.Engine,
@@ -138,6 +125,10 @@ const Engine = Matter.Engine,
 
 const engine = Engine.create();
 const world = engine.world;
+
+// RENDRE LA PHYSIQUE PLUS FLUIDE ET PRÉCISE
+engine.positionIterations = 8;
+engine.velocityIterations = 8;
 
 const GAME_WIDTH = 600;
 const GAME_HEIGHT = 800;
@@ -158,7 +149,7 @@ const runner = Runner.create();
 Runner.run(runner, engine);
 
 // --- SEAU ---
-const wallOptions = { isStatic: true, render: { visible: false } };
+const wallOptions = { isStatic: true, render: { visible: false }, friction: 0.2 };
 const ground = Bodies.rectangle(GAME_WIDTH / 2, GAME_HEIGHT + 25, GAME_WIDTH, 50, wallOptions);
 const leftWall = Bodies.rectangle(-25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
 const rightWall = Bodies.rectangle(GAME_WIDTH + 25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
@@ -171,6 +162,10 @@ let currentSlimeLevel = 0;
 let score = 0;
 let canDrop = true;
 let isGameOver = false;
+
+// --- GESTION DU MEILLEUR SCORE ---
+let bestScore = localStorage.getItem('fuslime_best_score') || 0;
+document.getElementById('best-score').innerText = bestScore;
 
 // --- GESTION DES SFX (WEB AUDIO API) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -189,14 +184,14 @@ function playSound(type, level = 1) {
 
     if (type === 'drop') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-        gain.gain.setValueAtTime(0.3, now);
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+        gain.gain.setValueAtTime(0.2, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
         osc.start(now); osc.stop(now + 0.1);
     } else if (type === 'merge') {
         osc.type = 'triangle';
-        const baseFreq = 300 + (level * 60); 
+        const baseFreq = 200 + (level * 50); 
         osc.frequency.setValueAtTime(baseFreq, now);
         osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.15);
         gain.gain.setValueAtTime(0.4, now);
@@ -218,7 +213,7 @@ function createEffects(x, y, points, slimeData) {
     container.appendChild(text);
     setTimeout(() => text.remove(), 800);
 
-    for(let i = 0; i < 8; i++) {
+    for(let i = 0; i < 10; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
         p.style.backgroundColor = slimeData.color;
@@ -228,7 +223,7 @@ function createEffects(x, y, points, slimeData) {
         p.style.top = y + 'px';
         
         const angle = Math.random() * Math.PI * 2;
-        const dist = Math.random() * 60 + 30;
+        const dist = Math.random() * 80 + 30;
         p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
         p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
         
@@ -244,11 +239,18 @@ function createEffects(x, y, points, slimeData) {
 function updateScore(points) {
     score += points;
     document.getElementById('score').innerText = score;
+    
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('fuslime_best_score', bestScore);
+        document.getElementById('best-score').innerText = bestScore;
+    }
 }
 
 function getScale(radius) {
-    const originalImageSize = 256; // Modifie cette valeur si tes slimes sont en 512px
-    return (radius * 2) / originalImageSize;
+    // ⚠️ Modifie cette valeur si tes images ne font pas 512x512 pixels !
+    const IMAGE_SIZE_IN_PIXELS = 512; 
+    return (radius * 2) / IMAGE_SIZE_IN_PIXELS;
 }
 
 function spawnGhostSlime(x) {
@@ -260,6 +262,7 @@ function spawnGhostSlime(x) {
         isSensor: true,
         label: 'ghost',
         render: {
+            fillStyle: slimeData.color, // COULEUR DE SECOURS si l'image ne charge pas !
             sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
@@ -285,12 +288,14 @@ function dropSlime() {
     currentSlime = null;
 
     const realSlime = Bodies.circle(x, y, slimeData.radius, {
-        restitution: 0.2, 
-        friction: 0.1,
+        restitution: 0.25, // Un peu plus bondissant
+        friction: 0.05, // Glisse mieux sur les autres slimes
+        frictionAir: 0.002, // Donne une légère impression de flotter un peu
         density: 0.001 * slimeData.level,
         label: 'slime',
         slimeLevel: currentSlimeLevel,
         render: {
+            fillStyle: slimeData.color, // COULEUR DE SECOURS
             sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
@@ -306,10 +311,10 @@ function dropSlime() {
             spawnGhostSlime(GAME_WIDTH / 2);
             canDrop = true;
         }
-    }, 1000); 
+    }, 800); // Un peu plus rapide à recharger (800ms)
 }
 
-// --- CONTRÔLES SOURIS ET TACTILE ---
+// --- CONTRÔLES ---
 const container = document.getElementById('game-container');
 
 container.addEventListener('mousemove', (e) => {
@@ -342,7 +347,7 @@ container.addEventListener('touchend', (e) => {
     dropSlime();
 });
 
-// --- FUSION (MERGE) ---
+// --- FUSION (MERGE) AVEC EFFET DE POP ---
 Events.on(engine, 'collisionStart', (event) => {
     const pairs = event.pairs;
 
@@ -364,12 +369,14 @@ Events.on(engine, 'collisionStart', (event) => {
                 const midY = (bodyA.position.y + bodyB.position.y) / 2;
 
                 const newSlime = Bodies.circle(midX, midY, slimeData.radius, {
-                    restitution: 0.2,
-                    friction: 0.1,
+                    restitution: 0.25,
+                    friction: 0.05,
+                    frictionAir: 0.002,
                     density: 0.001 * slimeData.level,
                     label: 'slime',
                     slimeLevel: newLevel,
                     render: {
+                        fillStyle: slimeData.color, // COULEUR DE SECOURS
                         sprite: {
                             texture: slimeData.texture,
                             xScale: getScale(slimeData.radius),
@@ -380,6 +387,12 @@ Events.on(engine, 'collisionStart', (event) => {
 
                 Composite.remove(world, [bodyA, bodyB]);
                 Composite.add(world, newSlime);
+                
+                // EFFET DE POP : Fait sauter le nouveau slime légèrement en l'air à la création !
+                Matter.Body.setVelocity(newSlime, { 
+                    x: (bodyA.velocity.x + bodyB.velocity.x) / 2, 
+                    y: -4 
+                });
                 
                 updateScore(slimeData.points);
                 playSound('merge', newLevel);
@@ -431,5 +444,5 @@ function gameOver() {
     if (currentSlime) Composite.remove(world, currentSlime); 
 }
 
-// Lancement du premier Slime !
+// Lancement
 spawnGhostSlime(GAME_WIDTH / 2);
