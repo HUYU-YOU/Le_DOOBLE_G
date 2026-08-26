@@ -16,7 +16,7 @@
     <!-- Bouton de retour au Hub -->
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
 
-    <!-- Bouton Paramètres (il ira chercher dans fuslime2/img/setting.png) -->
+    <!-- BOUTON PARAMÈTRES (Chemin : img/setting.png) -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
@@ -61,8 +61,7 @@
     
     <!-- Zone de jeu -->
     <div id="game-container">
-        <!-- Canvas forcé pour éviter l'écran noir -->
-        <canvas id="game-canvas" width="600" height="800"></canvas>
+        <!-- Le canvas sera injecté ici par JavaScript -->
         <div id="effects-container"></div>
     </div>
 
