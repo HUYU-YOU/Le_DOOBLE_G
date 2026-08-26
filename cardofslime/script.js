@@ -78,7 +78,7 @@ const cardDatabase = {
         }
     },
     slimeuse: { 
-        id: "slimeuse", type: "troop", name: "Slimeuse", cost: 3, hp: 200, dmg: 90, range: 30, speed: 5, atkSpeed: 1000, isRanged: true, targetsAir: true,
+        id: "slimeuse", type: "troop", name: "Slimeuse", cost: 3, hp: 200, dmg: 90, range: 25, speed: 5, atkSpeed: 1000, isRanged: true, targetsAir: true,
         skins: {
             front: { idle: ['assets/skins/slimeuse.png'], attack: ['assets/skins/slimeuseattack.png'] },
             back:  { idle: ['assets/skins/slimeuseback.png'], attack: ['assets/skins/slimeuseback.png'] }
@@ -128,14 +128,14 @@ const cardDatabase = {
         }
     },
     canon: { 
-        id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 35, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, hasTurret: true,
+        id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 30, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, hasTurret: true,
         skins: {
             front: { base: 'assets/skins/supportcanon.png', turret: 'assets/skins/canon.png' },
             back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' }
         }
     },
     tornade: { 
-        id: "tornade", type: "spell", name: "Tornade", cost: 3, dmg: 150, radius: 15,
+        id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, // dmg par tick d'animation
         anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png']
     },
     boule_sort: { 
@@ -155,7 +155,7 @@ const cardDatabase = {
     }
 };
 
-let playerDeck = ["slime", "slimeuse", "helicoton", "canon", "boule_sort", "marais"];
+let playerDeck = ["slime", "slimeuse", "dragon", "tornade", "boule_sort", "marais"];
 let tempSelectedDeck = [...playerDeck];
 
 function openDeckBuilder() {
@@ -172,8 +172,11 @@ function renderDeckPool() {
         div.className = `card-select-item ${tempSelectedDeck.includes(cardId) ? 'selected' : ''}`;
         
         let bgImg = (card.hasTurret || card.isStacked) ? card.skins.front.base : (card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]));
-        div.style.backgroundImage = `url('${bgImg}')`;
-        
+        // Map de fond intégrée aux cartes
+        div.style.backgroundImage = `url('${bgImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
+        div.style.backgroundSize = '80%, cover, cover';
+        div.style.backgroundPosition = 'center 20%, center, center';
+
         div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>`;
         div.onclick = () => {
             if (tempSelectedDeck.includes(cardId)) { if(tempSelectedDeck.length > 1) tempSelectedDeck = tempSelectedDeck.filter(id => id !== cardId); } 
@@ -218,7 +221,7 @@ function joinGame() {
 function setupConnectionEvents() {
     conn.on('data', (data) => {
         if (data.type === 'spawn') {
-            if (data.spellType === 'spell') castSpell(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            if (data.spellType === 'spell' || data.spellType === 'spell_tornado') castSpell(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
             else if (data.spellType === 'spell_puddle' || data.spellType === 'spell_spawn') castSpellPuddle(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
             else spawnEntity(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
         } else if (data.type === 'emote') { showEmote(data.emote, 'enemy'); }
@@ -245,7 +248,7 @@ let activeEntities = [], activeProjectiles = [], activeSpells = [];
 let lastTime = performance.now();
 let selectedCardIndex = null; let isGameOver = false;
 
-let gameTime = 180; let slimeRate = 1.5; let slimeAcc = 0; let enemySlimeAcc = 0; let doubleSlimeActive = false;
+let gameTime = 180; let slimeRate = 2.5; let slimeAcc = 0; let enemySlimeAcc = 0; let doubleSlimeActive = false;
 const arena = document.getElementById('arena'); const deployZone = document.getElementById('deploy-zone');
 
 function initGameEngine() {
@@ -259,13 +262,13 @@ function initGameEngine() {
 }
 
 function setupTowers() {
-    createTower('base_p', 'player', 50, 92, 3000, "assets/skins/tourroyaleback.png", 96, 96);
-    createTower('tower_p_l', 'player', 25, 75, 1500, "assets/skins/tourback.png", 72, 72);
-    createTower('tower_p_r', 'player', 75, 75, 1500, "assets/skins/tourback.png", 72, 72);
+    createTower('base_p', 'player', 50, 92, 5000, "assets/skins/tourroyaleback.png", 96, 96);
+    createTower('tower_p_l', 'player', 25, 75, 2500, "assets/skins/tourback.png", 72, 72);
+    createTower('tower_p_r', 'player', 75, 75, 2500, "assets/skins/tourback.png", 72, 72);
 
-    createTower('base_e', 'enemy', 50, 8, 3000, "assets/skins/touroryale.png", 96, 96);
-    createTower('tower_e_l', 'enemy', 25, 25, 1500, "assets/skins/tour.png", 72, 72);
-    createTower('tower_e_r', 'enemy', 75, 25, 1500, "assets/skins/tour.png", 72, 72);
+    createTower('base_e', 'enemy', 50, 8, 5000, "assets/skins/touroryale.png", 96, 96);
+    createTower('tower_e_l', 'enemy', 25, 25, 2500, "assets/skins/tour.png", 72, 72);
+    createTower('tower_e_r', 'enemy', 75, 25, 2500, "assets/skins/tour.png", 72, 72);
 }
 
 function createTower(id, team, x, y, hp, img, width, height) {
@@ -273,9 +276,13 @@ function createTower(id, team, x, y, hp, img, width, height) {
     el.className = `entity building team-${team}`;
     el.style.left = `${x}%`; el.style.top = `${y}%`; el.style.width = `${width}px`; el.style.height = `${height}px`;
     el.style.backgroundImage = `url('${img}')`;
-    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`; // Plus de texte dégueulasse !
+    el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
     arena.appendChild(el);
-    activeEntities.push({ id: id, team: team, x: x, y: y, hp: hp, maxHp: hp, dmg: 50, range: 25, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
+    
+    // Ajout de "lane" même pour les tours pour aider le pathfinding
+    let lane = x < 50 ? 'left' : (x > 50 ? 'right' : 'center');
+    
+    activeEntities.push({ id: id, team: team, x: x, y: y, lane: lane, hp: hp, maxHp: hp, dmg: 50, range: 35, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
 }
 
 function restartGame() {
@@ -283,7 +290,7 @@ function restartGame() {
     document.querySelectorAll('.entity, .projectile, .particle, .dmg-text, .spell-puddle, .spell-anim').forEach(e => e.remove());
     activeEntities = []; activeProjectiles = []; activeSpells = [];
     currentSlime = 5; enemySlime = 5; updateSlimeUI();
-    gameTime = 180; slimeRate = 1.5; doubleSlimeActive = false; document.getElementById('game-timer').classList.remove('timer-danger');
+    gameTime = 180; slimeRate = 2.5; doubleSlimeActive = false; document.getElementById('game-timer').classList.remove('timer-danger');
     setupTowers();
 }
 
@@ -307,14 +314,20 @@ function updateUI() {
         div.className = `card ${selectedCardIndex === index ? 'selected' : ''} ${currentSlime < cardDatabase[cardId].cost ? 'disabled' : ''}`;
         const data = cardDatabase[cardId];
         let bgImg = (data.hasTurret || data.isStacked) ? data.skins.front.base : (data.skins ? data.skins.front.idle[0] : (data.projectile || data.anim[0]));
-        div.style.backgroundImage = `url('${bgImg}')`;
+        
+        div.style.backgroundImage = `url('${bgImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
+        div.style.backgroundSize = '80%, cover, cover';
+        div.style.backgroundPosition = 'center 20%, center, center';
+
         div.dataset.cost = data.cost; div.innerHTML = `<div class="cost">${data.cost}</div>`;
         div.addEventListener('click', () => selectCard(index)); handContainer.appendChild(div);
     });
     
     let nextData = cardDatabase[nextCard];
     let nextBg = (nextData.hasTurret || nextData.isStacked) ? nextData.skins.front.base : (nextData.skins ? nextData.skins.front.idle[0] : (nextData.projectile || nextData.anim[0]));
-    document.getElementById('next-card').style.backgroundImage = `url('${nextBg}')`;
+    document.getElementById('next-card').style.backgroundImage = `url('${nextBg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
+    document.getElementById('next-card').style.backgroundSize = '80%, cover, cover';
+    document.getElementById('next-card').style.backgroundPosition = 'center 20%, center, center';
     document.getElementById('next-card').innerHTML = `<div class="cost">${nextData.cost}</div>`;
 }
 
@@ -330,11 +343,11 @@ function handleArenaClick(e) {
     const clickX = ((e.clientX - rect.left) / rect.width) * 100; const clickY = ((e.clientY - rect.top) / rect.height) * 100;
     const cardData = cardDatabase[hand[selectedCardIndex]];
 
-    if (cardData.type !== 'spell' && cardData.type !== 'spell_puddle' && cardData.type !== 'spell_spawn' && clickY < 50) return;
+    if (cardData.type !== 'spell' && cardData.type !== 'spell_puddle' && cardData.type !== 'spell_spawn' && cardData.type !== 'spell_tornado' && clickY < 50) return;
 
     currentSlime -= cardData.cost; updateSlimeUI(); playSound('sfx-spawn');
 
-    if (cardData.type === 'spell') castSpell(cardData, 'player', clickX, clickY);
+    if (cardData.type === 'spell' || cardData.type === 'spell_tornado') castSpell(cardData, 'player', clickX, clickY);
     else if (cardData.type === 'spell_puddle' || cardData.type === 'spell_spawn') castSpellPuddle(cardData, 'player', clickX, clickY);
     else spawnEntity(cardData, 'player', clickX, clickY);
 
@@ -349,6 +362,8 @@ function spawnEntity(data, team, x, y) {
     el.className = `entity team-${team} ${data.type === 'building' ? 'building' : ''} ${data.isFlying ? 'is-flying' : ''}`;
     el.dataset.id = data.id;
     let initFacing = team === 'player' ? 'back' : 'front';
+    let initLane = x < 50 ? 'left' : 'right'; // Détermination de la Lane à l'invocation !
+
     el.style.left = `${x}%`; el.style.top = `${y}%`;
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
     
@@ -367,7 +382,7 @@ function spawnEntity(data, team, x, y) {
     arena.appendChild(el);
     activeEntities.push({
         id: Math.random().toString(36).substr(2, 9),
-        team: team, x: x, y: y, color: data.color, hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, 
+        team: team, x: x, y: y, lane: initLane, color: data.color, hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, 
         range: data.range, speed: data.speed, atkSpeed: data.atkSpeed || 1000, 
         isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
         isFlying: data.isFlying || false, targetsAir: data.targetsAir || false,
@@ -378,27 +393,45 @@ function spawnEntity(data, team, x, y) {
     });
 }
 
+// INVOCATION DES SORTS (Tornade Magique à têtes multiples)
 function castSpell(spellData, casterTeam, targetX, targetY) {
-    const fx = document.createElement('div'); fx.className = 'spell-anim';
-    fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`; fx.style.width = `${spellData.radius*4}px`; fx.style.height = `${spellData.radius*4}px`;
-    arena.appendChild(fx);
-    activeSpells.push({ type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, timer: 0, frame: 0, maxTime: 0.8 });
+    if (spellData.id === 'tornade') {
+        // La tornade invoque 3 tourbillons qui avancent
+        for(let i=0; i<3; i++) {
+            const fx = document.createElement('div'); fx.className = 'spell-anim';
+            fx.style.width = '60px'; fx.style.height = '60px';
+            arena.appendChild(fx);
+            
+            // Décalage pour pas qu'elles se superposent
+            let offsetX = (Math.random() - 0.5) * 15;
+            let offsetY = (Math.random() - 0.5) * 15;
 
-    const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
-    activeEntities.forEach(ent => {
-        if (ent.team === targetTeam && Math.sqrt(Math.pow(ent.x - targetX, 2) + Math.pow(ent.y - targetY, 2)) < spellData.radius) takeDamage(ent, spellData.dmg);
-    });
+            activeSpells.push({ 
+                type: 'tornado', team: casterTeam, 
+                x: targetX + offsetX, y: targetY + offsetY, 
+                vx: (Math.random() - 0.5) * 4, vy: casterTeam === 'player' ? -8 : 8, // Avance vers le camp adverse
+                anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), 
+                duration: 3500, dmg: spellData.dmg, tickTimer: 0
+            });
+        }
+    } else {
+        const fx = document.createElement('div'); fx.className = 'spell-anim';
+        fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`; fx.style.width = `${spellData.radius*4}px`; fx.style.height = `${spellData.radius*4}px`;
+        arena.appendChild(fx);
+        activeSpells.push({ type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, timer: 0, frame: 0, maxTime: 0.8 });
+
+        const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
+        activeEntities.forEach(ent => {
+            if (ent.team === targetTeam && Math.sqrt(Math.pow(ent.x - targetX, 2) + Math.pow(ent.y - targetY, 2)) < spellData.radius) takeDamage(ent, spellData.dmg);
+        });
+    }
 }
 
 function castSpellPuddle(spellData, casterTeam, targetX, targetY) {
     const puddle = document.createElement('div'); puddle.className = 'spell-puddle';
     puddle.style.left = `${targetX}%`; puddle.style.top = `${targetY}%`;
     puddle.style.width = `${spellData.radius * 4}px`; puddle.style.height = `${spellData.radius * 4}px`;
-    
-    // Assure l'affichage direct de la frame 0 (Bug du Marais invisible résolu)
-    if(spellData.anim && spellData.anim.length > 0) {
-        puddle.style.backgroundImage = `url('${spellData.anim[0]}')`;
-    }
+    if(spellData.anim && spellData.anim.length > 0) { puddle.style.backgroundImage = `url('${spellData.anim[0]}')`; }
     arena.appendChild(puddle);
     
     activeSpells.push({
@@ -416,7 +449,7 @@ function enemyAI() {
         const cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
         enemySlime -= cardToPlay.cost;
         if(cardToPlay.type.includes('spell')) {
-            const spellFn = cardToPlay.type === 'spell' ? castSpell : castSpellPuddle;
+            const spellFn = cardToPlay.type === 'spell' || cardToPlay.type === 'spell_tornado' ? castSpell : castSpellPuddle;
             spellFn(cardToPlay, 'enemy', 20 + Math.random()*60, 65 + Math.random()*20);
         } else { spawnEntity(cardToPlay, 'enemy', Math.random() > 0.5 ? 25 : 75, 15); }
         playSound('sfx-spawn');
@@ -463,7 +496,7 @@ function gameLoop(currentTime) {
     // TIMER ET ÉNERGIE
     gameTime -= dt;
     if (gameTime <= 60 && !doubleSlimeActive) {
-        doubleSlimeActive = true; slimeRate = 0.75; 
+        doubleSlimeActive = true; slimeRate = 1.25; 
         document.getElementById('game-timer').classList.add('timer-danger'); document.getElementById('alert-message').style.display = 'block';
     }
     if (gameTime <= 0) { endGame('tie'); return; }
@@ -474,7 +507,7 @@ function gameLoop(currentTime) {
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
-    // ANIMATIONS DES SORTS ET FLAQUES
+    // ANIMATIONS DES SORTS (Tornade dynamique incluse)
     activeSpells = activeSpells.filter(spell => {
         spell.timer += dt;
         if(spell.timer > 0.15 && spell.anim && spell.anim.length > 1) { 
@@ -482,7 +515,27 @@ function gameLoop(currentTime) {
             spell.element.style.backgroundImage = `url('${spell.anim[spell.frame % spell.anim.length]}')`;
         }
         
-        if (spell.type === 'instant') {
+        if (spell.type === 'tornado') {
+            spell.duration -= dt * 1000;
+            spell.x += spell.vx * dt; spell.y += spell.vy * dt;
+            spell.element.style.left = `${spell.x}%`; spell.element.style.top = `${spell.y}%`;
+
+            spell.tickTimer += dt;
+            if(spell.tickTimer > 0.3) {
+                spell.tickTimer = 0;
+                const targetTeam = spell.team === 'player' ? 'enemy' : 'player';
+                activeEntities.forEach(ent => {
+                    if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
+                        takeDamage(ent, spell.dmg);
+                        if (!ent.id.includes('base') && !ent.id.includes('tower')) {
+                            ent.x += (spell.x - ent.x) * 0.1; ent.y += (spell.y - ent.y) * 0.1; // Aspiration
+                        }
+                    }
+                });
+            }
+            if(spell.duration <= 0) { spell.element.remove(); return false; }
+        }
+        else if (spell.type === 'instant') {
             spell.maxTime -= dt; if(spell.maxTime <= 0) { spell.element.remove(); return false; }
         } else {
             spell.duration -= dt * 1000;
@@ -490,13 +543,10 @@ function gameLoop(currentTime) {
                 spell.triggered = true;
                 const targetTeam = spell.team === 'player' ? 'enemy' : 'player';
                 activeEntities.forEach(ent => {
-                    if (ent.team === targetTeam) {
-                        const dx = ent.x - spell.x; const dy = ent.y - spell.y;
-                        if (Math.sqrt(dx*dx + dy*dy) < spell.radius) {
-                            takeDamage(ent, spell.dmg);
-                            if(spell.pushback && !ent.id.includes('base') && !ent.id.includes('tower')) {
-                                const angle = Math.atan2(dy, dx); ent.x += Math.cos(angle) * 8; ent.y += Math.sin(angle) * 8; ent.slowTimer = spell.slowDuration;
-                            }
+                    if (ent.team === targetTeam && Math.sqrt(Math.pow(ent.x - spell.x, 2) + Math.pow(ent.y - spell.y, 2)) < spell.radius) {
+                        takeDamage(ent, spell.dmg);
+                        if(spell.pushback && !ent.id.includes('base') && !ent.id.includes('tower')) {
+                            const angle = Math.atan2(ent.y - spell.y, ent.x - spell.x); ent.x += Math.cos(angle) * 8; ent.y += Math.sin(angle) * 8; ent.slowTimer = spell.slowDuration;
                         }
                     }
                 });
@@ -538,7 +588,7 @@ function gameLoop(currentTime) {
         }
     });
 
-    // UNITÉS ET CIBLAGE
+    // UNITÉS ET CIBLAGE (LANE & AGGRO)
     activeEntities.forEach(unit => {
         let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
         if (unit.stunTimer > 0) { unit.stunTimer -= dt; unit.state = 'idle'; unit.element.classList.add('stunned'); return; } 
@@ -550,18 +600,50 @@ function gameLoop(currentTime) {
         if (unit.spawnRate) { unit.lastSpawn += dt * 1000; if (unit.lastSpawn >= unit.spawnRate) { unit.lastSpawn = 0; spawnEntity(cardDatabase[unit.spawnId], unit.team, unit.x, unit.y + (unit.team === 'player' ? -5 : 5)); } }
         if (unit.lifetime) { unit.hp -= (unit.maxHp / unit.lifetime) * dt; if (unit.hpBar) unit.hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`; }
 
-        let closestTarget = null; let minDistance = 999;
-        activeEntities.forEach(target => {
-            if (target.team !== unit.team) {
-                if (target.isFlying && !unit.targetsAir) return; 
-                if (unit.targetBuilding && target.speed !== 0) return; 
-                let dist = Math.sqrt(Math.pow(unit.x - target.x, 2) + Math.pow(unit.y - target.y, 2));
-                if (dist < minDistance) { minDistance = dist; closestTarget = target; }
-            }
-        });
+        let closestTarget = null; 
+        let minDistance = 999;
+        let aggroRadius = 25; // Rayon pour détecter les ennemis qui marchent à côté
 
+        // RECHERCHE DE CIBLE INTELLIGENTE
+        // 1. D'abord on vérifie s'il y a un ennemi proche (Aggro)
+        if (!unit.targetBuilding && unit.speed > 0) {
+            activeEntities.forEach(target => {
+                if (target.team !== unit.team && (!target.isFlying || unit.targetsAir)) {
+                    let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
+                    if (dist < aggroRadius && dist < minDistance) {
+                        minDistance = dist; closestTarget = target;
+                    }
+                }
+            });
+        }
+
+        // 2. Si pas d'ennemi proche, on cible les bâtiments dans sa LANE (ou base centrale)
+        if (!closestTarget) {
+            let minLaneDist = 999;
+            activeEntities.forEach(target => {
+                if (target.team !== unit.team && target.speed === 0) { // Uniquement les bâtiments
+                    let targetLane = target.x < 50 ? 'left' : (target.x > 50 ? 'right' : 'center');
+                    // Si c'est dans sa voie OU si c'est la base finale
+                    if (targetLane === unit.lane || targetLane === 'center' || target.id.includes('base')) {
+                        let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
+                        if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
+                    }
+                }
+            });
+            // 3. Fallback (si sa tour est détruite), cibler le bâtiment global le plus proche
+            if (!closestTarget) {
+                activeEntities.forEach(target => {
+                    if (target.team !== unit.team && target.speed === 0) {
+                        let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
+                        if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
+                    }
+                });
+            }
+        }
+
+        // ACTIONS VERS LA CIBLE
         if (closestTarget) {
-            let distToTarget = Math.sqrt(Math.pow(unit.x - closestTarget.x, 2) + Math.pow(unit.y - closestTarget.y, 2));
+            let distToTarget = Math.hypot(unit.x - closestTarget.x, unit.y - closestTarget.y);
             
             if(!unit.id.includes('base') && !unit.id.includes('tower')) { unit.facing = (closestTarget.y < unit.y) ? 'back' : 'front'; }
 
@@ -580,8 +662,10 @@ function gameLoop(currentTime) {
             } else if (unit.speed > 0) {
                 unit.state = 'idle';
                 let targetX = closestTarget.x; let targetY = closestTarget.y;
+                
+                // PONT (On traverse le pont le plus proche de la cible)
                 if (!unit.isFlying && ((unit.y > 50 && targetY < 50) || (unit.y < 50 && targetY > 50))) {
-                    let targetBridgeX = (unit.x < 50) ? 25 : 75; 
+                    let targetBridgeX = (closestTarget.x < 50) ? 25 : 75; 
                     if (Math.abs(unit.x - targetBridgeX) > 2) { targetX = targetBridgeX; targetY = unit.y; }
                 }
                 const dx = targetX - unit.x; const dy = targetY - unit.y; const angle = Math.atan2(dy, dx);
@@ -591,7 +675,6 @@ function gameLoop(currentTime) {
             }
         } else { unit.state = 'idle'; }
 
-        // CYCLE D'ANIMATIONS (Crash de l'usine résolu ici)
         if (unit.skins && !unit.hasTurret && !unit.isStacked && !unit.id.includes('base') && !unit.id.includes('tower')) {
             unit.animTimer += dt;
             if (unit.animTimer > 0.15) { 
