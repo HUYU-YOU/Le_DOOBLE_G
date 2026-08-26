@@ -2,7 +2,7 @@
 // 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
 // =========================================================
 
-// Chemins d'images PARFAITEMENT ajustés avec "../img/" !
+// CORRECTION : Les images de l'engrenage sont dans le dossier parent "../img/"
 const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
 let hoverInterval = null;
 let currentFrame = 0;
@@ -93,11 +93,11 @@ function onYouTubeIframeAPIReady() {
 // 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
 // =========================================================
 
-// Si tes images de slimes font environ 256x256 pixels, laisse 256. 
-// Si elles sont plus grandes (ex: 512x512), remplace par 512 pour qu'elles rentrent dans le cercle.
+// 🚨 DÉTECTION DU MODE LOCAL (Pour empêcher le bug d'écran noir)
+const isLocal = window.location.protocol === 'file:';
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🚨 CORRECTION : Les slimes sont dans le dossier "assets" !
+// CORRECTION : Les slimes sont dans le dossier "assets" !
 const SLIMES = [
     { level: 1, radius: 22, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
     { level: 2, radius: 32, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
@@ -111,7 +111,7 @@ const SLIMES = [
     { level: 10, radius: 195, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
     { level: 11, radius: 225, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
     { level: 12, radius: 255, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
-    { level: 13, radius: 285, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' } // S'il te manque le 13, il sera blanc !
+    { level: 13, radius: 285, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
 ];
 
 const Engine = Matter.Engine,
@@ -135,7 +135,7 @@ const render = Render.create({
     options: {
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
-        wireframes: false, // OBLIGATOIRE POUR VOIR LES IMAGES
+        wireframes: false, // Indispensable pour l'affichage visuel
         background: 'transparent'
     }
 });
@@ -252,7 +252,8 @@ function spawnGhostSlime(x) {
         slimeLevel: currentSlimeLevel,
         render: {
             fillStyle: slimeData.color,
-            sprite: {
+            // Bloque le sprite si le fichier est lu en local pour éviter un crash invisible
+            sprite: isLocal ? undefined : {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
@@ -285,7 +286,7 @@ function dropSlime() {
         slimeLevel: currentSlimeLevel,
         render: {
             fillStyle: slimeData.color,
-            sprite: {
+            sprite: isLocal ? undefined : {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
@@ -366,7 +367,7 @@ Events.on(engine, 'collisionStart', (event) => {
                     slimeLevel: newLevel,
                     render: {
                         fillStyle: slimeData.color,
-                        sprite: {
+                        sprite: isLocal ? undefined : {
                             texture: slimeData.texture,
                             xScale: getScale(slimeData.radius),
                             yScale: getScale(slimeData.radius)
@@ -423,6 +424,22 @@ Events.on(render, 'afterRender', () => {
     context.setLineDash([10, 10]);
     context.stroke();
     context.setLineDash([]);
+
+    // 🚨 FALLBACK : Si le jeu est lancé en "file:///" (Double-clic)
+    // On dessine le niveau du Slime au milieu du rond de couleur !
+    if (isLocal) {
+        const bodies = Composite.allBodies(world);
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        for (let i = 0; i < bodies.length; i++) {
+            const body = bodies[i];
+            if ((body.label === 'slime' || body.label === 'ghost') && body.slimeLevel) {
+                context.fillStyle = "#000";
+                context.font = `bold ${body.circleRadius}px Arial`;
+                context.fillText(body.slimeLevel, body.position.x, body.position.y);
+            }
+        }
+    }
 });
 
 function gameOver() {
