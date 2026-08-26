@@ -2,8 +2,7 @@
 // 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
 // =========================================================
 
-// CORRECTION : Les images de l'engrenage sont dans le dossier parent "../img/"
-const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
+const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings4.png', 'img/settings5.png'];
 let hoverInterval = null;
 let currentFrame = 0;
 const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -22,17 +21,17 @@ function stopSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
     if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = '../img/setting.png'; 
+        settingsBtnImg.src = 'img/setting.png'; 
     }
 }
 
 function clickSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
-    if (settingsBtnImg) settingsBtnImg.src = '../img/settings4.png';
+    if (settingsBtnImg) settingsBtnImg.src = 'img/settings4.png';
     toggleSettings();
     setTimeout(() => { 
-        if (settingsBtnImg) settingsBtnImg.src = '../img/setting.png'; 
+        if (settingsBtnImg) settingsBtnImg.src = 'img/setting.png'; 
     }, 300);
 }
 
@@ -90,14 +89,11 @@ function onYouTubeIframeAPIReady() {
 
 
 // =========================================================
-// 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
+// 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS)
 // =========================================================
 
-// 🚨 DÉTECTION DU MODE LOCAL (Pour empêcher le bug d'écran noir)
-const isLocal = window.location.protocol === 'file:';
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// CORRECTION : Les slimes sont dans le dossier "assets" !
 const SLIMES = [
     { level: 1, radius: 22, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
     { level: 2, radius: 32, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
@@ -114,6 +110,15 @@ const SLIMES = [
     { level: 13, radius: 285, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
 ];
 
+// 🔥 PRÉCHARGEUR MAGIQUE ANTI-CRASH 🔥
+// Va vérifier si tes images s'affichent bien. Sinon, active le mode secours coloré.
+SLIMES.forEach(slime => {
+    const img = new Image();
+    img.src = slime.texture;
+    img.onload = () => { slime.isLoaded = true; };
+    img.onerror = () => { slime.isLoaded = false; };
+});
+
 const Engine = Matter.Engine,
       Render = Matter.Render,
       Runner = Matter.Runner,
@@ -129,13 +134,14 @@ engine.velocityIterations = 10;
 const GAME_WIDTH = 600;
 const GAME_HEIGHT = 800;
 
+// Liaison stricte avec le Canvas du HTML
 const render = Render.create({
-    element: document.getElementById('game-container'),
+    canvas: document.getElementById('game-canvas'),
     engine: engine,
     options: {
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
-        wireframes: false, // Indispensable pour l'affichage visuel
+        wireframes: false, 
         background: 'transparent'
     }
 });
@@ -152,7 +158,6 @@ const rightWall = Bodies.rectangle(GAME_WIDTH + 25, GAME_HEIGHT / 2, 50, GAME_HE
 const loseLineY = 150; 
 Composite.add(world, [ground, leftWall, rightWall]);
 
-// --- VARIABLES ---
 let currentSlime = null;
 let currentSlimeLevel = 0;
 let score = 0;
@@ -252,12 +257,11 @@ function spawnGhostSlime(x) {
         slimeLevel: currentSlimeLevel,
         render: {
             fillStyle: slimeData.color,
-            // Bloque le sprite si le fichier est lu en local pour éviter un crash invisible
-            sprite: isLocal ? undefined : {
+            sprite: slimeData.isLoaded ? {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
-            },
+            } : undefined, // Si l'image bug, Matter.js affichera la couleur fillStyle
             opacity: 0.5
         }
     });
@@ -286,11 +290,11 @@ function dropSlime() {
         slimeLevel: currentSlimeLevel,
         render: {
             fillStyle: slimeData.color,
-            sprite: isLocal ? undefined : {
+            sprite: slimeData.isLoaded ? {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
-            }
+            } : undefined
         }
     });
 
@@ -367,11 +371,11 @@ Events.on(engine, 'collisionStart', (event) => {
                     slimeLevel: newLevel,
                     render: {
                         fillStyle: slimeData.color,
-                        sprite: isLocal ? undefined : {
+                        sprite: slimeData.isLoaded ? {
                             texture: slimeData.texture,
                             xScale: getScale(slimeData.radius),
                             yScale: getScale(slimeData.radius)
-                        }
+                        } : undefined
                     }
                 });
 
@@ -425,16 +429,16 @@ Events.on(render, 'afterRender', () => {
     context.stroke();
     context.setLineDash([]);
 
-    // 🚨 FALLBACK : Si le jeu est lancé en "file:///" (Double-clic)
-    // On dessine le niveau du Slime au milieu du rond de couleur !
-    if (isLocal) {
-        const bodies = Composite.allBodies(world);
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        for (let i = 0; i < bodies.length; i++) {
-            const body = bodies[i];
-            if ((body.label === 'slime' || body.label === 'ghost') && body.slimeLevel) {
-                context.fillStyle = "#000";
+    // 🚨 ANTI-BUG : Si les images ne chargent pas (sécurité navigateur), on dessine le niveau dans le rond !
+    const bodies = Composite.allBodies(world);
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    for (let i = 0; i < bodies.length; i++) {
+        const body = bodies[i];
+        if ((body.label === 'slime' || body.label === 'ghost') && body.slimeLevel) {
+            const data = SLIMES[body.slimeLevel - 1];
+            if (!data.isLoaded) { // Si l'image a foiré
+                context.fillStyle = "#000"; // Texte en noir
                 context.font = `bold ${body.circleRadius}px Arial`;
                 context.fillText(body.slimeLevel, body.position.x, body.position.y);
             }
@@ -448,4 +452,5 @@ function gameOver() {
     if (currentSlime) Composite.remove(world, currentSlime); 
 }
 
-spawnGhostSlime(GAME_WIDTH / 2);
+// Lancement
+setTimeout(() => spawnGhostSlime(GAME_WIDTH / 2), 200); // Laisse 200ms aux images pour commencer à charger
