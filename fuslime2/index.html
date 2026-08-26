@@ -13,7 +13,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
-    <!-- Boutons d'interface Globale (Hub & Paramètres) -->
+    <!-- Boutons d'interface Globale -->
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
     <img src="img/setting.png" id="settings-btn-img" class="btn-settings" alt="Paramètres">
 
@@ -37,7 +37,10 @@
     <!-- Interface du jeu -->
     <div id="game-ui">
         <h1>Fuslime 2</h1>
-        <div class="score-container">Score: <span id="score">0</span></div>
+        <div class="scores-wrapper">
+            <div class="score-container">Score: <span id="score">0</span></div>
+            <div class="best-score-container">Best: <span id="best-score">0</span></div>
+        </div>
     </div>
     
     <!-- Zone de jeu (Seau et Particules) -->
