@@ -16,12 +16,12 @@
     <!-- Bouton de retour au Hub -->
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
 
-    <!-- Bouton Paramètres (Engrenage animé) -->
-    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+    <!-- Bouton Paramètres -->
+    <div class="settings-btn-wrapper" onclick="toggleSettings()">
         <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
-    <!-- Modal des Paramètres Classique -->
+    <!-- Modal des Paramètres -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2>Paramètres</h2>
@@ -59,7 +59,7 @@
         </div>
     </div>
     
-    <!-- Zone de jeu (Seau et Particules) -->
+    <!-- Zone de jeu (Taille FIXE pour éviter le bug d'affichage) -->
     <div id="game-container">
         <div id="effects-container"></div>
     </div>
