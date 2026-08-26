@@ -39,16 +39,14 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; max-height: 400px; overflow-y: auto; }
-.card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: 80%; background-repeat: no-repeat; background-position: center 20%; }
+.card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
-/* --- L'ARÈNE --- 
-   J'ai ajusté background-position à "center 15%" pour glisser la carte vers le bas.
-   Modifie ce "15%" (ex: 20% ou 5%) si tu veux ajuster précisément ton chemin visuel ! */
-#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center 15% / cover no-repeat; overflow: hidden; cursor: crosshair; transition: background 0.3s; }
-body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 15% / cover no-repeat; }
+/* --- L'ARÈNE ET LA MAP --- */
+/* Map redescendue avec "center 30%" */
+#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center 30% / cover no-repeat; overflow: hidden; cursor: crosshair; transition: background 0.3s; }
+body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 30% / cover no-repeat; }
 
-/* La rivière et les ponts HTML deviennent complètement transparents ! Ils servent juste pour les calculs de collisions JS */
 #river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: transparent; z-index: 1; pointer-events: none;}
 .bridge { position: absolute; top: 45%; height: 10%; width: 15%; background: transparent; z-index: 2; pointer-events: none;}
 .left-bridge { left: 20%; } .right-bridge { right: 20%; }
@@ -59,7 +57,7 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 15% 
 #next-card-zone { position: absolute; bottom: 190px; left: 10px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 10px; font-size: 12px; text-align: center; color: #ccc; z-index: 10; font-family: 'Rajdhani'; }
 #hand { display: flex; justify-content: space-around; align-items: flex-end; height: 100px; }
 
-.card { width: 70px; height: 100px; background-color: #222; border: 2px solid #888; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; cursor: pointer; transition: transform 0.1s, border-color 0.2s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.5); background-size: 80%; background-repeat: no-repeat; background-position: center 20%; }
+.card { width: 70px; height: 100px; background-color: #222; border: 2px solid #888; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; cursor: pointer; transition: transform 0.1s, border-color 0.2s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
 .card.selected { border-color: #39ff14; transform: translateY(-15px); box-shadow: 0 0 15px #39ff14; }
 .card.disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
 .card.mini { width: 45px; height: 65px; font-size: 9px; margin-top: 5px; pointer-events: none; }
@@ -80,17 +78,14 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 15% 
 
 /* === ENTITÉS ET SKINS === */
 .entity { position: absolute; width: 55px; height: 55px; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
-.entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
-.entity[data-id="slimeuse"] { width: 44px; height: 44px; } /* Plus petite */
-
-/* Bâtiments (Plus de bords blancs ni de fond noir !) */
 .entity.building { display: flex; justify-content: center; align-items: center; z-index: 3; }
+.entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
+.entity[data-id="slimeuse"] { width: 44px; height: 44px; }
 
 .entity.is-flying { box-shadow: 0 20px 15px rgba(0,0,0,0.5); z-index: 6; }
 .entity.stunned { filter: brightness(1.5) drop-shadow(0 0 10px yellow); animation: shake 0.2s infinite; }
 .entity.slowed { filter: sepia(1) hue-rotate(180deg) saturate(3); }
 
-/* LE CANON ROTATIF ET L'USINE EMPILÉE */
 .turret { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; transform-origin: center center; transform: translate(-50%, -50%); z-index: 5; }
 .stacked-top { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 5; pointer-events: none; }
 
@@ -108,7 +103,7 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 15% 
 @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
 @keyframes shake { 0% { transform: translate(-52%, -50%); } 50% { transform: translate(-48%, -50%); } 100% { transform: translate(-50%, -50%); } }
 
-/* EFFETS DES SORTS (On enlève le fallback violet du marais) */
+/* EFFETS DES SORTS */
 .spell-anim { position: absolute; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 10; pointer-events: none; }
 .spell-puddle { position: absolute; background-size: contain; background-repeat: no-repeat; background-position: center; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; }
 
