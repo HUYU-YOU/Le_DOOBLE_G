@@ -43,7 +43,10 @@ window.setGameSize = function(size) { const container = document.getElementById(
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
-terrainImg.src = 'assets/map_globe.jpg'; 
+
+// ---> CORRECTION ICI AUSSI : map_globe.png <---
+terrainImg.src = 'assets/map_globe.png'; 
+
 terrainImg.onload = () => { terrainCanvas.width = terrainImg.width; terrainCanvas.height = terrainImg.height; terrainCtx.drawImage(terrainImg, 0, 0); };
 function isWater(r, g, b) { return (r < 20 && g < 20 && b < 20); }
 
