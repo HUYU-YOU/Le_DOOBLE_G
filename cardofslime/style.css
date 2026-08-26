@@ -37,12 +37,13 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; max-height: 400px; overflow-y: auto; }
-.card-select-item { width: 70px; height: 100px; background: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: cover; background-position: center; }
+.card-select-item { width: 70px; height: 100px; background: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: contain; background-repeat: no-repeat; background-position: center; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
-#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background-color: #3b522b; overflow: hidden; cursor: crosshair; }
-#river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: rgba(57, 255, 20, 0.3); border-top: 2px solid #39ff14; border-bottom: 2px solid #39ff14; z-index: 1; }
-.bridge { position: absolute; top: 45%; height: 10%; width: 15%; background: #5c4033; border-left: 2px solid #3e2723; border-right: 2px solid #3e2723; z-index: 2; }
+/* BACKGROUND MAP DAY */
+#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center/cover no-repeat; overflow: hidden; cursor: crosshair; }
+#river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: rgba(57, 255, 20, 0.2); border-top: 2px dashed rgba(57, 255, 20, 0.5); border-bottom: 2px dashed rgba(57, 255, 20, 0.5); z-index: 1; pointer-events: none;}
+.bridge { position: absolute; top: 45%; height: 10%; width: 15%; background: rgba(92, 64, 51, 0.8); border-left: 2px solid #3e2723; border-right: 2px solid #3e2723; z-index: 2; pointer-events: none;}
 .left-bridge { left: 20%; } .right-bridge { right: 20%; }
 #deploy-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 45%; background: rgba(57, 255, 20, 0.15); border-top: 2px dashed #39ff14; z-index: 10; display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.7); font-family: 'Rajdhani'; font-size: 1.5em; pointer-events: none; }
 
@@ -50,7 +51,7 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 #next-card-zone { position: absolute; bottom: 190px; left: 10px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 10px; font-size: 12px; text-align: center; color: #ccc; z-index: 10; font-family: 'Rajdhani'; }
 #hand { display: flex; justify-content: space-around; align-items: flex-end; height: 100px; }
 
-.card { width: 70px; height: 100px; background: linear-gradient(135deg, #444, #222); border: 2px solid #888; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; cursor: pointer; transition: transform 0.1s, border-color 0.2s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.5); background-size: cover; background-position: center; }
+.card { width: 70px; height: 100px; background: linear-gradient(135deg, #444, #222); border: 2px solid #888; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; cursor: pointer; transition: transform 0.1s, border-color 0.2s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.5); background-size: contain; background-repeat: no-repeat; background-position: center; }
 .card.selected { border-color: #39ff14; transform: translateY(-15px); box-shadow: 0 0 15px #39ff14; }
 .card.disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
 .card.mini { width: 45px; height: 65px; font-size: 9px; margin-top: 5px; pointer-events: none; }
@@ -69,33 +70,33 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 .btn-size.active { background: #39ff14; color: #000; }
 .close-btn { background: #ff3366; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; font-family: 'Rajdhani'; font-size: 1.1em; }
 
-/* === ENTITÉS ET STATUTS (VOL, STUN, SLOW) === */
-.entity { position: absolute; width: 45px; height: 45px; border-radius: 50%; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
-.entity.building { border-radius: 10px; border: 2px solid #fff; background-color: rgba(0,0,0,0.8) !important; color: white; display: flex; justify-content: center; align-items: center; font-family: 'Rajdhani'; font-size: 1.2em; font-weight: bold; z-index: 3;}
-.entity[data-id="mega"] { width: 70px; height: 70px; z-index: 5; }
-.entity.is-flying { box-shadow: 0 15px 10px rgba(0,0,0,0.5); z-index: 6; } /* Fait flotter l'unité */
+/* === ENTITÉS ET SKINS === */
+.entity { position: absolute; width: 55px; height: 55px; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
+.entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
+.entity.is-flying { box-shadow: 0 20px 15px rgba(0,0,0,0.5); z-index: 6; }
 .entity.stunned { filter: brightness(1.5) drop-shadow(0 0 10px yellow); animation: shake 0.2s infinite; }
-.entity.slowed { filter: sepia(1) hue-rotate(180deg) saturate(3); /* Teinte bleutée givrée */ }
+.entity.slowed { filter: sepia(1) hue-rotate(180deg) saturate(3); }
 
-.entity-hp-container { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 40px; height: 6px; background: #222; border: 1px solid #000; border-radius: 3px; overflow: hidden; }
+/* LE CANON ROTATIF */
+.turret { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; transform-origin: center center; transform: translate(-50%, -50%); z-index: 5; }
+
+.entity-hp-container { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 40px; height: 6px; background: #222; border: 1px solid #000; border-radius: 3px; overflow: hidden; z-index: 7;}
 .entity-hp-fill { height: 100%; background: #39ff14; width: 100%; transition: width 0.1s linear; }
 .team-enemy .entity-hp-fill { background: #ff3366; }
 
-.projectile { position: absolute; width: 10px; height: 10px; background: #03A9F4; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px #03A9F4; z-index: 6; }
-.team-enemy .projectile { background: #ff3366; box-shadow: 0 0 10px #ff3366; }
+.projectile { position: absolute; width: 15px; height: 15px; background-size: contain; background-repeat: no-repeat; background-position: center; transform: translate(-50%, -50%); z-index: 6; }
+.team-enemy .projectile { filter: hue-rotate(180deg); }
 
 .dmg-text { position: absolute; color: white; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 0 #000; transform: translate(-50%, -50%); z-index: 10; animation: floatUp 1s ease-out forwards; pointer-events: none; font-family: 'Luckiest Guy'; }
 .team-player .dmg-text { color: #ff3366; } 
 .team-enemy .dmg-text { color: #39ff14; }
 
 @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
-@keyframes walkAnim { 0%, 100% { transform: translate(-50%, -50%) rotate(-5deg) translateY(0); } 50% { transform: translate(-50%, -50%) rotate(5deg) translateY(-5px); } }
-@keyframes attackAnim { 0% { transform: translate(-50%, -50%) scale(1); } 40% { transform: translate(-50%, -60%) scale(1.2); filter: brightness(1.5); } 100% { transform: translate(-50%, -50%) scale(1); } }
 @keyframes shake { 0% { transform: translate(-52%, -50%); } 50% { transform: translate(-48%, -50%); } 100% { transform: translate(-50%, -50%); } }
 
-.is-walking { animation: walkAnim 0.5s infinite; }
-.is-attacking { animation: attackAnim 0.4s ease-in-out; }
-.entity.dead { opacity: 0; transform: translate(-50%, -50%) scale(1.5); transition: all 0.3s ease-out; }
+/* EFFETS DES SORTS */
+.spell-anim { position: absolute; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 10; pointer-events: none; }
+.spell-puddle { position: absolute; background-size: contain; background-repeat: no-repeat; background-position: center; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; }
 
 #game-over-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
 .game-over-content { text-align: center; }
@@ -103,4 +104,3 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 
 .particle { position: absolute; width: 12px; height: 12px; border-radius: 50%; pointer-events: none; z-index: 5; animation: splatter 0.5s ease-out forwards; }
 @keyframes splatter { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
-.spell-puddle { position: absolute; background: radial-gradient(circle, rgba(138, 43, 226, 0.6) 0%, rgba(138, 43, 226, 0) 70%); border-radius: 50%; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; animation: pulse 2s infinite; }
