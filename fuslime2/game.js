@@ -2,8 +2,8 @@
 // 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
 // =========================================================
 
-// Chemins d'images PARFAITEMENT ajustés sans le "img/" !
-const animFrames = ['settings1.png', 'settings2.png', 'settings3.png', 'settings4.png', 'settings5.png'];
+// Chemins d'images PARFAITEMENT ajustés avec "../img/" !
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
 let hoverInterval = null;
 let currentFrame = 0;
 const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -22,17 +22,17 @@ function stopSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
     if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = 'setting.png'; 
+        settingsBtnImg.src = '../img/setting.png'; 
     }
 }
 
 function clickSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
-    if (settingsBtnImg) settingsBtnImg.src = 'settings4.png';
+    if (settingsBtnImg) settingsBtnImg.src = '../img/settings4.png';
     toggleSettings();
     setTimeout(() => { 
-        if (settingsBtnImg) settingsBtnImg.src = 'setting.png'; 
+        if (settingsBtnImg) settingsBtnImg.src = '../img/setting.png'; 
     }, 300);
 }
 
@@ -93,24 +93,25 @@ function onYouTubeIframeAPIReady() {
 // 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
 // =========================================================
 
-// 🚨 DÉTECTION DU MODE "HORS-LIGNE" (Double-clic sur le fichier)
-const isLocalFile = window.location.protocol === 'file:';
+// Si tes images de slimes font environ 256x256 pixels, laisse 256. 
+// Si elles sont plus grandes (ex: 512x512), remplace par 512 pour qu'elles rentrent dans le cercle.
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
+// 🚨 CORRECTION : Les slimes sont dans le dossier "assets" !
 const SLIMES = [
-    { level: 1, radius: 22, points: 2, texture: 'slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 32, points: 4, texture: 'slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 45, points: 8, texture: 'slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 60, points: 16, texture: 'slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 75, points: 32, texture: 'slime5.png', color: '#ffaaff' },
-    { level: 6, radius: 95, points: 64, texture: 'slime6.png', color: '#aaffff' },
-    { level: 7, radius: 115, points: 128, texture: 'slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 140, points: 256, texture: 'slime8.png', color: '#aaccff' },
-    { level: 9, radius: 165, points: 512, texture: 'slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 195, points: 1024, texture: 'slime10.png', color: '#ff9999' },
-    { level: 11, radius: 225, points: 2048, texture: 'slime11.png', color: '#99ff99' },
-    { level: 12, radius: 255, points: 4096, texture: 'slime12.png', color: '#9999ff' },
-    { level: 13, radius: 285, points: 8192, texture: 'slime13.png', color: '#ffffff' }
+    { level: 1, radius: 22, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
+    { level: 2, radius: 32, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
+    { level: 3, radius: 45, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
+    { level: 4, radius: 60, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
+    { level: 5, radius: 75, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
+    { level: 6, radius: 95, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
+    { level: 7, radius: 115, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
+    { level: 8, radius: 140, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
+    { level: 9, radius: 165, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
+    { level: 10, radius: 195, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
+    { level: 11, radius: 225, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
+    { level: 12, radius: 255, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
+    { level: 13, radius: 285, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' } // S'il te manque le 13, il sera blanc !
 ];
 
 const Engine = Matter.Engine,
@@ -134,7 +135,7 @@ const render = Render.create({
     options: {
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
-        wireframes: false, 
+        wireframes: false, // OBLIGATOIRE POUR VOIR LES IMAGES
         background: 'transparent'
     }
 });
@@ -248,11 +249,10 @@ function spawnGhostSlime(x) {
         isStatic: true,
         isSensor: true,
         label: 'ghost',
-        slimeLevel: currentSlimeLevel, // Utilisé pour afficher le texte de secours
+        slimeLevel: currentSlimeLevel,
         render: {
             fillStyle: slimeData.color,
-            // Si on ouvre en "file:///", on désactive les images pour éviter le crash du canvas
-            sprite: isLocalFile ? undefined : {
+            sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
@@ -285,7 +285,7 @@ function dropSlime() {
         slimeLevel: currentSlimeLevel,
         render: {
             fillStyle: slimeData.color,
-            sprite: isLocalFile ? undefined : {
+            sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
@@ -366,7 +366,7 @@ Events.on(engine, 'collisionStart', (event) => {
                     slimeLevel: newLevel,
                     render: {
                         fillStyle: slimeData.color,
-                        sprite: isLocalFile ? undefined : {
+                        sprite: {
                             texture: slimeData.texture,
                             xScale: getScale(slimeData.radius),
                             yScale: getScale(slimeData.radius)
@@ -423,21 +423,6 @@ Events.on(render, 'afterRender', () => {
     context.setLineDash([10, 10]);
     context.stroke();
     context.setLineDash([]);
-
-    // 🚨 SI OUVERT HORS LIGNE (FILE://) : On dessine le niveau des slimes dans les ronds
-    if (isLocalFile) {
-        const bodies = Composite.allBodies(world);
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        for (let i = 0; i < bodies.length; i++) {
-            const body = bodies[i];
-            if ((body.label === 'slime' || body.label === 'ghost') && body.slimeLevel) {
-                context.fillStyle = "#000";
-                context.font = `bold ${body.circleRadius}px Arial`;
-                context.fillText(body.slimeLevel, body.position.x, body.position.y);
-            }
-        }
-    }
 });
 
 function gameOver() {
