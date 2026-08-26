@@ -2,7 +2,8 @@
 // 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
 // =========================================================
 
-const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+// Chemins modifiés pour correspondre à la racine (plus de 'img/')
+const animFrames = ['settings1.png', 'settings2.png', 'settings3.png', 'settings4.png', 'settings5.png'];
 let hoverInterval = null;
 let currentFrame = 0;
 const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -21,17 +22,17 @@ function stopSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
     if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = 'img/setting.png'; 
+        settingsBtnImg.src = 'setting.png'; 
     }
 }
 
 function clickSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
-    if (settingsBtnImg) settingsBtnImg.src = 'img/settings4.png';
+    if (settingsBtnImg) settingsBtnImg.src = 'settings4.png';
     toggleSettings();
     setTimeout(() => { 
-        if (settingsBtnImg) settingsBtnImg.src = 'img/setting.png'; 
+        if (settingsBtnImg) settingsBtnImg.src = 'setting.png'; 
     }, 300);
 }
 
@@ -92,21 +93,21 @@ function onYouTubeIframeAPIReady() {
 // 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
 // =========================================================
 
-// Ajuste les chemins si tes images sont à la racine (ex: 'slime1.png') ou dans un dossier (ex: 'img/slime1.png')
+// Plus de sous dossier "img/" ! On pointe direct vers les images.
 const SLIMES = [
-    { level: 1, radius: 22, points: 2, texture: 'img/slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 32, points: 4, texture: 'img/slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 45, points: 8, texture: 'img/slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 60, points: 16, texture: 'img/slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 75, points: 32, texture: 'img/slime5.png', color: '#ffaaff' },
-    { level: 6, radius: 95, points: 64, texture: 'img/slime6.png', color: '#aaffff' },
-    { level: 7, radius: 115, points: 128, texture: 'img/slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 140, points: 256, texture: 'img/slime8.png', color: '#aaccff' },
-    { level: 9, radius: 165, points: 512, texture: 'img/slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 195, points: 1024, texture: 'img/slime10.png', color: '#ff9999' },
-    { level: 11, radius: 225, points: 2048, texture: 'img/slime11.png', color: '#99ff99' },
-    { level: 12, radius: 255, points: 4096, texture: 'img/slime12.png', color: '#9999ff' },
-    { level: 13, radius: 285, points: 8192, texture: 'img/slime13.png', color: '#ffffff' }
+    { level: 1, radius: 22, points: 2, texture: 'slime1.png', color: '#ffaaaa' },
+    { level: 2, radius: 32, points: 4, texture: 'slime2.png', color: '#aaffaa' },
+    { level: 3, radius: 45, points: 8, texture: 'slime3.png', color: '#aaaaff' },
+    { level: 4, radius: 60, points: 16, texture: 'slime4.png', color: '#ffffaa' },
+    { level: 5, radius: 75, points: 32, texture: 'slime5.png', color: '#ffaaff' },
+    { level: 6, radius: 95, points: 64, texture: 'slime6.png', color: '#aaffff' },
+    { level: 7, radius: 115, points: 128, texture: 'slime7.png', color: '#ffccaa' },
+    { level: 8, radius: 140, points: 256, texture: 'slime8.png', color: '#aaccff' },
+    { level: 9, radius: 165, points: 512, texture: 'slime9.png', color: '#ccaaff' },
+    { level: 10, radius: 195, points: 1024, texture: 'slime10.png', color: '#ff9999' },
+    { level: 11, radius: 225, points: 2048, texture: 'slime11.png', color: '#99ff99' },
+    { level: 12, radius: 255, points: 4096, texture: 'slime12.png', color: '#9999ff' },
+    { level: 13, radius: 285, points: 8192, texture: 'slime13.png', color: '#ffffff' }
 ];
 
 const Engine = Matter.Engine,
@@ -132,7 +133,7 @@ const render = Render.create({
     options: {
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
-        wireframes: false, // Indispensable pour voir les images texturées
+        wireframes: false, 
         background: 'transparent'
     }
 });
@@ -244,7 +245,7 @@ function updateScore(points) {
 
 // Calcule l'échelle pour adapter l'image au rayon du cercle physique Matter.js
 function getScale(radius) {
-    const IMAGE_ORIGINAL_SIZE = 512; // Mettre 256 si tes images font 256x256px
+    const IMAGE_ORIGINAL_SIZE = 512; // Modifie cette valeur par 256 si l'image est trop petite
     return (radius * 2) / IMAGE_ORIGINAL_SIZE;
 }
 
@@ -257,7 +258,7 @@ function spawnGhostSlime(x) {
         isSensor: true,
         label: 'ghost',
         render: {
-            fillStyle: slimeData.color, // Couleur de secours si l'image met du temps à charger
+            fillStyle: slimeData.color, // Couleur de secours si l'image ne charge pas !
             sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
@@ -290,7 +291,7 @@ function dropSlime() {
         label: 'slime',
         slimeLevel: currentSlimeLevel,
         render: {
-            fillStyle: slimeData.color,
+            fillStyle: slimeData.color, // Couleur de secours 
             sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
