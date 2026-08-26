@@ -1,8 +1,11 @@
+console.log("Le fichier game.js s'est bien chargé !");
+
 // =========================================================
 // 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
 // =========================================================
 
-const animFrames = ['settings1.png', 'settings2.png', 'settings3.png', 'settings4.png', 'settings5.png'];
+// On remet le dossier img/ !
+const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings4.png', 'img/settings5.png'];
 let hoverInterval = null;
 let currentFrame = 0;
 const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -21,17 +24,17 @@ function stopSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
     if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = 'setting.png'; 
+        settingsBtnImg.src = 'img/setting.png'; 
     }
 }
 
 function clickSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
-    if (settingsBtnImg) settingsBtnImg.src = 'settings4.png';
+    if (settingsBtnImg) settingsBtnImg.src = 'img/settings4.png';
     toggleSettings();
     setTimeout(() => { 
-        if (settingsBtnImg) settingsBtnImg.src = 'setting.png'; 
+        if (settingsBtnImg) settingsBtnImg.src = 'img/setting.png'; 
     }, 300);
 }
 
@@ -92,30 +95,24 @@ function onYouTubeIframeAPIReady() {
 // 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & CONFIGURATION)
 // =========================================================
 
-// 🚨🚨🚨 MODIFIE CES 3 LIGNES POUR RÉGLER TON PROBLÈME : 🚨🚨🚨
-
-// 1. Mets la taille RÉELLE de tes images PNG en pixels (si tes images font 150x150, écris 150)
+// ⚠️ Mettre 256 si tes images font environ 256x256px, ou 512 si elles sont plus grandes
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 2. DEBUG MODE : Mets à "true" pour désactiver les images. 
-// Ça affichera des ronds de couleurs à la place. Si les ronds s'affichent, ça prouve que ton jeu marche et que c'est un problème d'image !
-const DESACTIVER_IMAGES = false;
-
-// 3. TES SLIMES (Si tes images sont dans un dossier img, écris 'img/slime1.png')
+// Avec le chemin 'img/' !
 const SLIMES = [
-    { level: 1, radius: 22, points: 2, texture: 'slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 32, points: 4, texture: 'slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 45, points: 8, texture: 'slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 60, points: 16, texture: 'slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 75, points: 32, texture: 'slime5.png', color: '#ffaaff' },
-    { level: 6, radius: 95, points: 64, texture: 'slime6.png', color: '#aaffff' },
-    { level: 7, radius: 115, points: 128, texture: 'slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 140, points: 256, texture: 'slime8.png', color: '#aaccff' },
-    { level: 9, radius: 165, points: 512, texture: 'slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 195, points: 1024, texture: 'slime10.png', color: '#ff9999' },
-    { level: 11, radius: 225, points: 2048, texture: 'slime11.png', color: '#99ff99' },
-    { level: 12, radius: 255, points: 4096, texture: 'slime12.png', color: '#9999ff' },
-    { level: 13, radius: 285, points: 8192, texture: 'slime13.png', color: '#ffffff' }
+    { level: 1, radius: 22, points: 2, texture: 'img/slime1.png', color: '#ffaaaa' },
+    { level: 2, radius: 32, points: 4, texture: 'img/slime2.png', color: '#aaffaa' },
+    { level: 3, radius: 45, points: 8, texture: 'img/slime3.png', color: '#aaaaff' },
+    { level: 4, radius: 60, points: 16, texture: 'img/slime4.png', color: '#ffffaa' },
+    { level: 5, radius: 75, points: 32, texture: 'img/slime5.png', color: '#ffaaff' },
+    { level: 6, radius: 95, points: 64, texture: 'img/slime6.png', color: '#aaffff' },
+    { level: 7, radius: 115, points: 128, texture: 'img/slime7.png', color: '#ffccaa' },
+    { level: 8, radius: 140, points: 256, texture: 'img/slime8.png', color: '#aaccff' },
+    { level: 9, radius: 165, points: 512, texture: 'img/slime9.png', color: '#ccaaff' },
+    { level: 10, radius: 195, points: 1024, texture: 'img/slime10.png', color: '#ff9999' },
+    { level: 11, radius: 225, points: 2048, texture: 'img/slime11.png', color: '#99ff99' },
+    { level: 12, radius: 255, points: 4096, texture: 'img/slime12.png', color: '#9999ff' },
+    { level: 13, radius: 285, points: 8192, texture: 'img/slime13.png', color: '#ffffff' }
 ];
 
 const Engine = Matter.Engine,
@@ -149,7 +146,6 @@ Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);
 
-// --- SEAU DE JEU ---
 const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.1 };
 const ground = Bodies.rectangle(GAME_WIDTH / 2, GAME_HEIGHT + 25, GAME_WIDTH, 50, wallOptions);
 const leftWall = Bodies.rectangle(-25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
@@ -157,7 +153,6 @@ const rightWall = Bodies.rectangle(GAME_WIDTH + 25, GAME_HEIGHT / 2, 50, GAME_HE
 const loseLineY = 150; 
 Composite.add(world, [ground, leftWall, rightWall]);
 
-// --- VARIABLES GLOBALES ---
 let currentSlime = null;
 let currentSlimeLevel = 0;
 let score = 0;
@@ -167,7 +162,6 @@ let isGameOver = false;
 let bestScore = localStorage.getItem('fuslime2_best_score') || 0;
 document.getElementById('best-score').innerText = bestScore;
 
-// --- AUDIO WEB API ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let audioInitialized = false;
 
@@ -199,7 +193,6 @@ function playSound(type, level = 1) {
     }
 }
 
-// --- EFFETS VISUELS ---
 function createEffects(x, y, points, slimeData) {
     const container = document.getElementById('effects-container');
     
@@ -260,7 +253,7 @@ function spawnGhostSlime(x) {
         label: 'ghost',
         render: {
             fillStyle: slimeData.color,
-            sprite: DESACTIVER_IMAGES ? undefined : {
+            sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
@@ -293,7 +286,7 @@ function dropSlime() {
         slimeLevel: currentSlimeLevel,
         render: {
             fillStyle: slimeData.color,
-            sprite: DESACTIVER_IMAGES ? undefined : {
+            sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
@@ -311,7 +304,6 @@ function dropSlime() {
     }, 700); 
 }
 
-// --- CONTRÔLES ---
 const container = document.getElementById('game-container');
 
 container.addEventListener('mousemove', (e) => {
@@ -344,7 +336,6 @@ container.addEventListener('touchend', (e) => {
     dropSlime();
 });
 
-// --- COLLISIONS ET FUSION ---
 Events.on(engine, 'collisionStart', (event) => {
     const pairs = event.pairs;
 
@@ -374,7 +365,7 @@ Events.on(engine, 'collisionStart', (event) => {
                     slimeLevel: newLevel,
                     render: {
                         fillStyle: slimeData.color,
-                        sprite: DESACTIVER_IMAGES ? undefined : {
+                        sprite: {
                             texture: slimeData.texture,
                             xScale: getScale(slimeData.radius),
                             yScale: getScale(slimeData.radius)
@@ -398,7 +389,6 @@ Events.on(engine, 'collisionStart', (event) => {
     }
 });
 
-// --- GAME OVER ---
 Events.on(engine, 'beforeUpdate', () => {
     if (isGameOver) return;
 
@@ -440,5 +430,4 @@ function gameOver() {
     if (currentSlime) Composite.remove(world, currentSlime); 
 }
 
-// Lancement
 spawnGhostSlime(GAME_WIDTH / 2);
