@@ -75,15 +75,20 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center/cove
 .close-btn { background: #ff3366; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; font-family: 'Rajdhani'; font-size: 1.1em; }
 
 /* === ENTITÉS ET SKINS === */
-/* Color transparent masque les noms comme "Tour" ou "Canon" qui bavaient sur les images */
 .entity { position: absolute; width: 55px; height: 55px; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
+.entity.building { border-radius: 10px; border: 2px solid #fff; background-color: rgba(0,0,0,0.8) !important; color: white; display: flex; justify-content: center; align-items: center; font-family: 'Rajdhani'; font-size: 1.2em; font-weight: bold; z-index: 3;}
 .entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
+
+/* La Slimeuse réduite de 20% comme demandé (55px * 0.8 = 44px) */
+.entity[data-id="slimeuse"] { width: 44px; height: 44px; }
+
 .entity.is-flying { box-shadow: 0 20px 15px rgba(0,0,0,0.5); z-index: 6; }
 .entity.stunned { filter: brightness(1.5) drop-shadow(0 0 10px yellow); animation: shake 0.2s infinite; }
 .entity.slowed { filter: sepia(1) hue-rotate(180deg) saturate(3); }
 
-/* LE CANON ROTATIF */
+/* LE CANON ROTATIF ET L'USINE EMPILÉE */
 .turret { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; transform-origin: center center; transform: translate(-50%, -50%); z-index: 5; }
+.stacked-top { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 5; pointer-events: none; }
 
 .entity-hp-container { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 40px; height: 6px; background: #222; border: 1px solid #000; border-radius: 3px; overflow: hidden; z-index: 7;}
 .entity-hp-fill { height: 100%; background: #39ff14; width: 100%; transition: width 0.1s linear; }
