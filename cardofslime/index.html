@@ -59,7 +59,6 @@
 
         <!-- JEU -->
         <div id="arena" style="display: none;">
-            <!-- La Map (Background géré en CSS) -->
             <div id="river"></div>
             <div class="bridge left-bridge"></div>
             <div class="bridge right-bridge"></div>
@@ -85,12 +84,18 @@
     <div id="settings-modal" class="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: #39ff14; text-transform: uppercase;">Paramètres</h2>
+            
             <div class="setting-item" style="margin-bottom: 20px;">
                 <label style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.2em;">
                     <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()" style="transform: scale(1.5);"> 
                     <span>Activer le Son 🔊</span>
                 </label>
             </div>
+
+            <div class="setting-item" style="margin-bottom: 20px;">
+                <button class="btn-main" onclick="toggleTheme()" style="font-size: 1em; padding: 10px;">Mode Sombre / Clair 🌙</button>
+            </div>
+
             <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
