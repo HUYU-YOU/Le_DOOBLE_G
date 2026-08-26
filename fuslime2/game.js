@@ -2,7 +2,6 @@
 // 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
 // =========================================================
 
-// Chemins modifiés pour correspondre à la racine (plus de 'img/')
 const animFrames = ['settings1.png', 'settings2.png', 'settings3.png', 'settings4.png', 'settings5.png'];
 let hoverInterval = null;
 let currentFrame = 0;
@@ -90,10 +89,19 @@ function onYouTubeIframeAPIReady() {
 
 
 // =========================================================
-// 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
+// 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & CONFIGURATION)
 // =========================================================
 
-// Plus de sous dossier "img/" ! On pointe direct vers les images.
+// 🚨🚨🚨 MODIFIE CES 3 LIGNES POUR RÉGLER TON PROBLÈME : 🚨🚨🚨
+
+// 1. Mets la taille RÉELLE de tes images PNG en pixels (si tes images font 150x150, écris 150)
+const TAILLE_IMAGE_EN_PIXELS = 256; 
+
+// 2. DEBUG MODE : Mets à "true" pour désactiver les images. 
+// Ça affichera des ronds de couleurs à la place. Si les ronds s'affichent, ça prouve que ton jeu marche et que c'est un problème d'image !
+const DESACTIVER_IMAGES = false;
+
+// 3. TES SLIMES (Si tes images sont dans un dossier img, écris 'img/slime1.png')
 const SLIMES = [
     { level: 1, radius: 22, points: 2, texture: 'slime1.png', color: '#ffaaaa' },
     { level: 2, radius: 32, points: 4, texture: 'slime2.png', color: '#aaffaa' },
@@ -120,7 +128,6 @@ const Engine = Matter.Engine,
 const engine = Engine.create();
 const world = engine.world;
 
-// Haute précision pour des collisions ultra fluides et sans traversée
 engine.positionIterations = 10;
 engine.velocityIterations = 10;
 
@@ -157,11 +164,10 @@ let score = 0;
 let canDrop = true;
 let isGameOver = false;
 
-// Gestion du Meilleur Score
 let bestScore = localStorage.getItem('fuslime2_best_score') || 0;
 document.getElementById('best-score').innerText = bestScore;
 
-// --- AUDIO WEB API (Sons dynamiques) ---
+// --- AUDIO WEB API ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let audioInitialized = false;
 
@@ -197,7 +203,6 @@ function playSound(type, level = 1) {
 function createEffects(x, y, points, slimeData) {
     const container = document.getElementById('effects-container');
     
-    // Texte flottant du score
     const text = document.createElement('div');
     text.className = 'floating-text';
     text.innerText = '+' + points;
@@ -207,7 +212,6 @@ function createEffects(x, y, points, slimeData) {
     container.appendChild(text);
     setTimeout(() => text.remove(), 800);
 
-    // Particules éclaboussures
     for(let i = 0; i < 10; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
@@ -226,7 +230,6 @@ function createEffects(x, y, points, slimeData) {
         setTimeout(() => p.remove(), 500);
     }
 
-    // Animation du score
     const scoreEl = document.getElementById('score').parentElement;
     scoreEl.classList.add('score-bump');
     setTimeout(() => scoreEl.classList.remove('score-bump'), 100);
@@ -243,10 +246,8 @@ function updateScore(points) {
     }
 }
 
-// Calcule l'échelle pour adapter l'image au rayon du cercle physique Matter.js
 function getScale(radius) {
-    const IMAGE_ORIGINAL_SIZE = 512; // Modifie cette valeur par 256 si l'image est trop petite
-    return (radius * 2) / IMAGE_ORIGINAL_SIZE;
+    return (radius * 2) / TAILLE_IMAGE_EN_PIXELS;
 }
 
 function spawnGhostSlime(x) {
@@ -258,8 +259,8 @@ function spawnGhostSlime(x) {
         isSensor: true,
         label: 'ghost',
         render: {
-            fillStyle: slimeData.color, // Couleur de secours si l'image ne charge pas !
-            sprite: {
+            fillStyle: slimeData.color,
+            sprite: DESACTIVER_IMAGES ? undefined : {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
@@ -284,15 +285,15 @@ function dropSlime() {
     currentSlime = null;
 
     const realSlime = Bodies.circle(x, y, slimeData.radius, {
-        restitution: 0.25, // Rebond agréable
+        restitution: 0.25, 
         friction: 0.05, 
         frictionAir: 0.002,
         density: 0.001 * slimeData.level,
         label: 'slime',
         slimeLevel: currentSlimeLevel,
         render: {
-            fillStyle: slimeData.color, // Couleur de secours 
-            sprite: {
+            fillStyle: slimeData.color,
+            sprite: DESACTIVER_IMAGES ? undefined : {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
                 yScale: getScale(slimeData.radius)
@@ -310,7 +311,7 @@ function dropSlime() {
     }, 700); 
 }
 
-// --- CONTRÔLES SOURIS / TACTILE ---
+// --- CONTRÔLES ---
 const container = document.getElementById('game-container');
 
 container.addEventListener('mousemove', (e) => {
@@ -343,7 +344,7 @@ container.addEventListener('touchend', (e) => {
     dropSlime();
 });
 
-// --- COLLISIONS ET FUSION (STYLE SUIKA) ---
+// --- COLLISIONS ET FUSION ---
 Events.on(engine, 'collisionStart', (event) => {
     const pairs = event.pairs;
 
@@ -373,7 +374,7 @@ Events.on(engine, 'collisionStart', (event) => {
                     slimeLevel: newLevel,
                     render: {
                         fillStyle: slimeData.color,
-                        sprite: {
+                        sprite: DESACTIVER_IMAGES ? undefined : {
                             texture: slimeData.texture,
                             xScale: getScale(slimeData.radius),
                             yScale: getScale(slimeData.radius)
@@ -384,7 +385,6 @@ Events.on(engine, 'collisionStart', (event) => {
                 Composite.remove(world, [bodyA, bodyB]);
                 Composite.add(world, newSlime);
                 
-                // Effet de Pop / Sursaut lors de la fusion
                 Matter.Body.setVelocity(newSlime, { 
                     x: (bodyA.velocity.x + bodyB.velocity.x) / 2, 
                     y: -4 
@@ -422,7 +422,6 @@ Events.on(engine, 'beforeUpdate', () => {
     }
 });
 
-// Dessiner la ligne de sécurité rouge en haut du seau
 Events.on(render, 'afterRender', () => {
     const context = render.context;
     context.beginPath();
@@ -441,5 +440,5 @@ function gameOver() {
     if (currentSlime) Composite.remove(world, currentSlime); 
 }
 
-// Lancement du jeu
+// Lancement
 spawnGhostSlime(GAME_WIDTH / 2);
