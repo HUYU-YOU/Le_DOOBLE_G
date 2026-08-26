@@ -35,8 +35,9 @@ window.gameScene.add(window.gameEarth);
 
 // --- CHARGEMENT DE TA NOUVELLE IMAGE ---
 const textureLoader = new THREE.TextureLoader();
-// On charge bien ton image JPG !
-textureLoader.load('assets/map_globe.jpg', (texture) => {
+
+// ---> CORRECTION ICI : map_globe.png <---
+textureLoader.load('assets/map_globe.png', (texture) => {
     material.map = texture;
     material.needsUpdate = true;
 });
