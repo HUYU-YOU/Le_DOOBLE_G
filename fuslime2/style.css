@@ -33,7 +33,7 @@ body.dark-mode #game-container { background-color: #e0e0e0; border-color: #ccc; 
     box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
-/* Bouton Paramètres (Engrenage) */
+/* Bouton Paramètres */
 .settings-btn-wrapper {
     position: absolute;
     top: 20px; right: 25px;
@@ -48,22 +48,22 @@ body.dark-mode #game-container { background-color: #e0e0e0; border-color: #ccc; 
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
 /* Modal Paramètres */
-#settings-modal {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+.modal {
+    display: none; position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(0,0,0,0.85); z-index: 999;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    align-items: center; justify-content: center;
     backdrop-filter: blur(5px);
 }
-#settings-modal.show { opacity: 1; pointer-events: auto; }
+.modal.show { display: flex; }
 
-.settings-content {
+.modal-content {
     background: rgba(15, 20, 30, 0.95);
     border: 2px solid #00e5ff; border-radius: 15px;
     padding: 30px 40px; color: white; text-align: center;
     box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 320px;
 }
-.settings-content h2 { margin-top: 0; color: #00e5ff; text-transform: uppercase; letter-spacing: 2px; }
+.modal-content h2 { margin-top: 0; color: #00e5ff; text-transform: uppercase; letter-spacing: 2px; }
 .setting-item {
     display: flex; justify-content: space-between; align-items: center;
     margin: 25px 0; font-size: 1.2rem; font-weight: bold;
@@ -90,9 +90,13 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
 .best-score-container { font-size: 18px; color: #f39c12; font-weight: bold; }
 .score-bump { transform: scale(1.4); color: #fff; }
 
-/* Le Seau */
+/* --- LE SEAU (TAILLES FIXÉES POUR EMPÊCHER LE BUG) --- */
 #game-container {
     position: relative;
+    width: 600px;
+    height: 800px;
+    max-width: 100vw;
+    max-height: 80vh;
     border-left: 10px solid #16213e;
     border-right: 10px solid #16213e;
     border-bottom: 10px solid #16213e;
@@ -100,7 +104,12 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
     background-color: #0f172a;
     box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
 }
-canvas { display: block; }
+
+canvas { 
+    width: 100%;
+    height: 100%;
+    display: block; 
+}
 
 /* Effets Visuels (Particules et Textes) */
 #effects-container {
