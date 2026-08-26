@@ -1,41 +1,69 @@
 // ==========================================
-// 1. PARAMÈTRES ET AUDIO
+// 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES
 // ==========================================
 const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
-let currentSettingIndex = 0; let soundEnabled = true; let musicStarted = false;
+let currentSettingIndex = 0;
 
 function toggleSettings() {
-    document.getElementById('settings-modal').classList.toggle('show');
+    const modal = document.getElementById('settings-modal');
+    modal.classList.toggle('show');
     currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
-    if(document.getElementById('settings-btn-img')) document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
+    const btnImg = document.getElementById('settings-btn-img');
+    if (btnImg) btnImg.src = settingImages[currentSettingIndex];
 }
+
 function toggleTheme() { document.body.classList.toggle('dark-mode'); }
-function toggleSound() {
-    soundEnabled = document.getElementById('sound-toggle').checked;
-    const bgm = document.getElementById('bg-music');
-    if (bgm) { if (soundEnabled) bgm.play().catch(()=>{}); else bgm.pause(); }
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+    }
 }
+
+document.addEventListener('fullscreenchange', () => {
+    const fsToggle = document.getElementById('fs-toggle');
+    if (fsToggle) fsToggle.checked = !!document.fullscreenElement;
+});
+
+// --- GESTION AUDIO GLOBALE ---
+let ytPlayer; // Compatible avec ton système Youtube éventuel
+let isMuted = localStorage.getItem('isMuted') === 'true';
+let musicStarted = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const musicToggle = document.getElementById('music-toggle');
+    if (musicToggle) musicToggle.checked = !isMuted;
+});
+
+function toggleAudioGlobal() {
+    const musicToggle = document.getElementById('music-toggle');
+    isMuted = !musicToggle.checked;
+    localStorage.setItem('isMuted', isMuted);
+    
+    const bgm = document.getElementById('bg-music');
+    if (bgm) { if (!isMuted) bgm.play().catch(()=>{}); else bgm.pause(); }
+}
+
 function startMusic() {
-    if(!musicStarted && soundEnabled) {
+    if(!musicStarted && !isMuted) {
         const bgm = document.getElementById('bg-music');
         if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
         musicStarted = true;
     }
 }
+
 function playSound(id) {
-    if (!soundEnabled) return;
+    if (isMuted) return;
     const sound = document.getElementById(id);
     if(sound) { sound.currentTime = 0; sound.volume = 0.5; sound.play().catch(()=>{}); }
 }
+
 function setGameSize(sizeType) {
     document.getElementById('game-container').className = `size-${sizeType}`;
     document.querySelectorAll('.btn-size').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`btn-sz-${sizeType}`).classList.add('active');
-    if (sizeType === 'full') {
-        if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
-    } else {
-        if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-    }
 }
 
 // ==========================================
@@ -77,7 +105,7 @@ const cardDatabase = {
         id: "helicoton", type: "troop", name: "Hélicoton", cost: 3, hp: 300, dmg: 50, range: 20, speed: 5, atkSpeed: 900, isRanged: true, isFlying: true, targetsAir: true,
         skins: {
             front: { idle: ['assets/skins/helicoton.png'], attack: ['assets/skins/helicotonattack.png'] },
-            back:  { idle: ['assets/skins/helictonback.png'], attack: ['assets/skins/helictonback.png'] } // Faute de frappe respectée
+            back:  { idle: ['assets/skins/helictonback.png'], attack: ['assets/skins/helictonback.png'] }
         }
     },
     dragon: { 
@@ -88,11 +116,13 @@ const cardDatabase = {
         }
     },
     
-    // BÂTIMENTS
+    // BÂTIMENTS (USINE EMPILÉE / CANON ROTATIF)
     usine: { 
         id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0,
+        isStacked: true, // Mécanique d'empilage spécifique sans rotation
         skins: {
-            front: { idle: ['assets/skins/tour.png'] }, back: { idle: ['assets/skins/tourback.png'] }
+            front: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }, 
+            back: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }
         }
     },
     barriere: { 
@@ -106,7 +136,7 @@ const cardDatabase = {
         id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 35, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, hasTurret: true,
         skins: {
             front: { base: 'assets/skins/supportcanon.png', turret: 'assets/skins/canon.png' },
-            back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' } // Fautes respectées
+            back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' }
         }
     },
     
@@ -150,7 +180,7 @@ function renderDeckPool() {
         const div = document.createElement('div');
         div.className = `card-select-item ${tempSelectedDeck.includes(cardId) ? 'selected' : ''}`;
         
-        let bgImg = card.hasTurret ? card.skins.front.base : (card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]));
+        let bgImg = (card.hasTurret || card.isStacked) ? card.skins.front.base : (card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]));
         div.style.backgroundImage = `url('${bgImg}')`;
         
         div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>
@@ -238,14 +268,15 @@ function initGameEngine() {
     lastTime = performance.now(); requestAnimationFrame(gameLoop);
 }
 
+// Les tours sont augmentées de 20% (80 -> 96, 60 -> 72)
 function setupTowers() {
-    createTower('base_p', 'player', 50, 92, 3000, "assets/skins/tourroyaleback.png", 80, 80);
-    createTower('tower_p_l', 'player', 25, 75, 1500, "assets/skins/tourback.png", 60, 60);
-    createTower('tower_p_r', 'player', 75, 75, 1500, "assets/skins/tourback.png", 60, 60);
+    createTower('base_p', 'player', 50, 92, 3000, "assets/skins/tourroyaleback.png", 96, 96);
+    createTower('tower_p_l', 'player', 25, 75, 1500, "assets/skins/tourback.png", 72, 72);
+    createTower('tower_p_r', 'player', 75, 75, 1500, "assets/skins/tourback.png", 72, 72);
 
-    createTower('base_e', 'enemy', 50, 8, 3000, "assets/skins/touroryale.png", 80, 80); // Fautes respectées "touroryale.png"
-    createTower('tower_e_l', 'enemy', 25, 25, 1500, "assets/skins/tour.png", 60, 60);
-    createTower('tower_e_r', 'enemy', 75, 25, 1500, "assets/skins/tour.png", 60, 60);
+    createTower('base_e', 'enemy', 50, 8, 3000, "assets/skins/touroryale.png", 96, 96);
+    createTower('tower_e_l', 'enemy', 25, 25, 1500, "assets/skins/tour.png", 72, 72);
+    createTower('tower_e_r', 'enemy', 75, 25, 1500, "assets/skins/tour.png", 72, 72);
 }
 
 function createTower(id, team, x, y, hp, img, width, height) {
@@ -286,14 +317,14 @@ function updateUI() {
         const div = document.createElement('div');
         div.className = `card ${selectedCardIndex === index ? 'selected' : ''} ${currentSlime < cardDatabase[cardId].cost ? 'disabled' : ''}`;
         const data = cardDatabase[cardId];
-        let bgImg = data.hasTurret ? data.skins.front.base : (data.skins ? data.skins.front.idle[0] : (data.projectile || data.anim[0]));
+        let bgImg = (data.hasTurret || data.isStacked) ? data.skins.front.base : (data.skins ? data.skins.front.idle[0] : (data.projectile || data.anim[0]));
         div.style.backgroundImage = `url('${bgImg}')`;
         div.dataset.cost = data.cost; div.innerHTML = `<div class="cost">${data.cost}</div><div class="name" style="color:${data.color}">${data.name}</div>`;
         div.addEventListener('click', () => selectCard(index)); handContainer.appendChild(div);
     });
     
     let nextData = cardDatabase[nextCard];
-    let nextBg = nextData.hasTurret ? nextData.skins.front.base : (nextData.skins ? nextData.skins.front.idle[0] : (nextData.projectile || nextData.anim[0]));
+    let nextBg = (nextData.hasTurret || nextData.isStacked) ? nextData.skins.front.base : (nextData.skins ? nextData.skins.front.idle[0] : (nextData.projectile || nextData.anim[0]));
     document.getElementById('next-card').style.backgroundImage = `url('${nextBg}')`;
     document.getElementById('next-card').innerHTML = `<div class="cost">${nextData.cost}</div><div class="name">${nextData.name}</div>`;
 }
@@ -330,19 +361,26 @@ function spawnEntity(data, team, x, y) {
     el.className = `entity team-${team} ${data.type === 'building' ? 'building' : ''} ${data.isFlying ? 'is-flying' : ''}`;
     el.dataset.id = data.id;
     
-    // Le joueur est en bas, il regarde vers le HAUT (dos visible). L'ennemi est en haut, il regarde vers le BAS (face visible)
     let initFacing = team === 'player' ? 'back' : 'front';
-    
     el.style.left = `${x}%`; el.style.top = `${y}%`;
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
     
-    let turretEl = null;
+    let turretEl = null; let topEl = null;
+    
     if (data.hasTurret) {
+        // Canon avec tourelle rotative
         el.style.backgroundImage = `url('${data.skins[initFacing].base}')`;
         turretEl = document.createElement('div');
         turretEl.className = 'turret';
         turretEl.style.backgroundImage = `url('${data.skins[initFacing].turret}')`;
         el.appendChild(turretEl);
+    } else if (data.isStacked) {
+        // Usine (Image Top empilée sur la Base sans rotation)
+        el.style.backgroundImage = `url('${data.skins[initFacing].base}')`;
+        topEl = document.createElement('div');
+        topEl.className = 'stacked-top';
+        topEl.style.backgroundImage = `url('${data.skins[initFacing].top}')`;
+        el.appendChild(topEl);
     }
 
     arena.appendChild(el);
@@ -364,7 +402,6 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
     const fx = document.createElement('div'); fx.className = 'spell-anim';
     fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`; fx.style.width = `${spellData.radius*4}px`; fx.style.height = `${spellData.radius*4}px`;
     arena.appendChild(fx);
-
     activeSpells.push({ type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, timer: 0, frame: 0, maxTime: 0.8 });
 
     const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
@@ -466,7 +503,7 @@ function gameLoop(currentTime) {
             spell.maxTime -= dt; if(spell.maxTime <= 0) { spell.element.remove(); return false; }
         } else {
             spell.duration -= dt * 1000;
-            // Effet d'impact unique (ex: Boule de sort)
+            // Impact unique (Boule sort)
             if (spell.type === 'puddle' && !spell.triggered) {
                 spell.triggered = true;
                 const targetTeam = spell.team === 'player' ? 'enemy' : 'player';
@@ -482,7 +519,7 @@ function gameLoop(currentTime) {
                     }
                 });
             }
-            // Effet Spawner (Marais)
+            // Spawner (Marais)
             if (spell.type === 'spawner') {
                 spell.lastSpawn += dt * 1000;
                 if(spell.lastSpawn >= spell.spawnRate) {
