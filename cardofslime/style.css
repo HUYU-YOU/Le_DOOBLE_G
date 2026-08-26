@@ -1,7 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
 
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); color: white; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); color: white; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; transition: background 0.3s; }
+body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d1a 100%); }
+
 .game-title { font-family: 'Luckiest Guy', cursive; color: #39ff14; text-shadow: 2px 2px 0px #000; margin-bottom: 10px; z-index: 10; font-size: 2.5em; letter-spacing: 2px; }
 
 .hub-link { position: absolute; top: 20px; left: 20px; color: #39ff14; text-decoration: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; font-size: 1.2em; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 5px; border: 1px solid #39ff14; z-index: 100; transition: 0.2s; }
@@ -37,11 +39,13 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; max-height: 400px; overflow-y: auto; }
-.card-select-item { width: 70px; height: 100px; background: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: contain; background-repeat: no-repeat; background-position: center; }
+.card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: 80%; background-repeat: no-repeat; background-position: center 20%; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
-/* BACKGROUND MAP DAY */
-#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center/cover no-repeat; overflow: hidden; cursor: crosshair; }
+/* L'ARÈNE AVEC TOGGLE JOUR/NUIT */
+#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center/cover no-repeat; overflow: hidden; cursor: crosshair; transition: background 0.3s; }
+body.dark-mode #arena { background: url('assets/skins/mapnight.png') center/cover no-repeat; }
+
 #river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: rgba(57, 255, 20, 0.2); border-top: 2px dashed rgba(57, 255, 20, 0.5); border-bottom: 2px dashed rgba(57, 255, 20, 0.5); z-index: 1; pointer-events: none;}
 .bridge { position: absolute; top: 45%; height: 10%; width: 15%; background: rgba(92, 64, 51, 0.8); border-left: 2px solid #3e2723; border-right: 2px solid #3e2723; z-index: 2; pointer-events: none;}
 .left-bridge { left: 20%; } .right-bridge { right: 20%; }
@@ -51,7 +55,7 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 #next-card-zone { position: absolute; bottom: 190px; left: 10px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 10px; font-size: 12px; text-align: center; color: #ccc; z-index: 10; font-family: 'Rajdhani'; }
 #hand { display: flex; justify-content: space-around; align-items: flex-end; height: 100px; }
 
-.card { width: 70px; height: 100px; background: linear-gradient(135deg, #444, #222); border: 2px solid #888; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; cursor: pointer; transition: transform 0.1s, border-color 0.2s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.5); background-size: contain; background-repeat: no-repeat; background-position: center; }
+.card { width: 70px; height: 100px; background-color: #222; border: 2px solid #888; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; cursor: pointer; transition: transform 0.1s, border-color 0.2s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.5); background-size: 80%; background-repeat: no-repeat; background-position: center 20%; }
 .card.selected { border-color: #39ff14; transform: translateY(-15px); box-shadow: 0 0 15px #39ff14; }
 .card.disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
 .card.mini { width: 45px; height: 65px; font-size: 9px; margin-top: 5px; pointer-events: none; }
@@ -71,6 +75,7 @@ body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); 
 .close-btn { background: #ff3366; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; font-family: 'Rajdhani'; font-size: 1.1em; }
 
 /* === ENTITÉS ET SKINS === */
+/* Color transparent masque les noms comme "Tour" ou "Canon" qui bavaient sur les images */
 .entity { position: absolute; width: 55px; height: 55px; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
 .entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
 .entity.is-flying { box-shadow: 0 20px 15px rgba(0,0,0,0.5); z-index: 6; }
