@@ -1,46 +1,15 @@
-console.log("Le fichier game.js s'est bien chargé !");
-
 // =========================================================
-// 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
+// 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES
 // =========================================================
-
-// On remet le dossier img/ !
-const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings4.png', 'img/settings5.png'];
-let hoverInterval = null;
-let currentFrame = 0;
-const settingsBtnImg = document.getElementById('settings-btn-img');
-
-function startSettingsAnim() {
-    if (hoverInterval) return;
-    currentFrame = 0;
-    if (settingsBtnImg) settingsBtnImg.src = animFrames[currentFrame];
-    hoverInterval = setInterval(() => {
-        currentFrame = (currentFrame + 1) % animFrames.length;
-        if (settingsBtnImg) settingsBtnImg.src = animFrames[currentFrame];
-    }, 100); 
-}
-
-function stopSettingsAnim() {
-    clearInterval(hoverInterval); 
-    hoverInterval = null;
-    if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = 'img/setting.png'; 
-    }
-}
-
-function clickSettingsAnim() {
-    clearInterval(hoverInterval); 
-    hoverInterval = null;
-    if (settingsBtnImg) settingsBtnImg.src = 'img/settings4.png';
-    toggleSettings();
-    setTimeout(() => { 
-        if (settingsBtnImg) settingsBtnImg.src = 'img/setting.png'; 
-    }, 300);
-}
+const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+let currentSettingIndex = 0;
 
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
-    if (modal) modal.classList.toggle('show');
+    modal.classList.toggle('show');
+
+    currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
+    document.getElementById('settings-btn-img').src = settingImages[currentSettingIndex];
 }
 
 function toggleTheme() {
@@ -60,7 +29,7 @@ document.addEventListener('fullscreenchange', () => {
     if (fsToggle) fsToggle.checked = !!document.fullscreenElement;
 });
 
-// --- GESTION AUDIO (YOUTUBE) ---
+// --- GESTION AUDIO GLOBALE ---
 let ytPlayer;
 let isMuted = localStorage.getItem('isMuted') === 'true';
 
@@ -70,7 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function toggleMusic() {
-    isMuted = !document.getElementById('music-toggle').checked;
+    let musicToggle = document.getElementById('music-toggle');
+    if(!musicToggle) return;
+    isMuted = !musicToggle.checked;
     localStorage.setItem('isMuted', isMuted);
     
     if (ytPlayer && ytPlayer.mute) {
@@ -92,13 +63,13 @@ function onYouTubeIframeAPIReady() {
 
 
 // =========================================================
-// 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & CONFIGURATION)
+// 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
 // =========================================================
 
-// ⚠️ Mettre 256 si tes images font environ 256x256px, ou 512 si elles sont plus grandes
-const TAILLE_IMAGE_EN_PIXELS = 256; 
+// Si les images dans ton jeu sont énormes (ex: 512x512 pixels), laisse 512.
+// Si elles sont petites (256x256), change cette valeur en 256.
+const TAILLE_IMAGE_EN_PIXELS = 512; 
 
-// Avec le chemin 'img/' !
 const SLIMES = [
     { level: 1, radius: 22, points: 2, texture: 'img/slime1.png', color: '#ffaaaa' },
     { level: 2, radius: 32, points: 4, texture: 'img/slime2.png', color: '#aaffaa' },
@@ -146,6 +117,7 @@ Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);
 
+// --- SEAU DE JEU ---
 const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.1 };
 const ground = Bodies.rectangle(GAME_WIDTH / 2, GAME_HEIGHT + 25, GAME_WIDTH, 50, wallOptions);
 const leftWall = Bodies.rectangle(-25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
@@ -153,15 +125,18 @@ const rightWall = Bodies.rectangle(GAME_WIDTH + 25, GAME_HEIGHT / 2, 50, GAME_HE
 const loseLineY = 150; 
 Composite.add(world, [ground, leftWall, rightWall]);
 
+// --- VARIABLES GLOBALES ---
 let currentSlime = null;
 let currentSlimeLevel = 0;
 let score = 0;
 let canDrop = true;
 let isGameOver = false;
 
+// Gestion du Meilleur Score
 let bestScore = localStorage.getItem('fuslime2_best_score') || 0;
 document.getElementById('best-score').innerText = bestScore;
 
+// --- AUDIO WEB API (Sons dynamiques) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let audioInitialized = false;
 
@@ -193,9 +168,11 @@ function playSound(type, level = 1) {
     }
 }
 
+// --- EFFETS VISUELS ---
 function createEffects(x, y, points, slimeData) {
     const container = document.getElementById('effects-container');
     
+    // Texte flottant du score
     const text = document.createElement('div');
     text.className = 'floating-text';
     text.innerText = '+' + points;
@@ -205,6 +182,7 @@ function createEffects(x, y, points, slimeData) {
     container.appendChild(text);
     setTimeout(() => text.remove(), 800);
 
+    // Particules éclaboussures
     for(let i = 0; i < 10; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
@@ -223,6 +201,7 @@ function createEffects(x, y, points, slimeData) {
         setTimeout(() => p.remove(), 500);
     }
 
+    // Animation du score
     const scoreEl = document.getElementById('score').parentElement;
     scoreEl.classList.add('score-bump');
     setTimeout(() => scoreEl.classList.remove('score-bump'), 100);
@@ -252,7 +231,7 @@ function spawnGhostSlime(x) {
         isSensor: true,
         label: 'ghost',
         render: {
-            fillStyle: slimeData.color,
+            fillStyle: slimeData.color, // Couleur de secours
             sprite: {
                 texture: slimeData.texture,
                 xScale: getScale(slimeData.radius),
@@ -304,12 +283,17 @@ function dropSlime() {
     }, 700); 
 }
 
+// --- CONTRÔLES SOURIS / TACTILE ---
 const container = document.getElementById('game-container');
 
 container.addEventListener('mousemove', (e) => {
     if (!canDrop || isGameOver || !currentSlime) return;
     const rect = container.getBoundingClientRect();
-    let x = e.clientX - rect.left;
+    
+    // Le calcul de coordonnée doit prendre en compte le redimensionnement du CSS
+    const scaleX = GAME_WIDTH / rect.width;
+    let x = (e.clientX - rect.left) * scaleX;
+    
     const slimeRadius = SLIMES[currentSlimeLevel - 1].radius;
 
     if (x < slimeRadius) x = slimeRadius;
@@ -324,7 +308,9 @@ container.addEventListener('touchmove', (e) => {
     if (!canDrop || isGameOver || !currentSlime) return;
     e.preventDefault();
     const rect = container.getBoundingClientRect();
-    let x = e.touches[0].clientX - rect.left;
+    const scaleX = GAME_WIDTH / rect.width;
+    let x = (e.touches[0].clientX - rect.left) * scaleX;
+    
     const slimeRadius = SLIMES[currentSlimeLevel - 1].radius;
     if (x < slimeRadius) x = slimeRadius;
     if (x > GAME_WIDTH - slimeRadius) x = GAME_WIDTH - slimeRadius;
@@ -336,6 +322,7 @@ container.addEventListener('touchend', (e) => {
     dropSlime();
 });
 
+// --- COLLISIONS ET FUSION (STYLE SUIKA) ---
 Events.on(engine, 'collisionStart', (event) => {
     const pairs = event.pairs;
 
@@ -389,6 +376,7 @@ Events.on(engine, 'collisionStart', (event) => {
     }
 });
 
+// --- GAME OVER ---
 Events.on(engine, 'beforeUpdate', () => {
     if (isGameOver) return;
 
@@ -430,4 +418,5 @@ function gameOver() {
     if (currentSlime) Composite.remove(world, currentSlime); 
 }
 
+// Lancement du jeu
 spawnGhostSlime(GAME_WIDTH / 2);
