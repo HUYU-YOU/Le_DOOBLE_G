@@ -1,17 +1,86 @@
-:root { --bg: #020308; --panel: rgba(10, 15, 28, 0.7); --p1: #00f0ff; --p2: #ff007f; --p3: #39ff14; --p4: #ffbf00; }
-body.dark-mode { filter: brightness(0.7) contrast(1.2); }
-body, html { font-family: 'Rajdhani', sans-serif; background-color: var(--bg); background-image: url('assets/background.jpg'); background-size: cover; background-position: center; color: #fff; margin: 0; padding: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; user-select: none; }
-#game-container { position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important; background-image: url('assets/background.jpg'); background-size: cover; background-position: center; background-color: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; z-index: 999; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
-#game-container.size-classic { position: relative !important; width: 1000px !important; height: 600px !important; border-radius: 15px; border: 1px solid rgba(0, 240, 255, 0.2); box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); }
-#webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-.hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px); transition: all 0.3s ease; z-index: 100; }
+/* =======================================================
+   VARIABLES GLOBALES ET COULEURS
+   ======================================================= */
+:root { 
+    --bg: #020308; 
+    --panel: rgba(10, 15, 28, 0.7); 
+    --p1: #00f0ff; 
+    --p2: #ff007f; 
+    --p3: #39ff14; 
+    --p4: #ffbf00; 
+}
+
+body.dark-mode { 
+    filter: brightness(0.7) contrast(1.2); 
+}
+
+/* =======================================================
+   CORPS DE LA PAGE (BASE & BACKGROUND)
+   ======================================================= */
+body, html { 
+    font-family: 'Rajdhani', sans-serif; 
+    background-color: var(--bg); 
+    background-image: url('assets/background.jpg'); 
+    background-size: cover; 
+    background-position: center; 
+    color: #fff; 
+    margin: 0; padding: 0; 
+    width: 100vw; height: 100vh; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    overflow: hidden; user-select: none; 
+}
+
+#game-container { 
+    position: fixed !important; top: 0; left: 0; 
+    width: 100vw !important; height: 100vh !important; 
+    background-image: url('assets/background.jpg'); 
+    background-size: cover; background-position: center; background-color: var(--bg); 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    overflow: hidden; z-index: 999; 
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+}
+
+#game-container.size-classic { 
+    position: relative !important; width: 1000px !important; height: 600px !important; 
+    border-radius: 15px; border: 1px solid rgba(0, 240, 255, 0.2); 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+}
+
+#webgl-container { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; 
+}
+
+/* =======================================================
+   BOUTONS FLOTTANTS ET MENUS
+   ======================================================= */
+.hub-link { 
+    position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; 
+    font-weight: bold; font-size: 1.2rem; background: rgba(0,0,0,0.5); padding: 10px 20px; 
+    border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px); 
+    transition: all 0.3s ease; z-index: 100; 
+}
 .hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
+
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; pointer-events: auto; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
-.overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 17, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); pointer-events: auto; }
+
+.overlay { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 17, 0.85); 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; 
+    text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(12px); 
+    -webkit-backdrop-filter: blur(12px); pointer-events: auto; 
+}
+
 .menu-title { font-size: 2.2em; margin-bottom: 20px; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
-.btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 12px 30px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.3s; margin: 10px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); width: 80%; max-width: 400px; pointer-events: auto; position: relative; z-index: 100; }
+
+.btn-main { 
+    background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 12px 30px; 
+    font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 8px; 
+    cursor: pointer; text-transform: uppercase; transition: 0.3s; margin: 10px; 
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); width: 80%; max-width: 400px; 
+    pointer-events: auto; position: relative; z-index: 100; 
+}
 .btn-main:hover { background: var(--p1); color: #000; transform: scale(1.05); box-shadow: 0 0 25px var(--p1); }
 .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
 .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); color: #000;}
@@ -19,9 +88,18 @@ body, html { font-family: 'Rajdhani', sans-serif; background-color: var(--bg); b
 .btn-main.gold:hover { background: var(--p4); color:#000; box-shadow: 0 0 25px var(--p4); }
 .btn-main.cancel { background: transparent; border: 1px solid #555; color: #aaa; font-size: 1em; padding: 10px 20px; box-shadow: none; }
 .btn-main.cancel:hover { background: #333; color: #fff; border-color: #fff; transform: none; box-shadow: none; }
+
 input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px; position: relative; z-index: 100;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
-#settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s; backdrop-filter: blur(5px); }
+
+/* =======================================================
+   MODAL PARAMÈTRES ET UI JEU
+   ======================================================= */
+#settings-modal { 
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); 
+    z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; 
+    visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s; backdrop-filter: blur(5px); 
+}
 #settings-modal.show { opacity: 1; visibility: visible; }
 .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 420px; }
 .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
@@ -30,6 +108,7 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
 .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
 #ui-container { position: absolute; top: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; pointer-events: none; }
 .game-title { margin: 0; letter-spacing: 8px; text-shadow: 0 0 20px #000, 0 0 30px var(--p1); font-size: 3rem; }
 #economy-panel { background: rgba(0, 0, 0, 0.8); border: 1px solid var(--p1); border-radius: 10px; padding: 10px 20px; display: flex; gap: 20px; margin-bottom: 5px; backdrop-filter: blur(5px); box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); pointer-events: auto; }
@@ -38,9 +117,11 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #status-panel p { margin: 0; }
 .troop-slider-container { display: flex; align-items: center; gap: 10px; }
 #troop-slider { width: 150px; cursor: pointer; }
+
 #spawn-timer-container { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 15, 28, 0.85); border: 3px solid var(--p4); padding: 20px 50px; border-radius: 20px; text-align: center; z-index: 20; box-shadow: 0 0 40px rgba(255, 191, 0, 0.4); pointer-events: none; }
 #spawn-timer-container h2 { margin: 0 0 10px 0; color: var(--p4); font-size: 2em; letter-spacing: 2px; }
 #spawn-timer { font-size: 6em; font-weight: bold; color: #fff; text-shadow: 0 0 20px var(--p2); }
+
 #action-menu { position: absolute; background: rgba(10, 15, 28, 0.95); border: 2px solid var(--p1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); backdrop-filter: blur(8px); transform: translate(-50%, -50%); z-index: 50; min-width: 200px; pointer-events: auto; }
 .action-header { color: #fff; text-align: center; font-weight: bold; margin-bottom: 5px; font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px; }
 .action-subheader { color: #aaa; text-align: center; font-size: 0.9em; margin-bottom: 10px; font-style: italic; }
