@@ -42,13 +42,17 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 .card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: 80%; background-repeat: no-repeat; background-position: center 20%; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
-/* L'ARÈNE AVEC TOGGLE JOUR/NUIT */
-#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center/cover no-repeat; overflow: hidden; cursor: crosshair; transition: background 0.3s; }
-body.dark-mode #arena { background: url('assets/skins/mapnight.png') center/cover no-repeat; }
+/* --- L'ARÈNE --- 
+   J'ai ajusté background-position à "center 15%" pour glisser la carte vers le bas.
+   Modifie ce "15%" (ex: 20% ou 5%) si tu veux ajuster précisément ton chemin visuel ! */
+#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center 15% / cover no-repeat; overflow: hidden; cursor: crosshair; transition: background 0.3s; }
+body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 15% / cover no-repeat; }
 
-#river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: rgba(57, 255, 20, 0.2); border-top: 2px dashed rgba(57, 255, 20, 0.5); border-bottom: 2px dashed rgba(57, 255, 20, 0.5); z-index: 1; pointer-events: none;}
-.bridge { position: absolute; top: 45%; height: 10%; width: 15%; background: rgba(92, 64, 51, 0.8); border-left: 2px solid #3e2723; border-right: 2px solid #3e2723; z-index: 2; pointer-events: none;}
+/* La rivière et les ponts HTML deviennent complètement transparents ! Ils servent juste pour les calculs de collisions JS */
+#river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: transparent; z-index: 1; pointer-events: none;}
+.bridge { position: absolute; top: 45%; height: 10%; width: 15%; background: transparent; z-index: 2; pointer-events: none;}
 .left-bridge { left: 20%; } .right-bridge { right: 20%; }
+
 #deploy-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 45%; background: rgba(57, 255, 20, 0.15); border-top: 2px dashed #39ff14; z-index: 10; display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.7); font-family: 'Rajdhani'; font-size: 1.5em; pointer-events: none; }
 
 #ui-container { height: 180px; background: rgba(17, 14, 45, 0.9); border-top: 2px solid #39ff14; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10; }
@@ -76,11 +80,11 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center/cove
 
 /* === ENTITÉS ET SKINS === */
 .entity { position: absolute; width: 55px; height: 55px; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
-.entity.building { border-radius: 10px; border: 2px solid #fff; background-color: rgba(0,0,0,0.8) !important; color: white; display: flex; justify-content: center; align-items: center; font-family: 'Rajdhani'; font-size: 1.2em; font-weight: bold; z-index: 3;}
 .entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
+.entity[data-id="slimeuse"] { width: 44px; height: 44px; } /* Plus petite */
 
-/* La Slimeuse réduite de 20% comme demandé (55px * 0.8 = 44px) */
-.entity[data-id="slimeuse"] { width: 44px; height: 44px; }
+/* Bâtiments (Plus de bords blancs ni de fond noir !) */
+.entity.building { display: flex; justify-content: center; align-items: center; z-index: 3; }
 
 .entity.is-flying { box-shadow: 0 20px 15px rgba(0,0,0,0.5); z-index: 6; }
 .entity.stunned { filter: brightness(1.5) drop-shadow(0 0 10px yellow); animation: shake 0.2s infinite; }
@@ -104,7 +108,7 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center/cove
 @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
 @keyframes shake { 0% { transform: translate(-52%, -50%); } 50% { transform: translate(-48%, -50%); } 100% { transform: translate(-50%, -50%); } }
 
-/* EFFETS DES SORTS */
+/* EFFETS DES SORTS (On enlève le fallback violet du marais) */
 .spell-anim { position: absolute; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 10; pointer-events: none; }
 .spell-puddle { position: absolute; background-size: contain; background-repeat: no-repeat; background-position: center; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; }
 
