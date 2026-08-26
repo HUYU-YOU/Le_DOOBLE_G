@@ -1,5 +1,118 @@
-// --- CONFIGURATION DES SLIMES ---
-// (Tu pourras ajuster les couleurs des particules selon l'allure de tes images)
+// =========================================================
+// 1. GESTION DES PARAMÈTRES ET DU CYCLE D'IMAGES
+// =========================================================
+
+const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+let currentSettingIndex = 0;
+let hoverInterval;
+const settingsBtnImg = document.getElementById('settings-btn-img');
+
+function startSettingsAnim() {
+    if (hoverInterval) return;
+    currentSettingIndex = 0;
+    if(settingsBtnImg) settingsBtnImg.src = settingImages[currentSettingIndex];
+    hoverInterval = setInterval(() => {
+        currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
+        if(settingsBtnImg) settingsBtnImg.src = settingImages[currentSettingIndex];
+    }, 100); 
+}
+
+function stopSettingsAnim() {
+    clearInterval(hoverInterval); 
+    hoverInterval = null;
+    if (settingsBtnImg && !settingsBtnImg.src.includes('settings5.png')) { 
+        settingsBtnImg.src = 'img/setting.png'; 
+    }
+}
+
+function clickSettingsAnim() {
+    clearInterval(hoverInterval); 
+    hoverInterval = null;
+    if(settingsBtnImg) settingsBtnImg.src = 'img/settings5.png';
+    toggleSettings();
+    setTimeout(() => { 
+        if(settingsBtnImg) settingsBtnImg.src = 'img/setting.png'; 
+    }, 300);
+}
+
+// Attacher les événements d'animation
+if (settingsBtnImg) {
+    settingsBtnImg.addEventListener('mouseenter', startSettingsAnim);
+    settingsBtnImg.addEventListener('mouseleave', stopSettingsAnim);
+    settingsBtnImg.addEventListener('click', clickSettingsAnim);
+}
+
+function toggleSettings() {
+    const modal = document.getElementById('settings-modal');
+    if(modal) modal.classList.toggle('show');
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    let fsToggle = document.getElementById('fs-toggle');
+    if(fsToggle) fsToggle.checked = !!document.fullscreenElement;
+});
+
+// --- GESTION AUDIO GLOBALE (YOUTUBE) ---
+let ytPlayer;
+let isMuted = localStorage.getItem('isMuted') === 'true';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const musicToggle = document.getElementById('music-toggle');
+    if(musicToggle) musicToggle.checked = !isMuted;
+});
+
+// Fonction appelée par le checkbox du modal
+function toggleMusic() {
+    let musicToggle = document.getElementById('music-toggle');
+    if(!musicToggle) return;
+    isMuted = !musicToggle.checked; // Si c'est checké, on dé-mute (isMuted = false)
+    localStorage.setItem('isMuted', isMuted);
+    
+    if (ytPlayer && ytPlayer.mute) {
+        if (isMuted) ytPlayer.mute();
+        else ytPlayer.unMute();
+    }
+}
+
+function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('youtube-audio', {
+        height: '0',
+        width: '0',
+        videoId: '4RaguYU_SQI',
+        playerVars: {
+            'autoplay': 1,
+            'controls': 0,
+            'showinfo': 0,
+            'autohide': 1,
+            'loop': 1,
+            'playlist': '4RaguYU_SQI'
+        },
+        events: {
+            'onReady': (e) => {
+                if (isMuted) e.target.mute();
+                else e.target.unMute();
+            }
+        }
+    });
+}
+
+
+// =========================================================
+// 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS)
+// =========================================================
+
 const SLIMES = [
     { level: 1, radius: 20, points: 2, texture: 'img/slime1.png', color: '#ffaaaa' },
     { level: 2, radius: 30, points: 4, texture: 'img/slime2.png', color: '#aaffaa' },
@@ -16,7 +129,6 @@ const SLIMES = [
     { level: 13, radius: 280, points: 8192, texture: 'img/slime13.png', color: '#ffffff' }
 ];
 
-// --- INITIALISATION DE MATTER.JS ---
 const Engine = Matter.Engine,
       Render = Matter.Render,
       Runner = Matter.Runner,
@@ -45,7 +157,7 @@ Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);
 
-// --- SEAU ET PHYSIQUE ---
+// --- SEAU ---
 const wallOptions = { isStatic: true, render: { visible: false } };
 const ground = Bodies.rectangle(GAME_WIDTH / 2, GAME_HEIGHT + 25, GAME_WIDTH, 50, wallOptions);
 const leftWall = Bodies.rectangle(-25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
@@ -60,12 +172,12 @@ let score = 0;
 let canDrop = true;
 let isGameOver = false;
 
-// --- GESTION DU SON (WEB AUDIO API) ---
+// --- GESTION DES SFX (WEB AUDIO API) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let audioInitialized = false;
 
 function playSound(type, level = 1) {
-    if (!audioInitialized) return; // Sécurité pour empêcher le navigateur de bloquer le son
+    if (!audioInitialized) return; 
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
     const osc = audioCtx.createOscillator();
@@ -84,7 +196,6 @@ function playSound(type, level = 1) {
         osc.start(now); osc.stop(now + 0.1);
     } else if (type === 'merge') {
         osc.type = 'triangle';
-        // Le son devient plus aigu quand le slime est gros !
         const baseFreq = 300 + (level * 60); 
         osc.frequency.setValueAtTime(baseFreq, now);
         osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.15);
@@ -98,7 +209,6 @@ function playSound(type, level = 1) {
 function createEffects(x, y, points, slimeData) {
     const container = document.getElementById('effects-container');
     
-    // 1. Texte flottant (+X points)
     const text = document.createElement('div');
     text.className = 'floating-text';
     text.innerText = '+' + points;
@@ -108,7 +218,6 @@ function createEffects(x, y, points, slimeData) {
     container.appendChild(text);
     setTimeout(() => text.remove(), 800);
 
-    // 2. Particules d'éclaboussure
     for(let i = 0; i < 8; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
@@ -118,7 +227,6 @@ function createEffects(x, y, points, slimeData) {
         p.style.left = x + 'px';
         p.style.top = y + 'px';
         
-        // Direction de l'éclaboussure
         const angle = Math.random() * Math.PI * 2;
         const dist = Math.random() * 60 + 30;
         p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
@@ -128,7 +236,6 @@ function createEffects(x, y, points, slimeData) {
         setTimeout(() => p.remove(), 500);
     }
 
-    // 3. Animation de rebond du Score
     const scoreEl = document.getElementById('score').parentElement;
     scoreEl.classList.add('score-bump');
     setTimeout(() => scoreEl.classList.remove('score-bump'), 100);
@@ -140,26 +247,11 @@ function updateScore(points) {
 }
 
 function getScale(radius) {
-    // Adapter selon la résolution de tes PNG. 256 suppose une image source d'environ 256x256px.
-    const originalImageSize = 256; 
+    const originalImageSize = 256; // Modifie cette valeur si tes slimes sont en 512px
     return (radius * 2) / originalImageSize;
 }
 
-// --- PLEIN ÉCRAN ---
-const fsBtn = document.getElementById('fullscreen-btn');
-fsBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => console.log(err));
-        fsBtn.innerText = "🔲 Réduire";
-    } else {
-        document.exitFullscreen();
-        fsBtn.innerText = "🔲 Plein Écran";
-    }
-});
-
-// --- LOGIQUE DU JEU ---
 function spawnGhostSlime(x) {
-    // Les slimes initiaux sont de niveau 1 à 3
     currentSlimeLevel = Math.floor(Math.random() * 3) + 1; 
     const slimeData = SLIMES[currentSlimeLevel - 1];
 
@@ -182,7 +274,7 @@ function spawnGhostSlime(x) {
 function dropSlime() {
     if (!canDrop || isGameOver || !currentSlime) return;
     canDrop = false;
-    audioInitialized = true; // Active l'audio après la 1ère interaction
+    audioInitialized = true; 
     playSound('drop');
 
     const x = currentSlime.position.x;
@@ -193,7 +285,7 @@ function dropSlime() {
     currentSlime = null;
 
     const realSlime = Bodies.circle(x, y, slimeData.radius, {
-        restitution: 0.2, // Légèrement rebondissant
+        restitution: 0.2, 
         friction: 0.1,
         density: 0.001 * slimeData.level,
         label: 'slime',
@@ -209,7 +301,6 @@ function dropSlime() {
 
     Composite.add(world, realSlime);
 
-    // Temps d'attente avant la prochaine chute
     setTimeout(() => {
         if (!isGameOver) {
             spawnGhostSlime(GAME_WIDTH / 2);
@@ -251,7 +342,7 @@ container.addEventListener('touchend', (e) => {
     dropSlime();
 });
 
-// --- MÉCANIQUE DE FUSION (MERGE) ---
+// --- FUSION (MERGE) ---
 Events.on(engine, 'collisionStart', (event) => {
     const pairs = event.pairs;
 
@@ -262,7 +353,6 @@ Events.on(engine, 'collisionStart', (event) => {
         if (bodyA.label === 'slime' && bodyB.label === 'slime') {
             if (bodyA.slimeLevel === bodyB.slimeLevel && bodyA.slimeLevel < SLIMES.length) {
                 
-                // Évite la création en double si plusieurs collisions en même temps
                 if (bodyA.isMerging || bodyB.isMerging) continue;
                 bodyA.isMerging = true;
                 bodyB.isMerging = true;
@@ -299,7 +389,7 @@ Events.on(engine, 'collisionStart', (event) => {
     }
 });
 
-// --- GESTION DU GAME OVER ---
+// --- GAME OVER ---
 Events.on(engine, 'beforeUpdate', () => {
     if (isGameOver) return;
 
@@ -308,12 +398,11 @@ Events.on(engine, 'beforeUpdate', () => {
         const body = bodies[i];
         
         if (body.label === 'slime') {
-            // Si le slime dépasse la ligne rouge ET est presque immobile
             if (body.position.y < loseLineY && body.velocity.y > -0.5 && body.velocity.y < 0.5) {
                 if (!body.warningTimer) body.warningTimer = 0;
                 body.warningTimer++;
 
-                if (body.warningTimer > 60) { // Environ 1 seconde
+                if (body.warningTimer > 60) { 
                     gameOver();
                     break;
                 }
@@ -324,7 +413,6 @@ Events.on(engine, 'beforeUpdate', () => {
     }
 });
 
-// Dessiner la ligne rouge en haut du seau
 Events.on(render, 'afterRender', () => {
     const context = render.context;
     context.beginPath();
