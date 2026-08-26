@@ -90,7 +90,7 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
 .best-score-container { font-size: 18px; color: #f39c12; font-weight: bold; }
 .score-bump { transform: scale(1.4); color: #fff; }
 
-/* --- LE SEAU (TAILLES FIXÉES POUR EMPÊCHER LE BUG) --- */
+/* Le Seau */
 #game-container {
     position: relative;
     width: 600px;
