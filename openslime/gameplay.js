@@ -16,12 +16,7 @@ let entities = [];
 let selectedEntity = null; 
 let actionState = 'NORMAL'; 
 
-let playerStats = { 
-    pop: 10, 
-    maxPop: 100, 
-    gold: 0, 
-    territory: 1 
-};
+let playerStats = { pop: 10, maxPop: 100, gold: 0, territory: 1 };
 
 const overlayCanvas = document.createElement('canvas');
 overlayCanvas.width = 2048; 
@@ -31,120 +26,26 @@ let overlayTexture;
 
 // --- 1. PARAMETRES ---
 const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
-let hoverInterval; 
-let currentFrame = 0;
-
-window.startSettingsAnim = function() { 
-    if (hoverInterval) return; 
-    currentFrame = 0; 
-    const btn = document.getElementById('settings-btn-img'); 
-    if(btn) btn.src = animFrames[currentFrame]; 
-    hoverInterval = setInterval(() => { 
-        currentFrame = (currentFrame + 1) % animFrames.length; 
-        if(btn) btn.src = animFrames[currentFrame]; 
-    }, 100); 
-}
-
-window.stopSettingsAnim = function() { 
-    clearInterval(hoverInterval); 
-    hoverInterval = null; 
-    const btn = document.getElementById('settings-btn-img'); 
-    if (btn && !btn.src.includes('settings4.png')) { 
-        btn.src = '../img/setting.png'; 
-    } 
-}
-
-window.clickSettingsAnim = function() { 
-    clearInterval(hoverInterval); 
-    hoverInterval = null; 
-    const btn = document.getElementById('settings-btn-img'); 
-    if(btn) btn.src = '../img/settings4.png'; 
-    window.toggleSettings(); 
-    setTimeout(() => { 
-        if(btn) btn.src = '../img/setting.png'; 
-    }, 300); 
-}
-
-window.toggleSettings = function() { 
-    document.getElementById('settings-modal').classList.toggle('show'); 
-}
-
-window.toggleTheme = function() { 
-    document.body.classList.toggle('dark-mode'); 
-}
-
-window.toggleFullscreen = function() { 
-    if (!document.fullscreenElement) { 
-        document.documentElement.requestFullscreen().catch(err => console.log(err)); 
-    } else { 
-        if (document.exitFullscreen) document.exitFullscreen(); 
-    } 
-}
-
-window.setGameSize = function(size) { 
-    const container = document.getElementById('game-container'); 
-    if (!container) return; 
-    
-    document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active')); 
-    container.classList.remove('size-classic', 'size-wide', 'size-full'); 
-    
-    let btnClassic = document.getElementById('btn-sz-classic'); 
-    let btnWide = document.getElementById('btn-sz-wide'); 
-    
-    if (size === 'classic') { 
-        container.classList.add('size-classic'); 
-        if(btnClassic) btnClassic.classList.add('active'); 
-        if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); 
-    } 
-    else if (size === 'wide') { 
-        container.classList.add('size-wide'); 
-        if(btnWide) btnWide.classList.add('active'); 
-        if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); 
-    } 
-    
-    if (typeof window.resize3DEnvironment === "function") { 
-        setTimeout(window.resize3DEnvironment, 50); 
-        setTimeout(window.resize3DEnvironment, 400); 
-    } 
-}
+let hoverInterval; let currentFrame = 0;
+window.startSettingsAnim = function() { if (hoverInterval) return; currentFrame = 0; const btn = document.getElementById('settings-btn-img'); if(btn) btn.src = animFrames[currentFrame]; hoverInterval = setInterval(() => { currentFrame = (currentFrame + 1) % animFrames.length; if(btn) btn.src = animFrames[currentFrame]; }, 100); }
+window.stopSettingsAnim = function() { clearInterval(hoverInterval); hoverInterval = null; const btn = document.getElementById('settings-btn-img'); if (btn && !btn.src.includes('settings4.png')) { btn.src = '../img/setting.png'; } }
+window.clickSettingsAnim = function() { clearInterval(hoverInterval); hoverInterval = null; const btn = document.getElementById('settings-btn-img'); if(btn) btn.src = '../img/settings4.png'; window.toggleSettings(); setTimeout(() => { if(btn) btn.src = '../img/setting.png'; }, 300); }
+window.toggleSettings = function() { document.getElementById('settings-modal').classList.toggle('show'); }
+window.toggleTheme = function() { document.body.classList.toggle('dark-mode'); }
+window.toggleFullscreen = function() { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.log(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } }
+window.setGameSize = function(size) { const container = document.getElementById('game-container'); if (!container) return; document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active')); container.classList.remove('size-classic', 'size-wide', 'size-full'); let btnClassic = document.getElementById('btn-sz-classic'); let btnWide = document.getElementById('btn-sz-wide'); if (size === 'classic') { container.classList.add('size-classic'); if(btnClassic) btnClassic.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } else if (size === 'wide') { container.classList.add('size-wide'); if(btnWide) btnWide.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } if (typeof window.resize3DEnvironment === "function") { setTimeout(window.resize3DEnvironment, 50); setTimeout(window.resize3DEnvironment, 400); } }
 
 // --- 2. RADAR ---
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
 terrainImg.src = 'assets/map_globe_terreste.png'; 
-terrainImg.onload = () => { 
-    terrainCanvas.width = terrainImg.width; 
-    terrainCanvas.height = terrainImg.height; 
-    terrainCtx.drawImage(terrainImg, 0, 0); 
-};
-
-function isWater(r, g, b) { 
-    return (r < 20 && g < 20 && b < 20); 
-}
+terrainImg.onload = () => { terrainCanvas.width = terrainImg.width; terrainCanvas.height = terrainImg.height; terrainCtx.drawImage(terrainImg, 0, 0); };
+function isWater(r, g, b) { return (r < 20 && g < 20 && b < 20); }
 
 // --- 3. MENUS ---
-window.openMenu = function(menuId) { 
-    document.getElementById('main-menu').style.display = 'none'; 
-    document.getElementById('local-menu').style.display = 'none'; 
-    document.getElementById('network-menu').style.display = 'none'; 
-    
-    if(menuId !== 'main') {
-        document.getElementById(menuId + '-menu').style.display = 'flex'; 
-    } else {
-        document.getElementById('main-menu').style.display = 'flex'; 
-    }
-}
-
-window.joinNetworkGame = function() { 
-    let input = document.getElementById('ops-input').value.toUpperCase(); 
-    if(/^OPS\d{4}$/.test(input)) { 
-        document.getElementById('network-error').innerText = "Connexion..."; 
-        setTimeout(() => { alert("Multijoueur en dev !"); }, 1000); 
-    } else { 
-        document.getElementById('network-error').innerText = "Format requis : OPS + 4 chiffres."; 
-    } 
-}
+window.openMenu = function(menuId) { document.getElementById('main-menu').style.display = 'none'; document.getElementById('local-menu').style.display = 'none'; document.getElementById('network-menu').style.display = 'none'; if(menuId !== 'main') document.getElementById(menuId + '-menu').style.display = 'flex'; else document.getElementById('main-menu').style.display = 'flex'; }
+window.joinNetworkGame = function() { let input = document.getElementById('ops-input').value.toUpperCase(); if(/^OPS\d{4}$/.test(input)) { document.getElementById('network-error').innerText = "Connexion..."; setTimeout(() => { alert("Multijoueur en dev !"); }, 1000); } else { document.getElementById('network-error').innerText = "Format requis : OPS + 4 chiffres."; } }
 
 // --- 4. LANCEMENT ---
 window.startGame = function(mode) {
@@ -158,12 +59,12 @@ window.startGame = function(mode) {
     spawnCountdown = 10;
     document.getElementById('spawn-timer').innerText = spawnCountdown;
 
-    if(!overlayTexture && window.planetGroup) {
+    if(!overlayTexture && window.gameScene) {
         overlayTexture = new THREE.CanvasTexture(overlayCanvas);
         const overlayGeo = new THREE.SphereGeometry(5.02, 64, 64);
         const overlayMat = new THREE.MeshBasicMaterial({ map: overlayTexture, transparent: true, opacity: 0.65 });
         const overlaySphere = new THREE.Mesh(overlayGeo, overlayMat);
-        window.planetGroup.add(overlaySphere);
+        window.gameScene.add(overlaySphere);
     }
 
     let timerInterval = setInterval(() => {
@@ -186,11 +87,7 @@ function finishSpawningPhase() {
         if(gameState === 'PLAYING' && myCapitalPlaced) {
             let popGrowth = Math.max(1, Math.floor(playerStats.pop * 0.05));
             playerStats.pop += popGrowth; 
-            
-            if(playerStats.pop > playerStats.maxPop) {
-                playerStats.pop = playerStats.maxPop; 
-            }
-            
+            if(playerStats.pop > playerStats.maxPop) playerStats.pop = playerStats.maxPop; 
             playerStats.gold += Math.floor(playerStats.territory * 2);
             updateHUD();
         }
@@ -204,34 +101,68 @@ function updateHUD() {
     document.getElementById('ui-gold').innerText = playerStats.gold;
 }
 
-// --- 5. INTERACTIONS SOURIS CORRIGÉES ---
+// --- 5. INTERACTIONS SOURIS BLINDÉES ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-window.onDoubleClick = function(event) {
+// A. PLACEMENT DE LA CAPITALE (IMMANQUABLE)
+window.addEventListener('pointerup', function(event) {
+    if (gameState !== 'SPAWNING' || myCapitalPlaced) return;
+    
+    // On ignore le clic s'il est sur un bouton de paramètre
+    if (event.target.closest && event.target.closest('.settings-btn-wrapper')) return;
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, window.gameCamera);
+    const intersects = raycaster.intersectObject(window.gameEarth);
+
+    if (intersects.length > 0) {
+        const hit = intersects[0];
+        buildTargetPosition = hit.point;
+        if (hit.uv) playerCapitalUV = hit.uv.clone();
+
+        executeAction('build_city', true); 
+        myCapitalPlaced = true;
+        
+        playerStats.pop = 500; 
+        playerStats.maxPop = 1000; 
+        playerStats.gold = 500;
+        updateHUD();
+        
+        const timerCont = document.getElementById('spawn-timer-container');
+        if(timerCont) {
+            timerCont.querySelector('h2').innerText = "CAPITALE PLACÉE !";
+            timerCont.querySelector('p').innerText = "Préparez-vous au combat...";
+        }
+    }
+});
+
+// B. DOUBLE CLIC (Expansion)
+window.addEventListener('dblclick', function(event) {
     event.preventDefault(); 
     if (gameState !== 'PLAYING' || !myCapitalPlaced) return;
-    if (event.target.closest('#ui-container') || event.target.closest('#action-menu')) return;
+    if (event.target.closest && (event.target.closest('#ui-container') || event.target.closest('#action-menu'))) return;
     
     expandTerritory();
-}
+});
 
-window.onRightClick = function(event) {
+// C. CLIC DROIT (Menu d'Action)
+window.addEventListener('contextmenu', function(event) {
     event.preventDefault(); 
-    if (gameState === 'MENU') return;
-    if (event.target.closest('#ui-container') || event.target.closest('#action-menu') || event.target.closest('.settings-btn-wrapper')) return;
+    if (gameState !== 'PLAYING') return;
+    if (event.target.closest && (event.target.closest('#ui-container') || event.target.closest('#action-menu') || event.target.closest('.settings-btn-wrapper'))) return;
 
-    const container3D = document.getElementById('webgl-container');
-    const rect = container3D.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, window.gameCamera);
     
     const entityMeshes = entities.map(e => e.mesh);
     const entityIntersects = raycaster.intersectObjects(entityMeshes);
 
-    if (entityIntersects.length > 0 && actionState === 'NORMAL' && gameState === 'PLAYING') {
+    if (entityIntersects.length > 0 && actionState === 'NORMAL') {
         const hitEntityMesh = entityIntersects[0].object;
         const clickedEntity = entities.find(e => e.mesh === hitEntityMesh);
         if(clickedEntity && clickedEntity.owner === 'player') {
@@ -244,9 +175,7 @@ window.onRightClick = function(event) {
         const earthIntersects = raycaster.intersectObject(window.gameEarth);
         if(earthIntersects.length > 0) {
             launchMissile(selectedEntity, earthIntersects[0].point);
-            actionState = 'NORMAL'; 
-            selectedEntity = null; 
-            return;
+            actionState = 'NORMAL'; selectedEntity = null; return;
         }
     }
 
@@ -254,9 +183,7 @@ window.onRightClick = function(event) {
         const earthIntersects = raycaster.intersectObject(window.gameEarth);
         if(earthIntersects.length > 0) {
             createSeaRoute(selectedEntity.mesh.position, earthIntersects[0].point);
-            actionState = 'NORMAL'; 
-            selectedEntity = null; 
-            return;
+            actionState = 'NORMAL'; selectedEntity = null; return;
         }
     }
 
@@ -266,47 +193,22 @@ window.onRightClick = function(event) {
         const hit = intersects[0];
         buildTargetPosition = hit.point; 
         
-        if (hit.uv) {
-            let terrainType = 'Terre'; // PAR DEFAUT: C'est la terre !
-            
-            // LA CORRECTION EST ICI : try/catch pour éviter le plantage CORS en local
-            try {
-                if (terrainImg.complete) {
-                    let px = Math.floor(hit.uv.x * terrainCanvas.width);
-                    let py = Math.floor((1 - hit.uv.y) * terrainCanvas.height); 
-                    let pixel = terrainCtx.getImageData(px, py, 1, 1).data;
-                    terrainType = isWater(pixel[0], pixel[1], pixel[2]) ? 'Eau' : 'Terre';
-                }
-            } catch (error) {
-                console.warn("Lecture du Radar bloquée par le navigateur local. Clic autorisé par défaut !");
+        let terrainType = 'Terre'; 
+        try {
+            if (terrainImg.complete && hit.uv) {
+                let px = Math.floor(hit.uv.x * terrainCanvas.width);
+                let py = Math.floor((1 - hit.uv.y) * terrainCanvas.height); 
+                let pixel = terrainCtx.getImageData(px, py, 1, 1).data;
+                terrainType = isWater(pixel[0], pixel[1], pixel[2]) ? 'Eau' : 'Terre';
             }
-            
-            buildTargetTerrain = terrainType;
-
-            if (gameState === 'SPAWNING') {
-                if (terrainType === 'Terre' && !myCapitalPlaced) {
-                    executeAction('build_city', true); 
-                    myCapitalPlaced = true;
-                    playerCapitalUV = hit.uv.clone();
-                    playerStats.pop = 500; 
-                    playerStats.maxPop = 1000; 
-                    playerStats.gold = 500;
-                    updateHUD();
-                    
-                    document.getElementById('spawn-timer-container').querySelector('h2').innerText = "CAPITALE PLACÉE !";
-                    document.getElementById('spawn-timer-container').querySelector('p').innerText = "En attente des autres joueurs...";
-                }
-            } else if (gameState === 'PLAYING') {
-                openActionMenu(event.clientX, event.clientY, null, terrainType);
-            }
-        }
+        } catch (error) {} 
+        
+        openActionMenu(event.clientX, event.clientY, null, terrainType);
     } else {
         closeActionMenu(); 
     }
-}
+});
 
-document.getElementById('webgl-container').addEventListener('contextmenu', window.onRightClick);
-document.getElementById('webgl-container').addEventListener('dblclick', window.onDoubleClick);
 
 // --- 6. ACTION ET EXPANSION ---
 window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = null) {
