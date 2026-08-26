@@ -20,45 +20,35 @@ controls.minDistance = 6;
 controls.maxDistance = 30; 
 controls.enablePan = false; // Désactive le glissement au clic droit
 
-// --- LA TERRE ---
+// On crée un "Groupe" pour attacher la Terre et l'Océan ensemble
+window.planetGroup = new THREE.Group();
+window.gameScene.add(window.planetGroup);
+
+// --- 1. LA TERRE (Transparente pour les bords de la carte) ---
 const geometry = new THREE.SphereGeometry(5, 64, 64);
 const material = new THREE.MeshStandardMaterial({ 
-    color: 0xffffff, 
-    roughness: 0.6, 
-    metalness: 0.1
-    // ATTENTION: On a retiré "transparent: true" ici pour rendre la planète solide !
+    color: 0xffffff, roughness: 0.6, metalness: 0.1, 
+    transparent: true // Laisse passer le noyau océanique en dessous !
 });
 window.gameEarth = new THREE.Mesh(geometry, material);
+window.planetGroup.add(window.gameEarth);
 
-// On tourne la Terre pour que le beau milieu de ta carte soit face à toi au début !
-window.gameEarth.rotation.y = -Math.PI / 2; 
+// --- 2. LE NOYAU OCÉANIQUE (Pour corriger le problème de Skin) ---
+const oceanGeo = new THREE.SphereGeometry(4.98, 64, 64); // Légèrement plus petite
+const oceanMat = new THREE.MeshStandardMaterial({ 
+    color: 0x02b3e8, // Bleu Cyan pour se fondre avec ton océan
+    roughness: 0.3, metalness: 0.2 
+});
+const oceanCore = new THREE.Mesh(oceanGeo, oceanMat);
+window.planetGroup.add(oceanCore);
 
-window.gameScene.add(window.gameEarth);
-
-// --- CORRECTION MAGIQUE DU TROU (CANVAS TEXTURE) ---
+// --- CHARGEMENT DE LA CARTE ---
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load('assets/map_globe.png', (texture) => {
-    
-    // On crée une toile de peinture en mémoire, de la taille de ton image
-    const canvas = document.createElement('canvas');
-    canvas.width = texture.image.width;
-    canvas.height = texture.image.height;
-    const ctx = canvas.getContext('2d');
-    
-    // 1. On peint tout le fond de la toile avec un bleu océan profond
-    ctx.fillStyle = '#005588'; // Tu peux changer ce code couleur HTML si tu veux un bleu différent !
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // 2. On colle ton image par-dessus (les zones transparentes laisseront voir le bleu)
-    ctx.drawImage(texture.image, 0, 0);
-    
-    // 3. On applique cette nouvelle image parfaite et sans trous sur le globe 3D
-    const fixedTexture = new THREE.CanvasTexture(canvas);
-    material.map = fixedTexture;
+    material.map = texture;
     material.needsUpdate = true;
 });
 
-// --- LUMIÈRES ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 window.gameScene.add(ambientLight);
 const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -77,6 +67,10 @@ window.resize3DEnvironment = function() {
     window.gameCamera.updateProjectionMatrix();
     renderer.setSize(container3D.clientWidth, container3D.clientHeight);
 }
-
 window.addEventListener('resize', window.resize3DEnvironment);
+
+// Sécurité pour aligner parfaitement le 3D avec les redimensionnements
+const resizeObserver = new ResizeObserver(() => window.resize3DEnvironment());
+resizeObserver.observe(container3D);
+
 animate();
