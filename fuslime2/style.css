@@ -16,9 +16,11 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
+/* Thème clair / sombre */
 body.dark-mode { background-color: #f0f0f0; color: #111; }
 body.dark-mode #game-container { background-color: #e0e0e0; border-color: #ccc; }
 
+/* Bouton Retour Hub */
 .btn-hub {
     position: absolute;
     top: 20px; left: 20px;
@@ -31,6 +33,7 @@ body.dark-mode #game-container { background-color: #e0e0e0; border-color: #ccc; 
     box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
+/* Bouton Paramètres */
 .settings-btn-wrapper {
     position: absolute;
     top: 20px; right: 25px;
@@ -44,6 +47,7 @@ body.dark-mode #game-container { background-color: #e0e0e0; border-color: #ccc; 
 }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
+/* Modal Paramètres */
 .modal {
     display: none; position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
@@ -78,6 +82,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 .close-btn:hover { box-shadow: 0 0 20px #00e5ff; transform: scale(1.05); }
 
+/* Interface du Jeu & Scores */
 #game-ui { text-align: center; margin-top: 10px; margin-bottom: 10px; }
 h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
 .scores-wrapper { display: flex; justify-content: center; gap: 25px; align-items: baseline; }
@@ -85,28 +90,31 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
 .best-score-container { font-size: 18px; color: #f39c12; font-weight: bold; }
 .score-bump { transform: scale(1.4); color: #fff; }
 
-/* FIX DIMENSIONS DU SEAU */
+/* LE SEAU */
 #game-container {
     position: relative;
     width: 600px;
     max-width: 95vw;
-    aspect-ratio: 3 / 4; /* Force un ratio parfait pour éviter les bugs de clics */
+    aspect-ratio: 3 / 4;
     border-left: 10px solid #16213e;
     border-right: 10px solid #16213e;
     border-bottom: 10px solid #16213e;
     border-radius: 0 0 20px 20px;
     background-color: #0f172a;
     box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
+    overflow: hidden; /* Empêche les débordements visuels */
 }
 
-#game-canvas {
+/* On s'assure que le canvas généré par Matter.js prend bien toute la place */
+#game-container canvas {
     position: absolute;
     top: 0; left: 0;
-    width: 100%; height: 100%;
-    border-radius: 0 0 10px 10px;
+    width: 100% !important;
+    height: 100% !important;
     z-index: 1;
 }
 
+/* Effets Visuels (Particules et Textes) */
 #effects-container {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; overflow: hidden; z-index: 10;
@@ -128,6 +136,7 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
     100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
 }
 
+/* Game Over */
 #game-over {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; text-align: center;
