@@ -5,11 +5,11 @@
 const container3D = document.getElementById('webgl-container');
 
 window.gameScene = new THREE.Scene();
-window.gameCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+window.gameCamera = new THREE.PerspectiveCamera(45, container3D.clientWidth / container3D.clientHeight, 0.1, 1000);
 window.gameCamera.position.set(0, 0, 15); 
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(container3D.clientWidth, container3D.clientHeight);
 renderer.setPixelRatio(window.devicePixelRatio); 
 container3D.appendChild(renderer.domElement);
 
@@ -20,27 +20,65 @@ controls.minDistance = 6;
 controls.maxDistance = 30; 
 controls.enablePan = false; // Désactive le glissement au clic droit
 
-// --- LA TERRE ---
+// On crée un "Groupe" pour attacher la Terre et l'Océan ensemble
+window.planetGroup = new THREE.Group();
+window.gameScene.add(window.planetGroup);
+
+// --- 1. LA TERRE ---
 const geometry = new THREE.SphereGeometry(5, 64, 64);
 const material = new THREE.MeshStandardMaterial({ 
     color: 0xffffff, 
     roughness: 0.6, 
-    metalness: 0.1
-    // La transparence a été retirée. Si tu vois du noir, c'est qu'il faut peindre ton PNG en bleu !
+    metalness: 0.1, 
+    transparent: true // Indispensable pour voir l'eau à travers les trous !
 });
-
 window.gameEarth = new THREE.Mesh(geometry, material);
-// Tourne la Terre pour que le centre de ta carte te regarde au début
-window.gameEarth.rotation.y = -Math.PI / 2; 
-window.gameScene.add(window.gameEarth);
+window.gameEarth.rotation.y = -Math.PI / 2; // Centre la belle face vers toi
+window.planetGroup.add(window.gameEarth);
 
-// --- CHARGEMENT DE LA CARTE ---
+// --- 2. LE NOYAU OCÉANIQUE (Pour remplacer le noir par de l'eau) ---
+const oceanGeo = new THREE.SphereGeometry(4.98, 64, 64); 
+const oceanMat = new THREE.MeshStandardMaterial({ 
+    color: 0x124a8c, // Un bleu profond qui matche bien avec ta carte
+    roughness: 0.2, 
+    metalness: 0.3 
+});
+const oceanCore = new THREE.Mesh(oceanGeo, oceanMat);
+window.planetGroup.add(oceanCore);
+
+// --- 3. CORRECTION MAGIQUE DE TON IMAGE ---
 const textureLoader = new THREE.TextureLoader();
 textureLoader.load('assets/map_globe.png', (texture) => {
-    material.map = texture;
+    
+    // Création d'une toile virtuelle
+    const canvas = document.createElement('canvas');
+    
+    // On force un ratio parfait de 2:1 (ex: 4088 x 2044)
+    canvas.width = texture.image.width;
+    canvas.height = Math.floor(texture.image.width / 2);
+    const ctx = canvas.getContext('2d');
+    
+    // On dessine l'image (légèrement compressée pour fit le 2:1)
+    ctx.drawImage(texture.image, 0, 0, canvas.width, canvas.height);
+    
+    // On scanne les pixels pour effacer le fond noir
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        // Si le pixel est "noir" ou très sombre
+        if (data[i] < 20 && data[i+1] < 20 && data[i+2] < 20) {
+            data[i+3] = 0; // On met l'Opacité (Alpha) à 0 -> Transparent !
+        }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    
+    // On applique cette nouvelle image corrigée sur la Terre
+    const fixedTexture = new THREE.CanvasTexture(canvas);
+    material.map = fixedTexture;
     material.needsUpdate = true;
 });
 
+// --- LUMIÈRES ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 window.gameScene.add(ambientLight);
 
@@ -55,9 +93,14 @@ function animate() {
 }
 
 window.resize3DEnvironment = function() {
-    window.gameCamera.aspect = window.innerWidth / window.innerHeight;
+    if(!container3D) return;
+    window.gameCamera.aspect = container3D.clientWidth / container3D.clientHeight;
     window.gameCamera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(container3D.clientWidth, container3D.clientHeight);
 }
+
 window.addEventListener('resize', window.resize3DEnvironment);
+const resizeObserver = new ResizeObserver(() => window.resize3DEnvironment());
+resizeObserver.observe(container3D);
+
 animate();
