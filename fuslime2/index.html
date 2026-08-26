@@ -9,32 +9,48 @@
     <!-- Moteur physique Matter.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     
-    <!-- API YouTube pour la musique -->
+    <!-- API YouTube pour la musique de fond -->
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
-    <!-- Boutons d'interface Globale -->
+    <!-- Bouton de retour au Hub -->
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
-    <img src="img/setting.png" id="settings-btn-img" class="btn-settings" alt="Paramètres">
 
-    <!-- Fenêtre Modale des Paramètres -->
+    <!-- Bouton Paramètres (Engrenage animé) -->
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- Modal des Paramètres Classique -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2>Paramètres</h2>
-            <label>
-                <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()"> Plein Écran
-            </label>
-            <label>
-                <input type="checkbox" id="music-toggle" onchange="toggleMusic()"> Musique (YouTube)
-            </label>
-            <label>
-                <input type="checkbox" onchange="toggleTheme()"> Mode Clair / Sombre
-            </label>
-            <button class="close-btn" onclick="toggleSettings()">Fermer</button>
+            <div class="setting-item">
+                <span>Mode Sombre 🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>Plein Écran 🖥️</span>
+                <label class="switch">
+                    <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>Musique (ON/OFF) 🎵</span>
+                <label class="switch">
+                    <input type="checkbox" id="music-toggle" onchange="toggleMusic()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <!-- Interface du jeu -->
+    <!-- Interface Scores -->
     <div id="game-ui">
         <h1>Fuslime 2</h1>
         <div class="scores-wrapper">
