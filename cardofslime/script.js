@@ -1,18 +1,14 @@
 // ==========================================
-// 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES
+// 1. GESTION DES PARAMETRES (AVEC TON ANIMATION JAVASCRIPT)
 // ==========================================
-const settingImages = ['img/setting.png', 'img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
-let currentSettingIndex = 0;
-
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('show');
-    currentSettingIndex = (currentSettingIndex + 1) % settingImages.length;
-    const btnImg = document.getElementById('settings-btn-img');
-    if (btnImg) btnImg.src = settingImages[currentSettingIndex];
 }
 
-function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+}
 
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
@@ -24,20 +20,55 @@ function toggleFullscreen() {
 
 document.addEventListener('fullscreenchange', () => {
     const fsToggle = document.getElementById('fs-toggle');
-    if (fsToggle) fsToggle.checked = !!document.fullscreenElement;
+    if(fsToggle) fsToggle.checked = !!document.fullscreenElement;
 });
 
+// ANIMATION DES PARAMETRES (Hover / Click)
+let hoverInterval; 
+let currentFrame = 0;
+const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+
+function startSettingsAnim() {
+    if (hoverInterval) return;
+    currentFrame = 0;
+    const settingsBtnImg = document.getElementById('settings-btn-img');
+    settingsBtnImg.src = animFrames[currentFrame];
+    hoverInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % animFrames.length;
+        settingsBtnImg.src = animFrames[currentFrame];
+    }, 100); 
+}
+
+function stopSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    const settingsBtnImg = document.getElementById('settings-btn-img');
+    if (!settingsBtnImg.src.includes('settings4.png')) { 
+        settingsBtnImg.src = 'img/setting.png'; 
+    }
+}
+
+function clickSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    const settingsBtnImg = document.getElementById('settings-btn-img');
+    settingsBtnImg.src = 'img/settings4.png';
+    toggleSettings();
+    setTimeout(() => { settingsBtnImg.src = 'img/setting.png'; }, 300);
+}
+
 // --- GESTION AUDIO GLOBALE ---
-let ytPlayer; 
 let isMuted = localStorage.getItem('isMuted') === 'true';
 let musicStarted = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     const musicToggle = document.getElementById('music-toggle');
     if (musicToggle) musicToggle.checked = !isMuted;
+    
+    // Fix image au chargement
+    const settingsBtnImg = document.getElementById('settings-btn-img');
+    if(settingsBtnImg) settingsBtnImg.src = 'img/setting.png';
 });
 
-function toggleAudioGlobal() {
+function toggleMusic() {
     const musicToggle = document.getElementById('music-toggle');
     isMuted = !musicToggle.checked;
     localStorage.setItem('isMuted', isMuted);
@@ -60,11 +91,6 @@ function playSound(id) {
     if(sound) { sound.currentTime = 0; sound.volume = 0.5; sound.play().catch(()=>{}); }
 }
 
-function setGameSize(sizeType) {
-    document.getElementById('game-container').className = `size-${sizeType}`;
-    document.querySelectorAll('.btn-size').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(`btn-sz-${sizeType}`).classList.add('active');
-}
 
 // ==========================================
 // 2. BASE DE DONNÉES EXACTE DES SKINS
@@ -172,7 +198,6 @@ function renderDeckPool() {
         div.className = `card-select-item ${tempSelectedDeck.includes(cardId) ? 'selected' : ''}`;
         
         let bgImg = (card.hasTurret || card.isStacked) ? card.skins.front.base : (card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]));
-        // Map de fond intégrée aux cartes
         div.style.backgroundImage = `url('${bgImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
         div.style.backgroundSize = '80%, cover, cover';
         div.style.backgroundPosition = 'center 20%, center, center';
@@ -279,7 +304,6 @@ function createTower(id, team, x, y, hp, img, width, height) {
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
     arena.appendChild(el);
     
-    // Ajout de "lane" même pour les tours pour aider le pathfinding
     let lane = x < 50 ? 'left' : (x > 50 ? 'right' : 'center');
     
     activeEntities.push({ id: id, team: team, x: x, y: y, lane: lane, hp: hp, maxHp: hp, dmg: 50, range: 35, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
@@ -362,7 +386,7 @@ function spawnEntity(data, team, x, y) {
     el.className = `entity team-${team} ${data.type === 'building' ? 'building' : ''} ${data.isFlying ? 'is-flying' : ''}`;
     el.dataset.id = data.id;
     let initFacing = team === 'player' ? 'back' : 'front';
-    let initLane = x < 50 ? 'left' : 'right'; // Détermination de la Lane à l'invocation !
+    let initLane = x < 50 ? 'left' : 'right';
 
     el.style.left = `${x}%`; el.style.top = `${y}%`;
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
@@ -393,23 +417,18 @@ function spawnEntity(data, team, x, y) {
     });
 }
 
-// INVOCATION DES SORTS (Tornade Magique à têtes multiples)
 function castSpell(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
-        // La tornade invoque 3 tourbillons qui avancent
         for(let i=0; i<3; i++) {
             const fx = document.createElement('div'); fx.className = 'spell-anim';
             fx.style.width = '60px'; fx.style.height = '60px';
             arena.appendChild(fx);
-            
-            // Décalage pour pas qu'elles se superposent
-            let offsetX = (Math.random() - 0.5) * 15;
-            let offsetY = (Math.random() - 0.5) * 15;
+            let offsetX = (Math.random() - 0.5) * 15; let offsetY = (Math.random() - 0.5) * 15;
 
             activeSpells.push({ 
                 type: 'tornado', team: casterTeam, 
                 x: targetX + offsetX, y: targetY + offsetY, 
-                vx: (Math.random() - 0.5) * 4, vy: casterTeam === 'player' ? -8 : 8, // Avance vers le camp adverse
+                vx: (Math.random() - 0.5) * 4, vy: casterTeam === 'player' ? -8 : 8,
                 anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), 
                 duration: 3500, dmg: spellData.dmg, tickTimer: 0
             });
@@ -493,7 +512,6 @@ function gameLoop(currentTime) {
     const dt = (currentTime - lastTime) / 1000; 
     lastTime = currentTime;
 
-    // TIMER ET ÉNERGIE
     gameTime -= dt;
     if (gameTime <= 60 && !doubleSlimeActive) {
         doubleSlimeActive = true; slimeRate = 1.25; 
@@ -507,7 +525,6 @@ function gameLoop(currentTime) {
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
-    // ANIMATIONS DES SORTS (Tornade dynamique incluse)
     activeSpells = activeSpells.filter(spell => {
         spell.timer += dt;
         if(spell.timer > 0.15 && spell.anim && spell.anim.length > 1) { 
@@ -528,7 +545,7 @@ function gameLoop(currentTime) {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
                         takeDamage(ent, spell.dmg);
                         if (!ent.id.includes('base') && !ent.id.includes('tower')) {
-                            ent.x += (spell.x - ent.x) * 0.1; ent.y += (spell.y - ent.y) * 0.1; // Aspiration
+                            ent.x += (spell.x - ent.x) * 0.1; ent.y += (spell.y - ent.y) * 0.1; 
                         }
                     }
                 });
@@ -563,7 +580,6 @@ function gameLoop(currentTime) {
         return true;
     });
 
-    // NETTOYAGE MORTS
     activeEntities = activeEntities.filter(ent => {
         if (ent.hp <= 0) {
             playSound('sfx-die'); createParticles(ent.x, ent.y, ent.color || '#fff');
@@ -574,7 +590,6 @@ function gameLoop(currentTime) {
         return true;
     });
 
-    // PROJECTILES
     activeProjectiles = activeProjectiles.filter(p => {
         if(p.target.hp <= 0) { p.element.remove(); return false; } 
         const dx = p.target.x - p.x; const dy = p.target.y - p.y;
@@ -588,7 +603,6 @@ function gameLoop(currentTime) {
         }
     });
 
-    // UNITÉS ET CIBLAGE (LANE & AGGRO)
     activeEntities.forEach(unit => {
         let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
         if (unit.stunTimer > 0) { unit.stunTimer -= dt; unit.state = 'idle'; unit.element.classList.add('stunned'); return; } 
@@ -600,37 +614,29 @@ function gameLoop(currentTime) {
         if (unit.spawnRate) { unit.lastSpawn += dt * 1000; if (unit.lastSpawn >= unit.spawnRate) { unit.lastSpawn = 0; spawnEntity(cardDatabase[unit.spawnId], unit.team, unit.x, unit.y + (unit.team === 'player' ? -5 : 5)); } }
         if (unit.lifetime) { unit.hp -= (unit.maxHp / unit.lifetime) * dt; if (unit.hpBar) unit.hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`; }
 
-        let closestTarget = null; 
-        let minDistance = 999;
-        let aggroRadius = 25; // Rayon pour détecter les ennemis qui marchent à côté
+        let closestTarget = null; let minDistance = 999;
+        let aggroRadius = 25;
 
-        // RECHERCHE DE CIBLE INTELLIGENTE
-        // 1. D'abord on vérifie s'il y a un ennemi proche (Aggro)
         if (!unit.targetBuilding && unit.speed > 0) {
             activeEntities.forEach(target => {
                 if (target.team !== unit.team && (!target.isFlying || unit.targetsAir)) {
                     let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
-                    if (dist < aggroRadius && dist < minDistance) {
-                        minDistance = dist; closestTarget = target;
-                    }
+                    if (dist < aggroRadius && dist < minDistance) { minDistance = dist; closestTarget = target; }
                 }
             });
         }
 
-        // 2. Si pas d'ennemi proche, on cible les bâtiments dans sa LANE (ou base centrale)
         if (!closestTarget) {
             let minLaneDist = 999;
             activeEntities.forEach(target => {
-                if (target.team !== unit.team && target.speed === 0) { // Uniquement les bâtiments
+                if (target.team !== unit.team && target.speed === 0) {
                     let targetLane = target.x < 50 ? 'left' : (target.x > 50 ? 'right' : 'center');
-                    // Si c'est dans sa voie OU si c'est la base finale
                     if (targetLane === unit.lane || targetLane === 'center' || target.id.includes('base')) {
                         let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
                         if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
                     }
                 }
             });
-            // 3. Fallback (si sa tour est détruite), cibler le bâtiment global le plus proche
             if (!closestTarget) {
                 activeEntities.forEach(target => {
                     if (target.team !== unit.team && target.speed === 0) {
@@ -641,10 +647,8 @@ function gameLoop(currentTime) {
             }
         }
 
-        // ACTIONS VERS LA CIBLE
         if (closestTarget) {
             let distToTarget = Math.hypot(unit.x - closestTarget.x, unit.y - closestTarget.y);
-            
             if(!unit.id.includes('base') && !unit.id.includes('tower')) { unit.facing = (closestTarget.y < unit.y) ? 'back' : 'front'; }
 
             if (unit.hasTurret) {
@@ -662,8 +666,6 @@ function gameLoop(currentTime) {
             } else if (unit.speed > 0) {
                 unit.state = 'idle';
                 let targetX = closestTarget.x; let targetY = closestTarget.y;
-                
-                // PONT (On traverse le pont le plus proche de la cible)
                 if (!unit.isFlying && ((unit.y > 50 && targetY < 50) || (unit.y < 50 && targetY > 50))) {
                     let targetBridgeX = (closestTarget.x < 50) ? 25 : 75; 
                     if (Math.abs(unit.x - targetBridgeX) > 2) { targetX = targetBridgeX; targetY = unit.y; }
@@ -680,9 +682,7 @@ function gameLoop(currentTime) {
             if (unit.animTimer > 0.15) { 
                 unit.animTimer = 0; unit.animFrame++;
                 let skinState = unit.skins[unit.facing][unit.state] || unit.skins[unit.facing]['idle'];
-                if(skinState) {
-                    unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`;
-                }
+                if(skinState) { unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`; }
             }
         }
     });
