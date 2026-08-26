@@ -13,9 +13,42 @@
     <h1 class="game-title">Card of Slime</h1>
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     
-    <!-- Bouton paramètres (Vérifie bien le chemin de ton image "img/setting.png") -->
-    <div class="settings-btn-wrapper" onclick="toggleSettings()">
+    <!-- BOUTON PARAMETRES (ANIMATION JAVASCRIPT) -->
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2>Paramètres</h2>
+            
+            <div class="setting-item">
+                <span>Mode Sombre 🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <span>Plein Écran 🖥️</span>
+                <label class="switch">
+                    <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <span>Musique (ON/OFF) 🎵</span>
+                <label class="switch">
+                    <input type="checkbox" id="music-toggle" onchange="toggleMusic()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
     </div>
 
     <div id="game-container" class="size-wide">
@@ -78,41 +111,6 @@
                 <button class="btn-main" onclick="restartGame()">Rejouer</button>
                 <button class="btn-main" style="background:#333; margin-top:10px;" onclick="location.reload()">Menu Principal</button>
             </div>
-        </div>
-    </div>
-
-    <!-- PARAMÈTRES -->
-    <div id="settings-modal" class="settings-modal">
-        <div class="settings-content">
-            <h2 style="margin-top: 0; color: #39ff14; text-transform: uppercase;">Paramètres</h2>
-            
-            <div class="setting-item" style="margin-bottom: 20px;">
-                <label style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.2em;">
-                    <input type="checkbox" id="music-toggle" onchange="toggleAudioGlobal()" style="transform: scale(1.5);"> 
-                    <span>Activer le Son 🔊</span>
-                </label>
-            </div>
-
-            <div class="setting-item" style="margin-bottom: 20px;">
-                <button class="btn-main" onclick="toggleTheme()" style="font-size: 1em; padding: 10px;">Mode Sombre / Clair 🌙</button>
-            </div>
-
-            <div class="setting-item" style="margin-bottom: 20px;">
-                <label style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.2em;">
-                    <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()" style="transform: scale(1.5);"> 
-                    <span>Plein Écran Natif 🖥️</span>
-                </label>
-            </div>
-
-            <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-                <span>Format de l'Arène 📏</span>
-                <div class="size-options">
-                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
-                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Large</button>
-                </div>
-            </div>
-
-            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
