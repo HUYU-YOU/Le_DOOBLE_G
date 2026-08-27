@@ -13,12 +13,18 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
+    <!-- VIDÉO DE FOND JOUR/NUIT -->
+    <video autoplay loop muted playsinline class="bg-video-main" id="bg-video">
+        <source src="img/daybackground.mp4" type="video/mp4">
+    </video>
+    <div class="bg-overlay"></div> <!-- Pour assombrir un peu la vidéo si besoin -->
+
     <!-- Bouton de retour au Hub -->
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
 
-    <!-- BOUTON PARAMÈTRES (Chemin : img/setting.png) -->
+    <!-- Bouton Paramètres -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
-        <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
     <!-- Modal des Paramètres -->
@@ -26,7 +32,7 @@
         <div class="modal-content">
             <h2>Paramètres</h2>
             <div class="setting-item">
-                <span>Mode Sombre 🌙</span>
+                <span>Mode Sombre / Nuit 🌙</span>
                 <label class="switch">
                     <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
                     <span class="slider"></span>
@@ -61,7 +67,7 @@
     
     <!-- Zone de jeu -->
     <div id="game-container">
-        <!-- Le canvas sera injecté ici par JavaScript -->
+        <canvas id="game-canvas" width="600" height="800"></canvas>
         <div id="effects-container"></div>
     </div>
 
