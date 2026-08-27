@@ -100,25 +100,25 @@ function onYouTubeIframeAPIReady() {
 
 const isLocalFile = window.location.protocol === 'file:';
 
-// ⚠️ Assure-toi que cette valeur correspond bien à la taille de tes PNG (ex: 256 ou 512).
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 Fini la triche ! Les zooms sont redescendus à 1.05. 
-// Le cercle physique de collision correspond maintenant quasiment exactement à la taille du dessin.
+// 🔥 NOUVELLE LISTE DES SLIMES 🔥
+// - slime1 supprimé, on commence au slime2 (vert) ! Le jeu a maintenant 12 niveaux.
+// - Hitboxes (radius) réduites d'environ 15% pour qu'elles s'empilent mieux dans le seau.
+// - Zoom normalisé à 1.05 pour éviter les chevauchements bizarres.
 const SLIMES = [
-    { level: 1, radius: 35, zoom: 1.05, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 48, zoom: 1.05, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 62, zoom: 1.05, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 78, zoom: 1.05, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 96, zoom: 1.05, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
-    { level: 6, radius: 116, zoom: 1.05, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
-    { level: 7, radius: 138, zoom: 1.05, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 162, zoom: 1.05, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
-    { level: 9, radius: 188, zoom: 1.05, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 216, zoom: 1.05, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
-    { level: 11, radius: 246, zoom: 1.05, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
-    { level: 12, radius: 275, zoom: 1.05, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
-    { level: 13, radius: 290, zoom: 1.05, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
+    { level: 1, radius: 26, zoom: 1.05, points: 2, texture: 'assets/slime2.png', color: '#aaffaa' },
+    { level: 2, radius: 40, zoom: 1.05, points: 4, texture: 'assets/slime3.png', color: '#aaaaff' },
+    { level: 3, radius: 56, zoom: 1.05, points: 8, texture: 'assets/slime4.png', color: '#ffffaa' },
+    { level: 4, radius: 72, zoom: 1.05, points: 16, texture: 'assets/slime5.png', color: '#ffaaff' },
+    { level: 5, radius: 90, zoom: 1.05, points: 32, texture: 'assets/slime6.png', color: '#aaffff' },
+    { level: 6, radius: 110, zoom: 1.05, points: 64, texture: 'assets/slime7.png', color: '#ffccaa' },
+    { level: 7, radius: 130, zoom: 1.05, points: 128, texture: 'assets/slime8.png', color: '#aaccff' },
+    { level: 8, radius: 150, zoom: 1.05, points: 256, texture: 'assets/slime9.png', color: '#ccaaff' },
+    { level: 9, radius: 172, zoom: 1.05, points: 512, texture: 'assets/slime10.png', color: '#ff9999' },
+    { level: 10, radius: 196, zoom: 1.05, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' },
+    { level: 11, radius: 222, zoom: 1.05, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' },
+    { level: 12, radius: 250, zoom: 1.05, points: 4096, texture: 'assets/slime13.png', color: '#ffffff' }
 ];
 
 SLIMES.forEach(slime => {
@@ -139,7 +139,6 @@ const Engine = Matter.Engine,
 const engine = Engine.create();
 const world = engine.world;
 
-// Pour une physique ultra fluide et précise
 engine.positionIterations = 15;
 engine.velocityIterations = 15;
 
@@ -161,8 +160,7 @@ Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);
 
-// --- RACCOURCI CLAVIER "D" POUR LE MODE DEBUG ---
-// Appuie sur D pour voir la vraie physique et les hitbox !
+// --- RACCOURCI CLAVIER "D" ---
 window.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'd') {
         render.options.wireframes = !render.options.wireframes;
@@ -311,10 +309,10 @@ function dropSlime() {
     currentSlime = null;
 
     const realSlime = Bodies.circle(x, y, slimeData.radius, {
-        restitution: 0.1, // Rebondissement faible
-        friction: 0.005, // Glisse parfaitement
+        restitution: 0.1, 
+        friction: 0.005, 
         frictionAir: 0.001,
-        density: 0.001 + (slimeData.level * 0.0005), // Les gros sont lourds
+        density: 0.001 + (slimeData.level * 0.0005), 
         label: 'slime',
         slimeLevel: currentSlimeLevel,
         render: getRenderOptions(slimeData, false)
