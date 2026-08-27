@@ -1,5 +1,5 @@
 // =========================================================
-// 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
+// 1. PARAMÈTRES, VIDÉO DE FOND ET ENGRENAGE
 // =========================================================
 
 const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
@@ -40,8 +40,16 @@ function toggleSettings() {
     if (modal) modal.classList.toggle('show');
 }
 
+// 🌙 GESTION DU MODE JOUR / NUIT (Avec changement de vidéo)
 function toggleTheme() {
-    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.toggle('dark-mode');
+    const bgVideo = document.getElementById('bg-video');
+    
+    if (bgVideo) {
+        // Change la vidéo selon le thème
+        bgVideo.src = isDark ? 'img/backgroundnight.mp4' : 'img/daybackground.mp4';
+        bgVideo.play();
+    }
 }
 
 function toggleFullscreen() {
@@ -92,27 +100,31 @@ function onYouTubeIframeAPIReady() {
 // 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
 // =========================================================
 
-// Si tes images sont plus grandes, remplace 256 par 512
+const isLocalFile = window.location.protocol === 'file:';
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
+// 🔥 PARAMÈTRE MAGIQUE : LE RATIO DE ZOOM
+// Si tes slimes ont encore un petit espace entre eux (à cause du vide dans ton PNG), 
+// augmente ce chiffre (ex: 1.30, 1.40). S'ils se rentrent trop dedans, baisse-le (ex: 1.15).
+const RATIO_ZOOM_IMAGE = 1.25; 
+
+// J'AI AGRANDI TOUS LES RADIUS POUR QU'ILS SOIENT PLUS GROS !
 const SLIMES = [
-    { level: 1, radius: 22, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 32, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 45, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 60, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 75, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
-    { level: 6, radius: 95, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
-    { level: 7, radius: 115, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 140, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
-    { level: 9, radius: 165, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 195, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
-    { level: 11, radius: 225, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
-    { level: 12, radius: 255, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
-    { level: 13, radius: 285, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
+    { level: 1, radius: 35, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
+    { level: 2, radius: 48, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
+    { level: 3, radius: 62, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
+    { level: 4, radius: 78, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
+    { level: 5, radius: 96, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
+    { level: 6, radius: 116, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
+    { level: 7, radius: 138, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
+    { level: 8, radius: 162, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
+    { level: 9, radius: 188, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
+    { level: 10, radius: 216, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
+    { level: 11, radius: 246, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
+    { level: 12, radius: 275, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
+    { level: 13, radius: 290, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
 ];
 
-// 🔥 PRÉCHARGEUR ANTI-CRASH 🔥
-// On force le jeu à vérifier si l'image existe. Si elle n'existe pas, on passe en mode "Couleur de secours".
 SLIMES.forEach(slime => {
     slime.imageLoaded = false;
     const img = new Image();
@@ -137,7 +149,7 @@ const GAME_WIDTH = 600;
 const GAME_HEIGHT = 800;
 
 const render = Render.create({
-    element: document.getElementById('game-container'), // Génère le Canvas automatiquement
+    canvas: document.getElementById('game-canvas'),
     engine: engine,
     options: {
         width: GAME_WIDTH,
@@ -159,7 +171,6 @@ const rightWall = Bodies.rectangle(GAME_WIDTH + 25, GAME_HEIGHT / 2, 50, GAME_HE
 const loseLineY = 150; 
 Composite.add(world, [ground, leftWall, rightWall]);
 
-// --- VARIABLES ---
 let currentSlime = null;
 let currentSlimeLevel = 0;
 let score = 0;
@@ -244,21 +255,20 @@ function updateScore(points) {
     }
 }
 
+// Calcule l'échelle AVEC LE RATIO MAGIQUE pour combler les trous
 function getScale(radius) {
-    return (radius * 2) / TAILLE_IMAGE_EN_PIXELS;
+    return (radius * 2 * RATIO_ZOOM_IMAGE) / TAILLE_IMAGE_EN_PIXELS;
 }
 
-// 🛡️ Fonction qui génère les bonnes options graphiques (Image OU Couleur de secours)
 function getRenderOptions(slimeData, isGhost = false) {
     let options = {
-        fillStyle: slimeData.color, // La couleur de secours
+        fillStyle: slimeData.color,
         strokeStyle: '#ffffff',
         lineWidth: 2,
         opacity: isGhost ? 0.5 : 1
     };
 
-    // Si l'image a réussi à se charger, on l'ajoute !
-    if (slimeData.imageLoaded) {
+    if (slimeData.imageLoaded && !isLocalFile) {
         options.sprite = {
             texture: slimeData.texture,
             xScale: getScale(slimeData.radius),
@@ -429,7 +439,7 @@ Events.on(render, 'afterRender', () => {
     context.stroke();
     context.setLineDash([]);
 
-    // 🚨 AFFICHAGE DES NIVEAUX DE SECOURS (Si l'image ne charge pas)
+    // Textes de secours si images bloquées
     const bodies = Composite.allBodies(world);
     context.textAlign = "center";
     context.textBaseline = "middle";
@@ -437,7 +447,7 @@ Events.on(render, 'afterRender', () => {
         const body = bodies[i];
         if ((body.label === 'slime' || body.label === 'ghost') && body.slimeLevel) {
             const data = SLIMES[body.slimeLevel - 1];
-            if (!data.imageLoaded) { 
+            if (!data.imageLoaded || isLocalFile) { 
                 context.fillStyle = "#000000"; 
                 context.font = `bold ${body.circleRadius}px Arial`;
                 context.fillText(body.slimeLevel, body.position.x, body.position.y);
@@ -452,5 +462,4 @@ function gameOver() {
     if (currentSlime) Composite.remove(world, currentSlime); 
 }
 
-// On attend une demi-seconde pour laisser les images se charger avant de démarrer
 setTimeout(() => spawnGhostSlime(GAME_WIDTH / 2), 500);
