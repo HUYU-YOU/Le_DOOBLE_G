@@ -96,7 +96,6 @@ skinNames.forEach(name => {
     skins[name].src = `assets/${name}.png`;
 });
 
-// MATRICES EXPLICITES POUR COLLER 1:1 À LA GRILLE DE TES PNG !
 const SHAPES = {
     1: [ // BARRE
         [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]], 
@@ -104,11 +103,11 @@ const SHAPES = {
         [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
         [[0,1,0,0], [0,1,0,0], [0,1,0,0], [0,1,0,0]]
     ],
-    2: [ // L ORANGE (Aligné sur tes PNG)
-        [[2,0,0], [2,2,2], [0,0,0]], // 0
-        [[2,2,0], [2,0,0], [2,0,0]], // 90
-        [[0,0,2], [2,2,2], [0,0,0]], // 180
-        [[2,0,0], [2,0,0], [2,2,0]]  // 270
+    2: [ // L ORANGE
+        [[2,0,0], [2,2,2], [0,0,0]], 
+        [[2,2,0], [2,0,0], [2,0,0]], 
+        [[0,0,2], [2,2,2], [0,0,0]], 
+        [[2,0,0], [2,0,0], [2,2,0]]  
     ],
     3: [ // CUBE
         [[3,3], [3,3]],
@@ -178,6 +177,25 @@ function getImgName(type, rotIndex) {
     return null;
 }
 
+// Fonction utilitaire pour calculer les dimensions réelles des PNG
+function getMatrixBounds(matrix) {
+    let minX = matrix[0].length, maxX = 0, minY = matrix.length, maxY = 0;
+    let hasBlocks = false;
+    matrix.forEach((row, y) => {
+        row.forEach((val, x) => {
+            if (val !== 0) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+                hasBlocks = true;
+            }
+        });
+    });
+    if (!hasBlocks) return { minX: 0, minY: 0, w: matrix[0].length, h: matrix.length };
+    return { minX, minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
 function drawBlock(ctxTarget, x, y, size, colorIndex) {
     if (colorIndex === 0) return;
     ctxTarget.fillStyle = COLORS[colorIndex] || '#666666';
@@ -216,9 +234,14 @@ function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
     if (img && img.complete && img.naturalWidth > 0) {
-        let matrixW = p.matrix[0].length;
-        let matrixH = p.matrix.length;
-        ctxTarget.drawImage(img, (p.pos.x + offsetX) * size, (p.pos.y + offsetY) * size, matrixW * size, matrixH * size);
+        let bounds = getMatrixBounds(p.matrix);
+        ctxTarget.drawImage(
+            img, 
+            (p.pos.x + offsetX + bounds.minX) * size, 
+            (p.pos.y + offsetY + bounds.minY) * size, 
+            bounds.w * size, 
+            bounds.h * size
+        );
     } else {
         drawMatrix(p.matrix, {x: p.pos.x + offsetX, y: p.pos.y + offsetY}, ctxTarget, size);
     }
@@ -243,18 +266,20 @@ function drawPreview(ctxTarget, p, size) {
     ctxTarget.clearRect(0, 0, ctxTarget.canvas.width, ctxTarget.canvas.height);
     if (!p) return;
     
-    let matrixW = p.matrix[0].length;
-    let matrixH = p.matrix.length;
-    
-    let drawX = (ctxTarget.canvas.width - matrixW * size) / 2;
-    let drawY = (ctxTarget.canvas.height - matrixH * size) / 2;
-    
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
+    let bounds = getMatrixBounds(p.matrix);
+    
+    let drawX = (ctxTarget.canvas.width - bounds.w * size) / 2;
+    let drawY = (ctxTarget.canvas.height - bounds.h * size) / 2;
+
     if (img && img.complete && img.naturalWidth > 0) {
-        ctxTarget.drawImage(img, drawX, drawY, matrixW * size, matrixH * size);
+        ctxTarget.drawImage(img, drawX, drawY, bounds.w * size, bounds.h * size);
     } else {
-        drawMatrix(p.matrix, {x: (ctxTarget.canvas.width/size - matrixW)/2, y: (ctxTarget.canvas.height/size - matrixH)/2}, ctxTarget, size);
+        drawMatrix(p.matrix, {
+            x: (ctxTarget.canvas.width/size - p.matrix[0].length)/2, 
+            y: (ctxTarget.canvas.height/size - p.matrix.length)/2
+        }, ctxTarget, size);
     }
 }
 
@@ -269,6 +294,7 @@ function collide(arena, player) {
 }
 
 function merge(arena, player) {
+    let bounds = getMatrixBounds(player.matrix);
     player.matrix.forEach((row, py) => {
         row.forEach((value, px) => {
             if (value !== 0) {
@@ -276,10 +302,10 @@ function merge(arena, player) {
                     val: value,
                     type: player.type,
                     rot: player.rotIndex,
-                    imgX: px, 
-                    imgY: py, 
-                    boxW: player.matrix[0].length,
-                    boxH: player.matrix.length
+                    imgX: px - bounds.minX, 
+                    imgY: py - bounds.minY, 
+                    boxW: bounds.w,
+                    boxH: bounds.h
                 };
             }
         });
