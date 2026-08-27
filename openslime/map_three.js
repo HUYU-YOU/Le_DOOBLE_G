@@ -18,7 +18,7 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.minDistance = 6; 
 controls.maxDistance = 30; 
-controls.enablePan = false; // Désactive le glissement au clic droit
+controls.enablePan = false; 
 
 // --- LA TERRE EN SPHÈRE PARFAITE ---
 const geometry = new THREE.SphereGeometry(5, 64, 64);
@@ -33,14 +33,27 @@ window.gameEarth = new THREE.Mesh(geometry, material);
 window.gameEarth.rotation.y = -Math.PI / 2; 
 window.gameScene.add(window.gameEarth);
 
-// --- CHARGEMENT DE TA NOUVELLE IMAGE ---
+// --- CHARGEMENT DE L'IMAGE AVEC SÉCURITÉ ---
 const textureLoader = new THREE.TextureLoader();
 
-// ---> CORRECTION ICI : map_globe.png <---
-textureLoader.load('assets/map_globe.png', (texture) => {
-    material.map = texture;
-    material.needsUpdate = true;
-});
+// ⚠️ ATTENTION : Change ".jpg" en ".png" si ton fichier est un png !
+const imagePath = 'assets/map_globe.png'; 
+
+textureLoader.load(
+    imagePath, 
+    // Si ça marche :
+    (texture) => {
+        material.map = texture;
+        material.needsUpdate = true;
+    },
+    // En cours de chargement (on ignore)
+    undefined,
+    // SI ÇA PLANTE :
+    (error) => {
+        alert("🚨 ERREUR 3D : Impossible de charger l'image '" + imagePath + "'.\n\n1. Vérifie que le nom est EXACTEMENT celui-là.\n2. Si le nom est bon, ton image (4088px) est trop grande pour ton navigateur. Réduis-la à 2048x1024 pixels !");
+        console.error("Erreur de chargement texture:", error);
+    }
+);
 
 // --- LUMIÈRES ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
