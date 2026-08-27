@@ -13,12 +13,10 @@
     <h1 class="game-title">Card of Slime</h1>
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     
-    <!-- BOUTON PARAMETRES (ANIMATION JAVASCRIPT) -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
-        <img src="../img/setting.png" alt="" id="settings-btn-img" class="settings-btn">
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
-    <!-- MODAL PARAMETRES -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2>Paramètres</h2>
@@ -52,19 +50,17 @@
     </div>
 
     <div id="game-container" class="size-wide">
-        <!-- CHRONO ET ALERTES -->
         <div id="game-timer" style="display: none;">3:00</div>
         <div id="alert-message" style="display: none;">DOUBLE SLIME !</div>
 
-        <!-- ÉMOTES -->
+        <!-- ÉMOTES (Mise à jour avec PNG) -->
         <div id="emote-panel" style="display: none;">
-            <button onclick="sendEmote('😂')">😂</button>
-            <button onclick="sendEmote('😡')">😡</button>
-            <button onclick="sendEmote('😭')">😭</button>
-            <button onclick="sendEmote('👍')">👍</button>
+            <button onclick="sendEmote('emojilol.png')"><img src="assets/skins/emojilol.png" alt="lol"></button>
+            <button onclick="sendEmote('emojicolere.png')"><img src="assets/skins/emojicolere.png" alt="colere"></button>
+            <button onclick="sendEmote('emojipleure.png')"><img src="assets/skins/emojipleure.png" alt="pleure"></button>
+            <button onclick="sendEmote('emojipouce.png')"><img src="assets/skins/emojipouce.png" alt="pouce"></button>
         </div>
 
-        <!-- MENUS -->
         <div id="main-menu" class="menu-overlay">
             <h2 class="menu-subtitle">Choisis ton mode</h2>
             <button class="btn-main" onclick="openDeckBuilder()">🃏 Composer mon Deck</button>
@@ -91,7 +87,6 @@
             <button class="btn-main" style="background:#333;" onclick="closeDeckBuilder()">Retour</button>
         </div>
 
-        <!-- JEU -->
         <div id="arena" style="display: none;">
             <div id="river"></div>
             <div class="bridge left-bridge"></div>
