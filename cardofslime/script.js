@@ -6,9 +6,7 @@ function toggleSettings() {
     modal.classList.toggle('show');
 }
 
-function toggleTheme() {
-    document.body.classList.toggle('dark-mode');
-}
+function toggleTheme() { document.body.classList.toggle('dark-mode'); }
 
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
@@ -26,7 +24,7 @@ document.addEventListener('fullscreenchange', () => {
 // ANIMATION DES PARAMETRES (Hover / Click)
 let hoverInterval; 
 let currentFrame = 0;
-const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
 
 function startSettingsAnim() {
     if (hoverInterval) return;
@@ -43,16 +41,16 @@ function stopSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
     const settingsBtnImg = document.getElementById('settings-btn-img');
     if (!settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = 'img/setting.png'; 
+        settingsBtnImg.src = '../img/setting.png'; 
     }
 }
 
 function clickSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
     const settingsBtnImg = document.getElementById('settings-btn-img');
-    settingsBtnImg.src = 'img/settings4.png';
+    settingsBtnImg.src = '../img/settings4.png';
     toggleSettings();
-    setTimeout(() => { settingsBtnImg.src = 'img/setting.png'; }, 300);
+    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
 }
 
 // --- GESTION AUDIO GLOBALE ---
@@ -63,9 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const musicToggle = document.getElementById('music-toggle');
     if (musicToggle) musicToggle.checked = !isMuted;
     
-    // Fix image au chargement
     const settingsBtnImg = document.getElementById('settings-btn-img');
-    if(settingsBtnImg) settingsBtnImg.src = 'img/setting.png';
+    if(settingsBtnImg) settingsBtnImg.src = '../img/setting.png';
 });
 
 function toggleMusic() {
@@ -161,7 +158,7 @@ const cardDatabase = {
         }
     },
     tornade: { 
-        id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, // dmg par tick d'animation
+        id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, 
         anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png']
     },
     boule_sort: { 
@@ -198,9 +195,12 @@ function renderDeckPool() {
         div.className = `card-select-item ${tempSelectedDeck.includes(cardId) ? 'selected' : ''}`;
         
         let bgImg = (card.hasTurret || card.isStacked) ? card.skins.front.base : (card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]));
+        
+        // Empêche les "doubles images" avec background-repeat: no-repeat !
         div.style.backgroundImage = `url('${bgImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
-        div.style.backgroundSize = '80%, cover, cover';
-        div.style.backgroundPosition = 'center 20%, center, center';
+        div.style.backgroundSize = 'contain, cover, cover';
+        div.style.backgroundPosition = 'center, center, center';
+        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
 
         div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>`;
         div.onclick = () => {
@@ -340,8 +340,9 @@ function updateUI() {
         let bgImg = (data.hasTurret || data.isStacked) ? data.skins.front.base : (data.skins ? data.skins.front.idle[0] : (data.projectile || data.anim[0]));
         
         div.style.backgroundImage = `url('${bgImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
-        div.style.backgroundSize = '80%, cover, cover';
-        div.style.backgroundPosition = 'center 20%, center, center';
+        div.style.backgroundSize = 'contain, cover, cover';
+        div.style.backgroundPosition = 'center, center, center';
+        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
 
         div.dataset.cost = data.cost; div.innerHTML = `<div class="cost">${data.cost}</div>`;
         div.addEventListener('click', () => selectCard(index)); handContainer.appendChild(div);
@@ -350,8 +351,9 @@ function updateUI() {
     let nextData = cardDatabase[nextCard];
     let nextBg = (nextData.hasTurret || nextData.isStacked) ? nextData.skins.front.base : (nextData.skins ? nextData.skins.front.idle[0] : (nextData.projectile || nextData.anim[0]));
     document.getElementById('next-card').style.backgroundImage = `url('${nextBg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
-    document.getElementById('next-card').style.backgroundSize = '80%, cover, cover';
-    document.getElementById('next-card').style.backgroundPosition = 'center 20%, center, center';
+    document.getElementById('next-card').style.backgroundSize = 'contain, cover, cover';
+    document.getElementById('next-card').style.backgroundPosition = 'center, center, center';
+    document.getElementById('next-card').style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
     document.getElementById('next-card').innerHTML = `<div class="cost">${nextData.cost}</div>`;
 }
 
@@ -682,7 +684,9 @@ function gameLoop(currentTime) {
             if (unit.animTimer > 0.15) { 
                 unit.animTimer = 0; unit.animFrame++;
                 let skinState = unit.skins[unit.facing][unit.state] || unit.skins[unit.facing]['idle'];
-                if(skinState) { unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`; }
+                if(skinState) {
+                    unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`;
+                }
             }
         }
     });
