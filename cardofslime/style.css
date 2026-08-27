@@ -9,7 +9,6 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 .hub-link { position: absolute; top: 20px; left: 20px; color: #39ff14; text-decoration: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; font-size: 1.2em; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 5px; border: 1px solid #39ff14; z-index: 100; transition: 0.2s; }
 .hub-link:hover { background: #39ff14; color: black; }
 
-/* --- BOUTON PARAMÈTRES --- */
 .settings-btn-wrapper { position: absolute; top: 20px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2; }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
@@ -22,7 +21,6 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 .close-btn { background: #00e5ff; border: none; color: #000; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px; font-weight: bold; font-size: 1.1em; width: 100%; transition: 0.2s; }
 .close-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px #00e5ff; }
 
-/* CSS DES BOUTONS À BASCULE (SWITCH ON/OFF) */
 .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
@@ -30,7 +28,6 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 input:checked + .slider { background-color: #00e5ff; }
 input:checked + .slider:before { transform: translateX(24px); }
 
-/* --- CONTENEUR PRINCIPAL --- */
 #game-container { background: url('assets/skins/mapday.jpeg') center bottom / cover no-repeat; border: 2px solid #39ff14; border-radius: 20px; display: flex; flex-direction: column; position: relative; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
 body.dark-mode #game-container { background: url('assets/skins/mapnight.png') center bottom / cover no-repeat; }
 
@@ -44,11 +41,13 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 @keyframes flash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
 @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); } }
 
-/* EMOJIS REMONTÉS À 35% */
+/* --- EMOJIS PNG --- */
 #emote-panel { position: absolute; left: 10px; top: 35%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 20; }
-#emote-panel button { background: rgba(0,0,0,0.6); border: 2px solid #888; border-radius: 50%; width: 45px; height: 45px; font-size: 1.5em; cursor: pointer; transition: 0.2s; }
+#emote-panel button { background: rgba(0,0,0,0.6); border: 2px solid #888; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; transition: 0.2s; overflow: hidden; padding: 5px; }
+#emote-panel button img { width: 100%; height: 100%; object-fit: contain; }
 #emote-panel button:hover { background: #39ff14; transform: scale(1.2); }
-.emote-bubble { position: absolute; font-size: 2em; background: white; border-radius: 50%; padding: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); z-index: 30; animation: floatEmote 2s forwards; pointer-events: none; }
+.emote-bubble { position: absolute; width: 50px; height: 50px; background: white; border-radius: 50%; padding: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); z-index: 30; animation: floatEmote 2s forwards; pointer-events: none; display: flex; justify-content: center; align-items: center;}
+.emote-bubble img { width: 100%; height: 100%; object-fit: contain; }
 @keyframes floatEmote { 0% { opacity: 0; transform: translate(-50%, 0) scale(0); } 20% { opacity: 1; transform: translate(-50%, -30px) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -40px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(0.5); } }
 
 .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 25, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; text-align: center; }
@@ -64,7 +63,6 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 .card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
-/* --- L'ARÈNE --- */
 #arena { flex: 1; position: relative; margin: 0; border: none; background: transparent; overflow: hidden; cursor: crosshair; }
 
 #river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: transparent; z-index: 1; pointer-events: none;}
@@ -88,7 +86,6 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 #slime-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #1f8a0e, #39ff14); transition: width 0.3s linear; }
 #slime-count { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-weight: bold; text-shadow: 1px 1px 2px #000; font-family: 'Luckiest Guy', cursive; font-size: 14px; letter-spacing: 1px; }
 
-/* === ENTITÉS ET SKINS === */
 .entity { position: absolute; width: 55px; height: 55px; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
 .entity.building { display: flex; justify-content: center; align-items: center; z-index: 3; }
 .entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
@@ -115,7 +112,6 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
 @keyframes shake { 0% { transform: translate(-52%, -50%); } 50% { transform: translate(-48%, -50%); } 100% { transform: translate(-50%, -50%); } }
 
-/* EFFETS DES SORTS */
 .spell-anim { position: absolute; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 10; pointer-events: none; }
 .spell-puddle { position: absolute; background-size: contain; background-repeat: no-repeat; background-position: center; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; }
 
