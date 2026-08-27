@@ -5,7 +5,7 @@
 }
 
 body {
-    background-color: #0b0f19; /* Fond sombre par défaut si la vidéo met du temps à charger */
+    background-color: #0b0f19;
     color: white;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
@@ -22,17 +22,16 @@ body {
     object-fit: cover; z-index: -5; pointer-events: none;
 }
 
-/* Un filtre par-dessus la vidéo pour que le texte reste lisible */
 .bg-overlay {
     position: absolute;
     top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(255, 255, 255, 0.05); /* Jour : très léger filtre */
+    background: rgba(255, 255, 255, 0.05);
     z-index: -4; pointer-events: none;
     transition: background 0.5s ease;
 }
 
 body.dark-mode .bg-overlay {
-    background: rgba(0, 0, 0, 0.5); /* Nuit : on assombrit un peu plus */
+    background: rgba(0, 0, 0, 0.5); 
 }
 
 /* Bouton Retour Hub */
@@ -109,12 +108,9 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
 #game-container {
     position: relative;
     width: 600px;
-    max-width: 90vw;
+    max-width: 95vw;
     aspect-ratio: 3 / 4;
-    
-    /* 🚨 LE SECRET EST ICI : Empêche les bordures d'écraser la taille du canvas */
     box-sizing: content-box; 
-
     border-left: 10px solid rgba(22, 33, 62, 0.9);
     border-right: 10px solid rgba(22, 33, 62, 0.9);
     border-bottom: 10px solid rgba(22, 33, 62, 0.9);
@@ -122,6 +118,8 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
     background-color: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(4px);
     box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden; 
+    transition: background-color 0.5s ease;
 }
 
 body.dark-mode #game-container {
