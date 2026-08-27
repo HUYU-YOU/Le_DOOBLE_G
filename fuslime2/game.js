@@ -102,25 +102,26 @@ function onYouTubeIframeAPIReady() {
 const isLocalFile = window.location.protocol === 'file:';
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 LE FAMEUX RATIO POUR COUPER LE VIDE TRANSPARENT 🔥
-// On passe à 1.45. L'image sera dessinée beaucoup plus grande 
-// par rapport à sa hitbox physique. Fini le vide entre les slimes !
-const RATIO_ZOOM_IMAGE = 1.45; 
-
+// 🔥 GESTION DES ZOOMS INDIVIDUELS 🔥
+// Si un slime a trop d'écart avec les autres (à cause du vide dans l'image PNG), augmente son 'zoom' !
+// S'il rentre trop à l'intérieur des autres, diminue son 'zoom'.
 const SLIMES = [
-    { level: 1, radius: 35, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 48, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 62, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 78, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 96, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
-    { level: 6, radius: 116, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
-    { level: 7, radius: 138, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 162, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
-    { level: 9, radius: 188, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 216, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
-    { level: 11, radius: 246, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
-    { level: 12, radius: 275, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
-    { level: 13, radius: 290, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
+    { level: 1, radius: 35, zoom: 1.35, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
+    { level: 2, radius: 48, zoom: 1.35, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
+    { level: 3, radius: 62, zoom: 1.35, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
+    { level: 4, radius: 78, zoom: 1.35, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
+    { level: 5, radius: 96, zoom: 1.35, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
+    
+    // Le niveau 6 est le boss à cornes bleu qui posait problème : zoom poussé à 1.55 pour masquer son vide
+    { level: 6, radius: 116, zoom: 1.55, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
+    
+    { level: 7, radius: 138, zoom: 1.40, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
+    { level: 8, radius: 162, zoom: 1.40, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
+    { level: 9, radius: 188, zoom: 1.40, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
+    { level: 10, radius: 216, zoom: 1.40, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
+    { level: 11, radius: 246, zoom: 1.40, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
+    { level: 12, radius: 275, zoom: 1.40, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
+    { level: 13, radius: 290, zoom: 1.40, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
 ];
 
 SLIMES.forEach(slime => {
@@ -253,8 +254,8 @@ function updateScore(points) {
     }
 }
 
-function getScale(radius) {
-    return (radius * 2 * RATIO_ZOOM_IMAGE) / TAILLE_IMAGE_EN_PIXELS;
+function getScale(radius, customZoom) {
+    return (radius * 2 * customZoom) / TAILLE_IMAGE_EN_PIXELS;
 }
 
 function getRenderOptions(slimeData, isGhost = false) {
@@ -268,8 +269,8 @@ function getRenderOptions(slimeData, isGhost = false) {
     if (slimeData.imageLoaded && !isLocalFile) {
         options.sprite = {
             texture: slimeData.texture,
-            xScale: getScale(slimeData.radius),
-            yScale: getScale(slimeData.radius)
+            xScale: getScale(slimeData.radius, slimeData.zoom),
+            yScale: getScale(slimeData.radius, slimeData.zoom)
         };
     }
     return options;
@@ -303,8 +304,8 @@ function dropSlime() {
     currentSlime = null;
 
     const realSlime = Bodies.circle(x, y, slimeData.radius, {
-        restitution: 0.1, // 🔻 Baisse du rebond pour qu'ils se calent mieux
-        friction: 0.1,    // 🔺 Plus de friction pour ne pas trop glisser
+        restitution: 0.1, 
+        friction: 0.1, 
         frictionAir: 0.002,
         density: 0.001 * slimeData.level,
         label: 'slime',
@@ -435,7 +436,7 @@ Events.on(render, 'afterRender', () => {
     context.stroke();
     context.setLineDash([]);
 
-    // Textes de secours
+    // Textes de secours si les images ne chargent pas
     const bodies = Composite.allBodies(world);
     context.textAlign = "center";
     context.textBaseline = "middle";
