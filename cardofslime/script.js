@@ -1,13 +1,11 @@
 // ==========================================
-// 1. GESTION DES PARAMETRES (AVEC TON ANIMATION JAVASCRIPT)
+// 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES
 // ==========================================
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('show');
 }
-
 function toggleTheme() { document.body.classList.toggle('dark-mode'); }
-
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => console.log(err));
@@ -15,13 +13,11 @@ function toggleFullscreen() {
         if (document.exitFullscreen) document.exitFullscreen();
     }
 }
-
 document.addEventListener('fullscreenchange', () => {
     const fsToggle = document.getElementById('fs-toggle');
     if(fsToggle) fsToggle.checked = !!document.fullscreenElement;
 });
 
-// ANIMATION DES PARAMETRES (Hover / Click)
 let hoverInterval; 
 let currentFrame = 0;
 const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
@@ -36,7 +32,6 @@ function startSettingsAnim() {
         settingsBtnImg.src = animFrames[currentFrame];
     }, 100); 
 }
-
 function stopSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
     const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -44,7 +39,6 @@ function stopSettingsAnim() {
         settingsBtnImg.src = '../img/setting.png'; 
     }
 }
-
 function clickSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
     const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -60,7 +54,6 @@ let musicStarted = false;
 document.addEventListener('DOMContentLoaded', () => {
     const musicToggle = document.getElementById('music-toggle');
     if (musicToggle) musicToggle.checked = !isMuted;
-    
     const settingsBtnImg = document.getElementById('settings-btn-img');
     if(settingsBtnImg) settingsBtnImg.src = '../img/setting.png';
 });
@@ -69,11 +62,9 @@ function toggleMusic() {
     const musicToggle = document.getElementById('music-toggle');
     isMuted = !musicToggle.checked;
     localStorage.setItem('isMuted', isMuted);
-    
     const bgm = document.getElementById('bg-music');
     if (bgm) { if (!isMuted) bgm.play().catch(()=>{}); else bgm.pause(); }
 }
-
 function startMusic() {
     if(!musicStarted && !isMuted) {
         const bgm = document.getElementById('bg-music');
@@ -81,7 +72,6 @@ function startMusic() {
         musicStarted = true;
     }
 }
-
 function playSound(id) {
     if (isMuted) return;
     const sound = document.getElementById(id);
@@ -139,8 +129,8 @@ const cardDatabase = {
         id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0,
         isStacked: true,
         skins: {
-            front: { base: 'assets/skins/tourback.png', top: 'assets/skins/tour.png' }, 
-            back: { base: 'assets/skins/tourback.png', top: 'assets/skins/tour.png' }
+            front: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }, 
+            back: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }
         }
     },
     barriere: { 
@@ -166,20 +156,42 @@ const cardDatabase = {
         projectile: 'assets/skins/boulespell.png', anim: ['assets/skins/splashboule.png']
     },
     marais: { 
-        id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "mini_slime", radius: 15,
+        id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "slime_marais", radius: 15,
         anim: ['assets/skins/marais1.png', 'assets/skins/marais2.png', 'assets/skins/marais3.png']
     },
-    mini_slime: { 
-        id: "mini_slime", type: "troop", name: "Mini", hp: 150, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true,
+    // NOUVEAU : Le slime du marais, moitié moins fort (Caché du deck builder)
+    slime_marais: { 
+        id: "slime_marais", type: "troop", name: "Slime Marais", hp: 300, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true,
         skins: {
-            front: { idle: ['assets/skins/slime.png'], attack: ['assets/skins/slimeattack1.png'] },
-            back:  { idle: ['assets/skins/slimeback.png'], attack: ['assets/skins/slimeback.png'] }
+            front: { idle: ['assets/skins/slimemarais.png'], attack: ['assets/skins/slimemarais.png'] },
+            back:  { idle: ['assets/skins/slimemaraisback.png'], attack: ['assets/skins/slimemaraisback.png'] }
         }
     }
 };
 
-let playerDeck = ["slime", "slimeuse", "dragon", "tornade", "boule_sort", "marais"];
+let playerDeck = ["slime", "slimeuse", "dragon", "canon", "boule_sort", "marais"];
 let tempSelectedDeck = [...playerDeck];
+
+// APPLIQUE LE FOND + LE SUPPORT ET LA TOURELLE DU CANON
+function getCardBackgroundStyle(card) {
+    if (card.hasTurret) {
+        return {
+            img: `url('${card.skins.front.turret}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`,
+            size: 'contain, contain, cover, cover'
+        };
+    } else if (card.isStacked) {
+        return {
+            img: `url('${card.skins.front.top}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`,
+            size: 'contain, contain, cover, cover'
+        };
+    } else {
+        let singleImg = card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]);
+        return {
+            img: `url('${singleImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`,
+            size: 'contain, cover, cover'
+        };
+    }
+}
 
 function openDeckBuilder() {
     document.getElementById('main-menu').style.display = 'none'; document.getElementById('deck-builder-menu').style.display = 'flex'; renderDeckPool();
@@ -194,11 +206,11 @@ function renderDeckPool() {
         const div = document.createElement('div');
         div.className = `card-select-item ${tempSelectedDeck.includes(cardId) ? 'selected' : ''}`;
         
-        let bgImg = (card.hasTurret || card.isStacked) ? card.skins.front.base : (card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]));
-        div.style.backgroundImage = `url('${bgImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
-        div.style.backgroundSize = 'contain, cover, cover';
-        div.style.backgroundPosition = 'center, center, center';
-        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
+        let bg = getCardBackgroundStyle(card);
+        div.style.backgroundImage = bg.img;
+        div.style.backgroundSize = bg.size;
+        div.style.backgroundPosition = 'center, center, center, center';
+        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat, no-repeat';
 
         div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>`;
         div.onclick = () => {
@@ -215,7 +227,7 @@ function saveCustomDeck() { playerDeck = [...tempSelectedDeck]; closeDeckBuilder
 
 
 // ==========================================
-// 3. MULTIJOUEUR ET ÉMOTES
+// 3. MULTIJOUEUR ET ÉMOTES (PNG)
 // ==========================================
 let peer = null, conn = null, isHost = false, currentCOSCode = "";
 
@@ -248,13 +260,18 @@ function setupConnectionEvents() {
             if (data.spellType === 'spell' || data.spellType === 'spell_tornado') castSpell(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
             else if (data.spellType === 'spell_puddle' || data.spellType === 'spell_spawn') castSpellPuddle(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
             else spawnEntity(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
-        } else if (data.type === 'emote') { showEmote(data.emote, 'enemy'); }
+        } else if (data.type === 'emote') { showEmote(data.emotePath, 'enemy'); }
     });
 }
-function sendEmote(emoji) { showEmote(emoji, 'player'); if(conn && conn.open) conn.send({type: 'emote', emote: emoji}); }
-function showEmote(emoji, team) {
+function sendEmote(emojiFileName) { 
+    let path = `assets/skins/${emojiFileName}`;
+    showEmote(path, 'player'); 
+    if(conn && conn.open) conn.send({type: 'emote', emotePath: path}); 
+}
+function showEmote(emojiPath, team) {
     const base = activeEntities.find(e => e.id === (team === 'player' ? 'base_p' : 'base_e')); if(!base) return;
-    const b = document.createElement('div'); b.className = 'emote-bubble'; b.innerText = emoji;
+    const b = document.createElement('div'); b.className = 'emote-bubble'; 
+    b.innerHTML = `<img src="${emojiPath}" alt="emote">`;
     b.style.left = `${base.x}%`; b.style.top = `${base.y}%`; arena.appendChild(b);
     setTimeout(() => b.remove(), 2000);
 }
@@ -285,14 +302,11 @@ function initGameEngine() {
     lastTime = performance.now(); requestAnimationFrame(gameLoop);
 }
 
-// ALIGNEMENT EXACT AVEC L'IMAGE
 function setupTowers() {
-    // Joueur (En bas) - Bases redescendues, Tours écartées et redescendues
     createTower('base_p', 'player', 50, 87, 5000, "assets/skins/tourroyaleback.png", 96, 96);
     createTower('tower_p_l', 'player', 27, 76, 2500, "assets/skins/tourback.png", 72, 72);
     createTower('tower_p_r', 'player', 73, 76, 2500, "assets/skins/tourback.png", 72, 72);
 
-    // Ennemi (En haut) - Base redescendue un peu, Tours écartées et remontées
     createTower('base_e', 'enemy', 50, 18, 5000, "assets/skins/touroryale.png", 96, 96);
     createTower('tower_e_l', 'enemy', 27, 26, 2500, "assets/skins/tour.png", 72, 72);
     createTower('tower_e_r', 'enemy', 73, 26, 2500, "assets/skins/tour.png", 72, 72);
@@ -337,25 +351,23 @@ function updateUI() {
     hand.forEach((cardId, index) => {
         const div = document.createElement('div');
         div.className = `card ${selectedCardIndex === index ? 'selected' : ''} ${currentSlime < cardDatabase[cardId].cost ? 'disabled' : ''}`;
-        const data = cardDatabase[cardId];
-        let bgImg = (data.hasTurret || data.isStacked) ? data.skins.front.base : (data.skins ? data.skins.front.idle[0] : (data.projectile || data.anim[0]));
         
-        div.style.backgroundImage = `url('${bgImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
-        div.style.backgroundSize = 'contain, cover, cover';
-        div.style.backgroundPosition = 'center, center, center';
-        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
+        let bg = getCardBackgroundStyle(cardDatabase[cardId]);
+        div.style.backgroundImage = bg.img;
+        div.style.backgroundSize = bg.size;
+        div.style.backgroundPosition = 'center, center, center, center';
+        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat, no-repeat';
 
-        div.dataset.cost = data.cost; div.innerHTML = `<div class="cost">${data.cost}</div>`;
+        div.dataset.cost = cardDatabase[cardId].cost; div.innerHTML = `<div class="cost">${cardDatabase[cardId].cost}</div>`;
         div.addEventListener('click', () => selectCard(index)); handContainer.appendChild(div);
     });
     
-    let nextData = cardDatabase[nextCard];
-    let nextBg = (nextData.hasTurret || nextData.isStacked) ? nextData.skins.front.base : (nextData.skins ? nextData.skins.front.idle[0] : (nextData.projectile || nextData.anim[0]));
-    document.getElementById('next-card').style.backgroundImage = `url('${nextBg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`;
-    document.getElementById('next-card').style.backgroundSize = 'contain, cover, cover';
-    document.getElementById('next-card').style.backgroundPosition = 'center, center, center';
-    document.getElementById('next-card').style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
-    document.getElementById('next-card').innerHTML = `<div class="cost">${nextData.cost}</div>`;
+    let nextBg = getCardBackgroundStyle(cardDatabase[nextCard]);
+    document.getElementById('next-card').style.backgroundImage = nextBg.img;
+    document.getElementById('next-card').style.backgroundSize = nextBg.size;
+    document.getElementById('next-card').style.backgroundPosition = 'center, center, center, center';
+    document.getElementById('next-card').style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat, no-repeat';
+    document.getElementById('next-card').innerHTML = `<div class="cost">${cardDatabase[nextCard].cost}</div>`;
 }
 
 function selectCard(index) {
@@ -431,9 +443,9 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
 
             activeSpells.push({ 
                 type: 'tornado', team: casterTeam, 
-                originX: targetX, originY: targetY, // Point de lancement pour la confiner
+                originX: targetX, originY: targetY, 
                 x: targetX + offsetX, y: targetY + offsetY, 
-                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, // Vitesse initiale
+                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, 
                 anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), 
                 duration: 3500, dmg: spellData.dmg, tickTimer: 0
             });
@@ -516,7 +528,6 @@ function gameLoop(currentTime) {
     const dt = (currentTime - lastTime) / 1000; 
     lastTime = currentTime;
 
-    // TIMER ET ÉNERGIE
     gameTime -= dt;
     if (gameTime <= 60 && !doubleSlimeActive) {
         doubleSlimeActive = true; slimeRate = 1.25; 
@@ -530,7 +541,6 @@ function gameLoop(currentTime) {
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
-    // ANIMATIONS DES SORTS (Tornade dynamique restreinte)
     activeSpells = activeSpells.filter(spell => {
         spell.timer += dt;
         if(spell.timer > 0.15 && spell.anim && spell.anim.length > 1) { 
@@ -541,13 +551,11 @@ function gameLoop(currentTime) {
         if (spell.type === 'tornado') {
             spell.duration -= dt * 1000;
             
-            // Attirer la tornade vers son point d'origine pour qu'elle reste dans la zone !
             let dxOrig = spell.originX - spell.x;
             let dyOrig = spell.originY - spell.y;
             spell.vx += dxOrig * dt * 5; 
             spell.vy += dyOrig * dt * 5;
             
-            // Friction pour ne pas qu'elle aille trop vite
             spell.vx *= 0.98; spell.vy *= 0.98;
 
             spell.x += spell.vx * dt; spell.y += spell.vy * dt;
@@ -561,7 +569,6 @@ function gameLoop(currentTime) {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
                         takeDamage(ent, spell.dmg);
                         if (!ent.id.includes('base') && !ent.id.includes('tower')) {
-                            // Attire les ennemis vers l'origine du sort
                             ent.x += (spell.originX - ent.x) * 0.1; 
                             ent.y += (spell.originY - ent.y) * 0.1; 
                         }
@@ -598,7 +605,6 @@ function gameLoop(currentTime) {
         return true;
     });
 
-    // NETTOYAGE MORTS
     activeEntities = activeEntities.filter(ent => {
         if (ent.hp <= 0) {
             playSound('sfx-die'); createParticles(ent.x, ent.y, ent.color || '#fff');
@@ -609,7 +615,6 @@ function gameLoop(currentTime) {
         return true;
     });
 
-    // PROJECTILES
     activeProjectiles = activeProjectiles.filter(p => {
         if(p.target.hp <= 0) { p.element.remove(); return false; } 
         const dx = p.target.x - p.x; const dy = p.target.y - p.y;
@@ -623,7 +628,6 @@ function gameLoop(currentTime) {
         }
     });
 
-    // UNITÉS ET CIBLAGE (CHEMIN EN DIAGONALE CORRIGÉ)
     activeEntities.forEach(unit => {
         let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
         if (unit.stunTimer > 0) { unit.stunTimer -= dt; unit.state = 'idle'; unit.element.classList.add('stunned'); return; } 
@@ -638,7 +642,6 @@ function gameLoop(currentTime) {
         let closestTarget = null; let minDistance = 999;
         let aggroRadius = 25;
 
-        // 1. Chercher un ennemi proche (Aggro)
         if (!unit.targetBuilding && unit.speed > 0) {
             activeEntities.forEach(target => {
                 if (target.team !== unit.team && (!target.isFlying || unit.targetsAir)) {
@@ -648,7 +651,6 @@ function gameLoop(currentTime) {
             });
         }
 
-        // 2. Sinon chercher un bâtiment dans sa lane
         if (!closestTarget) {
             let minLaneDist = 999;
             activeEntities.forEach(target => {
@@ -660,7 +662,6 @@ function gameLoop(currentTime) {
                     }
                 }
             });
-            // 3. Fallback
             if (!closestTarget) {
                 activeEntities.forEach(target => {
                     if (target.team !== unit.team && target.speed === 0) {
@@ -689,24 +690,15 @@ function gameLoop(currentTime) {
                 }
             } else if (unit.speed > 0) {
                 unit.state = 'idle';
-                let targetX = closestTarget.x; 
-                let targetY = closestTarget.y;
-                
-                // CORRECTION DU DÉPLACEMENT (Direct vers l'entrée du pont)
+                let targetX = closestTarget.x; let targetY = closestTarget.y;
                 if (!unit.isFlying && ((unit.y > 50 && targetY < 50) || (unit.y < 50 && targetY > 50))) {
-                    let targetBridgeX = (unit.x < 50) ? 27 : 73; 
-                    targetX = targetBridgeX;
-                    targetY = 50; 
+                    let targetBridgeX = (closestTarget.x < 50) ? 27 : 73; 
+                    if (Math.abs(unit.x - targetBridgeX) > 2) { targetX = targetBridgeX; targetY = unit.y; }
                 }
-                
-                const dx = targetX - unit.x; 
-                const dy = targetY - unit.y; 
-                const angle = Math.atan2(dy, dx);
-                
+                const dx = targetX - unit.x; const dy = targetY - unit.y; const angle = Math.atan2(dy, dx);
                 unit.x += Math.cos(angle) * currentSpeed * dt * (arena.offsetHeight / arena.offsetWidth);
                 unit.y += Math.sin(angle) * currentSpeed * dt;
-                unit.element.style.left = `${unit.x}%`; 
-                unit.element.style.top = `${unit.y}%`;
+                unit.element.style.left = `${unit.x}%`; unit.element.style.top = `${unit.y}%`;
             }
         } else { unit.state = 'idle'; }
 
