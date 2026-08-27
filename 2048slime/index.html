@@ -23,13 +23,27 @@
             background-color: var(--bg); color: #fff; margin: 0; padding: 0; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 100vh; overflow: hidden; touch-action: none; 
-            background-image: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05) 0%, transparent 70%);
+        }
+
+        /* --- VIDÉO DE FOND --- */
+        .bg-video-main {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            object-fit: cover; z-index: -5; pointer-events: none;
+        }
+
+        .bg-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(5, 8, 17, 0.5); /* Filtre sombre pour que le jeu reste lisible */
+            z-index: -4; pointer-events: none;
         }
 
         /* --- WRAPPER DYNAMIQUE (Pour changer la taille) --- */
         #main-wrapper {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1; /* Pour passer au-dessus de la vidéo */
         }
 
         /* Tailles de jeu */
@@ -70,12 +84,17 @@
         .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
         .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
 
-        /* --- HEADER --- */
+        /* --- HEADER & SCORES --- */
         #game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; transition: width 0.4s ease; }
         h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin: 0; text-shadow: 0 0 15px var(--p1); font-size: 3em; }
-        .score-box { background: rgba(0,0,0,0.6); padding: 15px 30px; border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.3); text-align: center; box-shadow: 0 5px 20px rgba(0, 240, 255, 0.15); backdrop-filter: blur(5px); }
+        
+        .scores-wrapper { display: flex; gap: 15px; }
+        .score-box { background: rgba(0,0,0,0.6); padding: 10px 25px; border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.3); text-align: center; box-shadow: 0 5px 20px rgba(0, 240, 255, 0.15); backdrop-filter: blur(5px); }
         .score-title { font-size: 1em; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
-        .score-value { font-size: 2.2em; font-weight: bold; margin-top: 5px; text-shadow: 0 0 10px var(--p1); }
+        .score-value { font-size: 2em; font-weight: bold; margin-top: 5px; text-shadow: 0 0 10px var(--p1); }
+        
+        #best-score { color: #f39c12; text-shadow: 0 0 10px #f39c12; }
+        #best-title { color: #f39c12; }
 
         /* LE PLATEAU DE JEU */
         #game-container { 
@@ -102,7 +121,7 @@
         .tile-merged { animation: pop 200ms ease-in-out; }
         .tile-new { animation: pop 200ms ease-in-out; }
 
-        /* COULEURS DE SECOURS (Si l'image ne charge pas) */
+        /* COULEURS DE SECOURS */
         .tile-2 { background-color: #3d3a4e; }
         .tile-4 { background-color: #4a4563; }
         .tile-8 { background-color: #6a4c7a; }
@@ -136,11 +155,20 @@
             .size-wide #game-container, .size-classic #game-container { width: 90vw; height: 90vw; }
             .size-wide #game-header, .size-classic #game-header { width: 90vw; flex-direction: column; gap: 15px;}
             h1 { font-size: 2.5em; }
+            .scores-wrapper { gap: 10px; }
+            .score-box { padding: 10px 15px; }
+            .score-value { font-size: 1.5em; }
         }
     </style>
 </head>
 <body>
     
+    <!-- VIDÉO DE FOND -->
+    <video autoplay loop muted playsinline class="bg-video-main" id="bg-video">
+        <source src="img/background.mp4" type="video/mp4">
+    </video>
+    <div class="bg-overlay"></div>
+
     <!-- BOUTONS FLOTTANTS -->
     <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
     
@@ -245,10 +273,19 @@
     <div id="main-wrapper" class="size-wide">
         <div id="game-header">
             <h1>SLIME 2048</h1>
-            <div class="score-box">
-                <div class="score-title">Score</div>
-                <div class="score-value" id="score">0</div>
+            
+            <!-- SCORES AVEC BEST SCORE -->
+            <div class="scores-wrapper">
+                <div class="score-box">
+                    <div class="score-title">Score</div>
+                    <div class="score-value" id="score">0</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-title" id="best-title">Best</div>
+                    <div class="score-value" id="best-score">0</div>
+                </div>
             </div>
+            
         </div>
 
         <div id="game-container">
@@ -266,7 +303,7 @@
         </div>
     </div>
 
-    <!-- MOTEUR DE JEU JAVASCRIPT (INCHANGÉ) -->
+    <!-- MOTEUR DE JEU JAVASCRIPT -->
     <script>
         // --- AUDIO : BRUITAGES PIKMIN / PLAYTEST ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -334,12 +371,17 @@
         const gridBg = document.getElementById('grid-bg');
         const tilesContainer = document.getElementById('tiles-container');
         const scoreElement = document.getElementById('score');
+        const bestScoreElement = document.getElementById('best-score');
         const gameOverScreen = document.getElementById('game-over');
 
         let board = [];
         let score = 0;
         let tileIdCounter = 0;
         let tiles = {};
+        
+        // --- GESTION DU MEILLEUR SCORE ---
+        let bestScore = localStorage.getItem('fuslime1_best_score') || 0;
+        bestScoreElement.innerText = bestScore;
 
         // Générer les 16 cases de fond
         for (let i = 0; i < 16; i++) {
@@ -429,7 +471,16 @@
             delete tiles[id]; 
         }
 
-        function updateScore() { scoreElement.innerText = score; }
+        function updateScore() { 
+            scoreElement.innerText = score; 
+            
+            // Mise à jour du Best Score en temps réel
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('fuslime1_best_score', bestScore);
+                bestScoreElement.innerText = bestScore;
+            }
+        }
 
         // Moteur de déplacement
         function move(direction) {
