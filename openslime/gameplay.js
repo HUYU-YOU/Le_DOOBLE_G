@@ -19,13 +19,7 @@ let selectedEntity = null;
 let actionState = 'NORMAL'; 
 let playerCapitalMesh = null;
 
-let playerStats = { 
-    pop: 500, 
-    maxPop: 1000, 
-    gold: 500, 
-    territory: 0, 
-    alive: true 
-};
+let playerStats = { pop: 500, maxPop: 1000, gold: 500, territory: 0, alive: true };
 
 // --- PALETTE DE COULEURS POUR LES 10 IA + JOUEUR ---
 const FACTIONS = [
@@ -44,9 +38,9 @@ const FACTIONS = [
 
 let ais = [];
 
-// Grille de territoire : -2 = Eau, -1 = Terre neutre, 0 = Joueur, 1..10 = IA
+// Grille de territoire : -3 = Irradié, -2 = Eau, -1 = Terre neutre, 0 = Joueur, 1..10 = IA
 const grid = new Int8Array(SIM_W * SIM_H);
-const frontierMap = new Map(); // FactionID -> Set de clés "x,y" frontalières
+const frontierMap = new Map(); // Liste les pixels de frontières pour s'étendre
 
 // Canvas de superposition pour Three.js
 const overlayCanvas = document.createElement('canvas');
@@ -56,16 +50,11 @@ const overlayCtx = overlayCanvas.getContext('2d');
 let overlayImgData = overlayCtx.createImageData(SIM_W, SIM_H);
 let overlayTexture;
 
-// --- 1. RADAR ET CHARGEMENT TERRAIN (TERRE VS MER) ---
+// --- 1. RADAR ET CHARGEMENT TERRAIN ---
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
-terrainImg.src = 'assets/map_globe_terreste.png';
-
-terrainImg.onerror = () => {
-    // Si la carte radar n'existe pas, on prend la carte graphique standard
-    terrainImg.src = 'assets/map_globe.png';
-};
+terrainImg.src = 'assets/map_globe.png'; 
 
 terrainImg.onload = () => {
     terrainCanvas.width = SIM_W;
@@ -85,9 +74,7 @@ function initGridLandWater() {
                 grid[y * SIM_W + x] = isOcean ? -2 : -1;
             }
         }
-    } catch(e) {
-        grid.fill(-1); // Fallback terre partout si sécurité navigateur locale
-    }
+    } catch(e) { grid.fill(-1); }
 }
 
 function isWaterPixel(x, y) {
@@ -95,68 +82,36 @@ function isWaterPixel(x, y) {
     return grid[y * SIM_W + x] === -2;
 }
 
-// --- 2. GESTION DES MENUS & PARAMÈTRES ---
-const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
-let hoverInterval; let currentFrame = 0;
-window.startSettingsAnim = function() { if (hoverInterval) return; currentFrame = 0; const btn = document.getElementById('settings-btn-img'); if(btn) btn.src = animFrames[currentFrame]; hoverInterval = setInterval(() => { currentFrame = (currentFrame + 1) % animFrames.length; if(btn) btn.src = animFrames[currentFrame]; }, 100); }
-window.stopSettingsAnim = function() { clearInterval(hoverInterval); hoverInterval = null; const btn = document.getElementById('settings-btn-img'); if (btn && !btn.src.includes('settings4.png')) { btn.src = '../img/setting.png'; } }
-window.clickSettingsAnim = function() { clearInterval(hoverInterval); hoverInterval = null; const btn = document.getElementById('settings-btn-img'); if(btn) btn.src = '../img/settings4.png'; window.toggleSettings(); setTimeout(() => { if(btn) btn.src = '../img/setting.png'; }, 300); }
+// --- 2. MENUS & DÉMARRAGE ---
+window.openMenu = function(menuId) { document.getElementById('main-menu').style.display = 'none'; document.getElementById('local-menu').style.display = 'none'; document.getElementById('network-menu').style.display = 'none'; if(menuId !== 'main') document.getElementById(menuId + '-menu').style.display = 'flex'; else document.getElementById('main-menu').style.display = 'flex'; }
+window.joinNetworkGame = function() { alert("Multijoueur en dev !"); }
 window.toggleSettings = function() { document.getElementById('settings-modal').classList.toggle('show'); }
 window.toggleTheme = function() { document.body.classList.toggle('dark-mode'); }
-window.toggleFullscreen = function() { if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => console.log(err)); } else { if (document.exitFullscreen) document.exitFullscreen(); } }
-window.setGameSize = function(size) { const container = document.getElementById('game-container'); if (!container) return; document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active')); container.classList.remove('size-classic', 'size-wide', 'size-full'); let btnClassic = document.getElementById('btn-sz-classic'); let btnWide = document.getElementById('btn-sz-wide'); if (size === 'classic') { container.classList.add('size-classic'); if(btnClassic) btnClassic.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } else if (size === 'wide') { container.classList.add('size-wide'); if(btnWide) btnWide.classList.add('active'); if (document.fullscreenElement) document.exitFullscreen().catch(e=>{}); } if (typeof window.resize3DEnvironment === "function") { setTimeout(window.resize3DEnvironment, 50); setTimeout(window.resize3DEnvironment, 400); } }
+window.toggleFullscreen = function() { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{}); else if (document.exitFullscreen) document.exitFullscreen(); }
+window.setGameSize = function(size) { const c = document.getElementById('game-container'); if (!c) return; document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active')); c.classList.remove('size-classic', 'size-wide', 'size-full'); if (size === 'classic') c.classList.add('size-classic'); else if (size === 'wide') c.classList.add('size-wide'); if (typeof window.resize3DEnvironment === "function") { setTimeout(window.resize3DEnvironment, 50); setTimeout(window.resize3DEnvironment, 400); } }
 
-window.openMenu = function(menuId) { 
-    document.getElementById('main-menu').style.display = 'none'; 
-    document.getElementById('local-menu').style.display = 'none'; 
-    document.getElementById('network-menu').style.display = 'none'; 
-    if(menuId !== 'main') document.getElementById(menuId + '-menu').style.display = 'flex'; 
-    else document.getElementById('main-menu').style.display = 'flex'; 
-}
-
-window.joinNetworkGame = function() { 
-    let input = document.getElementById('ops-input').value.toUpperCase(); 
-    if(/^OPS\d{4}$/.test(input)) { 
-        document.getElementById('network-error').innerText = "Connexion..."; 
-        setTimeout(() => { alert("Multijoueur en dev !"); }, 1000); 
-    } else { 
-        document.getElementById('network-error').innerText = "Format requis : OPS + 4 chiffres."; 
-    } 
-}
-
-// --- 3. DÉMARRAGE DU JEU ---
 window.startGame = function(mode) {
     aiMode = mode;
     document.getElementById('local-menu').style.display = 'none';
     document.getElementById('ui-container').style.display = 'flex';
     document.getElementById('spawn-timer-container').style.display = 'block';
     
-    gameState = 'SPAWNING'; 
-    myCapitalPlaced = false; 
-    spawnCountdown = 10;
+    gameState = 'SPAWNING'; myCapitalPlaced = false; spawnCountdown = 10;
     document.getElementById('spawn-timer').innerText = spawnCountdown;
 
-    // Sphère de superposition pour l'affichage de l'expansion
     if(!overlayTexture && window.gameScene) {
         overlayTexture = new THREE.CanvasTexture(overlayCanvas);
+        overlayTexture.magFilter = THREE.NearestFilter; // Rendu net style pixels
         const overlayGeo = new THREE.SphereGeometry(5.03, 64, 64);
-        const overlayMat = new THREE.MeshBasicMaterial({ 
-            map: overlayTexture, 
-            transparent: true, 
-            opacity: 0.75 
-        });
+        const overlayMat = new THREE.MeshBasicMaterial({ map: overlayTexture, transparent: true, opacity: 0.8 });
         const overlaySphere = new THREE.Mesh(overlayGeo, overlayMat);
         overlaySphere.rotation.y = -Math.PI / 2;
         window.gameScene.add(overlaySphere);
     }
 
     let timerInterval = setInterval(() => {
-        spawnCountdown--; 
-        document.getElementById('spawn-timer').innerText = spawnCountdown;
-        if (spawnCountdown <= 0) { 
-            clearInterval(timerInterval); 
-            finishSpawningPhase(); 
-        }
+        spawnCountdown--; document.getElementById('spawn-timer').innerText = spawnCountdown;
+        if (spawnCountdown <= 0) { clearInterval(timerInterval); finishSpawningPhase(); }
     }, 1000);
 }
 
@@ -165,27 +120,19 @@ function finishSpawningPhase() {
     document.getElementById('spawn-timer-container').style.display = 'none';
     document.getElementById('game-phase-text').innerText = "GUERRE GLOBALE";
 
-    // Si le joueur n'a pas cliqué, on le place automatiquement sur la terre ferme
     if (!myCapitalPlaced) {
         let uv = getRandomLandUV();
         setPlayerCapital(uv, get3DPosFromUV(uv.x, uv.y));
     }
-
-    // Déploiement des 10 IA
     spawnAllAIs();
 
-    // Boucle de simulation temps réel (Economie & IA)
     setInterval(() => {
         if(gameState === 'PLAYING') {
-            // Economie Joueur
             if (playerStats.alive) {
-                let popGrowth = Math.max(1, Math.floor(playerStats.pop * 0.04));
-                playerStats.pop = Math.min(playerStats.maxPop, playerStats.pop + popGrowth);
+                playerStats.pop = Math.min(playerStats.maxPop, playerStats.pop + Math.max(1, Math.floor(playerStats.pop * 0.04)));
                 playerStats.gold += Math.floor(playerStats.territory * 0.15) + 2;
                 updateHUD();
             }
-
-            // Economie & Actions des 10 IA
             updateAllAIs();
         }
     }, 1000);
@@ -198,138 +145,80 @@ function updateHUD() {
     document.getElementById('ui-gold').innerText = playerStats.gold;
 }
 
-// --- 4. GESTION DES POSITIONS & DE LA CAPITALE ---
+// --- 3. GESTION DES POSITIONS & DE LA CAPITALE ---
 function get3DPosFromUV(u, v) {
-    let phi = (1 - v) * Math.PI; 
-    let theta = u * Math.PI * 2; 
-    let x = -5 * Math.sin(phi) * Math.cos(theta);
-    let y = 5 * Math.cos(phi);
-    let z = 5 * Math.sin(phi) * Math.sin(theta);
-    let pos = new THREE.Vector3(x, y, z);
-    pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+    let phi = (1 - v) * Math.PI; let theta = u * Math.PI * 2; 
+    let x = -5 * Math.sin(phi) * Math.cos(theta); let y = 5 * Math.cos(phi); let z = 5 * Math.sin(phi) * Math.sin(theta);
+    let pos = new THREE.Vector3(x, y, z); pos.applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
     return pos;
 }
 
 function getRandomLandUV() {
     for(let i = 0; i < 200; i++) {
-        let u = Math.random();
-        let v = Math.random() * 0.7 + 0.15; // Évite les pôles
-        let gx = Math.floor(u * SIM_W);
-        let gy = Math.floor((1 - v) * SIM_H);
-        if (!isWaterPixel(gx, gy) && grid[gy * SIM_W + gx] === -1) {
-            return new THREE.Vector2(u, v);
-        }
+        let u = Math.random(); let v = Math.random() * 0.7 + 0.15; 
+        let gx = Math.floor(u * SIM_W); let gy = Math.floor((1 - v) * SIM_H);
+        if (!isWaterPixel(gx, gy) && grid[gy * SIM_W + gx] === -1) return new THREE.Vector2(u, v);
     }
     return new THREE.Vector2(0.5, 0.5);
 }
 
-// Positionne ou déplace la capitale du joueur
 function setPlayerCapital(uv, pos3D) {
-    // 1. Si la capitale existait déjà, on la retire de la scène 3D
     if (playerCapitalMesh) {
         window.gameScene.remove(playerCapitalMesh);
         entities = entities.filter(e => e.mesh !== playerCapitalMesh);
     }
-
-    // 2. Nettoie l'ancien point sur la grille si déplacé
     if (playerCapitalUV) {
-        let oldGx = Math.floor(playerCapitalUV.x * SIM_W);
-        let oldGy = Math.floor((1 - playerCapitalUV.y) * SIM_H);
+        let oldGx = Math.floor(playerCapitalUV.x * SIM_W); let oldGy = Math.floor((1 - playerCapitalUV.y) * SIM_H);
         claimPixel(oldGx, oldGy, -1);
     }
 
-    playerCapitalUV = uv.clone();
-    buildTargetPosition = pos3D;
+    playerCapitalUV = uv.clone(); buildTargetPosition = pos3D;
 
-    // 3. Pose la nouvelle ville dorée 3D
     const geometry = new THREE.BoxGeometry(0.35, 0.35, 0.35);
     const material = new THREE.MeshStandardMaterial({ color: 0xffbf00, roughness: 0.3 });
     playerCapitalMesh = new THREE.Mesh(geometry, material);
     playerCapitalMesh.position.copy(pos3D);
     playerCapitalMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos3D.clone().normalize());
     window.gameScene.add(playerCapitalMesh);
-    
     entities.push({ type: 'city', owner: 'player', mesh: playerCapitalMesh, factionId: 0 });
 
-    // 4. Initialise la zone de départ
-    let gx = Math.floor(uv.x * SIM_W);
-    let gy = Math.floor((1 - uv.y) * SIM_H);
+    let gx = Math.floor(uv.x * SIM_W); let gy = Math.floor((1 - uv.y) * SIM_H);
     claimPixel(gx, gy, 0);
 
     myCapitalPlaced = true;
-    playerStats.pop = 500;
-    playerStats.maxPop = 1000;
-    playerStats.gold = 500;
-    playerStats.territory = 1;
-    updateHUD();
-    renderGridToCanvas();
+    playerStats.pop = 500; playerStats.maxPop = 1000; playerStats.gold = 500; playerStats.territory = 1;
+    updateHUD(); renderGridToCanvas();
 
     const tCont = document.getElementById('spawn-timer-container');
-    if (tCont) {
-        tCont.querySelector('h2').innerText = "CAPITALE PLACÉE !";
-        tCont.querySelector('p').innerText = "Tu peux recliquer sur la terre pour la déplacer.";
-    }
+    if (tCont) { tCont.querySelector('h2').innerText = "CAPITALE PLACÉE !"; tCont.querySelector('p').innerText = "Tu peux recliquer sur la terre pour la déplacer."; }
 }
 
-// --- 5. INITIALISATION DES 10 IA ---
+// --- 4. INITIALISATION DES IA ---
 function spawnAllAIs() {
-    ais = [];
-    const isEmpire = (aiMode === 'smart_bots');
-
+    ais = []; const isEmpire = (aiMode === 'smart_bots');
     for (let id = 1; id <= 10; id++) {
-        let uv = getRandomLandUV();
-        let pos3D = get3DPosFromUV(uv.x, uv.y);
-        let faction = FACTIONS[id];
+        let uv = getRandomLandUV(); let pos3D = get3DPosFromUV(uv.x, uv.y); let faction = FACTIONS[id];
+        let ai = { id: id, name: faction.name, hex: faction.hex, uv: uv, pos3D: pos3D, pop: isEmpire ? 3000 : 500, maxPop: isEmpire ? 10000 : 1500, gold: isEmpire ? 1500 : 500, territory: 0, alive: true };
 
-        let ai = {
-            id: id,
-            name: faction.name,
-            rgb: faction.rgb,
-            hex: faction.hex,
-            css: faction.css,
-            uv: uv,
-            pos3D: pos3D,
-            pop: isEmpire ? 2000 : 500,
-            maxPop: isEmpire ? 8000 : 1500,
-            gold: isEmpire ? 1500 : 500,
-            territory: 0,
-            alive: true
-        };
-
-        // Pose la capitale IA
-        const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-        const mat = new THREE.MeshStandardMaterial({ color: faction.hex });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.copy(pos3D);
-        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos3D.clone().normalize());
-        window.gameScene.add(mesh);
-        ai.mesh = mesh;
+        const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3); const mat = new THREE.MeshStandardMaterial({ color: faction.hex });
+        const mesh = new THREE.Mesh(geo, mat); mesh.position.copy(pos3D); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos3D.clone().normalize());
+        window.gameScene.add(mesh); ai.mesh = mesh;
         entities.push({ type: 'city', owner: 'ai_' + id, mesh: mesh, factionId: id });
 
-        // Point de départ de la faction
-        let gx = Math.floor(uv.x * SIM_W);
-        let gy = Math.floor((1 - uv.y) * SIM_H);
+        let gx = Math.floor(uv.x * SIM_W); let gy = Math.floor((1 - uv.y) * SIM_H);
         claimPixel(gx, gy, id);
-
-        // Si mode empire, expansion immédiate
-        if (isEmpire) {
-            expandFactionTerritory(id, 60);
-        }
-
+        if (isEmpire) expandFactionTerritory(id, 80);
         ais.push(ai);
     }
     renderGridToCanvas();
 }
 
-// --- 6. MOTEUR D'EXPANSION ET DE CONQUÊTE (OPEN FRONT) ---
+// --- 5. MOTEUR D'EXPANSION ORGANIQUE ---
 function claimPixel(x, y, factionId) {
     if (x < 0 || x >= SIM_W || y < 0 || y >= SIM_H) return;
-    if (isWaterPixel(x, y)) return;
-
     const oldOwner = grid[y * SIM_W + x];
-    if (oldOwner === factionId) return;
+    if (oldOwner === factionId || oldOwner === -3 || oldOwner === -2) return; // Ignore l'eau (-2) et les zones irradiées (-3)
 
-    // Si on vole le territoire d'un joueur/IA vivant
     if (oldOwner >= 0) {
         if (oldOwner === 0) {
             playerStats.territory = Math.max(0, playerStats.territory - 1);
@@ -346,39 +235,29 @@ function claimPixel(x, y, factionId) {
     grid[y * SIM_W + x] = factionId;
 
     if (factionId === 0) {
-        playerStats.territory++;
-        playerStats.maxPop = Math.max(1000, 1000 + playerStats.territory * 15);
+        playerStats.territory++; playerStats.maxPop = Math.max(1000, 1000 + playerStats.territory * 15);
     } else if (factionId > 0) {
         let ai = ais.find(a => a.id === factionId);
-        if (ai) {
-            ai.territory++;
-            ai.maxPop = Math.max(1000, 1000 + ai.territory * 15);
-        }
+        if (ai) { ai.territory++; ai.maxPop = Math.max(1000, 1000 + ai.territory * 15); }
     }
-
-    // Met à jour la frontière
     updateFrontier(x, y, factionId);
 }
 
 function updateFrontier(x, y, factionId) {
     if (!frontierMap.has(factionId)) frontierMap.set(factionId, new Set());
     const set = frontierMap.get(factionId);
-    
-    // Vérifie ses 4 voisins
     const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
     let isBorder = false;
     for(let [dx, dy] of dirs) {
         let nx = x + dx, ny = y + dy;
         if (nx >= 0 && nx < SIM_W && ny >= 0 && ny < SIM_H) {
             let neighborOwner = grid[ny * SIM_W + nx];
-            if (neighborOwner !== factionId && neighborOwner !== -2) {
-                isBorder = true;
-                break;
+            if (neighborOwner !== factionId && neighborOwner !== -2 && neighborOwner !== -3) {
+                isBorder = true; break;
             }
         }
     }
-    if (isBorder) set.add(`${x},${y}`);
-    else set.delete(`${x},${y}`);
+    if (isBorder) set.add(`${x},${y}`); else set.delete(`${x},${y}`);
 }
 
 function expandFactionTerritory(factionId, pixelsToClaim) {
@@ -386,19 +265,18 @@ function expandFactionTerritory(factionId, pixelsToClaim) {
     const frontierSet = frontierMap.get(factionId);
     if (frontierSet.size === 0) return;
 
-    const frontierArray = Array.from(frontierSet);
-    let claimed = 0;
-    const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+    let frontierArray = Array.from(frontierSet);
+    frontierArray.sort(() => Math.random() - 0.5); // Expansion organique (bords aléatoires)
+    let claimed = 0; const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
 
     for (let key of frontierArray) {
         if (claimed >= pixelsToClaim) break;
         let [fx, fy] = key.split(',').map(Number);
-
         for (let [dx, dy] of dirs) {
             let nx = fx + dx, ny = fy + dy;
             if (nx >= 0 && nx < SIM_W && ny >= 0 && ny < SIM_H) {
                 let target = grid[ny * SIM_W + nx];
-                if (target !== factionId && target !== -2) { // Uniquement sur la terre ferme
+                if (target !== factionId && target !== -2 && target !== -3) { 
                     claimPixel(nx, ny, factionId);
                     claimed++;
                     if (claimed >= pixelsToClaim) break;
@@ -409,50 +287,40 @@ function expandFactionTerritory(factionId, pixelsToClaim) {
     renderGridToCanvas();
 }
 
-// Rendu des pixels sur la texture Three.js
 function renderGridToCanvas() {
     const data = overlayImgData.data;
     for (let i = 0; i < grid.length; i++) {
-        const owner = grid[i];
-        const idx = i * 4;
+        const owner = grid[i]; const idx = i * 4;
         if (owner >= 0 && owner < FACTIONS.length) {
             const rgb = FACTIONS[owner].rgb;
-            data[idx] = rgb[0];
-            data[idx + 1] = rgb[1];
-            data[idx + 2] = rgb[2];
-            data[idx + 3] = 200; // Opacité
-        } else {
-            data[idx + 3] = 0; // Transparent sur mer ou terre neutre
-        }
+            data[idx] = rgb[0]; data[idx + 1] = rgb[1]; data[idx + 2] = rgb[2]; data[idx + 3] = 200; 
+        } else if (owner === -3) {
+            // ZONE IRRADIÉE (Vert Fluo Toxique)
+            data[idx] = 120; data[idx + 1] = 255; data[idx + 2] = 20; data[idx + 3] = 220; 
+        } else { data[idx + 3] = 0; }
     }
     overlayCtx.putImageData(overlayImgData, 0, 0);
     if (overlayTexture) overlayTexture.needsUpdate = true;
 }
 
-// --- 7. ÉLIMINATION D'UNE NATION ET BUTIN DE GUERRE ---
+// --- 6. GUERRE, ÉLIMINATION ET BOTS ---
 function eliminateFaction(defeatedAI, conquerorId) {
     if (!defeatedAI.alive) return;
     defeatedAI.alive = false;
-
-    // Retrait de la capitale de l'IA détruite
     if (defeatedAI.mesh) window.gameScene.remove(defeatedAI.mesh);
 
-    // Transfert des bâtiments à l'attaquant
     entities.forEach(ent => {
         if (ent.factionId === defeatedAI.id) {
             ent.factionId = conquerorId;
             ent.owner = conquerorId === 0 ? 'player' : 'ai_' + conquerorId;
-            if (ent.mesh && ent.mesh.material) {
-                ent.mesh.material.color.setHex(FACTIONS[conquerorId].hex);
-            }
+            if (ent.mesh && ent.mesh.material) ent.mesh.material.color.setHex(FACTIONS[conquerorId].hex);
         }
     });
 
-    // Transfert de l'or
     let stolenGold = defeatedAI.gold;
     if (conquerorId === 0) {
         playerStats.gold += stolenGold;
-        alert(`🏆 VICTOIRE : Tu as éliminé ${defeatedAI.name} ! Butin récupéré : +${stolenGold} Or.`);
+        alert(`🏆 VICTOIRE : Tu as éliminé ${defeatedAI.name} ! +${stolenGold} Or.`);
         updateHUD();
     } else {
         let winnerAI = ais.find(a => a.id === conquerorId);
@@ -462,83 +330,64 @@ function eliminateFaction(defeatedAI, conquerorId) {
 
 function checkPlayerElimination() {
     if (playerStats.territory <= 0 && playerStats.alive && gameState === 'PLAYING') {
-        playerStats.alive = false;
-        alert("💀 DÉFAITE : Votre nation a été entièrement conquise !");
+        playerStats.alive = false; alert("💀 DÉFAITE : Votre nation a été entièrement conquise !");
     }
 }
 
-// --- 8. BOUCLE D'ACTION DES 10 IA ---
 function updateAllAIs() {
     const isEmpire = (aiMode === 'smart_bots');
-    
     ais.forEach(ai => {
         if (!ai.alive) return;
-
-        // Croissance
-        let growthRate = isEmpire ? 0.06 : 0.035;
+        let growthRate = isEmpire ? 0.08 : 0.04;
         ai.pop = Math.min(ai.maxPop, ai.pop + Math.max(2, Math.floor(ai.pop * growthRate)));
         ai.gold += Math.floor(ai.territory * 0.15) + 2;
 
-        // Décision d'expansion
         let expandProb = isEmpire ? 0.6 : 0.35;
-        if (Math.random() < expandProb && ai.pop > 80) {
+        if (Math.random() < expandProb && ai.pop > 100) {
             let troopsToSend = Math.floor(ai.pop * (Math.random() * 0.3 + 0.2));
             ai.pop -= troopsToSend;
-            let pixels = Math.max(1, Math.floor(Math.sqrt(troopsToSend) * 1.5));
+            let pixels = Math.max(1, Math.floor(troopsToSend * 0.25)); // Puissance d'expansion
             expandFactionTerritory(ai.id, pixels);
         }
 
-        // Décision de construction
-        if (ai.gold >= 500 && Math.random() < 0.15) {
-            ai.gold -= 500;
-            // Pose une petite tour de défense
-            let offsetU = (Math.random() - 0.5) * 0.03;
-            let offsetV = (Math.random() - 0.5) * 0.03;
-            let pos = get3DPosFromUV(ai.uv.x + offsetU, ai.uv.y + offsetV);
-            
-            const g = new THREE.ConeGeometry(0.08, 0.3, 8);
-            const m = new THREE.MeshStandardMaterial({ color: ai.hex });
-            const mesh = new THREE.Mesh(g, m);
-            mesh.position.copy(pos);
-            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos.clone().normalize());
-            window.gameScene.add(mesh);
-            entities.push({ type: 'defense', owner: 'ai_' + ai.id, mesh: mesh, factionId: ai.id });
+        if (ai.gold >= 1500 && Math.random() < 0.05) {
+            ai.gold -= 1500;
+            // L'IA construit sur ses frontières uniquement !
+            let frontiers = Array.from(frontierMap.get(ai.id) || []);
+            if (frontiers.length > 0) {
+                let randKey = frontiers[Math.floor(Math.random() * frontiers.length)];
+                let [fx, fy] = randKey.split(',').map(Number);
+                let pos = get3DPosFromUV(fx / SIM_W, 1 - (fy / SIM_H));
+                const g = new THREE.ConeGeometry(0.08, 0.3, 8); const m = new THREE.MeshStandardMaterial({ color: ai.hex });
+                const mesh = new THREE.Mesh(g, m); mesh.position.copy(pos); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos.clone().normalize());
+                window.gameScene.add(mesh); entities.push({ type: 'defense', owner: 'ai_' + ai.id, mesh: mesh, factionId: ai.id });
+            }
         }
     });
 }
 
-// --- 9. CONTRÔLES SOURIS DU JOUEUR ---
+// --- 7. CONTRÔLES JOUEUR ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-// Clic pour placer / déplacer la capitale
 window.addEventListener('pointerup', function(event) {
     if (event.target.closest && (event.target.closest('.settings-btn-wrapper') || event.target.closest('#settings-modal'))) return;
-
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1; mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, window.gameCamera);
     const intersects = raycaster.intersectObject(window.gameEarth);
 
     if (intersects.length > 0) {
         const hit = intersects[0];
         if (!hit.uv) return;
+        let gx = Math.floor(hit.uv.x * SIM_W); let gy = Math.floor((1 - hit.uv.y) * SIM_H);
 
-        let gx = Math.floor(hit.uv.x * SIM_W);
-        let gy = Math.floor((1 - hit.uv.y) * SIM_H);
-
-        // Phase 1 : Choix et Déplacement de Capitale
+        // Phase 1 : Déplacement libre de la Capitale
         if (gameState === 'SPAWNING') {
-            if (!isWaterPixel(gx, gy)) {
-                setPlayerCapital(hit.uv, hit.point);
-            } else {
-                alert("Impossible de placer la capitale sur l'eau !");
-            }
+            if (!isWaterPixel(gx, gy)) setPlayerCapital(hit.uv, hit.point);
         }
     }
 });
 
-// Double Clic : Expansion territoriale du joueur
 window.addEventListener('dblclick', function(event) {
     event.preventDefault(); 
     if (gameState !== 'PLAYING' || !playerStats.alive) return;
@@ -548,112 +397,175 @@ window.addEventListener('dblclick', function(event) {
     if (troopsSent <= 0) return;
 
     playerStats.pop -= troopsSent;
-    let pixelsToClaim = Math.max(1, Math.floor(Math.sqrt(troopsSent) * 1.8));
+    // 1 troupe envoyée = 0.2 pixel conquis (ajustable)
+    let pixelsToClaim = Math.max(1, Math.floor(troopsSent * 0.25));
     expandFactionTerritory(0, pixelsToClaim);
     updateHUD();
 });
 
-// Clic Droit : Menu d'actions ou ordres
 window.addEventListener('contextmenu', function(event) {
     event.preventDefault(); 
-    if (gameState !== 'PLAYING') return;
-    if (event.target.closest && (event.target.closest('#ui-container') || event.target.closest('#action-menu') || event.target.closest('.settings-btn-wrapper'))) return;
+    if (gameState !== 'PLAYING' || !playerStats.alive) return;
+    if (event.target.closest && (event.target.closest('#ui-container') || event.target.closest('#action-menu'))) return;
 
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1; mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, window.gameCamera);
+
+    // 1. Clic sur une entité (ex: Silo)
+    const entityMeshes = entities.map(e => e.mesh);
+    const entityIntersects = raycaster.intersectObjects(entityMeshes);
+    if (entityIntersects.length > 0 && actionState === 'NORMAL') {
+        const hitMesh = entityIntersects[0].object;
+        const clickedEnt = entities.find(e => e.mesh === hitMesh);
+        if(clickedEnt && clickedEnt.owner === 'player') { openActionMenu(event.clientX, event.clientY, clickedEnt, null); return; }
+    }
 
     const intersects = raycaster.intersectObject(window.gameEarth);
     if (intersects.length > 0) {
         const hit = intersects[0];
+        
+        // Cible pour lancer le missile nucléaire
+        if (actionState === 'TARGETING_ICBM' && selectedEntity) {
+            launchMissile(selectedEntity, hit.point, hit.uv);
+            actionState = 'NORMAL'; selectedEntity = null; return;
+        }
+
         buildTargetPosition = hit.point;
-        let gx = Math.floor(hit.uv.x * SIM_W);
-        let gy = Math.floor((1 - hit.uv.y) * SIM_H);
-        let terrainType = isWaterPixel(gx, gy) ? 'Eau' : 'Terre';
-        openActionMenu(event.clientX, event.clientY, null, terrainType);
-    } else {
-        closeActionMenu();
-    }
+        let gx = Math.floor(hit.uv.x * SIM_W); let gy = Math.floor((1 - hit.uv.y) * SIM_H);
+        let owner = grid[gy * SIM_W + gx];
+
+        // RÈGLE : On ne peut ouvrir le menu que sur son propre terrain (0) !
+        if (owner === 0) {
+            openActionMenu(event.clientX, event.clientY, null, 'Terre');
+        } else if (owner === -2) {
+            // Eau = impossible de construire pour l'instant
+            closeActionMenu();
+        } else {
+            closeActionMenu();
+        }
+    } else { closeActionMenu(); }
 });
 
-// --- 10. MENU D'ACTION & BÂTIMENTS ---
+// --- 8. MENUS & CONSTRUCTION ---
 window.openActionMenu = function(mouseX, mouseY, entity = null, terrainType = null) {
-    const menu = document.getElementById('action-menu'); 
-    const header = document.getElementById('action-title'); 
-    const subheader = document.getElementById('action-subtitle'); 
-    const buildOptions = document.getElementById('build-options'); 
-    const commandOptions = document.getElementById('command-options');
-    
-    menu.style.left = mouseX + 'px'; 
-    menu.style.top = mouseY + 'px'; 
-    menu.style.display = 'flex';
+    const menu = document.getElementById('action-menu'); const header = document.getElementById('action-title'); const subheader = document.getElementById('action-subtitle'); const buildOptions = document.getElementById('build-options'); const commandOptions = document.getElementById('command-options');
+    menu.style.left = mouseX + 'px'; menu.style.top = mouseY + 'px'; menu.style.display = 'flex';
 
-    buildOptions.style.display = 'flex'; 
-    buildOptions.style.flexDirection = 'column'; 
-    commandOptions.style.display = 'none';
-
-    if (terrainType === 'Eau') { 
-        header.innerText = "🌊 ZONE MARITIME"; 
-        header.style.color = "#00f0ff"; 
-        subheader.innerText = "Construction navale"; 
-        document.getElementById('btn-city').disabled = true; 
-        document.getElementById('btn-missile').disabled = true; 
-        document.getElementById('btn-anti-missile').disabled = true; 
-        document.getElementById('btn-port').disabled = false; 
-    } else { 
-        header.innerText = "⛰️ ZONE TERRESTRE"; 
-        header.style.color = "#39ff14"; 
-        subheader.innerText = "Déploiement terrestre"; 
-        document.getElementById('btn-city').disabled = false; 
-        document.getElementById('btn-missile').disabled = false; 
-        document.getElementById('btn-anti-missile').disabled = false; 
-        document.getElementById('btn-port').disabled = true; 
+    if (entity) {
+        buildOptions.style.display = 'none'; commandOptions.style.display = 'flex'; commandOptions.style.flexDirection = 'column'; selectedEntity = entity;
+        if (entity.type === 'missile') { header.innerText = "🚀 SILO NUCLÉAIRE"; header.style.color = "#ff007f"; subheader.innerText = "En attente de cible..."; document.getElementById('btn-launch-icbm').style.display = 'block'; document.getElementById('btn-establish-route').style.display = 'none'; } 
+        else { closeActionMenu(); }
+    } else {
+        buildOptions.style.display = 'flex'; buildOptions.style.flexDirection = 'column'; commandOptions.style.display = 'none';
+        header.innerText = "⛰️ TON TERRITOIRE"; header.style.color = "#39ff14"; subheader.innerText = "Construire des défenses"; 
+        // Mise à jour des textes avec les NOUVEAUX PRIX (1500 pour les deux missiles)
+        document.getElementById('btn-missile').innerText = "🚀 Silo Nucléaire (1500 Or)";
+        document.getElementById('btn-anti-missile').innerText = "🛡️ Anti-Missile (1500 Or)";
+        document.getElementById('btn-port').style.display = 'none'; // Désactivé
     }
 }
+window.closeActionMenu = function() { document.getElementById('action-menu').style.display = 'none'; if(actionState === 'NORMAL') selectedEntity = null; }
 
-window.closeActionMenu = function() { 
-    document.getElementById('action-menu').style.display = 'none'; 
-}
-
-window.executeAction = function(action) {
+window.executeAction = function(action, isCapital = false) {
     closeActionMenu();
+    if (action === 'launch_icbm') { actionState = 'TARGETING_ICBM'; return; }
     if (!buildTargetPosition) return;
     
-    let cost = 0; 
-    let type = action.replace('build_', '');
+    let cost = 0; let type = action.replace('build_', '');
     if (type === 'city') cost = 500; 
-    if (type === 'port') cost = 800; 
-    if (type === 'missile') cost = 2000; 
+    if (type === 'missile') cost = 1500; 
     if (type === 'anti_missile') cost = 1500;
 
-    if (playerStats.gold < cost) { 
-        alert("Fonds insuffisants ! Il te faut " + cost + " Or."); 
-        return; 
-    }
-    
-    playerStats.gold -= cost; 
-    updateHUD();
+    if(!isCapital && playerStats.gold < cost) { alert("Fonds insuffisants !"); return; }
+    if(!isCapital) playerStats.gold -= cost; updateHUD();
 
-    let color = 0x00f0ff;
-    let geometry;
-    if (type === 'city') geometry = new THREE.BoxGeometry(0.25, 0.25, 0.25);
-    else if (type === 'port') geometry = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16);
-    else if (type === 'missile') { geometry = new THREE.ConeGeometry(0.08, 0.35, 8); color = 0xff007f; }
+    let color = 0x00f0ff, geometry;
+    if (type === 'city') { geometry = new THREE.BoxGeometry(0.25, 0.25, 0.25); if(isCapital) { color = 0xffbf00; geometry.scale(1.5, 1.5, 1.5); } } 
+    else if (type === 'missile') { geometry = new THREE.ConeGeometry(0.08, 0.35, 8); color = 0xff007f; } 
     else if (type === 'anti_missile') { geometry = new THREE.SphereGeometry(0.18, 8, 8, 0, Math.PI*2, 0, Math.PI/2); color = 0x39ff14; }
 
     const material = new THREE.MeshStandardMaterial({ color: color });
     const structure = new THREE.Mesh(geometry, material);
     structure.position.copy(buildTargetPosition);
     structure.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), buildTargetPosition.clone().normalize());
-    
-    if (type === 'missile') structure.translateY(0.15);
-    
+    if(type === 'missile') structure.translateY(0.15);
     window.gameScene.add(structure);
     entities.push({ type: type, owner: 'player', mesh: structure, factionId: 0 });
 }
 
-window.updateTroopVal = function(val) { 
-    troopPercentage = val; 
-    let elem = document.getElementById('troop-val'); 
-    if(elem) elem.innerText = val + "%"; 
+window.updateTroopVal = function(val) { troopPercentage = val; let elem = document.getElementById('troop-val'); if(elem) elem.innerText = val + "%"; }
+
+// --- 9. ARMES NUCLÉAIRES & IRRADIATION ---
+function launchMissile(siloEntity, targetPos, targetUV) {
+    // Le silo est détruit au lancement !
+    window.gameScene.remove(siloEntity.mesh);
+    entities = entities.filter(e => e !== siloEntity);
+
+    const missileGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.2, 8); const missileMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); const missile = new THREE.Mesh(missileGeo, missileMat);
+    missile.position.copy(siloEntity.mesh.position); window.gameScene.add(missile);
+    
+    const start = siloEntity.mesh.position.clone(); const end = targetPos.clone();
+    const midPoint = start.clone().add(end).multiplyScalar(0.5); 
+    midPoint.normalize().multiplyScalar(5 + start.distanceTo(end) * 0.5);
+    
+    const curve = new THREE.QuadraticBezierCurve3(start, midPoint, end); const points = curve.getPoints(60); 
+    let index = 0;
+    function animateMissile() {
+        if (index < points.length) {
+            missile.position.copy(points[index]); if(index < points.length - 1) missile.lookAt(points[index+1]);
+            missile.rotateX(Math.PI / 2); index++; requestAnimationFrame(animateMissile);
+        } else { 
+            window.gameScene.remove(missile); 
+            createExplosion(end, targetUV); 
+        }
+    } animateMissile();
+}
+
+function createExplosion(pos, uv) {
+    // Visuel de l'explosion
+    const geo = new THREE.SphereGeometry(0.5, 16, 16); const mat = new THREE.MeshBasicMaterial({ color: 0x88ff00, transparent: true, opacity: 0.9 }); const explosion = new THREE.Mesh(geo, mat);
+    explosion.position.copy(pos); window.gameScene.add(explosion);
+    let scale = 1;
+    function animateBoom() {
+        scale += 0.15; explosion.scale.set(scale, scale, scale); mat.opacity -= 0.05;
+        if (mat.opacity > 0) requestAnimationFrame(animateBoom); else window.gameScene.remove(explosion);
+    } animateBoom();
+
+    // DÉGÂTS : Irradiation de la zone (Rayon de ~12 pixels)
+    let cx = Math.floor(uv.x * SIM_W);
+    let cy = Math.floor((1 - uv.y) * SIM_H);
+    let nRadius = 12;
+
+    for(let y = cy - nRadius; y <= cy + nRadius; y++) {
+        for(let x = cx - nRadius; x <= cx + nRadius; x++) {
+            if(x >= 0 && x < SIM_W && y >= 0 && y < SIM_H) {
+                if((x - cx)**2 + (y - cy)**2 <= nRadius**2) {
+                    let idx = y * SIM_W + x;
+                    let oldOwner = grid[idx];
+                    
+                    if (oldOwner !== -2) { // On n'irradie pas l'eau, que la terre
+                        if (oldOwner >= 0) {
+                            // On retire ce pixel du score du propriétaire
+                            if (oldOwner === 0) playerStats.territory = Math.max(0, playerStats.territory - 1);
+                            else {
+                                let ai = ais.find(a => a.id === oldOwner);
+                                if(ai) ai.territory = Math.max(0, ai.territory - 1);
+                            }
+                        }
+                        grid[idx] = -3; // DEVIENT IRRADIÉ !
+                    }
+                }
+            }
+        }
+    }
+    renderGridToCanvas();
+
+    // Détruit tous les bâtiments pris dans le souffle nucléaire (Rayon 0.8 en 3D)
+    entities = entities.filter(ent => {
+        if (ent.mesh.position.distanceTo(pos) < 0.8) {
+            window.gameScene.remove(ent.mesh);
+            return false;
+        }
+        return true;
+    });
 }
