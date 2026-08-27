@@ -213,6 +213,7 @@ function renderDeckPool() {
 }
 function saveCustomDeck() { playerDeck = [...tempSelectedDeck]; closeDeckBuilder(); }
 
+
 // ==========================================
 // 3. MULTIJOUEUR ET ÉMOTES
 // ==========================================
@@ -284,9 +285,7 @@ function initGameEngine() {
     lastTime = performance.now(); requestAnimationFrame(gameLoop);
 }
 
-// ==========================================
 // ALIGNEMENT EXACT AVEC L'IMAGE
-// ==========================================
 function setupTowers() {
     // Joueur (En bas) - Bases redescendues, Tours écartées et redescendues
     createTower('base_p', 'player', 50, 87, 5000, "assets/skins/tourroyaleback.png", 96, 96);
@@ -421,6 +420,7 @@ function spawnEntity(data, team, x, y) {
     });
 }
 
+// SORT: Tornade Confinée (Physique de ressort / Attraction)
 function castSpell(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
         for(let i=0; i<3; i++) {
@@ -431,9 +431,9 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
 
             activeSpells.push({ 
                 type: 'tornado', team: casterTeam, 
-                originX: targetX, originY: targetY, 
+                originX: targetX, originY: targetY, // Point de lancement pour la confiner
                 x: targetX + offsetX, y: targetY + offsetY, 
-                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, 
+                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, // Vitesse initiale
                 anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), 
                 duration: 3500, dmg: spellData.dmg, tickTimer: 0
             });
@@ -516,6 +516,7 @@ function gameLoop(currentTime) {
     const dt = (currentTime - lastTime) / 1000; 
     lastTime = currentTime;
 
+    // TIMER ET ÉNERGIE
     gameTime -= dt;
     if (gameTime <= 60 && !doubleSlimeActive) {
         doubleSlimeActive = true; slimeRate = 1.25; 
@@ -529,6 +530,7 @@ function gameLoop(currentTime) {
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
+    // ANIMATIONS DES SORTS (Tornade dynamique restreinte)
     activeSpells = activeSpells.filter(spell => {
         spell.timer += dt;
         if(spell.timer > 0.15 && spell.anim && spell.anim.length > 1) { 
@@ -539,11 +541,13 @@ function gameLoop(currentTime) {
         if (spell.type === 'tornado') {
             spell.duration -= dt * 1000;
             
+            // Attirer la tornade vers son point d'origine pour qu'elle reste dans la zone !
             let dxOrig = spell.originX - spell.x;
             let dyOrig = spell.originY - spell.y;
             spell.vx += dxOrig * dt * 5; 
             spell.vy += dyOrig * dt * 5;
             
+            // Friction pour ne pas qu'elle aille trop vite
             spell.vx *= 0.98; spell.vy *= 0.98;
 
             spell.x += spell.vx * dt; spell.y += spell.vy * dt;
@@ -557,6 +561,7 @@ function gameLoop(currentTime) {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
                         takeDamage(ent, spell.dmg);
                         if (!ent.id.includes('base') && !ent.id.includes('tower')) {
+                            // Attire les ennemis vers l'origine du sort
                             ent.x += (spell.originX - ent.x) * 0.1; 
                             ent.y += (spell.originY - ent.y) * 0.1; 
                         }
@@ -593,6 +598,7 @@ function gameLoop(currentTime) {
         return true;
     });
 
+    // NETTOYAGE MORTS
     activeEntities = activeEntities.filter(ent => {
         if (ent.hp <= 0) {
             playSound('sfx-die'); createParticles(ent.x, ent.y, ent.color || '#fff');
@@ -603,6 +609,7 @@ function gameLoop(currentTime) {
         return true;
     });
 
+    // PROJECTILES
     activeProjectiles = activeProjectiles.filter(p => {
         if(p.target.hp <= 0) { p.element.remove(); return false; } 
         const dx = p.target.x - p.x; const dy = p.target.y - p.y;
@@ -616,6 +623,7 @@ function gameLoop(currentTime) {
         }
     });
 
+    // UNITÉS ET CIBLAGE (CHEMIN EN DIAGONALE CORRIGÉ)
     activeEntities.forEach(unit => {
         let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
         if (unit.stunTimer > 0) { unit.stunTimer -= dt; unit.state = 'idle'; unit.element.classList.add('stunned'); return; } 
@@ -630,6 +638,7 @@ function gameLoop(currentTime) {
         let closestTarget = null; let minDistance = 999;
         let aggroRadius = 25;
 
+        // 1. Chercher un ennemi proche (Aggro)
         if (!unit.targetBuilding && unit.speed > 0) {
             activeEntities.forEach(target => {
                 if (target.team !== unit.team && (!target.isFlying || unit.targetsAir)) {
@@ -639,6 +648,7 @@ function gameLoop(currentTime) {
             });
         }
 
+        // 2. Sinon chercher un bâtiment dans sa lane
         if (!closestTarget) {
             let minLaneDist = 999;
             activeEntities.forEach(target => {
@@ -650,6 +660,7 @@ function gameLoop(currentTime) {
                     }
                 }
             });
+            // 3. Fallback
             if (!closestTarget) {
                 activeEntities.forEach(target => {
                     if (target.team !== unit.team && target.speed === 0) {
@@ -678,15 +689,24 @@ function gameLoop(currentTime) {
                 }
             } else if (unit.speed > 0) {
                 unit.state = 'idle';
-                let targetX = closestTarget.x; let targetY = closestTarget.y;
+                let targetX = closestTarget.x; 
+                let targetY = closestTarget.y;
+                
+                // CORRECTION DU DÉPLACEMENT (Direct vers l'entrée du pont)
                 if (!unit.isFlying && ((unit.y > 50 && targetY < 50) || (unit.y < 50 && targetY > 50))) {
-                    let targetBridgeX = (closestTarget.x < 50) ? 25 : 75; 
-                    if (Math.abs(unit.x - targetBridgeX) > 2) { targetX = targetBridgeX; targetY = unit.y; }
+                    let targetBridgeX = (unit.x < 50) ? 27 : 73; 
+                    targetX = targetBridgeX;
+                    targetY = 50; 
                 }
-                const dx = targetX - unit.x; const dy = targetY - unit.y; const angle = Math.atan2(dy, dx);
+                
+                const dx = targetX - unit.x; 
+                const dy = targetY - unit.y; 
+                const angle = Math.atan2(dy, dx);
+                
                 unit.x += Math.cos(angle) * currentSpeed * dt * (arena.offsetHeight / arena.offsetWidth);
                 unit.y += Math.sin(angle) * currentSpeed * dt;
-                unit.element.style.left = `${unit.x}%`; unit.element.style.top = `${unit.y}%`;
+                unit.element.style.left = `${unit.x}%`; 
+                unit.element.style.top = `${unit.y}%`;
             }
         } else { unit.state = 'idle'; }
 
