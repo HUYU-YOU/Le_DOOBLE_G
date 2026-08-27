@@ -1,11 +1,13 @@
 // ==========================================
-// 1. GESTION DES PARAMETRES
+// 1. GESTION DES PARAMETRES (AVEC TON ANIMATION JAVASCRIPT)
 // ==========================================
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('show');
 }
+
 function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => console.log(err));
@@ -13,6 +15,7 @@ function toggleFullscreen() {
         if (document.exitFullscreen) document.exitFullscreen();
     }
 }
+
 document.addEventListener('fullscreenchange', () => {
     const fsToggle = document.getElementById('fs-toggle');
     if(fsToggle) fsToggle.checked = !!document.fullscreenElement;
@@ -33,6 +36,7 @@ function startSettingsAnim() {
         settingsBtnImg.src = animFrames[currentFrame];
     }, 100); 
 }
+
 function stopSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
     const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -40,6 +44,7 @@ function stopSettingsAnim() {
         settingsBtnImg.src = '../img/setting.png'; 
     }
 }
+
 function clickSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
     const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -55,6 +60,7 @@ let musicStarted = false;
 document.addEventListener('DOMContentLoaded', () => {
     const musicToggle = document.getElementById('music-toggle');
     if (musicToggle) musicToggle.checked = !isMuted;
+    
     const settingsBtnImg = document.getElementById('settings-btn-img');
     if(settingsBtnImg) settingsBtnImg.src = '../img/setting.png';
 });
@@ -63,9 +69,11 @@ function toggleMusic() {
     const musicToggle = document.getElementById('music-toggle');
     isMuted = !musicToggle.checked;
     localStorage.setItem('isMuted', isMuted);
+    
     const bgm = document.getElementById('bg-music');
     if (bgm) { if (!isMuted) bgm.play().catch(()=>{}); else bgm.pause(); }
 }
+
 function startMusic() {
     if(!musicStarted && !isMuted) {
         const bgm = document.getElementById('bg-music');
@@ -73,11 +81,13 @@ function startMusic() {
         musicStarted = true;
     }
 }
+
 function playSound(id) {
     if (isMuted) return;
     const sound = document.getElementById(id);
     if(sound) { sound.currentTime = 0; sound.volume = 0.5; sound.play().catch(()=>{}); }
 }
+
 
 // ==========================================
 // 2. BASE DE DONNÉES EXACTE DES SKINS
@@ -148,7 +158,7 @@ const cardDatabase = {
         }
     },
     tornade: { 
-        id: "tornade", type: "spell", name: "Tornade", cost: 3, dmg: 15, radius: 15, 
+        id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, 
         anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png']
     },
     boule_sort: { 
@@ -203,7 +213,6 @@ function renderDeckPool() {
 }
 function saveCustomDeck() { playerDeck = [...tempSelectedDeck]; closeDeckBuilder(); }
 
-
 // ==========================================
 // 3. MULTIJOUEUR ET ÉMOTES
 // ==========================================
@@ -235,7 +244,7 @@ function joinGame() {
 function setupConnectionEvents() {
     conn.on('data', (data) => {
         if (data.type === 'spawn') {
-            if (data.spellType === 'spell') castSpell(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            if (data.spellType === 'spell' || data.spellType === 'spell_tornado') castSpell(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
             else if (data.spellType === 'spell_puddle' || data.spellType === 'spell_spawn') castSpellPuddle(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
             else spawnEntity(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
         } else if (data.type === 'emote') { showEmote(data.emote, 'enemy'); }
@@ -275,17 +284,19 @@ function initGameEngine() {
     lastTime = performance.now(); requestAnimationFrame(gameLoop);
 }
 
-// ALIGNEMENT EXACT AVEC TON IMAGE (Ronds marrons et plateformes grises)
+// ==========================================
+// ALIGNEMENT EXACT AVEC L'IMAGE
+// ==========================================
 function setupTowers() {
-    // Joueur (En bas)
-    createTower('base_p', 'player', 50, 83, 5000, "assets/skins/tourroyaleback.png", 96, 96);
-    createTower('tower_p_l', 'player', 32, 72, 2500, "assets/skins/tourback.png", 72, 72);
-    createTower('tower_p_r', 'player', 68, 72, 2500, "assets/skins/tourback.png", 72, 72);
+    // Joueur (En bas) - Bases redescendues, Tours écartées et redescendues
+    createTower('base_p', 'player', 50, 87, 5000, "assets/skins/tourroyaleback.png", 96, 96);
+    createTower('tower_p_l', 'player', 27, 76, 2500, "assets/skins/tourback.png", 72, 72);
+    createTower('tower_p_r', 'player', 73, 76, 2500, "assets/skins/tourback.png", 72, 72);
 
-    // Ennemi (En haut)
-    createTower('base_e', 'enemy', 50, 15, 5000, "assets/skins/touroryale.png", 96, 96);
-    createTower('tower_e_l', 'enemy', 32, 32, 2500, "assets/skins/tour.png", 72, 72);
-    createTower('tower_e_r', 'enemy', 68, 32, 2500, "assets/skins/tour.png", 72, 72);
+    // Ennemi (En haut) - Base redescendue un peu, Tours écartées et remontées
+    createTower('base_e', 'enemy', 50, 18, 5000, "assets/skins/touroryale.png", 96, 96);
+    createTower('tower_e_l', 'enemy', 27, 26, 2500, "assets/skins/tour.png", 72, 72);
+    createTower('tower_e_r', 'enemy', 73, 26, 2500, "assets/skins/tour.png", 72, 72);
 }
 
 function createTower(id, team, x, y, hp, img, width, height) {
@@ -360,7 +371,7 @@ function handleArenaClick(e) {
     const clickX = ((e.clientX - rect.left) / rect.width) * 100; const clickY = ((e.clientY - rect.top) / rect.height) * 100;
     const cardData = cardDatabase[hand[selectedCardIndex]];
 
-    if (cardData.type !== 'spell' && cardData.type !== 'spell_puddle' && cardData.type !== 'spell_spawn' && clickY < 50) return;
+    if (cardData.type !== 'spell' && cardData.type !== 'spell_puddle' && cardData.type !== 'spell_spawn' && cardData.type !== 'spell_tornado' && clickY < 50) return;
 
     currentSlime -= cardData.cost; updateSlimeUI(); playSound('sfx-spawn');
 
@@ -410,7 +421,6 @@ function spawnEntity(data, team, x, y) {
     });
 }
 
-// SORT: Tornade Confinée (Physique de ressort / Attraction)
 function castSpell(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
         for(let i=0; i<3; i++) {
@@ -421,9 +431,9 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
 
             activeSpells.push({ 
                 type: 'tornado', team: casterTeam, 
-                originX: targetX, originY: targetY, // Point de lancement pour la confiner
+                originX: targetX, originY: targetY, 
                 x: targetX + offsetX, y: targetY + offsetY, 
-                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, // Vitesse initiale
+                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, 
                 anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), 
                 duration: 3500, dmg: spellData.dmg, tickTimer: 0
             });
@@ -519,7 +529,6 @@ function gameLoop(currentTime) {
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
-    // ANIMATIONS DES SORTS (Tornade dynamique restreinte)
     activeSpells = activeSpells.filter(spell => {
         spell.timer += dt;
         if(spell.timer > 0.15 && spell.anim && spell.anim.length > 1) { 
@@ -530,13 +539,11 @@ function gameLoop(currentTime) {
         if (spell.type === 'tornado') {
             spell.duration -= dt * 1000;
             
-            // Attirer la tornade vers son point d'origine pour qu'elle reste dans la zone !
             let dxOrig = spell.originX - spell.x;
             let dyOrig = spell.originY - spell.y;
             spell.vx += dxOrig * dt * 5; 
             spell.vy += dyOrig * dt * 5;
             
-            // Friction pour ne pas qu'elle aille trop vite
             spell.vx *= 0.98; spell.vy *= 0.98;
 
             spell.x += spell.vx * dt; spell.y += spell.vy * dt;
@@ -550,7 +557,6 @@ function gameLoop(currentTime) {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
                         takeDamage(ent, spell.dmg);
                         if (!ent.id.includes('base') && !ent.id.includes('tower')) {
-                            // Attire les ennemis vers l'origine du sort
                             ent.x += (spell.originX - ent.x) * 0.1; 
                             ent.y += (spell.originY - ent.y) * 0.1; 
                         }
