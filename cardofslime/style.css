@@ -9,7 +9,7 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 .hub-link { position: absolute; top: 20px; left: 20px; color: #39ff14; text-decoration: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; font-size: 1.2em; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 5px; border: 1px solid #39ff14; z-index: 100; transition: 0.2s; }
 .hub-link:hover { background: #39ff14; color: black; }
 
-/* --- BOUTON PARAMÈTRES (En haut à droite) --- */
+/* --- BOUTON PARAMÈTRES (Ton CSS exact) --- */
 .settings-btn-wrapper {
     position: absolute;
     top: 20px; right: 25px;
@@ -28,12 +28,12 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
     position: relative;
     z-index: 2;
 }
+
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-/* --- MODAL DES PARAMÈTRES (Ton CSS) --- */
 #settings-modal {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.85); z-index: 3000;
+    background: rgba(0,0,0,0.85); z-index: 999;
     display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
     backdrop-filter: blur(5px);
@@ -67,8 +67,14 @@ body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d
 input:checked + .slider { background-color: #00e5ff; }
 input:checked + .slider:before { transform: translateX(24px); }
 
+/* --- CONTENEUR PRINCIPAL (GÈRE LA MAP GLOBALE) --- */
+#game-container { 
+    /* La map est placée ici, centrée en bas pour passer sous le UI Container ! */
+    background: url('assets/skins/mapday.jpeg') center bottom / cover no-repeat;
+    border: 2px solid #39ff14; border-radius: 20px; display: flex; flex-direction: column; position: relative; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); 
+}
+body.dark-mode #game-container { background: url('assets/skins/mapnight.png') center bottom / cover no-repeat; }
 
-#game-container { background: rgba(0, 0, 0, 0.4); border: 2px solid #39ff14; border-radius: 20px; display: flex; flex-direction: column; position: relative; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
 .size-classic { width: 400px; height: 700px; }
 .size-wide { width: 85vw; height: 85vh; border-radius: 10px; max-width: 900px; max-height: 800px; }
 .size-full { width: 100vw; height: 100vh; border: none; border-radius: 0; }
@@ -95,12 +101,11 @@ input:checked + .slider:before { transform: translateX(24px); }
 .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; max-height: 400px; overflow-y: auto; }
-.card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; background-size: 80%; background-repeat: no-repeat; background-position: center 20%; }
+.card-select-item { width: 70px; height: 100px; background-color: #222; border: 2px solid #555; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
 .card-select-item.selected { border-color: #39ff14; box-shadow: 0 0 15px #39ff14; transform: translateY(-5px); }
 
 /* --- L'ARÈNE --- */
-#arena { flex: 1; position: relative; margin: 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: url('assets/skins/mapday.jpeg') center 30% / cover no-repeat; overflow: hidden; cursor: crosshair; transition: background 0.3s; }
-body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 30% / cover no-repeat; }
+#arena { flex: 1; position: relative; margin: 0; border: none; background: transparent; overflow: hidden; cursor: crosshair; }
 
 #river { position: absolute; top: 45%; left: 0; width: 100%; height: 10%; background: transparent; z-index: 1; pointer-events: none;}
 .bridge { position: absolute; top: 45%; height: 10%; width: 15%; background: transparent; z-index: 2; pointer-events: none;}
@@ -108,7 +113,8 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 30% 
 
 #deploy-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 45%; background: rgba(57, 255, 20, 0.15); border-top: 2px dashed #39ff14; z-index: 10; display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.7); font-family: 'Rajdhani'; font-size: 1.5em; pointer-events: none; }
 
-#ui-container { height: 180px; background: rgba(17, 14, 45, 0.9); border-top: 2px solid #39ff14; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10; }
+/* UI DES CARTES (Verre flouté au-dessus de la map) */
+#ui-container { height: 180px; background: rgba(10, 15, 30, 0.6); backdrop-filter: blur(8px); border-top: 2px solid #39ff14; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; z-index: 10; }
 #next-card-zone { position: absolute; bottom: 190px; left: 10px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 10px; font-size: 12px; text-align: center; color: #ccc; z-index: 10; font-family: 'Rajdhani'; }
 #hand { display: flex; justify-content: space-around; align-items: flex-end; height: 100px; }
 
@@ -123,7 +129,7 @@ body.dark-mode #arena { background: url('assets/skins/mapnight.png') center 30% 
 #slime-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #1f8a0e, #39ff14); transition: width 0.3s linear; }
 #slime-count { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-weight: bold; text-shadow: 1px 1px 2px #000; font-family: 'Luckiest Guy', cursive; font-size: 14px; letter-spacing: 1px; }
 
-/* === ENTITÉS ET SKINS === */
+/* === ENTITÉS ET SKINS (SANS CARRE DE FOND !) === */
 .entity { position: absolute; width: 55px; height: 55px; color: transparent; transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transition: filter 0.2s; }
 .entity.building { display: flex; justify-content: center; align-items: center; z-index: 3; }
 .entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
