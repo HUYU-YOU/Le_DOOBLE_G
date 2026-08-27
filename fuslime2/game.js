@@ -40,14 +40,13 @@ function toggleSettings() {
     if (modal) modal.classList.toggle('show');
 }
 
-// 🌙 GESTION DU MODE JOUR / NUIT (Avec changement de vidéo)
+// 🌙 GESTION DU MODE JOUR / NUIT (Avec changement de vidéo dans le bon dossier)
 function toggleTheme() {
     const isDark = document.body.classList.toggle('dark-mode');
     const bgVideo = document.getElementById('bg-video');
     
     if (bgVideo) {
-        // Change la vidéo selon le thème
-        bgVideo.src = isDark ? 'img/backgroundnight.mp4' : 'img/daybackground.mp4';
+        bgVideo.src = isDark ? 'assets/backgroundnight.mp4' : 'assets/daybackground.mp4';
         bgVideo.play();
     }
 }
@@ -103,12 +102,10 @@ function onYouTubeIframeAPIReady() {
 const isLocalFile = window.location.protocol === 'file:';
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 PARAMÈTRE MAGIQUE : LE RATIO DE ZOOM
-// Si tes slimes ont encore un petit espace entre eux (à cause du vide dans ton PNG), 
-// augmente ce chiffre (ex: 1.30, 1.40). S'ils se rentrent trop dedans, baisse-le (ex: 1.15).
+// Ratio de Zoom : 1.25 permet aux slimes de se chevaucher très légèrement 
+// pour effacer le petit bord transparent de tes images.
 const RATIO_ZOOM_IMAGE = 1.25; 
 
-// J'AI AGRANDI TOUS LES RADIUS POUR QU'ILS SOIENT PLUS GROS !
 const SLIMES = [
     { level: 1, radius: 35, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
     { level: 2, radius: 48, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
@@ -255,7 +252,6 @@ function updateScore(points) {
     }
 }
 
-// Calcule l'échelle AVEC LE RATIO MAGIQUE pour combler les trous
 function getScale(radius) {
     return (radius * 2 * RATIO_ZOOM_IMAGE) / TAILLE_IMAGE_EN_PIXELS;
 }
@@ -325,12 +321,12 @@ function dropSlime() {
     }, 700); 
 }
 
-// --- CONTRÔLES ---
-const container = document.getElementById('game-container');
+// --- CONTRÔLES (On cible le canvas directement pour une précision absolue) ---
+const canvasEl = document.getElementById('game-canvas');
 
-container.addEventListener('mousemove', (e) => {
+canvasEl.addEventListener('mousemove', (e) => {
     if (!canDrop || isGameOver || !currentSlime) return;
-    const rect = container.getBoundingClientRect();
+    const rect = canvasEl.getBoundingClientRect();
     const scaleX = GAME_WIDTH / rect.width;
     let x = (e.clientX - rect.left) * scaleX;
     
@@ -340,12 +336,12 @@ container.addEventListener('mousemove', (e) => {
     Matter.Body.setPosition(currentSlime, { x: x, y: 50 });
 });
 
-container.addEventListener('click', dropSlime);
+canvasEl.addEventListener('click', dropSlime);
 
-container.addEventListener('touchmove', (e) => {
+canvasEl.addEventListener('touchmove', (e) => {
     if (!canDrop || isGameOver || !currentSlime) return;
     e.preventDefault();
-    const rect = container.getBoundingClientRect();
+    const rect = canvasEl.getBoundingClientRect();
     const scaleX = GAME_WIDTH / rect.width;
     let x = (e.touches[0].clientX - rect.left) * scaleX;
     
@@ -355,7 +351,7 @@ container.addEventListener('touchmove', (e) => {
     Matter.Body.setPosition(currentSlime, { x: x, y: 50 });
 }, { passive: false });
 
-container.addEventListener('touchend', (e) => {
+canvasEl.addEventListener('touchend', (e) => {
     e.preventDefault();
     dropSlime();
 });
@@ -429,7 +425,6 @@ Events.on(engine, 'beforeUpdate', () => {
 Events.on(render, 'afterRender', () => {
     const context = render.context;
     
-    // Ligne de défaite
     context.beginPath();
     context.moveTo(0, loseLineY);
     context.lineTo(GAME_WIDTH, loseLineY);
@@ -439,7 +434,7 @@ Events.on(render, 'afterRender', () => {
     context.stroke();
     context.setLineDash([]);
 
-    // Textes de secours si images bloquées
+    // Textes de secours si les images ne chargent pas
     const bodies = Composite.allBodies(world);
     context.textAlign = "center";
     context.textBaseline = "middle";
