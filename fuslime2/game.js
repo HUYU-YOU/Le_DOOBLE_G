@@ -2,8 +2,7 @@
 // 1. PARAMÈTRES ET ANIMATIONS DE L'ENGRENAGE
 // =========================================================
 
-// Chemins remis fidèlement selon ton code : img/...
-const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings4.png', 'img/settings5.png'];
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
 let hoverInterval = null;
 let currentFrame = 0;
 const settingsBtnImg = document.getElementById('settings-btn-img');
@@ -22,17 +21,17 @@ function stopSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
     if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = 'img/setting.png'; 
+        settingsBtnImg.src = '../img/setting.png'; 
     }
 }
 
 function clickSettingsAnim() {
     clearInterval(hoverInterval); 
     hoverInterval = null;
-    if (settingsBtnImg) settingsBtnImg.src = 'img/settings4.png';
+    if (settingsBtnImg) settingsBtnImg.src = '../img/settings4.png';
     toggleSettings();
     setTimeout(() => { 
-        if (settingsBtnImg) settingsBtnImg.src = 'img/setting.png'; 
+        if (settingsBtnImg) settingsBtnImg.src = '../img/setting.png'; 
     }, 300);
 }
 
@@ -93,9 +92,9 @@ function onYouTubeIframeAPIReady() {
 // 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
 // =========================================================
 
+// Si tes images sont plus grandes, remplace 256 par 512
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// Chemins des slimes pointant vers le dossier assets/
 const SLIMES = [
     { level: 1, radius: 22, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
     { level: 2, radius: 32, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
@@ -111,6 +110,16 @@ const SLIMES = [
     { level: 12, radius: 255, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
     { level: 13, radius: 285, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
 ];
+
+// 🔥 PRÉCHARGEUR ANTI-CRASH 🔥
+// On force le jeu à vérifier si l'image existe. Si elle n'existe pas, on passe en mode "Couleur de secours".
+SLIMES.forEach(slime => {
+    slime.imageLoaded = false;
+    const img = new Image();
+    img.onload = () => { slime.imageLoaded = true; };
+    img.onerror = () => { console.warn("L'image " + slime.texture + " n'a pas pu être chargée."); };
+    img.src = slime.texture;
+});
 
 const Engine = Matter.Engine,
       Render = Matter.Render,
@@ -128,7 +137,7 @@ const GAME_WIDTH = 600;
 const GAME_HEIGHT = 800;
 
 const render = Render.create({
-    element: document.getElementById('game-container'),
+    element: document.getElementById('game-container'), // Génère le Canvas automatiquement
     engine: engine,
     options: {
         width: GAME_WIDTH,
@@ -239,6 +248,26 @@ function getScale(radius) {
     return (radius * 2) / TAILLE_IMAGE_EN_PIXELS;
 }
 
+// 🛡️ Fonction qui génère les bonnes options graphiques (Image OU Couleur de secours)
+function getRenderOptions(slimeData, isGhost = false) {
+    let options = {
+        fillStyle: slimeData.color, // La couleur de secours
+        strokeStyle: '#ffffff',
+        lineWidth: 2,
+        opacity: isGhost ? 0.5 : 1
+    };
+
+    // Si l'image a réussi à se charger, on l'ajoute !
+    if (slimeData.imageLoaded) {
+        options.sprite = {
+            texture: slimeData.texture,
+            xScale: getScale(slimeData.radius),
+            yScale: getScale(slimeData.radius)
+        };
+    }
+    return options;
+}
+
 function spawnGhostSlime(x) {
     currentSlimeLevel = Math.floor(Math.random() * 3) + 1; 
     const slimeData = SLIMES[currentSlimeLevel - 1];
@@ -247,15 +276,8 @@ function spawnGhostSlime(x) {
         isStatic: true,
         isSensor: true,
         label: 'ghost',
-        render: {
-            fillStyle: slimeData.color,
-            sprite: {
-                texture: slimeData.texture,
-                xScale: getScale(slimeData.radius),
-                yScale: getScale(slimeData.radius)
-            },
-            opacity: 0.5
-        }
+        slimeLevel: currentSlimeLevel,
+        render: getRenderOptions(slimeData, true)
     });
     Composite.add(world, currentSlime);
 }
@@ -280,14 +302,7 @@ function dropSlime() {
         density: 0.001 * slimeData.level,
         label: 'slime',
         slimeLevel: currentSlimeLevel,
-        render: {
-            fillStyle: slimeData.color,
-            sprite: {
-                texture: slimeData.texture,
-                xScale: getScale(slimeData.radius),
-                yScale: getScale(slimeData.radius)
-            }
-        }
+        render: getRenderOptions(slimeData, false)
     });
 
     Composite.add(world, realSlime);
@@ -361,14 +376,7 @@ Events.on(engine, 'collisionStart', (event) => {
                     density: 0.001 * slimeData.level,
                     label: 'slime',
                     slimeLevel: newLevel,
-                    render: {
-                        fillStyle: slimeData.color,
-                        sprite: {
-                            texture: slimeData.texture,
-                            xScale: getScale(slimeData.radius),
-                            yScale: getScale(slimeData.radius)
-                        }
-                    }
+                    render: getRenderOptions(slimeData, false)
                 });
 
                 Composite.remove(world, [bodyA, bodyB]);
@@ -420,6 +428,22 @@ Events.on(render, 'afterRender', () => {
     context.setLineDash([10, 10]);
     context.stroke();
     context.setLineDash([]);
+
+    // 🚨 AFFICHAGE DES NIVEAUX DE SECOURS (Si l'image ne charge pas)
+    const bodies = Composite.allBodies(world);
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    for (let i = 0; i < bodies.length; i++) {
+        const body = bodies[i];
+        if ((body.label === 'slime' || body.label === 'ghost') && body.slimeLevel) {
+            const data = SLIMES[body.slimeLevel - 1];
+            if (!data.imageLoaded) { 
+                context.fillStyle = "#000000"; 
+                context.font = `bold ${body.circleRadius}px Arial`;
+                context.fillText(body.slimeLevel, body.position.x, body.position.y);
+            }
+        }
+    }
 });
 
 function gameOver() {
@@ -428,4 +452,5 @@ function gameOver() {
     if (currentSlime) Composite.remove(world, currentSlime); 
 }
 
-spawnGhostSlime(GAME_WIDTH / 2);
+// On attend une demi-seconde pour laisser les images se charger avant de démarrer
+setTimeout(() => spawnGhostSlime(GAME_WIDTH / 2), 500);
