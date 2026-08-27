@@ -100,28 +100,31 @@ function onYouTubeIframeAPIReady() {
 // =========================================================
 
 const isLocalFile = window.location.protocol === 'file:';
+
+// ⚠️ Mets bien la taille originale (largeur) de tes images PNG ici (ex: 256, 512...)
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 GESTION DES ZOOMS INDIVIDUELS 🔥
-// Si un slime a trop d'écart avec les autres (à cause du vide dans l'image PNG), augmente son 'zoom' !
-// S'il rentre trop à l'intérieur des autres, diminue son 'zoom'.
+// 🔥 GESTION DES ZOOMS INDIVIDUELS EXTRÊMES 🔥
+// J'ai monté le "zoom" à 1.65 et 1.95 pour forcer le dessin à manger l'espace vide du PNG !
+// APPUIE SUR LA TOUCHE "D" EN JEU POUR VOIR LES CERCLES PHYSIQUES ET AJUSTER CES VALEURS :
+// Si les dessins se rentrent TROP dedans, baisse le zoom de ce slime (ex: passe de 1.65 à 1.50)
 const SLIMES = [
-    { level: 1, radius: 35, zoom: 1.35, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 48, zoom: 1.35, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 62, zoom: 1.35, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 78, zoom: 1.35, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 96, zoom: 1.35, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
+    { level: 1, radius: 35, zoom: 1.65, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
+    { level: 2, radius: 48, zoom: 1.65, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
+    { level: 3, radius: 62, zoom: 1.65, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
+    { level: 4, radius: 78, zoom: 1.65, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
+    { level: 5, radius: 96, zoom: 1.65, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
     
-    // Le niveau 6 est le boss à cornes bleu qui posait problème : zoom poussé à 1.55 pour masquer son vide
-    { level: 6, radius: 116, zoom: 1.55, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
+    // Le gros slime rocheux (niveau 6 sur tes images) a beaucoup de vide, on le zoom à fond (1.95) !
+    { level: 6, radius: 116, zoom: 1.95, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
     
-    { level: 7, radius: 138, zoom: 1.40, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 162, zoom: 1.40, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
-    { level: 9, radius: 188, zoom: 1.40, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 216, zoom: 1.40, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
-    { level: 11, radius: 246, zoom: 1.40, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
-    { level: 12, radius: 275, zoom: 1.40, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
-    { level: 13, radius: 290, zoom: 1.40, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
+    { level: 7, radius: 138, zoom: 1.70, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
+    { level: 8, radius: 162, zoom: 1.70, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
+    { level: 9, radius: 188, zoom: 1.70, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
+    { level: 10, radius: 216, zoom: 1.70, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
+    { level: 11, radius: 246, zoom: 1.70, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
+    { level: 12, radius: 275, zoom: 1.70, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
+    { level: 13, radius: 290, zoom: 1.70, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
 ];
 
 SLIMES.forEach(slime => {
@@ -161,6 +164,13 @@ const render = Render.create({
 Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);
+
+// --- RACCOURCI CLAVIER "D" POUR LE MODE DEBUG ---
+window.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'd') {
+        render.options.wireframes = !render.options.wireframes;
+    }
+});
 
 // --- SEAU ---
 const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.1 };
@@ -436,7 +446,6 @@ Events.on(render, 'afterRender', () => {
     context.stroke();
     context.setLineDash([]);
 
-    // Textes de secours si les images ne chargent pas
     const bodies = Composite.allBodies(world);
     context.textAlign = "center";
     context.textBaseline = "middle";
