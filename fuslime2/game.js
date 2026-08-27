@@ -40,7 +40,7 @@ function toggleSettings() {
     if (modal) modal.classList.toggle('show');
 }
 
-// 🌙 GESTION DU MODE JOUR / NUIT (Avec changement de vidéo dans le bon dossier)
+// 🌙 GESTION DU MODE JOUR / NUIT
 function toggleTheme() {
     const isDark = document.body.classList.toggle('dark-mode');
     const bgVideo = document.getElementById('bg-video');
@@ -102,9 +102,10 @@ function onYouTubeIframeAPIReady() {
 const isLocalFile = window.location.protocol === 'file:';
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// Ratio de Zoom : 1.25 permet aux slimes de se chevaucher très légèrement 
-// pour effacer le petit bord transparent de tes images.
-const RATIO_ZOOM_IMAGE = 1.25; 
+// 🔥 LE FAMEUX RATIO POUR COUPER LE VIDE TRANSPARENT 🔥
+// On passe à 1.45. L'image sera dessinée beaucoup plus grande 
+// par rapport à sa hitbox physique. Fini le vide entre les slimes !
+const RATIO_ZOOM_IMAGE = 1.45; 
 
 const SLIMES = [
     { level: 1, radius: 35, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
@@ -302,8 +303,8 @@ function dropSlime() {
     currentSlime = null;
 
     const realSlime = Bodies.circle(x, y, slimeData.radius, {
-        restitution: 0.25, 
-        friction: 0.05, 
+        restitution: 0.1, // 🔻 Baisse du rebond pour qu'ils se calent mieux
+        friction: 0.1,    // 🔺 Plus de friction pour ne pas trop glisser
         frictionAir: 0.002,
         density: 0.001 * slimeData.level,
         label: 'slime',
@@ -321,7 +322,7 @@ function dropSlime() {
     }, 700); 
 }
 
-// --- CONTRÔLES (On cible le canvas directement pour une précision absolue) ---
+// --- CONTRÔLES ---
 const canvasEl = document.getElementById('game-canvas');
 
 canvasEl.addEventListener('mousemove', (e) => {
@@ -376,8 +377,8 @@ Events.on(engine, 'collisionStart', (event) => {
                 const midY = (bodyA.position.y + bodyB.position.y) / 2;
 
                 const newSlime = Bodies.circle(midX, midY, slimeData.radius, {
-                    restitution: 0.25,
-                    friction: 0.05,
+                    restitution: 0.1,
+                    friction: 0.1,
                     frictionAir: 0.002,
                     density: 0.001 * slimeData.level,
                     label: 'slime',
@@ -434,7 +435,7 @@ Events.on(render, 'afterRender', () => {
     context.stroke();
     context.setLineDash([]);
 
-    // Textes de secours si les images ne chargent pas
+    // Textes de secours
     const bodies = Composite.allBodies(world);
     context.textAlign = "center";
     context.textBaseline = "middle";
