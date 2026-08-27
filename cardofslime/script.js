@@ -1,5 +1,5 @@
 // ==========================================
-// 1. GESTION DES PARAMETRES ET DU CYCLE D'IMAGES
+// 1. GESTION DES PARAMETRES
 // ==========================================
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
@@ -78,9 +78,8 @@ function playSound(id) {
     if(sound) { sound.currentTime = 0; sound.volume = 0.5; sound.play().catch(()=>{}); }
 }
 
-
 // ==========================================
-// 2. BASE DE DONNÉES EXACTE DES SKINS
+// 2. BASE DE DONNÉES DES SKINS
 // ==========================================
 const cardDatabase = {
     slime: { 
@@ -159,7 +158,6 @@ const cardDatabase = {
         id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "slime_marais", radius: 15,
         anim: ['assets/skins/marais1.png', 'assets/skins/marais2.png', 'assets/skins/marais3.png']
     },
-    // NOUVEAU : Le slime du marais, moitié moins fort (Caché du deck builder)
     slime_marais: { 
         id: "slime_marais", type: "troop", name: "Slime Marais", hp: 300, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true,
         skins: {
@@ -172,7 +170,6 @@ const cardDatabase = {
 let playerDeck = ["slime", "slimeuse", "dragon", "canon", "boule_sort", "marais"];
 let tempSelectedDeck = [...playerDeck];
 
-// APPLIQUE LE FOND + LE SUPPORT ET LA TOURELLE DU CANON
 function getCardBackgroundStyle(card) {
     if (card.hasTurret) {
         return {
@@ -225,9 +222,8 @@ function renderDeckPool() {
 }
 function saveCustomDeck() { playerDeck = [...tempSelectedDeck]; closeDeckBuilder(); }
 
-
 // ==========================================
-// 3. MULTIJOUEUR ET ÉMOTES (PNG)
+// 3. MULTIJOUEUR ET ÉMOTES
 // ==========================================
 let peer = null, conn = null, isHost = false, currentCOSCode = "";
 
@@ -257,9 +253,9 @@ function joinGame() {
 function setupConnectionEvents() {
     conn.on('data', (data) => {
         if (data.type === 'spawn') {
-            if (data.spellType === 'spell' || data.spellType === 'spell_tornado') castSpell(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
-            else if (data.spellType === 'spell_puddle' || data.spellType === 'spell_spawn') castSpellPuddle(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
-            else spawnEntity(cardDatabase[data.cardId], isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            const cardData = cardDatabase[data.cardId];
+            if (cardData.type.includes('spell')) castSpell(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            else spawnEntity(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
         } else if (data.type === 'emote') { showEmote(data.emotePath, 'enemy'); }
     });
 }
@@ -326,7 +322,7 @@ function createTower(id, team, x, y, hp, img, width, height) {
 
 function restartGame() {
     isGameOver = false; document.getElementById('game-over-overlay').style.display = 'none';
-    document.querySelectorAll('.entity, .projectile, .particle, .dmg-text, .spell-puddle, .spell-anim').forEach(e => e.remove());
+    document.querySelectorAll('.entity, .projectile, .particle, .dmg-text, .spell-puddle, .spell-anim, .spell-throw-anim').forEach(e => e.remove());
     activeEntities = []; activeProjectiles = []; activeSpells = [];
     currentSlime = 5; enemySlime = 5; updateSlimeUI();
     gameTime = 180; slimeRate = 2.5; doubleSlimeActive = false; document.getElementById('game-timer').classList.remove('timer-danger');
@@ -382,15 +378,14 @@ function handleArenaClick(e) {
     const clickX = ((e.clientX - rect.left) / rect.width) * 100; const clickY = ((e.clientY - rect.top) / rect.height) * 100;
     const cardData = cardDatabase[hand[selectedCardIndex]];
 
-    if (cardData.type !== 'spell' && cardData.type !== 'spell_puddle' && cardData.type !== 'spell_spawn' && cardData.type !== 'spell_tornado' && clickY < 50) return;
+    if (!cardData.type.includes('spell') && clickY < 50) return;
 
     currentSlime -= cardData.cost; updateSlimeUI(); playSound('sfx-spawn');
 
-    if (cardData.id === 'tornade' || cardData.type === 'spell') castSpell(cardData, 'player', clickX, clickY);
-    else if (cardData.type === 'spell_puddle' || cardData.type === 'spell_spawn') castSpellPuddle(cardData, 'player', clickX, clickY);
+    if (cardData.type.includes('spell')) castSpell(cardData, 'player', clickX, clickY);
     else spawnEntity(cardData, 'player', clickX, clickY);
 
-    if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY, spellType: cardData.type });
+    if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY });
 
     drawPile.push(hand[selectedCardIndex]); hand[selectedCardIndex] = nextCard; nextCard = drawPile.shift();
     selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
@@ -432,50 +427,67 @@ function spawnEntity(data, team, x, y) {
     });
 }
 
-// SORT: Tornade Confinée (Physique de ressort / Attraction)
+// LANCER DE SORT (GESTION DES PROJECTILES)
 function castSpell(spellData, casterTeam, targetX, targetY) {
+    if (spellData.projectile) {
+        // Lance une animation balistique
+        let originX = 50; let originY = casterTeam === 'player' ? 95 : 5;
+        let base = activeEntities.find(e => e.id === (casterTeam === 'player' ? 'base_p' : 'base_e'));
+        if (base) { originX = base.x; originY = base.y; }
+
+        const proj = document.createElement('div');
+        proj.className = 'spell-throw-anim';
+        proj.style.backgroundImage = `url('${spellData.projectile}')`;
+        proj.style.left = `${originX}%`; proj.style.top = `${originY}%`;
+        arena.appendChild(proj);
+
+        activeSpells.push({
+            type: 'throw', team: casterTeam, startX: originX, startY: originY, targetX: targetX, targetY: targetY,
+            progress: 0, element: proj, spellData: spellData
+        });
+    } else {
+        // Exécution directe si pas de projectile
+        executeSpellImpact(spellData, casterTeam, targetX, targetY);
+    }
+}
+
+// L'IMPACT DE SORT APRÈS L'ATTERRISSAGE
+function executeSpellImpact(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
         for(let i=0; i<3; i++) {
             const fx = document.createElement('div'); fx.className = 'spell-anim';
             fx.style.width = '60px'; fx.style.height = '60px';
             arena.appendChild(fx);
             let offsetX = (Math.random() - 0.5) * 10; let offsetY = (Math.random() - 0.5) * 10;
-
             activeSpells.push({ 
-                type: 'tornado', team: casterTeam, 
-                originX: targetX, originY: targetY, 
-                x: targetX + offsetX, y: targetY + offsetY, 
-                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, 
+                type: 'tornado', team: casterTeam, originX: targetX, originY: targetY, 
+                x: targetX + offsetX, y: targetY + offsetY, vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, 
                 anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), 
                 duration: 3500, dmg: spellData.dmg, tickTimer: 0
             });
         }
+    } else if (spellData.type === 'spell_puddle' || spellData.type === 'spell_spawn') {
+        const puddle = document.createElement('div'); puddle.className = 'spell-puddle';
+        puddle.style.left = `${targetX}%`; puddle.style.top = `${targetY}%`;
+        puddle.style.width = `${spellData.radius * 4}px`; puddle.style.height = `${spellData.radius * 4}px`;
+        if(spellData.anim && spellData.anim.length > 0) { puddle.style.backgroundImage = `url('${spellData.anim[0]}')`; }
+        arena.appendChild(puddle);
+        activeSpells.push({
+            type: spellData.type === 'spell_puddle' ? 'puddle' : 'spawner',
+            team: casterTeam, x: targetX, y: targetY, radius: spellData.radius, duration: spellData.duration, 
+            spawnRate: spellData.spawnRate, spawnId: spellData.spawnId, lastSpawn: 0, anim: spellData.anim, element: puddle, timer: 0, frame: 0,
+            dmg: spellData.dmg, slowDuration: spellData.slowDuration, pushback: spellData.pushback, triggered: false
+        });
     } else {
         const fx = document.createElement('div'); fx.className = 'spell-anim';
         fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`; fx.style.width = `${spellData.radius*4}px`; fx.style.height = `${spellData.radius*4}px`;
         arena.appendChild(fx);
         activeSpells.push({ type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, timer: 0, frame: 0, maxTime: 0.8 });
-
         const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
         activeEntities.forEach(ent => {
             if (ent.team === targetTeam && Math.sqrt(Math.pow(ent.x - targetX, 2) + Math.pow(ent.y - targetY, 2)) < spellData.radius) takeDamage(ent, spellData.dmg);
         });
     }
-}
-
-function castSpellPuddle(spellData, casterTeam, targetX, targetY) {
-    const puddle = document.createElement('div'); puddle.className = 'spell-puddle';
-    puddle.style.left = `${targetX}%`; puddle.style.top = `${targetY}%`;
-    puddle.style.width = `${spellData.radius * 4}px`; puddle.style.height = `${spellData.radius * 4}px`;
-    if(spellData.anim && spellData.anim.length > 0) { puddle.style.backgroundImage = `url('${spellData.anim[0]}')`; }
-    arena.appendChild(puddle);
-    
-    activeSpells.push({
-        type: spellData.type === 'spell_puddle' ? 'puddle' : 'spawner',
-        team: casterTeam, x: targetX, y: targetY, radius: spellData.radius, duration: spellData.duration, 
-        spawnRate: spellData.spawnRate, spawnId: spellData.spawnId, lastSpawn: 0, anim: spellData.anim, element: puddle, timer: 0, frame: 0,
-        dmg: spellData.dmg, slowDuration: spellData.slowDuration, pushback: spellData.pushback, triggered: false
-    });
 }
 
 function enemyAI() {
@@ -484,8 +496,7 @@ function enemyAI() {
     if (playableCards.length > 0 && Math.random() > 0.4) {
         const cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
         enemySlime -= cardToPlay.cost;
-        if(cardToPlay.id === 'tornade' || cardToPlay.type === 'spell') castSpell(cardToPlay, 'enemy', 20 + Math.random()*60, 65 + Math.random()*20);
-        else if(cardToPlay.type === 'spell_puddle' || cardToPlay.type === 'spell_spawn') castSpellPuddle(cardToPlay, 'enemy', 20 + Math.random()*60, 65 + Math.random()*20);
+        if(cardToPlay.type.includes('spell')) castSpell(cardToPlay, 'enemy', 20 + Math.random()*60, 65 + Math.random()*20);
         else spawnEntity(cardToPlay, 'enemy', Math.random() > 0.5 ? 25 : 75, 15);
         playSound('sfx-spawn');
     }
@@ -541,7 +552,25 @@ function gameLoop(currentTime) {
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
+    // ANIMATIONS DES SORTS (Gestion de l'atterrissage du lancer)
     activeSpells = activeSpells.filter(spell => {
+        
+        if (spell.type === 'throw') {
+            spell.progress += dt * 1.5; // Vitesse de lancer
+            if (spell.progress >= 1) {
+                spell.element.remove();
+                executeSpellImpact(spell.spellData, spell.team, spell.targetX, spell.targetY);
+                return false;
+            }
+            let currentX = spell.startX + (spell.targetX - spell.startX) * spell.progress;
+            let currentY = spell.startY + (spell.targetY - spell.startY) * spell.progress;
+            let arc = Math.sin(spell.progress * Math.PI) * 20; // Arc de tir
+            spell.element.style.left = `${currentX}%`;
+            spell.element.style.top = `${currentY - arc}%`;
+            spell.element.style.transform = `translate(-50%, -50%) rotate(${spell.progress * 1080}deg)`; // Fait tourner la boule
+            return true;
+        }
+
         spell.timer += dt;
         if(spell.timer > 0.15 && spell.anim && spell.anim.length > 1) { 
             spell.timer = 0; spell.frame++;
@@ -550,14 +579,9 @@ function gameLoop(currentTime) {
         
         if (spell.type === 'tornado') {
             spell.duration -= dt * 1000;
-            
-            let dxOrig = spell.originX - spell.x;
-            let dyOrig = spell.originY - spell.y;
-            spell.vx += dxOrig * dt * 5; 
-            spell.vy += dyOrig * dt * 5;
-            
+            let dxOrig = spell.originX - spell.x; let dyOrig = spell.originY - spell.y;
+            spell.vx += dxOrig * dt * 5; spell.vy += dyOrig * dt * 5;
             spell.vx *= 0.98; spell.vy *= 0.98;
-
             spell.x += spell.vx * dt; spell.y += spell.vy * dt;
             spell.element.style.left = `${spell.x}%`; spell.element.style.top = `${spell.y}%`;
 
@@ -568,10 +592,7 @@ function gameLoop(currentTime) {
                 activeEntities.forEach(ent => {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
                         takeDamage(ent, spell.dmg);
-                        if (!ent.id.includes('base') && !ent.id.includes('tower')) {
-                            ent.x += (spell.originX - ent.x) * 0.1; 
-                            ent.y += (spell.originY - ent.y) * 0.1; 
-                        }
+                        if (!ent.id.includes('base') && !ent.id.includes('tower')) { ent.x += (spell.originX - ent.x) * 0.1; ent.y += (spell.originY - ent.y) * 0.1; }
                     }
                 });
             }
