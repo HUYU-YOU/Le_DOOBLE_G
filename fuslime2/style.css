@@ -5,7 +5,7 @@
 }
 
 body {
-    background-color: #0b0f19;
+    background-color: transparent; /* Remplacé par la vidéo */
     color: white;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
@@ -13,23 +13,38 @@ body {
     align-items: center;
     height: 100vh;
     overflow: hidden;
-    transition: background-color 0.3s, color 0.3s;
 }
 
-/* Thème clair / sombre */
-body.dark-mode { background-color: #f0f0f0; color: #111; }
-body.dark-mode #game-container { background-color: #e0e0e0; border-color: #ccc; }
+/* --- GESTION DE LA VIDÉO DE FOND --- */
+.bg-video-main {
+    position: absolute;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    object-fit: cover; z-index: -5; pointer-events: none;
+}
+
+/* Un filtre par-dessus la vidéo pour que le texte reste lisible */
+.bg-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(255, 255, 255, 0.05); /* Jour : très léger filtre */
+    z-index: -4; pointer-events: none;
+    transition: background 0.5s ease;
+}
+
+body.dark-mode .bg-overlay {
+    background: rgba(0, 0, 0, 0.5); /* Nuit : on assombrit un peu plus */
+}
 
 /* Bouton Retour Hub */
 .btn-hub {
     position: absolute;
     top: 20px; left: 20px;
-    background-color: #1a1a2e; color: white; text-decoration: none;
+    background-color: rgba(26, 26, 46, 0.8); color: white; text-decoration: none;
     border: 1px solid #00e5ff; padding: 8px 15px; border-radius: 8px;
     font-weight: bold; font-size: 14px; transition: 0.3s; z-index: 100;
 }
 .btn-hub:hover {
-    background-color: rgba(0, 229, 255, 0.2);
+    background-color: rgba(0, 229, 255, 0.3);
     box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
@@ -83,7 +98,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 .close-btn:hover { box-shadow: 0 0 20px #00e5ff; transform: scale(1.05); }
 
 /* Interface du Jeu & Scores */
-#game-ui { text-align: center; margin-top: 10px; margin-bottom: 10px; }
+#game-ui { text-align: center; margin-top: 10px; margin-bottom: 10px; z-index: 10; text-shadow: 0 0 10px #000; }
 h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
 .scores-wrapper { display: flex; justify-content: center; gap: 25px; align-items: baseline; }
 .score-container { font-size: 26px; font-weight: bold; color: #4ecca3; transition: transform 0.1s; }
@@ -96,21 +111,28 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
     width: 600px;
     max-width: 95vw;
     aspect-ratio: 3 / 4;
-    border-left: 10px solid #16213e;
-    border-right: 10px solid #16213e;
-    border-bottom: 10px solid #16213e;
+    border-left: 10px solid rgba(22, 33, 62, 0.9);
+    border-right: 10px solid rgba(22, 33, 62, 0.9);
+    border-bottom: 10px solid rgba(22, 33, 62, 0.9);
     border-radius: 0 0 20px 20px;
-    background-color: #0f172a;
-    box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
-    overflow: hidden; /* Empêche les débordements visuels */
+    background-color: rgba(15, 23, 42, 0.7); /* Seau un peu transparent pour voir la vidéo ! */
+    backdrop-filter: blur(4px); /* Petit effet de verre flou */
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden; 
+    transition: background-color 0.5s ease;
 }
 
-/* On s'assure que le canvas généré par Matter.js prend bien toute la place */
-#game-container canvas {
+body.dark-mode #game-container {
+    background-color: rgba(0, 0, 0, 0.75);
+    border-color: rgba(40, 40, 40, 0.9);
+}
+
+#game-canvas {
     position: absolute;
     top: 0; left: 0;
     width: 100% !important;
     height: 100% !important;
+    border-radius: 0 0 10px 10px;
     z-index: 1;
 }
 
