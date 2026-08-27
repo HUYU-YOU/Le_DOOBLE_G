@@ -40,7 +40,6 @@ function toggleSettings() {
     if (modal) modal.classList.toggle('show');
 }
 
-// 🌙 GESTION DU MODE JOUR / NUIT
 function toggleTheme() {
     const isDark = document.body.classList.toggle('dark-mode');
     const bgVideo = document.getElementById('bg-video');
@@ -101,30 +100,25 @@ function onYouTubeIframeAPIReady() {
 
 const isLocalFile = window.location.protocol === 'file:';
 
-// ⚠️ Mets bien la taille originale (largeur) de tes images PNG ici (ex: 256, 512...)
+// ⚠️ Assure-toi que cette valeur correspond bien à la taille de tes PNG (ex: 256 ou 512).
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 GESTION DES ZOOMS INDIVIDUELS EXTRÊMES 🔥
-// J'ai monté le "zoom" à 1.65 et 1.95 pour forcer le dessin à manger l'espace vide du PNG !
-// APPUIE SUR LA TOUCHE "D" EN JEU POUR VOIR LES CERCLES PHYSIQUES ET AJUSTER CES VALEURS :
-// Si les dessins se rentrent TROP dedans, baisse le zoom de ce slime (ex: passe de 1.65 à 1.50)
+// 🔥 Fini la triche ! Les zooms sont redescendus à 1.05. 
+// Le cercle physique de collision correspond maintenant quasiment exactement à la taille du dessin.
 const SLIMES = [
-    { level: 1, radius: 35, zoom: 1.65, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
-    { level: 2, radius: 48, zoom: 1.65, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
-    { level: 3, radius: 62, zoom: 1.65, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
-    { level: 4, radius: 78, zoom: 1.65, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
-    { level: 5, radius: 96, zoom: 1.65, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
-    
-    // Le gros slime rocheux (niveau 6 sur tes images) a beaucoup de vide, on le zoom à fond (1.95) !
-    { level: 6, radius: 116, zoom: 1.95, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
-    
-    { level: 7, radius: 138, zoom: 1.70, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
-    { level: 8, radius: 162, zoom: 1.70, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
-    { level: 9, radius: 188, zoom: 1.70, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
-    { level: 10, radius: 216, zoom: 1.70, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
-    { level: 11, radius: 246, zoom: 1.70, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
-    { level: 12, radius: 275, zoom: 1.70, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
-    { level: 13, radius: 290, zoom: 1.70, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
+    { level: 1, radius: 35, zoom: 1.05, points: 2, texture: 'assets/slime1.png', color: '#ffaaaa' },
+    { level: 2, radius: 48, zoom: 1.05, points: 4, texture: 'assets/slime2.png', color: '#aaffaa' },
+    { level: 3, radius: 62, zoom: 1.05, points: 8, texture: 'assets/slime3.png', color: '#aaaaff' },
+    { level: 4, radius: 78, zoom: 1.05, points: 16, texture: 'assets/slime4.png', color: '#ffffaa' },
+    { level: 5, radius: 96, zoom: 1.05, points: 32, texture: 'assets/slime5.png', color: '#ffaaff' },
+    { level: 6, radius: 116, zoom: 1.05, points: 64, texture: 'assets/slime6.png', color: '#aaffff' },
+    { level: 7, radius: 138, zoom: 1.05, points: 128, texture: 'assets/slime7.png', color: '#ffccaa' },
+    { level: 8, radius: 162, zoom: 1.05, points: 256, texture: 'assets/slime8.png', color: '#aaccff' },
+    { level: 9, radius: 188, zoom: 1.05, points: 512, texture: 'assets/slime9.png', color: '#ccaaff' },
+    { level: 10, radius: 216, zoom: 1.05, points: 1024, texture: 'assets/slime10.png', color: '#ff9999' },
+    { level: 11, radius: 246, zoom: 1.05, points: 2048, texture: 'assets/slime11.png', color: '#99ff99' },
+    { level: 12, radius: 275, zoom: 1.05, points: 4096, texture: 'assets/slime12.png', color: '#9999ff' },
+    { level: 13, radius: 290, zoom: 1.05, points: 8192, texture: 'assets/slime13.png', color: '#ffffff' }
 ];
 
 SLIMES.forEach(slime => {
@@ -144,8 +138,10 @@ const Engine = Matter.Engine,
 
 const engine = Engine.create();
 const world = engine.world;
-engine.positionIterations = 10;
-engine.velocityIterations = 10;
+
+// Pour une physique ultra fluide et précise
+engine.positionIterations = 15;
+engine.velocityIterations = 15;
 
 const GAME_WIDTH = 600;
 const GAME_HEIGHT = 800;
@@ -166,6 +162,7 @@ const runner = Runner.create();
 Runner.run(runner, engine);
 
 // --- RACCOURCI CLAVIER "D" POUR LE MODE DEBUG ---
+// Appuie sur D pour voir la vraie physique et les hitbox !
 window.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'd') {
         render.options.wireframes = !render.options.wireframes;
@@ -173,7 +170,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 // --- SEAU ---
-const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.1 };
+const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.2, friction: 0.1 };
 const ground = Bodies.rectangle(GAME_WIDTH / 2, GAME_HEIGHT + 25, GAME_WIDTH, 50, wallOptions);
 const leftWall = Bodies.rectangle(-25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
 const rightWall = Bodies.rectangle(GAME_WIDTH + 25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
@@ -215,7 +212,7 @@ function playSound(type, level = 1) {
         const baseFreq = 200 + (level * 50); 
         osc.frequency.setValueAtTime(baseFreq, now);
         osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.15);
-        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.setValueAtTime(0.4, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
         osc.start(now); osc.stop(now + 0.15);
     }
@@ -314,10 +311,10 @@ function dropSlime() {
     currentSlime = null;
 
     const realSlime = Bodies.circle(x, y, slimeData.radius, {
-        restitution: 0.1, 
-        friction: 0.1, 
-        frictionAir: 0.002,
-        density: 0.001 * slimeData.level,
+        restitution: 0.1, // Rebondissement faible
+        friction: 0.005, // Glisse parfaitement
+        frictionAir: 0.001,
+        density: 0.001 + (slimeData.level * 0.0005), // Les gros sont lourds
         label: 'slime',
         slimeLevel: currentSlimeLevel,
         render: getRenderOptions(slimeData, false)
@@ -389,9 +386,9 @@ Events.on(engine, 'collisionStart', (event) => {
 
                 const newSlime = Bodies.circle(midX, midY, slimeData.radius, {
                     restitution: 0.1,
-                    friction: 0.1,
-                    frictionAir: 0.002,
-                    density: 0.001 * slimeData.level,
+                    friction: 0.005,
+                    frictionAir: 0.001,
+                    density: 0.001 + (slimeData.level * 0.0005),
                     label: 'slime',
                     slimeLevel: newLevel,
                     render: getRenderOptions(slimeData, false)
