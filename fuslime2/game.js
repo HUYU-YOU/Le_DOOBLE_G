@@ -98,25 +98,22 @@ function onYouTubeIframeAPIReady() {
 
 const isLocalFile = window.location.protocol === 'file:';
 
-// ⚠️ METS ICI LA TAILLE DE TES IMAGES (ex: 256, 512, 1024...)
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 CORRECTION PARFAITE DU DÉCALAGE 🔥
-// On commence à slime2.png avec un petit radius.
-// ZOOM à 1.85 : ça veut dire que le skin est dessiné presque 2x plus grand pour cacher l'espace vide transparent !
+// 🔥 GESTION DES ZOOMS AJUSTÉE À LA DEMANDE 🔥
 const SLIMES = [
-    { level: 1,  radius: 25,  zoom: 1.85, points: 2,    texture: 'assets/slime2.png',  color: '#aaffaa' },
-    { level: 2,  radius: 36,  zoom: 1.85, points: 4,    texture: 'assets/slime3.png',  color: '#aaaaff' },
-    { level: 3,  radius: 50,  zoom: 1.85, points: 8,    texture: 'assets/slime4.png',  color: '#ffffaa' },
-    { level: 4,  radius: 65,  zoom: 1.85, points: 16,   texture: 'assets/slime5.png',  color: '#ffaaff' },
-    { level: 5,  radius: 82,  zoom: 1.85, points: 32,   texture: 'assets/slime6.png',  color: '#aaffff' },
-    { level: 6,  radius: 100, zoom: 1.85, points: 64,   texture: 'assets/slime7.png',  color: '#ffccaa' },
-    { level: 7,  radius: 120, zoom: 1.85, points: 128,  texture: 'assets/slime8.png',  color: '#aaccff' },
-    { level: 8,  radius: 140, zoom: 1.85, points: 256,  texture: 'assets/slime9.png',  color: '#ccaaff' },
-    { level: 9,  radius: 165, zoom: 1.85, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' },
-    { level: 10, radius: 190, zoom: 1.85, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' },
-    { level: 11, radius: 215, zoom: 1.85, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' },
-    { level: 12, radius: 245, zoom: 1.85, points: 4096, texture: 'assets/slime13.png', color: '#ffffff' }
+    { level: 1,  radius: 25,  zoom: 1.85, points: 2,    texture: 'assets/slime2.png',  color: '#aaffaa' }, // 1. Vert (Parfait)
+    { level: 2,  radius: 36,  zoom: 1.85, points: 4,    texture: 'assets/slime3.png',  color: '#aaaaff' }, // 2. Orange (Parfait)
+    { level: 3,  radius: 50,  zoom: 1.11, points: 8,    texture: 'assets/slime4.png',  color: '#ffffaa' }, // 3. Rose (-40%)
+    { level: 4,  radius: 65,  zoom: 1.48, points: 16,   texture: 'assets/slime5.png',  color: '#ffaaff' }, // 4. Suivant (-20%)
+    { level: 5,  radius: 82,  zoom: 1.48, points: 32,   texture: 'assets/slime6.png',  color: '#aaffff' }, // -20%
+    { level: 6,  radius: 100, zoom: 1.48, points: 64,   texture: 'assets/slime7.png',  color: '#ffccaa' }, // -20%
+    { level: 7,  radius: 120, zoom: 1.48, points: 128,  texture: 'assets/slime8.png',  color: '#aaccff' }, // -20%
+    { level: 8,  radius: 140, zoom: 1.48, points: 256,  texture: 'assets/slime9.png',  color: '#ccaaff' }, // -20%
+    { level: 9,  radius: 165, zoom: 1.48, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' }, // -20%
+    { level: 10, radius: 190, zoom: 1.48, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' }, // -20%
+    { level: 11, radius: 215, zoom: 1.48, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' }, // -20%
+    { level: 12, radius: 245, zoom: 1.48, points: 4096, texture: 'assets/slime13.png', color: '#ffffff' }  // -20%
 ];
 
 SLIMES.forEach(slime => {
@@ -149,7 +146,7 @@ const render = Render.create({
     options: {
         width: GAME_WIDTH,
         height: GAME_HEIGHT,
-        wireframes: false, // Appuie sur "D" en jeu pour l'activer !
+        wireframes: false, 
         background: 'transparent'
     }
 });
@@ -159,7 +156,6 @@ const runner = Runner.create();
 Runner.run(runner, engine);
 
 // --- RACCOURCI CLAVIER "D" ---
-// Affiche les cercles blancs pour voir si l'image est bien ajustée à la hitbox !
 window.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'd') {
         render.options.wireframes = !render.options.wireframes;
