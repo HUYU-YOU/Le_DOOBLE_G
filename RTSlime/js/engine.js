@@ -27,6 +27,45 @@ let isDarkMode = false;
 // CHOIX DU BIOME EN COURS (classic ou hell)
 let currentMapTheme = 'classic';
 
+// --- FOG OF WAR ---
+const fogCanvas = document.createElement('canvas');
+const fogCtx = fogCanvas.getContext('2d');
+const FOG_SCALE = 0.05; 
+fogCanvas.width = MAP_WIDTH * FOG_SCALE;
+fogCanvas.height = MAP_HEIGHT * FOG_SCALE;
+
+function resetFog() {
+    fogCtx.globalCompositeOperation = 'source-over';
+    fogCtx.fillStyle = 'rgba(0, 0, 0, 0.95)'; // Opacité du brouillard de guerre
+    fogCtx.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
+}
+
+function updateFog() {
+    let actualId = isHost ? 'host' : 'guest';
+    fogCtx.globalCompositeOperation = 'destination-out';
+    
+    const reveal = (obj, radius) => {
+        let cx = obj.x * FOG_SCALE;
+        let cy = obj.y * FOG_SCALE;
+        let r = radius * FOG_SCALE;
+        
+        let grad = fogCtx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        fogCtx.fillStyle = grad;
+        fogCtx.beginPath();
+        fogCtx.arc(cx, cy, r, 0, Math.PI*2);
+        fogCtx.fill();
+    };
+
+    if (baseHost && baseHost.owner === actualId && baseHost.hp > 0) reveal(baseHost, 1800);
+    if (baseGuest && baseGuest.owner === actualId && baseGuest.hp > 0) reveal(baseGuest, 1800);
+    
+    buildings.forEach(b => { if(b.owner === actualId) reveal(b, 1200); });
+    units.forEach(u => { if(u.owner === actualId) reveal(u, 900); });
+}
+
 // --- GESTION DES ASSETS ---
 const ASSETS_PATHS = {
     mapHG: 'assets/map/MAPHG.png',
@@ -343,6 +382,11 @@ function drawMinimap() {
     units.forEach(u => drawDot(u, u.owner === 'host' ? '#00f0ff' : '#ff007f', 2));
     enemies.forEach(e => drawDot(e, '#ff3333', 3));
 
+    // AFFICHER LE BROUILLARD SUR LA MINIMAP
+    mmCtx.globalAlpha = 0.95;
+    mmCtx.drawImage(fogCanvas, 0, 0, 150, 150);
+    mmCtx.globalAlpha = 1.0;
+
     mmCtx.strokeStyle = 'white'; mmCtx.lineWidth = 1;
     mmCtx.strokeRect((camera.x/MAP_WIDTH)*150, (camera.y/MAP_HEIGHT)*150, (width/(zoom*MAP_WIDTH))*150, (height/(zoom*MAP_HEIGHT))*150);
 }
@@ -445,7 +489,6 @@ function executeCommand(data) {
 
 // --- GENERATION DE LA CARTE ---
 function buildMapElements(seed) {
-    mapSeed = seed;
     trees = []; rivers = []; decorations = []; treasures = [];
 
     // Rivières
@@ -535,9 +578,18 @@ function initGame(seed, mapTheme = 'classic') {
     
     resize();
 
-    baseHost = new Base(1500, MAP_HEIGHT/2, 'host');
-    baseGuest = new Base(MAP_WIDTH - 1500, MAP_HEIGHT/2, 'guest');
+    mapSeed = seed;
+    // SPATIALISATION ALEATOIRE ET DISTANTE
+    let hX = 1500 + seededRandom() * (MAP_WIDTH/2 - 3000);
+    let hY = 1500 + seededRandom() * (MAP_HEIGHT - 3000);
+    let gX = MAP_WIDTH/2 + 1500 + seededRandom() * (MAP_WIDTH/2 - 3000);
+    let gY = 1500 + seededRandom() * (MAP_HEIGHT - 3000);
+
+    baseHost = new Base(hX, hY, 'host');
+    baseGuest = new Base(gX, gY, 'guest');
     
+    resetFog();
+
     camera.x = baseHost.x - (width / zoom) / 2;
     camera.y = baseHost.y - (height / zoom) / 2;
     camera.x = Math.max(0, Math.min(camera.x, MAP_WIDTH - width/zoom));
@@ -578,8 +630,18 @@ function initGameClient(seed, mapTheme = 'classic') {
     
     resize();
     
-    baseHost = new Base(1500, MAP_HEIGHT/2, 'host');
-    baseGuest = new Base(MAP_WIDTH - 1500, MAP_HEIGHT/2, 'guest');
+    mapSeed = seed;
+    // SPATIALISATION ALEATOIRE ET DISTANTE (Identique à l'hôte grâce au seed)
+    let hX = 1500 + seededRandom() * (MAP_WIDTH/2 - 3000);
+    let hY = 1500 + seededRandom() * (MAP_HEIGHT - 3000);
+    let gX = MAP_WIDTH/2 + 1500 + seededRandom() * (MAP_WIDTH/2 - 3000);
+    let gY = 1500 + seededRandom() * (MAP_HEIGHT - 3000);
+
+    baseHost = new Base(hX, hY, 'host');
+    baseGuest = new Base(gX, gY, 'guest');
+    
+    resetFog();
+    
     buildMapElements(seed);
     
     updateUI(); renderBottomUI();
@@ -1010,6 +1072,12 @@ function draw() {
 
         particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.size, p.size); });
         ctx.globalAlpha = 1;
+        
+        // AFFICHER LE BROUILLARD SUR LA CARTE PRINCIPALE
+        if (gameState === 'PLAYING') {
+            updateFog();
+            ctx.drawImage(fogCanvas, 0, 0, MAP_WIDTH, MAP_HEIGHT);
+        }
 
         if (isSelecting && inputMode === 'mouse') {
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)'; ctx.lineWidth = 1; ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
