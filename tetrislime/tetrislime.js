@@ -170,7 +170,9 @@ function randomPiece() {
 
 function getImgName(type, rotIndex) {
     if (type === 3) return 'CUBE';
-    if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE' : 'BARRE90';
+    
+    // Inversion des skins de la Barre
+    if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE90' : 'BARRE';
     
     if (type === 2) {
         if (rotIndex === 0) return 'L0';
@@ -180,7 +182,14 @@ function getImgName(type, rotIndex) {
     }
     
     if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
-    if (type === 5) return rotIndex === 0 ? 'CROIX' : 'CROIX' + rotIndex;
+    
+    // Inversion de la Croix (T) pour les côtés gauche/droite
+    if (type === 5) {
+        if (rotIndex === 0) return 'CROIX';
+        if (rotIndex === 90) return 'CROIX270';
+        if (rotIndex === 180) return 'CROIX180';
+        if (rotIndex === 270) return 'CROIX90';
+    }
     
     return null;
 }
