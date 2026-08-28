@@ -82,6 +82,9 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
+// VARIABLE DE DEBUG (Touche D)
+let isDebug = false;
+
 const skinNames = [
     'BARRE', 'BARRE90', 
     'L0', 'L90', 'L180', 'L270', 
@@ -93,7 +96,6 @@ const skinNames = [
 const skins = {};
 skinNames.forEach(name => {
     skins[name] = new Image();
-    // On force l'actualisation de l'affichage dès que l'image est chargée (supprime les blocs bleus temporaires)
     skins[name].onload = () => {
         if (typeof draw === 'function') draw();
         if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 25);
@@ -127,7 +129,7 @@ const SHAPES = {
         [[0,4,4], [4,4,0], [0,0,0]], 
         [[4,0,0], [4,4,0], [0,4,0]]  
     ],
-    5: [ // CROIX
+    5: [ // CROIX (La pièce T)
         [[0,5,0], [5,5,5], [0,0,0]], 
         [[0,5,0], [5,5,0], [0,5,0]], 
         [[0,0,0], [5,5,5], [0,5,0]], 
@@ -217,25 +219,25 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
                     let imgName = getImgName(cell.type, cell.rot);
                     let img = skins[imgName];
                     
-                    if (img && img.complete && img.naturalWidth > 0) {
+                    // Si on n'est PAS en Debug et que l'image existe, on la dessine
+                    if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
                         let drawW = cell.boxW * size;
                         let drawH = cell.boxH * size;
                         let destX = (x + offset.x) * size;
                         let destY = (y + offset.y) * size;
 
-                        // On masque (clip) tout ce qui dépasse de la grille pour ce bloc précis
                         ctxTarget.save();
                         ctxTarget.beginPath();
                         ctxTarget.rect(destX, destY, size, size);
                         ctxTarget.clip();
 
-                        // On dessine l'image géante, décalée pour que la case s'aligne parfaitement
                         let imgDrawX = destX - (cell.imgX * size);
                         let imgDrawY = destY - (cell.imgY * size);
 
                         ctxTarget.drawImage(img, imgDrawX, imgDrawY, drawW, drawH);
                         ctxTarget.restore();
                     } else {
+                        // MODE DEBUG ou Image manquante = On dessine le bloc coloré logique
                         drawBlock(ctxTarget, x + offset.x, y + offset.y, size, cell.val);
                     }
                 } else {
@@ -251,7 +253,8 @@ function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
     let img = skins[imgName];
     let bounds = getMatrixBounds(p.matrix);
     
-    if (img && img.complete && img.naturalWidth > 0) {
+    // Si on n'est PAS en Debug et que l'image existe, on la dessine
+    if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
         ctxTarget.drawImage(
             img, 
             (p.pos.x + offsetX + bounds.minX) * size, 
@@ -260,6 +263,7 @@ function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
             bounds.h * size
         );
     } else {
+        // MODE DEBUG = On dessine les blocs colorés pour la pièce qui tombe
         drawMatrix(p.matrix, {x: p.pos.x + offsetX, y: p.pos.y + offsetY}, ctxTarget, size);
     }
 }
@@ -290,7 +294,7 @@ function drawPreview(ctxTarget, p, size) {
     let drawX = (ctxTarget.canvas.width - bounds.w * size) / 2;
     let drawY = (ctxTarget.canvas.height - bounds.h * size) / 2;
 
-    if (img && img.complete && img.naturalWidth > 0) {
+    if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
         ctxTarget.drawImage(img, drawX, drawY, bounds.w * size, bounds.h * size);
     } else {
         drawMatrix(p.matrix, {
@@ -458,6 +462,16 @@ document.addEventListener('keydown', event => {
     
     if (document.activeElement.tagName === 'INPUT') return;
 
+    // ----- BOUTON DE DEBUG (TOUCHE D) -----
+    if (event.keyCode === 68) { // 68 est le code de la touche D
+        event.preventDefault();
+        isDebug = !isDebug;
+        draw();
+        if (nextPiece) drawPreview(nextCtx, nextPiece, 25);
+        if (holdPiece) drawPreview(holdCtx, holdPiece, 25);
+        return; // On arrête là pour ne pas déplacer la pièce
+    }
+
     if (event.keyCode === 37) { event.preventDefault(); playerMove(-1); } // Gauche
     else if (event.keyCode === 39) { event.preventDefault(); playerMove(1); } // Droite
     else if (event.keyCode === 40) { event.preventDefault(); playerDrop(); } // Bas
@@ -467,7 +481,7 @@ document.addEventListener('keydown', event => {
         while (!collide(board, piece)) { piece.pos.y++; }
         piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); canHold = true; dropCounter = 0;
     } // Espace
-    else if (event.keyCode === 16 || event.keyCode === 67) { event.preventDefault(); hold(); } // Shift
+    else if (event.keyCode === 16 || event.keyCode === 67) { event.preventDefault(); hold(); } // Shift ou C
 });
 
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
