@@ -325,7 +325,6 @@ function collide(arena, player) {
 }
 
 function merge(arena, player) {
-    let bounds = getMatrixBounds(player.matrix);
     player.matrix.forEach((row, py) => {
         row.forEach((value, px) => {
             if (value !== 0) {
@@ -333,10 +332,10 @@ function merge(arena, player) {
                     val: value,
                     type: player.type,
                     rot: player.rotIndex,
-                    imgX: px - bounds.minX, 
-                    imgY: py - bounds.minY, 
-                    boxW: bounds.w,
-                    boxH: bounds.h
+                    imgX: px, 
+                    imgY: py, 
+                    boxW: player.matrix[0].length, 
+                    boxH: player.matrix.length  
                 };
             }
         });
