@@ -93,6 +93,12 @@ const skinNames = [
 const skins = {};
 skinNames.forEach(name => {
     skins[name] = new Image();
+    // On force l'actualisation de l'affichage dès que l'image est chargée (supprime les blocs bleus temporaires)
+    skins[name].onload = () => {
+        if (typeof draw === 'function') draw();
+        if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 25);
+        if (typeof holdPiece !== 'undefined' && holdPiece) drawPreview(holdCtx, holdPiece, 25);
+    };
     skins[name].src = `assets/${name}.png`;
 });
 
@@ -177,7 +183,6 @@ function getImgName(type, rotIndex) {
     return null;
 }
 
-// Fonction utilitaire pour calculer les dimensions réelles des PNG
 function getMatrixBounds(matrix) {
     let minX = matrix[0].length, maxX = 0, minY = matrix.length, maxY = 0;
     let hasBlocks = false;
@@ -213,12 +218,23 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
                     let img = skins[imgName];
                     
                     if (img && img.complete && img.naturalWidth > 0) {
-                        let sW = img.naturalWidth / cell.boxW;
-                        let sH = img.naturalHeight / cell.boxH;
-                        let sX = cell.imgX * sW;
-                        let sY = cell.imgY * sH;
-                        
-                        ctxTarget.drawImage(img, sX, sY, sW, sH, (x + offset.x) * size, (y + offset.y) * size, size, size);
+                        let drawW = cell.boxW * size;
+                        let drawH = cell.boxH * size;
+                        let destX = (x + offset.x) * size;
+                        let destY = (y + offset.y) * size;
+
+                        // On masque (clip) tout ce qui dépasse de la grille pour ce bloc précis
+                        ctxTarget.save();
+                        ctxTarget.beginPath();
+                        ctxTarget.rect(destX, destY, size, size);
+                        ctxTarget.clip();
+
+                        // On dessine l'image géante, décalée pour que la case s'aligne parfaitement
+                        let imgDrawX = destX - (cell.imgX * size);
+                        let imgDrawY = destY - (cell.imgY * size);
+
+                        ctxTarget.drawImage(img, imgDrawX, imgDrawY, drawW, drawH);
+                        ctxTarget.restore();
                     } else {
                         drawBlock(ctxTarget, x + offset.x, y + offset.y, size, cell.val);
                     }
@@ -233,8 +249,9 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
 function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
+    let bounds = getMatrixBounds(p.matrix);
+    
     if (img && img.complete && img.naturalWidth > 0) {
-        let bounds = getMatrixBounds(p.matrix);
         ctxTarget.drawImage(
             img, 
             (p.pos.x + offsetX + bounds.minX) * size, 
