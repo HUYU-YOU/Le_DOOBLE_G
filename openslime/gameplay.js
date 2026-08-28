@@ -20,7 +20,7 @@ let actionState = 'NORMAL';
 let playerCapitalMesh = null;
 
 let playerStats = { pop: 500, maxPop: 1000, gold: 500, territory: 0, alive: true, cityCount: 0 };
-let tradeShips = []; // Gestion des navires de commerce
+let tradeShips = []; 
 
 // --- PALETTE DE COULEURS ---
 const FACTIONS = [
@@ -47,11 +47,16 @@ const overlayCtx = overlayCanvas.getContext('2d');
 let overlayImgData = overlayCtx.createImageData(SIM_W, SIM_H);
 let overlayTexture;
 
-// --- 1. RADAR TERRAIN ---
+// --- 1. RADAR TERRAIN (POUR LES FRONTIÈRES TERRE/MER) ---
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
-terrainImg.src = 'assets/map_globe.png'; 
+
+// Chargement de l'image de masque (le radar noir et blanc/transparent)
+terrainImg.src = 'assets/map_globe_terrestre.png'; 
+terrainImg.onerror = () => { 
+    if(terrainImg.src.includes('terrestre')) terrainImg.src = 'assets/map_globe_terreste.png'; // Fallback orthographe
+};
 
 terrainImg.onload = () => {
     terrainCanvas.width = SIM_W; terrainCanvas.height = SIM_H;
@@ -66,11 +71,16 @@ function initGridLandWater() {
             for (let x = 0; x < SIM_W; x++) {
                 const idx = (y * SIM_W + x) * 4;
                 const r = pData[idx], g = pData[idx + 1], b = pData[idx + 2], a = pData[idx + 3];
-                const isOcean = (a < 50) || (r < 30 && g < 30 && b < 30) || (b > 130 && r < 70 && g < 110);
+                // L'eau est noire (r<20, g<20, b<20) ou transparente (a<50)
+                const isOcean = (a < 50) || (r < 20 && g < 20 && b < 20);
                 grid[y * SIM_W + x] = isOcean ? -2 : -1;
             }
         }
-    } catch(e) { grid.fill(-1); }
+        console.log("Radar terrestre chargé avec succès !");
+    } catch(e) { 
+        console.warn("BLOCAGE SÉCURITÉ NAVIGATEUR : Utilise Live Server pour que la détection de la mer fonctionne !");
+        grid.fill(-1); 
+    }
 }
 
 function isWaterPixel(x, y) {
@@ -131,7 +141,7 @@ function finishSpawningPhase() {
                 updateHUD();
             }
             updateAllAIs();
-            manageTradeRoutes(); // Génère les bateaux !
+            manageTradeRoutes(); 
         }
     }, 1000);
 }
@@ -166,9 +176,7 @@ function setPlayerCapital(uv, pos3D) {
 
     playerCapitalUV = uv.clone(); buildTargetPosition = pos3D;
 
-    // NOUVEAU VISUEL : Le Cristal de la Capitale (Octaèdre étiré)
-    const geometry = new THREE.OctahedronGeometry(0.18, 0);
-    geometry.scale(1, 1.8, 1);
+    const geometry = new THREE.OctahedronGeometry(0.18, 0); geometry.scale(1, 1.8, 1);
     const material = new THREE.MeshStandardMaterial({ color: 0xffbf00, roughness: 0.1, metalness: 0.8 });
     playerCapitalMesh = new THREE.Mesh(geometry, material);
     playerCapitalMesh.position.copy(pos3D);
@@ -188,7 +196,7 @@ function setPlayerCapital(uv, pos3D) {
     if (tCont) { tCont.querySelector('h2').innerText = "CAPITALE PLACÉE !"; tCont.querySelector('p').innerText = "Tu peux recliquer sur la terre pour la déplacer."; }
 }
 
-// --- 5. MOTEUR D'EXPANSION (CIBLÉ SUR LE CLIC !) ---
+// --- 5. MOTEUR D'EXPANSION (CIBLÉ & TERRESTRE) ---
 function claimPixel(x, y, factionId) {
     if (x < 0 || x >= SIM_W || y < 0 || y >= SIM_H) return;
     const oldOwner = grid[y * SIM_W + x];
@@ -229,7 +237,6 @@ function updateFrontier(x, y, factionId) {
     if (isBorder) set.add(`${x},${y}`); else set.delete(`${x},${y}`);
 }
 
-// L'EXPANSION CIBLÉE (Le point magique)
 function expandFactionTerritory(factionId, pixelsToClaim, targetPoint = null) {
     if (!frontierMap.has(factionId)) return;
     const frontierSet = frontierMap.get(factionId);
@@ -237,16 +244,14 @@ function expandFactionTerritory(factionId, pixelsToClaim, targetPoint = null) {
 
     let frontierArray = Array.from(frontierSet);
     
-    // Si un point est visé (le clic !), on trie les frontières pour grandir UNIQUEMENT vers ce point
     if (targetPoint) {
         frontierArray.sort((a, b) => {
             let [ax, ay] = a.split(',').map(Number); let [bx, by] = b.split(',').map(Number);
             let distA = (ax - targetPoint.x)**2 + (ay - targetPoint.y)**2;
             let distB = (bx - targetPoint.x)**2 + (by - targetPoint.y)**2;
-            return distA - distB; // Les pixels les plus proches du clic s'étendent en premier !
+            return distA - distB; 
         });
     } else {
-        // L'IA s'étend autour de son centre
         let faction = factionId === 0 ? playerCapitalUV : ais.find(a => a.id === factionId).uv;
         if(faction) {
             let cx = Math.floor(faction.x * SIM_W); let cy = Math.floor((1 - faction.y) * SIM_H);
@@ -285,7 +290,7 @@ function renderGridToCanvas() {
             const rgb = FACTIONS[owner].rgb;
             data[idx] = rgb[0]; data[idx + 1] = rgb[1]; data[idx + 2] = rgb[2]; data[idx + 3] = 200; 
         } else if (owner === -3) {
-            data[idx] = 120; data[idx + 1] = 255; data[idx + 2] = 20; data[idx + 3] = 220; // Irradié
+            data[idx] = 120; data[idx + 1] = 255; data[idx + 2] = 20; data[idx + 3] = 220; 
         } else { data[idx + 3] = 0; }
     }
     overlayCtx.putImageData(overlayImgData, 0, 0);
@@ -391,7 +396,7 @@ window.addEventListener('pointerup', function(event) {
     }
 });
 
-// DOUBLE CLIC : EXPANSION CIBLÉE !
+// DOUBLE CLIC : EXPANSION CIBLÉE VERS LA SOURIS
 window.addEventListener('dblclick', function(event) {
     event.preventDefault(); 
     if (gameState !== 'PLAYING' || !playerStats.alive) return;
@@ -408,7 +413,6 @@ window.addEventListener('dblclick', function(event) {
         playerStats.pop -= troopsSent;
         let pixelsToClaim = Math.max(1, Math.floor(troopsSent * 0.25));
         
-        // On passe les coordonnées du clic à la fonction d'expansion !
         let targetPoint = { x: Math.floor(intersects[0].uv.x * SIM_W), y: Math.floor((1 - intersects[0].uv.y) * SIM_H) };
         expandFactionTerritory(0, pixelsToClaim, targetPoint);
         updateHUD();
@@ -490,20 +494,13 @@ window.executeAction = function(action, isCapital = false) {
 
     let color = 0x00f0ff, geometry;
     
-    // Nouveaux Designs de bâtiments 3D !
     if (type === 'city') { 
-        geometry = new THREE.CylinderGeometry(0.08, 0.12, 0.25, 6); // Tour Hexagonale
+        geometry = new THREE.CylinderGeometry(0.08, 0.12, 0.25, 6); 
         playerStats.cityCount++; updateMaxPop(0);
     } 
-    else if (type === 'port') { 
-        geometry = new THREE.BoxGeometry(0.15, 0.05, 0.15); // Plateforme de quai
-    }
-    else if (type === 'missile') { 
-        geometry = new THREE.CylinderGeometry(0.1, 0.1, 0.2, 8); color = 0xff007f; // Silo rond
-    } 
-    else if (type === 'anti_missile') { 
-        geometry = new THREE.DodecahedronGeometry(0.15, 0); color = 0x39ff14; // Dôme géométrique
-    }
+    else if (type === 'port') { geometry = new THREE.BoxGeometry(0.15, 0.05, 0.15); }
+    else if (type === 'missile') { geometry = new THREE.CylinderGeometry(0.1, 0.1, 0.2, 8); color = 0xff007f; } 
+    else if (type === 'anti_missile') { geometry = new THREE.DodecahedronGeometry(0.15, 0); color = 0x39ff14; }
 
     const material = new THREE.MeshStandardMaterial({ color: color });
     const structure = new THREE.Mesh(geometry, material);
@@ -517,7 +514,7 @@ window.executeAction = function(action, isCapital = false) {
     updateHUD();
 }
 
-// --- 9. NAVIRES DE COMMERCE (BATEAUX) ---
+// --- 9. NAVIRES DE COMMERCE ---
 function manageTradeRoutes() {
     let ports = entities.filter(e => e.type === 'port');
     if (ports.length >= 2 && Math.random() < 0.4) {
@@ -533,20 +530,16 @@ function spawnShip(portA, portB) {
     let shipMesh = new THREE.Mesh(shipGeo, shipMat);
     shipMesh.position.copy(portA.mesh.position);
     window.gameScene.add(shipMesh);
-    
     tradeShips.push({ mesh: shipMesh, start: portA.mesh.position.clone(), end: portB.mesh.position.clone(), progress: 0, owner: portA.owner });
 }
 
-// Boucle d'animation fluide pour les bateaux et la capitale !
 function customAnimations() {
     requestAnimationFrame(customAnimations);
     
-    // Fait tourner tous les cristaux (Capitales) sur eux-mêmes
     entities.forEach(ent => {
         if (ent.type === 'capital' && ent.mesh) ent.mesh.rotateY(0.02);
     });
 
-    // Déplace les petits bateaux de commerce
     for (let i = tradeShips.length - 1; i >= 0; i--) {
         let ship = tradeShips[i];
         ship.progress += 0.003; 
@@ -557,24 +550,13 @@ function customAnimations() {
         } else {
             let t = ship.progress; let u = 1 - t;
             let mid = ship.start.clone().lerp(ship.end, 0.5);
-            mid.normalize().multiplyScalar(5.02); // Juste au dessus de l'eau
-            
-            // Courbe au-dessus de l'océan
-            let pos = new THREE.Vector3();
-            pos.x = u*u*ship.start.x + 2*u*t*mid.x + t*t*ship.end.x;
-            pos.y = u*u*ship.start.y + 2*u*t*mid.y + t*t*ship.end.y;
-            pos.z = u*u*ship.start.z + 2*u*t*mid.z + t*t*ship.end.z;
-            pos.normalize().multiplyScalar(5.01);
+            mid.normalize().multiplyScalar(5.02);
+            let pos = new THREE.Vector3(); pos.x = u*u*ship.start.x + 2*u*t*mid.x + t*t*ship.end.x; pos.y = u*u*ship.start.y + 2*u*t*mid.y + t*t*ship.end.y; pos.z = u*u*ship.start.z + 2*u*t*mid.z + t*t*ship.end.z; pos.normalize().multiplyScalar(5.01);
             
             let nextT = Math.min(1, t + 0.01); let nu = 1 - nextT;
-            let nextPos = new THREE.Vector3();
-            nextPos.x = nu*nu*ship.start.x + 2*nu*nextT*mid.x + nextT*nextT*ship.end.x;
-            nextPos.y = nu*nu*ship.start.y + 2*nu*nextT*mid.y + nextT*nextT*ship.end.y;
-            nextPos.z = nu*nu*ship.start.z + 2*nu*nextT*mid.z + nextT*nextT*ship.end.z;
-            nextPos.normalize().multiplyScalar(5.01);
+            let nextPos = new THREE.Vector3(); nextPos.x = nu*nu*ship.start.x + 2*nu*nextT*mid.x + nextT*nextT*ship.end.x; nextPos.y = nu*nu*ship.start.y + 2*nu*nextT*mid.y + nextT*nextT*ship.end.y; nextPos.z = nu*nu*ship.start.z + 2*nu*nextT*mid.z + nextT*nextT*ship.end.z; nextPos.normalize().multiplyScalar(5.01);
             
-            ship.mesh.position.copy(pos);
-            ship.mesh.lookAt(nextPos);
+            ship.mesh.position.copy(pos); ship.mesh.lookAt(nextPos);
         }
     }
 }
