@@ -100,21 +100,20 @@ const isLocalFile = window.location.protocol === 'file:';
 
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 LES ZOOMS FINAUX (À partir du 6ème : -15%, et le 7ème + "un poil") 🔥
+// 🔥 ZOOMS FINAUX : +7% du niveau 5 au niveau 12 🔥
 const SLIMES = [
-    { level: 1,  radius: 25,  zoom: 1.85, points: 2,    texture: 'assets/slime2.png',  color: '#aaffaa' }, // 1. Vert (Inchangé)
-    { level: 2,  radius: 36,  zoom: 1.66, points: 4,    texture: 'assets/slime3.png',  color: '#aaaaff' }, // 2. Orange (Inchangé)
-    { level: 3,  radius: 50,  zoom: 1.22, points: 8,    texture: 'assets/slime4.png',  color: '#ffffaa' }, // 3. Rose (Inchangé)
-    { level: 4,  radius: 65,  zoom: 1.18, points: 16,   texture: 'assets/slime5.png',  color: '#ffaaff' }, // 4. (Inchangé)
-    { level: 5,  radius: 82,  zoom: 1.18, points: 32,   texture: 'assets/slime6.png',  color: '#aaffff' }, // 5. (Inchangé)
-    
-    { level: 6,  radius: 100, zoom: 1.00, points: 64,   texture: 'assets/slime7.png',  color: '#ffccaa' }, // 6. (-15%)
-    { level: 7,  radius: 120, zoom: 1.05, points: 128,  texture: 'assets/slime8.png',  color: '#aaccff' }, // 7. (Le petit poil en plus : 1.05 !)
-    { level: 8,  radius: 140, zoom: 1.00, points: 256,  texture: 'assets/slime9.png',  color: '#ccaaff' }, // 8. (-15%)
-    { level: 9,  radius: 165, zoom: 1.00, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' }, // 9. (-15%)
-    { level: 10, radius: 190, zoom: 1.00, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' }, // 10. (-15%)
-    { level: 11, radius: 215, zoom: 1.00, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' }, // 11. (-15%)
-    { level: 12, radius: 245, zoom: 1.00, points: 4096, texture: 'assets/slime13.png', color: '#ffffff' }  // 12. (-15%)
+    { level: 1,  radius: 25,  zoom: 1.85, points: 2,    texture: 'assets/slime2.png',  color: '#aaffaa' }, 
+    { level: 2,  radius: 36,  zoom: 1.66, points: 4,    texture: 'assets/slime3.png',  color: '#aaaaff' }, 
+    { level: 3,  radius: 50,  zoom: 1.22, points: 8,    texture: 'assets/slime4.png',  color: '#ffffaa' }, 
+    { level: 4,  radius: 65,  zoom: 1.36, points: 16,   texture: 'assets/slime5.png',  color: '#ffaaff' }, 
+    { level: 5,  radius: 82,  zoom: 1.26, points: 32,   texture: 'assets/slime6.png',  color: '#aaffff' }, // +7% (passe de 1.18 à 1.26)
+    { level: 6,  radius: 100, zoom: 1.07, points: 64,   texture: 'assets/slime7.png',  color: '#ffccaa' }, // +7% (passe de 1.00 à 1.07)
+    { level: 7,  radius: 120, zoom: 1.12, points: 128,  texture: 'assets/slime8.png',  color: '#aaccff' }, // +7% (passe de 1.05 à 1.12)
+    { level: 8,  radius: 140, zoom: 1.07, points: 256,  texture: 'assets/slime9.png',  color: '#ccaaff' }, // +7%
+    { level: 9,  radius: 165, zoom: 1.07, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' }, // +7%
+    { level: 10, radius: 190, zoom: 1.07, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' }, // +7%
+    { level: 11, radius: 215, zoom: 1.07, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' }, // +7%
+    { level: 12, radius: 245, zoom: 1.07, points: 4096, texture: 'assets/slime13.png', color: '#ffffff' }  // +7%
 ];
 
 SLIMES.forEach(slime => {
