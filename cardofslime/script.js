@@ -1,5 +1,5 @@
 // ==========================================
-// 1. GESTION DES PARAMETRES
+// 1. GESTION DES PARAMETRES 
 // ==========================================
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
@@ -167,7 +167,7 @@ const cardDatabase = {
     }
 };
 
-let playerDeck = ["slime", "slimeuse", "dragon", "canon", "boule_sort", "marais"];
+let playerDeck = ["slime", "slimeuse", "dragon", "tornade", "boule_sort", "marais"];
 let tempSelectedDeck = [...playerDeck];
 
 function getCardBackgroundStyle(card) {
@@ -427,10 +427,8 @@ function spawnEntity(data, team, x, y) {
     });
 }
 
-// LANCER DE SORT (GESTION DES PROJECTILES)
 function castSpell(spellData, casterTeam, targetX, targetY) {
     if (spellData.projectile) {
-        // Lance une animation balistique
         let originX = 50; let originY = casterTeam === 'player' ? 95 : 5;
         let base = activeEntities.find(e => e.id === (casterTeam === 'player' ? 'base_p' : 'base_e'));
         if (base) { originX = base.x; originY = base.y; }
@@ -446,12 +444,10 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
             progress: 0, element: proj, spellData: spellData
         });
     } else {
-        // Exécution directe si pas de projectile
         executeSpellImpact(spellData, casterTeam, targetX, targetY);
     }
 }
 
-// L'IMPACT DE SORT APRÈS L'ATTERRISSAGE
 function executeSpellImpact(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
         for(let i=0; i<3; i++) {
@@ -552,11 +548,10 @@ function gameLoop(currentTime) {
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
-    // ANIMATIONS DES SORTS (Gestion de l'atterrissage du lancer)
+    // ANIMATIONS DES SORTS (Tornade dynamique & Lancer Balistique)
     activeSpells = activeSpells.filter(spell => {
-        
         if (spell.type === 'throw') {
-            spell.progress += dt * 1.5; // Vitesse de lancer
+            spell.progress += dt * 1.5;
             if (spell.progress >= 1) {
                 spell.element.remove();
                 executeSpellImpact(spell.spellData, spell.team, spell.targetX, spell.targetY);
@@ -564,10 +559,10 @@ function gameLoop(currentTime) {
             }
             let currentX = spell.startX + (spell.targetX - spell.startX) * spell.progress;
             let currentY = spell.startY + (spell.targetY - spell.startY) * spell.progress;
-            let arc = Math.sin(spell.progress * Math.PI) * 20; // Arc de tir
+            let arc = Math.sin(spell.progress * Math.PI) * 20; 
             spell.element.style.left = `${currentX}%`;
             spell.element.style.top = `${currentY - arc}%`;
-            spell.element.style.transform = `translate(-50%, -50%) rotate(${spell.progress * 1080}deg)`; // Fait tourner la boule
+            spell.element.style.transform = `translate(-50%, -50%) rotate(${spell.progress * 1080}deg)`;
             return true;
         }
 
@@ -649,6 +644,7 @@ function gameLoop(currentTime) {
         }
     });
 
+    // PATHFINDING ORTHOGONAL (Déplacement en L corrigé)
     activeEntities.forEach(unit => {
         let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
         if (unit.stunTimer > 0) { unit.stunTimer -= dt; unit.state = 'idle'; unit.element.classList.add('stunned'); return; } 
@@ -711,15 +707,42 @@ function gameLoop(currentTime) {
                 }
             } else if (unit.speed > 0) {
                 unit.state = 'idle';
-                let targetX = closestTarget.x; let targetY = closestTarget.y;
-                if (!unit.isFlying && ((unit.y > 50 && targetY < 50) || (unit.y < 50 && targetY > 50))) {
-                    let targetBridgeX = (closestTarget.x < 50) ? 27 : 73; 
-                    if (Math.abs(unit.x - targetBridgeX) > 2) { targetX = targetBridgeX; targetY = unit.y; }
+                let targetX = closestTarget.x; 
+                let targetY = closestTarget.y;
+                
+                // DÉPLACEMENT EN L (Suivi orthogonal)
+                if (!unit.isFlying && closestTarget.speed === 0) {
+                    let laneX = unit.lane === 'left' ? 27 : 73;
+                    
+                    if (closestTarget.x === 50) {
+                        if (Math.abs(unit.y - closestTarget.y) > 5) {
+                            targetX = laneX; targetY = closestTarget.y; 
+                        } else {
+                            targetX = closestTarget.x; targetY = closestTarget.y;
+                        }
+                    } else {
+                        targetX = closestTarget.x; targetY = closestTarget.y;
+                    }
+
+                    if ((unit.y > 50 && closestTarget.y < 50) || (unit.y < 50 && closestTarget.y > 50)) {
+                        targetY = 50; targetX = laneX;
+                    }
+
+                    if (Math.abs(unit.x - laneX) > 2 && Math.abs(unit.y - 50) > 20) {
+                        targetX = laneX; targetY = unit.y; 
+                    }
                 }
+                
                 const dx = targetX - unit.x; const dy = targetY - unit.y; const angle = Math.atan2(dy, dx);
                 unit.x += Math.cos(angle) * currentSpeed * dt * (arena.offsetHeight / arena.offsetWidth);
                 unit.y += Math.sin(angle) * currentSpeed * dt;
-                unit.element.style.left = `${unit.x}%`; unit.element.style.top = `${unit.y}%`;
+                
+                // LIMITES DE LA CARTE (Empêche de sortir des traits verts)
+                unit.x = Math.max(15, Math.min(85, unit.x));
+                unit.y = Math.max(10, Math.min(95, unit.y));
+
+                unit.element.style.left = `${unit.x}%`;
+                unit.element.style.top = `${unit.y}%`;
             }
         } else { unit.state = 'idle'; }
 
