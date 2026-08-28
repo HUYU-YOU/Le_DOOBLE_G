@@ -52,11 +52,8 @@ const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
 
-// Chargement de l'image de masque (le radar noir et blanc/transparent)
-terrainImg.src = 'assets/map_globe_terrestre.png'; 
-terrainImg.onerror = () => { 
-    if(terrainImg.src.includes('terrestre')) terrainImg.src = 'assets/map_globe_terreste.png'; // Fallback orthographe
-};
+// J'ai mis exactement le nom qui est dans ton dossier !
+terrainImg.src = 'assets/map_globe_terreste.png'; 
 
 terrainImg.onload = () => {
     terrainCanvas.width = SIM_W; terrainCanvas.height = SIM_H;
@@ -71,14 +68,14 @@ function initGridLandWater() {
             for (let x = 0; x < SIM_W; x++) {
                 const idx = (y * SIM_W + x) * 4;
                 const r = pData[idx], g = pData[idx + 1], b = pData[idx + 2], a = pData[idx + 3];
-                // L'eau est noire (r<20, g<20, b<20) ou transparente (a<50)
+                // L'eau est noire ou transparente
                 const isOcean = (a < 50) || (r < 20 && g < 20 && b < 20);
                 grid[y * SIM_W + x] = isOcean ? -2 : -1;
             }
         }
-        console.log("Radar terrestre chargé avec succès !");
+        console.log("Radar chargé avec succès !");
     } catch(e) { 
-        console.warn("BLOCAGE SÉCURITÉ NAVIGATEUR : Utilise Live Server pour que la détection de la mer fonctionne !");
+        console.warn("Erreur de lecture de l'image radar (CORS).");
         grid.fill(-1); 
     }
 }
@@ -196,7 +193,7 @@ function setPlayerCapital(uv, pos3D) {
     if (tCont) { tCont.querySelector('h2').innerText = "CAPITALE PLACÉE !"; tCont.querySelector('p').innerText = "Tu peux recliquer sur la terre pour la déplacer."; }
 }
 
-// --- 5. MOTEUR D'EXPANSION (CIBLÉ & TERRESTRE) ---
+// --- 5. MOTEUR D'EXPANSION CIBLÉE ---
 function claimPixel(x, y, factionId) {
     if (x < 0 || x >= SIM_W || y < 0 || y >= SIM_H) return;
     const oldOwner = grid[y * SIM_W + x];
@@ -379,7 +376,7 @@ function checkPlayerElimination() {
     }
 }
 
-// --- 7. CONTRÔLES SOURIS (CIBLAGE) ---
+// --- 7. CONTRÔLES SOURIS ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
