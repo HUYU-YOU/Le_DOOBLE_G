@@ -101,7 +101,8 @@ skinNames.forEach(name => {
         if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 25);
         if (typeof holdPiece !== 'undefined' && holdPiece) drawPreview(holdCtx, holdPiece, 25);
     };
-    skins[name].src = `assets/${name}.png`;
+    // ANTI-CACHE (Empêche le navigateur de garder une vieille image)
+    skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
 });
 
 const SHAPES = {
@@ -171,25 +172,25 @@ function randomPiece() {
 function getImgName(type, rotIndex) {
     if (type === 3) return 'CUBE';
     
-   
+    // Inversion des skins de la Barre
     if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE' : 'BARRE90';
     
-
+    // L ORANGE
     if (type === 2) {
         if (rotIndex === 0) return 'L0';
-        if (rotIndex === 90) return 'L90';  
+        if (rotIndex === 90) return 'L270';  
         if (rotIndex === 180) return 'L180';
-        if (rotIndex === 270) return 'L270';
+        if (rotIndex === 270) return 'L90';
     }
     
-
     if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
-
+    
+    // Inversion de la Croix (T) pour les côtés gauche/droite
     if (type === 5) {
         if (rotIndex === 0) return 'CROIX';
-        if (rotIndex === 90) return 'CROIX90';
+        if (rotIndex === 90) return 'CROIX270';
         if (rotIndex === 180) return 'CROIX180';
-        if (rotIndex === 270) return 'CROIX270';
+        if (rotIndex === 270) return 'CROIX90';
     }
     
     return null;
@@ -229,7 +230,6 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
                     let imgName = getImgName(cell.type, cell.rot);
                     let img = skins[imgName];
                     
-                    // Si on n'est PAS en Debug et que l'image existe, on la dessine
                     if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
                         let drawW = cell.boxW * size;
                         let drawH = cell.boxH * size;
@@ -247,7 +247,6 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
                         ctxTarget.drawImage(img, imgDrawX, imgDrawY, drawW, drawH);
                         ctxTarget.restore();
                     } else {
-                        // MODE DEBUG ou Image manquante = On dessine le bloc coloré logique
                         drawBlock(ctxTarget, x + offset.x, y + offset.y, size, cell.val);
                     }
                 } else {
@@ -263,7 +262,6 @@ function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
     let img = skins[imgName];
     let bounds = getMatrixBounds(p.matrix);
     
-    // Si on n'est PAS en Debug et que l'image existe, on la dessine
     if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
         ctxTarget.drawImage(
             img, 
@@ -273,7 +271,6 @@ function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
             bounds.h * size
         );
     } else {
-        // MODE DEBUG = On dessine les blocs colorés pour la pièce qui tombe
         drawMatrix(p.matrix, {x: p.pos.x + offsetX, y: p.pos.y + offsetY}, ctxTarget, size);
     }
 }
@@ -325,6 +322,7 @@ function collide(arena, player) {
 }
 
 function merge(arena, player) {
+    let bounds = getMatrixBounds(player.matrix);
     player.matrix.forEach((row, py) => {
         row.forEach((value, px) => {
             if (value !== 0) {
@@ -332,10 +330,10 @@ function merge(arena, player) {
                     val: value,
                     type: player.type,
                     rot: player.rotIndex,
-                    imgX: px, 
-                    imgY: py, 
-                    boxW: player.matrix[0].length, 
-                    boxH: player.matrix.length  
+                    imgX: px - bounds.minX, 
+                    imgY: py - bounds.minY, 
+                    boxW: bounds.w,
+                    boxH: bounds.h
                 };
             }
         });
@@ -471,14 +469,13 @@ document.addEventListener('keydown', event => {
     
     if (document.activeElement.tagName === 'INPUT') return;
 
-    // ----- BOUTON DE DEBUG (TOUCHE D) -----
-    if (event.keyCode === 68) { // 68 est le code de la touche D
+    if (event.keyCode === 68) { 
         event.preventDefault();
         isDebug = !isDebug;
         draw();
         if (nextPiece) drawPreview(nextCtx, nextPiece, 25);
         if (holdPiece) drawPreview(holdCtx, holdPiece, 25);
-        return; // On arrête là pour ne pas déplacer la pièce
+        return; 
     }
 
     if (event.keyCode === 37) { event.preventDefault(); playerMove(-1); } // Gauche
@@ -490,7 +487,7 @@ document.addEventListener('keydown', event => {
         while (!collide(board, piece)) { piece.pos.y++; }
         piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); canHold = true; dropCounter = 0;
     } // Espace
-    else if (event.keyCode === 16 || event.keyCode === 67) { event.preventDefault(); hold(); } // Shift ou C
+    else if (event.keyCode === 16 || event.keyCode === 67) { event.preventDefault(); hold(); } // Shift
 });
 
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
