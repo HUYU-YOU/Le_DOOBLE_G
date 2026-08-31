@@ -238,7 +238,11 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
 
                         ctxTarget.save();
                         ctxTarget.beginPath();
-                        ctxTarget.rect(destX, destY, size, size);
+                        
+                        // 💡 L'ASTUCE EST ICI : On agrandit le masque de 6 pixels vers le haut 
+                        // pour ne plus couper le front/les oreilles des slimes !
+                        let earOffset = 6; 
+                        ctxTarget.rect(destX, destY - earOffset, size, size + earOffset);
                         ctxTarget.clip();
 
                         let imgDrawX = destX - (cell.imgX * size);
