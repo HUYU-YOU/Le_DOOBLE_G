@@ -1,5 +1,5 @@
 // ==========================================
-// 1. GESTION DES PARAMETRES 
+// 1. GESTION DES PARAMETRES
 // ==========================================
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
@@ -276,7 +276,7 @@ function startSoloGame() { document.getElementById('main-menu').style.display = 
 
 
 // ==========================================
-// 4. MOTEUR DE JEU (GAME ENGINE)
+// 4. MOTEUR DE JEU ET IA AVANCÉE
 // ==========================================
 const MAX_SLIME = 10;
 let currentSlime = 5; let enemySlime = 5; 
@@ -317,6 +317,7 @@ function createTower(id, team, x, y, hp, img, width, height) {
     arena.appendChild(el);
     
     let lane = x < 50 ? 'left' : (x > 50 ? 'right' : 'center');
+    // Note: speed: 0 indique un bâtiment, targetsAir: true permet de tirer sur les volants
     activeEntities.push({ id: id, team: team, x: x, y: y, lane: lane, hp: hp, maxHp: hp, dmg: 50, range: 35, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
 }
 
@@ -385,7 +386,7 @@ function handleArenaClick(e) {
     if (cardData.type.includes('spell')) castSpell(cardData, 'player', clickX, clickY);
     else spawnEntity(cardData, 'player', clickX, clickY);
 
-    if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY });
+    if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY, spellType: cardData.type });
 
     drawPile.push(hand[selectedCardIndex]); hand[selectedCardIndex] = nextCard; nextCard = drawPile.shift();
     selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
@@ -427,6 +428,7 @@ function spawnEntity(data, team, x, y) {
     });
 }
 
+// LANCER DE SORT (GESTION DES PROJECTILES ET DÉPLOIEMENT)
 function castSpell(spellData, casterTeam, targetX, targetY) {
     if (spellData.projectile) {
         let originX = 50; let originY = casterTeam === 'player' ? 95 : 5;
@@ -448,6 +450,7 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
     }
 }
 
+// L'IMPACT DE SORT APRÈS L'ATTERRISSAGE (OU DIRECTEMENT)
 function executeSpellImpact(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
         for(let i=0; i<3; i++) {
@@ -481,19 +484,79 @@ function executeSpellImpact(spellData, casterTeam, targetX, targetY) {
         activeSpells.push({ type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, timer: 0, frame: 0, maxTime: 0.8 });
         const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
         activeEntities.forEach(ent => {
-            if (ent.team === targetTeam && Math.sqrt(Math.pow(ent.x - targetX, 2) + Math.pow(ent.y - targetY, 2)) < spellData.radius) takeDamage(ent, spellData.dmg);
+            if (ent.team === targetTeam && Math.hypot(ent.x - targetX, ent.y - targetY) < spellData.radius) takeDamage(ent, spellData.dmg);
         });
     }
 }
 
+// IA STRATÉGIQUE (Analyse le terrain)
 function enemyAI() {
     if (isGameOver || conn) return;
+    
+    // Détection des menaces proches de la base ennemie (y < 50)
+    let playerTroops = activeEntities.filter(e => e.team === 'player' && e.speed > 0);
+    let enemyThreats = playerTroops.filter(e => e.y < 50); 
+    
     const playableCards = Object.values(cardDatabase).filter(c => c.cost <= enemySlime && !c.hidden);
-    if (playableCards.length > 0 && Math.random() > 0.4) {
-        const cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
+    if (playableCards.length === 0) return;
+
+    if (Math.random() > 0.3) return; // Ne joue que 30% du temps pour ne pas vider son énergie d'un coup
+
+    let cardToPlay = null;
+    let spawnX = Math.random() > 0.5 ? 27 : 73;
+    let spawnY = 15;
+
+    if (enemyThreats.length > 0) {
+        // Mode Défense
+        enemyThreats.sort((a, b) => a.y - b.y);
+        let threat = enemyThreats[0];
+        spawnX = threat.x < 50 ? 27 : 73; 
+        spawnY = Math.max(10, threat.y - 15); // Invoque devant la menace
+
+        // Pas de cible-bâtiments en défense
+        let defensiveCards = playableCards.filter(c => !c.targetBuilding);
+        
+        // Si volant, il FAUT un anti-air ou un sort
+        if (threat.isFlying) {
+            let antiAir = defensiveCards.filter(c => c.targetsAir || c.type.includes('spell'));
+            if (antiAir.length > 0) defensiveCards = antiAir;
+        }
+
+        if (defensiveCards.length > 0) {
+            cardToPlay = defensiveCards[Math.floor(Math.random() * defensiveCards.length)];
+        } else {
+            cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
+        }
+
+        if (cardToPlay && cardToPlay.type.includes('spell')) {
+            spawnX = threat.x; spawnY = threat.y;
+        }
+    } else {
+        // Mode Attaque
+        let attackCards = playableCards;
+        if (Math.random() > 0.4) {
+            attackCards = playableCards.filter(c => c.id !== 'boule'); // Réduit le spam aveugle de la boule
+        }
+        if (attackCards.length === 0) attackCards = playableCards;
+        
+        cardToPlay = attackCards[Math.floor(Math.random() * attackCards.length)];
+
+        if (cardToPlay.type.includes('spell')) {
+            let playerTowers = activeEntities.filter(e => e.team === 'player' && e.speed === 0);
+            if (playerTowers.length > 0) {
+                let targetTower = playerTowers[Math.floor(Math.random() * playerTowers.length)];
+                spawnX = targetTower.x; spawnY = targetTower.y;
+            }
+        }
+    }
+
+    if (cardToPlay) {
         enemySlime -= cardToPlay.cost;
-        if(cardToPlay.type.includes('spell')) castSpell(cardToPlay, 'enemy', 20 + Math.random()*60, 65 + Math.random()*20);
-        else spawnEntity(cardToPlay, 'enemy', Math.random() > 0.5 ? 25 : 75, 15);
+        if (cardToPlay.type.includes('spell')) castSpell(cardToPlay, 'enemy', spawnX, spawnY);
+        else {
+            spawnY = Math.min(45, Math.max(10, spawnY)); // Respecte sa zone
+            spawnEntity(cardToPlay, 'enemy', spawnX, spawnY);
+        }
         playSound('sfx-spawn');
     }
 }
@@ -587,7 +650,9 @@ function gameLoop(currentTime) {
                 activeEntities.forEach(ent => {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
                         takeDamage(ent, spell.dmg);
-                        if (!ent.id.includes('base') && !ent.id.includes('tower')) { ent.x += (spell.originX - ent.x) * 0.1; ent.y += (spell.originY - ent.y) * 0.1; }
+                        if (!ent.id.includes('base') && !ent.id.includes('tower')) {
+                            ent.x += (spell.originX - ent.x) * 0.1; ent.y += (spell.originY - ent.y) * 0.1; 
+                        }
                     }
                 });
             }
@@ -601,7 +666,7 @@ function gameLoop(currentTime) {
                 spell.triggered = true;
                 const targetTeam = spell.team === 'player' ? 'enemy' : 'player';
                 activeEntities.forEach(ent => {
-                    if (ent.team === targetTeam && Math.sqrt(Math.pow(ent.x - spell.x, 2) + Math.pow(ent.y - spell.y, 2)) < spell.radius) {
+                    if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < spell.radius) {
                         takeDamage(ent, spell.dmg);
                         if(spell.pushback && !ent.id.includes('base') && !ent.id.includes('tower')) {
                             const angle = Math.atan2(ent.y - spell.y, ent.x - spell.x); ent.x += Math.cos(angle) * 8; ent.y += Math.sin(angle) * 8; ent.slowTimer = spell.slowDuration;
@@ -634,7 +699,7 @@ function gameLoop(currentTime) {
     activeProjectiles = activeProjectiles.filter(p => {
         if(p.target.hp <= 0) { p.element.remove(); return false; } 
         const dx = p.target.x - p.x; const dy = p.target.y - p.y;
-        if (Math.sqrt(dx*dx + dy*dy) < 2) { 
+        if (Math.hypot(dx, dy) < 2) { 
             takeDamage(p.target, p.dmg); 
             if(p.stunDuration) p.target.stunTimer = p.stunDuration;
             p.element.remove(); return false; 
@@ -644,7 +709,7 @@ function gameLoop(currentTime) {
         }
     });
 
-    // PATHFINDING ORTHOGONAL (Déplacement en L corrigé)
+    // CIBLAGE ET DÉPLACEMENT (Correction du ciblage pour éviter le skip des tours)
     activeEntities.forEach(unit => {
         let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
         if (unit.stunTimer > 0) { unit.stunTimer -= dt; unit.state = 'idle'; unit.element.classList.add('stunned'); return; } 
@@ -657,35 +722,48 @@ function gameLoop(currentTime) {
         if (unit.lifetime) { unit.hp -= (unit.maxHp / unit.lifetime) * dt; if (unit.hpBar) unit.hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`; }
 
         let closestTarget = null; let minDistance = 999;
-        let aggroRadius = 25;
 
-        if (!unit.targetBuilding && unit.speed > 0) {
+        if (unit.speed === 0) {
+            // LES TOURS ET BÂTIMENTS
             activeEntities.forEach(target => {
-                if (target.team !== unit.team && (!target.isFlying || unit.targetsAir)) {
+                if (target.team !== unit.team && target.speed > 0) {
+                    if (target.isFlying && !unit.targetsAir) return; 
                     let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
-                    if (dist < aggroRadius && dist < minDistance) { minDistance = dist; closestTarget = target; }
+                    if (dist <= unit.range && dist < minDistance) { minDistance = dist; closestTarget = target; }
                 }
             });
-        }
-
-        if (!closestTarget) {
-            let minLaneDist = 999;
-            activeEntities.forEach(target => {
-                if (target.team !== unit.team && target.speed === 0) {
-                    let targetLane = target.x < 50 ? 'left' : (target.x > 50 ? 'right' : 'center');
-                    if (targetLane === unit.lane || targetLane === 'center' || target.id.includes('base')) {
-                        let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
-                        if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
-                    }
-                }
-            });
-            if (!closestTarget) {
+        } else {
+            // LES TROUPES
+            let aggroRadius = 25;
+            if (!unit.targetBuilding) {
                 activeEntities.forEach(target => {
-                    if (target.team !== unit.team && target.speed === 0) {
+                    if (target.team !== unit.team && target.speed > 0) {
+                        if (target.isFlying && !unit.targetsAir) return;
                         let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
-                        if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
+                        if (dist < aggroRadius && dist < minDistance) { minDistance = dist; closestTarget = target; }
                     }
                 });
+            }
+
+            if (!closestTarget) {
+                let minLaneDist = 999;
+                activeEntities.forEach(target => {
+                    if (target.team !== unit.team && target.speed === 0) {
+                        let targetLane = target.x < 50 ? 'left' : (target.x > 50 ? 'right' : 'center');
+                        if (targetLane === unit.lane || targetLane === 'center' || target.id.includes('base')) {
+                            let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
+                            if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
+                        }
+                    }
+                });
+                if (!closestTarget) {
+                    activeEntities.forEach(target => {
+                        if (target.team !== unit.team && target.speed === 0) {
+                            let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
+                            if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
+                        }
+                    });
+                }
             }
         }
 
@@ -710,24 +788,17 @@ function gameLoop(currentTime) {
                 let targetX = closestTarget.x; 
                 let targetY = closestTarget.y;
                 
-                // DÉPLACEMENT EN L (Suivi orthogonal)
                 if (!unit.isFlying && closestTarget.speed === 0) {
                     let laneX = unit.lane === 'left' ? 27 : 73;
                     
                     if (closestTarget.x === 50) {
-                        if (Math.abs(unit.y - closestTarget.y) > 5) {
-                            targetX = laneX; targetY = closestTarget.y; 
-                        } else {
-                            targetX = closestTarget.x; targetY = closestTarget.y;
-                        }
-                    } else {
-                        targetX = closestTarget.x; targetY = closestTarget.y;
-                    }
+                        if (Math.abs(unit.y - closestTarget.y) > 5) { targetX = laneX; targetY = closestTarget.y; } 
+                        else { targetX = closestTarget.x; targetY = closestTarget.y; }
+                    } else { targetX = closestTarget.x; targetY = closestTarget.y; }
 
                     if ((unit.y > 50 && closestTarget.y < 50) || (unit.y < 50 && closestTarget.y > 50)) {
                         targetY = 50; targetX = laneX;
                     }
-
                     if (Math.abs(unit.x - laneX) > 2 && Math.abs(unit.y - 50) > 20) {
                         targetX = laneX; targetY = unit.y; 
                     }
@@ -737,12 +808,9 @@ function gameLoop(currentTime) {
                 unit.x += Math.cos(angle) * currentSpeed * dt * (arena.offsetHeight / arena.offsetWidth);
                 unit.y += Math.sin(angle) * currentSpeed * dt;
                 
-                // LIMITES DE LA CARTE (Empêche de sortir des traits verts)
-                unit.x = Math.max(15, Math.min(85, unit.x));
-                unit.y = Math.max(10, Math.min(95, unit.y));
+                unit.x = Math.max(15, Math.min(85, unit.x)); unit.y = Math.max(10, Math.min(95, unit.y));
 
-                unit.element.style.left = `${unit.x}%`;
-                unit.element.style.top = `${unit.y}%`;
+                unit.element.style.left = `${unit.x}%`; unit.element.style.top = `${unit.y}%`;
             }
         } else { unit.state = 'idle'; }
 
@@ -751,9 +819,7 @@ function gameLoop(currentTime) {
             if (unit.animTimer > 0.15) { 
                 unit.animTimer = 0; unit.animFrame++;
                 let skinState = unit.skins[unit.facing][unit.state] || unit.skins[unit.facing]['idle'];
-                if(skinState) {
-                    unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`;
-                }
+                if(skinState) { unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`; }
             }
         }
     });
