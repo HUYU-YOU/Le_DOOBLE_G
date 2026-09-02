@@ -1,5 +1,5 @@
 // =========================================================================
-// OPEN FRONT - MOTEUR DE JEU & GUERRE TERRITORIALE (CIBLAGE & COMMERCE)
+// OPEN FRONT - MOTEUR DE JEU & GUERRE TERRITORIALE (TACHE D'HUILE)
 // =========================================================================
 
 const SIM_W = 512;
@@ -47,13 +47,13 @@ const overlayCtx = overlayCanvas.getContext('2d');
 let overlayImgData = overlayCtx.createImageData(SIM_W, SIM_H);
 let overlayTexture;
 
-// --- 1. RADAR TERRAIN (POUR LES FRONTIÈRES TERRE/MER) ---
+// --- 1. RADAR TERRAIN ---
 const terrainCanvas = document.createElement('canvas');
 const terrainCtx = terrainCanvas.getContext('2d', { willReadFrequently: true });
 const terrainImg = new Image();
 
-// J'ai mis exactement le nom qui est dans ton dossier !
 terrainImg.src = 'assets/map_globe_terreste.png'; 
+terrainImg.onerror = () => { if(terrainImg.src.includes('terrestre')) terrainImg.src = 'assets/map_globe_terrestre.png'; };
 
 terrainImg.onload = () => {
     terrainCanvas.width = SIM_W; terrainCanvas.height = SIM_H;
@@ -68,16 +68,11 @@ function initGridLandWater() {
             for (let x = 0; x < SIM_W; x++) {
                 const idx = (y * SIM_W + x) * 4;
                 const r = pData[idx], g = pData[idx + 1], b = pData[idx + 2], a = pData[idx + 3];
-                // L'eau est noire ou transparente
                 const isOcean = (a < 50) || (r < 20 && g < 20 && b < 20);
                 grid[y * SIM_W + x] = isOcean ? -2 : -1;
             }
         }
-        console.log("Radar chargé avec succès !");
-    } catch(e) { 
-        console.warn("Erreur de lecture de l'image radar (CORS).");
-        grid.fill(-1); 
-    }
+    } catch(e) { grid.fill(-1); }
 }
 
 function isWaterPixel(x, y) {
@@ -168,11 +163,21 @@ function getRandomLandUV() {
 }
 
 function setPlayerCapital(uv, pos3D) {
-    if (playerCapitalMesh) { window.gameScene.remove(playerCapitalMesh); entities = entities.filter(e => e.mesh !== playerCapitalMesh); }
-    if (playerCapitalUV) { let oldGx = Math.floor(playerCapitalUV.x * SIM_W); let oldGy = Math.floor((1 - playerCapitalUV.y) * SIM_H); claimPixel(oldGx, oldGy, -1); }
+    // Nettoie l'ancien spawn si déplacé
+    if (playerCapitalMesh) { 
+        window.gameScene.remove(playerCapitalMesh); 
+        entities = entities.filter(e => e.mesh !== playerCapitalMesh); 
+    }
+    if (playerCapitalUV) { 
+        let oldGx = Math.floor(playerCapitalUV.x * SIM_W); let oldGy = Math.floor((1 - playerCapitalUV.y) * SIM_H); 
+        // Force l'oubli de cette case pour éviter l'expansion fantôme
+        grid[oldGy * SIM_W + oldGx] = -1;
+        updateFrontierPixel(oldGx, oldGy, -1);
+    }
 
     playerCapitalUV = uv.clone(); buildTargetPosition = pos3D;
 
+    // Cristal de Capitale
     const geometry = new THREE.OctahedronGeometry(0.18, 0); geometry.scale(1, 1.8, 1);
     const material = new THREE.MeshStandardMaterial({ color: 0xffbf00, roughness: 0.1, metalness: 0.8 });
     playerCapitalMesh = new THREE.Mesh(geometry, material);
@@ -193,7 +198,32 @@ function setPlayerCapital(uv, pos3D) {
     if (tCont) { tCont.querySelector('h2').innerText = "CAPITALE PLACÉE !"; tCont.querySelector('p').innerText = "Tu peux recliquer sur la terre pour la déplacer."; }
 }
 
-// --- 5. MOTEUR D'EXPANSION CIBLÉE ---
+// --- 5. MOTEUR D'EXPANSION (TACHE D'HUILE CORRECTE) ---
+function updateFrontierPixel(x, y, factionId) {
+    // 1. Nettoie la position de TOUTES les frontières existantes
+    for(let i=0; i<=10; i++) {
+        if(frontierMap.has(i)) frontierMap.get(i).delete(`${x},${y}`);
+    }
+
+    if (factionId < 0) return; // L'eau, la terre neutre et les irradiations n'ont pas de frontière
+
+    if (!frontierMap.has(factionId)) frontierMap.set(factionId, new Set());
+    const set = frontierMap.get(factionId);
+    
+    const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+    let isBorder = false;
+    for(let [dx, dy] of dirs) {
+        let nx = x + dx, ny = y + dy;
+        if (nx >= 0 && nx < SIM_W && ny >= 0 && ny < SIM_H) {
+            let neighborOwner = grid[ny * SIM_W + nx];
+            if (neighborOwner !== factionId && neighborOwner !== -2 && neighborOwner !== -3) {
+                isBorder = true; break;
+            }
+        }
+    }
+    if (isBorder) set.add(`${x},${y}`);
+}
+
 function claimPixel(x, y, factionId) {
     if (x < 0 || x >= SIM_W || y < 0 || y >= SIM_H) return;
     const oldOwner = grid[y * SIM_W + x];
@@ -206,32 +236,27 @@ function claimPixel(x, y, factionId) {
 
     grid[y * SIM_W + x] = factionId;
     updateMaxPop(factionId);
-    updateFrontier(x, y, factionId);
+    if (oldOwner >= 0) updateMaxPop(oldOwner);
+
+    // Mets à jour ce pixel et ses 4 voisins dans les registres de frontières
+    updateFrontierPixel(x, y, factionId);
+    const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+    for(let [dx, dy] of dirs) {
+        let nx = x + dx, ny = y + dy;
+        if (nx >= 0 && nx < SIM_W && ny >= 0 && ny < SIM_H) {
+            let nOwner = grid[ny * SIM_W + nx];
+            if (nOwner >= 0) updateFrontierPixel(nx, ny, nOwner);
+        }
+    }
 }
 
 function updateMaxPop(factionId) {
     if (factionId === 0) {
-        playerStats.territory++; 
         playerStats.maxPop = Math.max(1000, 1000 + (playerStats.territory * 15) + (playerStats.cityCount * 3000));
     } else if (factionId > 0) {
         let ai = ais.find(a => a.id === factionId);
-        if (ai) { ai.territory++; ai.maxPop = Math.max(1000, 1000 + (ai.territory * 15) + (ai.cityCount * 3000)); }
+        if (ai) { ai.maxPop = Math.max(1000, 1000 + (ai.territory * 15) + (ai.cityCount * 3000)); }
     }
-}
-
-function updateFrontier(x, y, factionId) {
-    if (!frontierMap.has(factionId)) frontierMap.set(factionId, new Set());
-    const set = frontierMap.get(factionId);
-    const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
-    let isBorder = false;
-    for(let [dx, dy] of dirs) {
-        let nx = x + dx, ny = y + dy;
-        if (nx >= 0 && nx < SIM_W && ny >= 0 && ny < SIM_H) {
-            let neighborOwner = grid[ny * SIM_W + nx];
-            if (neighborOwner !== factionId && neighborOwner !== -2 && neighborOwner !== -3) { isBorder = true; break; }
-        }
-    }
-    if (isBorder) set.add(`${x},${y}`); else set.delete(`${x},${y}`);
 }
 
 function expandFactionTerritory(factionId, pixelsToClaim, targetPoint = null) {
@@ -241,6 +266,7 @@ function expandFactionTerritory(factionId, pixelsToClaim, targetPoint = null) {
 
     let frontierArray = Array.from(frontierSet);
     
+    // Trie pour démarrer la tache d'huile depuis le point le plus proche du clic
     if (targetPoint) {
         frontierArray.sort((a, b) => {
             let [ax, ay] = a.split(',').map(Number); let [bx, by] = b.split(',').map(Number);
@@ -249,29 +275,35 @@ function expandFactionTerritory(factionId, pixelsToClaim, targetPoint = null) {
             return distA - distB; 
         });
     } else {
-        let faction = factionId === 0 ? playerCapitalUV : ais.find(a => a.id === factionId).uv;
-        if(faction) {
-            let cx = Math.floor(faction.x * SIM_W); let cy = Math.floor((1 - faction.y) * SIM_H);
-            frontierArray.sort((a, b) => {
-                let [ax, ay] = a.split(',').map(Number); let [bx, by] = b.split(',').map(Number);
-                return ((ax - cx)**2 + (ay - cy)**2) - ((bx - cx)**2 + (by - cy)**2);
-            });
-        }
+        frontierArray.sort(() => Math.random() - 0.5);
     }
 
-    let claimed = 0; const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+    let claimed = 0; 
+    const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+    
+    // Algorithme BFS (Breadth-First Search) pour que ça ne saute jamais de cases !
+    let queue = [...frontierArray];
+    let visited = new Set(queue);
 
-    for (let key of frontierArray) {
-        if (claimed >= pixelsToClaim) break;
+    while (queue.length > 0 && claimed < pixelsToClaim) {
+        let key = queue.shift();
         let [fx, fy] = key.split(',').map(Number);
+
         for (let [dx, dy] of dirs) {
+            if (claimed >= pixelsToClaim) break;
+
             let nx = fx + dx, ny = fy + dy;
             if (nx >= 0 && nx < SIM_W && ny >= 0 && ny < SIM_H) {
                 let target = grid[ny * SIM_W + nx];
                 if (target !== factionId && target !== -2 && target !== -3) { 
                     claimPixel(nx, ny, factionId);
                     claimed++;
-                    if (claimed >= pixelsToClaim) break;
+
+                    let newKey = `${nx},${ny}`;
+                    if (!visited.has(newKey)) {
+                        visited.add(newKey);
+                        queue.push(newKey);
+                    }
                 }
             }
         }
@@ -376,7 +408,7 @@ function checkPlayerElimination() {
     }
 }
 
-// --- 7. CONTRÔLES SOURIS ---
+// --- 7. CONTRÔLES SOURIS (CIBLAGE DE L'ATTAQUE) ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -393,7 +425,6 @@ window.addEventListener('pointerup', function(event) {
     }
 });
 
-// DOUBLE CLIC : EXPANSION CIBLÉE VERS LA SOURIS
 window.addEventListener('dblclick', function(event) {
     event.preventDefault(); 
     if (gameState !== 'PLAYING' || !playerStats.alive) return;
@@ -443,6 +474,7 @@ window.addEventListener('contextmenu', function(event) {
         let gx = Math.floor(hit.uv.x * SIM_W); let gy = Math.floor((1 - hit.uv.y) * SIM_H);
         let owner = grid[gy * SIM_W + gx];
 
+        // SÉCURITÉ : Ne peut construire QUE sur sa propre zone (0)
         if (owner === 0) openActionMenu(event.clientX, event.clientY, null, 'Terre');
         else if (owner === -2) openActionMenu(event.clientX, event.clientY, null, 'Eau');
         else closeActionMenu();
