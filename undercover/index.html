@@ -80,7 +80,7 @@
         .no-swipe { touch-action: none; }
 
         h2, h3 { color: var(--cyan); margin-top: 0; margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;}
-        
+
         input[type="text"], input[type="number"] {
             background: var(--inner-bg); border: 1px solid var(--teal);
             color: #fff; padding: 15px; margin: 10px 0; width: 100%;
@@ -97,7 +97,7 @@
             letter-spacing: 1px;
         }
         .btn:hover { transform: scale(1.02); box-shadow: 0 0 20px var(--cyan); background: #fff; }
-        
+
         .btn-pink { background: var(--pink); color: #fff; box-shadow: 0 0 10px rgba(255, 0, 127, 0.3); }
         .btn-pink:hover { background: #fff; color: #000; box-shadow: 0 0 20px var(--pink); }
 
@@ -118,7 +118,7 @@
             text-align: center;
         }
         .player-box h4 { margin: 0 0 15px 0; color: #fff; font-weight: 500; font-size: 1.2em; text-transform: uppercase; letter-spacing: 1px;}
-        
+
         .players-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
         .player-badge {
             background: rgba(0, 240, 255, 0.1); border: 1px solid var(--cyan); color: #fff;
@@ -128,7 +128,7 @@
 
         /* Zone de Jeu */
         #game-area { display: none; }
-        
+
         .panel-header {
             background: #111; padding: 15px; border-radius: 8px; 
             border: 1px solid var(--teal); margin-bottom: 20px;
@@ -194,7 +194,7 @@
         .game-status-text { color: #aaa; font-style: italic; margin-bottom: 15px; font-size: 1.2em;}
 
         .action-module { display: none; }
-        
+
         #chat-input-area { display: flex; gap: 10px; }
         #chat-input { flex: 1; margin: 0; }
         #btn-send-desc { width: 120px; margin: 0; }
@@ -209,14 +209,14 @@
 
         /* Ecran de fin */
         #game-over-screen { display: none; margin-top: 20px; border: 2px solid var(--cyan); padding: 30px; border-radius: 8px; background: rgba(0, 240, 255, 0.1); box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);}
-        
+
         /* Recap de fin de partie */
         #end-game-reveal {
             background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; 
             margin-bottom: 25px; text-align: left; border: 1px dashed var(--pink);
         }
         #end-game-reveal p { margin: 8px 0; font-size: 1.2em; }
-        
+
         hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0; }
     </style>
 </head>
@@ -237,7 +237,7 @@
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--cyan); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
-            
+
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
@@ -254,7 +254,7 @@
                     <span class="slider"></span>
                 </label>
             </div>
-            
+
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
@@ -262,7 +262,7 @@
     <h1 class="main-title">Cyber-Spy</h1>
 
     <div id="game-container" class="size-wide no-swipe">
-        
+
         <!-- 1. Screen: Login -->
         <div id="screen-login" class="screen active-screen">
             <h2>Connexion Réseau</h2>
@@ -281,7 +281,7 @@
                 Partagez ce code aux joueurs :<br>
                 <span id="my-id" class="share-code-val">Génération...</span>
             </p>
-            
+
             <div class="player-box">
                 <h4>Joueurs Connectés</h4>
                 <div id="players-list-container" class="players-container">
@@ -309,16 +309,16 @@
 
         <!-- 3. Screen: Game -->
         <div id="screen-game" class="screen">
-            
+
             <div class="panel-header">
                 INFILTRATION EN COURS 
                 <span id="game-player-rpc" style="float:right; color:var(--text); font-weight:normal; font-size: 0.8em; margin-top: 2px;"></span>
             </div>
-            
-            <!-- Bloc Rôle -->
+
+            <!-- Bloc Rôle Modifié -->
             <div id="role-container">
                 <button class="btn btn-pink" id="btn-reveal-role" style="margin:0; padding:20px; font-size:1.3em;">Découvrir mon rôle secret</button>
-                <div id="role-display" style="display:none;">
+                <div id="role-display" style="display:none; margin-top: 20px;">
                     <p style="margin:0; color:#aaa; text-transform: uppercase; font-size: 1em;">Votre mot secret est :</p>
                     <div id="secret-word" class="word-display">...</div>
                 </div>
@@ -363,7 +363,7 @@
             <div id="game-over-screen">
                 <h2 id="winner-text" style="color: var(--cyan); font-size: 2.5em; margin-bottom: 10px;">...</h2>
                 <p id="winner-desc" style="color: white; font-size: 1.3em; margin-bottom: 20px;"></p>
-                
+
                 <!-- REVELATION FIN DE PARTIE -->
                 <div id="end-game-reveal">
                     <p><strong>Mot Civil :</strong> <span id="end-civil" style="color: var(--cyan);"></span></p>
@@ -397,7 +397,7 @@
             btns.forEach(b => b.classList.remove('active'));
 
             container.classList.remove('size-classic', 'size-wide', 'size-full');
-            
+
             if (size === 'classic') {
                 container.classList.add('size-classic');
                 document.getElementById('btn-sz-classic').classList.add('active');
@@ -483,7 +483,7 @@
         let myPseudo = "Anonyme";
         let hostId = null;
         let isHost = false;
-        
+
         let players = []; 
         let gameLogic = {
             phase: null,
@@ -501,7 +501,7 @@
         const screens = document.querySelectorAll('.screen');
         const loginErr = document.getElementById('login-error');
         const chatArea = document.getElementById('chat-area');
-        
+
         const actionTitle = document.getElementById('action-title');
         const gameStatus = document.getElementById('game-status');
         const chatInputArea = document.getElementById('chat-input-area');
@@ -518,11 +518,11 @@
             actionTitle.innerText = title;
             gameStatus.innerText = msg;
             gameStatus.style.opacity = blink ? "0.6" : "1";
-            
+
             chatInputArea.style.display = 'none';
             votingZone.style.display = 'none';
             glitchZone.style.display = 'none';
-            
+
             if(activeModule === 'chat') chatInputArea.style.display = 'flex';
             if(activeModule === 'vote') votingZone.style.display = 'block';
             if(activeModule === 'glitch-block') glitchZone.style.display = 'flex';
@@ -531,7 +531,7 @@
         function addChatMsg(senderStr, msg, type = 'player') {
             const msgEl = document.createElement('div');
             msgEl.classList.add('chat-msg');
-            
+
             if (type === 'system') {
                 msgEl.innerHTML = `<span class="chat-system">${msg}</span>`;
             } else if (type === 'eliminated') {
@@ -545,7 +545,7 @@
         // INIT PEER
         function initPeer(pseudo, callback, customId = null) {
             myPseudo = pseudo || "Joueur_" + Math.floor(Math.random()*1000);
-            
+
             loginErr.innerText = "Connexion au réseau...";
             loginErr.style.color = "var(--cyan)";
 
@@ -631,7 +631,7 @@
                     showScreen('screen-lobby');
                     document.getElementById('waiting-host-msg').style.display = 'block';
                     break;
-                
+
                 case 's_lobby_update':
                     updateLobbyUI(data.playerList);
                     break;
@@ -676,7 +676,7 @@
                     }
                     checkIfMyTurnDesc();
                     break;
-                
+
                 case 's_start_voting':
                     handleStartVoting(data.vokPlayerIds);
                     break;
@@ -721,7 +721,7 @@
                 document.getElementById('my-id').innerText = id;
                 showScreen('screen-lobby');
                 document.getElementById('host-config').style.display = 'block';
-                
+
                 players = [{
                     id: 0,
                     peerId: id,
@@ -793,7 +793,7 @@
             const lightList = players.map(p => ({ id: p.id, peerId: p.peerId, pseudo: p.pseudo, isHost: p.id === 0 }));
             updateLobbyUI(lightList);
             broadcast({ type: 's_lobby_update', playerList: lightList });
-            
+
             if (isHost && players.length >= 3) {
                 document.getElementById('btn-start').style.display = 'block';
                 document.getElementById('min-players-msg').style.display = 'none';
@@ -827,10 +827,10 @@
         function launchGameProtocol() {
             gameLogic.roundNumber = 0;
             const pairData = wordPairs[Math.floor(Math.random() * wordPairs.length)];
-            
+
             const lang = document.getElementById('host-lang-select').value;
             let pair = [];
-            
+
             if (lang === 'dual') {
                 pair = [`${pairData.fr[0]} / ${pairData.en[0]}`, `${pairData.fr[1]} / ${pairData.en[1]}`];
             } else {
@@ -838,7 +838,7 @@
             }
 
             gameLogic.currentPair = pair;
-            
+
             if (Math.random() > 0.5) {
                 gameLogic.civilWord = pair[0];
                 gameLogic.undercoverWord = pair[1];
@@ -875,7 +875,7 @@
             // Prépare les données pour la fin de partie (Plus de triche pendant le jeu !)
             const undercovers = players.filter(p => p.role === ROLES.UNDERCOVER).map(p => p.pseudo).join(', ');
             const glitch = players.filter(p => p.role === ROLES.GLITCH).map(p => p.pseudo).join(', ') || 'Aucun';
-            
+
             const secretData = {
                 civilWord: gameLogic.civilWord,
                 undercoverWord: gameLogic.undercoverWord,
@@ -912,20 +912,41 @@
             setTimeout(hostStartDescriptionPhase, 6000);
         }
 
+        // --- NOUVELLE FONCTION SETUP AVEC BOUTON TOGGLE ---
         function setupGameUI() {
             chatArea.innerHTML = "";
             document.getElementById('game-player-rpc').innerText = myPseudo;
             document.getElementById('game-over-screen').style.display = 'none';
             document.getElementById('action-zone-container').style.display = 'block';
             document.getElementById('secret-word').innerText = "...";
-            
+
             const revealBtn = document.getElementById('btn-reveal-role');
             revealBtn.style.display = 'block';
-            document.getElementById('role-display').style.display = 'none';
             
+            // On réinitialise l'état du bouton pour les nouvelles parties
+            revealBtn.innerText = "Découvrir mon rôle secret";
+            revealBtn.classList.remove('btn-cyan');
+            revealBtn.classList.add('btn-pink');
+            
+            document.getElementById('role-display').style.display = 'none';
+
+            // Nouvelle logique de toggle (Bascule)
             revealBtn.onclick = function() {
-                revealBtn.style.display = 'none';
-                document.getElementById('role-display').style.display = 'block';
+                const roleDisplay = document.getElementById('role-display');
+                
+                if (roleDisplay.style.display === 'none') {
+                    // Afficher le mot
+                    roleDisplay.style.display = 'block';
+                    revealBtn.innerText = 'Cacher mon rôle secret 👁️';
+                    revealBtn.classList.remove('btn-pink');
+                    revealBtn.classList.add('btn-cyan');
+                } else {
+                    // Cacher le mot
+                    roleDisplay.style.display = 'none';
+                    revealBtn.innerText = 'Découvrir mon rôle secret';
+                    revealBtn.classList.remove('btn-cyan');
+                    revealBtn.classList.add('btn-pink');
+                }
             };
 
             updateGamePlayersListUI();
@@ -938,7 +959,7 @@
             players.forEach(p => {
                 const li = document.createElement('li');
                 li.classList.add('player-item');
-                
+
                 let nameSpan = `<span class="player-name">${p.pseudo}</span>`;
                 let statusStr = "";
 
@@ -965,7 +986,7 @@
             gameLogic.roundNumber++;
             gameLogic.turnIndex = 0;
             gameLogic.descRound = 1;
-            
+
             // Filtrer les morts en conservant l'ordre de jeu défini au début
             gameLogic.turnOrder = gameLogic.turnOrder.filter(id => {
                 const p = players.find(player => player.id === id);
@@ -973,7 +994,7 @@
             });
 
             broadcast({ type: 's_start_descriptions', round: gameLogic.roundNumber, turnOrder: gameLogic.turnOrder });
-            
+
             addChatMsg("SYSTÈME", `--- PHASE D'ENQUÊTE ${gameLogic.roundNumber} ---`, 'system');
             updateGamePlayersListUI();
             checkIfMyTurnDesc();
@@ -981,7 +1002,7 @@
 
         function checkIfMyTurnDesc() {
             if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
-            
+
             const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
             const myPlayerObj = players.find(p => p.peerId === myId);
 
@@ -1006,7 +1027,7 @@
             if (gameLogic.phase !== GAME_PHASES.DESCRIPTION) return;
             const currentSpeakerId = gameLogic.turnOrder[gameLogic.turnIndex];
             const myPlayerObj = players.find(p => p.peerId === myId);
-            
+
             if (!myPlayerObj || currentSpeakerId !== myPlayerObj.id) return;
 
             const input = document.getElementById('chat-input');
@@ -1059,7 +1080,7 @@
             addChatMsg("SYSTÈME", "La phase de vote est lancée.", 'system');
             players.forEach(p => p.votesReceived = 0);
             gameLogic.votesCast = 0;
-            
+
             const vokPlayerIds = players.filter(p => p.isAlive).map(p => p.id);
             broadcast({ type: 's_start_voting', vokPlayerIds: vokPlayerIds });
             handleStartVoting(vokPlayerIds);
@@ -1149,7 +1170,7 @@
 
             target.isAlive = false;
             addChatMsg("SYSTÈME", `${target.pseudo} a été éliminé(e) avec ${maxVotes} votes.`, 'system');
-            
+
             broadcast({ 
                 type: 's_elimination_results', 
                 text: `${target.pseudo} a été éliminé(e). Son rôle était : ${target.role}.`,
@@ -1207,7 +1228,7 @@
         function hostLaunchGlitchGuess(glitchPlayer) {
             gameLogic.phase = GAME_PHASES.GLITCH_GUESS;
             addChatMsg("SYSTÈME", `${glitchPlayer.pseudo} (Le Glitch) tente une dernière attaque...`, 'system');
-            
+
             broadcast({ type: 's_glitch_last_chance', glitchPlayerId: glitchPlayer.id });
             handleGlitchLastChance(glitchPlayer.id);
         }
@@ -1218,7 +1239,7 @@
 
             if (myPlayer && myPlayer.id === glitchPlayerId) {
                 setActionUI("ALERTE", "Vous êtes démasqué. Devinez le mot pour voler la victoire !", "glitch-block");
-                
+
                 const input = document.getElementById('glitch-guess-input');
                 const btn = document.getElementById('btn-glitch-submit');
                 input.value = "";
@@ -1276,13 +1297,13 @@
             goScreen.style.display = 'block';
             document.getElementById('winner-text').innerText = data.winner;
             document.getElementById('winner-desc').innerText = data.desc;
-            
+
             // REVELATION DES MOTS SECRET SUR L'ECRAN DE FIN
             if(gameLogic.secretData) {
                 document.getElementById('end-civil').innerText = gameLogic.secretData.civilWord;
                 document.getElementById('end-undercover').innerText = gameLogic.secretData.undercoverWord;
                 document.getElementById('end-undercover-names').innerText = gameLogic.secretData.undercovers;
-                
+
                 if(gameLogic.secretData.glitch && gameLogic.secretData.glitch !== 'Aucun') {
                     document.getElementById('end-glitch-row').style.display = 'block';
                     document.getElementById('end-glitch-name').innerText = gameLogic.secretData.glitch;
@@ -1290,10 +1311,10 @@
                     document.getElementById('end-glitch-row').style.display = 'none';
                 }
             }
-            
+
             const restartBtn = document.getElementById('btn-restart');
             const waitingMsg = document.getElementById('waiting-restart-msg');
-            
+
             if (isHost) {
                 restartBtn.style.display = 'inline-block';
                 waitingMsg.style.display = 'none';
@@ -1311,18 +1332,18 @@
             gameLogic = {
                 phase: GAME_PHASES.LOBBY, currentPair: [], turnOrder: [], turnIndex: 0, civilWord: "", roundNumber: 0, descRound: 1, hasVoted: false, votesCast: 0, secretData: null
             };
-            
+
             players.forEach(p => {
                 p.isAlive = true;
                 p.role = null;
                 p.votesReceived = 0;
             });
-            
+
             chatArea.innerHTML = "";
             document.getElementById('secret-word').innerText = "...";
 
             showScreen('screen-lobby');
-            
+
             if (isHost) {
                 sendLobbyUpdate();
             } else {
