@@ -109,7 +109,7 @@ const wordPairs = [
     { fr: ["Pomme", "Poire"], en: ["Apple", "Pear"] },
     { fr: ["Burger", "Hot-Dog"], en: ["Burger", "Hot-Dog"] },
     { fr: ["Bonbon", "Sucre d'orge"], en: ["Candy", "Candy Cane"] },
-    { fr: ["Kebab", "Shawarma"], en: ["Kebab", "Shawarma"] },
+    { fr: ["Kebab", "Libanais"], en: ["Kebab", "Shawarma"] },
 
     // --- ANIMAUX & NATURE ---
     { fr: ["Tigre", "Lion"], en: ["Tiger", "Lion"] },
