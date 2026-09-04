@@ -10,6 +10,18 @@ let specialDrakkarAlive = true;
 let berserkerCoupsRestants = 2;
 
 // ==========================================
+// 0. MENU PRINCIPAL
+// ==========================================
+function lancerJeu() {
+    // Cache l'écran titre (Kraken + Logo)
+    const mainMenu = document.getElementById('main-menu');
+    if(mainMenu) mainMenu.classList.add('hidden');
+    
+    // Affiche l'interface du jeu (Sélection des classes)
+    document.getElementById('game-ui').classList.remove('hidden');
+}
+
+// ==========================================
 // 1. SÉLECTION DE LA CLASSE
 // ==========================================
 function selectClass(className) {
@@ -37,14 +49,14 @@ function afficherMenuMulti() {
         <div id="multi-menu" style="text-align: center; margin-top: 50px;">
             <h2>Rejoindre le Valhalla</h2>
             <div style="margin: 20px;">
-                <button onclick="creerPartie()" style="padding: 10px 20px; font-size: 18px; cursor: pointer;">Créer une partie</button>
+                <button class="start-btn" onclick="creerPartie()" style="padding: 10px 20px; font-size: 18px; cursor: pointer;">Créer une partie</button>
             </div>
             <p>OU</p>
             <div style="margin: 20px;">
                 <input type="text" id="join-code" placeholder="VIK1234" maxlength="7" style="padding: 10px; font-size: 18px; text-transform: uppercase;">
-                <button onclick="rejoindrePartie()" style="padding: 10px 20px; font-size: 18px; cursor: pointer;">Rejoindre</button>
+                <button class="start-btn" onclick="rejoindrePartie()" style="padding: 10px 20px; font-size: 18px; cursor: pointer;">Rejoindre</button>
             </div>
-            <p id="multi-status" style="color: #f1c40f;"></p>
+            <p id="multi-status" style="color: #2ecc71; margin-top: 15px; font-weight: bold;"></p>
         </div>
     `;
     
@@ -79,6 +91,7 @@ function rejoindrePartie() {
         }, 1500);
     } else {
         document.getElementById('multi-status').innerText = "Erreur : Le code doit être au format VIK suivi de 4 chiffres (ex: VIK1234).";
+        document.getElementById('multi-status').style.color = "#e74c3c"; // Rouge erreur
     }
 }
 
@@ -185,8 +198,6 @@ function executerAttaque(index) {
         cell.classList.add('miss');
         cell.style.backgroundColor = "#3498db";
     }
-    
-    // Ici, plus tard : socket.emit('attack', { room: roomCode, target: index });
 }
 
 function finDeTour() {
@@ -216,10 +227,10 @@ function mettreAJourStatut(message) {
 // ==========================================
 // 5. FONCTIONS UI HÉRITÉES DU HUB (PARAMÈTRES)
 // ==========================================
-// Ces fonctions permettent à tes boutons de paramètres de fonctionner
 function toggleSettings() {
+    // CORRECTION ICI : on utilise classList.toggle('show') au lieu de style.display
     const modal = document.getElementById('settings-modal');
-    modal.style.display = (modal.style.display === "block") ? "none" : "block";
+    modal.classList.toggle('show');
 }
 
 function clickSettingsAnim() {
