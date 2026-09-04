@@ -17,8 +17,9 @@
     <!-- Bouton de retour au Hub -->
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
 
-    <!-- Bouton Paramètres -->
+    <!-- Bouton Paramètres avec le Slime en orbite -->
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
+        <div class="orbiting-slime"></div>
         <img src="../img/setting.png" alt="Paramètres" class="settings-btn">
     </div>
 
@@ -52,10 +53,9 @@
         </div>
     </div>
 
-    <!-- Écran de démarrage (Kraken + Logo) -->
+    <!-- Écran de démarrage (Sans logo, juste le fond de tempête et le bouton) -->
     <div id="main-menu">
         <div class="storm-background"></div>
-        <img src="assets/sliking-logo-transparent.png" alt="Sliking Logo" class="game-main-logo">
         <button class="start-btn-epic" id="txt-btn-enter" onclick="lancerJeu()">ENTRER DANS LA TEMPÊTE</button>
     </div>
 
@@ -76,22 +76,22 @@
             <p id="multi-status" style="color: #2ecc71; margin-top: 15px; font-weight: bold; font-size: 1.2rem;"></p>
         </div>
 
-        <!-- ÉTAPE 2 : Sélection du Slime -->
+        <!-- ÉTAPE 2 : Sélection du Slime (Personnages en grand) -->
         <div id="class-selection" class="hidden">
             <h2 id="txt-class-title">Choisis ton Commandant Slime !</h2>
             <div class="classes-container">
                 <button class="class-btn berserker-btn" onclick="selectClass('berserker')">
-                    <img src="assets/berserk.jpg" alt="Berserker" class="slime-skin">
+                    <img src="assets/berserk.jpg" alt="Berserker" class="slime-skin-large">
                     <h3>Slime Berserker 🪓</h3>
                     <p id="txt-desc-berserk">Frappe 2 fois où il veut.</p>
                 </button>
                 <button class="class-btn navigateur-btn" onclick="selectClass('navigateur')">
-                    <img src="assets/navigator.jpeg" alt="Navigateur" class="slime-skin">
+                    <img src="assets/navigator.jpeg" alt="Navigateur" class="slime-skin-large">
                     <h3>Slime Navigateur 🧭</h3>
                     <p id="txt-desc-nav">Tire sur 2 cases en ligne.</p>
                 </button>
                 <button class="class-btn chaman-btn" onclick="selectClass('chaman')">
-                    <img src="assets/shaman.jpg" alt="Chaman" class="slime-skin">
+                    <img src="assets/shaman.jpg" alt="Chaman" class="slime-skin-large">
                     <h3>Slime Chaman Loki 🔮</h3>
                     <p id="txt-desc-sham">Tire 3 fois aléatoirement.</p>
                 </button>
@@ -109,7 +109,7 @@
             </div>
 
             <div class="game-container">
-                <!-- Grille du Joueur avec Coordonnées -->
+                <!-- Grille du Joueur -->
                 <div class="grid-section">
                     <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
                         <span id="txt-my-fleet">Ma Flotte</span> 
@@ -122,7 +122,7 @@
                             <div id="player-grid" class="grid"></div>
                         </div>
                     </div>
-                    <!-- HUD État de la Flotte Joueur -->
+                    <!-- HUD État de la Flotte -->
                     <div class="fleet-status-panel">
                         <span id="p-ship-special">🟢 Drakkar Spécial</span>
                         <span id="p-ship-class">🟢 Drakkar Classique</span>
@@ -130,7 +130,7 @@
                     </div>
                 </div>
 
-                <!-- Grille de l'Adversaire avec Coordonnées -->
+                <!-- Grille de l'Adversaire -->
                 <div class="grid-section">
                     <h2 id="txt-enemy-fleet" style="margin-bottom: 5px;">Flotte Ennemie</h2>
                     <div class="board-wrapper">
