@@ -59,14 +59,14 @@
         <button class="start-btn-epic" id="txt-btn-enter" onclick="lancerJeu()">ENTRER DANS LA TEMPÊTE</button>
     </div>
 
-    <!-- Interface Principale du Jeu (Cachée au chargement) -->
+    <!-- Interface Principale du Jeu -->
     <div id="game-ui" class="hidden">
         
-        <!-- ÉTAPE 1 : Menu Multijoueur -->
+        <!-- ÉTAPE 1 : Menu Multijoueur / Solo -->
         <div id="multi-menu">
             <h2 id="txt-multi-title">Rejoindre le Valhalla</h2>
             <div style="margin: 20px;">
-                <button class="start-btn" id="txt-btn-create" onclick="creerPartie()">Créer une partie</button>
+                <button class="start-btn" id="txt-btn-create" onclick="creerPartie()">Créer une partie (Solo vs IA)</button>
             </div>
             <p id="txt-or">OU</p>
             <div style="margin: 20px;">
@@ -109,26 +109,57 @@
             </div>
 
             <div class="game-container">
-                <!-- Grille du Joueur -->
-                <div class="grid-container">
-                    <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                <!-- Grille du Joueur avec Coordonnées -->
+                <div class="grid-section">
+                    <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
                         <span id="txt-my-fleet">Ma Flotte</span> 
-                        <img id="player-skin-display" src="" class="slime-skin" style="width: 50px; height: 50px; margin: 0; border-width: 2px;">
+                        <img id="player-skin-display" src="" class="slime-skin" style="width: 40px; height: 40px; margin: 0; border-width: 2px;">
                     </h2>
-                    <div id="player-grid" class="grid"></div>
+                    <div class="board-wrapper">
+                        <div class="col-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
+                        <div class="board-row">
+                            <div class="row-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+                            <div id="player-grid" class="grid"></div>
+                        </div>
+                    </div>
+                    <!-- HUD État de la Flotte Joueur -->
+                    <div class="fleet-status-panel">
+                        <span id="p-ship-special">🟢 Drakkar Spécial</span>
+                        <span id="p-ship-class">🟢 Drakkar Classique</span>
+                        <span id="p-ship-small">🟢 Petit Drakkar</span>
+                    </div>
                 </div>
 
-                <!-- Grille de l'Adversaire -->
-                <div class="grid-container">
-                    <h2 id="txt-enemy-fleet" style="margin-bottom: 10px;">Flotte Ennemie</h2>
-                    <div id="adversary-grid" class="grid"></div>
+                <!-- Grille de l'Adversaire avec Coordonnées -->
+                <div class="grid-section">
+                    <h2 id="txt-enemy-fleet" style="margin-bottom: 5px;">Flotte Ennemie</h2>
+                    <div class="board-wrapper">
+                        <div class="col-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
+                        <div class="board-row">
+                            <div class="row-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+                            <div id="adversary-grid" class="grid"></div>
+                        </div>
+                    </div>
+                    <!-- HUD État de la Flotte Ennemie -->
+                    <div class="fleet-status-panel">
+                        <span id="e-ship-1">🟢 Navire 1</span>
+                        <span id="e-ship-2">🟢 Navire 2</span>
+                        <span id="e-ship-3">🟢 Navire 3</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="command-panel" style="margin-top: 20px;">
-                <p id="game-status" style="font-size: 1.5rem; font-weight: bold; color: #f1c40f;">...</p>
+            <div class="command-panel" style="margin-top: 15px;">
+                <p id="game-status" style="font-size: 1.4rem; font-weight: bold; color: #f1c40f;">...</p>
             </div>
         </div>
+    </div>
+
+    <!-- Écran de Fin de Partie -->
+    <div id="game-over-screen" class="hidden">
+        <h1 id="txt-end-title" style="font-size: 50px; color: #f1c40f;">Victoire !</h1>
+        <p id="txt-end-desc" style="font-size: 24px; margin-bottom: 30px;">La flotte ennemie est au fond de l'océan.</p>
+        <button class="start-btn-epic" onclick="location.reload()">Rejouer une bataille</button>
     </div>
 
     <script src="script.js"></script>
