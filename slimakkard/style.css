@@ -53,12 +53,12 @@ body.dark-mode .bg-overlay {
 }
 .storm-background {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url('assets/fond-tempete.jpg'); /* TON IMAGE KRAKEN */
+    background-image: url('assets/fond-tempete.jpg'); 
     background-size: cover; background-position: center;
     z-index: -1; box-shadow: inset 0 0 200px rgba(0,0,0,0.9);
 }
 .game-main-logo {
-    width: 600px; max-width: 90%; margin-bottom: 50px;
+    width: 550px; max-width: 90%; margin-bottom: 40px;
     filter: drop-shadow(0 0 25px rgba(46, 204, 113, 0.7)); 
     animation: float 4s ease-in-out infinite; 
 }
@@ -68,7 +68,7 @@ body.dark-mode .bg-overlay {
     100% { transform: translateY(0px) rotate(0deg); }
 }
 .start-btn-epic {
-    padding: 15px 40px; font-size: 24px; font-weight: bold;
+    padding: 15px 40px; font-size: 22px; font-weight: bold;
     background-color: #2ecc71; color: white; border: 3px solid #27ae60;
     border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.5);
     transition: 0.3s;
@@ -117,7 +117,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 /* =========================================
    5. INTERFACE JEU ET SKINS
    ========================================= */
-#game-ui { position: relative; z-index: 10; text-align: center; margin-top: 60px; }
+#game-ui { position: relative; z-index: 10; text-align: center; margin-top: 20px; }
 .hidden { display: none !important; }
 .start-btn {
     background: #2ecc71; color: #000; border: none; padding: 10px 20px; 
@@ -131,35 +131,67 @@ input:checked + .slider:before { transform: translateX(26px); }
     padding: 20px; color: white; cursor: pointer; transition: 0.3s; width: 220px; backdrop-filter: blur(5px);
 }
 .class-btn:hover { border-color: #2ecc71; box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); transform: translateY(-5px); }
-.slime-skin { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #2ecc71; margin-bottom: 15px; box-shadow: 0 0 15px rgba(46, 204, 113, 0.5); }
+.slime-skin { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid #2ecc71; margin-bottom: 10px; box-shadow: 0 0 15px rgba(46, 204, 113, 0.5); }
 
 /* =========================================
-   6. GRILLES TRANSPARENTES
+   6. GRILLES ET COORDONNÉES (A-J / 1-10)
    ========================================= */
-.game-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; margin-top: 20px; }
+.game-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; margin-top: 10px; }
+.grid-section { display: flex; flex-direction: column; align-items: center; }
+
+.board-wrapper { display: flex; flex-direction: column; }
+.col-labels { display: flex; padding-left: 25px; font-weight: bold; color: #2ecc71; margin-bottom: 2px; }
+.col-labels span { width: 32px; text-align: center; font-size: 14px; }
+
+.board-row { display: flex; }
+.row-labels { display: flex; flex-direction: column; justify-content: space-around; width: 22px; font-weight: bold; color: #2ecc71; margin-right: 3px; }
+.row-labels span { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
 .grid {
-    display: grid; grid-template-columns: repeat(10, 35px); grid-template-rows: repeat(10, 35px);
-    gap: 2px; padding: 10px; border: 3px solid #2ecc71; border-radius: 5px;
-    background-color: rgba(0, 0, 0, 0.2); /* Laisse voir la vidéo */
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    display: grid; grid-template-columns: repeat(10, 32px); grid-template-rows: repeat(10, 32px);
+    gap: 2px; padding: 5px; border: 2px solid #2ecc71; border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.3); 
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
 }
 .cell {
-    width: 35px; height: 35px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: 0.2s;
-    background-color: rgba(0, 0, 0, 0.5); /* Assombrit légèrement la vidéo pour les cases */
+    width: 32px; height: 32px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: 0.2s;
+    background-color: rgba(0, 0, 0, 0.5); 
     background-size: contain; background-repeat: no-repeat; background-position: center;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
 }
 .cell:hover { background-color: rgba(46, 204, 113, 0.4); }
 
-/* États en jeu */
+/* États de jeu & VFX */
 .preview-valid { background-color: rgba(46, 204, 113, 0.6) !important; }
 .preview-invalid { background-color: rgba(231, 76, 60, 0.6) !important; }
-.ship-placed { background-color: rgba(46, 204, 113, 0.8) !important; border-color: #2ecc71; }
-.cell.miss { background-color: rgba(52, 152, 219, 0.8) !important; }
+.ship-placed { background-color: rgba(46, 204, 113, 0.7) !important; border-color: #2ecc71; }
+.cell.miss { background-color: rgba(52, 152, 219, 0.7) !important; }
 .cell.hit { background-color: rgba(231, 76, 60, 0.8) !important; }
 
-/* Bateaux (S'affichent lors du placement) */
+/* HUD État de la flotte */
+.fleet-status-panel {
+    display: flex; gap: 15px; margin-top: 8px; font-size: 13px; font-weight: bold;
+    background: rgba(15, 23, 42, 0.8); padding: 5px 10px; border-radius: 5px; border: 1px solid #34495e;
+}
+
+/* Bateaux */
 .drakkar-1 { background-image: url('assets/drakar1.png'); }
 .drakkar-2 { background-image: url('assets/drakar2.png'); }
 .drakkar-special-berserker { background-image: url('assets/drakkarberserk.png'); }
 .drakkar-special-navigateur { background-image: url('assets/drakkarnavigator.png'); }
 .drakkar-special-chaman { background-image: url('assets/drakkarshaman.png'); }
+
+/* Écran de Fin & Shake */
+#game-over-screen {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.9); z-index: 1000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    backdrop-filter: blur(10px);
+}
+.shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+    40%, 60% { transform: translate3d(6px, 0, 0); }
+}
