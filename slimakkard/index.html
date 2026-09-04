@@ -2,31 +2,114 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Viking Slime Battle - Prototype</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viking Slime Battle</title>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- API YouTube pour la musique de fond épique -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
+    <!-- VIDÉO DE FOND JOUR/NUIT (Mer agitée, ambiance Viking) -->
+    <video autoplay loop muted playsinline class="bg-video-main" id="bg-video">
+        <source src="assets/viking_sea_background.mp4" type="video/mp4">
+    </video>
+    <div class="bg-overlay"></div> 
 
-    <h1>VIKING SLIME BATTLE</h1>
+    <!-- Bouton de retour au Hub -->
+    <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
 
-    <div class="game-container">
-        <!-- Grille du Joueur -->
-        <div class="grid-container">
-            <h2>Ma Flotte (Slime)</h2>
-            <div id="player-grid" class="grid"></div>
-        </div>
+    <!-- Bouton Paramètres -->
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
 
-        <!-- Grille de l'Adversaire -->
-        <div class="grid-container">
-            <h2>Flotte Ennemie</h2>
-            <div id="adversary-grid" class="grid"></div>
+    <!-- Modal des Paramètres -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2>Paramètres</h2>
+            <div class="setting-item">
+                <span>Mode Sombre / Nuit 🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>Plein Écran 🖥️</span>
+                <label class="switch">
+                    <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>Musique (ON/OFF) 🎵</span>
+                <label class="switch">
+                    <input type="checkbox" id="music-toggle" onchange="toggleMusic()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <div class="command-panel">
-        <p id="game-status">Cliquez sur la grille ennemie pour attaquer !</p>
+    <!-- Interface Principale du Jeu -->
+    <div id="game-ui">
+        <h1>VIKING SLIME BATTLE</h1>
+        
+        <!-- ÉCRAN 1 : Sélection du Slime (Classe) -->
+        <div id="class-selection">
+            <h2>Choisis ton Commandant Slime !</h2>
+            <div class="classes-container">
+                <button class="class-btn berserker-btn" onclick="selectClass('berserker')">
+                    <h3>Slime Berserker 🪓</h3>
+                    <p>Frappe 2 fois où il veut.</p>
+                </button>
+                <button class="class-btn navigateur-btn" onclick="selectClass('navigateur')">
+                    <h3>Slime Navigateur 🧭</h3>
+                    <p>Tire sur 2 cases en ligne.</p>
+                </button>
+                <button class="class-btn chaman-btn" onclick="selectClass('chaman')">
+                    <h3>Slime Chaman Loki 🔮</h3>
+                    <p>Tire 3 fois aléatoirement.</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- ÉCRAN 2 : Les grilles de Bataille Navale (Cachées au lancement) -->
+        <div id="battle-container" class="hidden">
+            <div class="game-container">
+                <!-- Grille du Joueur -->
+                <div class="grid-container">
+                    <h2>Ma Flotte (<span id="player-class-name">Slime</span>)</h2>
+                    <div id="player-grid" class="grid"></div>
+                </div>
+
+                <!-- Grille de l'Adversaire -->
+                <div class="grid-container">
+                    <h2>Flotte Ennemie</h2>
+                    <div id="adversary-grid" class="grid"></div>
+                </div>
+            </div>
+
+            <!-- Panneau d'informations et actions -->
+            <div class="command-panel">
+                <p id="game-status">Place ton Drakkar Spécial pour commencer !</p>
+                <p id="special-power-status" class="power-active">Pouvoir Spécial : ACTIF</p>
+            </div>
+        </div>
     </div>
 
+    <!-- Écran de Fin de Partie (Game Over / Victoire) -->
+    <div id="game-over" class="hidden">
+        <h2 id="victory-message">Le Valhalla t'attend !</h2>
+        <button onclick="location.reload()">Rejouer une bataille</button>
+    </div>
+
+    <!-- Lecteur YouTube invisible -->
+    <div id="youtube-audio"></div>
+
+    <!-- Script du jeu -->
     <script src="script.js"></script>
 </body>
 </html>
