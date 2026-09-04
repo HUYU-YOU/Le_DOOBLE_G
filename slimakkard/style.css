@@ -28,7 +28,12 @@
     background-repeat: no-repeat;
     background-position: center;
 }
-
+.drakkar-3 {
+    background-image: url('assets/drakar3.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
 /* Drakkars Spéciaux */
 .drakkar-special-berserk {
     background-image: url('assets/drakkarberserk.png');
