@@ -1,0 +1,44 @@
+body {
+    background-color: #2c3e50; /* Couleur sombre de fond */
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+}
+
+h1 {
+    color: #2ecc71; /* Vert Slime */
+    text-shadow: 2px 2px 4px #000;
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin-top: 30px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(10, 30px);
+    grid-template-rows: repeat(10, 30px);
+    gap: 2px;
+    background-color: #34495e;
+    padding: 5px;
+    border: 3px solid #7f8c8d;
+}
+
+.cell {
+    width: 30px;
+    height: 30px;
+    background-color: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    cursor: pointer;
+}
+
+/* État des cases cliquées */
+.cell.miss {
+    background-color: #3498db; /* Bleu eau (Raté) */
+}
+
+.cell.hit {
+    background-color: #e74c3c; /* Rouge explosion (Touché)
