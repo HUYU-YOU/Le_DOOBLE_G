@@ -3,21 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alice in Slimiworld</title>
+    <title>Éline in Slimerland</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- VIDÉO DE FOND (Optionnel, tu peux mettre une image fixe si tu préfères) -->
-    <video autoplay loop muted playsinline class="bg-video-main" id="bg-video">
-        <source src="assets/daybackground.mp4" type="video/mp4">
-    </video>
-    <div class="bg-overlay"></div> 
-
-    <!-- Bouton de retour au Hub -->
+    <!-- BOUTONS ET INTERFACE FIXES AU-DESSUS -->
     <a href="../index.html" class="btn-hub">⬅ Retour</a>
 
-    <!-- Bouton Paramètres -->
-    <div class="settings-btn-wrapper" onclick="toggleSettings()">
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
@@ -36,24 +29,21 @@
         </div>
     </div>
 
-    <!-- Interface Titre (Optionnel) -->
     <div id="game-ui">
-        <h1>Alice in Slimiworld</h1>
+        <h1>Éline in Slimerland</h1>
     </div>
     
-    <!-- ZONE DE JEU INTERACTIVE -->
+    <!-- CONTENEUR VIDÉO PLEIN ÉCRAN -->
     <div id="game-container">
-        <!-- La vidéo en cours -->
         <video id="story-video" playsinline></video>
         
-        <!-- L'interface par dessus la vidéo -->
         <div id="video-ui">
             <h2 id="top-text" class="story-text"></h2>
             
             <div id="bottom-section">
                 <p id="bottom-text" class="story-text"></p>
                 <div id="choices-container">
-                    <!-- Les boutons de choix seront injectés ici par Javascript -->
+                    <!-- Les boutons de choix s'insèrent ici -->
                 </div>
             </div>
         </div>
