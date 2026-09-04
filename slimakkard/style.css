@@ -14,15 +14,16 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     min-height: 100vh;
-    overflow-x: hidden; /* Empêche le scroll horizontal */
+    overflow-x: hidden;
 }
 
 /* =========================================
    2. FOND VIDÉO ET OVERLAY
    ========================================= */
 .bg-video-main {
-    position: fixed; /* Fixed pour rester en place même si on scroll */
+    position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
     object-fit: cover; z-index: -5; pointer-events: none;
 }
@@ -30,168 +31,135 @@ body {
 .bg-overlay {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0, 0, 0, 0.4); /* Assombrit la vidéo pour lire le texte */
+    background: rgba(0, 0, 0, 0.4); 
     z-index: -4; pointer-events: none;
     transition: background 0.5s ease;
 }
 
 body.dark-mode .bg-overlay {
-    background: rgba(0, 0, 0, 0.8); 
+    background: rgba(0, 0, 0, 0.85); 
 }
 
 /* =========================================
-   3. BOUTONS HUB ET PARAMÈTRES
+   3. ÉCRAN D'ACCUEIL (LOGO & KRAKEN)
+   ========================================= */
+#main-menu {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 50;
+}
+.storm-background {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url('assets/fond-tempete.jpg'); /* TON IMAGE KRAKEN */
+    background-size: cover; background-position: center;
+    z-index: -1; box-shadow: inset 0 0 200px rgba(0,0,0,0.9);
+}
+.game-main-logo {
+    width: 600px; max-width: 90%; margin-bottom: 50px;
+    filter: drop-shadow(0 0 25px rgba(46, 204, 113, 0.7)); 
+    animation: float 4s ease-in-out infinite; 
+}
+@keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(2deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+.start-btn-epic {
+    padding: 15px 40px; font-size: 24px; font-weight: bold;
+    background-color: #2ecc71; color: white; border: 3px solid #27ae60;
+    border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.5);
+    transition: 0.3s;
+}
+.start-btn-epic:hover { transform: scale(1.05); background-color: #27ae60; }
+
+/* =========================================
+   4. BOUTONS HUB ET PARAMÈTRES
    ========================================= */
 .btn-hub {
-    position: absolute;
-    top: 20px; left: 20px;
+    position: absolute; top: 20px; left: 20px;
     background-color: rgba(26, 26, 46, 0.8); color: white; text-decoration: none;
     border: 1px solid #2ecc71; padding: 8px 15px; border-radius: 8px;
     font-weight: bold; font-size: 14px; transition: 0.3s; z-index: 100;
 }
-.btn-hub:hover {
-    background-color: rgba(46, 204, 113, 0.3);
-    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-}
+.btn-hub:hover { background-color: rgba(46, 204, 113, 0.3); box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }
 
 .settings-btn-wrapper {
-    position: absolute;
-    top: 20px; right: 25px;
-    width: 45px; height: 45px;
-    cursor: pointer; z-index: 100;
+    position: absolute; top: 20px; right: 25px;
+    width: 45px; height: 45px; cursor: pointer; z-index: 100;
 }
-.settings-btn {
-    width: 100%; height: 100%; object-fit: contain;
-    transition: transform 0.2s ease;
-    filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.8));
-}
+.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: 0.2s; filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.8)); }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-/* =========================================
-   4. MODAL DES PARAMÈTRES ET BOUTONS SWITCH
-   ========================================= */
+/* Modal */
 .modal {
-    display: none; /* Caché par défaut */
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.85); z-index: 999;
-    align-items: center; justify-content: center;
-    backdrop-filter: blur(5px);
+    display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.85); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(5px);
 }
-/* Le JS bascule cette classe pour afficher le menu */
 .modal.show { display: flex !important; }
-
 .modal-content {
-    background: rgba(15, 20, 30, 0.95);
-    border: 2px solid #2ecc71; border-radius: 15px;
-    padding: 30px 40px; color: white; text-align: center;
-    box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); min-width: 320px;
+    background: rgba(15, 20, 30, 0.95); border: 2px solid #2ecc71; border-radius: 15px;
+    padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); min-width: 320px;
 }
-.modal-content h2 { margin-top: 0; color: #2ecc71; text-transform: uppercase; letter-spacing: 2px; }
-
-.setting-item {
-    display: flex; justify-content: space-between; align-items: center;
-    margin: 25px 0; font-size: 1.2rem; font-weight: bold;
-}
-
-/* Boutons Switch (ON/OFF) */
+.modal-content h2 { color: #2ecc71; text-transform: uppercase; margin-bottom: 20px; }
+.setting-item { display: flex; justify-content: space-between; align-items: center; margin: 25px 0; font-weight: bold; }
 .switch { position: relative; display: inline-block; width: 54px; height: 28px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
 .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
 input:checked + .slider:before { transform: translateX(26px); }
-
-.close-btn {
-    margin-top: 15px; background: #2ecc71; color: #000; border: none;
-    padding: 10px 25px; font-size: 1.1rem; font-weight: bold;
-    border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase;
-}
+.close-btn { background: #2ecc71; color: #000; border: none; padding: 10px 25px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
 .close-btn:hover { box-shadow: 0 0 20px #2ecc71; transform: scale(1.05); }
 
 /* =========================================
-   5. INTERFACE DU JEU BATAILLE NAVALE
+   5. INTERFACE JEU ET SKINS
    ========================================= */
-#game-ui {
-    position: relative;
-    z-index: 10;
-    margin-top: 60px; /* Laisse de la place pour les boutons en haut */
-    text-shadow: 0 0 10px #000;
+#game-ui { position: relative; z-index: 10; text-align: center; margin-top: 60px; }
+.hidden { display: none !important; }
+.start-btn {
+    background: #2ecc71; color: #000; border: none; padding: 10px 20px; 
+    font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s;
 }
+.start-btn:hover { background: #27ae60; transform: scale(1.05); }
 
-h1 { font-size: 38px; color: #2ecc71; margin-bottom: 20px; letter-spacing: 2px;}
-h2 { margin-bottom: 15px; }
-
-.classes-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 30px;
-    margin-top: 20px;
-}
-
+.classes-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 20px; }
 .class-btn {
-    background: rgba(15, 23, 42, 0.7);
-    border: 2px solid #34495e;
-    border-radius: 15px;
-    padding: 20px;
-    color: white;
-    cursor: pointer;
-    transition: 0.3s;
-    width: 220px;
-    backdrop-filter: blur(5px);
+    background: rgba(15, 23, 42, 0.7); border: 2px solid #34495e; border-radius: 15px;
+    padding: 20px; color: white; cursor: pointer; transition: 0.3s; width: 220px; backdrop-filter: blur(5px);
 }
-.class-btn:hover {
-    border-color: #2ecc71;
-    box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
-    transform: translateY(-5px);
-}
-
-.game-container {
-    display: flex;
-    flex-wrap: wrap; 
-    justify-content: center;
-    gap: 40px;
-    margin-top: 20px;
-}
+.class-btn:hover { border-color: #2ecc71; box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); transform: translateY(-5px); }
+.slime-skin { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #2ecc71; margin-bottom: 15px; box-shadow: 0 0 15px rgba(46, 204, 113, 0.5); }
 
 /* =========================================
-   6. SKINS ET GRILLES
+   6. GRILLES TRANSPARENTES
    ========================================= */
-.slime-skin {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%; 
-    object-fit: cover; 
-    border: 4px solid #2ecc71; 
-    margin-bottom: 15px;
-    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
-    transition: transform 0.2s;
-}
-.class-btn:hover .slime-skin { transform: scale(1.1); }
-
+.game-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; margin-top: 20px; }
 .grid {
-    display: grid;
-    grid-template-columns: repeat(10, 35px);
-    grid-template-rows: repeat(10, 35px);
-    gap: 2px;
-    background-color: rgba(52, 73, 94, 0.8);
-    padding: 10px;
-    border: 3px solid #7f8c8d;
-    border-radius: 5px;
+    display: grid; grid-template-columns: repeat(10, 35px); grid-template-rows: repeat(10, 35px);
+    gap: 2px; padding: 10px; border: 3px solid #2ecc71; border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.2); /* Laisse voir la vidéo */
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
 }
-
 .cell {
-    width: 35px;
-    height: 35px;
-    background-color: rgba(236, 240, 241, 0.8);
-    border: 1px solid #bdc3c7;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    width: 35px; height: 35px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: 0.2s;
+    background-color: rgba(0, 0, 0, 0.5); /* Assombrit légèrement la vidéo pour les cases */
+    background-size: contain; background-repeat: no-repeat; background-position: center;
 }
+.cell:hover { background-color: rgba(46, 204, 113, 0.4); }
 
-.cell:hover { background-color: #bdc3c7; }
-.cell.miss { background-color: #3498db; }
-.cell.hit { background-color: #e74c3c; }
+/* États en jeu */
+.preview-valid { background-color: rgba(46, 204, 113, 0.6) !important; }
+.preview-invalid { background-color: rgba(231, 76, 60, 0.6) !important; }
+.ship-placed { background-color: rgba(46, 204, 113, 0.8) !important; border-color: #2ecc71; }
+.cell.miss { background-color: rgba(52, 152, 219, 0.8) !important; }
+.cell.hit { background-color: rgba(231, 76, 60, 0.8) !important; }
 
-.hidden { display: none !important; }
+/* Bateaux (S'affichent lors du placement) */
+.drakkar-1 { background-image: url('assets/drakar1.png'); }
+.drakkar-2 { background-image: url('assets/drakar2.png'); }
+.drakkar-special-berserker { background-image: url('assets/drakkarberserk.png'); }
+.drakkar-special-navigateur { background-image: url('assets/drakkarnavigator.png'); }
+.drakkar-special-chaman { background-image: url('assets/drakkarshaman.png'); }
