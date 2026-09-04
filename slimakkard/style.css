@@ -1,124 +1,197 @@
-/* --- SKINS DES SLIMES --- */
-.slime-skin {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%; /* Rend l'image ronde */
-    object-fit: cover; /* Évite que l'image soit écrasée */
-    border: 4px solid #2ecc71; /* Bordure vert baveux */
-    margin-bottom: 15px;
-    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
-    transition: transform 0.2s;
-}
-
-.class-btn:hover .slime-skin {
-    transform: scale(1.1); /* Petit effet de zoom au survol */
-}
-
-/* --- SKINS DES DRAKKARS (À utiliser sur la grille) --- */
-/* Bateaux normaux */
-.drakkar-1 {
-    background-image: url('assets/drakar1.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-.drakkar-2 {
-    background-image: url('assets/drakar2.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-.drakkar-3 {
-    background-image: url('assets/drakar3.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-/* Drakkars Spéciaux */
-.drakkar-special-berserk {
-    background-image: url('assets/drakkarberserk.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-.drakkar-special-navigator {
-    background-image: url('assets/drakkarnavigator.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-.drakkar-special-shaman {
-    background-image: url('assets/drakkarshaman.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
 /* =========================================
-   1. OPTIMISATION FULL SCREEN & CORPS
+   1. RESET ET BASE DU CORPS
    ========================================= */
-html, body {
+* {
     margin: 0;
     padding: 0;
-    width: 100%;
-    height: 100vh; /* Prend 100% de la hauteur de l'écran */
-    overflow-x: hidden; /* Empêche le défilement horizontal */
-    font-family: 'Courier New', Courier, monospace;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0b0f19;
     color: white;
-    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden; /* Empêche le scroll horizontal */
 }
 
 /* =========================================
-   2. GESTION DE LA VIDÉO DE FOND (background.mp4)
+   2. FOND VIDÉO ET OVERLAY
    ========================================= */
 .bg-video-main {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover; /* Étire la vidéo proprement sans la déformer */
-    z-index: -2; /* La place tout au fond */
+    position: fixed; /* Fixed pour rester en place même si on scroll */
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    object-fit: cover; z-index: -5; pointer-events: none;
 }
 
 .bg-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.65); /* Assombrit la vidéo pour que le jeu reste lisible */
-    z-index: -1;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.4); /* Assombrit la vidéo pour lire le texte */
+    z-index: -4; pointer-events: none;
+    transition: background 0.5s ease;
+}
+
+body.dark-mode .bg-overlay {
+    background: rgba(0, 0, 0, 0.8); 
 }
 
 /* =========================================
-   3. CONTENEUR DU JEU (Centrage parfait)
+   3. BOUTONS HUB ET PARAMÈTRES
+   ========================================= */
+.btn-hub {
+    position: absolute;
+    top: 20px; left: 20px;
+    background-color: rgba(26, 26, 46, 0.8); color: white; text-decoration: none;
+    border: 1px solid #2ecc71; padding: 8px 15px; border-radius: 8px;
+    font-weight: bold; font-size: 14px; transition: 0.3s; z-index: 100;
+}
+.btn-hub:hover {
+    background-color: rgba(46, 204, 113, 0.3);
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+.settings-btn-wrapper {
+    position: absolute;
+    top: 20px; right: 25px;
+    width: 45px; height: 45px;
+    cursor: pointer; z-index: 100;
+}
+.settings-btn {
+    width: 100%; height: 100%; object-fit: contain;
+    transition: transform 0.2s ease;
+    filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.8));
+}
+.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+
+/* =========================================
+   4. MODAL DES PARAMÈTRES ET BOUTONS SWITCH
+   ========================================= */
+.modal {
+    display: none; /* Caché par défaut */
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.85); z-index: 999;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(5px);
+}
+/* Le JS bascule cette classe pour afficher le menu */
+.modal.show { display: flex !important; }
+
+.modal-content {
+    background: rgba(15, 20, 30, 0.95);
+    border: 2px solid #2ecc71; border-radius: 15px;
+    padding: 30px 40px; color: white; text-align: center;
+    box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); min-width: 320px;
+}
+.modal-content h2 { margin-top: 0; color: #2ecc71; text-transform: uppercase; letter-spacing: 2px; }
+
+.setting-item {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 25px 0; font-size: 1.2rem; font-weight: bold;
+}
+
+/* Boutons Switch (ON/OFF) */
+.switch { position: relative; display: inline-block; width: 54px; height: 28px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #555; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+input:checked + .slider:before { transform: translateX(26px); }
+
+.close-btn {
+    margin-top: 15px; background: #2ecc71; color: #000; border: none;
+    padding: 10px 25px; font-size: 1.1rem; font-weight: bold;
+    border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase;
+}
+.close-btn:hover { box-shadow: 0 0 20px #2ecc71; transform: scale(1.05); }
+
+/* =========================================
+   5. INTERFACE DU JEU BATAILLE NAVALE
    ========================================= */
 #game-ui {
     position: relative;
-    z-index: 1; /* Place l'UI au-dessus de la vidéo */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh; /* Centre verticalement sur toute la page */
-    padding: 20px;
-    box-sizing: border-box;
+    z-index: 10;
+    margin-top: 60px; /* Laisse de la place pour les boutons en haut */
+    text-shadow: 0 0 10px #000;
 }
 
-/* =========================================
-   4. RESPONSIVE DES GRILLES DE BATAILLE
-   ========================================= */
-.game-container {
-    display: flex;
-    flex-wrap: wrap; /* Si l'écran est trop petit, la 2ème grille passe en dessous */
-    justify-content: center;
-    gap: 30px;
-    margin-top: 20px;
-}
+h1 { font-size: 38px; color: #2ecc71; margin-bottom: 20px; letter-spacing: 2px;}
+h2 { margin-bottom: 15px; }
 
 .classes-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 20px;
+    gap: 30px;
+    margin-top: 20px;
 }
+
+.class-btn {
+    background: rgba(15, 23, 42, 0.7);
+    border: 2px solid #34495e;
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 220px;
+    backdrop-filter: blur(5px);
+}
+.class-btn:hover {
+    border-color: #2ecc71;
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
+    transform: translateY(-5px);
+}
+
+.game-container {
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: center;
+    gap: 40px;
+    margin-top: 20px;
+}
+
+/* =========================================
+   6. SKINS ET GRILLES
+   ========================================= */
+.slime-skin {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 4px solid #2ecc71; 
+    margin-bottom: 15px;
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
+    transition: transform 0.2s;
+}
+.class-btn:hover .slime-skin { transform: scale(1.1); }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(10, 35px);
+    grid-template-rows: repeat(10, 35px);
+    gap: 2px;
+    background-color: rgba(52, 73, 94, 0.8);
+    padding: 10px;
+    border: 3px solid #7f8c8d;
+    border-radius: 5px;
+}
+
+.cell {
+    width: 35px;
+    height: 35px;
+    background-color: rgba(236, 240, 241, 0.8);
+    border: 1px solid #bdc3c7;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cell:hover { background-color: #bdc3c7; }
+.cell.miss { background-color: #3498db; }
+.cell.hit { background-color: #e74c3c; }
+
+.hidden { display: none !important; }
