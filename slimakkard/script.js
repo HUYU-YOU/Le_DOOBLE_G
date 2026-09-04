@@ -6,26 +6,30 @@ const dict = {
     'fr': {
         'txt-settings': 'Paramètres', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Mode Sombre / Nuit 🌙',
         'txt-fs': 'Plein Écran 🖥️', 'txt-close': 'Fermer', 'txt-btn-enter': 'ENTRER DANS LA TEMPÊTE',
-        'txt-multi-title': 'Rejoindre le Valhalla', 'txt-btn-create': 'Créer une partie', 'txt-or': 'OU', 
+        'txt-multi-title': 'Rejoindre le Valhalla', 'txt-btn-create': 'Créer une partie (Solo vs IA)', 'txt-or': 'OU', 
         'txt-btn-join': 'Rejoindre', 'txt-class-title': 'Choisis ton Commandant Slime !', 
         'txt-desc-berserk': 'Frappe 2 fois où il veut.', 'txt-desc-nav': 'Tire sur 2 cases en ligne.', 
         'txt-desc-sham': 'Tire 3 fois aléatoirement.', 'txt-my-fleet': 'Ma Flotte', 'txt-enemy-fleet': 'Flotte Ennemie', 
-        'status-wait': 'En attente d\'un adversaire...', 'status-connect': 'Connexion au drakkar ennemi...', 
-        'status-error': 'Erreur : Code invalide.', 'status-turn-me': "C'est à ton tour d'attaquer !", 
+        'status-wait': 'Génération du champ de bataille...', 'status-connect': 'Connexion...', 
+        'status-error': 'Mode non disponible.', 'status-turn-me': "C'est à ton tour d'attaquer !", 
         'status-turn-enemy': "L'ennemi prépare son attaque...", 'status-chaos': "Le Chaman invoque le chaos !", 
-        'txt-placement-title': "Place ta flotte !", 'rot-horiz': "🔄 Tourner : Horizontal", 'rot-vert': "🔄 Tourner : Vertical"
+        'txt-placement-title': "Place ta flotte !", 'rot-horiz': "🔄 Tourner : Horizontal", 'rot-vert': "🔄 Tourner : Vertical",
+        'end-win': "VICTOIRE !", 'end-win-desc': "La flotte ennemie repose au fond de l'océan.",
+        'end-lose': "DÉFAITE !", 'end-lose-desc': "Le Valhalla vous attend..."
     },
     'en': {
         'txt-settings': 'Settings', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Dark / Night Mode 🌙',
         'txt-fs': 'Fullscreen 🖥️', 'txt-close': 'Close', 'txt-btn-enter': 'ENTER THE STORM',
-        'txt-multi-title': 'Join Valhalla', 'txt-btn-create': 'Create a room', 'txt-or': 'OR', 
+        'txt-multi-title': 'Join Valhalla', 'txt-btn-create': 'Create room (Solo vs AI)', 'txt-or': 'OR', 
         'txt-btn-join': 'Join', 'txt-class-title': 'Choose your Slime Commander!', 
         'txt-desc-berserk': 'Strikes 2 times anywhere.', 'txt-desc-nav': 'Strikes 2 tiles in a row.', 
         'txt-desc-sham': 'Strikes 3 times randomly.', 'txt-my-fleet': 'My Fleet', 'txt-enemy-fleet': 'Enemy Fleet', 
-        'status-wait': 'Waiting for an opponent...', 'status-connect': 'Connecting to enemy drakkar...', 
-        'status-error': 'Error: Invalid code.', 'status-turn-me': "It's your turn to attack!", 
+        'status-wait': 'Generating battlefield...', 'status-connect': 'Connecting...', 
+        'status-error': 'Mode unavailable.', 'status-turn-me': "It's your turn to attack!", 
         'status-turn-enemy': "Enemy is preparing to attack...", 'status-chaos': "The Shaman summons chaos!", 
-        'txt-placement-title': "Place your fleet!", 'rot-horiz': "🔄 Rotate: Horizontal", 'rot-vert': "🔄 Rotate: Vertical"
+        'txt-placement-title': "Place your fleet!", 'rot-horiz': "🔄 Rotate: Horizontal", 'rot-vert': "🔄 Rotate: Vertical",
+        'end-win': "VICTORY!", 'end-win-desc': "The enemy fleet rests at the bottom of the ocean.",
+        'end-lose': "DEFEAT!", 'end-lose-desc': "Valhalla awaits you..."
     }
 };
 
@@ -39,20 +43,27 @@ function toggleLanguage() {
 }
 
 // ==========================================
-// VARIABLES GLOBALES
+// VARIABLES GLOBALES & ÉTATS
 // ==========================================
 let slimeClass = "";
-let roomCode = "";
 let isMyTurn = false;
+let placementPhase = false;
+let isHorizontal = true;
+
+const TOTAL_SHIP_CELLS = 7; 
+let playerGridState = new Array(100).fill(0); 
+let enemyGridState = new Array(100).fill(0);
+let playerHitsTaken = 0;
+let enemyHitsTaken = 0;
+
+let specialDrakkarCellsPlayer = [];
+let specialDrakkarHits = 0;
 let specialDrakkarAlive = true;
 let berserkerCoupsRestants = 2;
 
-// Variables de Placement
-let isHorizontal = true;
-let placementPhase = false;
+let aiTargetQueue = [];
 let fleetToPlace = [];
 let currentShipIndex = 0;
-let playerGridState = new Array(100).fill(0); 
 
 // ==========================================
 // FLUX DU JEU
@@ -63,22 +74,16 @@ function lancerJeu() {
 }
 
 function creerPartie() {
-    roomCode = `VIK${Math.floor(1000 + Math.random() * 9000)}`;
     const statusBox = document.getElementById('multi-status');
     statusBox.style.color = "#2ecc71";
-    statusBox.innerHTML = `Code : <strong>${roomCode}</strong><br>${dict[currentLang]['status-wait']}`;
-    setTimeout(() => { showClassSelection(); }, 2000);
+    statusBox.innerText = dict[currentLang]['status-wait'];
+    genererFlotteIA();
+    setTimeout(() => { showClassSelection(); }, 1500);
 }
 
 function rejoindrePartie() {
-    const inputCode = document.getElementById('join-code').value.toUpperCase();
-    if (/^VIK[0-9]{4}$/.test(inputCode)) {
-        document.getElementById('multi-status').innerText = dict[currentLang]['status-connect'];
-        setTimeout(() => { showClassSelection(); }, 1500);
-    } else {
-        document.getElementById('multi-status').style.color = "#e74c3c";
-        document.getElementById('multi-status').innerText = dict[currentLang]['status-error'];
-    }
+    document.getElementById('multi-status').style.color = "#e74c3c";
+    document.getElementById('multi-status').innerText = dict[currentLang]['status-error'];
 }
 
 function showClassSelection() {
@@ -88,11 +93,7 @@ function showClassSelection() {
 
 function selectClass(className) {
     slimeClass = className;
-    const skins = {
-        'berserker': 'assets/berserk.jpg',
-        'navigateur': 'assets/navigator.jpeg',
-        'chaman': 'assets/shaman.jpg'
-    };
+    const skins = { 'berserker': 'assets/berserk.jpg', 'navigateur': 'assets/navigator.jpeg', 'chaman': 'assets/shaman.jpg' };
     document.getElementById('player-skin-display').src = skins[className];
 
     document.getElementById('class-selection').classList.add('hidden');
@@ -102,17 +103,18 @@ function selectClass(className) {
 }
 
 // ==========================================
-// PHASE DE PLACEMENT DES BATEAUX
+// PHASE DE PLACEMENT
 // ==========================================
 function preparerFlotte(className) {
     fleetToPlace = [
-        { name: "Drakkar Spécial", size: 3, cssClass: `drakkar-special-${className}` },
-        { name: "Drakkar Classique", size: 2, cssClass: `drakkar-1` },
-        { name: "Petit Drakkar", size: 2, cssClass: `drakkar-2` }
+        { name: "Drakkar Spécial", size: 3, cssClass: `drakkar-special-${className}`, isSpecial: true },
+        { name: "Drakkar Classique", size: 2, cssClass: `drakkar-1`, isSpecial: false },
+        { name: "Petit Drakkar", size: 2, cssClass: `drakkar-2`, isSpecial: false }
     ];
     currentShipIndex = 0;
     placementPhase = true;
     playerGridState.fill(0);
+    specialDrakkarCellsPlayer = [];
     
     document.getElementById('placement-controls').classList.remove('hidden');
     document.getElementById('current-ship-name').innerText = fleetToPlace[currentShipIndex].name;
@@ -145,8 +147,6 @@ function initialiserGrilles() {
         cellA.addEventListener('click', () => preparerAttaque(i, cellA));
         adversaryGrid.appendChild(cellA);
     }
-    
-    window.drakkarAdverseIndex = [12, 13, 14]; 
 }
 
 function getShipCells(startIndex, size, horizontal) {
@@ -174,7 +174,7 @@ function previewShip(index) {
     const gridElements = document.querySelectorAll('#player-grid .cell');
     
     if (!cells) return; 
-    let collision = cells.some(c => playerGridState[c] === 1);
+    let collision = cells.some(c => playerGridState[c] !== 0);
     cells.forEach(c => { gridElements[c].classList.add(collision ? 'preview-invalid' : 'preview-valid'); });
 }
 
@@ -189,11 +189,13 @@ function placeShip(index) {
     const ship = fleetToPlace[currentShipIndex];
     const cells = getShipCells(index, ship.size, isHorizontal);
     
-    if (!cells || cells.some(c => playerGridState[c] === 1)) return; 
+    if (!cells || cells.some(c => playerGridState[c] !== 0)) return; 
     
     const gridElements = document.querySelectorAll('#player-grid .cell');
     cells.forEach((c, i) => {
-        playerGridState[c] = 1;
+        playerGridState[c] = ship.isSpecial ? 2 : 1;
+        if (ship.isSpecial) specialDrakkarCellsPlayer.push(c);
+        
         gridElements[c].classList.add('ship-placed');
         if (i === 0) gridElements[c].classList.add(ship.cssClass); 
     });
@@ -208,6 +210,26 @@ function placeShip(index) {
         isMyTurn = true;
         mettreAJourStatut(dict[currentLang]['status-turn-me']);
     }
+}
+
+// ==========================================
+// GÉNÉRATION IA
+// ==========================================
+function genererFlotteIA() {
+    enemyGridState.fill(0);
+    const ships = [3, 2, 2];
+    ships.forEach(size => {
+        let placed = false;
+        while (!placed) {
+            let randIndex = Math.floor(Math.random() * 100);
+            let horizontal = Math.random() > 0.5;
+            let cells = getShipCells(randIndex, size, horizontal);
+            if (cells && !cells.some(c => enemyGridState[c] !== 0)) {
+                cells.forEach(c => enemyGridState[c] = 1);
+                placed = true;
+            }
+        }
+    });
 }
 
 // ==========================================
@@ -237,7 +259,12 @@ function preparerAttaque(index, cellElement) {
         case 'chaman':
             mettreAJourStatut(dict[currentLang]['status-chaos']);
             for (let i = 0; i < 3; i++) {
-                setTimeout(() => executerAttaque(Math.floor(Math.random() * 100)), i * 400);
+                setTimeout(() => {
+                    let rand;
+                    do { rand = Math.floor(Math.random() * 100); } 
+                    while (document.querySelectorAll('#adversary-grid .cell')[rand].classList.contains('hit') || document.querySelectorAll('#adversary-grid .cell')[rand].classList.contains('miss'));
+                    executerAttaque(rand);
+                }, i * 400);
             }
             setTimeout(finDeTour, 1200);
             break;
@@ -246,10 +273,19 @@ function preparerAttaque(index, cellElement) {
 
 function executerAttaque(index) {
     const cell = document.querySelectorAll('#adversary-grid .cell')[index];
-    if (window.drakkarAdverseIndex && window.drakkarAdverseIndex.includes(index)) {
+    if (cell.classList.contains('hit') || cell.classList.contains('miss')) return;
+
+    if (enemyGridState[index] === 1) {
         cell.classList.add('hit');
+        cell.innerText = "💥";
+        enemyHitsTaken++;
+        if (enemyHitsTaken >= 3) document.getElementById('e-ship-1').style.color = "#e74c3c";
+        if (enemyHitsTaken >= 5) document.getElementById('e-ship-2').style.color = "#e74c3c";
+        if (enemyHitsTaken >= 7) document.getElementById('e-ship-3').style.color = "#e74c3c";
+        checkWinCondition();
     } else {
         cell.classList.add('miss');
+        cell.innerText = "💦";
     }
 }
 
@@ -257,23 +293,94 @@ function finDeTour() {
     isMyTurn = false;
     berserkerCoupsRestants = 2; 
     mettreAJourStatut(dict[currentLang]['status-turn-enemy']);
-    setTimeout(simulerAttaqueAdverse, 2000);
+    setTimeout(simulerAttaqueAdverse, 1500);
 }
 
 function simulerAttaqueAdverse() {
+    if (playerHitsTaken >= TOTAL_SHIP_CELLS || enemyHitsTaken >= TOTAL_SHIP_CELLS) return;
+
     const playerCells = document.querySelectorAll('#player-grid .cell');
-    let randomTarget;
-    do { randomTarget = Math.floor(Math.random() * 100); } 
-    while (playerCells[randomTarget].classList.contains('miss') || playerCells[randomTarget].classList.contains('hit'));
-    
-    if (playerGridState[randomTarget] === 1) {
-        playerCells[randomTarget].classList.add('hit');
-    } else {
-        playerCells[randomTarget].classList.add('miss');
+    let target = -1;
+
+    while (aiTargetQueue.length > 0) {
+        let potential = aiTargetQueue.shift();
+        if (!playerCells[potential].classList.contains('hit') && !playerCells[potential].classList.contains('miss')) {
+            target = potential;
+            break;
+        }
+    }
+
+    if (target === -1) {
+        do { target = Math.floor(Math.random() * 100); } 
+        while (playerCells[target].classList.contains('miss') || playerCells[target].classList.contains('hit'));
     }
     
-    isMyTurn = true;
-    mettreAJourStatut(dict[currentLang]['status-turn-me']);
+    if (playerGridState[target] !== 0) {
+        playerCells[target].classList.add('hit');
+        playerCells[target].innerText = "💥";
+        document.getElementById('game-ui').classList.add('shake');
+        setTimeout(() => document.getElementById('game-ui').classList.remove('shake'), 500);
+        
+        playerHitsTaken++;
+        if (playerHitsTaken >= 3) document.getElementById('p-ship-special').style.color = "#e74c3c";
+        if (playerHitsTaken >= 5) document.getElementById('p-ship-class').style.color = "#e74c3c";
+        if (playerHitsTaken >= 7) document.getElementById('p-ship-small').style.color = "#e74c3c";
+
+        if (target >= 10) aiTargetQueue.push(target - 10);
+        if (target < 90) aiTargetQueue.push(target + 10);
+        if (target % 10 !== 0) aiTargetQueue.push(target - 1);
+        if (target % 10 !== 9) aiTargetQueue.push(target + 1);
+
+        if (playerGridState[target] === 2) {
+            specialDrakkarHits++;
+            if (specialDrakkarHits === 3) {
+                specialDrakkarAlive = false;
+                mettreAJourStatut("Drakkar Spécial détruit ! Pouvoir perdu.");
+                setTimeout(() => {
+                    isMyTurn = true;
+                    mettreAJourStatut(dict[currentLang]['status-turn-me']);
+                }, 2000);
+                checkWinCondition();
+                return;
+            }
+        }
+    } else {
+        playerCells[target].classList.add('miss');
+        playerCells[target].innerText = "💦";
+    }
+    
+    checkWinCondition();
+    if (playerHitsTaken < TOTAL_SHIP_CELLS) {
+        isMyTurn = true;
+        mettreAJourStatut(dict[currentLang]['status-turn-me']);
+    }
+}
+
+function checkWinCondition() {
+    if (enemyHitsTaken >= TOTAL_SHIP_CELLS) {
+        finDePartie(true);
+    } else if (playerHitsTaken >= TOTAL_SHIP_CELLS) {
+        finDePartie(false);
+    }
+}
+
+function finDePartie(isVictoire) {
+    isMyTurn = false;
+    const screen = document.getElementById('game-over-screen');
+    const title = document.getElementById('txt-end-title');
+    const desc = document.getElementById('txt-end-desc');
+    
+    screen.classList.remove('hidden');
+    
+    if (isVictoire) {
+        title.innerText = dict[currentLang]['end-win'];
+        title.style.color = "#2ecc71";
+        desc.innerText = dict[currentLang]['end-win-desc'];
+    } else {
+        title.innerText = dict[currentLang]['end-lose'];
+        title.style.color = "#e74c3c";
+        desc.innerText = dict[currentLang]['end-lose-desc'];
+    }
 }
 
 function mettreAJourStatut(message) { document.getElementById('game-status').innerText = message; }
