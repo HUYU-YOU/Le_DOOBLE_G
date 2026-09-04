@@ -100,7 +100,7 @@ const isLocalFile = window.location.protocol === 'file:';
 
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 ZOOMS FINAUX : Réduction de 30% pour slime11.png et slime12.png 🔥
+// 🔥 ZOOMS FINAUX : Réduction de 20% pour slime10, 11 et 12 🔥
 const SLIMES = [
     { level: 1,  radius: 25,  zoom: 1.85, points: 2,    texture: 'assets/slime2.png',  color: '#aaffaa' }, 
     { level: 2,  radius: 36,  zoom: 1.66, points: 4,    texture: 'assets/slime3.png',  color: '#aaaaff' }, 
@@ -110,9 +110,9 @@ const SLIMES = [
     { level: 6,  radius: 100, zoom: 1.07, points: 64,   texture: 'assets/slime7.png',  color: '#ffccaa' }, 
     { level: 7,  radius: 120, zoom: 1.12, points: 128,  texture: 'assets/slime8.png',  color: '#aaccff' }, 
     { level: 8,  radius: 140, zoom: 1.07, points: 256,  texture: 'assets/slime9.png',  color: '#ccaaff' }, 
-    { level: 9,  radius: 165, zoom: 1.07, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' }, 
-    { level: 10, radius: 190, zoom: 0.75, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' }, // -30% (passe de 1.07 à 0.75)
-    { level: 11, radius: 215, zoom: 0.75, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' }, // -30% (passe de 1.07 à 0.75)
+    { level: 9,  radius: 165, zoom: 0.86, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' }, // -20% (passe de 1.07 à 0.86)
+    { level: 10, radius: 190, zoom: 0.60, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' }, // -20% (passe de 0.75 à 0.60)
+    { level: 11, radius: 215, zoom: 0.60, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' }, // -20% (passe de 0.75 à 0.60)
     { level: 12, radius: 245, zoom: 1.07, points: 4096, texture: 'assets/slime13.png', color: '#ffffff' }  
 ];
 
@@ -162,12 +162,15 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// --- SEAU ---
+// --- SEAU ET LIGNE DE DÉFAITE ---
 const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.2, friction: 0.1 };
 const ground = Bodies.rectangle(GAME_WIDTH / 2, GAME_HEIGHT + 25, GAME_WIDTH, 50, wallOptions);
 const leftWall = Bodies.rectangle(-25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
 const rightWall = Bodies.rectangle(GAME_WIDTH + 25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
-const loseLineY = 150; 
+
+// 🔥 La ligne remonte (plus haut dans l'écran), tu as plus d'espace dans ton seau ! 🔥
+const loseLineY = 110; // C'était 150 avant, je l'ai remonté de 40 pixels.
+
 Composite.add(world, [ground, leftWall, rightWall]);
 
 let currentSlime = null;
