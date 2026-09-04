@@ -100,7 +100,6 @@ const isLocalFile = window.location.protocol === 'file:';
 
 const TAILLE_IMAGE_EN_PIXELS = 256; 
 
-// 🔥 ZOOMS FINAUX : Réduction de 20% pour slime10, 11 et 12 🔥
 const SLIMES = [
     { level: 1,  radius: 25,  zoom: 1.85, points: 2,    texture: 'assets/slime2.png',  color: '#aaffaa' }, 
     { level: 2,  radius: 36,  zoom: 1.66, points: 4,    texture: 'assets/slime3.png',  color: '#aaaaff' }, 
@@ -110,9 +109,9 @@ const SLIMES = [
     { level: 6,  radius: 100, zoom: 1.07, points: 64,   texture: 'assets/slime7.png',  color: '#ffccaa' }, 
     { level: 7,  radius: 120, zoom: 1.12, points: 128,  texture: 'assets/slime8.png',  color: '#aaccff' }, 
     { level: 8,  radius: 140, zoom: 1.07, points: 256,  texture: 'assets/slime9.png',  color: '#ccaaff' }, 
-    { level: 9,  radius: 165, zoom: 0.86, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' }, // -20% (passe de 1.07 à 0.86)
-    { level: 10, radius: 190, zoom: 0.60, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' }, // -20% (passe de 0.75 à 0.60)
-    { level: 11, radius: 215, zoom: 0.60, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' }, // -20% (passe de 0.75 à 0.60)
+    { level: 9,  radius: 165, zoom: 0.86, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' },
+    { level: 10, radius: 190, zoom: 0.60, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' },
+    { level: 11, radius: 215, zoom: 0.60, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' },
     { level: 12, radius: 245, zoom: 1.07, points: 4096, texture: 'assets/slime13.png', color: '#ffffff' }  
 ];
 
@@ -168,8 +167,7 @@ const ground = Bodies.rectangle(GAME_WIDTH / 2, GAME_HEIGHT + 25, GAME_WIDTH, 50
 const leftWall = Bodies.rectangle(-25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
 const rightWall = Bodies.rectangle(GAME_WIDTH + 25, GAME_HEIGHT / 2, 50, GAME_HEIGHT, wallOptions);
 
-// 🔥 La ligne remonte (plus haut dans l'écran), tu as plus d'espace dans ton seau ! 🔥
-const loseLineY = 110; // C'était 150 avant, je l'ai remonté de 40 pixels.
+const loseLineY = 110; 
 
 Composite.add(world, [ground, leftWall, rightWall]);
 
@@ -178,6 +176,9 @@ let currentSlimeLevel = 0;
 let score = 0;
 let canDrop = true;
 let isGameOver = false;
+
+// 🔥 NOUVEAU : Chrono global pour contrer le spam
+let overflowTimer = 0;
 
 let bestScore = localStorage.getItem('fuslime2_best_score') || 0;
 document.getElementById('best-score').innerText = bestScore;
@@ -407,24 +408,33 @@ Events.on(engine, 'collisionStart', (event) => {
     }
 });
 
-// --- GAME OVER ---
+// --- GAME OVER : ANTI-SPAM SYSTEM ---
 Events.on(engine, 'beforeUpdate', () => {
     if (isGameOver) return;
     const bodies = Composite.allBodies(world);
+    let slimeAboveLine = false;
+
     for (let i = 0; i < bodies.length; i++) {
         const body = bodies[i];
         if (body.label === 'slime') {
-            if (body.position.y < loseLineY && body.velocity.y > -0.5 && body.velocity.y < 0.5) {
-                if (!body.warningTimer) body.warningTimer = 0;
-                body.warningTimer++;
-                if (body.warningTimer > 60) { 
-                    gameOver();
-                    break;
-                }
-            } else {
-                body.warningTimer = 0;
+            // Tolérance augmentée à 2.5 pour ignorer les sursauts.
+            // (Un nouveau slime qui tombe aura une vélocité bien plus grande que 2.5 en arrivant à cette ligne)
+            if (body.position.y < loseLineY && body.velocity.y > -2.5 && body.velocity.y < 2.5) {
+                slimeAboveLine = true;
+                break;
             }
         }
+    }
+
+    if (slimeAboveLine) {
+        overflowTimer++;
+        if (overflowTimer > 90) { // Environ 1.5 secondes pleines au-dessus de la ligne
+            gameOver();
+        }
+    } else {
+        // Redescend doucement, empêche le reset brutal avec le spam
+        if (overflowTimer > 0) overflowTimer -= 2;
+        if (overflowTimer < 0) overflowTimer = 0;
     }
 });
 
