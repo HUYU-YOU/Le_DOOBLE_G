@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viking Slime Battle</title>
+    <title>Sliking - Viking Slime Battle</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- API YouTube pour la musique de fond épique -->
-    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
-    <!-- VIDÉO DE FOND JOUR/NUIT (Mer agitée, ambiance Viking) -->
+
+    <!-- VIDÉO DE FOND JOUR/NUIT -->
     <video autoplay loop muted playsinline class="bg-video-main" id="bg-video">
-        <source src="assets/viking_sea_background.mp4" type="video/mp4">
+        <source src="assets/background.mp4" type="video/mp4">
     </video>
     <div class="bg-overlay"></div> 
 
@@ -20,96 +18,119 @@
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
 
     <!-- Bouton Paramètres -->
-    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
-        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    <div class="settings-btn-wrapper" onclick="toggleSettings()">
+        <img src="../img/setting.png" alt="Paramètres" class="settings-btn">
     </div>
 
     <!-- Modal des Paramètres -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
-            <h2>Paramètres</h2>
+            <h2 id="txt-settings">Paramètres</h2>
+            
             <div class="setting-item">
-                <span>Mode Sombre / Nuit 🌙</span>
+                <span id="txt-lang">Langue / Language 🌍</span>
+                <label class="switch">
+                    <input type="checkbox" id="lang-toggle" onchange="toggleLanguage()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span id="txt-theme">Mode Sombre / Nuit 🌙</span>
                 <label class="switch">
                     <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="setting-item">
-                <span>Plein Écran 🖥️</span>
+                <span id="txt-fs">Plein Écran 🖥️</span>
                 <label class="switch">
                     <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()">
                     <span class="slider"></span>
                 </label>
             </div>
-            <div class="setting-item">
-                <span>Musique (ON/OFF) 🎵</span>
-                <label class="switch">
-                    <input type="checkbox" id="music-toggle" onchange="toggleMusic()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+            <button onclick="toggleSettings()" class="close-btn" id="txt-close">Fermer</button>
         </div>
     </div>
 
-    <!-- Interface Principale du Jeu -->
-    <div id="game-ui">
-        <h1>VIKING SLIME BATTLE</h1>
+    <!-- Écran de démarrage (Kraken + Logo) -->
+    <div id="main-menu">
+        <div class="storm-background"></div>
+        <img src="assets/sliking-logo-transparent.png" alt="Sliking Logo" class="game-main-logo">
+        <button class="start-btn-epic" id="txt-btn-enter" onclick="lancerJeu()">ENTRER DANS LA TEMPÊTE</button>
+    </div>
+
+    <!-- Interface Principale du Jeu (Cachée au chargement) -->
+    <div id="game-ui" class="hidden">
         
-        <!-- ÉCRAN 1 : Sélection du Slime (Classe) -->
-        <div id="class-selection">
-            <h2>Choisis ton Commandant Slime !</h2>
+        <!-- ÉTAPE 1 : Menu Multijoueur -->
+        <div id="multi-menu">
+            <h2 id="txt-multi-title">Rejoindre le Valhalla</h2>
+            <div style="margin: 20px;">
+                <button class="start-btn" id="txt-btn-create" onclick="creerPartie()">Créer une partie</button>
+            </div>
+            <p id="txt-or">OU</p>
+            <div style="margin: 20px;">
+                <input type="text" id="join-code" placeholder="VIK1234" maxlength="7" style="padding: 10px; font-size: 18px; text-transform: uppercase;">
+                <button class="start-btn" id="txt-btn-join" onclick="rejoindrePartie()">Rejoindre</button>
+            </div>
+            <p id="multi-status" style="color: #2ecc71; margin-top: 15px; font-weight: bold; font-size: 1.2rem;"></p>
+        </div>
+
+        <!-- ÉTAPE 2 : Sélection du Slime -->
+        <div id="class-selection" class="hidden">
+            <h2 id="txt-class-title">Choisis ton Commandant Slime !</h2>
             <div class="classes-container">
                 <button class="class-btn berserker-btn" onclick="selectClass('berserker')">
+                    <img src="assets/berserk.jpg" alt="Berserker" class="slime-skin">
                     <h3>Slime Berserker 🪓</h3>
-                    <p>Frappe 2 fois où il veut.</p>
+                    <p id="txt-desc-berserk">Frappe 2 fois où il veut.</p>
                 </button>
                 <button class="class-btn navigateur-btn" onclick="selectClass('navigateur')">
+                    <img src="assets/navigator.jpeg" alt="Navigateur" class="slime-skin">
                     <h3>Slime Navigateur 🧭</h3>
-                    <p>Tire sur 2 cases en ligne.</p>
+                    <p id="txt-desc-nav">Tire sur 2 cases en ligne.</p>
                 </button>
                 <button class="class-btn chaman-btn" onclick="selectClass('chaman')">
+                    <img src="assets/shaman.jpg" alt="Chaman" class="slime-skin">
                     <h3>Slime Chaman Loki 🔮</h3>
-                    <p>Tire 3 fois aléatoirement.</p>
+                    <p id="txt-desc-sham">Tire 3 fois aléatoirement.</p>
                 </button>
             </div>
         </div>
 
-        <!-- ÉCRAN 2 : Les grilles de Bataille Navale (Cachées au lancement) -->
+        <!-- ÉTAPE 3 : Bataille Navale -->
         <div id="battle-container" class="hidden">
+            
+            <!-- Contrôles de Placement -->
+            <div id="placement-controls" style="margin-bottom: 15px;">
+                <h2 id="txt-placement-title" style="color: #f1c40f; margin-bottom: 10px;">Place ta flotte !</h2>
+                <button class="start-btn" id="btn-rotate" onclick="toggleRotation()" style="padding: 10px; font-size: 16px;">🔄 Tourner : Horizontal</button>
+                <p style="margin-top: 10px; font-weight: bold; font-size: 1.2rem;">Bateau : <span id="current-ship-name" style="color: #2ecc71;">Drakkar Spécial</span></p>
+            </div>
+
             <div class="game-container">
                 <!-- Grille du Joueur -->
                 <div class="grid-container">
-                    <h2>Ma Flotte (<span id="player-class-name">Slime</span>)</h2>
+                    <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                        <span id="txt-my-fleet">Ma Flotte</span> 
+                        <img id="player-skin-display" src="" class="slime-skin" style="width: 50px; height: 50px; margin: 0; border-width: 2px;">
+                    </h2>
                     <div id="player-grid" class="grid"></div>
                 </div>
 
                 <!-- Grille de l'Adversaire -->
                 <div class="grid-container">
-                    <h2>Flotte Ennemie</h2>
+                    <h2 id="txt-enemy-fleet" style="margin-bottom: 10px;">Flotte Ennemie</h2>
                     <div id="adversary-grid" class="grid"></div>
                 </div>
             </div>
 
-            <!-- Panneau d'informations et actions -->
-            <div class="command-panel">
-                <p id="game-status">Place ton Drakkar Spécial pour commencer !</p>
-                <p id="special-power-status" class="power-active">Pouvoir Spécial : ACTIF</p>
+            <div class="command-panel" style="margin-top: 20px;">
+                <p id="game-status" style="font-size: 1.5rem; font-weight: bold; color: #f1c40f;">...</p>
             </div>
         </div>
     </div>
 
-    <!-- Écran de Fin de Partie (Game Over / Victoire) -->
-    <div id="game-over" class="hidden">
-        <h2 id="victory-message">Le Valhalla t'attend !</h2>
-        <button onclick="location.reload()">Rejouer une bataille</button>
-    </div>
-
-    <!-- Lecteur YouTube invisible -->
-    <div id="youtube-audio"></div>
-
-    <!-- Script du jeu -->
     <script src="script.js"></script>
 </body>
 </html>
