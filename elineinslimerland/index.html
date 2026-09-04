@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alice in Slimiworld</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- VIDÉO DE FOND (Optionnel, tu peux mettre une image fixe si tu préfères) -->
+    <video autoplay loop muted playsinline class="bg-video-main" id="bg-video">
+        <source src="assets/daybackground.mp4" type="video/mp4">
+    </video>
+    <div class="bg-overlay"></div> 
+
+    <!-- Bouton de retour au Hub -->
+    <a href="../index.html" class="btn-hub">⬅ Retour</a>
+
+    <!-- Bouton Paramètres -->
+    <div class="settings-btn-wrapper" onclick="toggleSettings()">
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
+
+    <!-- Modal des Paramètres -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2>Paramètres</h2>
+            <div class="setting-item">
+                <span>Mode Sombre 🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <!-- Interface Titre (Optionnel) -->
+    <div id="game-ui">
+        <h1>Alice in Slimiworld</h1>
+    </div>
+    
+    <!-- ZONE DE JEU INTERACTIVE -->
+    <div id="game-container">
+        <!-- La vidéo en cours -->
+        <video id="story-video" playsinline></video>
+        
+        <!-- L'interface par dessus la vidéo -->
+        <div id="video-ui">
+            <h2 id="top-text" class="story-text"></h2>
+            
+            <div id="bottom-section">
+                <p id="bottom-text" class="story-text"></p>
+                <div id="choices-container">
+                    <!-- Les boutons de choix seront injectés ici par Javascript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
