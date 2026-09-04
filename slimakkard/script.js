@@ -103,13 +103,13 @@ function selectClass(className) {
 }
 
 // ==========================================
-// PHASE DE PLACEMENT
+// PHASE DE PLACEMENT & GESTION DES BATEAUX ENTIERS
 // ==========================================
 function preparerFlotte(className) {
     fleetToPlace = [
-        { name: "Drakkar Spécial", size: 3, cssClass: `drakkar-special-${className}`, isSpecial: true },
-        { name: "Drakkar Classique", size: 2, cssClass: `drakkar-1`, isSpecial: false },
-        { name: "Petit Drakkar", size: 2, cssClass: `drakkar-2`, isSpecial: false }
+        { name: "Drakkar Spécial", size: 3, imageFile: `assets/drakkar${className === 'berserker' ? 'berserk' : className === 'navigateur' ? 'navigator' : 'shaman'}.png`, isSpecial: true },
+        { name: "Drakkar Classique", size: 2, imageFile: `assets/drakar1.png`, isSpecial: false },
+        { name: "Petit Drakkar", size: 2, imageFile: `assets/drakar2.png`, isSpecial: false }
     ];
     currentShipIndex = 0;
     placementPhase = true;
@@ -191,14 +191,16 @@ function placeShip(index) {
     
     if (!cells || cells.some(c => playerGridState[c] !== 0)) return; 
     
-    const gridElements = document.querySelectorAll('#player-grid .cell');
+    const row = Math.floor(index / 10);
+    const col = index % 10;
+    
     cells.forEach((c, i) => {
         playerGridState[c] = ship.isSpecial ? 2 : 1;
         if (ship.isSpecial) specialDrakkarCellsPlayer.push(c);
-        
-        gridElements[c].classList.add('ship-placed');
-        if (i === 0) gridElements[c].classList.add(ship.cssClass); 
     });
+
+    // Création de l'élément graphique complet couvrant toute la section du bateau
+    renderPlayerShipGraphic(row, col, ship.size, isHorizontal, ship.imageFile);
     
     currentShipIndex++;
     
@@ -210,6 +212,36 @@ function placeShip(index) {
         isMyTurn = true;
         mettreAJourStatut(dict[currentLang]['status-turn-me']);
     }
+}
+
+function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc) {
+    const playerGrid = document.getElementById('player-grid');
+    const shipDiv = document.createElement('div');
+    shipDiv.classList.add('placed-ship-graphic');
+    
+    const cellSize = 32;
+    const gap = 2;
+    const padding = 5;
+    
+    const leftPx = padding + col * (cellSize + gap);
+    const topPx = padding + row * (cellSize + gap);
+    const totalSpanPx = (size * cellSize) + ((size - 1) * gap);
+    
+    shipDiv.style.left = `${leftPx}px`;
+    shipDiv.style.top = `${topPx}px`;
+    shipDiv.style.backgroundImage = `url('${imageSrc}')`;
+    
+    if (horizontal) {
+        shipDiv.style.width = `${totalSpanPx}px`;
+        shipDiv.style.height = `${cellSize}px`;
+        shipDiv.style.transform = 'none';
+    } else {
+        // En mode vertical, on ajuste les dimensions et on applique une rotation pour que le drakkar suive l'axe vertical
+        shipDiv.style.width = `${cellSize}px`;
+        shipDiv.style.height = `${totalSpanPx}px`;
+    }
+    
+    playerGrid.appendChild(shipDiv);
 }
 
 // ==========================================
