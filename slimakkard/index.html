@@ -17,7 +17,7 @@
     <!-- Bouton de retour au Hub -->
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
 
-    <!-- NOUVEAU : Bouton Paramètres avec ton animation frame par frame -->
+    <!-- Bouton Paramètres (Animation au survol) -->
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
         <div class="settings-anim"></div>
     </div>
@@ -27,6 +27,12 @@
         <div class="modal-content">
             <h2 id="txt-settings">Paramètres</h2>
             
+            <!-- Slider de Volume -->
+            <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
+                <span id="txt-volume" style="margin-bottom: 10px;">Volume Musique 🔊</span>
+                <input type="range" id="music-volume" min="0" max="1" step="0.01" value="0.5" style="width: 100%;">
+            </div>
+
             <div class="setting-item">
                 <span id="txt-lang">Langue / Language 🌍</span>
                 <label class="switch">
@@ -75,7 +81,7 @@
             <p id="multi-status" style="color: #2ecc71; margin-top: 15px; font-weight: bold; font-size: 1.2rem;"></p>
         </div>
 
-        <!-- ÉTAPE 2 : Sélection du Slime (NOUVEAU DESIGN AFFICHES PLEINES) -->
+        <!-- ÉTAPE 2 : Sélection du Slime -->
         <div id="class-selection" class="hidden">
             <h2 id="txt-class-title">Choisis ton Commandant Slime !</h2>
             <div class="classes-container">
@@ -173,6 +179,9 @@
         <p id="txt-end-desc" style="font-size: 24px; margin-bottom: 30px;">La flotte ennemie est au fond de l'océan.</p>
         <button class="start-btn-epic" onclick="location.reload()">Rejouer une bataille</button>
     </div>
+
+    <!-- Balise Audio invisible pour la musique -->
+    <audio id="bg-music" preload="auto"></audio>
 
     <script src="script.js"></script>
 </body>
