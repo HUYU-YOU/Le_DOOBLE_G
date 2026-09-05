@@ -103,7 +103,7 @@ function selectClass(className) {
 }
 
 // ==========================================
-// PHASE DE PLACEMENT & GESTION DES BATEAUX ENTIERS
+// PHASE DE PLACEMENT
 // ==========================================
 function preparerFlotte(className) {
     fleetToPlace = [
@@ -197,9 +197,12 @@ function placeShip(index) {
     cells.forEach((c) => {
         playerGridState[c] = ship.isSpecial ? 2 : 1;
         if (ship.isSpecial) specialDrakkarCellsPlayer.push(c);
+        
+        // Ajoute la couleur rouge de placement
+        document.querySelectorAll('#player-grid .cell')[c].classList.add('ship-placed');
     });
 
-    // NOUVEAU : Dessine le graphique du bateau entier !
+    // NOUVELLE FONCTION MATHEMATIQUE
     renderPlayerShipGraphic(row, col, ship.size, isHorizontal, ship.imageFile);
     
     currentShipIndex++;
@@ -214,37 +217,33 @@ function placeShip(index) {
     }
 }
 
-// Fonction Magique pour créer une superposition visuelle parfaite du bateau
 function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc) {
     const playerGrid = document.getElementById('player-grid');
     const shipDiv = document.createElement('div');
     shipDiv.classList.add('placed-ship-graphic');
     
-    // Mesures exactes basées sur ton CSS (.grid et .cell)
     const cellSize = 32; 
     const gap = 2;
     const padding = 5;
     
-    // Calcul de la position de départ (Top / Left)
     const leftPx = padding + col * (cellSize + gap);
     const topPx = padding + row * (cellSize + gap);
-    
-    // Calcul de la longueur totale du bateau (Cases + espaces inter-cases)
     const totalSpanPx = (size * cellSize) + ((size - 1) * gap);
     
     shipDiv.style.left = `${leftPx}px`;
     shipDiv.style.top = `${topPx}px`;
     shipDiv.style.backgroundImage = `url('${imageSrc}')`;
     
-    // On définit toujours la div comme horizontale au départ
-    shipDiv.style.width = `${totalSpanPx}px`;
-    shipDiv.style.height = `${cellSize}px`;
+    // Le code génère le conteneur à la VERTICALE (car tes dessins pointent vers le haut)
+    shipDiv.style.width = `${cellSize}px`;
+    shipDiv.style.height = `${totalSpanPx}px`;
     
-    // Si c'est vertical, on applique une rotation de 90°
-    if (!horizontal) {
-        // Astuce : on pivote exactement autour du centre de la TOUTE PREMIÈRE case !
+    if (horizontal) {
+        // Si placé à l'horizontale, on pivote l'image de 90° autour du centre exact de sa 1ère case !
         shipDiv.style.transformOrigin = `${cellSize / 2}px ${cellSize / 2}px`;
-        shipDiv.style.transform = 'rotate(90deg)';
+        shipDiv.style.transform = 'rotate(-90deg)';
+    } else {
+        shipDiv.style.transform = 'none';
     }
     
     playerGrid.appendChild(shipDiv);
