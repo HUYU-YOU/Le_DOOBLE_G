@@ -7,7 +7,7 @@ const dict = {
         'txt-settings': 'Paramètres', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Mode Sombre / Nuit 🌙',
         'txt-fs': 'Plein Écran 🖥️', 'txt-close': 'Fermer', 'txt-btn-enter': 'ENTRER DANS LA TEMPÊTE',
         'txt-multi-title': 'Rejoindre le Valhalla', 'txt-btn-create': 'Créer une partie (Solo vs IA)', 'txt-or': 'OU', 
-        'txt-btn-join': 'Rejoindre', 'txt-class-title': 'VIIIIKINNNGGG !', 
+        'txt-btn-join': 'Rejoindre', 'txt-class-title': 'Choisis ton Commandant Slime !', 
         'txt-desc-berserk': 'Frappe 2 fois où il veut.', 'txt-desc-nav': 'Tire sur 2 cases en ligne.', 
         'txt-desc-sham': 'Tire 3 fois aléatoirement.', 'txt-my-fleet': 'Ma Flotte', 'txt-enemy-fleet': 'Flotte Ennemie', 
         'status-wait': 'Génération du champ de bataille...', 'status-connect': 'Connexion...', 
@@ -16,7 +16,8 @@ const dict = {
         'txt-placement-title': "Place ta flotte !", 'rot-horiz': "🔄 Tourner : Horizontal", 'rot-vert': "🔄 Tourner : Vertical",
         'end-win': "VICTOIRE !", 'end-win-desc': "La flotte ennemie repose au fond de l'océan.",
         'end-lose': "DÉFAITE !", 'end-lose-desc': "Le Valhalla vous attend...",
-        'status-power-lost': "⚠️ Drakkar Spécial détruit ! POUVOIR PERDU ! ⚠️"
+        'status-power-lost': "⚠️ Drakkar Spécial détruit ! POUVOIR PERDU ! ⚠️",
+        'txt-volume': "Volume Musique 🔊"
     },
     'en': {
         'txt-settings': 'Settings', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Dark / Night Mode 🌙',
@@ -31,7 +32,8 @@ const dict = {
         'txt-placement-title': "Place your fleet!", 'rot-horiz': "🔄 Rotate: Horizontal", 'rot-vert': "🔄 Rotate: Vertical",
         'end-win': "VICTORY!", 'end-win-desc': "The enemy fleet rests at the bottom of the ocean.",
         'end-lose': "DEFEAT!", 'end-lose-desc': "Valhalla awaits you...",
-        'status-power-lost': "⚠️ Special Drakkar destroyed! POWER LOST! ⚠️"
+        'status-power-lost': "⚠️ Special Drakkar destroyed! POWER LOST! ⚠️",
+        'txt-volume': "Music Volume 🔊"
     }
 };
 
@@ -41,6 +43,41 @@ function toggleLanguage() {
     for (const [id, text] of Object.entries(dict[currentLang])) {
         const element = document.getElementById(id);
         if (element) element.innerText = text;
+    }
+}
+
+// ==========================================
+// SYSTÈME DE MUSIQUE (PLAYLIST)
+// ==========================================
+const playlist = [
+    'assets/music1.mp3', 'assets/music2.mp3', 'assets/music3.mp3',
+    'assets/music4.mp3', 'assets/music5.mp3', 'assets/music6.mp3'
+];
+let currentTrack = 0;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const bgMusic = document.getElementById('bg-music');
+    const volumeSlider = document.getElementById('music-volume');
+    
+    volumeSlider.addEventListener('input', (e) => {
+        bgMusic.volume = e.target.value;
+    });
+
+    bgMusic.addEventListener('ended', () => {
+        currentTrack = (currentTrack + 1) % playlist.length;
+        bgMusic.src = playlist[currentTrack];
+        bgMusic.play();
+    });
+});
+
+function démarrerMusique() {
+    const bgMusic = document.getElementById('bg-music');
+    const volumeSlider = document.getElementById('music-volume');
+    
+    if (bgMusic.src === "") {
+        bgMusic.volume = volumeSlider.value; 
+        bgMusic.src = playlist[currentTrack];
+        bgMusic.play().catch(error => console.log("Autoplay bloqué par le navigateur", error));
     }
 }
 
@@ -56,8 +93,8 @@ const TOTAL_SHIP_CELLS = 7;
 let playerGridState = new Array(100).fill(0); 
 let enemyGridState = new Array(100).fill(0);
 
-// NOUVEAU : Suivi précis des points de vie de chaque bateau
-let playerShipHits = [0, 0, 0]; // Index 0: Spécial(3PV), Index 1: Normal1(2PV), Index 2: Normal2(2PV)
+// Suivi précis des points de vie
+let playerShipHits = [0, 0, 0]; 
 let enemyShipHits = [0, 0, 0];
 let playerHitsTaken = 0;
 let enemyHitsTaken = 0;
@@ -75,6 +112,7 @@ let currentShipIndex = 0;
 function lancerJeu() {
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('game-ui').classList.remove('hidden');
+    démarrerMusique(); 
 }
 
 function creerPartie() {
@@ -107,7 +145,7 @@ function selectClass(className) {
 }
 
 // ==========================================
-// PHASE DE PLACEMENT & HUD
+// PHASE DE PLACEMENT
 // ==========================================
 function preparerFlotte(className) {
     fleetToPlace = [
@@ -116,7 +154,6 @@ function preparerFlotte(className) {
         { name: "Petit Drakkar", size: 2, imageFile: `assets/drakar2.png`, isSpecial: false }
     ];
     
-    // Réinitialisation globale pour pouvoir rejouer
     currentShipIndex = 0;
     placementPhase = true;
     playerGridState.fill(0);
@@ -126,13 +163,12 @@ function preparerFlotte(className) {
     enemyHitsTaken = 0;
     specialDrakkarAlive = true;
     
-    // Reset de l'affichage du HUD
     document.getElementById('p-ship-special').innerHTML = "🟢 Drakkar Spécial"; document.getElementById('p-ship-special').style.color = "";
     document.getElementById('p-ship-class').innerHTML = "🟢 Drakkar Classique"; document.getElementById('p-ship-class').style.color = "";
     document.getElementById('p-ship-small').innerHTML = "🟢 Petit Drakkar"; document.getElementById('p-ship-small').style.color = "";
-    document.getElementById('e-ship-1').innerHTML = "🟢 Navire Spécial"; document.getElementById('e-ship-1').style.color = "";
-    document.getElementById('e-ship-2').innerHTML = "🟢 Navire Classique"; document.getElementById('e-ship-2').style.color = "";
-    document.getElementById('e-ship-3').innerHTML = "🟢 Petit Navire"; document.getElementById('e-ship-3').style.color = "";
+    document.getElementById('e-ship-1').innerHTML = "🟢 Navire 1"; document.getElementById('e-ship-1').style.color = "";
+    document.getElementById('e-ship-2').innerHTML = "🟢 Navire 2"; document.getElementById('e-ship-2').style.color = "";
+    document.getElementById('e-ship-3').innerHTML = "🟢 Navire 3"; document.getElementById('e-ship-3').style.color = "";
     
     document.getElementById('placement-controls').classList.remove('hidden');
     document.getElementById('current-ship-name').innerText = fleetToPlace[currentShipIndex].name;
@@ -213,7 +249,6 @@ function placeShip(index) {
     const col = index % 10;
     
     cells.forEach((c) => {
-        // Enregistre l'ID du bateau posé (1, 2 ou 3)
         playerGridState[c] = currentShipIndex + 1; 
         document.querySelectorAll('#player-grid .cell')[c].classList.add('ship-placed');
     });
@@ -273,7 +308,6 @@ function genererFlotteIA() {
             let horizontal = Math.random() > 0.5;
             let cells = getShipCells(randIndex, size, horizontal);
             if (cells && !cells.some(c => enemyGridState[c] !== 0)) {
-                // L'IA attribue les ID 1, 2, 3 à ses bateaux
                 cells.forEach(c => enemyGridState[c] = index + 1);
                 placed = true;
             }
@@ -287,14 +321,12 @@ function genererFlotteIA() {
 function preparerAttaque(index, cellElement) {
     if (!isMyTurn || placementPhase || cellElement.classList.contains('hit') || cellElement.classList.contains('miss')) return;
 
-    // SI LE BATEAU SPÉCIAL EST DÉTRUIT : Plus de pouvoir, on tire 1 seul coup
     if (!specialDrakkarAlive) {
         executerAttaque(index);
         finDeTour();
         return;
     }
 
-    // SI LE POUVOIR EST ACTIF :
     switch (slimeClass) {
         case 'berserker':
             executerAttaque(index);
@@ -333,18 +365,17 @@ function executerAttaque(index) {
         cell.innerText = "💥";
         enemyHitsTaken++;
         
-        // Logique HUD Ennemi individuel
         enemyShipHits[hitShipId - 1]++;
         if (hitShipId === 1 && enemyShipHits[0] === 3) {
-            document.getElementById('e-ship-1').innerHTML = "❌ Navire Spécial";
+            document.getElementById('e-ship-1').innerHTML = "❌ Navire 1";
             document.getElementById('e-ship-1').style.color = "#e74c3c";
         }
         if (hitShipId === 2 && enemyShipHits[1] === 2) {
-            document.getElementById('e-ship-2').innerHTML = "❌ Navire Classique";
+            document.getElementById('e-ship-2').innerHTML = "❌ Navire 2";
             document.getElementById('e-ship-2').style.color = "#e74c3c";
         }
         if (hitShipId === 3 && enemyShipHits[2] === 2) {
-            document.getElementById('e-ship-3').innerHTML = "❌ Petit Navire";
+            document.getElementById('e-ship-3').innerHTML = "❌ Navire 3";
             document.getElementById('e-ship-3').style.color = "#e74c3c";
         }
         
@@ -359,7 +390,6 @@ function finDeTour() {
     isMyTurn = false;
     berserkerCoupsRestants = 2; 
     
-    // N'écrase pas le message de perte de pouvoir si on vient de le perdre
     if (document.getElementById('game-status').innerText !== dict[currentLang]['status-power-lost']) {
         mettreAJourStatut(dict[currentLang]['status-turn-enemy']);
     }
@@ -395,15 +425,13 @@ function simulerAttaqueAdverse() {
         
         playerHitsTaken++;
         
-        // Logique HUD Joueur + PERTE DE POUVOIR
         playerShipHits[hitShipId - 1]++;
         
         if (hitShipId === 1 && playerShipHits[0] === 3) {
-            // Le drakkar Spécial est entièrement coulé !
             specialDrakkarAlive = false;
             document.getElementById('p-ship-special').innerHTML = "❌ Drakkar Spécial";
             document.getElementById('p-ship-special').style.color = "#e74c3c";
-            mettreAJourStatut(dict[currentLang]['status-power-lost']); // Affiche l'alerte !
+            mettreAJourStatut(dict[currentLang]['status-power-lost']);
         } else if (hitShipId === 2 && playerShipHits[1] === 2) {
             document.getElementById('p-ship-class').innerHTML = "❌ Drakkar Classique";
             document.getElementById('p-ship-class').style.color = "#e74c3c";
@@ -426,7 +454,6 @@ function simulerAttaqueAdverse() {
     if (playerHitsTaken < TOTAL_SHIP_CELLS) {
         setTimeout(() => {
             isMyTurn = true;
-            // Redonne la main visuellement si on n'est pas mort, en évitant d'écraser l'alerte de perte de pouvoir immédiatement
             if (document.getElementById('game-status').innerText !== dict[currentLang]['status-power-lost']) {
                 mettreAJourStatut(dict[currentLang]['status-turn-me']);
             }
