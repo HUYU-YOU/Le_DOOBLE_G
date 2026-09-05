@@ -7,15 +7,16 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- BOUTONS ET INTERFACE FIXES AU-DESSUS -->
+    <div id="start-screen">
+        <button id="start-btn" onclick="startGame()">Démarrer l'Aventure ▶</button>
+    </div>
+
     <a href="../index.html" class="btn-hub">⬅ Retour</a>
 
-    <!-- Bouton de paramètres avec ses animations JS -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
-    <!-- Modal des Paramètres -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2>Paramètres</h2>
@@ -30,25 +31,20 @@
         </div>
     </div>
 
-    <!-- Titre discret en haut -->
     <div id="game-ui">
         <h1>Éline in Slimerland</h1>
     </div>
     
-    <!-- CONTENEUR VIDÉO PLEIN ÉCRAN -->
     <div id="game-container">
-        <!-- La vidéo interactive -->
         <video id="story-video" playsinline></video>
         
-        <!-- L'interface de texte et de choix superposée à la vidéo -->
         <div id="video-ui">
             <h2 id="top-text" class="story-text"></h2>
             
             <div id="bottom-section">
                 <p id="bottom-text" class="story-text"></p>
                 <div id="choices-container">
-                    <!-- Les boutons de choix seront injectés ici par le JavaScript -->
-                </div>
+                    </div>
             </div>
         </div>
     </div>
