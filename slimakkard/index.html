@@ -70,9 +70,13 @@
         <!-- ÉTAPE 1 : Menu Multijoueur / Solo -->
         <div id="multi-menu">
             <h2 id="txt-multi-title">Rejoindre le Valhalla</h2>
-            <div style="margin: 20px;">
-                <button class="start-btn" id="txt-btn-create" onclick="creerPartie()">Créer une partie (Solo vs IA)</button>
+            
+            <!-- NOUVEAU : Boutons Héberger et Solo alignés proprement -->
+            <div style="margin: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                <button class="start-btn" id="txt-btn-host" onclick="hebergerPartie()" style="width: 250px;">Héberger une partie (Multi)</button>
+                <button class="start-btn" id="txt-btn-create" onclick="creerPartie()" style="width: 250px;">Créer une partie (Solo vs IA)</button>
             </div>
+
             <p id="txt-or">OU</p>
             <div style="margin: 20px;">
                 <input type="text" id="join-code" placeholder="VIK1234" maxlength="7" style="padding: 10px; font-size: 18px; text-transform: uppercase;">
