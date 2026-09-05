@@ -17,10 +17,9 @@
     <!-- Bouton de retour au Hub -->
     <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
 
-    <!-- Bouton Paramètres avec le Slime en orbite -->
+    <!-- NOUVEAU : Bouton Paramètres avec ton animation frame par frame -->
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
-        <div class="orbiting-slime"></div>
-        <img src="../img/setting.png" alt="Paramètres" class="settings-btn">
+        <div class="settings-anim"></div>
     </div>
 
     <!-- Modal des Paramètres -->
@@ -76,24 +75,27 @@
             <p id="multi-status" style="color: #2ecc71; margin-top: 15px; font-weight: bold; font-size: 1.2rem;"></p>
         </div>
 
-        <!-- ÉTAPE 2 : Sélection du Slime -->
+        <!-- ÉTAPE 2 : Sélection du Slime (NOUVEAU DESIGN AFFICHES PLEINES) -->
         <div id="class-selection" class="hidden">
             <h2 id="txt-class-title">Choisis ton Commandant Slime !</h2>
             <div class="classes-container">
                 <button class="class-btn berserker-btn" onclick="selectClass('berserker')">
-                    <img src="assets/berserk.jpg" alt="Berserker" class="slime-skin-large">
-                    <h3>Slime Berserker 🪓</h3>
-                    <p id="txt-desc-berserk">Frappe 2 fois où il veut.</p>
+                    <div class="class-info">
+                        <h3>Slime Berserker 🪓</h3>
+                        <p id="txt-desc-berserk">Frappe 2 fois où il veut.</p>
+                    </div>
                 </button>
                 <button class="class-btn navigateur-btn" onclick="selectClass('navigateur')">
-                    <img src="assets/navigator.jpeg" alt="Navigateur" class="slime-skin-large">
-                    <h3>Slime Navigateur 🧭</h3>
-                    <p id="txt-desc-nav">Tire sur 2 cases en ligne.</p>
+                    <div class="class-info">
+                        <h3>Slime Navigateur 🧭</h3>
+                        <p id="txt-desc-nav">Tire sur 2 cases en ligne.</p>
+                    </div>
                 </button>
                 <button class="class-btn chaman-btn" onclick="selectClass('chaman')">
-                    <img src="assets/shaman.jpg" alt="Chaman" class="slime-skin-large">
-                    <h3>Slime Chaman Loki 🔮</h3>
-                    <p id="txt-desc-sham">Tire 3 fois aléatoirement.</p>
+                    <div class="class-info">
+                        <h3>Slime Chaman Loki 🔮</h3>
+                        <p id="txt-desc-sham">Tire 3 fois aléatoirement.</p>
+                    </div>
                 </button>
             </div>
         </div>
@@ -113,13 +115,12 @@
                 <div class="grid-section">
                     <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
                         <span id="txt-my-fleet">Ma Flotte</span> 
-                        <img id="player-skin-display" src="" class="slime-skin" style="width: 40px; height: 40px; margin: 0; border-width: 2px;">
+                        <img id="player-skin-display" src="" class="slime-skin-small" style="width: 40px; height: 40px; margin: 0; border-width: 2px;">
                     </h2>
                     <div class="board-wrapper">
                         <div class="col-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
                         <div class="board-row">
                             <div class="row-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
-                            <!-- NOUVEAU : Wrapper Vidéo Quadrillage 1 -->
                             <div class="grid-video-wrapper">
                                 <video autoplay loop muted playsinline class="grid-bg-video">
                                     <source src="assets/QUADRILLAGE1.mp4" type="video/mp4">
@@ -143,7 +144,6 @@
                         <div class="col-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
                         <div class="board-row">
                             <div class="row-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
-                            <!-- NOUVEAU : Wrapper Vidéo Quadrillage 2 -->
                             <div class="grid-video-wrapper">
                                 <video autoplay loop muted playsinline class="grid-bg-video">
                                     <source src="assets/QUADRILLAGE2.mp4" type="video/mp4">
