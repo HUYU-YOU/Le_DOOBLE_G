@@ -19,6 +19,38 @@ body.dark-mode {
     background-color: #000;
 }
 
+/* --- Écran de Démarrage --- */
+#start-screen {
+    position: absolute;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: #0b0f19;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000; /* Au-dessus de tout le reste */
+}
+
+#start-btn {
+    background: rgba(0, 229, 255, 0.2);
+    color: #00e5ff;
+    border: 2px solid #00e5ff;
+    padding: 20px 40px;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+    text-transform: uppercase;
+}
+
+#start-btn:hover {
+    background: #00e5ff;
+    color: #000;
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.8);
+}
+
 /* --- UI Boutons Haut --- */
 .btn-hub {
     position: absolute; top: 20px; left: 20px;
