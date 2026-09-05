@@ -74,7 +74,8 @@ function démarrerMusique() {
     const bgMusic = document.getElementById('bg-music');
     const volumeSlider = document.getElementById('music-volume');
     
-    if (bgMusic.src === "") {
+    // Sécurité de lancement
+    if (!bgMusic.getAttribute('src')) {
         bgMusic.volume = volumeSlider.value; 
         bgMusic.src = playlist[currentTrack];
         bgMusic.play().catch(error => console.log("Autoplay bloqué par le navigateur", error));
@@ -93,7 +94,6 @@ const TOTAL_SHIP_CELLS = 7;
 let playerGridState = new Array(100).fill(0); 
 let enemyGridState = new Array(100).fill(0);
 
-// Suivi précis des points de vie
 let playerShipHits = [0, 0, 0]; 
 let enemyShipHits = [0, 0, 0];
 let playerHitsTaken = 0;
@@ -316,7 +316,7 @@ function genererFlotteIA() {
 }
 
 // ==========================================
-// PHASE DE COMBAT (AVEC PERTE DE POUVOIR)
+// PHASE DE COMBAT & PERTE DE POUVOIR
 // ==========================================
 function preparerAttaque(index, cellElement) {
     if (!isMyTurn || placementPhase || cellElement.classList.contains('hit') || cellElement.classList.contains('miss')) return;
@@ -424,7 +424,6 @@ function simulerAttaqueAdverse() {
         setTimeout(() => document.getElementById('game-ui').classList.remove('shake'), 500);
         
         playerHitsTaken++;
-        
         playerShipHits[hitShipId - 1]++;
         
         if (hitShipId === 1 && playerShipHits[0] === 3) {
