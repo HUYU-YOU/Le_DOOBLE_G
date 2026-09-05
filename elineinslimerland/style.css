@@ -15,7 +15,11 @@ body {
     overflow: hidden;
 }
 
-/* UI Boutons Haut (Z-index très haut pour rester cliquables par-dessus la vidéo) */
+body.dark-mode {
+    background-color: #000;
+}
+
+/* --- UI Boutons Haut --- */
 .btn-hub {
     position: absolute; top: 20px; left: 20px;
     background-color: rgba(26, 26, 46, 0.85); color: white; text-decoration: none;
@@ -36,7 +40,7 @@ body {
     filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
 }
 
-/* Modal Paramètres */
+/* --- Modal Paramètres --- */
 .modal {
     display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center;
@@ -58,13 +62,14 @@ input:checked + .slider { background-color: #00e5ff; box-shadow: 0 0 10px #00e5f
 input:checked + .slider:before { transform: translateX(26px); }
 .close-btn { margin-top: 15px; background: #00e5ff; color: #000; border: none; padding: 10px 25px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 
+/* --- Interface Titre --- */
 #game-ui { 
     position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
     text-align: center; z-index: 100; text-shadow: 0 2px 5px rgba(0,0,0,0.9); pointer-events: none;
 }
 h1 { font-size: 26px; color: #00e5ff; letter-spacing: 1px; }
 
-/* LE CONTENEUR VIDÉO EN GRAND (PLEIN ÉCRAN) */
+/* --- LE CONTENEUR VIDÉO EN GRAND (PLEIN ÉCRAN) --- */
 #game-container {
     position: absolute;
     top: 0; left: 0;
@@ -80,7 +85,7 @@ h1 { font-size: 26px; color: #00e5ff; letter-spacing: 1px; }
     object-fit: cover; /* Remplit tout l'écran sans déformer */
 }
 
-/* L'INTERFACE SUR LA VIDÉO */
+/* --- L'INTERFACE SUR LA VIDÉO --- */
 #video-ui {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -101,8 +106,9 @@ h1 { font-size: 26px; color: #00e5ff; letter-spacing: 1px; }
 #bottom-section { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-bottom: 30px; }
 #bottom-text { font-size: 22px; color: #00e5ff; }
 
+/* --- Les Choix --- */
 #choices-container {
-    display: flex; gap: 20px; justify-content: center;
+    display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
     opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
 }
 #choices-container.visible { opacity: 1; pointer-events: auto; }
