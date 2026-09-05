@@ -41,7 +41,7 @@ const story = {
         bottomText: "Tu as fui en courant...",
         showUIAtEnd: false,
         choices: [
-            { text: "Recommencer", targetScene: "partie1" }
+            { text: "Menu Principal", targetScene: "partie1" } // Modifié pour faire une boucle propre
         ]
     }
 };
@@ -51,47 +51,45 @@ const videoElement = document.getElementById('story-video');
 const topTextElement = document.getElementById('top-text');
 const bottomTextElement = document.getElementById('bottom-text');
 const choicesContainer = document.getElementById('choices-container');
-
 let currentSceneData = null;
 
 function loadScene(sceneId) {
+    // Si on retourne au menu principal depuis un Game Over
+    if (sceneId === "partie1" && currentSceneData && currentSceneData.topText === "Game Over") {
+        document.getElementById('main-menu').style.display = 'flex'; // On réaffiche le menu
+        videoElement.pause(); // On coupe la vidéo
+        return;
+    }
+
     currentSceneData = story[sceneId];
     
-    // 1. Cacher l'interface le temps que la vidéo démarre
     topTextElement.classList.remove('visible');
     bottomTextElement.classList.remove('visible');
     choicesContainer.classList.remove('visible');
     choicesContainer.innerHTML = '';
     
-    // 2. Charger la nouvelle vidéo
     videoElement.src = currentSceneData.videoSrc;
-    videoElement.load(); // Ligne ultra importante pour réinitialiser la vidéo !
+    videoElement.load(); 
     
-    // 3. Lancer la vidéo avec protection (play() renvoie une promise)
     let playPromise = videoElement.play();
     if (playPromise !== undefined) {
         playPromise.catch(error => {
             console.log("Lecture auto bloquée ou fichier introuvable : ", error);
-            // Sécurité : au cas où le navigateur bloque la vidéo, on affiche quand même les boutons.
             showInterface(); 
         });
     }
 
-    // 4. Préparer les textes de l'UI
     topTextElement.innerText = currentSceneData.topText || "";
     bottomTextElement.innerText = currentSceneData.bottomText || "";
 
-    // 5. Créer les boutons de choix interactifs
     currentSceneData.choices.forEach(choice => {
         const btn = document.createElement('button');
         btn.className = 'choice-btn';
         btn.innerText = choice.text;
-        // On attache la fonction de changement de scène au clic
         btn.onclick = () => loadScene(choice.targetScene);
         choicesContainer.appendChild(btn);
     });
 
-    // 6. Afficher l'interface tout de suite si on ne doit pas attendre la fin de la vidéo
     if (!currentSceneData.showUIAtEnd) {
         showInterface();
     }
@@ -103,36 +101,11 @@ function showInterface() {
     if (currentSceneData.choices.length > 0) choicesContainer.classList.add('visible');
 }
 
-// Événement : Quand la vidéo est totalement terminée...
 videoElement.onended = () => {
-    // ...on affiche les choix seulement si showUIAtEnd est à true
     if (currentSceneData.showUIAtEnd) {
         showInterface();
     }
 };
-
-
-// --- ANIMATIONS DU BOUTON PARAMÈTRES ---
-function startSettingsAnim() {
-    const img = document.getElementById('settings-btn-img');
-    if(img) img.style.transform = 'rotate(90deg) scale(1.15)';
-}
-
-function stopSettingsAnim() {
-    const img = document.getElementById('settings-btn-img');
-    if(img) img.style.transform = 'rotate(0deg) scale(1)';
-}
-
-function clickSettingsAnim() {
-    const img = document.getElementById('settings-btn-img');
-    if(img) {
-        img.style.transform = 'rotate(180deg) scale(1.25)';
-        setTimeout(() => {
-            img.style.transform = 'rotate(0deg) scale(1)';
-        }, 300);
-    }
-    toggleSettings();
-}
 
 // --- GESTION MODAL & THÈME ---
 function toggleSettings() {
@@ -144,7 +117,20 @@ function toggleTheme() {
     document.body.classList.toggle('dark-mode');
 }
 
-// Lancement automatique de la première scène au chargement
-window.onload = () => {
+// --- BOUTONS DU MENU PRINCIPAL ---
+function startNewGame() {
+    // On cache le menu et on lance la partie 1
+    document.getElementById('main-menu').style.display = 'none';
     loadScene('partie1');
-};
+}
+
+function continueGame() {
+    // Pour l'instant, on n'a pas de système de sauvegarde complet, on affiche une alerte
+    alert("Aucune sauvegarde trouvée. Lancement d'une nouvelle partie !");
+    startNewGame();
+}
+
+function quitGame() {
+    // Redirige vers la page d'accueil (ou l'index racine de ton projet)
+    window.location.href = "../index.html"; 
+}
