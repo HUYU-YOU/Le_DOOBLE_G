@@ -20,7 +20,7 @@ body.dark-mode .bg-overlay { background: rgba(0, 0, 0, 0.85); }
 .start-btn-epic:hover { transform: scale(1.05); background-color: #27ae60; }
 
 /* =========================================
-   4. BOUTONS HUB ET PARAMÈTRES (ANIMATION FRAMES)
+   4. BOUTONS HUB ET PARAMÈTRES (ANIMATION AU SURVOL)
    ========================================= */
 .btn-hub { position: absolute; top: 20px; left: 20px; background-color: rgba(26, 26, 46, 0.8); color: white; text-decoration: none; border: 1px solid #2ecc71; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.3s; z-index: 100; }
 .btn-hub:hover { background-color: rgba(46, 204, 113, 0.3); box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }
@@ -29,22 +29,28 @@ body.dark-mode .bg-overlay { background: rgba(0, 0, 0, 0.85); }
     position: absolute; top: 20px; right: 25px;
     width: 50px; height: 50px; cursor: pointer; z-index: 100;
 }
-.settings-btn-wrapper:hover { transform: scale(1.15); transition: 0.2s; }
 
-/* NOUVEAU : Animation de tes 5 frames */
+/* L'image de base (Frame 1) */
 .settings-anim {
     width: 100%; height: 100%;
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    animation: gear-frames 0.6s infinite;
+    background-size: contain; background-position: center; background-repeat: no-repeat;
+    background-image: url('../img/settings1.png'); 
+    transition: transform 0.2s;
 }
+
+/* L'animation s'active UNIQUEMENT au survol (:hover) */
+.settings-btn-wrapper:hover .settings-anim {
+    transform: scale(1.15); /* Petit zoom */
+    animation: gear-frames 0.5s infinite steps(1); /* Steps permet de passer d'une image à l'autre sans fondu */
+}
+
 @keyframes gear-frames {
-    0%, 19.9% { background-image: url('../img/settings1.png'); }
-    20%, 39.9% { background-image: url('../img/settings2.png'); }
-    40%, 59.9% { background-image: url('../img/settings3.png'); }
-    60%, 79.9% { background-image: url('../img/settings4.png'); }
-    80%, 100% { background-image: url('../img/settings5.png'); }
+    0% { background-image: url('../img/settings1.png'); }
+    20% { background-image: url('../img/settings2.png'); }
+    40% { background-image: url('../img/settings3.png'); }
+    60% { background-image: url('../img/settings4.png'); }
+    80% { background-image: url('../img/settings5.png'); }
+    100% { background-image: url('../img/settings1.png'); }
 }
 
 /* Modal Paramètres */
@@ -63,7 +69,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 .close-btn:hover { box-shadow: 0 0 20px #2ecc71; transform: scale(1.05); }
 
 /* =========================================
-   5. INTERFACE JEU ET AFFICHES DE CLASSES (POSTERS)
+   5. INTERFACE JEU & PERSOS EN GRAND
    ========================================= */
 #game-ui { position: relative; z-index: 10; text-align: center; margin-top: 20px; }
 .hidden { display: none !important; }
@@ -71,31 +77,14 @@ input:checked + .slider:before { transform: translateX(26px); }
 .start-btn:hover { background: #27ae60; transform: scale(1.05); }
 
 .classes-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 20px; }
-
-/* NOUVEAU DESIGN : Grandes Affiches */
-.class-btn { 
-    position: relative;
-    width: 250px; height: 350px; 
-    border: 3px solid transparent; border-radius: 15px; 
-    cursor: pointer; transition: 0.3s; 
-    overflow: hidden; 
-    background-size: cover; background-position: center; 
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
-}
+.class-btn { position: relative; width: 250px; height: 350px; border: 3px solid transparent; border-radius: 15px; cursor: pointer; transition: 0.3s; overflow: hidden; background-size: cover; background-position: center; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
 .berserker-btn { background-image: url('assets/berserk.jpg'); }
 .navigateur-btn { background-image: url('assets/navigator.jpeg'); }
 .chaman-btn { background-image: url('assets/shaman.jpg'); }
-
 .class-btn:hover { border-color: #2ecc71; box-shadow: 0 0 25px rgba(46, 204, 113, 0.8); transform: translateY(-10px); }
-
-.class-info {
-    position: absolute; bottom: 0; left: 0; width: 100%;
-    background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, rgba(0,0,0,0));
-    padding: 40px 15px 15px 15px; color: white; text-align: center;
-}
+.class-info { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, rgba(0,0,0,0)); padding: 40px 15px 15px 15px; color: white; text-align: center; }
 .class-info h3 { margin-bottom: 5px; color: #2ecc71; text-shadow: 0 2px 4px #000; font-size: 1.3rem;}
 .class-info p { font-size: 14px; text-shadow: 0 1px 2px #000; font-weight: bold;}
-
 .slime-skin-small { border-radius: 50%; object-fit: cover; border: 2px solid #2ecc71; }
 
 /* =========================================
@@ -114,28 +103,24 @@ input:checked + .slider:before { transform: translateX(26px); }
 .grid-video-wrapper { position: relative; border: 2px solid #2ecc71; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.5); overflow: hidden; }
 .grid-bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.85; }
 
-.grid {
-    position: relative;
-    display: grid; grid-template-columns: repeat(10, 32px); grid-template-rows: repeat(10, 32px);
-    gap: 2px; padding: 5px; background-color: transparent; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); z-index: 1;
-}
+.grid { position: relative; display: grid; grid-template-columns: repeat(10, 32px); grid-template-rows: repeat(10, 32px); gap: 2px; padding: 5px; background-color: transparent; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); z-index: 1; }
 
-.cell {
-    width: 32px; height: 32px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: 0.2s;
-    background-color: rgba(0, 0, 0, 0.4); 
-    font-size: 18px; display: flex; align-items: center; justify-content: center; z-index: 2;
-}
+.cell { width: 32px; height: 32px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: 0.2s; background-color: rgba(0, 0, 0, 0.4); font-size: 18px; display: flex; align-items: center; justify-content: center; z-index: 2; }
 .cell:hover { background-color: rgba(46, 204, 113, 0.4); }
 
-.preview-valid { background-color: rgba(46, 204, 113, 0.6) !important; }
-.preview-invalid { background-color: rgba(231, 76, 60, 0.6) !important; }
+/* --- MODIFICATION ICI : Couleurs de Placement en ROUGE --- */
+.preview-valid { background-color: rgba(231, 76, 60, 0.6) !important; }
+.preview-invalid { background-color: rgba(149, 165, 166, 0.6) !important; } /* Gris si invalide */
+.ship-placed { background-color: rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c; }
+
+/* États de combat */
 .cell.miss { background-color: rgba(52, 152, 219, 0.7) !important; }
-.cell.hit { background-color: rgba(231, 76, 60, 0.8) !important; }
+.cell.hit { background-color: rgba(231, 76, 60, 0.9) !important; text-shadow: 0 0 5px #000; }
 
 /* Bateau couché recouvrant précisément ses cases */
 .placed-ship-graphic {
     position: absolute;
-    background-size: 100% 100%; /* Force l'image à remplir l'espace calculé */
+    background-size: 100% 100%; 
     background-repeat: no-repeat;
     background-position: center;
     pointer-events: none;
