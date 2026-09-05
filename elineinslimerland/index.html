@@ -7,19 +7,29 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="start-screen">
-        <button id="start-btn" onclick="startGame()">Démarrer l'Aventure ▶</button>
-    </div>
 
-    <a href="../index.html" class="btn-hub">⬅ Retour</a>
-
-    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
-        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    <div id="main-menu">
+        <div class="menu-container">
+            <h1>Éline in Slimerland</h1>
+            <button class="menu-btn" onclick="startNewGame()">Nouvelle partie</button>
+            <button class="menu-btn" onclick="continueGame()">Reprendre partie</button>
+            <button class="menu-btn" onclick="toggleSettings()">Options</button>
+            <button class="menu-btn" onclick="quitGame()">Quitter</button>
+        </div>
     </div>
 
     <div id="settings-modal" class="modal">
         <div class="modal-content">
-            <h2>Paramètres</h2>
+            <h2>Options</h2>
+            
+            <div class="setting-item">
+                <span>Langue 🌍</span>
+                <select id="lang-select">
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+
             <div class="setting-item">
                 <span>Mode Sombre 🌙</span>
                 <label class="switch">
@@ -27,12 +37,13 @@
                     <span class="slider"></span>
                 </label>
             </div>
+
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
     <div id="game-ui">
-        <h1>Éline in Slimerland</h1>
+        <h1 class="in-game-title">Éline in Slimerland</h1>
     </div>
     
     <div id="game-container">
