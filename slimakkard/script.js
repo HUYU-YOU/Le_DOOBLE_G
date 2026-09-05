@@ -15,7 +15,8 @@ const dict = {
         'status-turn-enemy': "L'ennemi prépare son attaque...", 'status-chaos': "Le Chaman invoque le chaos !", 
         'txt-placement-title': "Place ta flotte !", 'rot-horiz': "🔄 Tourner : Horizontal", 'rot-vert': "🔄 Tourner : Vertical",
         'end-win': "VICTOIRE !", 'end-win-desc': "La flotte ennemie repose au fond de l'océan.",
-        'end-lose': "DÉFAITE !", 'end-lose-desc': "Le Valhalla vous attend..."
+        'end-lose': "DÉFAITE !", 'end-lose-desc': "Le Valhalla vous attend...",
+        'status-power-lost': "⚠️ Drakkar Spécial détruit ! POUVOIR PERDU ! ⚠️"
     },
     'en': {
         'txt-settings': 'Settings', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Dark / Night Mode 🌙',
@@ -29,7 +30,8 @@ const dict = {
         'status-turn-enemy': "Enemy is preparing to attack...", 'status-chaos': "The Shaman summons chaos!", 
         'txt-placement-title': "Place your fleet!", 'rot-horiz': "🔄 Rotate: Horizontal", 'rot-vert': "🔄 Rotate: Vertical",
         'end-win': "VICTORY!", 'end-win-desc': "The enemy fleet rests at the bottom of the ocean.",
-        'end-lose': "DEFEAT!", 'end-lose-desc': "Valhalla awaits you..."
+        'end-lose': "DEFEAT!", 'end-lose-desc': "Valhalla awaits you...",
+        'status-power-lost': "⚠️ Special Drakkar destroyed! POWER LOST! ⚠️"
     }
 };
 
@@ -53,11 +55,13 @@ let isHorizontal = true;
 const TOTAL_SHIP_CELLS = 7; 
 let playerGridState = new Array(100).fill(0); 
 let enemyGridState = new Array(100).fill(0);
+
+// NOUVEAU : Suivi précis des points de vie de chaque bateau
+let playerShipHits = [0, 0, 0]; // Index 0: Spécial(3PV), Index 1: Normal1(2PV), Index 2: Normal2(2PV)
+let enemyShipHits = [0, 0, 0];
 let playerHitsTaken = 0;
 let enemyHitsTaken = 0;
 
-let specialDrakkarCellsPlayer = [];
-let specialDrakkarHits = 0;
 let specialDrakkarAlive = true;
 let berserkerCoupsRestants = 2;
 
@@ -103,7 +107,7 @@ function selectClass(className) {
 }
 
 // ==========================================
-// PHASE DE PLACEMENT
+// PHASE DE PLACEMENT & HUD
 // ==========================================
 function preparerFlotte(className) {
     fleetToPlace = [
@@ -111,10 +115,24 @@ function preparerFlotte(className) {
         { name: "Drakkar Classique", size: 2, imageFile: `assets/drakar1.png`, isSpecial: false },
         { name: "Petit Drakkar", size: 2, imageFile: `assets/drakar2.png`, isSpecial: false }
     ];
+    
+    // Réinitialisation globale pour pouvoir rejouer
     currentShipIndex = 0;
     placementPhase = true;
     playerGridState.fill(0);
-    specialDrakkarCellsPlayer = [];
+    playerShipHits = [0, 0, 0];
+    enemyShipHits = [0, 0, 0];
+    playerHitsTaken = 0;
+    enemyHitsTaken = 0;
+    specialDrakkarAlive = true;
+    
+    // Reset de l'affichage du HUD
+    document.getElementById('p-ship-special').innerHTML = "🟢 Drakkar Spécial"; document.getElementById('p-ship-special').style.color = "";
+    document.getElementById('p-ship-class').innerHTML = "🟢 Drakkar Classique"; document.getElementById('p-ship-class').style.color = "";
+    document.getElementById('p-ship-small').innerHTML = "🟢 Petit Drakkar"; document.getElementById('p-ship-small').style.color = "";
+    document.getElementById('e-ship-1').innerHTML = "🟢 Navire Spécial"; document.getElementById('e-ship-1').style.color = "";
+    document.getElementById('e-ship-2').innerHTML = "🟢 Navire Classique"; document.getElementById('e-ship-2').style.color = "";
+    document.getElementById('e-ship-3').innerHTML = "🟢 Petit Navire"; document.getElementById('e-ship-3').style.color = "";
     
     document.getElementById('placement-controls').classList.remove('hidden');
     document.getElementById('current-ship-name').innerText = fleetToPlace[currentShipIndex].name;
@@ -195,14 +213,11 @@ function placeShip(index) {
     const col = index % 10;
     
     cells.forEach((c) => {
-        playerGridState[c] = ship.isSpecial ? 2 : 1;
-        if (ship.isSpecial) specialDrakkarCellsPlayer.push(c);
-        
-        // Ajoute la couleur rouge de placement
+        // Enregistre l'ID du bateau posé (1, 2 ou 3)
+        playerGridState[c] = currentShipIndex + 1; 
         document.querySelectorAll('#player-grid .cell')[c].classList.add('ship-placed');
     });
 
-    // NOUVELLE FONCTION MATHEMATIQUE
     renderPlayerShipGraphic(row, col, ship.size, isHorizontal, ship.imageFile);
     
     currentShipIndex++;
@@ -222,9 +237,7 @@ function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc) {
     const shipDiv = document.createElement('div');
     shipDiv.classList.add('placed-ship-graphic');
     
-    const cellSize = 32; 
-    const gap = 2;
-    const padding = 5;
+    const cellSize = 32; const gap = 2; const padding = 5;
     
     const leftPx = padding + col * (cellSize + gap);
     const topPx = padding + row * (cellSize + gap);
@@ -234,12 +247,10 @@ function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc) {
     shipDiv.style.top = `${topPx}px`;
     shipDiv.style.backgroundImage = `url('${imageSrc}')`;
     
-    // Le code génère le conteneur à la VERTICALE (car tes dessins pointent vers le haut)
     shipDiv.style.width = `${cellSize}px`;
     shipDiv.style.height = `${totalSpanPx}px`;
     
     if (horizontal) {
-        // Si placé à l'horizontale, on pivote l'image de 90° autour du centre exact de sa 1ère case !
         shipDiv.style.transformOrigin = `${cellSize / 2}px ${cellSize / 2}px`;
         shipDiv.style.transform = 'rotate(-90deg)';
     } else {
@@ -255,14 +266,15 @@ function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc) {
 function genererFlotteIA() {
     enemyGridState.fill(0);
     const ships = [3, 2, 2];
-    ships.forEach(size => {
+    ships.forEach((size, index) => {
         let placed = false;
         while (!placed) {
             let randIndex = Math.floor(Math.random() * 100);
             let horizontal = Math.random() > 0.5;
             let cells = getShipCells(randIndex, size, horizontal);
             if (cells && !cells.some(c => enemyGridState[c] !== 0)) {
-                cells.forEach(c => enemyGridState[c] = 1);
+                // L'IA attribue les ID 1, 2, 3 à ses bateaux
+                cells.forEach(c => enemyGridState[c] = index + 1);
                 placed = true;
             }
         }
@@ -270,17 +282,19 @@ function genererFlotteIA() {
 }
 
 // ==========================================
-// PHASE DE COMBAT
+// PHASE DE COMBAT (AVEC PERTE DE POUVOIR)
 // ==========================================
 function preparerAttaque(index, cellElement) {
     if (!isMyTurn || placementPhase || cellElement.classList.contains('hit') || cellElement.classList.contains('miss')) return;
 
+    // SI LE BATEAU SPÉCIAL EST DÉTRUIT : Plus de pouvoir, on tire 1 seul coup
     if (!specialDrakkarAlive) {
         executerAttaque(index);
         finDeTour();
         return;
     }
 
+    // SI LE POUVOIR EST ACTIF :
     switch (slimeClass) {
         case 'berserker':
             executerAttaque(index);
@@ -312,13 +326,28 @@ function executerAttaque(index) {
     const cell = document.querySelectorAll('#adversary-grid .cell')[index];
     if (cell.classList.contains('hit') || cell.classList.contains('miss')) return;
 
-    if (enemyGridState[index] === 1) {
+    let hitShipId = enemyGridState[index];
+
+    if (hitShipId !== 0) {
         cell.classList.add('hit');
         cell.innerText = "💥";
         enemyHitsTaken++;
-        if (enemyHitsTaken >= 3) document.getElementById('e-ship-1').style.color = "#e74c3c";
-        if (enemyHitsTaken >= 5) document.getElementById('e-ship-2').style.color = "#e74c3c";
-        if (enemyHitsTaken >= 7) document.getElementById('e-ship-3').style.color = "#e74c3c";
+        
+        // Logique HUD Ennemi individuel
+        enemyShipHits[hitShipId - 1]++;
+        if (hitShipId === 1 && enemyShipHits[0] === 3) {
+            document.getElementById('e-ship-1').innerHTML = "❌ Navire Spécial";
+            document.getElementById('e-ship-1').style.color = "#e74c3c";
+        }
+        if (hitShipId === 2 && enemyShipHits[1] === 2) {
+            document.getElementById('e-ship-2').innerHTML = "❌ Navire Classique";
+            document.getElementById('e-ship-2').style.color = "#e74c3c";
+        }
+        if (hitShipId === 3 && enemyShipHits[2] === 2) {
+            document.getElementById('e-ship-3').innerHTML = "❌ Petit Navire";
+            document.getElementById('e-ship-3').style.color = "#e74c3c";
+        }
+        
         checkWinCondition();
     } else {
         cell.classList.add('miss');
@@ -329,7 +358,11 @@ function executerAttaque(index) {
 function finDeTour() {
     isMyTurn = false;
     berserkerCoupsRestants = 2; 
-    mettreAJourStatut(dict[currentLang]['status-turn-enemy']);
+    
+    // N'écrase pas le message de perte de pouvoir si on vient de le perdre
+    if (document.getElementById('game-status').innerText !== dict[currentLang]['status-power-lost']) {
+        mettreAJourStatut(dict[currentLang]['status-turn-enemy']);
+    }
     setTimeout(simulerAttaqueAdverse, 1500);
 }
 
@@ -352,35 +385,38 @@ function simulerAttaqueAdverse() {
         while (playerCells[target].classList.contains('miss') || playerCells[target].classList.contains('hit'));
     }
     
-    if (playerGridState[target] !== 0) {
+    let hitShipId = playerGridState[target];
+
+    if (hitShipId !== 0) {
         playerCells[target].classList.add('hit');
         playerCells[target].innerText = "💥";
         document.getElementById('game-ui').classList.add('shake');
         setTimeout(() => document.getElementById('game-ui').classList.remove('shake'), 500);
         
         playerHitsTaken++;
-        if (playerHitsTaken >= 3) document.getElementById('p-ship-special').style.color = "#e74c3c";
-        if (playerHitsTaken >= 5) document.getElementById('p-ship-class').style.color = "#e74c3c";
-        if (playerHitsTaken >= 7) document.getElementById('p-ship-small').style.color = "#e74c3c";
+        
+        // Logique HUD Joueur + PERTE DE POUVOIR
+        playerShipHits[hitShipId - 1]++;
+        
+        if (hitShipId === 1 && playerShipHits[0] === 3) {
+            // Le drakkar Spécial est entièrement coulé !
+            specialDrakkarAlive = false;
+            document.getElementById('p-ship-special').innerHTML = "❌ Drakkar Spécial";
+            document.getElementById('p-ship-special').style.color = "#e74c3c";
+            mettreAJourStatut(dict[currentLang]['status-power-lost']); // Affiche l'alerte !
+        } else if (hitShipId === 2 && playerShipHits[1] === 2) {
+            document.getElementById('p-ship-class').innerHTML = "❌ Drakkar Classique";
+            document.getElementById('p-ship-class').style.color = "#e74c3c";
+        } else if (hitShipId === 3 && playerShipHits[2] === 2) {
+            document.getElementById('p-ship-small').innerHTML = "❌ Petit Drakkar";
+            document.getElementById('p-ship-small').style.color = "#e74c3c";
+        }
 
         if (target >= 10) aiTargetQueue.push(target - 10);
         if (target < 90) aiTargetQueue.push(target + 10);
         if (target % 10 !== 0) aiTargetQueue.push(target - 1);
         if (target % 10 !== 9) aiTargetQueue.push(target + 1);
 
-        if (playerGridState[target] === 2) {
-            specialDrakkarHits++;
-            if (specialDrakkarHits === 3) {
-                specialDrakkarAlive = false;
-                mettreAJourStatut("Drakkar Spécial détruit ! Pouvoir perdu.");
-                setTimeout(() => {
-                    isMyTurn = true;
-                    mettreAJourStatut(dict[currentLang]['status-turn-me']);
-                }, 2000);
-                checkWinCondition();
-                return;
-            }
-        }
     } else {
         playerCells[target].classList.add('miss');
         playerCells[target].innerText = "💦";
@@ -388,8 +424,13 @@ function simulerAttaqueAdverse() {
     
     checkWinCondition();
     if (playerHitsTaken < TOTAL_SHIP_CELLS) {
-        isMyTurn = true;
-        mettreAJourStatut(dict[currentLang]['status-turn-me']);
+        setTimeout(() => {
+            isMyTurn = true;
+            // Redonne la main visuellement si on n'est pas mort, en évitant d'écraser l'alerte de perte de pouvoir immédiatement
+            if (document.getElementById('game-status').innerText !== dict[currentLang]['status-power-lost']) {
+                mettreAJourStatut(dict[currentLang]['status-turn-me']);
+            }
+        }, 1500);
     }
 }
 
