@@ -194,12 +194,12 @@ function placeShip(index) {
     const row = Math.floor(index / 10);
     const col = index % 10;
     
-    cells.forEach((c, i) => {
+    cells.forEach((c) => {
         playerGridState[c] = ship.isSpecial ? 2 : 1;
         if (ship.isSpecial) specialDrakkarCellsPlayer.push(c);
     });
 
-    // Création de l'élément graphique complet couvrant toute la section du bateau
+    // NOUVEAU : Dessine le graphique du bateau entier !
     renderPlayerShipGraphic(row, col, ship.size, isHorizontal, ship.imageFile);
     
     currentShipIndex++;
@@ -214,31 +214,37 @@ function placeShip(index) {
     }
 }
 
+// Fonction Magique pour créer une superposition visuelle parfaite du bateau
 function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc) {
     const playerGrid = document.getElementById('player-grid');
     const shipDiv = document.createElement('div');
     shipDiv.classList.add('placed-ship-graphic');
     
-    const cellSize = 32;
+    // Mesures exactes basées sur ton CSS (.grid et .cell)
+    const cellSize = 32; 
     const gap = 2;
     const padding = 5;
     
+    // Calcul de la position de départ (Top / Left)
     const leftPx = padding + col * (cellSize + gap);
     const topPx = padding + row * (cellSize + gap);
+    
+    // Calcul de la longueur totale du bateau (Cases + espaces inter-cases)
     const totalSpanPx = (size * cellSize) + ((size - 1) * gap);
     
     shipDiv.style.left = `${leftPx}px`;
     shipDiv.style.top = `${topPx}px`;
     shipDiv.style.backgroundImage = `url('${imageSrc}')`;
     
-    if (horizontal) {
-        shipDiv.style.width = `${totalSpanPx}px`;
-        shipDiv.style.height = `${cellSize}px`;
-        shipDiv.style.transform = 'none';
-    } else {
-        // En mode vertical, on ajuste les dimensions et on applique une rotation pour que le drakkar suive l'axe vertical
-        shipDiv.style.width = `${cellSize}px`;
-        shipDiv.style.height = `${totalSpanPx}px`;
+    // On définit toujours la div comme horizontale au départ
+    shipDiv.style.width = `${totalSpanPx}px`;
+    shipDiv.style.height = `${cellSize}px`;
+    
+    // Si c'est vertical, on applique une rotation de 90°
+    if (!horizontal) {
+        // Astuce : on pivote exactement autour du centre de la TOUTE PREMIÈRE case !
+        shipDiv.style.transformOrigin = `${cellSize / 2}px ${cellSize / 2}px`;
+        shipDiv.style.transform = 'rotate(90deg)';
     }
     
     playerGrid.appendChild(shipDiv);
