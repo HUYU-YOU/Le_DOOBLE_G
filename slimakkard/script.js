@@ -7,7 +7,7 @@ const dict = {
         'txt-settings': 'Paramètres', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Mode Sombre / Nuit 🌙',
         'txt-fs': 'Plein Écran 🖥️', 'txt-close': 'Fermer', 'txt-btn-enter': 'ENTRER DANS LA TEMPÊTE',
         'txt-multi-title': 'Rejoindre le Valhalla', 'txt-btn-create': 'Créer une partie (Solo vs IA)', 'txt-or': 'OU', 
-        'txt-btn-join': 'Rejoindre', 'txt-class-title': 'Choisis ton Commandant Slime !', 
+        'txt-btn-join': 'Rejoindre', 'txt-class-title': 'VIIIIKINNNGGG !', 
         'txt-desc-berserk': 'Frappe 2 fois où il veut.', 'txt-desc-nav': 'Tire sur 2 cases en ligne.', 
         'txt-desc-sham': 'Tire 3 fois aléatoirement.', 'txt-my-fleet': 'Ma Flotte', 'txt-enemy-fleet': 'Flotte Ennemie', 
         'status-wait': 'Génération du champ de bataille...', 'status-connect': 'Connexion...', 
