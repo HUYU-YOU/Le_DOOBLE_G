@@ -437,6 +437,7 @@ function update(time = 0) {
 
 document.addEventListener('keydown', event => {
     if (isGameOver || document.getElementById('game-ui').style.display === 'none') return;
+    
     if (document.activeElement.tagName === 'INPUT') return;
 
     if (event.keyCode === 68) { 
@@ -469,6 +470,9 @@ function drop(e) { e.preventDefault(); playerDrop(); }
 document.addEventListener("DOMContentLoaded", () => {
     applyTheme();
     setGameSize('wide'); 
+    
+    // ON FORCE LE BACKGROUND MENU ICI :
+    document.body.style.backgroundImage = `url('assets/tetrislimebackground.jpeg?v=${new Date().getTime()}')`;
 
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
@@ -493,8 +497,8 @@ function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex'; 
     
-    // Change le background pour tetrisback.jpeg en jeu
-    document.body.classList.add('in-game');
+    // ON FORCE LE BACKGROUND EN JEU ICI (ANTI CACHE POUR ÊTRE SUR QUE ÇA MARCHE)
+    document.body.style.backgroundImage = `url('assets/tetrisback.jpeg?v=${new Date().getTime()}')`;
     
     gameMode = 'solo';
     board = createMatrix(COLS, ROWS);
@@ -576,8 +580,8 @@ function startMultiGameDisplay() {
     document.getElementById('game-ui').style.display = 'flex';
     document.getElementById('opponent-box').style.display = 'block';
     
-    // Change le background pour tetrisback.jpeg en multi
-    document.body.classList.add('in-game');
+    // ON FORCE LE BACKGROUND EN MULTI ICI :
+    document.body.style.backgroundImage = `url('assets/tetrisback.jpeg?v=${new Date().getTime()}')`;
     
     gameMode = 'multi';
     board = createMatrix(COLS, ROWS);
