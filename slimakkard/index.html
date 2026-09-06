@@ -70,9 +70,8 @@
         
         <!-- ÉTAPE 1 : Menu Multijoueur / Solo -->
         <div id="multi-menu">
-            <h2 id="txt-multi-title" style="margin-bottom: 25px; font-size: 2.5rem; text-shadow: 0 0 15px rgba(46, 204, 113, 0.8);">Rejoindre le Valhalla</h2>
+            <h2 id="txt-multi-title" style="margin-bottom: 25px; font-size: 2.8rem; text-shadow: 0 0 15px rgba(46, 204, 113, 0.8);">Rejoindre le Valhalla</h2>
             
-            <!-- Boutons Images avec texte court ("VS IA", "MULTI") centré sur le bois -->
             <div class="custom-menu-buttons">
                 <!-- Bouton Solo -->
                 <div class="custom-img-btn btn-vs-ai" onclick="creerPartie()">
@@ -85,9 +84,8 @@
                 </div>
             </div>
 
-            <p id="txt-or" style="margin-top: 15px; font-size: 1.5rem; color: #f1c40f;">OU</p>
+            <p id="txt-or" style="margin-top: 15px; font-size: 1.8rem; color: #f1c40f;">OU</p>
             
-            <!-- NOUVELLE BARRE D'ENTRÉE SLIMESQUE -->
             <div class="slimy-input-wrapper">
                 <input type="text" id="join-code" placeholder="CODE (EX: VIK12)" maxlength="7">
                 <button class="start-btn-epic join-btn" id="txt-btn-join" onclick="rejoindrePartie()">Rejoindre</button>
@@ -97,7 +95,7 @@
 
         <!-- ÉTAPE 2 : Sélection du Slime -->
         <div id="class-selection" class="hidden">
-            <h2 id="txt-class-title" style="font-size: 2.5rem; text-shadow: 0 0 15px rgba(46, 204, 113, 0.8);">Choisis ton Commandant Slime !</h2>
+            <h2 id="txt-class-title" style="font-size: 2.8rem; text-shadow: 0 0 15px rgba(46, 204, 113, 0.8);">Choisis ton Commandant Slime !</h2>
             <div class="classes-container">
                 <button class="class-btn berserker-btn" onclick="selectClass('berserker')">
                     <div class="class-info">
@@ -123,15 +121,13 @@
         <!-- ÉTAPE 3 : Bataille Navale -->
         <div id="battle-container" class="hidden">
             
-            <!-- Contrôles de Placement -->
             <div id="placement-controls" style="margin-bottom: 15px;">
-                <h2 id="txt-placement-title" style="color: #f1c40f; margin-bottom: 10px; font-size: 2rem;">Place ta flotte !</h2>
+                <h2 id="txt-placement-title" style="color: #f1c40f; margin-bottom: 10px; font-size: 2.2rem;">Place ta flotte !</h2>
                 <button class="start-btn" id="btn-rotate" onclick="toggleRotation()" style="padding: 10px; font-size: 18px;">🔄 Tourner : Horizontal</button>
                 <p style="margin-top: 10px; font-size: 1.4rem;">Bateau : <span id="current-ship-name" style="color: #2ecc71;">Drakkar Spécial</span></p>
             </div>
 
             <div class="game-container">
-                <!-- Grille du Joueur -->
                 <div class="grid-section">
                     <div class="grid-header">
                         <h2 id="txt-my-fleet">Ma Flotte</h2> 
@@ -150,7 +146,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- HUD État de la Flotte -->
                     <div class="fleet-status-panel">
                         <span id="p-ship-special">🟢 Drakkar Spécial</span>
                         <span id="p-ship-class">🟢 Drakkar Classique</span>
@@ -158,7 +153,6 @@
                     </div>
                 </div>
 
-                <!-- Grille de l'Adversaire -->
                 <div class="grid-section">
                     <div class="grid-header">
                         <h2 id="txt-enemy-fleet">Flotte Ennemie</h2>
@@ -176,7 +170,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- HUD État de la Flotte Ennemie -->
                     <div class="fleet-status-panel">
                         <span id="e-ship-1">🟢 Navire 1</span>
                         <span id="e-ship-2">🟢 Navire 2</span>
@@ -186,7 +179,7 @@
             </div>
 
             <div class="command-panel" style="margin-top: 15px;">
-                <p id="game-status" style="font-size: 1.8rem; color: #f1c40f; text-shadow: 0 0 10px rgba(0,0,0,0.8);">...</p>
+                <p id="game-status" style="font-size: 2rem; color: #f1c40f; text-shadow: 0 0 10px rgba(0,0,0,0.8);">...</p>
             </div>
         </div>
     </div>
