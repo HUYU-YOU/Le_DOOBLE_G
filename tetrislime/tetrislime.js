@@ -1,48 +1,6 @@
 // ==========================================
 // GESTION DU THÈME ET PARAMÈTRES
 // ==========================================
-let isNight = localStorage.getItem('tetrisNight') === 'true';
-
-// Fonction pour changer la langue du bouton Hub
-function setLanguage(lang) {
-    const hubImg = document.getElementById('hub-img');
-    if (hubImg) {
-        hubImg.src = lang === 'en' ? '../img/returnhub.png' : '../img/retourhub.png';
-    }
-}
-
-function toggleTheme() {
-    isNight = !isNight;
-    localStorage.setItem('tetrisNight', isNight);
-    const themeBtn = document.getElementById('btn-theme-toggle');
-    if (themeBtn) {
-        themeBtn.innerText = isNight ? "Mode Nuit 🌙" : "Mode Jour ☀️";
-    }
-}
-
-const settingsBtnImg = document.getElementById('settings-btn-img');
-const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
-let hoverInterval; let currentFrame = 0;
-
-function startSettingsAnim() {
-    if (hoverInterval) return;
-    currentFrame = 0; settingsBtnImg.src = animFrames[currentFrame];
-    hoverInterval = setInterval(() => {
-        currentFrame = (currentFrame + 1) % animFrames.length;
-        settingsBtnImg.src = animFrames[currentFrame];
-    }, 100); 
-}
-
-function stopSettingsAnim() {
-    clearInterval(hoverInterval); hoverInterval = null;
-    if (!settingsBtnImg.src.includes('settings4.png')) settingsBtnImg.src = '../img/setting.png';
-}
-
-function clickSettingsAnim() {
-    clearInterval(hoverInterval); hoverInterval = null;
-    settingsBtnImg.src = '../img/settings4.png'; toggleSettings();
-    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
-}
 
 function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
 
@@ -79,7 +37,6 @@ document.addEventListener('fullscreenchange', () => {
 const canvas = document.getElementById('tetris-canvas');
 const ctx = canvas.getContext('2d');
 const nextCtx = document.getElementById('next-canvas').getContext('2d');
-// La réserve (holdCtx) a été totalement supprimée pour éviter les crashs.
 
 const ROWS = 20;
 const COLS = 10;
@@ -102,7 +59,7 @@ skinNames.forEach(name => {
         if (typeof draw === 'function') draw();
         if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 25);
     };
-    skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
+    skins[name].src = `assets/${name}.png`;
 });
 
 const SHAPES = {
@@ -167,23 +124,27 @@ function randomPiece() {
     };
 }
 
-// TON CODE DE ROTATION EXACT :
 function getImgName(type, rotIndex) {
     if (type === 3) return 'CUBE';
+    
     if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE90' : 'BARRE';
+    
     if (type === 2) {
         if (rotIndex === 0) return 'L0';
         if (rotIndex === 90) return 'L270';  
         if (rotIndex === 180) return 'L180';
         if (rotIndex === 270) return 'L90';
     }
+    
     if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
+    
     if (type === 5) {
         if (rotIndex === 0) return 'CROIX';
         if (rotIndex === 90) return 'CROIX270';
         if (rotIndex === 180) return 'CROIX180';
         if (rotIndex === 270) return 'CROIX90';
     }
+    
     return null;
 }
 
@@ -195,7 +156,6 @@ function drawBlock(ctxTarget, x, y, size, colorIndex) {
     ctxTarget.beginPath(); ctxTarget.roundRect(x * size + 3, y * size + 3, size - 6, size / 3, 4); ctxTarget.fill();
 }
 
-// Retour à l'affichage 1:1 simple, sans recadrage ni "bounds"
 function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
     matrix.forEach((row, y) => { 
         row.forEach((cell, x) => { 
@@ -445,17 +405,21 @@ function rotate(e) { e.preventDefault(); playerRotate(); }
 function drop(e) { e.preventDefault(); playerDrop(); }
 
 // ==========================================
-// ROUTAGE AUTO ET FOND D'ECRAN
+// FONCTION MAGIQUE POUR CHARGER LE BACKGROUND
+// ==========================================
+function setBackgroundImage(filename) {
+    // Le "?v=" empêche le navigateur de faire le capricieux et force l'affichage
+    document.body.style.backgroundImage = `url('assets/${filename}?v=${new Date().getTime()}')`;
+}
+
+// ==========================================
+// ROUTAGE AUTO ET LANCEMENT DIRECT
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-    const themeBtn = document.getElementById('btn-theme-toggle');
-    if (themeBtn) {
-        themeBtn.innerText = isNight ? "Mode Nuit 🌙" : "Mode Jour ☀️";
-    }
     setGameSize('wide'); 
     
-    // ON AFFICHE LE FOND D'ÉCRAN DU MENU ICI :
-    document.body.style.backgroundImage = "url('assets/tetrislimebackground.jpeg')";
+    // VERIFIE BIEN LE NOM ICI : .jpeg ou .jpg ?
+    setBackgroundImage('tetrislimebackground.jpeg');
 
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
@@ -480,8 +444,8 @@ function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex'; 
     
-    // ON AFFICHE LE FOND D'ÉCRAN EN JEU ICI :
-    document.body.style.backgroundImage = "url('assets/tetrisback.jpeg')";
+    // VERIFIE BIEN LE NOM ICI AUSSI :
+    setBackgroundImage('tetrisback.jpeg');
     
     gameMode = 'solo';
     board = createMatrix(COLS, ROWS);
@@ -563,8 +527,7 @@ function startMultiGameDisplay() {
     document.getElementById('game-ui').style.display = 'flex';
     document.getElementById('opponent-box').style.display = 'block';
     
-    // ON AFFICHE LE FOND D'ÉCRAN EN MULTI ICI AUSSI :
-    document.body.style.backgroundImage = "url('assets/tetrisback.jpeg')";
+    setBackgroundImage('tetrisback.jpeg');
     
     gameMode = 'multi';
     board = createMatrix(COLS, ROWS);
