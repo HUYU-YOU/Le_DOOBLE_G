@@ -38,7 +38,7 @@ const dict = {
         'status-turn-me': "It's your turn to attack!", 
         'status-turn-enemy': "Enemy is preparing to attack...", 'status-chaos': "The Shaman summons chaos!", 
         'txt-placement-title': "Place your fleet!", 'rot-horiz': "🔄 Rotate: Horizontal", 'rot-vert': "🔄 Rotate: Vertical",
-        'end-win': "VICTORY!", 'end-win-desc': "The enemy fleet rests at the bottom of the ocean.",
+        'end-win': "VICTOIRE !", 'end-win-desc': "The enemy fleet rests at the bottom of the ocean.",
         'end-lose': "DEFEAT!", 'end-lose-desc': "Valhalla awaits you...",
         'status-power-lost': "⚠️ Special Drakkar destroyed! POWER LOST! ⚠️",
         'txt-volume': "Music Volume 🔊"
@@ -284,13 +284,12 @@ function placeShip(index) {
     }
 }
 
-// MISE À JOUR : Taille des bateaux adaptée aux grilles de 48px
 function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc, baseOrientation) {
     const playerGrid = document.getElementById('player-grid');
     const shipDiv = document.createElement('div');
     shipDiv.classList.add('placed-ship-graphic');
     
-    const cellSize = 48; // CHANGÉ : 48px pour s'adapter aux nouvelles grilles !
+    const cellSize = 48; 
     const gap = 2; 
     const padding = 5;
     
