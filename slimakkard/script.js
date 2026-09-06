@@ -162,7 +162,6 @@ function selectClass(className) {
 // PHASE DE PLACEMENT ET ROTATION ADAPTATIVE
 // ==========================================
 function preparerFlotte(className) {
-    // Détermination de l'orientation de base du skin spécial selon ce que tu m'as dit
     let specialBase = 'horizontal'; 
     if (className === 'chaman') specialBase = 'vertical';
 
@@ -271,7 +270,6 @@ function placeShip(index) {
         document.querySelectorAll('#player-grid .cell')[c].classList.add('ship-placed');
     });
 
-    // Envoi de l'orientation de base à la fonction de rendu
     renderPlayerShipGraphic(row, col, ship.size, isHorizontal, ship.imageFile, ship.baseOrientation);
     
     currentShipIndex++;
@@ -286,13 +284,15 @@ function placeShip(index) {
     }
 }
 
-// CORRECTION MAJEURE ICI : Prise en compte de l'orientation de base
+// MISE À JOUR : Taille des bateaux adaptée aux grilles de 48px
 function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc, baseOrientation) {
     const playerGrid = document.getElementById('player-grid');
     const shipDiv = document.createElement('div');
     shipDiv.classList.add('placed-ship-graphic');
     
-    const cellSize = 32; const gap = 2; const padding = 5;
+    const cellSize = 48; // CHANGÉ : 48px pour s'adapter aux nouvelles grilles !
+    const gap = 2; 
+    const padding = 5;
     
     const leftPx = padding + col * (cellSize + gap);
     const topPx = padding + row * (cellSize + gap);
@@ -302,30 +302,24 @@ function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc, baseOrien
     shipDiv.style.top = `${topPx}px`;
     shipDiv.style.backgroundImage = `url('${imageSrc}')`;
     
-    // Si l'image de base est DESSINÉE À LA VERTICALE (Drakar1, Shaman)
     if (baseOrientation === 'vertical') {
         shipDiv.style.width = `${cellSize}px`;
         shipDiv.style.height = `${totalSpanPx}px`;
         
         if (horizontal) {
-            // Placé à l'horizontal : on le couche
             shipDiv.style.transformOrigin = `${cellSize / 2}px ${cellSize / 2}px`;
             shipDiv.style.transform = 'rotate(-90deg)';
         } else {
-            // Placé à la verticale : on ne touche à rien
             shipDiv.style.transform = 'none';
         }
     } 
-    // Si l'image de base est DESSINÉE À L'HORIZONTALE (Drakar2, Berserk, Navigateur)
     else {
         shipDiv.style.width = `${totalSpanPx}px`;
         shipDiv.style.height = `${cellSize}px`;
         
         if (horizontal) {
-            // Placé à l'horizontal : on ne touche à rien
             shipDiv.style.transform = 'none';
         } else {
-            // Placé à la verticale : on le relève
             shipDiv.style.transformOrigin = `${cellSize / 2}px ${cellSize / 2}px`;
             shipDiv.style.transform = 'rotate(90deg)';
         }
