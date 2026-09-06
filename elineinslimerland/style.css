@@ -27,32 +27,57 @@ body.dark-mode {
     background-size: cover;
     display: flex;
     justify-content: center;
-    align-items: center; /* Centre verticalement */
+    /* On centre au milieu de l'écran... */
+    align-items: center; 
     z-index: 3000;
 }
 
 .menu-container {
     display: flex;
-    flex-direction: column; /* Empile les boutons l'un sur l'autre */
+    flex-direction: column;
     align-items: center;
-    gap: 15px; /* L'espace entre chaque bouton image */
-    margin-top: 150px; /* Pousse un peu les boutons vers le bas si le titre du jeu est sur le haut du fond d'écran */
+    gap: 15px; /* L'espacement parfait entre les bannières */
+    /* ... Et on pousse de 35% vers le bas pour le caler comme sur ton image ! */
+    margin-top: 35vh; 
 }
 
-/* Style de tes boutons images */
-.menu-btn-img {
-    width: 250px; /* Tu pourras ajuster cette taille selon tes images */
+/* Wrapper avec position relative pour superposer le texte */
+.menu-btn-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     cursor: pointer;
-    transition: transform 0.2s ease, filter 0.2s ease;
+    transition: transform 0.2s ease;
+}
+
+.menu-btn-wrapper:hover {
+    transform: scale(1.05); /* Grossit légèrement au survol */
+    filter: brightness(1.15); /* Éclaircit un peu l'image */
+}
+
+.menu-btn-img {
+    width: 280px; /* Tu peux ajuster la taille de tes bannières ici */
     object-fit: contain;
 }
 
-/* Animation de survol ultra propre */
-.menu-btn-img:hover {
-    transform: scale(1.08); /* Grossit légèrement */
-    filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.6)) brightness(1.1); /* Ajoute une lueur bleutée/cyan */
+/* Le texte PAR DESSUS l'image */
+.menu-text {
+    position: absolute; /* L'astuce pour le sortir du flux et le superposer */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centre parfaitement au pixel près */
+    color: #fff; /* Texte en blanc */
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    /* Grosse ombre noire pour être sûr que le texte soit lisible peu importe l'image */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.7); 
+    pointer-events: none; /* Le clic "passe à travers" le texte pour cliquer sur l'image */
+    text-align: center;
+    width: 90%;
 }
-
 /* --- Modal Paramètres --- */
 .modal {
     display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
