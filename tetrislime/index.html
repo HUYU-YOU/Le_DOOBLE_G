@@ -11,7 +11,10 @@
 </head>
 <body>
 
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    <!-- BOUTON RETOUR HUB (Image) -->
+    <a href="../index.html" class="hub-link">
+        <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-img">
+    </a>
 
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
@@ -22,7 +25,7 @@
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
             
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
-                <span>Thème (Fond d'écran) 🌗</span>
+                <span>Thème UI 🌗</span>
                 <button id="btn-theme-toggle" class="btn-main" style="width:auto; font-size:1.2rem; padding:10px 20px;" onclick="toggleTheme()">Mode Jour ☀️</button>
             </div>
 
@@ -42,8 +45,9 @@
         
         <div class="overlay" id="main-menu">
             <h1 class="game-title">TETRISLIME</h1>
-            <button class="btn-main" onclick="startSolo()">Jouer en Solo</button>
-            <button class="btn-main" onclick="openMultiMenu()">Multijoueur</button>
+            <!-- NOUVEAUX BOUTONS IMAGES -->
+            <img src="../img/solo.png" class="menu-btn" onclick="startSolo()" alt="Jouer en Solo">
+            <img src="../img/multi.png" class="menu-btn" onclick="openMultiMenu()" alt="Multijoueur">
         </div>
 
         <div class="overlay" id="network-menu" style="display: none;">
@@ -79,10 +83,7 @@
                     <div class="panel-title">Lignes</div>
                     <div class="panel-val" id="lines">0</div>
                 </div>
-                <div class="panel-box">
-                    <div class="panel-title">Réserve (Shift)</div>
-                    <canvas id="hold-canvas" width="120" height="120"></canvas>
-                </div>
+                <!-- LE BLOC "RÉSERVE" A ÉTÉ SUPPRIMÉ ICI -->
             </div>
 
             <div class="board-wrapper">
