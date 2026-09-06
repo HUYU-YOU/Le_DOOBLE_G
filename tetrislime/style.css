@@ -12,48 +12,46 @@
 body, html { 
     font-family: 'Rajdhani', sans-serif; 
     background-color: var(--bg); 
+    
+    /* 1. BACKGROUND DU MENU PAR DÉFAUT */
+    background-image: url('assets/tetrislimebackground.jpeg'); 
+    
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     color: white; margin: 0; padding: 0; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
     min-height: 100vh; user-select: none; touch-action: none; overflow: hidden; 
-    transition: background-image 0.5s ease; /* Petit effet de fondu stylé */
+    transition: background-image 0.5s ease-in-out;
 }
 
-/* PLUS AUCUN CARRÉ SUR LE BOUTON HUB */
+/* 2. BACKGROUND EN JEU (Activé par le JS) */
+body.in-game {
+    background-image: url('assets/tetrisback.jpeg') !important;
+}
+
+/* SUPPRESSION DU CADRE DU BOUTON HUB */
 .hub-link { 
     position: absolute; top: 15px; left: 15px; z-index: 100;
     background: transparent !important; 
     border: none !important; 
-    padding: 0 !important; 
-    backdrop-filter: none !important;
     box-shadow: none !important;
+    padding: 0 !important;
+    backdrop-filter: none !important;
 }
-.hub-link img {
-    width: 180px; 
-    transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
-}
-.hub-link:hover img { 
-    transform: scale(1.05) translateY(-2px); 
-    filter: drop-shadow(0 0 15px var(--p1)); 
-}
+.hub-link img { width: 180px; transition: 0.3s; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); }
+.hub-link:hover img { transform: scale(1.05) translateY(-2px); filter: drop-shadow(0 0 15px var(--p1)); }
 
-/* TAILLE ET STYLE DES BOUTONS SOLO / MULTI */
+/* STYLE DES BOUTONS IMAGES SOLO/MULTI */
 .menu-btn {
     cursor: pointer;
-    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s;
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+    transition: transform 0.3s, filter 0.3s;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));
     margin: 10px;
 }
-.solo-btn { width: 350px; max-width: 80vw; } 
-.multi-btn { width: 220px; max-width: 50vw; margin-top: -10px; } 
-
-.menu-btn:hover {
-    transform: scale(1.05) translateY(-5px);
-    filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.4));
-}
+.solo-btn { width: 350px; max-width: 80vw; }
+.multi-btn { width: 220px; max-width: 50vw; }
+.menu-btn:hover { transform: scale(1.05) translateY(-5px); filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)); }
 
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
@@ -76,8 +74,10 @@ body, html {
     width: 100%; max-width: 900px; height: 80vh; border: 1px solid rgba(0, 240, 255, 0.3); 
     box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
-    background: rgba(10, 15, 25, 0.4); /* Plus transparent pour voir le fond ! */
-    backdrop-filter: blur(5px);
+    
+    /* Légèrement transparent pour voir le magnifique background ! */
+    background: rgba(10, 15, 25, 0.5); 
+    backdrop-filter: blur(8px);
 }
 
 #game-container.size-wide, #game-container.size-full {
@@ -93,11 +93,10 @@ body, html {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
     z-index: 50; display: flex; flex-direction: column; 
     align-items: center; justify-content: center; text-align: center; border-radius: 15px;
-    background: transparent !important; /* Totalement transparent */
-    backdrop-filter: none !important;
+    background: rgba(10, 15, 28, 0.4); /* Overlay allégé pour voir le fond */
 }
 
-/* Boutons texte classiques conservés uniquement pour le menu Multijoueur */
+/* Pour le menu multi qui a besoin de boutons normaux */
 .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.5em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px;}
 .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
 .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255,0,127,0.2); }
@@ -106,12 +105,8 @@ body, html {
 input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
-/* UI DU JEU TETRIS AVEC ZOOM POUR LE MODE "GRAND" */
-#game-ui {
-    transition: transform 0.3s ease;
-    transform-origin: center center;
-}
-
+/* UI DU JEU TETRIS */
+#game-ui { transition: transform 0.3s ease; transform-origin: center center; }
 .side-panel { display: flex; flex-direction: column; gap: 15px; width: 160px; }
 .panel-box {
     background: rgba(0,0,0,0.7); border: 2px solid var(--p1); border-radius: 10px; padding: 15px;
@@ -124,10 +119,8 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     background: rgba(0, 0, 0, 0.8); border: 3px solid var(--p3); border-radius: 10px;
     padding: 5px; box-shadow: 0 0 30px rgba(184, 42, 255, 0.4); backdrop-filter: blur(10px);
 }
-
 canvas { display: block; border-radius: 5px; }
 
-/* CONTROLES MOBILES */
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
 .m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); }
 .m-btn:active { background: var(--p1); color: #000; }
