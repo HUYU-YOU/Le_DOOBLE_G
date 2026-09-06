@@ -7,9 +7,8 @@ const dict = {
         'txt-settings': 'Paramètres', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Mode Sombre / Nuit 🌙',
         'txt-fs': 'Plein Écran 🖥️', 'txt-close': 'Fermer', 'txt-btn-enter': 'ENTRER DANS LA TEMPÊTE',
         'txt-multi-title': 'Rejoindre le Valhalla', 
-        'txt-btn-host': 'MULTI', // TEXTE COURT POUR L'IMAGE
-        'txt-btn-create': 'VS IA', // TEXTE COURT POUR L'IMAGE
-        'txt-or': 'OU', 
+        'txt-btn-host': 'MULTI',
+        'txt-btn-create': 'VS IA', 'txt-or': 'OU', 
         'txt-btn-join': 'Rejoindre', 'txt-class-title': 'Choisis ton Commandant Slime !', 
         'txt-desc-berserk': 'Frappe 2 fois où il veut.', 'txt-desc-nav': 'Tire sur 2 cases en ligne.', 
         'txt-desc-sham': 'Tire 3 fois aléatoirement.', 'txt-my-fleet': 'Ma Flotte', 'txt-enemy-fleet': 'Flotte Ennemie', 
@@ -28,9 +27,8 @@ const dict = {
         'txt-settings': 'Settings', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Dark / Night Mode 🌙',
         'txt-fs': 'Fullscreen 🖥️', 'txt-close': 'Close', 'txt-btn-enter': 'ENTER THE STORM',
         'txt-multi-title': 'Join Valhalla', 
-        'txt-btn-host': 'MULTI', // TEXTE COURT
-        'txt-btn-create': 'VS AI', // TEXTE COURT
-        'txt-or': 'OR', 
+        'txt-btn-host': 'MULTI', 
+        'txt-btn-create': 'VS AI', 'txt-or': 'OR', 
         'txt-btn-join': 'Join', 'txt-class-title': 'Choose your Slime Commander!', 
         'txt-desc-berserk': 'Strikes 2 times anywhere.', 'txt-desc-nav': 'Strikes 2 tiles in a row.', 
         'txt-desc-sham': 'Strikes 3 times randomly.', 'txt-my-fleet': 'My Fleet', 'txt-enemy-fleet': 'Enemy Fleet', 
