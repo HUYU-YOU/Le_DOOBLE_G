@@ -23,57 +23,34 @@ body.dark-mode {
 #main-menu {
     position: absolute;
     top: 0; left: 0; width: 100vw; height: 100vh;
-    /* On met l'image maingame.png en fond. Si elle est dans le dossier assets, laisse comme ça : */
     background: url('assets/maingame.png') no-repeat center center;
     background-size: cover;
     display: flex;
     justify-content: center;
-    align-items: center;
-    z-index: 3000; /* Tout au-dessus */
+    align-items: center; /* Centre verticalement */
+    z-index: 3000;
 }
 
 .menu-container {
-    background: rgba(11, 15, 25, 0.85); /* Fond semi-transparent derrière les boutons */
-    padding: 50px;
-    border: 2px solid #00e5ff;
-    border-radius: 15px;
-    text-align: center;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
-    min-width: 400px;
+    display: flex;
+    flex-direction: column; /* Empile les boutons l'un sur l'autre */
+    align-items: center;
+    gap: 15px; /* L'espace entre chaque bouton image */
+    margin-top: 150px; /* Pousse un peu les boutons vers le bas si le titre du jeu est sur le haut du fond d'écran */
 }
 
-.menu-container h1 {
-    font-size: 38px;
-    color: #00e5ff;
-    margin-bottom: 40px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
-}
-
-.menu-btn {
-    display: block;
-    width: 100%;
-    margin: 15px 0;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    border: 2px solid #00e5ff;
-    border-radius: 8px;
-    font-size: 20px;
-    font-weight: bold;
+/* Style de tes boutons images */
+.menu-btn-img {
+    width: 250px; /* Tu pourras ajuster cette taille selon tes images */
     cursor: pointer;
-    transition: 0.3s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    object-fit: contain;
 }
 
-.menu-btn:hover {
-    background: #00e5ff;
-    color: #000;
-    transform: scale(1.05);
-    box-shadow: 0 0 20px #00e5ff;
+/* Animation de survol ultra propre */
+.menu-btn-img:hover {
+    transform: scale(1.08); /* Grossit légèrement */
+    filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.6)) brightness(1.1); /* Ajoute une lueur bleutée/cyan */
 }
 
 /* --- Modal Paramètres --- */
