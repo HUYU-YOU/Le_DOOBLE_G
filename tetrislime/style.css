@@ -12,37 +12,46 @@
 body, html { 
     font-family: 'Rajdhani', sans-serif; 
     background-color: var(--bg); 
-    /* Le fond (background) est maintenant géré dynamiquement par le Javascript */
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     color: white; margin: 0; padding: 0; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
     min-height: 100vh; user-select: none; touch-action: none; overflow: hidden; 
 }
 
-/* NOUVEAU STYLE POUR L'IMAGE RETOUR HUB */
+/* DESTRUCTION DU CARRÉ AUTOUR DU HUB */
 .hub-link { 
-    position: absolute; top: 15px; left: 15px; z-index: 100; transition: transform 0.2s ease;
+    position: absolute; top: 15px; left: 15px; z-index: 100;
+    background: transparent !important; 
+    border: none !important; 
+    padding: 0 !important; 
+    backdrop-filter: none !important;
+    box-shadow: none !important;
 }
 .hub-link img {
-    width: 150px; /* Ajuste cette valeur selon la taille de ton image */
-    filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.4));
-    transition: 0.3s ease;
+    width: 200px; /* Taille de ton bouton retour */
+    transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
 }
-.hub-link:hover { transform: scale(1.05); }
-.hub-link:hover img { filter: drop-shadow(0 0 15px var(--p1)); }
+.hub-link:hover img { 
+    transform: scale(1.05) translateY(-2px); 
+    filter: drop-shadow(0 0 15px var(--p1)); 
+}
 
-/* NOUVEAU STYLE POUR LES BOUTONS IMAGES (SOLO / MULTI) */
+/* STYLE DES NOUVEAUX BOUTONS IMAGES (SOLO / MULTI) */
 .menu-btn {
-    width: 250px; /* Ajuste cette valeur selon la taille de tes images Solo/Multi */
-    margin: 15px;
     cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s;
-    filter: drop-shadow(0 0 10px rgba(0,0,0,0.6));
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+    margin: 10px;
 }
+.solo-btn { width: 400px; max-width: 80vw; } /* Le gros bouton vert */
+.multi-btn { width: 250px; max-width: 50vw; margin-top: -10px; } /* Le bouton cyan plus petit en dessous */
+
 .menu-btn:hover {
-    transform: scale(1.1) translateY(-5px);
-    filter: drop-shadow(0 0 20px var(--p1));
+    transform: scale(1.05) translateY(-5px);
+    filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.4));
 }
 
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
@@ -61,28 +70,35 @@ body, html {
 
 /* MENUS & OVERLAYS */
 #game-container { 
-    position: relative; background: var(--panel); border-radius: 15px; 
+    position: relative; border-radius: 15px; 
     box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
     width: 100%; max-width: 900px; height: 80vh; border: 1px solid rgba(0, 240, 255, 0.3); 
-    backdrop-filter: blur(10px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
+    box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
+    /* On rend le container semi-transparent pour bien voir le tetrisback.jpeg ! */
+    background: rgba(10, 15, 25, 0.4); 
+    backdrop-filter: blur(5px);
 }
 
 #game-container.size-wide, #game-container.size-full {
     position: fixed !important; top: 0; left: 0; 
     width: 100vw !important; height: 100vh !important;
     max-width: none; max-height: none; border-radius: 0; border: none; padding: 0; 
-    z-index: 50; background: rgba(10, 15, 25, 0.7); justify-content: center;
+    z-index: 50; justify-content: center;
+    background: transparent; /* Fullscreen laisse voir le body direct */
+    backdrop-filter: none;
 }
 
+/* LE MENU DEVIENT TRANSPARENT POUR VOIR L'IMAGE DE FOND */
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(10, 15, 28, 0.9); z-index: 50; display: flex; flex-direction: column; 
-    align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(8px); border-radius: 15px;
+    z-index: 50; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; text-align: center; border-radius: 15px;
+    background: transparent !important; /* Pas de fond noir ! */
+    backdrop-filter: none !important; /* Pas de flou sur l'image de fond ! */
 }
-.game-title { font-size: 4em; color: #fff; text-shadow: 0 0 15px var(--p1), 0 0 30px var(--p1); letter-spacing: 5px; margin-bottom: 40px; }
 
-/* Boutons classiques conservés pour le menu multijoueur (héberger/rejoindre) */
+/* Boutons texte classiques conservés uniquement pour le menu Multijoueur */
 .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.5em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px;}
 .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
 .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255,0,127,0.2); }
