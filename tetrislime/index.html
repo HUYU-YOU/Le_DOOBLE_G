@@ -11,24 +11,18 @@
 </head>
 <body>
 
-    <!-- BOUTON RETOUR HUB (Image propre) -->
+    <!-- BOUTON RETOUR HUB PROPRE -->
     <a href="../index.html" class="hub-link">
         <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-img">
     </a>
 
-    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+    <div class="settings-btn-wrapper" onclick="toggleSettings()">
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
     <div id="settings-modal">
         <div class="settings-content">
-            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
-            
-            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
-                <span>Thème UI 🌗</span>
-                <button id="btn-theme-toggle" class="btn-main" style="width:auto; font-size:1.2rem; padding:10px 20px;" onclick="toggleTheme()">Mode Jour ☀️</button>
-            </div>
-
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase;">Paramètres</h2>
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
@@ -44,32 +38,24 @@
     <div id="game-container" class="size-wide">
         
         <div class="overlay" id="main-menu">
-            <!-- On masque le titre texte pour laisser visible ton image de fond -->
-            <!-- <h1 class="game-title">TETRISLIME</h1> -->
-            
             <!-- NOUVEAUX BOUTONS IMAGES -->
             <img src="../img/solo.png" class="menu-btn solo-btn" onclick="startSolo()" alt="Jouer en Solo">
             <img src="../img/multi.png" class="menu-btn multi-btn" onclick="openMultiMenu()" alt="Multijoueur">
         </div>
 
         <div class="overlay" id="network-menu" style="display: none;">
-            <h2 style="color: var(--p1); font-size: 3em; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 0 15px var(--p1);">Versus</h2>
-            
+            <h2 style="color: var(--p1); font-size: 3em; margin-bottom: 5px; text-transform: uppercase;">Versus</h2>
             <input type="text" id="pseudo" placeholder="Ton Pseudo" required>
-            
             <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid var(--perfect);">
                 <p style="margin: 0; font-size: 1.2em;">Code de ton salon :</p>
-                <span id="my-id" style="color:var(--perfect); font-weight:bold; font-size:2em; cursor: pointer;" title="Copier le code">Génération...</span>
+                <span id="my-id" style="color:var(--perfect); font-weight:bold; font-size:2em; cursor: pointer;">Génération...</span>
                 <br>
                 <button class="btn-main" id="host-btn" onclick="hostGame()" style="font-size: 1rem; padding: 10px 20px;">Héberger</button>
                 <button class="btn-main" id="start-net-btn" style="display:none; background:var(--perfect); color:#000;" onclick="startMultiGame()">Lancer le duel !</button>
             </div>
-            
             <p style="margin: 10px 0; color: #888; font-weight: bold;">--- OU ---</p>
-            
             <input type="text" id="join-id" placeholder="Code du salon (ex: TET1234)" style="text-transform: uppercase;">
             <button class="btn-main red" id="join-btn" onclick="joinGame()">Rejoindre</button>
-            
             <p id="status-text" style="color: var(--p4); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
         </div>
 
