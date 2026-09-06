@@ -11,18 +11,22 @@
 </head>
 <body>
 
-    <!-- BOUTON RETOUR HUB PROPRE -->
+    <!-- BOUTON RETOUR HUB (Image propre sans cadre) -->
     <a href="../index.html" class="hub-link">
         <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-img">
     </a>
 
-    <div class="settings-btn-wrapper" onclick="toggleSettings()">
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase;">Paramètres</h2>
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <span>Thème UI 🌗</span>
+                <button id="btn-theme-toggle" class="btn-main" style="width:auto; font-size:1.2rem; padding:10px 20px;" onclick="toggleTheme()">Changer Thème</button>
+            </div>
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
@@ -38,7 +42,7 @@
     <div id="game-container" class="size-wide">
         
         <div class="overlay" id="main-menu">
-            <!-- NOUVEAUX BOUTONS IMAGES -->
+            <!-- BOUTONS IMAGES DU MENU (A la place du texte) -->
             <img src="../img/solo.png" class="menu-btn solo-btn" onclick="startSolo()" alt="Jouer en Solo">
             <img src="../img/multi.png" class="menu-btn multi-btn" onclick="openMultiMenu()" alt="Multijoueur">
         </div>
@@ -71,6 +75,7 @@
                     <div class="panel-title">Lignes</div>
                     <div class="panel-val" id="lines">0</div>
                 </div>
+                <!-- LA CASE RÉSERVE EST SUPPRIMÉE DU VISUEL ICI -->
             </div>
 
             <div class="board-wrapper">
