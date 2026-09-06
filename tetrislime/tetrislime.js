@@ -76,15 +76,10 @@ const canvas = document.getElementById('tetris-canvas');
 const ctx = canvas.getContext('2d');
 const nextCtx = document.getElementById('next-canvas').getContext('2d');
 
-// Sécurité : si tu as retiré le canvas "Réserve" du HTML, le jeu ne plantera pas.
-const holdCanvasElement = document.getElementById('hold-canvas');
-const holdCtx = holdCanvasElement ? holdCanvasElement.getContext('2d') : null;
-
 const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// VARIABLE DE DEBUG (Touche D)
 let isDebug = false;
 
 const skinNames = [
@@ -101,9 +96,7 @@ skinNames.forEach(name => {
     skins[name].onload = () => {
         if (typeof draw === 'function') draw();
         if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 25);
-        if (typeof holdPiece !== 'undefined' && holdPiece && holdCtx) drawPreview(holdCtx, holdPiece, 25);
     };
-    // Anti-cache magique pour être sûr de charger tes nouvelles images
     skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
 });
 
@@ -145,8 +138,6 @@ const COLORS = [ null, '#00f0ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#
 let board = [];
 let piece = null;
 let nextPiece = null;
-let holdPiece = null;
-let canHold = true;
 let dropCounter = 0;
 let dropInterval = 1000;
 let lastTime = 0;
@@ -173,28 +164,20 @@ function randomPiece() {
 
 function getImgName(type, rotIndex) {
     if (type === 3) return 'CUBE';
-    
-    // Inversion des skins de la Barre
     if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE90' : 'BARRE';
-    
-    // Ton croisement d'origine pour le L
     if (type === 2) {
         if (rotIndex === 0) return 'L0';
         if (rotIndex === 90) return 'L270';  
         if (rotIndex === 180) return 'L180';
         if (rotIndex === 270) return 'L90';
     }
-    
     if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
-    
-    // Inversion de la Croix (T) pour les côtés gauche/droite
     if (type === 5) {
         if (rotIndex === 0) return 'CROIX';
         if (rotIndex === 90) return 'CROIX270';
         if (rotIndex === 180) return 'CROIX180';
         if (rotIndex === 270) return 'CROIX90';
     }
-    
     return null;
 }
 
@@ -240,8 +223,6 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
 
                         ctxTarget.save();
                         ctxTarget.beginPath();
-                        
-                        // L'astuce des 6 pixels pour ne pas couper le front des slimes
                         let earOffset = 6; 
                         ctxTarget.rect(destX, destY - earOffset, size, size + earOffset);
                         ctxTarget.clip();
@@ -378,23 +359,8 @@ function playerDrop() {
         merge(board, piece);
         resetPiece();
         clearLines();
-        canHold = true; 
     }
     dropCounter = 0;
-}
-
-function hold() {
-    if (!canHold) return;
-    if (holdPiece) {
-        let temp = { matrix: holdPiece.matrix, type: holdPiece.type, rotIndex: holdPiece.rotIndex, pos: {x: Math.floor(COLS/2) - Math.floor(holdPiece.matrix[0].length/2), y: 0} };
-        holdPiece = { matrix: SHAPES[piece.type][0], type: piece.type, rotIndex: 0 };
-        piece = temp;
-    } else {
-        holdPiece = { matrix: SHAPES[piece.type][0], type: piece.type, rotIndex: 0 };
-        resetPiece();
-    }
-    canHold = false;
-    if (holdCtx) drawPreview(holdCtx, holdPiece, 25);
 }
 
 function resetPiece() {
@@ -471,7 +437,6 @@ function update(time = 0) {
 
 document.addEventListener('keydown', event => {
     if (isGameOver || document.getElementById('game-ui').style.display === 'none') return;
-    
     if (document.activeElement.tagName === 'INPUT') return;
 
     if (event.keyCode === 68) { 
@@ -479,7 +444,6 @@ document.addEventListener('keydown', event => {
         isDebug = !isDebug;
         draw();
         if (nextPiece) drawPreview(nextCtx, nextPiece, 25);
-        if (holdPiece && holdCtx) drawPreview(holdCtx, holdPiece, 25);
         return; 
     }
 
@@ -490,9 +454,8 @@ document.addEventListener('keydown', event => {
     else if (event.keyCode === 32) { 
         event.preventDefault(); 
         while (!collide(board, piece)) { piece.pos.y++; }
-        piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); canHold = true; dropCounter = 0;
+        piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); dropCounter = 0;
     } // Espace
-    else if (event.keyCode === 16 || event.keyCode === 67) { event.preventDefault(); hold(); } // Shift ou C
 });
 
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
@@ -530,7 +493,7 @@ function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex'; 
     
-    // Le CSS s'occupera d'afficher tetrisback.jpeg grâce à cette ligne :
+    // Change le background pour tetrisback.jpeg en jeu
     document.body.classList.add('in-game');
     
     gameMode = 'solo';
@@ -613,7 +576,7 @@ function startMultiGameDisplay() {
     document.getElementById('game-ui').style.display = 'flex';
     document.getElementById('opponent-box').style.display = 'block';
     
-    // Le CSS s'occupera d'afficher tetrisback.jpeg grâce à cette ligne :
+    // Change le background pour tetrisback.jpeg en multi
     document.body.classList.add('in-game');
     
     gameMode = 'multi';
