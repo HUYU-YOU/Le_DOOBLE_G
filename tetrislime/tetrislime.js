@@ -474,7 +474,6 @@ function drop(e) { e.preventDefault(); playerDrop(); }
 // ==========================================
 function setBackgroundImage(filename) {
     const bgUrl = `url('assets/${filename}?v=${new Date().getTime()}')`;
-    // On force l'application sur le Body ET sur le HTML !
     document.body.style.backgroundImage = bgUrl;
     document.documentElement.style.backgroundImage = bgUrl;
 }
@@ -485,9 +484,6 @@ function setBackgroundImage(filename) {
 document.addEventListener("DOMContentLoaded", () => {
     applyTheme();
     setGameSize('wide'); 
-    
-    // Chargement de l'image de Menu (TETRISLIME)
-    setBackgroundImage('tetrislimebackground.jpeg');
 
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
@@ -512,8 +508,9 @@ function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex'; 
     
-    // 💥 C'EST ICI QUE LA MAGIE OPÈRE : Passage à l'image En-Jeu (Sans texte)
+    // ON DECLENCHE LE BACKGROUND DU JEU ICI
     setBackgroundImage('tetrisback.jpeg');
+    document.body.classList.add('in-game');
     
     gameMode = 'solo';
     board = createMatrix(COLS, ROWS);
@@ -595,8 +592,9 @@ function startMultiGameDisplay() {
     document.getElementById('game-ui').style.display = 'flex';
     document.getElementById('opponent-box').style.display = 'block';
     
-    // 💥 ON CHANGE AUSSI LE FOND ICI POUR LE MULTI !
+    // ON DECLENCHE LE BACKGROUND DU JEU ICI
     setBackgroundImage('tetrisback.jpeg');
+    document.body.classList.add('in-game');
     
     gameMode = 'multi';
     board = createMatrix(COLS, ROWS);
