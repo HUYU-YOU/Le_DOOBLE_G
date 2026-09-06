@@ -1,6 +1,44 @@
 // ==========================================
 // GESTION DU THÈME ET PARAMÈTRES
 // ==========================================
+let isNight = localStorage.getItem('tetrisNight') === 'true';
+
+function applyTheme() {
+    const themeBtn = document.getElementById('btn-theme-toggle');
+    if (themeBtn) {
+        themeBtn.innerText = isNight ? "Mode Nuit 🌙" : "Mode Jour ☀️";
+    }
+}
+
+function toggleTheme() {
+    isNight = !isNight;
+    localStorage.setItem('tetrisNight', isNight);
+    applyTheme();
+}
+
+const settingsBtnImg = document.getElementById('settings-btn-img');
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+let hoverInterval; let currentFrame = 0;
+
+function startSettingsAnim() {
+    if (hoverInterval) return;
+    currentFrame = 0; settingsBtnImg.src = animFrames[currentFrame];
+    hoverInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % animFrames.length;
+        settingsBtnImg.src = animFrames[currentFrame];
+    }, 100); 
+}
+
+function stopSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    if (!settingsBtnImg.src.includes('settings4.png')) settingsBtnImg.src = '../img/setting.png';
+}
+
+function clickSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    settingsBtnImg.src = '../img/settings4.png'; toggleSettings();
+    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+}
 
 function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
 
@@ -38,10 +76,15 @@ const canvas = document.getElementById('tetris-canvas');
 const ctx = canvas.getContext('2d');
 const nextCtx = document.getElementById('next-canvas').getContext('2d');
 
+// Sécurité : si tu as retiré le canvas "Réserve" du HTML, le jeu ne plantera pas.
+const holdCanvasElement = document.getElementById('hold-canvas');
+const holdCtx = holdCanvasElement ? holdCanvasElement.getContext('2d') : null;
+
 const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
+// VARIABLE DE DEBUG (Touche D)
 let isDebug = false;
 
 const skinNames = [
@@ -58,8 +101,10 @@ skinNames.forEach(name => {
     skins[name].onload = () => {
         if (typeof draw === 'function') draw();
         if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 25);
+        if (typeof holdPiece !== 'undefined' && holdPiece && holdCtx) drawPreview(holdCtx, holdPiece, 25);
     };
-    skins[name].src = `assets/${name}.png`;
+    // Anti-cache magique pour être sûr de charger tes nouvelles images
+    skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
 });
 
 const SHAPES = {
@@ -100,6 +145,8 @@ const COLORS = [ null, '#00f0ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#
 let board = [];
 let piece = null;
 let nextPiece = null;
+let holdPiece = null;
+let canHold = true;
 let dropCounter = 0;
 let dropInterval = 1000;
 let lastTime = 0;
@@ -127,8 +174,10 @@ function randomPiece() {
 function getImgName(type, rotIndex) {
     if (type === 3) return 'CUBE';
     
+    // Inversion des skins de la Barre
     if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE90' : 'BARRE';
     
+    // Ton croisement d'origine pour le L
     if (type === 2) {
         if (rotIndex === 0) return 'L0';
         if (rotIndex === 90) return 'L270';  
@@ -138,6 +187,7 @@ function getImgName(type, rotIndex) {
     
     if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
     
+    // Inversion de la Croix (T) pour les côtés gauche/droite
     if (type === 5) {
         if (rotIndex === 0) return 'CROIX';
         if (rotIndex === 90) return 'CROIX270';
@@ -146,6 +196,24 @@ function getImgName(type, rotIndex) {
     }
     
     return null;
+}
+
+function getMatrixBounds(matrix) {
+    let minX = matrix[0].length, maxX = 0, minY = matrix.length, maxY = 0;
+    let hasBlocks = false;
+    matrix.forEach((row, y) => {
+        row.forEach((val, x) => {
+            if (val !== 0) {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+                hasBlocks = true;
+            }
+        });
+    });
+    if (!hasBlocks) return { minX: 0, minY: 0, w: matrix[0].length, h: matrix.length };
+    return { minX, minY, w: maxX - minX + 1, h: maxY - minY + 1 };
 }
 
 function drawBlock(ctxTarget, x, y, size, colorIndex) {
@@ -165,12 +233,24 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
                     let img = skins[imgName];
                     
                     if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
-                        let sW = img.naturalWidth / cell.boxW;
-                        let sH = img.naturalHeight / cell.boxH;
-                        let sX = cell.imgX * sW;
-                        let sY = cell.imgY * sH;
+                        let drawW = cell.boxW * size;
+                        let drawH = cell.boxH * size;
+                        let destX = (x + offset.x) * size;
+                        let destY = (y + offset.y) * size;
 
-                        ctxTarget.drawImage(img, sX, sY, sW, sH, (x + offset.x) * size, (y + offset.y) * size, size, size);
+                        ctxTarget.save();
+                        ctxTarget.beginPath();
+                        
+                        // L'astuce des 6 pixels pour ne pas couper le front des slimes
+                        let earOffset = 6; 
+                        ctxTarget.rect(destX, destY - earOffset, size, size + earOffset);
+                        ctxTarget.clip();
+
+                        let imgDrawX = destX - (cell.imgX * size);
+                        let imgDrawY = destY - (cell.imgY * size);
+
+                        ctxTarget.drawImage(img, imgDrawX, imgDrawY, drawW, drawH);
+                        ctxTarget.restore();
                     } else {
                         drawBlock(ctxTarget, x + offset.x, y + offset.y, size, cell.val);
                     }
@@ -185,16 +265,15 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
 function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
+    let bounds = getMatrixBounds(p.matrix);
     
     if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
-        let matrixW = p.matrix[0].length;
-        let matrixH = p.matrix.length;
         ctxTarget.drawImage(
             img, 
-            (p.pos.x + offsetX) * size, 
-            (p.pos.y + offsetY) * size, 
-            matrixW * size, 
-            matrixH * size
+            (p.pos.x + offsetX + bounds.minX) * size, 
+            (p.pos.y + offsetY + bounds.minY) * size, 
+            bounds.w * size, 
+            bounds.h * size
         );
     } else {
         drawMatrix(p.matrix, {x: p.pos.x + offsetX, y: p.pos.y + offsetY}, ctxTarget, size);
@@ -222,19 +301,17 @@ function drawPreview(ctxTarget, p, size) {
     
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
+    let bounds = getMatrixBounds(p.matrix);
     
-    let matrixW = p.matrix[0].length;
-    let matrixH = p.matrix.length;
-    
-    let drawX = (ctxTarget.canvas.width - matrixW * size) / 2;
-    let drawY = (ctxTarget.canvas.height - matrixH * size) / 2;
+    let drawX = (ctxTarget.canvas.width - bounds.w * size) / 2;
+    let drawY = (ctxTarget.canvas.height - bounds.h * size) / 2;
 
     if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
-        ctxTarget.drawImage(img, drawX, drawY, matrixW * size, matrixH * size);
+        ctxTarget.drawImage(img, drawX, drawY, bounds.w * size, bounds.h * size);
     } else {
         drawMatrix(p.matrix, {
-            x: (ctxTarget.canvas.width/size - matrixW)/2, 
-            y: (ctxTarget.canvas.height/size - matrixH)/2
+            x: (ctxTarget.canvas.width/size - p.matrix[0].length)/2, 
+            y: (ctxTarget.canvas.height/size - p.matrix.length)/2
         }, ctxTarget, size);
     }
 }
@@ -250,6 +327,7 @@ function collide(arena, player) {
 }
 
 function merge(arena, player) {
+    let bounds = getMatrixBounds(player.matrix);
     player.matrix.forEach((row, py) => {
         row.forEach((value, px) => {
             if (value !== 0) {
@@ -257,10 +335,10 @@ function merge(arena, player) {
                     val: value,
                     type: player.type,
                     rot: player.rotIndex,
-                    imgX: px, 
-                    imgY: py, 
-                    boxW: player.matrix[0].length,
-                    boxH: player.matrix.length
+                    imgX: px - bounds.minX, 
+                    imgY: py - bounds.minY, 
+                    boxW: bounds.w,
+                    boxH: bounds.h
                 };
             }
         });
@@ -300,8 +378,23 @@ function playerDrop() {
         merge(board, piece);
         resetPiece();
         clearLines();
+        canHold = true; 
     }
     dropCounter = 0;
+}
+
+function hold() {
+    if (!canHold) return;
+    if (holdPiece) {
+        let temp = { matrix: holdPiece.matrix, type: holdPiece.type, rotIndex: holdPiece.rotIndex, pos: {x: Math.floor(COLS/2) - Math.floor(holdPiece.matrix[0].length/2), y: 0} };
+        holdPiece = { matrix: SHAPES[piece.type][0], type: piece.type, rotIndex: 0 };
+        piece = temp;
+    } else {
+        holdPiece = { matrix: SHAPES[piece.type][0], type: piece.type, rotIndex: 0 };
+        resetPiece();
+    }
+    canHold = false;
+    if (holdCtx) drawPreview(holdCtx, holdPiece, 25);
 }
 
 function resetPiece() {
@@ -378,6 +471,7 @@ function update(time = 0) {
 
 document.addEventListener('keydown', event => {
     if (isGameOver || document.getElementById('game-ui').style.display === 'none') return;
+    
     if (document.activeElement.tagName === 'INPUT') return;
 
     if (event.keyCode === 68) { 
@@ -385,6 +479,7 @@ document.addEventListener('keydown', event => {
         isDebug = !isDebug;
         draw();
         if (nextPiece) drawPreview(nextCtx, nextPiece, 25);
+        if (holdPiece && holdCtx) drawPreview(holdCtx, holdPiece, 25);
         return; 
     }
 
@@ -395,8 +490,9 @@ document.addEventListener('keydown', event => {
     else if (event.keyCode === 32) { 
         event.preventDefault(); 
         while (!collide(board, piece)) { piece.pos.y++; }
-        piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); dropCounter = 0;
+        piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); canHold = true; dropCounter = 0;
     } // Espace
+    else if (event.keyCode === 16 || event.keyCode === 67) { event.preventDefault(); hold(); } // Shift ou C
 });
 
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
@@ -405,21 +501,11 @@ function rotate(e) { e.preventDefault(); playerRotate(); }
 function drop(e) { e.preventDefault(); playerDrop(); }
 
 // ==========================================
-// FONCTION MAGIQUE POUR CHARGER LE BACKGROUND
-// ==========================================
-function setBackgroundImage(filename) {
-    // Le "?v=" empêche le navigateur de faire le capricieux et force l'affichage
-    document.body.style.backgroundImage = `url('assets/${filename}?v=${new Date().getTime()}')`;
-}
-
-// ==========================================
 // ROUTAGE AUTO ET LANCEMENT DIRECT
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
+    applyTheme();
     setGameSize('wide'); 
-    
-    // VERIFIE BIEN LE NOM ICI : .jpeg ou .jpg ?
-    setBackgroundImage('tetrislimebackground.jpeg');
 
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
@@ -444,8 +530,8 @@ function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex'; 
     
-    // VERIFIE BIEN LE NOM ICI AUSSI :
-    setBackgroundImage('tetrisback.jpeg');
+    // Le CSS s'occupera d'afficher tetrisback.jpeg grâce à cette ligne :
+    document.body.classList.add('in-game');
     
     gameMode = 'solo';
     board = createMatrix(COLS, ROWS);
@@ -527,7 +613,8 @@ function startMultiGameDisplay() {
     document.getElementById('game-ui').style.display = 'flex';
     document.getElementById('opponent-box').style.display = 'block';
     
-    setBackgroundImage('tetrisback.jpeg');
+    // Le CSS s'occupera d'afficher tetrisback.jpeg grâce à cette ligne :
+    document.body.classList.add('in-game');
     
     gameMode = 'multi';
     board = createMatrix(COLS, ROWS);
