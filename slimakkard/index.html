@@ -63,7 +63,6 @@
     <!-- Écran de démarrage -->
     <div id="main-menu">
         <div class="storm-background"></div>
-        <!-- Bouton ENTRER (IMAGE) -->
         <img src="assets/enter.png" alt="Entrer dans la tempête" class="enter-img-btn" onclick="lancerJeu()">
     </div>
 
@@ -125,10 +124,12 @@
             <div class="game-container">
                 <!-- Grille du Joueur -->
                 <div class="grid-section">
-                    <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
-                        <span id="txt-my-fleet">Ma Flotte</span> 
-                        <img id="player-skin-display" src="" class="slime-skin-small" style="width: 40px; height: 40px; margin: 0; border-width: 2px;">
-                    </h2>
+                    <!-- NOUVEAU CONTENEUR POUR ALIGNER LE TITRE -->
+                    <div class="grid-header">
+                        <h2 id="txt-my-fleet">Ma Flotte</h2> 
+                        <img id="player-skin-display" src="" class="slime-skin-small" style="width: 40px; height: 40px; border-width: 2px;">
+                    </div>
+
                     <div class="board-wrapper">
                         <div class="col-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
                         <div class="board-row">
@@ -151,7 +152,11 @@
 
                 <!-- Grille de l'Adversaire -->
                 <div class="grid-section">
-                    <h2 id="txt-enemy-fleet" style="margin-bottom: 5px;">Flotte Ennemie</h2>
+                     <!-- NOUVEAU CONTENEUR POUR ALIGNER LE TITRE -->
+                    <div class="grid-header">
+                        <h2 id="txt-enemy-fleet">Flotte Ennemie</h2>
+                    </div>
+
                     <div class="board-wrapper">
                         <div class="col-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
                         <div class="board-row">
@@ -183,13 +188,10 @@
     <div id="game-over-screen" class="hidden">
         <h1 id="txt-end-title" style="font-size: 50px; color: #f1c40f;">Victoire !</h1>
         <p id="txt-end-desc" style="font-size: 24px; margin-bottom: 30px;">La flotte ennemie est au fond de l'océan.</p>
-        <!-- Ce bouton reste en CSS car c'est juste "Rejouer" -->
         <button class="start-btn-epic" onclick="location.reload()">Rejouer une bataille</button>
     </div>
 
-    <!-- Balise Audio invisible pour la musique -->
     <audio id="bg-music" preload="auto"></audio>
-
     <script src="script.js"></script>
 </body>
 </html>
