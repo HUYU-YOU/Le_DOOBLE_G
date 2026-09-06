@@ -14,7 +14,7 @@ body, html {
     background-color: var(--bg); 
     background-image: url('assets/tetrislimebackground.jpeg'); 
     background-size: cover;
-    background-position: top center; /* Évite de couper le haut du titre TETRISLIME */
+    background-position: top center; 
     background-repeat: no-repeat;
     color: white; margin: 0; padding: 0; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -46,7 +46,7 @@ body.in-game {
     filter: drop-shadow(0 0 15px var(--p1)); 
 }
 
-/* BOUTONS IMAGES DU MENU (Même taille harmonisée) */
+/* BOUTONS IMAGES DU MENU */
 .menu-btn {
     width: 250px; 
     max-width: 80vw;
@@ -77,12 +77,15 @@ body.in-game {
 /* MENUS & OVERLAYS */
 #game-container { 
     position: relative; border-radius: 15px; 
-    box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
-    width: 100%; max-width: 900px; height: 80vh; border: 1px solid rgba(0, 240, 255, 0.3); 
+    width: 100%; max-width: 900px; height: 80vh; 
     box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
-    background: rgba(10, 15, 25, 0.5); 
-    backdrop-filter: blur(8px);
+    
+    /* On enlève la bordure et on le rend quasi-transparent pour voir le fond */
+    border: none;
+    background: transparent; 
+    backdrop-filter: none;
+    box-shadow: none;
 }
 
 #game-container.size-wide, #game-container.size-full {
@@ -114,20 +117,64 @@ body.in-game {
 input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
-/* UI DU JEU */
-#game-ui { transition: transform 0.3s ease; transform-origin: center center; }
-.side-panel { display: flex; flex-direction: column; gap: 15px; width: 160px; }
-.panel-box {
-    background: rgba(0,0,0,0.7); border: 2px solid var(--p1); border-radius: 10px; padding: 15px;
-    text-align: center; box-shadow: 0 0 15px rgba(0, 240, 255, 0.15); backdrop-filter: blur(5px);
-}
-.panel-title { font-size: 1.2em; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-.panel-val { font-size: 2.2em; font-weight: bold; color: #fff; text-shadow: 0 0 10px var(--p1); }
 
-.board-wrapper {
-    background: rgba(0, 0, 0, 0.8); border: 3px solid var(--p3); border-radius: 10px;
-    padding: 5px; box-shadow: 0 0 30px rgba(184, 42, 255, 0.4); backdrop-filter: blur(10px);
+/* =========================================
+   UI DU JEU TETRIS (Alignement avec l'image)
+   ========================================= */
+
+#game-ui { 
+    transition: transform 0.3s ease; 
+    transform-origin: center center; 
+    /* On écarte un peu plus les panneaux gauche/droite pour coller au dessin */
+    gap: 40px !important; 
 }
+
+.side-panel { 
+    display: flex; 
+    flex-direction: column; 
+    /* On écarte les blocs Score et Lignes pour qu'ils tombent dans leurs cadres */
+    gap: 50px; 
+    width: 160px; 
+}
+
+/* DESTRUCTION TOTALE DES FONDS ET BORDURES HTML */
+.panel-box {
+    background: transparent !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    text-align: center;
+}
+
+.panel-title { 
+    font-size: 1.3em; 
+    color: #fff; 
+    text-transform: uppercase; 
+    letter-spacing: 2px; 
+    margin-bottom: 5px;
+    /* Ajout d'une ombre noire pour que le texte reste lisible sur le fond */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
+}
+
+.panel-val { 
+    font-size: 2.5em; 
+    font-weight: bold; 
+    color: #fff; 
+    text-shadow: 0 0 10px var(--p1), 0 2px 5px rgba(0,0,0,1); 
+}
+
+/* LE PLATEAU DE JEU DEVIENT TRANSPARENT LUI AUSSI */
+.board-wrapper {
+    background: transparent !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    /* Remonte légèrement le plateau de jeu pour qu'il ne dépasse pas du cadre doré en bas */
+    margin-top: -30px; 
+}
+
 canvas { display: block; border-radius: 5px; }
 
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
