@@ -11,7 +11,7 @@
 </head>
 <body>
 
-    <!-- BOUTON RETOUR HUB (Image) -->
+    <!-- BOUTON RETOUR HUB (Image propre) -->
     <a href="../index.html" class="hub-link">
         <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-img">
     </a>
@@ -44,10 +44,12 @@
     <div id="game-container" class="size-wide">
         
         <div class="overlay" id="main-menu">
-            <h1 class="game-title">TETRISLIME</h1>
+            <!-- On masque le titre texte pour laisser visible ton image de fond -->
+            <!-- <h1 class="game-title">TETRISLIME</h1> -->
+            
             <!-- NOUVEAUX BOUTONS IMAGES -->
-            <img src="../img/solo.png" class="menu-btn" onclick="startSolo()" alt="Jouer en Solo">
-            <img src="../img/multi.png" class="menu-btn" onclick="openMultiMenu()" alt="Multijoueur">
+            <img src="../img/solo.png" class="menu-btn solo-btn" onclick="startSolo()" alt="Jouer en Solo">
+            <img src="../img/multi.png" class="menu-btn multi-btn" onclick="openMultiMenu()" alt="Multijoueur">
         </div>
 
         <div class="overlay" id="network-menu" style="display: none;">
@@ -83,7 +85,6 @@
                     <div class="panel-title">Lignes</div>
                     <div class="panel-val" id="lines">0</div>
                 </div>
-                <!-- LE BLOC "RÉSERVE" A ÉTÉ SUPPRIMÉ ICI -->
             </div>
 
             <div class="board-wrapper">
