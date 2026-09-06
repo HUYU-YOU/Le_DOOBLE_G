@@ -41,7 +41,7 @@ const story = {
         bottomText: "Tu as fui en courant...",
         showUIAtEnd: false,
         choices: [
-            { text: "Menu Principal", targetScene: "partie1" } // Modifié pour faire une boucle propre
+            { text: "Menu Principal", targetScene: "partie1" } 
         ]
     }
 };
@@ -122,12 +122,6 @@ function startNewGame() {
     // On cache le menu et on lance la partie 1
     document.getElementById('main-menu').style.display = 'none';
     loadScene('partie1');
-}
-
-function continueGame() {
-    // Pour l'instant, on n'a pas de système de sauvegarde complet, on affiche une alerte
-    alert("Aucune sauvegarde trouvée. Lancement d'une nouvelle partie !");
-    startNewGame();
 }
 
 function quitGame() {
