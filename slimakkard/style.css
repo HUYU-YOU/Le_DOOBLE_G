@@ -1,7 +1,8 @@
 /* =========================================
    1. IMPORT DE POLICE & BASE DU CORPS
    ========================================= */
-@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+/* Uncial Antiqua donne un vrai look Runique / Viking */
+@import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -9,7 +10,7 @@ body {
     background-color: #0b0f19; 
     color: white; 
     /* POLICE VIKING APPLIQUÉE À TOUT LE JEU */
-    font-family: 'MedievalSharp', cursive; 
+    font-family: 'Uncial Antiqua', cursive; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
     min-height: 100vh; overflow-x: hidden; 
 }
@@ -33,13 +34,13 @@ body.dark-mode .bg-overlay { background: rgba(0, 0, 0, 0.85); }
 
 /* Bouton principal global stylisé Viking */
 .start-btn-epic { 
-    padding: 15px 40px; font-size: 24px; font-family: 'MedievalSharp', cursive;
+    padding: 15px 40px; font-size: 24px; font-family: 'Uncial Antiqua', cursive;
     background-color: #2ecc71; color: #111; border: 3px solid #1e8449; 
     border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.5), inset 0 0 10px rgba(255,255,255,0.4); 
     transition: 0.3s; 
 }
 .start-btn-epic:hover { transform: scale(1.05); background-color: #27ae60; color: white; }
-.start-btn { font-family: 'MedievalSharp', cursive; background: #2ecc71; color: #000; border: 2px solid #1e8449; padding: 10px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: inset 0 0 5px rgba(255,255,255,0.4); }
+.start-btn { font-family: 'Uncial Antiqua', cursive; background: #2ecc71; color: #000; border: 2px solid #1e8449; padding: 10px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: inset 0 0 5px rgba(255,255,255,0.4); }
 .start-btn:hover { background: #27ae60; transform: scale(1.05); color: white; }
 
 /* =========================================
@@ -54,11 +55,10 @@ body.dark-mode .bg-overlay { background: rgba(0, 0, 0, 0.85); }
 .settings-btn-wrapper:hover .settings-anim { transform: scale(1.15); animation: gear-frames 0.5s infinite steps(1); }
 @keyframes gear-frames { 0% { background-image: url('../img/settings1.png'); } 20% { background-image: url('../img/settings2.png'); } 40% { background-image: url('../img/settings3.png'); } 60% { background-image: url('../img/settings4.png'); } 80% { background-image: url('../img/settings5.png'); } 100% { background-image: url('../img/setting.png'); } }
 
-/* Modal Paramètres */
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
 .modal.show { display: flex !important; }
-.modal-content { background: rgba(15, 20, 30, 0.95); border: 2px solid #2ecc71; border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); min-width: 320px; }
-.modal-content h2 { color: #2ecc71; font-size: 2rem; margin-bottom: 20px; }
+.modal-content { font-family: 'Uncial Antiqua', cursive; background: rgba(15, 20, 30, 0.95); border: 2px solid #2ecc71; border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); min-width: 320px; }
+.modal-content h2 { color: #2ecc71; font-size: 2.2rem; margin-bottom: 20px; }
 .setting-item { display: flex; justify-content: space-between; align-items: center; margin: 25px 0; font-size: 1.2rem; }
 .switch { position: relative; display: inline-block; width: 54px; height: 28px; }
 .switch input { opacity: 0; width: 0; height: 0; }
@@ -66,7 +66,7 @@ body.dark-mode .bg-overlay { background: rgba(0, 0, 0, 0.85); }
 .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
 input:checked + .slider:before { transform: translateX(26px); }
-.close-btn { background: #2ecc71; color: #000; border: none; padding: 10px 25px; font-size: 1.2rem; font-family: 'MedievalSharp', cursive; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+.close-btn { font-family: 'Uncial Antiqua', cursive; background: #2ecc71; color: #000; border: none; padding: 10px 25px; font-size: 1.2rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
 .close-btn:hover { box-shadow: 0 0 20px #2ecc71; transform: scale(1.05); }
 
 /* =========================================
@@ -85,14 +85,15 @@ input:checked + .slider:before { transform: translateX(26px); }
 .btn-vs-ai { background-image: url('assets/VSAI.png'); }
 .btn-heberg { background-image: url('assets/heberg.png'); }
 
-/* CENTRAGE DU TEXTE SUR LE BOIS */
+/* CENTRAGE DU TEXTE SUR LE BOIS (Descendu fortement) */
 .custom-img-btn span {
-    color: #ecf0f1;
-    font-size: 32px; /* Texte plus gros pour bien remplir l'espace */
+    color: #f1c40f; /* Or Viking pour bien ressortir */
+    font-size: 34px; 
     letter-spacing: 2px;
     pointer-events: none; 
-    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 5px 10px rgba(0,0,0,0.9);
-    transform: translateY(22px); /* DÉCALE LE TEXTE VERS LE BAS (SUR LE BOIS) */
+    /* Gros contour noir pour être ultra lisible sur n'importe quel fond */
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 5px 15px rgba(0,0,0,1);
+    transform: translateY(40px); /* DÉCALE LE TEXTE POUR LE POSER PILE SUR LE BOIS */
 }
 
 /* BARRE D'ENTRÉE SLIMESQUE */
@@ -103,11 +104,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     border: 3px solid #2ecc71; /* Contour baveux */
     border-radius: 10px;
     color: #f1c40f; /* Texte doré */
-    font-family: 'MedievalSharp', cursive;
-    font-size: 22px;
+    font-family: 'Uncial Antiqua', cursive; /* Police Viking */
+    font-size: 24px;
     text-align: center;
     padding: 12px 20px;
-    width: 250px;
+    width: 300px;
     box-shadow: 0 0 15px rgba(46, 204, 113, 0.4), inset 0 0 10px rgba(0,0,0,0.8);
     outline: none;
     transition: 0.3s;
@@ -121,33 +122,33 @@ input:checked + .slider:before { transform: translateX(26px); }
    6. CHOIX PERSOS & JEU
    ========================================= */
 .classes-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 20px; }
-.class-btn { position: relative; width: 250px; height: 350px; border: 3px solid transparent; border-radius: 15px; cursor: pointer; transition: 0.3s; overflow: hidden; background-size: cover; background-position: center; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+.class-btn { position: relative; width: 250px; height: 350px; border: 3px solid transparent; border-radius: 15px; cursor: pointer; transition: 0.3s; overflow: hidden; background-size: cover; background-position: center; box-shadow: 0 0 15px rgba(0,0,0,0.5); font-family: 'Uncial Antiqua', cursive; }
 .berserker-btn { background-image: url('assets/berserk.jpg'); }
 .navigateur-btn { background-image: url('assets/navigator.jpeg'); }
 .chaman-btn { background-image: url('assets/shaman.jpg'); }
 .class-btn:hover { border-color: #2ecc71; box-shadow: 0 0 25px rgba(46, 204, 113, 0.8); transform: translateY(-10px); }
 .class-info { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, rgba(0,0,0,0)); padding: 40px 15px 15px 15px; color: white; text-align: center; }
-.class-info h3 { margin-bottom: 5px; color: #2ecc71; text-shadow: 0 2px 4px #000; font-size: 1.5rem;}
-.class-info p { font-size: 16px; text-shadow: 0 1px 2px #000; }
+.class-info h3 { margin-bottom: 5px; color: #2ecc71; text-shadow: 0 2px 4px #000; font-size: 1.8rem;}
+.class-info p { font-size: 16px; text-shadow: 0 1px 2px #000; font-family: sans-serif; } /* Texte de desc en sans-serif pour lisibilité */
 .slime-skin-small { border-radius: 50%; object-fit: cover; border: 2px solid #2ecc71; }
 
 .game-container { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 60px; margin-top: 10px; }
 .grid-section { display: flex; flex-direction: column; align-items: center; }
 .grid-header { height: 50px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
-.grid-header h2 { margin: 0; font-size: 2rem; }
+.grid-header h2 { margin: 0; font-size: 2.2rem; }
 
 .board-wrapper { display: flex; flex-direction: column; }
 .col-labels { display: flex; padding-left: 30px; font-weight: bold; color: #2ecc71; margin-bottom: 2px; }
-.col-labels span { width: 48px; text-align: center; font-size: 18px; } 
+.col-labels span { width: 48px; text-align: center; font-size: 18px; font-family: sans-serif; } 
 .board-row { display: flex; }
 .row-labels { display: flex; flex-direction: column; justify-content: space-around; width: 25px; font-weight: bold; color: #2ecc71; margin-right: 5px; }
-.row-labels span { height: 48px; display: flex; align-items: center; justify-content: center; font-size: 16px; } 
+.row-labels span { height: 48px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-family: sans-serif; } 
 
 .grid-video-wrapper { position: relative; border: 2px solid #2ecc71; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.5); overflow: hidden; }
 .grid-bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.85; }
 
 .grid { position: relative; display: grid; grid-template-columns: repeat(10, 48px); grid-template-rows: repeat(10, 48px); gap: 2px; padding: 5px; background-color: transparent; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); z-index: 1; }
-.cell { width: 48px; height: 48px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: 0.2s; background-color: rgba(0, 0, 0, 0.4); font-size: 24px; display: flex; align-items: center; justify-content: center; z-index: 2; font-family: sans-serif; /* Conserve les emojis intacts */ }
+.cell { width: 48px; height: 48px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: 0.2s; background-color: rgba(0, 0, 0, 0.4); font-size: 24px; display: flex; align-items: center; justify-content: center; z-index: 2; font-family: sans-serif; }
 .cell:hover { background-color: rgba(46, 204, 113, 0.4); }
 
 .preview-valid { background-color: rgba(231, 76, 60, 0.6) !important; }
@@ -158,7 +159,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 .cell.hit { background-color: rgba(231, 76, 60, 0.9) !important; text-shadow: 0 0 5px #000; }
 
 .placed-ship-graphic { position: absolute; background-size: contain; background-repeat: no-repeat; background-position: center; pointer-events: none; z-index: 3; filter: drop-shadow(0 5px 6px rgba(0,0,0,0.8)); }
-.fleet-status-panel { display: flex; gap: 15px; margin-top: 8px; font-size: 15px; font-weight: bold; background: rgba(15, 23, 42, 0.8); padding: 5px 15px; border-radius: 5px; border: 1px solid #34495e; }
+.fleet-status-panel { display: flex; gap: 15px; margin-top: 8px; font-size: 15px; font-weight: bold; background: rgba(15, 23, 42, 0.8); padding: 5px 15px; border-radius: 5px; border: 1px solid #34495e; font-family: sans-serif;}
 
 /* =========================================
    7. STYLISATION DU SLIDER DE VOLUME
