@@ -7,14 +7,14 @@ const dict = {
         'txt-settings': 'Paramètres', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Mode Sombre / Nuit 🌙',
         'txt-fs': 'Plein Écran 🖥️', 'txt-close': 'Fermer', 'txt-btn-enter': 'ENTRER DANS LA TEMPÊTE',
         'txt-multi-title': 'Rejoindre le Valhalla', 
-        'txt-btn-host': 'Héberger une partie (Multi)', // NOUVEAU
+        'txt-btn-host': 'Héberger une partie (Multi)',
         'txt-btn-create': 'Créer une partie (Solo vs IA)', 'txt-or': 'OU', 
         'txt-btn-join': 'Rejoindre', 'txt-class-title': 'Choisis ton Commandant Slime !', 
         'txt-desc-berserk': 'Frappe 2 fois où il veut.', 'txt-desc-nav': 'Tire sur 2 cases en ligne.', 
         'txt-desc-sham': 'Tire 3 fois aléatoirement.', 'txt-my-fleet': 'Ma Flotte', 'txt-enemy-fleet': 'Flotte Ennemie', 
         'status-wait': 'Génération du champ de bataille...', 'status-connect': 'Connexion...', 
         'status-error': 'Mode non disponible.', 
-        'status-host': "En attente d'un vrai joueur... (Mode en ligne à venir !)", // NOUVEAU
+        'status-host': "En attente d'un vrai joueur... (Mode en ligne à venir !)", 
         'status-turn-me': "C'est à ton tour d'attaquer !", 
         'status-turn-enemy': "L'ennemi prépare son attaque...", 'status-chaos': "Le Chaman invoque le chaos !", 
         'txt-placement-title': "Place ta flotte !", 'rot-horiz': "🔄 Tourner : Horizontal", 'rot-vert': "🔄 Tourner : Vertical",
@@ -27,14 +27,14 @@ const dict = {
         'txt-settings': 'Settings', 'txt-lang': 'Langue / Language 🌍', 'txt-theme': 'Dark / Night Mode 🌙',
         'txt-fs': 'Fullscreen 🖥️', 'txt-close': 'Close', 'txt-btn-enter': 'ENTER THE STORM',
         'txt-multi-title': 'Join Valhalla', 
-        'txt-btn-host': 'Host a game (Multi)', // NOUVEAU
+        'txt-btn-host': 'Host a game (Multi)', 
         'txt-btn-create': 'Create room (Solo vs AI)', 'txt-or': 'OR', 
         'txt-btn-join': 'Join', 'txt-class-title': 'Choose your Slime Commander!', 
         'txt-desc-berserk': 'Strikes 2 times anywhere.', 'txt-desc-nav': 'Strikes 2 tiles in a row.', 
         'txt-desc-sham': 'Strikes 3 times randomly.', 'txt-my-fleet': 'My Fleet', 'txt-enemy-fleet': 'Enemy Fleet', 
         'status-wait': 'Generating battlefield...', 'status-connect': 'Connecting...', 
         'status-error': 'Mode unavailable.', 
-        'status-host': "Waiting for a real player... (Online mode coming soon!)", // NOUVEAU
+        'status-host': "Waiting for a real player... (Online mode coming soon!)", 
         'status-turn-me': "It's your turn to attack!", 
         'status-turn-enemy': "Enemy is preparing to attack...", 'status-chaos': "The Shaman summons chaos!", 
         'txt-placement-title': "Place your fleet!", 'rot-horiz': "🔄 Rotate: Horizontal", 'rot-vert': "🔄 Rotate: Vertical",
@@ -122,11 +122,12 @@ function lancerJeu() {
     démarrerMusique(); 
 }
 
-// NOUVEAU : Fonction d'attente pour le multijoueur
+// L'illusion du vrai multijoueur (Génération de code)
 function hebergerPartie() {
     const statusBox = document.getElementById('multi-status');
-    statusBox.style.color = "#f39c12"; // Orange pour indiquer une attente
-    statusBox.innerText = dict[currentLang]['status-host'];
+    const roomCode = `VIK${Math.floor(1000 + Math.random() * 9000)}`;
+    statusBox.style.color = "#f39c12"; // Orange d'attente
+    statusBox.innerHTML = `Code de la salle : <strong>${roomCode}</strong><br><br>${dict[currentLang]['status-host']}`;
 }
 
 function creerPartie() {
