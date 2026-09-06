@@ -12,22 +12,22 @@
 body, html { 
     font-family: 'Rajdhani', sans-serif; 
     background-color: var(--bg); 
-    
-    /* BACKGROUND PAR DÉFAUT */
     background-image: url('assets/tetrislimebackground.jpeg'); 
-    
     background-size: cover;
-    /* 💡 CORRECTION DU TITRE COUPÉ : L'image s'aligne par le HAUT maintenant */
-    background-position: top center; 
+    background-position: top center; /* Évite de couper le haut du titre TETRISLIME */
     background-repeat: no-repeat;
-    
     color: white; margin: 0; padding: 0; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
     min-height: 100vh; user-select: none; touch-action: none; overflow: hidden; 
     transition: background-image 0.5s ease-in-out;
 }
 
-/* SUPPRESSION DU CADRE DU BOUTON HUB */
+/* S'assure que le fond change correctement en jeu */
+body.in-game {
+    background-image: url('assets/tetrisback.jpeg') !important;
+}
+
+/* RETOUR HUB PROPRE SANS CADRE */
 .hub-link { 
     position: absolute; top: 15px; left: 15px; z-index: 100;
     background: transparent !important; 
@@ -36,10 +36,17 @@ body, html {
     padding: 0 !important;
     backdrop-filter: none !important;
 }
-.hub-link img { width: 180px; transition: 0.3s; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); }
-.hub-link:hover img { transform: scale(1.05) translateY(-2px); filter: drop-shadow(0 0 15px var(--p1)); }
+.hub-link img { 
+    width: 180px; 
+    transition: 0.3s; 
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); 
+}
+.hub-link:hover img { 
+    transform: scale(1.05) translateY(-2px); 
+    filter: drop-shadow(0 0 15px var(--p1)); 
+}
 
-/* 💡 CORRECTION DES BOUTONS SOLO/MULTI : Même taille pour les deux ! */
+/* BOUTONS IMAGES DU MENU (Même taille harmonisée) */
 .menu-btn {
     width: 250px; 
     max-width: 80vw;
@@ -48,7 +55,10 @@ body, html {
     filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));
     margin: 10px;
 }
-.menu-btn:hover { transform: scale(1.05) translateY(-5px); filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)); }
+.menu-btn:hover { 
+    transform: scale(1.05) translateY(-5px); 
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)); 
+}
 
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
@@ -91,7 +101,6 @@ body, html {
     background: rgba(10, 15, 28, 0.4); 
 }
 
-/* On rend le main-menu 100% transparent pour bien voir le fond ! */
 #main-menu {
     background: transparent !important;
     backdrop-filter: none !important;
@@ -105,7 +114,7 @@ body, html {
 input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
-/* UI DU JEU TETRIS */
+/* UI DU JEU */
 #game-ui { transition: transform 0.3s ease; transform-origin: center center; }
 .side-panel { display: flex; flex-direction: column; gap: 15px; width: 160px; }
 .panel-box {
