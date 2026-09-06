@@ -3,190 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sliking - Viking Slime Battle</title>
+    <title>Éline in Slimerland</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- VIDÉO DE FOND JOUR/NUIT -->
-    <video autoplay loop muted playsinline class="bg-video-main" id="bg-video">
-        <source src="assets/background.mp4" type="video/mp4">
-    </video>
-    <div class="bg-overlay"></div> 
-
-    <!-- Bouton de retour au Hub -->
-    <a href="../index.html" class="btn-hub">⬅ Retour au Hub</a>
-
-    <!-- Bouton Paramètres (Animation au survol) -->
-    <div class="settings-btn-wrapper" onclick="toggleSettings()">
-        <div class="settings-anim"></div>
+    <div id="main-menu">
+        <div class="menu-container">
+            <div class="menu-btn-wrapper" onclick="startNewGame()">
+                <img src="assets/start.png" alt="Nouvelle partie" class="menu-btn-img">
+                <span class="menu-text" id="menu-text-start">Commencer l'aventure</span>
+            </div>
+            <div class="menu-btn-wrapper" onclick="toggleSettings()">
+                <img src="assets/option.png" alt="Options" class="menu-btn-img">
+                <span class="menu-text" id="menu-text-option">Options..!</span>
+            </div>
+            <div class="menu-btn-wrapper" onclick="quitGame()">
+                <img src="assets/leave.png" alt="Quitter" class="menu-btn-img">
+                <span class="menu-text" id="menu-text-leave">Quitter</span>
+            </div>
+        </div>
     </div>
 
-    <!-- Modal des Paramètres -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
-            <h2 id="txt-settings">Paramètres</h2>
+            <h2 id="modal-title-options">Options</h2>
             
-            <!-- Slider de Volume -->
-            <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
-                <span id="txt-volume" style="margin-bottom: 10px;">Volume Musique 🔊</span>
-                <input type="range" id="music-volume" min="0" max="1" step="0.01" value="0.5" style="width: 100%;">
+            <div class="setting-item">
+                <span id="modal-text-lang">Langue 🌍</span>
+                <select id="lang-select" onchange="changeLanguage()">
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                </select>
             </div>
 
             <div class="setting-item">
-                <span id="txt-lang">Langue / Language 🌍</span>
-                <label class="switch">
-                    <input type="checkbox" id="lang-toggle" onchange="toggleLanguage()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div class="setting-item">
-                <span id="txt-theme">Mode Sombre / Nuit 🌙</span>
+                <span id="modal-text-theme">Mode Sombre 🌙</span>
                 <label class="switch">
                     <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
                     <span class="slider"></span>
                 </label>
             </div>
-            <div class="setting-item">
-                <span id="txt-fs">Plein Écran 🖥️</span>
-                <label class="switch">
-                    <input type="checkbox" id="fs-toggle" onchange="toggleFullscreen()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <button onclick="toggleSettings()" class="close-btn" id="txt-close">Fermer</button>
+
+            <button onclick="toggleSettings()" class="close-btn" id="modal-text-close">Fermer</button>
         </div>
     </div>
 
-    <!-- Écran de démarrage -->
-    <div id="main-menu">
-        <div class="storm-background"></div>
-        <button class="start-btn-epic" id="txt-btn-enter" onclick="lancerJeu()">ENTRER DANS LA TEMPÊTE</button>
+    <div id="game-ui">
+        <h1 class="in-game-title">Éline in Slimerland</h1>
     </div>
-
-    <!-- Interface Principale du Jeu -->
-    <div id="game-ui" class="hidden">
+    
+    <div id="game-container">
+        <video id="story-video" playsinline></video>
         
-        <!-- ÉTAPE 1 : Menu Multijoueur / Solo -->
-        <div id="multi-menu">
-            <h2 id="txt-multi-title">Rejoindre le Valhalla</h2>
+        <div id="video-ui">
+            <h2 id="top-text" class="story-text"></h2>
             
-            <!-- NOUVEAU : Boutons Héberger et Solo alignés proprement -->
-            <div style="margin: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center;">
-                <button class="start-btn" id="txt-btn-host" onclick="hebergerPartie()" style="width: 250px;">Héberger une partie (Multi)</button>
-                <button class="start-btn" id="txt-btn-create" onclick="creerPartie()" style="width: 250px;">Créer une partie (Solo vs IA)</button>
-            </div>
-
-            <p id="txt-or">OU</p>
-            <div style="margin: 20px;">
-                <input type="text" id="join-code" placeholder="VIK1234" maxlength="7" style="padding: 10px; font-size: 18px; text-transform: uppercase;">
-                <button class="start-btn" id="txt-btn-join" onclick="rejoindrePartie()">Rejoindre</button>
-            </div>
-            <p id="multi-status" style="color: #2ecc71; margin-top: 15px; font-weight: bold; font-size: 1.2rem;"></p>
-        </div>
-
-        <!-- ÉTAPE 2 : Sélection du Slime -->
-        <div id="class-selection" class="hidden">
-            <h2 id="txt-class-title">Choisis ton Commandant Slime !</h2>
-            <div class="classes-container">
-                <button class="class-btn berserker-btn" onclick="selectClass('berserker')">
-                    <div class="class-info">
-                        <h3>Slime Berserker 🪓</h3>
-                        <p id="txt-desc-berserk">Frappe 2 fois où il veut.</p>
+            <div id="bottom-section">
+                <p id="bottom-text" class="story-text"></p>
+                <div id="choices-container">
                     </div>
-                </button>
-                <button class="class-btn navigateur-btn" onclick="selectClass('navigateur')">
-                    <div class="class-info">
-                        <h3>Slime Navigateur 🧭</h3>
-                        <p id="txt-desc-nav">Tire sur 2 cases en ligne.</p>
-                    </div>
-                </button>
-                <button class="class-btn chaman-btn" onclick="selectClass('chaman')">
-                    <div class="class-info">
-                        <h3>Slime Chaman Loki 🔮</h3>
-                        <p id="txt-desc-sham">Tire 3 fois aléatoirement.</p>
-                    </div>
-                </button>
-            </div>
-        </div>
-
-        <!-- ÉTAPE 3 : Bataille Navale -->
-        <div id="battle-container" class="hidden">
-            
-            <!-- Contrôles de Placement -->
-            <div id="placement-controls" style="margin-bottom: 15px;">
-                <h2 id="txt-placement-title" style="color: #f1c40f; margin-bottom: 10px;">Place ta flotte !</h2>
-                <button class="start-btn" id="btn-rotate" onclick="toggleRotation()" style="padding: 10px; font-size: 16px;">🔄 Tourner : Horizontal</button>
-                <p style="margin-top: 10px; font-weight: bold; font-size: 1.2rem;">Bateau : <span id="current-ship-name" style="color: #2ecc71;">Drakkar Spécial</span></p>
-            </div>
-
-            <div class="game-container">
-                <!-- Grille du Joueur -->
-                <div class="grid-section">
-                    <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
-                        <span id="txt-my-fleet">Ma Flotte</span> 
-                        <img id="player-skin-display" src="" class="slime-skin-small" style="width: 40px; height: 40px; margin: 0; border-width: 2px;">
-                    </h2>
-                    <div class="board-wrapper">
-                        <div class="col-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
-                        <div class="board-row">
-                            <div class="row-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
-                            <div class="grid-video-wrapper">
-                                <video autoplay loop muted playsinline class="grid-bg-video">
-                                    <source src="assets/QUADRILLAGE1.mp4" type="video/mp4">
-                                </video>
-                                <div id="player-grid" class="grid"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- HUD État de la Flotte -->
-                    <div class="fleet-status-panel">
-                        <span id="p-ship-special">🟢 Drakkar Spécial</span>
-                        <span id="p-ship-class">🟢 Drakkar Classique</span>
-                        <span id="p-ship-small">🟢 Petit Drakkar</span>
-                    </div>
-                </div>
-
-                <!-- Grille de l'Adversaire -->
-                <div class="grid-section">
-                    <h2 id="txt-enemy-fleet" style="margin-bottom: 5px;">Flotte Ennemie</h2>
-                    <div class="board-wrapper">
-                        <div class="col-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span></div>
-                        <div class="board-row">
-                            <div class="row-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
-                            <div class="grid-video-wrapper">
-                                <video autoplay loop muted playsinline class="grid-bg-video">
-                                    <source src="assets/QUADRILLAGE2.mp4" type="video/mp4">
-                                </video>
-                                <div id="adversary-grid" class="grid"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- HUD État de la Flotte Ennemie -->
-                    <div class="fleet-status-panel">
-                        <span id="e-ship-1">🟢 Navire 1</span>
-                        <span id="e-ship-2">🟢 Navire 2</span>
-                        <span id="e-ship-3">🟢 Navire 3</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="command-panel" style="margin-top: 15px;">
-                <p id="game-status" style="font-size: 1.4rem; font-weight: bold; color: #f1c40f;">...</p>
             </div>
         </div>
     </div>
 
-    <!-- Écran de Fin de Partie -->
-    <div id="game-over-screen" class="hidden">
-        <h1 id="txt-end-title" style="font-size: 50px; color: #f1c40f;">Victoire !</h1>
-        <p id="txt-end-desc" style="font-size: 24px; margin-bottom: 30px;">La flotte ennemie est au fond de l'océan.</p>
-        <button class="start-btn-epic" onclick="location.reload()">Rejouer une bataille</button>
-    </div>
-
-    <!-- Balise Audio invisible pour la musique -->
-    <audio id="bg-music" preload="auto"></audio>
-
-    <script src="script.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
