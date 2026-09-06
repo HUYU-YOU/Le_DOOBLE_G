@@ -63,6 +63,7 @@
     <!-- Écran de démarrage -->
     <div id="main-menu">
         <div class="storm-background"></div>
+        <!-- Bouton ENTRER (IMAGE) -->
         <img src="assets/enter.png" alt="Entrer dans la tempête" class="enter-img-btn" onclick="lancerJeu()">
     </div>
 
@@ -71,15 +72,23 @@
         
         <!-- ÉTAPE 1 : Menu Multijoueur / Solo -->
         <div id="multi-menu">
-            <h2 id="txt-multi-title">Rejoindre le Valhalla</h2>
+            <h2 id="txt-multi-title" style="margin-bottom: 25px;">Rejoindre le Valhalla</h2>
             
-            <div style="margin: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center;">
-                <button class="start-btn" id="txt-btn-host" onclick="hebergerPartie()" style="width: 250px;">Héberger une partie (Multi)</button>
-                <button class="start-btn" id="txt-btn-create" onclick="creerPartie()" style="width: 250px;">Créer une partie (Solo vs IA)</button>
+            <!-- NOUVEAU : Boutons Images avec texte superposé -->
+            <div class="custom-menu-buttons">
+                <!-- Bouton Solo (Image VSAI) -->
+                <div class="custom-img-btn btn-vs-ai" onclick="creerPartie()">
+                    <span id="txt-btn-create">Créer une partie (Solo vs IA)</span>
+                </div>
+                
+                <!-- Bouton Héberger (Image heberg) -->
+                <div class="custom-img-btn btn-heberg" onclick="hebergerPartie()">
+                    <span id="txt-btn-host">Héberger une partie (Multi)</span>
+                </div>
             </div>
 
-            <p id="txt-or">OU</p>
-            <div style="margin: 20px;">
+            <p id="txt-or" style="margin-top: 15px;">OU</p>
+            <div style="margin: 15px;">
                 <input type="text" id="join-code" placeholder="VIK1234" maxlength="7" style="padding: 10px; font-size: 18px; text-transform: uppercase;">
                 <button class="start-btn" id="txt-btn-join" onclick="rejoindrePartie()">Rejoindre</button>
             </div>
@@ -124,7 +133,6 @@
             <div class="game-container">
                 <!-- Grille du Joueur -->
                 <div class="grid-section">
-                    <!-- NOUVEAU CONTENEUR POUR ALIGNER LE TITRE -->
                     <div class="grid-header">
                         <h2 id="txt-my-fleet">Ma Flotte</h2> 
                         <img id="player-skin-display" src="" class="slime-skin-small" style="width: 40px; height: 40px; border-width: 2px;">
@@ -152,7 +160,6 @@
 
                 <!-- Grille de l'Adversaire -->
                 <div class="grid-section">
-                     <!-- NOUVEAU CONTENEUR POUR ALIGNER LE TITRE -->
                     <div class="grid-header">
                         <h2 id="txt-enemy-fleet">Flotte Ennemie</h2>
                     </div>
