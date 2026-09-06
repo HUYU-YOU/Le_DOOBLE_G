@@ -51,12 +51,60 @@ input:checked + .slider:before { transform: translateX(26px); }
 .close-btn:hover { box-shadow: 0 0 20px #2ecc71; transform: scale(1.05); }
 
 /* =========================================
-   5. INTERFACE JEU & AFFICHES
+   5. INTERFACE JEU & NOUVEAUX BOUTONS MENU
    ========================================= */
 #game-ui { position: relative; z-index: 10; text-align: center; margin-top: 20px; }
 .hidden { display: none !important; }
+
+/* Boutons classiques conservés pour le jeu (bouton tourner, etc.) */
 .start-btn { background: #2ecc71; color: #000; border: none; padding: 10px 20px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
 .start-btn:hover { background: #27ae60; transform: scale(1.05); }
+
+/* --- NOUVEAU : BOUTONS IMAGES DU MENU (COLLÉS ET AVEC TEXTE) --- */
+.custom-menu-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0; /* Aucun espace ! */
+}
+
+.custom-img-btn {
+    position: relative;
+    width: 380px; 
+    height: 120px; 
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.2s ease-in-out;
+    margin: -10px 0; /* Marge négative pour les imbriquer légèrement */
+}
+
+.custom-img-btn:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 15px rgba(46, 204, 113, 0.6));
+    z-index: 2; /* Passe au-dessus au survol */
+}
+
+.btn-vs-ai { background-image: url('assets/VSAI.png'); }
+.btn-heberg { background-image: url('assets/heberg.png'); }
+
+/* Le texte par dessus l'image */
+.custom-img-btn span {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    pointer-events: none; /* Le clic passe à travers pour déclencher le div */
+    /* Gros contour noir pour être lisible sur n'importe quel fond */
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 4px 6px rgba(0,0,0,0.8);
+    padding-bottom: 5px; /* Ajuste légèrement la hauteur du texte */
+}
+/* ----------------------------------------------------------------- */
 
 .classes-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 20px; }
 .class-btn { position: relative; width: 250px; height: 350px; border: 3px solid transparent; border-radius: 15px; cursor: pointer; transition: 0.3s; overflow: hidden; background-size: cover; background-position: center; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
@@ -70,37 +118,25 @@ input:checked + .slider:before { transform: translateX(26px); }
 .slime-skin-small { border-radius: 50%; object-fit: cover; border: 2px solid #2ecc71; }
 
 /* =========================================
-   6. GRILLES (TAILLE AUGMENTÉE) ET ALIGNEMENT
+   6. GRILLES ET BATEAUX ENTIERS
    ========================================= */
-/* flex-start permet d'aligner les deux blocs parfaitement en haut ! */
 .game-container { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 60px; margin-top: 10px; }
 .grid-section { display: flex; flex-direction: column; align-items: center; }
 
-/* Conteneur de titre à hauteur FIXE pour éviter le décalage causé par l'image */
-.grid-header {
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
+.grid-header { height: 50px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
 .grid-header h2 { margin: 0; }
 
 .board-wrapper { display: flex; flex-direction: column; }
 .col-labels { display: flex; padding-left: 30px; font-weight: bold; color: #2ecc71; margin-bottom: 2px; }
-.col-labels span { width: 48px; text-align: center; font-size: 16px; } /* Largeur ajustée à 48px */
+.col-labels span { width: 48px; text-align: center; font-size: 16px; } 
 .board-row { display: flex; }
 .row-labels { display: flex; flex-direction: column; justify-content: space-around; width: 25px; font-weight: bold; color: #2ecc71; margin-right: 5px; }
-.row-labels span { height: 48px; display: flex; align-items: center; justify-content: center; font-size: 14px; } /* Hauteur ajustée à 48px */
+.row-labels span { height: 48px; display: flex; align-items: center; justify-content: center; font-size: 14px; } 
 
 .grid-video-wrapper { position: relative; border: 2px solid #2ecc71; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.5); overflow: hidden; }
 .grid-bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0.85; }
 
-/* GRILLE PASSÉE À 48px */
 .grid { position: relative; display: grid; grid-template-columns: repeat(10, 48px); grid-template-rows: repeat(10, 48px); gap: 2px; padding: 5px; background-color: transparent; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); z-index: 1; }
-
-/* CELLULE PASSÉE À 48px */
 .cell { width: 48px; height: 48px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: 0.2s; background-color: rgba(0, 0, 0, 0.4); font-size: 24px; display: flex; align-items: center; justify-content: center; z-index: 2; }
 .cell:hover { background-color: rgba(46, 204, 113, 0.4); }
 
