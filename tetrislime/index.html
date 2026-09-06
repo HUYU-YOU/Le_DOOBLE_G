@@ -11,6 +11,11 @@
 </head>
 <body>
 
+    <!-- 🎬 LA VIDÉO DE FOND DU MENU -->
+    <video id="menu-bg-video" autoplay loop muted playsinline>
+        <source src="assets/tetrislimebackground.mp4" type="video/mp4">
+    </video>
+
     <!-- BOUTON RETOUR HUB SANS CADRE -->
     <a href="../index.html" class="hub-link">
         <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-img">
@@ -45,7 +50,7 @@
         
         <div class="overlay" id="main-menu">
             <!-- BOUTONS IMAGES (SOLO / MULTI) -->
-            <img src="../img/solo2.png" class="menu-btn" onclick="startSolo()" alt="Jouer en Solo">
+            <img src="../img/solo.png" class="menu-btn" onclick="startSolo()" alt="Jouer en Solo">
             <img src="../img/multi.png" class="menu-btn" onclick="openMultiMenu()" alt="Multijoueur">
         </div>
 
