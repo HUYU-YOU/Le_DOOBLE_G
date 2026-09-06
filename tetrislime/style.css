@@ -12,7 +12,6 @@
 body, html { 
     font-family: 'Rajdhani', sans-serif; 
     background-color: var(--bg); 
-    background-image: url('assets/tetrislimebackground.jpeg'); 
     background-size: cover;
     background-position: top center; 
     background-repeat: no-repeat;
@@ -22,10 +21,28 @@ body, html {
     transition: background-image 0.5s ease-in-out;
 }
 
-/* S'assure que le fond change correctement en jeu */
+/* =========================================
+   🎬 GESTION DE LA VIDÉO DE FOND
+   ========================================= */
+#menu-bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover; /* Rempli tout l'écran sans déformer */
+    z-index: -10; /* Derrière tout le reste */
+    pointer-events: none; /* Empêche de cliquer accidentellement sur la vidéo */
+}
+
+/* S'assure que le fond change correctement en jeu ET cache la vidéo */
 body.in-game {
     background-image: url('assets/tetrisback.jpeg') !important;
 }
+body.in-game #menu-bg-video {
+    display: none; /* Cache la vidéo quand on joue */
+}
+
 
 /* RETOUR HUB PROPRE SANS CADRE */
 .hub-link { 
@@ -81,7 +98,6 @@ body.in-game {
     box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
     
-    /* On enlève la bordure et on le rend quasi-transparent pour voir le fond */
     border: none;
     background: transparent; 
     backdrop-filter: none;
@@ -117,7 +133,6 @@ body.in-game {
 input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
-
 /* =========================================
    UI DU JEU TETRIS (Alignement avec l'image)
    ========================================= */
@@ -125,19 +140,16 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #game-ui { 
     transition: transform 0.3s ease; 
     transform-origin: center center; 
-    /* On écarte un peu plus les panneaux gauche/droite pour coller au dessin */
     gap: 40px !important; 
 }
 
 .side-panel { 
     display: flex; 
     flex-direction: column; 
-    /* On écarte les blocs Score et Lignes pour qu'ils tombent dans leurs cadres */
     gap: 50px; 
     width: 160px; 
 }
 
-/* DESTRUCTION TOTALE DES FONDS ET BORDURES HTML */
 .panel-box {
     background: transparent !important; 
     border: none !important; 
@@ -153,7 +165,6 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     text-transform: uppercase; 
     letter-spacing: 2px; 
     margin-bottom: 5px;
-    /* Ajout d'une ombre noire pour que le texte reste lisible sur le fond */
     text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
 }
 
@@ -164,14 +175,12 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     text-shadow: 0 0 10px var(--p1), 0 2px 5px rgba(0,0,0,1); 
 }
 
-/* LE PLATEAU DE JEU DEVIENT TRANSPARENT LUI AUSSI */
 .board-wrapper {
     background: transparent !important; 
     border: none !important; 
     box-shadow: none !important; 
     backdrop-filter: none !important;
     padding: 0 !important;
-    /* Remonte légèrement le plateau de jeu pour qu'il ne dépasse pas du cadre doré en bas */
     margin-top: -30px; 
 }
 
