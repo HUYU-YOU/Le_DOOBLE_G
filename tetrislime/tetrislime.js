@@ -1,9 +1,9 @@
 // ==========================================
-// GESTION DU THÈME, LANGUE ET PARAMÈTRES
+// GESTION DU THÈME ET PARAMÈTRES
 // ==========================================
 let isNight = localStorage.getItem('tetrisNight') === 'true';
 
-// Petite fonction utile si tu crées un système de changement de langue plus tard !
+// Fonction pour changer la langue du bouton Hub si besoin
 function setLanguage(lang) {
     const hubImg = document.getElementById('hub-img');
     if (hubImg) {
@@ -12,8 +12,7 @@ function setLanguage(lang) {
 }
 
 function applyTheme() {
-    // Le background image n'est plus changé par le bouton Jour/Nuit, 
-    // car on veut utiliser tes JPEGs (Menu et In-Game).
+    // ⚠️ On ne modifie plus le background ici, pour ne pas écraser tes JPEG !
     const themeBtn = document.getElementById('btn-theme-toggle');
     if (themeBtn) {
         themeBtn.innerText = isNight ? "Mode Nuit 🌙" : "Mode Jour ☀️";
@@ -90,7 +89,6 @@ const ROWS = 20;
 const COLS = 10;
 const BLOCK_SIZE = 30; 
 
-// VARIABLE DE DEBUG (Touche D)
 let isDebug = false;
 
 const skinNames = [
@@ -175,39 +173,26 @@ function randomPiece() {
 
 function getImgName(type, rotIndex) {
     if (type === 3) return 'CUBE';
+    
     if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE90' : 'BARRE';
+    
     if (type === 2) {
         if (rotIndex === 0) return 'L0';
         if (rotIndex === 90) return 'L270';  
         if (rotIndex === 180) return 'L180';
         if (rotIndex === 270) return 'L90';
     }
+    
     if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
+    
     if (type === 5) {
         if (rotIndex === 0) return 'CROIX';
         if (rotIndex === 90) return 'CROIX270';
         if (rotIndex === 180) return 'CROIX180';
         if (rotIndex === 270) return 'CROIX90';
     }
+    
     return null;
-}
-
-function getMatrixBounds(matrix) {
-    let minX = matrix[0].length, maxX = 0, minY = matrix.length, maxY = 0;
-    let hasBlocks = false;
-    matrix.forEach((row, y) => {
-        row.forEach((val, x) => {
-            if (val !== 0) {
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
-                hasBlocks = true;
-            }
-        });
-    });
-    if (!hasBlocks) return { minX: 0, minY: 0, w: matrix[0].length, h: matrix.length };
-    return { minX, minY, w: maxX - minX + 1, h: maxY - minY + 1 };
 }
 
 function drawBlock(ctxTarget, x, y, size, colorIndex) {
@@ -258,15 +243,16 @@ function drawMatrix(matrix, offset, ctxTarget, size = BLOCK_SIZE) {
 function drawPiece(ctxTarget, p, size, offsetX = 0, offsetY = 0) {
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
-    let bounds = getMatrixBounds(p.matrix);
     
     if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
+        let matrixW = p.matrix[0].length;
+        let matrixH = p.matrix.length;
         ctxTarget.drawImage(
             img, 
-            (p.pos.x + offsetX + bounds.minX) * size, 
-            (p.pos.y + offsetY + bounds.minY) * size, 
-            bounds.w * size, 
-            bounds.h * size
+            (p.pos.x + offsetX) * size, 
+            (p.pos.y + offsetY) * size, 
+            matrixW * size, 
+            matrixH * size
         );
     } else {
         drawMatrix(p.matrix, {x: p.pos.x + offsetX, y: p.pos.y + offsetY}, ctxTarget, size);
@@ -294,17 +280,19 @@ function drawPreview(ctxTarget, p, size) {
     
     let imgName = getImgName(p.type, p.rotIndex);
     let img = skins[imgName];
-    let bounds = getMatrixBounds(p.matrix);
     
-    let drawX = (ctxTarget.canvas.width - bounds.w * size) / 2;
-    let drawY = (ctxTarget.canvas.height - bounds.h * size) / 2;
+    let matrixW = p.matrix[0].length;
+    let matrixH = p.matrix.length;
+    
+    let drawX = (ctxTarget.canvas.width - matrixW * size) / 2;
+    let drawY = (ctxTarget.canvas.height - matrixH * size) / 2;
 
     if (img && img.complete && img.naturalWidth > 0 && !isDebug) {
-        ctxTarget.drawImage(img, drawX, drawY, bounds.w * size, bounds.h * size);
+        ctxTarget.drawImage(img, drawX, drawY, matrixW * size, matrixH * size);
     } else {
         drawMatrix(p.matrix, {
-            x: (ctxTarget.canvas.width/size - p.matrix[0].length)/2, 
-            y: (ctxTarget.canvas.height/size - p.matrix.length)/2
+            x: (ctxTarget.canvas.width/size - matrixW)/2, 
+            y: (ctxTarget.canvas.height/size - matrixH)/2
         }, ctxTarget, size);
     }
 }
@@ -320,7 +308,6 @@ function collide(arena, player) {
 }
 
 function merge(arena, player) {
-    let bounds = getMatrixBounds(player.matrix);
     player.matrix.forEach((row, py) => {
         row.forEach((value, px) => {
             if (value !== 0) {
@@ -328,10 +315,10 @@ function merge(arena, player) {
                     val: value,
                     type: player.type,
                     rot: player.rotIndex,
-                    imgX: px - bounds.minX, 
-                    imgY: py - bounds.minY, 
-                    boxW: bounds.w,
-                    boxH: bounds.h
+                    imgX: px, 
+                    imgY: py, 
+                    boxW: player.matrix[0].length,
+                    boxH: player.matrix.length
                 };
             }
         });
@@ -469,7 +456,6 @@ document.addEventListener('keydown', event => {
         while (!collide(board, piece)) { piece.pos.y++; }
         piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); dropCounter = 0;
     } // Espace
-    // Le bouton Shift (16) et C (67) ont été retirés.
 });
 
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
@@ -478,13 +464,13 @@ function rotate(e) { e.preventDefault(); playerRotate(); }
 function drop(e) { e.preventDefault(); playerDrop(); }
 
 // ==========================================
-// ROUTAGE AUTO ET LANCEMENT DIRECT
+// ROUTAGE AUTO ET FOND D'ECRAN
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     applyTheme();
     setGameSize('wide'); 
     
-    // IMAGE DE FOND : Menu principal
+    // 💡 1. ON AFFICHE LE FOND D'ÉCRAN DU MENU ICI :
     document.body.style.backgroundImage = "url('assets/tetrislimebackground.jpeg')";
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -510,7 +496,7 @@ function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex'; 
     
-    // IMAGE DE FOND : Une fois le jeu lancé
+    // 💡 2. ON AFFICHE LE FOND D'ÉCRAN EN JEU ICI :
     document.body.style.backgroundImage = "url('assets/tetrisback.jpeg')";
     
     gameMode = 'solo';
@@ -593,7 +579,7 @@ function startMultiGameDisplay() {
     document.getElementById('game-ui').style.display = 'flex';
     document.getElementById('opponent-box').style.display = 'block';
     
-    // IMAGE DE FOND : Une fois le jeu multi lancé
+    // 💡 3. ON AFFICHE LE FOND D'ÉCRAN EN MULTI ICI AUSSI :
     document.body.style.backgroundImage = "url('assets/tetrisback.jpeg')";
     
     gameMode = 'multi';
