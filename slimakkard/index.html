@@ -29,7 +29,6 @@
         <div class="modal-content">
             <h2 id="txt-settings">Paramètres</h2>
             
-            <!-- Slider de Volume -->
             <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
                 <span id="txt-volume" style="margin-bottom: 10px;">Volume Musique 🔊</span>
                 <input type="range" id="music-volume" min="0" max="1" step="0.01" value="0.5" style="width: 100%;">
@@ -63,7 +62,6 @@
     <!-- Écran de démarrage -->
     <div id="main-menu">
         <div class="storm-background"></div>
-        <!-- Bouton ENTRER (IMAGE) -->
         <img src="assets/enter.png" alt="Entrer dans la tempête" class="enter-img-btn" onclick="lancerJeu()">
     </div>
 
@@ -72,32 +70,34 @@
         
         <!-- ÉTAPE 1 : Menu Multijoueur / Solo -->
         <div id="multi-menu">
-            <h2 id="txt-multi-title" style="margin-bottom: 25px;">Rejoindre le Valhalla</h2>
+            <h2 id="txt-multi-title" style="margin-bottom: 25px; font-size: 2.5rem; text-shadow: 0 0 15px rgba(46, 204, 113, 0.8);">Rejoindre le Valhalla</h2>
             
-            <!-- NOUVEAU : Boutons Images avec texte superposé -->
+            <!-- Boutons Images avec texte court ("VS IA", "MULTI") centré sur le bois -->
             <div class="custom-menu-buttons">
-                <!-- Bouton Solo (Image VSAI) -->
+                <!-- Bouton Solo -->
                 <div class="custom-img-btn btn-vs-ai" onclick="creerPartie()">
-                    <span id="txt-btn-create">Créer une partie (Solo vs IA)</span>
+                    <span id="txt-btn-create">VS IA</span>
                 </div>
                 
-                <!-- Bouton Héberger (Image heberg) -->
+                <!-- Bouton Héberger -->
                 <div class="custom-img-btn btn-heberg" onclick="hebergerPartie()">
-                    <span id="txt-btn-host">Héberger une partie (Multi)</span>
+                    <span id="txt-btn-host">MULTI</span>
                 </div>
             </div>
 
-            <p id="txt-or" style="margin-top: 15px;">OU</p>
-            <div style="margin: 15px;">
-                <input type="text" id="join-code" placeholder="VIK1234" maxlength="7" style="padding: 10px; font-size: 18px; text-transform: uppercase;">
-                <button class="start-btn" id="txt-btn-join" onclick="rejoindrePartie()">Rejoindre</button>
+            <p id="txt-or" style="margin-top: 15px; font-size: 1.5rem; color: #f1c40f;">OU</p>
+            
+            <!-- NOUVELLE BARRE D'ENTRÉE SLIMESQUE -->
+            <div class="slimy-input-wrapper">
+                <input type="text" id="join-code" placeholder="CODE (EX: VIK12)" maxlength="7">
+                <button class="start-btn-epic join-btn" id="txt-btn-join" onclick="rejoindrePartie()">Rejoindre</button>
             </div>
-            <p id="multi-status" style="color: #2ecc71; margin-top: 15px; font-weight: bold; font-size: 1.2rem;"></p>
+            <p id="multi-status" style="color: #2ecc71; margin-top: 15px; font-weight: bold; font-size: 1.4rem;"></p>
         </div>
 
         <!-- ÉTAPE 2 : Sélection du Slime -->
         <div id="class-selection" class="hidden">
-            <h2 id="txt-class-title">Choisis ton Commandant Slime !</h2>
+            <h2 id="txt-class-title" style="font-size: 2.5rem; text-shadow: 0 0 15px rgba(46, 204, 113, 0.8);">Choisis ton Commandant Slime !</h2>
             <div class="classes-container">
                 <button class="class-btn berserker-btn" onclick="selectClass('berserker')">
                     <div class="class-info">
@@ -125,9 +125,9 @@
             
             <!-- Contrôles de Placement -->
             <div id="placement-controls" style="margin-bottom: 15px;">
-                <h2 id="txt-placement-title" style="color: #f1c40f; margin-bottom: 10px;">Place ta flotte !</h2>
-                <button class="start-btn" id="btn-rotate" onclick="toggleRotation()" style="padding: 10px; font-size: 16px;">🔄 Tourner : Horizontal</button>
-                <p style="margin-top: 10px; font-weight: bold; font-size: 1.2rem;">Bateau : <span id="current-ship-name" style="color: #2ecc71;">Drakkar Spécial</span></p>
+                <h2 id="txt-placement-title" style="color: #f1c40f; margin-bottom: 10px; font-size: 2rem;">Place ta flotte !</h2>
+                <button class="start-btn" id="btn-rotate" onclick="toggleRotation()" style="padding: 10px; font-size: 18px;">🔄 Tourner : Horizontal</button>
+                <p style="margin-top: 10px; font-size: 1.4rem;">Bateau : <span id="current-ship-name" style="color: #2ecc71;">Drakkar Spécial</span></p>
             </div>
 
             <div class="game-container">
@@ -186,15 +186,15 @@
             </div>
 
             <div class="command-panel" style="margin-top: 15px;">
-                <p id="game-status" style="font-size: 1.4rem; font-weight: bold; color: #f1c40f;">...</p>
+                <p id="game-status" style="font-size: 1.8rem; color: #f1c40f; text-shadow: 0 0 10px rgba(0,0,0,0.8);">...</p>
             </div>
         </div>
     </div>
 
     <!-- Écran de Fin de Partie -->
     <div id="game-over-screen" class="hidden">
-        <h1 id="txt-end-title" style="font-size: 50px; color: #f1c40f;">Victoire !</h1>
-        <p id="txt-end-desc" style="font-size: 24px; margin-bottom: 30px;">La flotte ennemie est au fond de l'océan.</p>
+        <h1 id="txt-end-title" style="font-size: 60px; color: #f1c40f; text-shadow: 0 0 20px #f1c40f;">Victoire !</h1>
+        <p id="txt-end-desc" style="font-size: 30px; margin-bottom: 30px;">La flotte ennemie est au fond de l'océan.</p>
         <button class="start-btn-epic" onclick="location.reload()">Rejouer une bataille</button>
     </div>
 
