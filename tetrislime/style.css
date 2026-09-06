@@ -13,21 +13,18 @@ body, html {
     font-family: 'Rajdhani', sans-serif; 
     background-color: var(--bg); 
     
-    /* 1. BACKGROUND DU MENU PAR DÉFAUT */
+    /* BACKGROUND PAR DÉFAUT */
     background-image: url('assets/tetrislimebackground.jpeg'); 
     
     background-size: cover;
-    background-position: center;
+    /* 💡 CORRECTION DU TITRE COUPÉ : L'image s'aligne par le HAUT maintenant */
+    background-position: top center; 
     background-repeat: no-repeat;
+    
     color: white; margin: 0; padding: 0; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
     min-height: 100vh; user-select: none; touch-action: none; overflow: hidden; 
     transition: background-image 0.5s ease-in-out;
-}
-
-/* 2. BACKGROUND EN JEU (Activé par le JS) */
-body.in-game {
-    background-image: url('assets/tetrisback.jpeg') !important;
 }
 
 /* SUPPRESSION DU CADRE DU BOUTON HUB */
@@ -42,15 +39,15 @@ body.in-game {
 .hub-link img { width: 180px; transition: 0.3s; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); }
 .hub-link:hover img { transform: scale(1.05) translateY(-2px); filter: drop-shadow(0 0 15px var(--p1)); }
 
-/* STYLE DES BOUTONS IMAGES SOLO/MULTI */
+/* 💡 CORRECTION DES BOUTONS SOLO/MULTI : Même taille pour les deux ! */
 .menu-btn {
+    width: 250px; 
+    max-width: 80vw;
     cursor: pointer;
     transition: transform 0.3s, filter 0.3s;
     filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));
     margin: 10px;
 }
-.solo-btn { width: 350px; max-width: 80vw; }
-.multi-btn { width: 220px; max-width: 50vw; }
 .menu-btn:hover { transform: scale(1.05) translateY(-5px); filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)); }
 
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
@@ -74,8 +71,6 @@ body.in-game {
     width: 100%; max-width: 900px; height: 80vh; border: 1px solid rgba(0, 240, 255, 0.3); 
     box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
-    
-    /* Légèrement transparent pour voir le magnifique background ! */
     background: rgba(10, 15, 25, 0.5); 
     backdrop-filter: blur(8px);
 }
@@ -93,10 +88,15 @@ body.in-game {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
     z-index: 50; display: flex; flex-direction: column; 
     align-items: center; justify-content: center; text-align: center; border-radius: 15px;
-    background: rgba(10, 15, 28, 0.4); /* Overlay allégé pour voir le fond */
+    background: rgba(10, 15, 28, 0.4); 
 }
 
-/* Pour le menu multi qui a besoin de boutons normaux */
+/* On rend le main-menu 100% transparent pour bien voir le fond ! */
+#main-menu {
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
+
 .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.5em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px;}
 .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
 .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255,0,127,0.2); }
