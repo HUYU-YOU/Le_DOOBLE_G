@@ -10,7 +10,10 @@
 }
 
 body, html { 
-    font-family: 'Rajdhani', sans-serif; 
+    /* Application de la police Creepster partout */
+    font-family: 'Creepster', cursive; 
+    letter-spacing: 2px; /* Un peu d'espace pour que ça reste lisible */
+
     background-color: var(--bg); 
     background-size: cover;
     background-position: top center; 
@@ -21,119 +24,73 @@ body, html {
     transition: background-image 0.5s ease-in-out;
 }
 
-/* =========================================
-   🎬 GESTION DE LA VIDÉO DE FOND
-   ========================================= */
 #menu-bg-video {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    z-index: -10; 
-    pointer-events: none; 
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    object-fit: cover; z-index: -10; pointer-events: none; 
 }
 
-/* Cache la vidéo en jeu pour laisser le .jpeg */
-body.in-game {
-    background-image: url('assets/tetrisback.jpeg') !important;
-}
-body.in-game #menu-bg-video {
-    display: none; 
-}
+body.in-game { background-image: url('assets/tetrisback.jpeg') !important; }
+body.in-game #menu-bg-video { display: none; }
 
-/* RETOUR HUB PROPRE SANS CADRE */
 .hub-link { 
     position: absolute; top: 15px; left: 15px; z-index: 100;
-    background: transparent !important; 
-    border: none !important; 
-    box-shadow: none !important;
-    padding: 0 !important;
-    backdrop-filter: none !important;
+    background: transparent !important; border: none !important; 
+    box-shadow: none !important; padding: 0 !important; backdrop-filter: none !important;
 }
-.hub-link img { 
-    width: 180px; 
-    transition: 0.3s; 
-    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); 
-}
-.hub-link:hover img { 
-    transform: scale(1.05) translateY(-2px); 
-    filter: drop-shadow(0 0 15px var(--p1)); 
-}
+.hub-link img { width: 180px; transition: 0.3s; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); }
+.hub-link:hover img { transform: scale(1.05) translateY(-2px); filter: drop-shadow(0 0 15px var(--p1)); }
 
-/* BOUTONS IMAGES DU MENU */
 .menu-btn {
-    width: 250px; 
-    max-width: 80vw;
-    cursor: pointer;
+    width: 250px; max-width: 80vw; cursor: pointer;
     transition: transform 0.3s, filter 0.3s;
-    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));
-    margin: 10px;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6)); margin: 10px;
 }
-.menu-btn:hover { 
-    transform: scale(1.05) translateY(-5px); 
-    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)); 
-}
+.menu-btn:hover { transform: scale(1.05) translateY(-5px); filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)); }
 
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-/* MODAL PARAMETRES */
 #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
 #settings-modal.show { opacity: 1; pointer-events: auto; }
 .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
 .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
-.btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Creepster', cursive; font-size: 1.2rem; transition: 0.2s; }
 .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
 .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
-.close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+.close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.3rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
 
-/* MENUS & OVERLAYS */
 #game-container { 
-    position: relative; border-radius: 15px; 
-    width: 100%; max-width: 900px; height: 80vh; 
+    position: relative; border-radius: 15px; width: 100%; max-width: 900px; height: 80vh; 
     box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
-    
-    border: none;
-    background: transparent; 
-    backdrop-filter: none;
-    box-shadow: none;
+    border: none; background: transparent; backdrop-filter: none; box-shadow: none;
 }
 
 #game-container.size-wide, #game-container.size-full {
-    position: fixed !important; top: 0; left: 0; 
-    width: 100vw !important; height: 100vh !important;
+    position: fixed !important; top: 0; left: 0; width: 100vw !important; height: 100vh !important;
     max-width: none; max-height: none; border-radius: 0; border: none; padding: 0; 
-    z-index: 50; justify-content: center;
-    background: transparent; 
-    backdrop-filter: none;
+    z-index: 50; justify-content: center; background: transparent; backdrop-filter: none;
 }
 
 .overlay { 
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-    z-index: 50; display: flex; flex-direction: column; 
-    align-items: center; justify-content: center; text-align: center; border-radius: 15px;
-    background: rgba(10, 15, 28, 0.4); 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    text-align: center; border-radius: 15px; background: rgba(10, 15, 28, 0.4); 
 }
 
-#main-menu {
-    background: transparent !important;
-    backdrop-filter: none !important;
-}
+#main-menu { background: transparent !important; backdrop-filter: none !important; }
 
-.btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.5em; font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px;}
+.btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.8em; font-family: 'Creepster', cursive; border-radius: 8px; cursor: pointer; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px;}
 .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
 .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255,0,127,0.2); }
 .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); color: #000; }
 
-input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-weight: bold; font-family: 'Rajdhani'; font-size: 1.2rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
+input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-family: 'Creepster', cursive; font-size: 1.5rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 /* =========================================
-   UI DU JEU TETRIS 
+   UI DU JEU TETRIS
    ========================================= */
 
 #game-ui { 
@@ -143,37 +100,35 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 .side-panel { 
-    display: flex; 
-    flex-direction: column; 
-    width: 160px; 
+    display: flex; flex-direction: column; gap: 50px; width: 160px; 
 }
 
+/* Centrage parfait de tous les textes dans les boîtes */
 .panel-box {
-    background: transparent !important; 
-    border: none !important; 
-    box-shadow: none !important; 
-    backdrop-filter: none !important;
-    padding: 0 !important;
-    text-align: center;
+    background: transparent !important; border: none !important; box-shadow: none !important; 
+    backdrop-filter: none !important; padding: 0 !important;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
 
-/* TAILLE AUGMENTÉE POUR LES CHIFFRES */
 .panel-val { 
-    font-size: 4em; /* Beaucoup plus gros qu'avant */
-    font-weight: bold; 
+    font-size: 5em; /* Un peu plus gros car Creepster taille petit */
     color: #fff; 
     text-shadow: 0 0 15px var(--p1), 0 3px 5px rgba(0,0,0,0.8); 
+    line-height: 1; /* Resserre la hauteur pour coller au Best Score */
+}
+
+/* Style du texte Best Score sous le 0 */
+.best-score-text {
+    font-size: 1.5rem;
+    color: var(--gold);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    margin-top: -5px; /* Le rapproche du chiffre 0 du score */
 }
 
 .board-wrapper {
-    background: transparent !important; 
-    border: none !important; 
-    box-shadow: none !important; 
-    backdrop-filter: none !important;
-    padding: 0 !important;
-    margin-top: -30px; 
+    background: transparent !important; border: none !important; box-shadow: none !important; 
+    backdrop-filter: none !important; padding: 0 !important; margin-top: -30px; 
 }
-
 canvas { display: block; border-radius: 5px; }
 
 
@@ -181,24 +136,25 @@ canvas { display: block; border-radius: 5px; }
    🕹️ ALIGNEMENT SUR MESURE POUR TON BACKGROUND
    ========================================= */
 
-/* Fais varier ces chiffres (-160px etc) si tu veux monter ou descendre les infos */
 .box-score {
     transform: translateY(-160px); 
 }
 
+/* On descend la boîte Lignes (avant c'était -120, maintenant -80 pour la descendre) */
 .box-lines {
-    transform: translateY(-120px); 
+    transform: translateY(-80px); 
 }
 
+/* On décale la forme suivante vers la droite (30px) et vers le bas (-50px au lieu de -80px) */
 .box-next {
-    transform: translateY(-80px);
+    transform: translate(30px, -50px);
 }
 
 /* ========================================= */
 
 
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
-.m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); }
+.m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); font-family: 'Creepster', cursive; }
 .m-btn:active { background: var(--p1); color: #000; }
 
 @media (max-width: 900px) {
