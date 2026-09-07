@@ -1,8 +1,6 @@
-/* 💡 CHARGEMENT DE TA POLICE LOCALE SLIMEBOX */
 @font-face {
     font-family: 'SlimeBox';
     src: url('assets/SlimeBox.ttf') format('truetype');
-    /* Si ton fichier est un .otf, change .ttf par .otf ci-dessus */
 }
 
 :root { 
@@ -17,10 +15,8 @@
 }
 
 body, html { 
-    /* Application de SlimeBox partout */
     font-family: 'SlimeBox', sans-serif; 
     letter-spacing: 2px; 
-
     background-color: var(--bg); 
     background-size: cover;
     background-position: top center; 
@@ -116,46 +112,47 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
 
-/* 💡 TAILLE DU SCORE ET DES LIGNES RÉDUITE */
 .panel-val { 
-    font-size: 3.5em; /* Plus petit pour bien rentrer dans tes dessins */
+    font-size: 3.5em;
     color: #fff; 
     text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
     line-height: 1; 
 }
 
-/* 💡 TAILLE DU BEST SCORE RÉDUITE */
 .best-score-text {
     font-size: 1.2rem;
     color: var(--gold);
     text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-    margin-top: 5px; /* Petit espace sous le score */
+    margin-top: 5px; 
 }
+
 
 /* =========================================
-   🕹️ ALIGNEMENT SUR MESURE POUR TON BACKGROUND
+   🕹️ ALIGNEMENT SUR MESURE (V. CORRIGÉE)
    ========================================= */
 
+/* Le score est descendu (avant -160, maintenant -120) */
 .box-score {
-    transform: translateY(-160px); 
+    transform: translateY(-120px); 
 }
 
+/* Les lignes sont remontées (avant -80, maintenant -100) */
 .box-lines {
-    transform: translateY(-80px); 
+    transform: translateY(-100px); 
 }
 
-/* 💡 DÉCALAGE DE "SUIVANT" (Un poil à gauche et en bas) */
+/* Le suivant est décalé à droite (40px) et descendu (10px) */
 .box-next {
-    transform: translate(10px, -20px);
+    transform: translate(40px, 10px);
 }
 
-/* 💡 LE PLATEAU DE JEU ÉTIRÉ AU MAXIMUM DU CADRE ! */
+/* Plateau de jeu réduit pour ne pas dépasser du cadre ! */
 .board-wrapper {
     background: transparent !important; border: none !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important; 
     margin-top: -30px; 
     
-    transform: scale(1.25); /* C'EST CE CHIFFRE QUI AGRANDIT TON PLATEAU ! (Ajuste à 1.3 si pas assez grand) */
+    transform: scale(1.1); /* Rabaissé de 1.25 à 1.1 pour rentrer parfaitement */
     transform-origin: top center;
 }
 canvas { display: block; border-radius: 5px; }
