@@ -92,6 +92,7 @@ body.in-game #menu-bg-video { display: none; }
 input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-family: 'SlimeBox', sans-serif; font-size: 1.5rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
+
 /* =========================================
    UI DU JEU TETRIS
    ========================================= */
@@ -109,12 +110,19 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     width: 160px; 
 }
 
+/* 🛠️ ICI ON FIXE LES CONTENEURS POUR LE DEBUG */
 .panel-box {
-    background: transparent !important; border: none !important; box-shadow: none !important; 
+    background: transparent !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important;
     display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
 
+/* On donne des dimensions aux boîtes pour qu'elles aient la taille de tes dessins */
+.box-score { width: 130px; height: 90px; }
+.box-lines { width: 130px; height: 90px; }
+.box-next  { width: 150px; height: 150px; }
+
+/* 💡 Plus besoin de décaler les textes, Flexbox les centre dans la boîte ! */
 .panel-val { 
     font-size: 2.3em; 
     color: #fff; 
@@ -122,37 +130,42 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     line-height: 1; 
     margin-bottom: 5px; 
 }
-
 .best-score-text {
     font-size: 0.9rem; 
     color: var(--gold);
     text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     margin-top: 0px; 
-    transform: translateY(15px); /* On descend le texte BEST pour dégager le Score */
 }
 
+
 /* =========================================
-   🕹️ ALIGNEMENT MANUEL PRÉCIS
+   🚨 MODE DEBUG : COULEURS & ALIGNEMENT
    ========================================= */
 
+/* DÉPLACE CES BOITES POUR QU'ELLES SOIENT SUR TES DESSINS ! 
+   (Le premier chiffre c'est Gauche/Droite, le 2ème c'est Haut/Bas) */
+
 .box-score {
-    /* Recentre horizontalement et remonte un peu le 0 */
-    transform: translate(4px, -150px); 
+    border: 3px solid red !important; /* Ligne rouge */
+    transform: translate(6px, -110px); 
 }
 
 .box-lines {
-    /* Descend le 0 pour le mettre au milieu de sa bulle */
-    transform: translate(4px, -20px); 
+    border: 3px solid lime !important; /* Ligne verte */
+    transform: translate(6px, -45px); 
 }
 
 .box-next {
-    /* Remonte la pièce et la ramène un peu vers la gauche */
-    transform: translate(12px, 10px);
+    border: 3px solid cyan !important; /* Ligne bleu clair */
+    transform: translate(12px, -60px);
 }
 
 .board-wrapper {
-    background: transparent !important; border: none !important; box-shadow: none !important; 
+    background: transparent !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important; 
+
+    border: 3px solid fuchsia !important; /* Ligne rose pour le plateau central */
+    
     margin-top: 18px; 
     transform: scale(0.91); 
     transform-origin: top center;
