@@ -132,11 +132,11 @@ body.dark-mode #game-container {
     z-index: 1;
 }
 
-/* 🔥 LE DESIGN DU CADRE (AJUSTEMENT AU PIXEL PRÈS) 🔥 */
+/* 🔥 LE DESIGN DU CADRE (LE BAS REMONTÉ) 🔥 */
 #game-frame {
     position: absolute !important;
     
-    /* On remonte un TOUT PETIT PEU (de 58% à 56%) */
+    /* On passe de 56% à 53% pour tirer le cadre vers le HAUT */
     top: 53% !important; 
     left: 50% !important;
     
