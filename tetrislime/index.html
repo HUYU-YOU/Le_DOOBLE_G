@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TetriSlime - Solo & Versus</title>
     
-    <!-- Ajout de la police Creepster -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
-    
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -51,7 +46,7 @@
     <div id="game-container" class="size-wide">
         
         <div class="overlay" id="main-menu">
-            <!-- Modification du bouton SOLO en solo2.png -->
+            <!-- Bouton Solo2 -->
             <img src="../img/solo2.png" class="menu-btn" onclick="startSolo()" alt="Jouer en Solo">
             <img src="../img/multi.png" class="menu-btn" onclick="openMultiMenu()" alt="Multijoueur">
         </div>
@@ -82,7 +77,6 @@
             <div class="side-panel left-panel">
                 <div class="panel-box box-score">
                     <div class="panel-val" id="score">0</div>
-                    <!-- Le Best Score est de retour pour éviter les bugs JS, stylisé proprement en dessous -->
                     <div class="best-score-text">BEST: <span id="best-score">0</span></div>
                 </div>
                 <div class="panel-box box-lines">
@@ -96,8 +90,8 @@
 
             <div class="side-panel right-panel">
                 <div class="panel-box box-next">
-                    <!-- Zone de la forme suivante agrandie (160x160 au lieu de 120x120) -->
-                    <canvas id="next-canvas" width="160" height="160"></canvas>
+                    <!-- Zone Suivant agrandie pour accueillir la grosse pièce -->
+                    <canvas id="next-canvas" width="200" height="200"></canvas>
                 </div>
                 
                 <div class="panel-box" id="opponent-box" style="display: none; border-color: var(--p2);">
