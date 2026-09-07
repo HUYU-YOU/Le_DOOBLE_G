@@ -132,15 +132,14 @@ body.dark-mode #game-container {
     z-index: 1;
 }
 
-/* 🔥 LE DESIGN DU CADRE (LE BAS REMONTÉ) 🔥 */
+/* 🔥 LE DESIGN DU CADRE (ÉLARGI SUR LES CÔTÉS) 🔥 */
 #game-frame {
     position: absolute !important;
-    
-    /* On passe de 56% à 53% pour tirer le cadre vers le HAUT */
-    top: 54% !important; 
+    top: 53% !important; 
     left: 50% !important;
     
-    width: 116% !important; 
+    /* On passe de 116% à 118% pour écarter un peu plus les bords gauche et droite */
+    width: 118% !important; 
     height: 122% !important; 
     
     transform: translate(-50%, -50%) !important; 
