@@ -99,7 +99,6 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #game-ui { 
     transition: transform 0.3s ease; 
     transform-origin: center center; 
-    /* 💡 RESSERRÉ : On a diminué l'espace entre le plateau central et les côtés */
     gap: 15px !important; 
 }
 
@@ -116,22 +115,20 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
 
-/* 💡 TEXTES PLUS PETITS (Score et Lignes) */
 .panel-val { 
     font-size: 2.8em; 
     color: #fff; 
     text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
     line-height: 1; 
-    margin-bottom: 15px; /* Ajoute de l'espace pour ne pas écraser le BEST */
+    margin-bottom: 5px; 
 }
 
-/* 💡 BEST SCORE PLUS PETIT ET RECALÉ */
 .best-score-text {
     font-size: 1rem; 
     color: var(--gold);
     text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-    margin-top: 5px; 
-    transform: translateY(15px); /* Descend le texte BEST pour le caler en bas du cadre */
+    margin-top: 0px; 
+    transform: translateY(5px); 
 }
 
 /* =========================================
@@ -139,32 +136,31 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
    ========================================= */
 
 .box-score {
-    /* On remonte un peu plus pour centrer le gros "0" dans le cadre du haut */
-    transform: translateY(-135px); 
+    /* 💡 Remonté plus haut */
+    transform: translateY(-165px); 
 }
 
 .box-lines {
-    /* On descend le "0" des lignes car il était trop haut dans son cadre */
-    transform: translateY(-25px); 
+    /* 💡 Redescendu */
+    transform: translateY(10px); 
 }
 
-/* 💡 DÉCALAGE POUR LE "SUIVANT" POUR ÊTRE CENTRÉ DANS LE CADRE */
 .box-next {
-    /* Le cadre "Suivant" est à la même hauteur que le "Score". 
-       Il faut donc le remonter drastiquement. */
-    transform: translate(3px, -135px);
+    /* 💡 Décalé un poil à droite (+20px) et aligné en hauteur */
+    transform: translate(20px, -150px);
 }
 
 .board-wrapper {
     background: transparent !important; border: none !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important; 
     
-    margin-top: -30px; 
-    transform: scale(1.1); 
+    /* 💡 Plateau rétréci et recentré pour qu'il ne déborde plus des bords de l'image ! */
+    margin-top: 15px; 
+    transform: scale(0.89); 
     transform-origin: top center;
 }
-canvas { display: block; border-radius: 5px; }
 
+canvas { display: block; border-radius: 5px; }
 
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
 .m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); font-family: 'SlimeBox', sans-serif; }
