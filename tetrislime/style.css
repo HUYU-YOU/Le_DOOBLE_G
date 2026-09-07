@@ -99,11 +99,14 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #game-ui { 
     transition: transform 0.3s ease; 
     transform-origin: center center; 
-    gap: 40px !important; 
+    gap: 30px !important; 
 }
 
 .side-panel { 
-    display: flex; flex-direction: column; gap: 50px; width: 160px; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: flex-start; /* Important pour que nos marges manuelles fonctionnent */
+    width: 160px; 
 }
 
 .panel-box {
@@ -113,7 +116,7 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 .panel-val { 
-    font-size: 3.5em;
+    font-size: 3.5em; /* Taille adaptée */
     color: #fff; 
     text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
     line-height: 1; 
@@ -126,36 +129,36 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     margin-top: 5px; 
 }
 
+canvas { display: block; border-radius: 5px; }
+
 
 /* =========================================
-   🕹️ ALIGNEMENT SUR MESURE (V. CORRIGÉE)
+   🕹️ ALIGNEMENT MANUEL PRÉCIS
    ========================================= */
 
-/* Le score est descendu (avant -160, maintenant -120) */
 .box-score {
-    transform: translateY(-120px); 
+    margin-top: 60px; /* Augmente ce chiffre pour descendre le SCORE */
 }
 
-/* Les lignes sont remontées (avant -80, maintenant -100) */
 .box-lines {
-    transform: translateY(-100px); 
+    margin-top: 80px; /* Augmente ce chiffre pour descendre les LIGNES */
 }
 
-/* Le suivant est décalé à droite (40px) et descendu (10px) */
 .box-next {
-    transform: translate(40px, 10px);
+    margin-top: 130px; /* Augmente ce chiffre pour descendre le SUIVANT */
+    margin-left: 20px; /* Augmente ce chiffre pour décaler à droite */
 }
 
-/* Plateau de jeu réduit pour ne pas dépasser du cadre ! */
 .board-wrapper {
     background: transparent !important; border: none !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important; 
-    margin-top: -30px; 
     
-    transform: scale(1.1); /* Rabaissé de 1.25 à 1.1 pour rentrer parfaitement */
-    transform-origin: top center;
+    margin-top: 25px; /* Descend un peu la grille pour l'aligner en haut */
+    
+    /* ⚠️ SUPPRESSION DU SCALE() : C'est ce qui faisait déborder tes pièces en bas ! */
 }
-canvas { display: block; border-radius: 5px; }
+
+/* ========================================= */
 
 
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
