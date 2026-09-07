@@ -104,27 +104,24 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
 .best-score-container { font-size: 18px; color: #f39c12; font-weight: bold; }
 .score-bump { transform: scale(1.4); color: #fff; }
 
-/* LE SEAU */
+/* LE SEAU AVEC LE CADRE IMAGE */
 #game-container {
     position: relative;
     width: 600px;
     max-width: 95vw;
     aspect-ratio: 3 / 4;
-    box-sizing: content-box; 
-    border-left: 10px solid rgba(22, 33, 62, 0.9);
-    border-right: 10px solid rgba(22, 33, 62, 0.9);
-    border-bottom: 10px solid rgba(22, 33, 62, 0.9);
-    border-radius: 0 0 20px 20px;
+    
+    /* Retrait des bordures CSS, le cadre image s'en charge ! */
     background-color: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(4px);
     box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
+    border-radius: 15px; 
     overflow: hidden; 
     transition: background-color 0.5s ease;
 }
 
 body.dark-mode #game-container {
     background-color: rgba(0, 0, 0, 0.75);
-    border-color: rgba(40, 40, 40, 0.9);
 }
 
 #game-canvas {
@@ -132,8 +129,22 @@ body.dark-mode #game-container {
     top: 0; left: 0;
     width: 100% !important;
     height: 100% !important;
-    border-radius: 0 0 10px 10px;
-    z-index: 1;
+    z-index: 1; /* En dessous du cadre image */
+}
+
+/* 🔥 LE DESIGN DU CADRE 🔥 */
+#game-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* TRÈS IMPORTANT : Permet de cliquer À TRAVERS le cadre ! */
+    pointer-events: none; 
+    
+    z-index: 5; /* Au-dessus des slimes */
+    filter: drop-shadow(0 0 10px rgba(0,0,0,0.8)); 
 }
 
 /* Effets Visuels (Particules et Textes) */
