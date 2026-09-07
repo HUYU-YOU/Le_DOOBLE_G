@@ -137,7 +137,7 @@ body.dark-mode #game-container {
     position: absolute !important;
     
     /* On remonte un TOUT PETIT PEU (de 58% à 56%) */
-    top: 56% !important; 
+    top: 53% !important; 
     left: 50% !important;
     
     width: 116% !important; 
