@@ -132,18 +132,15 @@ body.dark-mode #game-container {
     z-index: 1;
 }
 
-/* 🔥 LE DESIGN DU CADRE (RÉGLAGE FINAL BAS - POUSSÉ À L'EXTRÊME) 🔥 */
+/* 🔥 LE DESIGN DU CADRE (AJUSTEMENT AU PIXEL PRÈS) 🔥 */
 #game-frame {
     position: absolute !important;
     
-    /* On pousse violemment l'image vers le bas (58% au lieu de 52%) */
-    top: 58% !important; 
+    /* On remonte un TOUT PETIT PEU (de 58% à 56%) */
+    top: 56% !important; 
     left: 50% !important;
     
-    /* La largeur reste parfaite à 116% (on n'y touche plus !) */
     width: 116% !important; 
-    
-    /* On compense en hauteur pour que le haut de l'image ne glisse pas trop vers le bas */
     height: 122% !important; 
     
     transform: translate(-50%, -50%) !important; 
