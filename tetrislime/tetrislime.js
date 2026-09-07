@@ -95,8 +95,8 @@ skinNames.forEach(name => {
     skins[name] = new Image();
     skins[name].onload = () => {
         if (typeof draw === 'function') draw();
-        // 💡 TAILLE PIÈCE SUIVANTE AGRANDIE À 45 
-        if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 45);
+        // 💡 TAILLE PIÈCE SUIVANTE RÉDUITE À 35
+        if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 35);
     };
     skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
 });
@@ -370,8 +370,8 @@ function resetPiece() {
     if (!nextPiece) nextPiece = randomPiece();
     piece = nextPiece;
     nextPiece = randomPiece();
-    // 💡 TAILLE PIÈCE SUIVANTE AGRANDIE À 45 
-    drawPreview(nextCtx, nextPiece, 45);
+    // 💡 TAILLE PIÈCE SUIVANTE RÉDUITE À 35
+    drawPreview(nextCtx, nextPiece, 35);
     if (collide(board, piece)) { triggerGameOver(); }
 }
 
@@ -450,8 +450,8 @@ document.addEventListener('keydown', event => {
         event.preventDefault();
         isDebug = !isDebug;
         draw();
-        // 💡 TAILLE PIÈCE SUIVANTE AGRANDIE À 45 
-        if (nextPiece) drawPreview(nextCtx, nextPiece, 45);
+        // 💡 TAILLE PIÈCE SUIVANTE RÉDUITE À 35 
+        if (nextPiece) drawPreview(nextCtx, nextPiece, 35);
         return; 
     }
 
