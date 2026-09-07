@@ -137,7 +137,7 @@ body.dark-mode #game-container {
     position: absolute !important;
     
     /* On passe de 56% à 53% pour tirer le cadre vers le HAUT */
-    top: 53% !important; 
+    top: 54% !important; 
     left: 50% !important;
     
     width: 116% !important; 
