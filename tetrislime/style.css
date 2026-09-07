@@ -99,13 +99,14 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #game-ui { 
     transition: transform 0.3s ease; 
     transform-origin: center center; 
-    gap: 30px !important; 
+    /* 💡 RESSERRÉ : On a diminué l'espace entre le plateau central et les côtés */
+    gap: 15px !important; 
 }
 
 .side-panel { 
     display: flex; 
     flex-direction: column; 
-    justify-content: flex-start; /* Important pour que nos marges manuelles fonctionnent */
+    justify-content: flex-start;
     width: 160px; 
 }
 
@@ -115,50 +116,48 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
 
+/* 💡 TEXTES PLUS PETITS (Score et Lignes) */
 .panel-val { 
-    font-size: 3.5em; /* Taille adaptée */
+    font-size: 2.8em; /* Réduit pour rentrer parfaitement */
     color: #fff; 
     text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
     line-height: 1; 
 }
 
+/* 💡 BEST SCORE PLUS PETIT */
 .best-score-text {
-    font-size: 1.2rem;
+    font-size: 1rem; /* Réduit également */
     color: var(--gold);
     text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     margin-top: 5px; 
 }
-
-canvas { display: block; border-radius: 5px; }
-
 
 /* =========================================
    🕹️ ALIGNEMENT MANUEL PRÉCIS
    ========================================= */
 
 .box-score {
-    margin-top: 60px; /* Augmente ce chiffre pour descendre le SCORE */
+    transform: translateY(-110px); 
 }
 
 .box-lines {
-    margin-top: 80px; /* Augmente ce chiffre pour descendre les LIGNES */
+    transform: translateY(-90px); 
 }
 
+/* 💡 DÉCALAGE À GAUCHE DU "SUIVANT" POUR ÊTRE CENTRÉ DANS LE CADRE */
 .box-next {
-    margin-top: 130px; /* Augmente ce chiffre pour descendre le SUIVANT */
-    margin-left: 20px; /* Augmente ce chiffre pour décaler à droite */
+    transform: translate(-5px, 5px);
 }
 
 .board-wrapper {
     background: transparent !important; border: none !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important; 
     
-    margin-top: 25px; /* Descend un peu la grille pour l'aligner en haut */
-    
-    /* ⚠️ SUPPRESSION DU SCALE() : C'est ce qui faisait déborder tes pièces en bas ! */
+    margin-top: -30px; 
+    transform: scale(1.1); 
+    transform-origin: top center;
 }
-
-/* ========================================= */
+canvas { display: block; border-radius: 5px; }
 
 
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
