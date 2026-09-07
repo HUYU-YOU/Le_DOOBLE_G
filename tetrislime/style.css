@@ -29,7 +29,9 @@ body, html {
 
 #menu-bg-video {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    object-fit: cover; z-index: -10; pointer-events: none; 
+    object-fit: cover; 
+    object-position: top; /* 💡 ALIGNEMENT EN HAUT ICI */
+    z-index: -10; pointer-events: none; 
 }
 
 body.in-game { background-image: url('assets/tetrisback.jpeg') !important; }
