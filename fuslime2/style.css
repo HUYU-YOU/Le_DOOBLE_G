@@ -132,15 +132,19 @@ body.dark-mode #game-container {
     z-index: 1;
 }
 
-/* 🔥 LE DESIGN DU CADRE (LE JUSTE MILIEU) 🔥 */
+/* 🔥 LE DESIGN DU CADRE (RÉGLAGE FINAL BAS) 🔥 */
 #game-frame {
     position: absolute !important;
-    top: 50% !important;
+    
+    /* On décale l'image un peu vers le bas (52% au lieu de 50%) */
+    top: 52% !important; 
     left: 50% !important;
     
-    /* Le réglage millimétré pour cacher les bords nets du seau sans écraser le jeu */
+    /* La largeur reste parfaite à 116% */
     width: 116% !important; 
-    height: 108% !important; 
+    
+    /* On augmente un peu la hauteur pour que le bas soit plus long */
+    height: 112% !important; 
     
     transform: translate(-50%, -50%) !important; 
     
