@@ -108,7 +108,10 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
 #game-container {
     position: relative;
     width: 600px;
-    max-width: 95vw;
+    
+    /* On l'a baissé à 80vw pour laisser de la place au cadre qui va déborder sur les côtés */
+    max-width: 80vw; 
+    
     aspect-ratio: 3 / 4;
     
     background-color: rgba(15, 23, 42, 0.7);
@@ -116,7 +119,7 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
     box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
     border-radius: 15px; 
     
-    /* 🔥 L'overflow est maintenant 'visible' pour laisser déborder le cadre 🔥 */
+    /* Doit rester 'visible' pour que le cadre puisse s'afficher à l'extérieur */
     overflow: visible; 
     
     transition: background-color 0.5s ease;
@@ -134,23 +137,27 @@ body.dark-mode #game-container {
     z-index: 1; /* En dessous du cadre image */
 }
 
-/* 🔥 LE DESIGN DU CADRE (FORCE ABSOLUE) 🔥 */
+/* 🔥 LE DESIGN DU CADRE (À L'EXTÉRIEUR) 🔥 */
 #game-frame {
     position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+    
+    /* On le place au centre exact du seau */
+    top: 50% !important;
+    left: 50% !important;
+    
+    /* On augmente sa taille pour repousser le bois en dehors de la zone de jeu */
+    /* Modifie ces valeurs (ex: 128%, 120%) si le cadre mord encore un peu trop sur l'intérieur */
+    width: 125% !important; 
+    height: 118% !important; 
+    
+    /* On le recentre parfaitement pour qu'il déborde de manière égale partout */
+    transform: translate(-50%, -50%) !important; 
     
     pointer-events: none !important; 
     display: block !important;
     z-index: 99 !important; 
     object-fit: fill !important; 
-    
-    /* 🔥 On grossit l'image pour qu'elle englobe parfaitement les bords du seau 🔥 */
-    transform: scale(1.10); 
-    
-    filter: drop-shadow(0 0 10px rgba(0,0,0,0.8)); 
+    filter: drop-shadow(0 0 15px rgba(0,0,0,0.9)); 
 }
 
 /* Effets Visuels (Particules et Textes) */
