@@ -95,8 +95,8 @@ skinNames.forEach(name => {
     skins[name] = new Image();
     skins[name].onload = () => {
         if (typeof draw === 'function') draw();
-        // Modification à 35 pour que la forme suivante soit plus grosse
-        if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 35);
+        // 💡 TAILLE PIÈCE SUIVANTE AGRANDIE À 45 
+        if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 45);
     };
     skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
 });
@@ -149,7 +149,6 @@ let isGameOver = false;
 let animationId;
 
 let bestScore = parseInt(localStorage.getItem('tetriSlimeBest')) || 0;
-// SÉCURITÉ : Ne plante plus si on enlève le best-score du HTML !
 if(document.getElementById('best-score')) {
     document.getElementById('best-score').innerText = bestScore;
 }
@@ -371,8 +370,8 @@ function resetPiece() {
     if (!nextPiece) nextPiece = randomPiece();
     piece = nextPiece;
     nextPiece = randomPiece();
-    // Taille à 35 pour la forme de Preview
-    drawPreview(nextCtx, nextPiece, 35);
+    // 💡 TAILLE PIÈCE SUIVANTE AGRANDIE À 45 
+    drawPreview(nextCtx, nextPiece, 45);
     if (collide(board, piece)) { triggerGameOver(); }
 }
 
@@ -391,7 +390,6 @@ function clearLines() {
         lines += linesCleared;
         dropInterval = Math.max(100, 1000 - (lines * 10)); 
         
-        // Sécurités ajoutées ici aussi pour que les variables mettent à jour le HTML sans planter
         if(document.getElementById('score')) document.getElementById('score').innerText = score;
         if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
         
@@ -452,8 +450,8 @@ document.addEventListener('keydown', event => {
         event.preventDefault();
         isDebug = !isDebug;
         draw();
-        // Taille à 35 pour la preview
-        if (nextPiece) drawPreview(nextCtx, nextPiece, 35);
+        // 💡 TAILLE PIÈCE SUIVANTE AGRANDIE À 45 
+        if (nextPiece) drawPreview(nextCtx, nextPiece, 45);
         return; 
     }
 
