@@ -118,18 +118,20 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 /* 💡 TEXTES PLUS PETITS (Score et Lignes) */
 .panel-val { 
-    font-size: 2.8em; /* Réduit pour rentrer parfaitement */
+    font-size: 2.8em; 
     color: #fff; 
     text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
     line-height: 1; 
+    margin-bottom: 15px; /* Ajoute de l'espace pour ne pas écraser le BEST */
 }
 
-/* 💡 BEST SCORE PLUS PETIT */
+/* 💡 BEST SCORE PLUS PETIT ET RECALÉ */
 .best-score-text {
-    font-size: 1rem; /* Réduit également */
+    font-size: 1rem; 
     color: var(--gold);
     text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     margin-top: 5px; 
+    transform: translateY(15px); /* Descend le texte BEST pour le caler en bas du cadre */
 }
 
 /* =========================================
@@ -137,16 +139,20 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
    ========================================= */
 
 .box-score {
-    transform: translateY(-110px); 
+    /* On remonte un peu plus pour centrer le gros "0" dans le cadre du haut */
+    transform: translateY(-135px); 
 }
 
 .box-lines {
-    transform: translateY(-90px); 
+    /* On descend le "0" des lignes car il était trop haut dans son cadre */
+    transform: translateY(-25px); 
 }
 
-/* 💡 DÉCALAGE À GAUCHE DU "SUIVANT" POUR ÊTRE CENTRÉ DANS LE CADRE */
+/* 💡 DÉCALAGE POUR LE "SUIVANT" POUR ÊTRE CENTRÉ DANS LE CADRE */
 .box-next {
-    transform: translate(-5px, 5px);
+    /* Le cadre "Suivant" est à la même hauteur que le "Score". 
+       Il faut donc le remonter drastiquement. */
+    transform: translate(3px, -135px);
 }
 
 .board-wrapper {
