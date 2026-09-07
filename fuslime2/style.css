@@ -12,7 +12,7 @@ body {
     flex-direction: column;
     align-items: center;
     height: 100vh;
-    overflow: hidden; /* Coupe ce qui dépasse de l'écran, parfait pour ton cadre */
+    overflow: hidden;
 }
 
 /* --- GESTION DE LA VIDÉO DE FOND --- */
@@ -132,15 +132,15 @@ body.dark-mode #game-container {
     z-index: 1;
 }
 
-/* 🔥 LE DESIGN DU CADRE (MODE "ENCORE PLUS CHEF") 🔥 */
+/* 🔥 LE DESIGN DU CADRE (LE JUSTE MILIEU) 🔥 */
 #game-frame {
     position: absolute !important;
     top: 50% !important;
     left: 50% !important;
     
-    /* On l'agrandit de manière disproportionnée pour s'assurer que le bas épais dégage de la zone */
-    width: 140% !important; 
-    height: 132% !important; 
+    /* Le réglage millimétré pour cacher les bords nets du seau sans écraser le jeu */
+    width: 116% !important; 
+    height: 108% !important; 
     
     transform: translate(-50%, -50%) !important; 
     
