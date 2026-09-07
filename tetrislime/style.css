@@ -116,7 +116,7 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 .panel-val { 
-    font-size: 2.3em; /* 💡 Texte plus petit */
+    font-size: 2.3em; 
     color: #fff; 
     text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
     line-height: 1; 
@@ -124,11 +124,11 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 .best-score-text {
-    font-size: 0.9rem; /* 💡 BEST un peu réduit */
+    font-size: 0.9rem; 
     color: var(--gold);
     text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     margin-top: 0px; 
-    transform: translateY(5px); 
+    transform: translateY(-5px); 
 }
 
 /* =========================================
@@ -136,27 +136,27 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
    ========================================= */
 
 .box-score {
-    /* 💡 Descendu un peu vers le centre de son cadre */
-    transform: translateY(-140px); 
+    /* 💡 Repoussé vers la droite (+8px) pour s'aligner sous le mot SCORE */
+    transform: translate(8px, -140px); 
 }
 
 .box-lines {
-    /* 💡 Remonté au centre de son cadre */
-    transform: translateY(-35px); 
+    /* 💡 Repoussé vers la droite (+8px) et descendu d'un cran (-40px) */
+    transform: translate(8px, -40px); 
 }
 
 .box-next {
-    /* 💡 Descendu pour atterrir dans la fenêtre SUIVANT */
-    transform: translate(18px, -65px);
+    /* 💡 Grosse descente (+45px) pour atterrir VRAIMENT au centre, et décalé à droite */
+    transform: translate(25px, 45px);
 }
 
 .board-wrapper {
     background: transparent !important; border: none !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important; 
     
-    /* 💡 Un poil plus grand pour remplir parfaitement le rectangle central */
-    margin-top: 10px; 
-    transform: scale(0.95); 
+    /* 💡 Plateau ajusté au millimètre */
+    margin-top: 18px; 
+    transform: scale(0.91); 
     transform-origin: top center;
 }
 
