@@ -141,35 +141,36 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 
 /* =========================================
-   🚨 MODE DEBUG : COULEURS & ALIGNEMENT
+   🚨 MODE DEBUG : COULEURS & ALIGNEMENT PARFAIT
    ========================================= */
 
-/* DÉPLACE CES BOITES POUR QU'ELLES SOIENT SUR TES DESSINS ! 
-   (Le premier chiffre c'est Gauche/Droite, le 2ème c'est Haut/Bas) */
+.box-score { width: 130px; height: 90px; }
+.box-lines { width: 130px; height: 90px; }
+.box-next  { width: 150px; height: 150px; }
 
 .box-score {
-    border: 3px solid red !important; /* Ligne rouge */
-    transform: translate(6px, -110px); 
-}
-
-.box-lines {
-    border: 3px solid lime !important; /* Ligne verte */
+    outline: 4px solid red !important; 
+    /* 💡 On descend la boîte rouge pour l'aligner sur son dessin */
     transform: translate(6px, -45px); 
 }
 
+.box-lines {
+    outline: 4px solid lime !important; 
+    /* 💡 On remonte la boîte verte pour l'aligner sur son dessin */
+    transform: translate(6px, -115px); 
+}
+
 .box-next {
-    border: 3px solid cyan !important; /* Ligne bleu clair */
-    transform: translate(12px, -60px);
+    outline: 4px solid cyan !important; 
+    /* 💡 On descend la boîte cyan pour l'aligner sur le cadre SUIVANT */
+    transform: translate(12px, 35px);
 }
 
 .board-wrapper {
-    background: transparent !important; box-shadow: none !important; 
-    backdrop-filter: none !important; padding: 0 !important; 
-
-    border: 3px solid fuchsia !important; /* Ligne rose pour le plateau central */
-    
-    margin-top: 18px; 
-    transform: scale(0.91); 
+    outline: 4px solid fuchsia !important; 
+    /* 💡 On remonte le plateau (moins de marge) et on réduit un poil l'échelle pour qu'il rentre dans le cadre violet */
+    margin-top: -5px; 
+    transform: scale(0.86); 
     transform-origin: top center;
 }
 
