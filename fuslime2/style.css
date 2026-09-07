@@ -115,7 +115,10 @@ h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
     backdrop-filter: blur(4px);
     box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
     border-radius: 15px; 
-    overflow: hidden; 
+    
+    /* 🔥 L'overflow est maintenant 'visible' pour laisser déborder le cadre 🔥 */
+    overflow: visible; 
+    
     transition: background-color 0.5s ease;
 }
 
@@ -139,15 +142,13 @@ body.dark-mode #game-container {
     width: 100% !important;
     height: 100% !important;
     
-    /* Permet de cliquer sur le canvas en dessous (les slimes) */
     pointer-events: none !important; 
-    
-    /* Affichage forcé au premier plan */
     display: block !important;
     z-index: 99 !important; 
-    
-    /* Empêche l'image de se déformer bêtement */
     object-fit: fill !important; 
+    
+    /* 🔥 On grossit l'image pour qu'elle englobe parfaitement les bords du seau 🔥 */
+    transform: scale(1.10); 
     
     filter: drop-shadow(0 0 10px rgba(0,0,0,0.8)); 
 }
