@@ -1,3 +1,10 @@
+/* 💡 CHARGEMENT DE TA POLICE LOCALE SLIMEBOX */
+@font-face {
+    font-family: 'SlimeBox';
+    src: url('assets/SlimeBox.ttf') format('truetype');
+    /* Si ton fichier est un .otf, change .ttf par .otf ci-dessus */
+}
+
 :root { 
     --bg: #050508; 
     --panel: rgba(10, 15, 25, 0.85); 
@@ -10,9 +17,9 @@
 }
 
 body, html { 
-    /* Application de la police Creepster partout */
-    font-family: 'Creepster', cursive; 
-    letter-spacing: 2px; /* Un peu d'espace pour que ça reste lisible */
+    /* Application de SlimeBox partout */
+    font-family: 'SlimeBox', sans-serif; 
+    letter-spacing: 2px; 
 
     background-color: var(--bg); 
     background-size: cover;
@@ -55,7 +62,7 @@ body.in-game #menu-bg-video { display: none; }
 #settings-modal.show { opacity: 1; pointer-events: auto; }
 .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
 .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
-.btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Creepster', cursive; font-size: 1.2rem; transition: 0.2s; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'SlimeBox', sans-serif; font-size: 1.2rem; transition: 0.2s; }
 .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
 .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
 .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.3rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
@@ -81,12 +88,12 @@ body.in-game #menu-bg-video { display: none; }
 
 #main-menu { background: transparent !important; backdrop-filter: none !important; }
 
-.btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.8em; font-family: 'Creepster', cursive; border-radius: 8px; cursor: pointer; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px;}
+.btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.8em; font-family: 'SlimeBox', sans-serif; border-radius: 8px; cursor: pointer; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px;}
 .btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
 .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255,0,127,0.2); }
 .btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); color: #000; }
 
-input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-family: 'Creepster', cursive; font-size: 1.5rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
+input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-family: 'SlimeBox', sans-serif; font-size: 1.5rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 /* =========================================
@@ -103,34 +110,27 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     display: flex; flex-direction: column; gap: 50px; width: 160px; 
 }
 
-/* Centrage parfait de tous les textes dans les boîtes */
 .panel-box {
     background: transparent !important; border: none !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important;
     display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
 }
 
+/* 💡 TAILLE DU SCORE ET DES LIGNES RÉDUITE */
 .panel-val { 
-    font-size: 5em; /* Un peu plus gros car Creepster taille petit */
+    font-size: 3.5em; /* Plus petit pour bien rentrer dans tes dessins */
     color: #fff; 
-    text-shadow: 0 0 15px var(--p1), 0 3px 5px rgba(0,0,0,0.8); 
-    line-height: 1; /* Resserre la hauteur pour coller au Best Score */
+    text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
+    line-height: 1; 
 }
 
-/* Style du texte Best Score sous le 0 */
+/* 💡 TAILLE DU BEST SCORE RÉDUITE */
 .best-score-text {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: var(--gold);
     text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-    margin-top: -5px; /* Le rapproche du chiffre 0 du score */
+    margin-top: 5px; /* Petit espace sous le score */
 }
-
-.board-wrapper {
-    background: transparent !important; border: none !important; box-shadow: none !important; 
-    backdrop-filter: none !important; padding: 0 !important; margin-top: -30px; 
-}
-canvas { display: block; border-radius: 5px; }
-
 
 /* =========================================
    🕹️ ALIGNEMENT SUR MESURE POUR TON BACKGROUND
@@ -140,21 +140,29 @@ canvas { display: block; border-radius: 5px; }
     transform: translateY(-160px); 
 }
 
-/* On descend la boîte Lignes (avant c'était -120, maintenant -80 pour la descendre) */
 .box-lines {
     transform: translateY(-80px); 
 }
 
-/* On décale la forme suivante vers la droite (30px) et vers le bas (-50px au lieu de -80px) */
+/* 💡 DÉCALAGE DE "SUIVANT" (Un poil à gauche et en bas) */
 .box-next {
-    transform: translate(30px, -50px);
+    transform: translate(10px, -20px);
 }
 
-/* ========================================= */
+/* 💡 LE PLATEAU DE JEU ÉTIRÉ AU MAXIMUM DU CADRE ! */
+.board-wrapper {
+    background: transparent !important; border: none !important; box-shadow: none !important; 
+    backdrop-filter: none !important; padding: 0 !important; 
+    margin-top: -30px; 
+    
+    transform: scale(1.25); /* C'EST CE CHIFFRE QUI AGRANDIT TON PLATEAU ! (Ajuste à 1.3 si pas assez grand) */
+    transform-origin: top center;
+}
+canvas { display: block; border-radius: 5px; }
 
 
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
-.m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); font-family: 'Creepster', cursive; }
+.m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); font-family: 'SlimeBox', sans-serif; }
 .m-btn:active { background: var(--p1); color: #000; }
 
 @media (max-width: 900px) {
