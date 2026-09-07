@@ -30,19 +30,18 @@ body, html {
     left: 0;
     width: 100vw;
     height: 100vh;
-    object-fit: cover; /* Rempli tout l'écran sans déformer */
-    z-index: -10; /* Derrière tout le reste */
-    pointer-events: none; /* Empêche de cliquer accidentellement sur la vidéo */
+    object-fit: cover;
+    z-index: -10; 
+    pointer-events: none; 
 }
 
-/* S'assure que le fond change correctement en jeu ET cache la vidéo */
+/* Cache la vidéo en jeu pour laisser le .jpeg */
 body.in-game {
     background-image: url('assets/tetrisback.jpeg') !important;
 }
 body.in-game #menu-bg-video {
-    display: none; /* Cache la vidéo quand on joue */
+    display: none; 
 }
-
 
 /* RETOUR HUB PROPRE SANS CADRE */
 .hub-link { 
@@ -134,7 +133,7 @@ input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-wei
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 /* =========================================
-   UI DU JEU TETRIS (Alignement avec l'image)
+   UI DU JEU TETRIS 
    ========================================= */
 
 #game-ui { 
@@ -146,7 +145,6 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 .side-panel { 
     display: flex; 
     flex-direction: column; 
-    gap: 50px; 
     width: 160px; 
 }
 
@@ -159,20 +157,12 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     text-align: center;
 }
 
-.panel-title { 
-    font-size: 1.3em; 
-    color: #fff; 
-    text-transform: uppercase; 
-    letter-spacing: 2px; 
-    margin-bottom: 5px;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
-}
-
+/* TAILLE AUGMENTÉE POUR LES CHIFFRES */
 .panel-val { 
-    font-size: 2.5em; 
+    font-size: 4em; /* Beaucoup plus gros qu'avant */
     font-weight: bold; 
     color: #fff; 
-    text-shadow: 0 0 10px var(--p1), 0 2px 5px rgba(0,0,0,1); 
+    text-shadow: 0 0 15px var(--p1), 0 3px 5px rgba(0,0,0,0.8); 
 }
 
 .board-wrapper {
@@ -185,6 +175,27 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 canvas { display: block; border-radius: 5px; }
+
+
+/* =========================================
+   🕹️ ALIGNEMENT SUR MESURE POUR TON BACKGROUND
+   ========================================= */
+
+/* Fais varier ces chiffres (-160px etc) si tu veux monter ou descendre les infos */
+.box-score {
+    transform: translateY(-160px); 
+}
+
+.box-lines {
+    transform: translateY(-120px); 
+}
+
+.box-next {
+    transform: translateY(-80px);
+}
+
+/* ========================================= */
+
 
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
 .m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); }
