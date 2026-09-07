@@ -95,7 +95,8 @@ skinNames.forEach(name => {
     skins[name] = new Image();
     skins[name].onload = () => {
         if (typeof draw === 'function') draw();
-        if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 25);
+        // Modification à 35 pour que la forme suivante soit plus grosse
+        if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 35);
     };
     skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
 });
@@ -148,7 +149,10 @@ let isGameOver = false;
 let animationId;
 
 let bestScore = parseInt(localStorage.getItem('tetriSlimeBest')) || 0;
-document.getElementById('best-score').innerText = bestScore;
+// SÉCURITÉ : Ne plante plus si on enlève le best-score du HTML !
+if(document.getElementById('best-score')) {
+    document.getElementById('best-score').innerText = bestScore;
+}
 
 function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
 
@@ -164,25 +168,20 @@ function randomPiece() {
 
 function getImgName(type, rotIndex) {
     if (type === 3) return 'CUBE';
-    
     if (type === 1) return (rotIndex === 0 || rotIndex === 180) ? 'BARRE90' : 'BARRE';
-    
     if (type === 2) {
         if (rotIndex === 0) return 'L0';
         if (rotIndex === 90) return 'L270';  
         if (rotIndex === 180) return 'L180';
         if (rotIndex === 270) return 'L90';
     }
-    
     if (type === 4) return rotIndex === 0 ? 'Z' : 'Z' + rotIndex;
-    
     if (type === 5) {
         if (rotIndex === 0) return 'CROIX';
         if (rotIndex === 90) return 'CROIX270';
         if (rotIndex === 180) return 'CROIX180';
         if (rotIndex === 270) return 'CROIX90';
     }
-    
     return null;
 }
 
@@ -372,7 +371,8 @@ function resetPiece() {
     if (!nextPiece) nextPiece = randomPiece();
     piece = nextPiece;
     nextPiece = randomPiece();
-    drawPreview(nextCtx, nextPiece, 25);
+    // Taille à 35 pour la forme de Preview
+    drawPreview(nextCtx, nextPiece, 35);
     if (collide(board, piece)) { triggerGameOver(); }
 }
 
@@ -391,12 +391,13 @@ function clearLines() {
         lines += linesCleared;
         dropInterval = Math.max(100, 1000 - (lines * 10)); 
         
-        document.getElementById('score').innerText = score;
-        document.getElementById('lines').innerText = lines;
+        // Sécurités ajoutées ici aussi pour que les variables mettent à jour le HTML sans planter
+        if(document.getElementById('score')) document.getElementById('score').innerText = score;
+        if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
         
         if (score > bestScore) {
             bestScore = score; localStorage.setItem('tetriSlimeBest', bestScore);
-            document.getElementById('best-score').innerText = bestScore;
+            if(document.getElementById('best-score')) document.getElementById('best-score').innerText = bestScore;
         }
 
         if (gameMode === 'multi' && hostConn && hostConn.open && linesCleared >= 2) {
@@ -419,16 +420,18 @@ function receiveGarbage(amount) {
 function triggerGameOver() {
     isGameOver = true;
     cancelAnimationFrame(animationId);
-    document.getElementById('final-score').innerText = score;
+    if(document.getElementById('final-score')) document.getElementById('final-score').innerText = score;
     
     if (gameMode === 'multi') {
-        document.getElementById('end-title').innerText = "TU AS PERDU...";
-        document.getElementById('end-title').style.color = "var(--p2)";
+        if(document.getElementById('end-title')) {
+            document.getElementById('end-title').innerText = "TU AS PERDU...";
+            document.getElementById('end-title').style.color = "var(--p2)";
+        }
         if (hostConn && hostConn.open) hostConn.send(JSON.stringify({ type: 'GAMEOVER' }));
     } else {
-        document.getElementById('end-title').innerText = "GAME OVER";
+        if(document.getElementById('end-title')) document.getElementById('end-title').innerText = "GAME OVER";
     }
-    document.getElementById('game-over').style.display = 'flex';
+    if(document.getElementById('game-over')) document.getElementById('game-over').style.display = 'flex';
 }
 
 function update(time = 0) {
@@ -449,7 +452,8 @@ document.addEventListener('keydown', event => {
         event.preventDefault();
         isDebug = !isDebug;
         draw();
-        if (nextPiece) drawPreview(nextCtx, nextPiece, 25);
+        // Taille à 35 pour la preview
+        if (nextPiece) drawPreview(nextCtx, nextPiece, 35);
         return; 
     }
 
@@ -508,7 +512,6 @@ function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex'; 
     
-    // ON DECLENCHE LE BACKGROUND DU JEU ICI
     setBackgroundImage('tetrisback.jpeg');
     document.body.classList.add('in-game');
     
@@ -572,10 +575,12 @@ function setupConnectionListeners(conn) {
         } else if (data.type === 'GAMEOVER') {
             isGameOver = true;
             cancelAnimationFrame(animationId);
-            document.getElementById('end-title').innerText = "VICTOIRE !";
-            document.getElementById('end-title').style.color = "var(--perfect)";
-            document.getElementById('final-score').innerText = score;
-            document.getElementById('game-over').style.display = 'flex';
+            if(document.getElementById('end-title')) {
+                document.getElementById('end-title').innerText = "VICTOIRE !";
+                document.getElementById('end-title').style.color = "var(--perfect)";
+            }
+            if(document.getElementById('final-score')) document.getElementById('final-score').innerText = score;
+            if(document.getElementById('game-over')) document.getElementById('game-over').style.display = 'flex';
         }
     });
 }
@@ -592,7 +597,6 @@ function startMultiGameDisplay() {
     document.getElementById('game-ui').style.display = 'flex';
     document.getElementById('opponent-box').style.display = 'block';
     
-    // ON DECLENCHE LE BACKGROUND DU JEU ICI
     setBackgroundImage('tetrisback.jpeg');
     document.body.classList.add('in-game');
     
