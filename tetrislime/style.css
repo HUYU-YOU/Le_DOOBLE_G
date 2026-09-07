@@ -116,7 +116,7 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 .panel-val { 
-    font-size: 2.8em; 
+    font-size: 2.3em; /* 💡 Texte plus petit */
     color: #fff; 
     text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
     line-height: 1; 
@@ -124,7 +124,7 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 .best-score-text {
-    font-size: 1rem; 
+    font-size: 0.9rem; /* 💡 BEST un peu réduit */
     color: var(--gold);
     text-shadow: 0 2px 4px rgba(0,0,0,0.9);
     margin-top: 0px; 
@@ -136,27 +136,27 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
    ========================================= */
 
 .box-score {
-    /* 💡 Remonté plus haut */
-    transform: translateY(-165px); 
+    /* 💡 Descendu un peu vers le centre de son cadre */
+    transform: translateY(-140px); 
 }
 
 .box-lines {
-    /* 💡 Redescendu */
-    transform: translateY(10px); 
+    /* 💡 Remonté au centre de son cadre */
+    transform: translateY(-35px); 
 }
 
 .box-next {
-    /* 💡 Décalé un poil à droite (+20px) et aligné en hauteur */
-    transform: translate(20px, -150px);
+    /* 💡 Descendu pour atterrir dans la fenêtre SUIVANT */
+    transform: translate(18px, -65px);
 }
 
 .board-wrapper {
     background: transparent !important; border: none !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important; 
     
-    /* 💡 Plateau rétréci et recentré pour qu'il ne déborde plus des bords de l'image ! */
-    margin-top: 15px; 
-    transform: scale(0.89); 
+    /* 💡 Un poil plus grand pour remplir parfaitement le rectangle central */
+    margin-top: 10px; 
+    transform: scale(0.95); 
     transform-origin: top center;
 }
 
