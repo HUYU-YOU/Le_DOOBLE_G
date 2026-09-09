@@ -150,24 +150,25 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 .box-score {
     outline: 10px solid red !important; 
-    /* 💡 On descend la boîte rouge pour qu'elle soit sous le mot SCORE */
-    transform: translate(6px, 20px); 
+    /* 💡 On remonte le Score pour l'aligner sur le cadre du haut */
+    transform: translate(6px, -55px); 
 }
 
 .box-lines {
     outline: 10px solid lime !important; 
-    /* 💡 On descend grandement la boîte verte pour l'emmener dans le cadre LIGNES en bas */
-    transform: translate(6px, 90px); 
+    /* 💡 On remonte les Lignes pour qu'elles sortent de l'herbe et rentrent dans le cadre du bas */
+    transform: translate(6px, 15px); 
 }
 
 .box-next {
     outline: 10px solid cyan !important; 
-    /* 💡 Ajustement mineur si besoin, on la cale parfaitement */
+    /* 💡 PARFAIT ! On ne touche à rien, il est idéal */
     transform: translate(12px, 25px);
 }
 
 .board-wrapper {
     outline: 10px solid fuchsia !important; 
+    /* 💡 PARFAIT ! On garde tel quel */
     margin-top: -5px; 
     transform: scale(0.86); 
     transform-origin: top center;
