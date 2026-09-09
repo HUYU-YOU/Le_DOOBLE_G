@@ -149,26 +149,25 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 .box-next  { width: 150px; height: 150px; }
 
 .box-score {
-    outline: 4px solid red !important; 
-    /* 💡 On descend la boîte rouge pour l'aligner sur son dessin */
-    transform: translate(6px, -45px); 
+    outline: 10px solid red !important; 
+    /* 💡 On descend la boîte rouge pour qu'elle soit sous le mot SCORE */
+    transform: translate(6px, 20px); 
 }
 
 .box-lines {
-    outline: 4px solid lime !important; 
-    /* 💡 On remonte la boîte verte pour l'aligner sur son dessin */
-    transform: translate(6px, -115px); 
+    outline: 10px solid lime !important; 
+    /* 💡 On descend grandement la boîte verte pour l'emmener dans le cadre LIGNES en bas */
+    transform: translate(6px, 90px); 
 }
 
 .box-next {
-    outline: 4px solid cyan !important; 
-    /* 💡 On descend la boîte cyan pour l'aligner sur le cadre SUIVANT */
-    transform: translate(12px, 35px);
+    outline: 10px solid cyan !important; 
+    /* 💡 Ajustement mineur si besoin, on la cale parfaitement */
+    transform: translate(12px, 25px);
 }
 
 .board-wrapper {
-    outline: 4px solid fuchsia !important; 
-    /* 💡 On remonte le plateau (moins de marge) et on réduit un poil l'échelle pour qu'il rentre dans le cadre violet */
+    outline: 10px solid fuchsia !important; 
     margin-top: -5px; 
     transform: scale(0.86); 
     transform-origin: top center;
