@@ -150,40 +150,25 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 .box-score {
     outline: 10px solid red !important; 
-    /* 💡 On remonte le Score pour l'aligner sur le cadre du haut */
-    transform: translate(6px, -55px); 
+    /* 💡 Grosse remontée pour aller chercher le cadre SCORE en haut */
+    transform: translate(6px, -145px); 
 }
 
 .box-lines {
     outline: 10px solid lime !important; 
-    /* 💡 On remonte les Lignes pour qu'elles sortent de l'herbe et rentrent dans le cadre du bas */
-    transform: translate(6px, 15px); 
+    /* 💡 On le sort de l'herbe pour le caler dans le cadre LIGNES */
+    transform: translate(6px, -55px); 
 }
 
 .box-next {
     outline: 10px solid cyan !important; 
-    /* 💡 PARFAIT ! On ne touche à rien, il est idéal */
-    transform: translate(12px, 25px);
+    /* 💡 Un poil plus haut pour être centré au millimètre */
+    transform: translate(12px, 20px);
 }
 
 .board-wrapper {
     outline: 10px solid fuchsia !important; 
-    /* 💡 PARFAIT ! On garde tel quel */
     margin-top: -5px; 
     transform: scale(0.86); 
     transform-origin: top center;
-}
-
-canvas { display: block; border-radius: 5px; }
-
-#mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
-.m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); font-family: 'SlimeBox', sans-serif; }
-.m-btn:active { background: var(--p1); color: #000; }
-
-@media (max-width: 900px) {
-    #game-ui { flex-direction: column !important; padding-top: 60px !important; transform: scale(0.9) !important;}
-    .side-panel { flex-direction: row; width: 100%; max-width: 320px; justify-content: space-between; }
-    .panel-box { padding: 5px; flex: 1; margin: 0 5px; }
-    .board-wrapper canvas { width: 250px; height: 500px; }
-    #mobile-controls { display: flex; }
 }
