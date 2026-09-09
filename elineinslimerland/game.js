@@ -1,3 +1,9 @@
+// --- TRADUCTIONS DU MENU ---
+const menuTranslations = {
+    fr: { start: "Commencer l'aventure", option: "Options..!", leave: "Quitter", optionsTitle: "Options", langue: "Langue 🌍", theme: "Mode Sombre 🌙", close: "Fermer", next: "▶ Suivant" },
+    en: { start: "Ready to start", option: "Options..!", leave: "Leave", optionsTitle: "Settings", langue: "Language 🌍", theme: "Dark Mode 🌙", close: "Close", next: "▶ Next" }
+};
+
 let currentLang = 'fr'; // Langue par défaut
 let currentDialogIndex = 0; // Pour le système de textes qui défilent
 
@@ -207,7 +213,11 @@ function loadScene(sceneId) {
     
     let playPromise = videoElement.play();
     if (playPromise !== undefined) {
-        playPromise.catch(error => { console.log("Lecture bloquée : ", error); });
+        playPromise.catch(error => { 
+            console.log("Lecture bloquée (Autoplay ou fichier introuvable) : ", error); 
+            // SÉCURITÉ GITHUB/MOBILE : On affiche quand même les boutons si la vidéo plante !
+            showInterface();
+        });
     }
 
     topTextElement.innerText = langData.topText || "";
@@ -269,6 +279,41 @@ videoElement.onended = () => {
         showInterface();
     }
 };
+
+// --- GESTION DES MENUS ET OPTIONS ---
+function changeLanguage() {
+    const langSelect = document.getElementById('lang-select');
+    if (langSelect) {
+        currentLang = langSelect.value;
+    }
+    
+    const texts = menuTranslations[currentLang];
+    
+    // On met à jour les textes seulement si les éléments existent dans le HTML
+    const elStart = document.getElementById('menu-text-start');
+    if(elStart) elStart.innerText = texts.start;
+    
+    const elOption = document.getElementById('menu-text-option');
+    if(elOption) elOption.innerText = texts.option;
+    
+    const elLeave = document.getElementById('menu-text-leave');
+    if(elLeave) elLeave.innerText = texts.leave;
+    
+    const elTitle = document.getElementById('modal-title-options');
+    if(elTitle) elTitle.innerText = texts.optionsTitle;
+    
+    const elLang = document.getElementById('modal-text-lang');
+    if(elLang) elLang.innerText = texts.langue;
+    
+    const elTheme = document.getElementById('modal-text-theme');
+    if(elTheme) elTheme.innerText = texts.theme;
+    
+    const elClose = document.getElementById('modal-text-close');
+    if(elClose) elClose.innerText = texts.close;
+}
+
+// S'assure que la langue est bien chargée au lancement du site
+window.addEventListener('DOMContentLoaded', changeLanguage);
 
 function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
 function toggleTheme() { document.body.classList.toggle('dark-mode'); }
