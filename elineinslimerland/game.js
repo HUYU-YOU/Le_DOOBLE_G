@@ -1,71 +1,43 @@
+let currentLang = 'fr'; // Langue par défaut
+let currentDialogIndex = 0; // Pour le système de textes qui défilent
+
 // --- LE SCÉNARIO DU JEU ---
 const story = {
     partie1: {
-        videoSrc: "assets/ELINE0.mp4",
-        topText: "Aventure d'Éline... partie 1...",
-        bottomText: "Appuyer sur l'écran si tu es prêt à quitter ce lieu",
-        showUIAtEnd: false, 
-        choices: [
-            { text: "Ready!", targetScene: "partie2" }
-        ]
+        videoSrc: "assets/ELINE0.mp4", loop: false, showUIAtEnd: false, 
+        fr: { topText: "Aventure d'Éline... partie 1...", bottomText: "Appuyer sur l'écran si tu es prêt à quitter ce lieu", choices: [{ text: "Prêt !", targetScene: "partie2" }] },
+        en: { topText: "Eline's Adventure... part 1...", bottomText: "Tap the screen if you are ready to leave this place", choices: [{ text: "Ready!", targetScene: "partie2" }] }
     },
     partie2: {
-        videoSrc: "assets/ELINE1.mp4",
-        topText: "",
-        bottomText: "S'enfoncer dans la forêt...?",
-        showUIAtEnd: true, 
-        choices: [
-            { text: "Ready!", targetScene: "partie3" }
-        ]
+        videoSrc: "assets/ELINE1.mp4", loop: false, showUIAtEnd: true, 
+        fr: { topText: "", bottomText: "S'enfoncer dans la forêt...?", choices: [{ text: "Prêt !", targetScene: "partie3" }] },
+        en: { topText: "", bottomText: "Go deeper into the forest...?", choices: [{ text: "Ready!", targetScene: "partie3" }] }
     },
     partie3: {
-        videoSrc: "assets/ELINE2.mp4",
-        topText: "",
-        bottomText: "Que faire ?",
-        showUIAtEnd: true, 
-        choices: [
+        videoSrc: "assets/ELINE2.mp4", loop: false, showUIAtEnd: true, 
+        fr: { topText: "", bottomText: "Que faire ?", choices: [
             { text: "Ramasser le talisman et prendre le portail", targetScene: "partie4" },
             { text: "FUIRRRR!!!!!!!!!!", targetScene: "fuite" }
-        ]
+        ] },
+        en: { topText: "", bottomText: "What to do?", choices: [
+            { text: "Take the talisman and enter the portal", targetScene: "partie4" },
+            { text: "FLEE!!!!!!!!!!", targetScene: "fuite" }
+        ] }
     },
     partie4: {
-        videoSrc: "assets/CHOIX1.mp4", 
-        topText: "À suivre...",
-        bottomText: "Bienvenue dans Slimerland !",
-        showUIAtEnd: false,
-        choices: []
+        videoSrc: "assets/CHOIX1.mp4", loop: false, showUIAtEnd: false,
+        fr: { topText: "À suivre...", bottomText: "Éline prend son courage à deux mains et saute dans le portail !", choices: [{ text: "Où ça mène ?", targetScene: "eline3" }] },
+        en: { topText: "To be continued...", bottomText: "Eline gathers her courage and jumps into the portal!", choices: [{ text: "Where does it go?", targetScene: "eline3" }] }
     },
     fuite: {
-        videoSrc: "assets/CHOIX2.mp4", 
-        topText: "Game Over",
-        bottomText: "Tu as fui en courant...",
-        showUIAtEnd: false,
-        choices: [
-            { text: "Menu Principal", targetScene: "partie1" } 
-        ]
-    }
-    // --- L'ANCIENNE FUITE DEVIENT LA CHUTE DANS LE PORTAIL ---
-    fuite: {
-        videoSrc: "assets/CHOIX2.mp4", 
-        loop: false, 
-        showUIAtEnd: true, // On attend la fin de l'animation du portail
-        fr: { 
-            topText: "La fuite...", 
-            bottomText: "Éline court pour fuir le renard, mais trébuche et tombe dans un étrange portail !", 
-            choices: [{ text: "Où ça mène ?", targetScene: "eline3" }] 
-        },
-        en: { 
-            topText: "Fleeing...", 
-            bottomText: "Eline runs to escape the fox, but trips and falls into a strange portal!", 
-            choices: [{ text: "Where does it go?", targetScene: "eline3" }] 
-        }
+        videoSrc: "assets/CHOIX2.mp4", loop: false, showUIAtEnd: true,
+        fr: { topText: "La fuite...", bottomText: "Éline court pour fuir, mais trébuche et tombe dans l'étrange portail !", choices: [{ text: "Où ça mène ?", targetScene: "eline3" }] },
+        en: { topText: "Fleeing...", bottomText: "Eline runs to escape, but trips and falls into the strange portal!", choices: [{ text: "Where does it go?", targetScene: "eline3" }] }
     },
 
     // --- LE GRAND CARREFOUR : FORÊT OU VILLE ---
     eline3: {
-        videoSrc: "assets/ELINE3.mp4",
-        loop: true,
-        showUIAtEnd: false, 
+        videoSrc: "assets/ELINE3.mp4", loop: true, showUIAtEnd: false, 
         fr: {
             topText: "Un nouveau chemin",
             dialogues: [
@@ -96,9 +68,7 @@ const story = {
 
     // --- BRANCHE 1 : LA VILLE ET MIAO ---
     ville_miao: {
-        videoSrc: "assets/MIAO.mp4",
-        loop: true,
-        showUIAtEnd: false, 
+        videoSrc: "assets/MIAO.mp4", loop: true, showUIAtEnd: false, 
         fr: {
             topText: "La Ville des Slimes",
             dialogues: [
@@ -107,7 +77,7 @@ const story = {
                 "Miao : Mrrr... Encore une touriste humaine. Qu'est-ce que ça me saoule..."
             ],
             bottomText: "Miao le chat-slime fait son apparition !",
-            choices: [{ text: "À suivre...", targetScene: "menu" }] // En attendant la suite de l'histoire en ville !
+            choices: [{ text: "Retour au menu", targetScene: "menu" }] 
         },
         en: {
             topText: "Slime City",
@@ -117,15 +87,13 @@ const story = {
                 "Miao: Mrrr... Another human tourist. This is so annoying..."
             ],
             bottomText: "Miao the slime-cat appears!",
-            choices: [{ text: "To be continued...", targetScene: "menu" }]
+            choices: [{ text: "Back to menu", targetScene: "menu" }]
         }
     },
 
     // --- BRANCHE 2 : LA FORÊT ET LE CHOIX D'EMPATHIE ---
     eline4: {
-        videoSrc: "assets/ELINE4.mp4",
-        loop: true,
-        showUIAtEnd: false,
+        videoSrc: "assets/ELINE4.mp4", loop: true, showUIAtEnd: false,
         fr: {
             topText: "La Forêt Sombre",
             dialogues: [
@@ -154,7 +122,6 @@ const story = {
         }
     },
 
-    // LES CONSÉQUENCES DU SLIME
     choix3: { 
         videoSrc: "assets/CHOIX3.mp4", loop: false, showUIAtEnd: true,
         fr: { topText: "Aïe...", bottomText: "Le slime n'a pas aimé ça du tout. Il s'enfuit en pleurant.", choices: [{ text: "Reprendre la route", targetScene: "eline5" }] },
@@ -166,18 +133,13 @@ const story = {
         en: { topText: "Full of love", bottomText: "Eline's empathy works wonders. The slime melts with happiness under the hug!", choices: [{ text: "Hit the road again", targetScene: "eline5" }] }
     },
 
-    // --- LA SUITE DE LA FORÊT : LA POURSUITE ---
     eline5: {
-        videoSrc: "assets/ELINE5.mp4",
-        loop: false,
-        showUIAtEnd: true,
+        videoSrc: "assets/ELINE5.mp4", loop: false, showUIAtEnd: true,
         fr: { topText: "Toujours plus loin...", bottomText: "Éline avance prudemment, mais une silhouette bouge dans la brume.", choices: [{ text: "S'approcher", targetScene: "eline6" }] },
         en: { topText: "Deeper and deeper...", bottomText: "Eline moves carefully, but a silhouette moves in the mist.", choices: [{ text: "Approach", targetScene: "eline6" }] }
     },
     eline6: {
-        videoSrc: "assets/ELINE6.mp4",
-        loop: true,
-        showUIAtEnd: false,
+        videoSrc: "assets/ELINE6.mp4", loop: true, showUIAtEnd: false,
         fr: {
             topText: "L'Étranger",
             dialogues: [
@@ -204,15 +166,14 @@ const story = {
         }
     },
 
-    // LES FINS DE LA BRANCHE
     fin1: {
         videoSrc: "assets/FIN1.mp4", loop: false, showUIAtEnd: true,
-        fr: { topText: "Fin de l'Aventure", bottomText: "Éline a paniqué et s'est perdue à jamais dans les méandres de Slimerland.", choices: [{ text: "Recommencer au début", targetScene: "partie1" }] },
-        en: { topText: "End of the Adventure", bottomText: "Eline panicked and got lost forever in the maze of Slimerland.", choices: [{ text: "Restart from the beginning", targetScene: "partie1" }] }
+        fr: { topText: "Fin de l'Aventure", bottomText: "Éline a paniqué et s'est perdue à jamais dans les méandres de Slimerland.", choices: [{ text: "Recommencer", targetScene: "menu" }] },
+        en: { topText: "End of the Adventure", bottomText: "Eline panicked and got lost forever in the maze of Slimerland.", choices: [{ text: "Restart", targetScene: "menu" }] }
     },
     eline7: {
         videoSrc: "assets/ELINE7.mp4", loop: false, showUIAtEnd: true,
-        fr: { topText: "La poursuite", bottomText: "Éline prend son courage à deux mains et s'élance à la suite de l'inconnu !", choices: [] }, // Prêt pour la prochaine mise à jour !
+        fr: { topText: "La poursuite", bottomText: "Éline prend son courage à deux mains et s'élance à la suite de l'inconnu !", choices: [] }, 
         en: { topText: "The pursuit", bottomText: "Eline gathers her courage and rushes after the stranger!", choices: [] }
     }
 };
@@ -225,14 +186,15 @@ const choicesContainer = document.getElementById('choices-container');
 let currentSceneData = null;
 
 function loadScene(sceneId) {
-    // Si on retourne au menu principal depuis un Game Over
-    if (sceneId === "partie1" && currentSceneData && currentSceneData.topText === "Game Over") {
-        document.getElementById('main-menu').style.display = 'flex'; // On réaffiche le menu
-        videoElement.pause(); // On coupe la vidéo
+    if (sceneId === "menu") {
+        document.getElementById('main-menu').style.display = 'flex';
+        videoElement.pause();
+        currentSceneData = null;
         return;
     }
 
     currentSceneData = story[sceneId];
+    const langData = currentSceneData[currentLang];
     
     topTextElement.classList.remove('visible');
     bottomTextElement.classList.remove('visible');
@@ -240,62 +202,75 @@ function loadScene(sceneId) {
     choicesContainer.innerHTML = '';
     
     videoElement.src = currentSceneData.videoSrc;
+    videoElement.loop = currentSceneData.loop || false;
     videoElement.load(); 
     
     let playPromise = videoElement.play();
     if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.log("Lecture auto bloquée ou fichier introuvable : ", error);
-            showInterface(); 
-        });
+        playPromise.catch(error => { console.log("Lecture bloquée : ", error); });
     }
 
-    topTextElement.innerText = currentSceneData.topText || "";
-    bottomTextElement.innerText = currentSceneData.bottomText || "";
+    topTextElement.innerText = langData.topText || "";
+    
+    // Si c'est une scène avec des dialogues qui défilent
+    if (langData.dialogues && langData.dialogues.length > 0) {
+        currentDialogIndex = 0;
+        showNextDialogLine();
+    } else {
+        // Scène classique avec juste un texte et un choix
+        bottomTextElement.innerText = langData.bottomText || "";
+        langData.choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice.text;
+            btn.onclick = () => loadScene(choice.targetScene);
+            choicesContainer.appendChild(btn);
+        });
+        if (!currentSceneData.showUIAtEnd) showInterface();
+    }
+}
 
-    currentSceneData.choices.forEach(choice => {
-        const btn = document.createElement('button');
-        btn.className = 'choice-btn';
-        btn.innerText = choice.text;
-        btn.onclick = () => loadScene(choice.targetScene);
-        choicesContainer.appendChild(btn);
-    });
-
-    if (!currentSceneData.showUIAtEnd) {
+function showNextDialogLine() {
+    const langData = currentSceneData[currentLang];
+    
+    if (currentDialogIndex < langData.dialogues.length) {
+        bottomTextElement.innerText = langData.dialogues[currentDialogIndex];
+        choicesContainer.innerHTML = '';
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'choice-btn';
+        nextBtn.innerText = currentLang === 'fr' ? "▶ Suivant" : "▶ Next";
+        nextBtn.onclick = () => {
+            currentDialogIndex++;
+            showNextDialogLine();
+        };
+        choicesContainer.appendChild(nextBtn);
         showInterface();
+    } else {
+        bottomTextElement.innerText = langData.bottomText || "";
+        choicesContainer.innerHTML = '';
+        langData.choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice.text;
+            btn.onclick = () => loadScene(choice.targetScene);
+            choicesContainer.appendChild(btn);
+        });
     }
 }
 
 function showInterface() {
     if (topTextElement.innerText !== "") topTextElement.classList.add('visible');
     if (bottomTextElement.innerText !== "") bottomTextElement.classList.add('visible');
-    if (currentSceneData.choices.length > 0) choicesContainer.classList.add('visible');
+    if (choicesContainer.innerHTML !== "") choicesContainer.classList.add('visible');
 }
 
 videoElement.onended = () => {
-    if (currentSceneData.showUIAtEnd) {
+    if (currentSceneData.showUIAtEnd && !currentSceneData.loop) {
         showInterface();
     }
 };
 
-// --- GESTION MODAL & THÈME ---
-function toggleSettings() {
-    const modal = document.getElementById('settings-modal');
-    modal.classList.toggle('show');
-}
-
-function toggleTheme() {
-    document.body.classList.toggle('dark-mode');
-}
-
-// --- BOUTONS DU MENU PRINCIPAL ---
-function startNewGame() {
-    // On cache le menu et on lance la partie 1
-    document.getElementById('main-menu').style.display = 'none';
-    loadScene('partie1');
-}
-
-function quitGame() {
-    // Redirige vers la page d'accueil (ou l'index racine de ton projet)
-    window.location.href = "../index.html"; 
-}
+function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
+function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+function startNewGame() { document.getElementById('main-menu').style.display = 'none'; loadScene('partie1'); }
+function quitGame() { window.location.href = "../index.html"; }
