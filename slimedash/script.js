@@ -77,9 +77,6 @@ document.addEventListener('fullscreenchange', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ==========================================
-    // DICTIONNAIRE DE LANGUES
-    // ==========================================
     const translations = {
         fr: {
             settings_title: "Paramètres", language: "Langue 🌍", sound: "Audio 🎵",
@@ -109,16 +106,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentLang = localStorage.getItem('slimeDashLang') || 'fr';
 
-    // Rendre la fonction accessible globalement via window
     window.setLanguage = function(lang) {
         currentLang = lang;
         localStorage.setItem('slimeDashLang', lang);
         
-        // Mettre à jour les boutons FR/EN visuellement
         document.getElementById('btn-lang-fr').classList.toggle('active', lang === 'fr');
         document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
         
-        // Traduire l'image du Retour Hub 
         const hubImg = document.getElementById('img-retour-hub');
         if(hubImg) {
             hubImg.src = lang === 'fr' ? '../img/retourhub.png' : '../img/returbhub.png';
@@ -126,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         updateMuteButton();
 
-        // Traduire le texte statique (data-i18n)
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (translations[lang][key]) {
@@ -163,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Initialisation
     setLanguage(currentLang);
 
     btnMute.addEventListener('click', () => {
@@ -213,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editorPanel = document.getElementById('editor-panel');
     const statusText = document.getElementById('status-text');
     const stopTestBtn = document.getElementById('btn-stop-test');
+    const uiLayer = document.getElementById('ui-layer'); // Nouvelle référence à l'UI
 
     let width, height;
     let gameState = 'START'; 
@@ -396,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
         menuScreen.style.display = 'none';
         gameOverScreen.style.display = 'none';
         editorPanel.style.display = 'none';
+        uiLayer.style.display = 'flex'; // On affiche les scores quand on joue !
         
         if (isTest) stopTestBtn.style.display = 'block';
         else stopTestBtn.style.display = 'none';
@@ -440,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         menuScreen.style.display = 'none';
         gameOverScreen.style.display = 'none';
         stopTestBtn.style.display = 'none';
+        uiLayer.style.display = 'flex'; // On affiche l'UI dans l'éditeur !
         
         editorPanel.style.transform = 'translateX(-50%)';
         editorPanel.style.left = '50%';
@@ -470,7 +465,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setAnimState('IDLE');
         stopTestBtn.style.display = 'none'; 
         
-        // Traduction du bouton retour
         document.getElementById('btn-back-menu').innerText = currentIsTest ? translations[currentLang].back_editor : translations[currentLang].back_menu;
 
         if (isVictory) {
@@ -508,15 +502,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showMenu(title, color) {
         gameState = 'START';
-        menuScreen.style.display = 'block';
+        menuScreen.style.display = 'flex'; // On affiche le conteneur du menu
         gameOverScreen.style.display = 'none';
         editorPanel.style.display = 'none';
         stopTestBtn.style.display = 'none';
         document.getElementById('code-section').style.display = 'none';
-        
-        // On n'affiche plus le titre car tu as le roller.png, mais la logique reste si tu as un H1
-        const mTitle = document.getElementById('menu-title');
-        mTitle.innerText = title; mTitle.style.color = color; mTitle.style.textShadow = `0 0 15px ${color}`;
+        uiLayer.style.display = 'none'; // MASQUE le bloc de score + "MENU"
         
         statusText.style.color = "var(--neon-cyan)";
         updateStatusText();
@@ -1059,5 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.restore();
     }
 
+    // Lance l'écran de démarrage à l'initialisation du jeu.
+    showMenu("Slime-Dash", "var(--neon-cyan)");
     requestAnimationFrame(mainLoop);
 });
