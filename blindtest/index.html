@@ -5,42 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Slime Blind Test - Multiplayer</title>
     
-    <!-- Liens externes -->
+    <!-- Liens externes (PeerJS et Nouvelles Polices Slimesques) -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Itim&display=swap" rel="stylesheet">
     
     <!-- Lien vers ton fichier CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    <!-- Bouton Retour au Hub avec ton Image -->
+    <a href="../index.html" class="hub-link">
+        <img id="hub-img" src="retourhub.png" alt="Retour au Hub">
+    </a>
+
+    <!-- Sélecteur de Langue en haut à droite -->
+    <div id="lang-toggle" onclick="toggleLanguage()">🇬🇧 EN</div>
     
-    <!-- Titre principal -->
-    <h1 style="display: none;">Slime Blind Test</h1> <!-- Masqué si tu utilises le titre dans l'image de fond -->
+    <h1 style="display: none;">Slime Blind Test</h1>
 
     <div id="game-container">
-        <!-- HEADER (IN-GAME) -->
-        <div id="game-header">
-            <div id="scores-container"></div>
-            <div id="timer-box">20</div>
-        </div>
-
-        <!-- TRACK INFO -->
-        <div id="track-info">
-            <div class="mystery-box" id="box-artist" style="display: none;">🧑‍🎤 ARTISTE : ? ? ?</div>
-            <div class="mystery-box" id="box-title" style="display: none;">🎵 TITRE : ? ? ?</div>
-            <div class="mystery-box" id="box-anime" style="display: none; padding: 25px; font-size: 2em;">📺 ANIME : ? ? ?</div>
-        </div>
-
-        <!-- CHAT -->
-        <div id="chat-container">
-            <div id="chat-messages"></div>
-            <div id="chat-input-area">
-                <input type="text" id="guess-input" placeholder="Analyse en attente... Tapez ici." autocomplete="off">
-                <button id="btn-send" onclick="submitGuess()">ENVOYER</button>
-            </div>
-        </div>
-
         <!-- MENU CATÉGORIE (SLIME THEME) -->
         <div class="overlay" id="category-menu">
             <div class="menu-title">SÉLECTION DE LA PLAYLIST</div>
@@ -61,7 +44,7 @@
 
             <div id="loading-api" style="display: none; flex-direction: column; align-items: center;">
                 <div class="loader"></div>
-                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px;">Génération des pistes originales en cours...</p>
+                <p style="font-weight:700; color:var(--sys); font-size:1.3em; margin-top: 15px; font-family: 'Itim', cursive;">Génération des pistes en cours...</p>
             </div>
         </div>
 
@@ -71,7 +54,7 @@
 
             <div style="background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px; border: 1px solid var(--gold); width: 340px; margin-bottom: 20px; text-align: center;">
                 <h3 style="color: #fff; margin-top: 0; font-size: 1.2em;">VOTRE PSEUDO :</h3>
-                <input type="text" id="player-name-input" class="input-pseudo" placeholder="Ex: CyberNinja" maxlength="12">
+                <input type="text" id="player-name-input" class="input-pseudo" placeholder="Ex: CyberSlime" maxlength="12">
             </div>
 
             <div style="display: flex; gap: 20px;">
@@ -98,8 +81,33 @@
         <!-- ECRAN D'ATTENTE GUEST -->
         <div class="overlay" id="waiting-menu" style="display: none;">
             <div class="menu-title" style="color:var(--sys); font-size:2.5em; margin-bottom:20px;">CONNEXION ÉTABLIE</div>
-            <p style="font-size:1.5em; color:#fff; font-weight:600;">En attente du lancement par l'hôte...</p>
+            <p style="font-size:1.5em; color:#fff; font-weight:600; font-family: 'Itim', cursive;">En attente du lancement par l'hôte...</p>
             <div class="loader"></div>
+        </div>
+
+        <!-- INTERFACE DE JEU (MASQUÉE JUSQU'AU LANCEMENT) -->
+        <div id="in-game-ui" style="display: none; flex-direction: column; height: 100%;">
+            <!-- HEADER (IN-GAME) -->
+            <div id="game-header">
+                <div id="scores-container"></div>
+                <div id="timer-box">20</div>
+            </div>
+
+            <!-- TRACK INFO -->
+            <div id="track-info">
+                <div class="mystery-box" id="box-artist" style="display: none;">🧑‍🎤 ARTISTE : ? ? ?</div>
+                <div class="mystery-box" id="box-title" style="display: none;">🎵 TITRE : ? ? ?</div>
+                <div class="mystery-box" id="box-anime" style="display: none; padding: 25px; font-size: 2em;">📺 ANIME : ? ? ?</div>
+            </div>
+
+            <!-- CHAT -->
+            <div id="chat-container">
+                <div id="chat-messages"></div>
+                <div id="chat-input-area">
+                    <input type="text" id="guess-input" placeholder="Analyse en attente... Tapez ici." autocomplete="off">
+                    <button id="btn-send" onclick="submitGuess()">ENVOYER</button>
+                </div>
+            </div>
         </div>
 
         <!-- ECRAN DE FIN -->
