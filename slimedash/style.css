@@ -1,0 +1,208 @@
+:root {
+    --bg-color: #050811;
+    --neon-cyan: #00f0ff;
+    --neon-pink: #ff007f;
+    --neon-green: #39ff14;
+    --neon-yellow: #fce803;
+    --neon-red: #ff3333;
+    --text-color: #e0e0e0;
+    --font-main: 'Rajdhani', sans-serif;
+    --panel: rgba(10, 15, 28, 0.85);
+}
+
+body, html {
+    margin: 0; padding: 0; width: 100vw; height: 100vh;
+    background-color: var(--bg-color); color: var(--text-color);
+    font-family: var(--font-main); overflow: hidden;
+    display: flex; justify-content: center; align-items: center;
+}
+
+/* --- CONTENEUR PRINCIPAL DU JEU --- */
+#game-container {
+    position: relative; width: 100%; height: 100%; max-width: 1200px; max-height: 700px;
+    background: var(--panel); box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
+    touch-action: none; overflow: hidden; border: 2px solid rgba(57, 255, 20, 0.3); border-radius: 15px;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    backdrop-filter: blur(10px);
+}
+
+canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
+
+/* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
+.size-classic canvas { width: 100%; height: 100%; }
+
+#game-container.size-wide, #game-container.size-full {
+    position: fixed !important; top: 0; left: 0; 
+    width: 100vw !important; height: 100vh !important;
+    max-width: none; max-height: none; border-radius: 0; border: none; padding: 0; 
+    z-index: 999; background: var(--bg-color); 
+}
+#game-container.size-wide canvas, #game-container.size-full canvas {
+    width: 100vw; height: 100vh; border-radius: 0; border: none; object-fit: fill;
+}
+
+/* --- BOUTON RETOUR AU HUB (Image dynamique) --- */
+#btn-retour-hub {
+    position: fixed; top: 20px; left: 20px; z-index: 9999;
+    display: flex; align-items: center; 
+    background: transparent; border: none; padding: 0; box-shadow: none;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+#btn-retour-hub img {
+    max-height: 55px; 
+    object-fit: contain;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6));
+    transition: filter 0.3s ease;
+}
+#btn-retour-hub:hover {
+    transform: scale(1.08) translateX(5px);
+}
+#btn-retour-hub:hover img {
+    filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6)) brightness(1.1);
+}
+
+/* --- BOUTONS OPTIONS FLOTTANTS --- */
+.floating-controls {
+    position: absolute; top: 20px; right: 80px; z-index: 1000;
+    display: flex; gap: 15px;
+}
+#btn-stop-test {
+    background-color: rgba(0, 0, 0, 0.5); border: 1px solid var(--neon-cyan);
+    padding: 8px 15px; font-family: inherit; font-size: 1.1rem; border-radius: 8px; 
+    cursor: pointer; font-weight: bold; transition: 0.2s ease; backdrop-filter: blur(5px);
+    border-color: var(--neon-pink); color: var(--neon-pink); display: none;
+}
+#btn-stop-test:hover { background-color: rgba(255, 0, 127, 0.15); box-shadow: 0 0 15px rgba(255, 0, 127, 0.5); color: #fff; }
+
+/* --- BOUTON SETTINGS & ORBITE --- */
+.settings-btn-wrapper { position: fixed; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 9999; }
+.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+.orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+.orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--neon-green); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--neon-green), 0 0 5px #ffffff; }
+.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+.settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+@keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* --- MODAL PARAMETRES & TAILLE D'ÉCRAN --- */
+#settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+#settings-modal.show { opacity: 1; pointer-events: auto; }
+.settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--neon-cyan); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+.size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--neon-cyan); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+.btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+.btn-size.active { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+#btn-mute { width: 100%; transition: all 0.3s ease; }
+.close-btn { margin-top: 25px; background: var(--neon-cyan); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+.close-btn:hover { box-shadow: 0 0 20px var(--neon-cyan); transform: scale(1.05); }
+
+#ui-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; display: flex; flex-direction: column;
+    justify-content: space-between; padding: 25px; box-sizing: border-box;
+    z-index: 50;
+}
+
+.score-board {
+    display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: bold;
+    color: var(--neon-pink); text-shadow: 0 0 12px var(--neon-pink); letter-spacing: 2px;
+    pointer-events: auto; padding-top: 60px;
+}
+
+/* --- NOUVEAU MENU ORGANIQUE (roller.png) --- */
+#menu-screen {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; pointer-events: auto; 
+    
+    background: url('img/roller.png') center/100% 100% no-repeat;
+    background-color: rgba(5, 20, 15, 0.7); 
+    padding: 80px 70px 60px 70px; 
+    
+    border: none; 
+    box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+    border-radius: 20px; 
+    z-index: 100; 
+    width: 90%; max-width: 650px;
+}
+
+#gameover-screen { 
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; pointer-events: auto; 
+    background: rgba(10, 15, 28, 0.8); backdrop-filter: blur(15px);
+    padding: 40px 60px; border-radius: 20px; z-index: 100; width: 90%; max-width: 600px;
+    border: 2px solid rgba(255, 0, 127, 0.3); 
+    box-shadow: 0 15px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 0, 127, 0.1); 
+    display: none; 
+}
+
+h1 { margin-top: 0; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--neon-green); text-transform: uppercase; font-size: 3.5rem; letter-spacing: 5px; }
+p { color: #ccc; margin-bottom: 25px; font-size: 1.2rem; line-height: 1.5; font-weight: bold;}
+
+.btn-group { display: flex; flex-direction: column; gap: 20px; justify-content: center; align-items: center; margin-bottom: 20px;}
+.btn-row { display: flex; gap: 20px; justify-content: center; width: 100%; }
+
+/* --- STYLE DES BOUTONS IMAGES --- */
+.image-btn {
+    background: transparent; border: none; padding: 0; cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease;
+    outline: none;
+}
+.image-btn img {
+    display: block; width: 100%; max-height: 80px; object-fit: contain;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6));
+}
+#btn-play-endless img { max-height: 110px; }
+
+.image-btn:hover {
+    transform: scale(1.08) translateY(-4px);
+    filter: brightness(1.15) drop-shadow(0 10px 15px rgba(57, 255, 20, 0.3));
+}
+.image-btn:active { transform: scale(0.95); filter: brightness(0.9); }
+
+/* Boutons classiques conservés pour codes/erreurs */
+.action-btn-main {
+    width: 100%; max-width: 400px; padding: 15px; margin: 5px 0;
+    font-size: 1.3rem; font-family: 'Rajdhani', sans-serif; font-weight: bold;
+    color: #fff; text-transform: uppercase; letter-spacing: 1px;
+    background: rgba(0,0,0,0.5); border: 2px solid transparent; border-radius: 10px; 
+    cursor: pointer; transition: all 0.3s ease; pointer-events: auto;
+}
+.btn-code { border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
+.btn-code:hover { background: var(--neon-pink); box-shadow: 0 10px 30px rgba(255, 0, 127, 0.6); color: #000; }
+.btn-play { border-color: var(--neon-green); box-shadow: 0 0 15px rgba(57, 255, 20, 0.2); }
+.btn-play:hover { background: var(--neon-green); box-shadow: 0 10px 30px rgba(57, 255, 20, 0.6); color:#000;}
+.btn-edit { border-color: var(--neon-yellow); box-shadow: 0 0 15px rgba(252, 232, 3, 0.2); }
+.btn-edit:hover { background: var(--neon-yellow); box-shadow: 0 10px 30px rgba(252, 232, 3, 0.6); color:#000;}
+
+#code-section {
+    border-top: 1px solid rgba(255,255,255,0.1); padding-top: 25px; margin-top: 15px;
+    display: none; flex-direction: column; gap: 15px; align-items: center; width: 100%;
+}
+input[type="text"] {
+    background: rgba(0,0,0,0.8); border: 1px solid var(--neon-pink); color: #fff;
+    padding: 15px; font-size: 1.2rem; font-family: inherit; font-weight: bold; outline: none; 
+    text-align: center; width: 80%; border-radius: 8px;
+}
+input[type="text"]:focus { box-shadow: 0 0 15px var(--neon-pink); }
+
+#editor-panel {
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(11, 12, 16, 0.95); border: 2px solid var(--neon-yellow);
+    padding: 15px 20px; border-radius: 10px; display: none; gap: 10px; pointer-events: auto;
+    box-shadow: 0 0 15px var(--neon-yellow); z-index: 100; align-items: center; flex-wrap: nowrap; 
+    cursor: grab;
+}
+#editor-panel:active { cursor: grabbing; }
+
+.tool-btn { 
+    padding: 10px; font-size: 1.3rem; border-color: gray; color: gray; min-width: 45px; 
+    background: #000; cursor: pointer; border-radius: 5px; border-style: solid; border-width: 2px;
+}
+.tool-btn.active { border-color: var(--neon-yellow); color: var(--neon-yellow); box-shadow: 0 0 10px var(--neon-yellow); }
+.divider { width: 2px; height: 40px; background: gray; margin: 0 5px; }
+.action-btn { padding: 10px 15px; font-size: 1rem; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; background: #000; font-family: inherit; }
+.action-tester { border: 2px solid var(--neon-green); color: var(--neon-green); }
+.action-exporter { border: 2px solid var(--neon-cyan); color: var(--neon-cyan); }
+.action-quitter { border: 2px solid var(--neon-pink); color: var(--neon-pink); }
+.action-tester:hover { background: var(--neon-green); color: #000; }
+.action-exporter:hover { background: var(--neon-cyan); color: #000; }
+.action-quitter:hover { background: var(--neon-pink); color: #000; }
