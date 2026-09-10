@@ -75,13 +75,33 @@ function toggleSettings() {
 
 
 // ==========================================
+// GESTION DE LA LANGUE
+// ==========================================
+function setLanguage(lang) {
+    const btnReturnHub = document.getElementById('btn-return-hub');
+    
+    if (lang === 'en') {
+        btnReturnHub.src = '../img/returbhub.png'; 
+    } else {
+        btnReturnHub.src = '../img/retourhub.png';
+    }
+}
+
+
+// ==========================================
 // MOTEUR DE JEU JAVASCRIPT
 // ==========================================
 
-// --- AUDIO : BRUITAGES PIKMIN / PLAYTEST ---
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// --- AUDIO : BRUITAGES PIKMIN / PLAYTEST (Sécurisé pour le local) ---
+let audioCtx;
+try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+} catch(e) {
+    console.warn("Audio bloqué par le navigateur en local.");
+}
 
 function playSound(type) {
+    if (!audioCtx) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -152,8 +172,13 @@ let score = 0;
 let tileIdCounter = 0;
 let tiles = {};
 
-// --- GESTION DU MEILLEUR SCORE ---
-let bestScore = localStorage.getItem('fuslime1_best_score') || 0;
+// --- GESTION DU MEILLEUR SCORE (Sécurisé pour le local) ---
+let bestScore = 0;
+try {
+    bestScore = localStorage.getItem('fuslime1_best_score') || 0;
+} catch(e) {
+    console.warn("Sauvegarde bloquée en local.");
+}
 bestScoreElement.innerText = bestScore;
 
 // Générer les 16 cases de fond
@@ -247,10 +272,12 @@ function removeTileElement(id, targetR, targetC) {
 function updateScore() { 
     scoreElement.innerText = score; 
     
-    // Mise à jour du Best Score en temps réel
+    // Mise à jour du Best Score en temps réel (Sécurisé)
     if (score > bestScore) {
         bestScore = score;
-        localStorage.setItem('fuslime1_best_score', bestScore);
+        try {
+            localStorage.setItem('fuslime1_best_score', bestScore);
+        } catch(e) {}
         bestScoreElement.innerText = bestScore;
     }
 }
@@ -354,7 +381,7 @@ const gameContainer = document.getElementById('game-container');
 let gameTouchX = 0, gameTouchY = 0;
 
 gameContainer.addEventListener('touchstart', e => {
-    if (audioCtx.state === 'suspended') audioCtx.resume(); 
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
     gameTouchX = e.touches[0].clientX;
     gameTouchY = e.touches[0].clientY;
     e.stopPropagation();
