@@ -132,79 +132,35 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 /* =========================================
-   UI DU JEU TETRIS
+   🕹️ ALIGNEMENT MANUEL PRÉCIS (Tes Valeurs Finales)
    ========================================= */
 
-#game-ui { 
-    transition: transform 0.3s ease; 
-    transform-origin: center center; 
-    gap: 15px !important; 
-}
-
-.side-panel { 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: flex-start;
-    width: 160px; 
-}
-
-.panel-box {
-    background: transparent !important; box-shadow: none !important; 
-    backdrop-filter: none !important; padding: 0 !important;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-}
-
-.panel-val { 
-    font-size: 2.3em; 
-    color: #fff; 
-    text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
-    line-height: 1; 
-    margin-bottom: 5px; 
-}
-.best-score-text {
-    font-size: 0.9rem; 
-    color: var(--gold);
-    text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-    margin-top: 0px; 
-}
-
-/* =========================================
-   🕹️ ALIGNEMENT MANUEL PRÉCIS (Tes Valeurs Pures !)
-   ========================================= */
-
-/* Dimensions des boîtes pour forcer la bonne taille */
 .box-score { width: 130px; height: 90px; }
 .box-lines { width: 130px; height: 90px; }
 .box-next  { width: 150px; height: 150px; }
 
-/* 🟥 Score (Rouge) */
 .box-score {
-    transform: translate(81px, -114px) scale(0.79) !important;
+    transform: translate(4px, -121px) scale(1) !important;
     transform-origin: center center !important;
 }
 
-/* 🟩 Lignes (Vert) */
 .box-lines {
-    transform: translate(79px, -76px) scale(0.78) !important;
+    transform: translate(4px, -72px) scale(1) !important;
     transform-origin: center center !important;
 }
 
-/* 🟦 Suivant (Cyan) */
 .box-next {
-    transform: translate(97px, 8px) scale(0.87) !important;
+    transform: translate(23px, 10px) scale(1) !important;
     transform-origin: center center !important;
 }
 
-/* 🟪 Plateau (Rose) */
 .board-wrapper {
-    background: transparent !important; 
-    box-shadow: none !important; 
-    backdrop-filter: none !important; 
-    padding: 0 !important; 
-    margin: 0 !important; /* 💡 On supprime les vieilles marges parasites ! */
+    background: transparent !important; box-shadow: none !important; 
+    backdrop-filter: none !important; padding: 0 !important; 
     
-    transform: translate(83px, -3px) scale(1.03) !important;
-    transform-origin: center center !important;
+    margin: 0 !important; /* On tue la marge parasite pour que tes calculs marchent */
+    transform: translate(4px, -11px) scale(1.03) !important;
+    transform-origin: center center !important; 
 }
 
 canvas { display: block; border-radius: 5px; }
