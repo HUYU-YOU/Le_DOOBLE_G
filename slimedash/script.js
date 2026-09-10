@@ -1,0 +1,1063 @@
+// ==========================================
+// 1. EVENT LISTENERS GLOBAUX ET UI
+// ==========================================
+
+document.addEventListener('touchstart', (e) => { 
+    if(e.target.closest('.no-swipe')) e.stopPropagation(); 
+}, { passive: false });
+
+const settingsBtnImg = document.getElementById('settings-btn-img');
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+let hoverInterval; let currentFrame = 0;
+
+function startSettingsAnim() {
+    if (hoverInterval) return;
+    currentFrame = 0;
+    settingsBtnImg.src = animFrames[currentFrame];
+    hoverInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % animFrames.length;
+        settingsBtnImg.src = animFrames[currentFrame];
+    }, 100); 
+}
+
+function stopSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+}
+
+function clickSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    settingsBtnImg.src = '../img/settings4.png';
+    toggleSettings();
+    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+}
+
+function toggleSettings() {
+    document.getElementById('settings-modal').classList.toggle('show');
+}
+
+function setGameSize(size) {
+    const container = document.getElementById('game-container');
+    const btns = document.querySelectorAll('.btn-size');
+    
+    document.getElementById('btn-sz-classic').classList.remove('active');
+    document.getElementById('btn-sz-wide').classList.remove('active');
+    document.getElementById('btn-sz-full').classList.remove('active');
+
+    container.classList.remove('size-classic', 'size-wide', 'size-full');
+    
+    if (size === 'classic') {
+        container.classList.add('size-classic');
+        document.getElementById('btn-sz-classic').classList.add('active');
+        if (document.fullscreenElement) document.exitFullscreen();
+    } 
+    else if (size === 'wide') {
+        container.classList.add('size-wide');
+        document.getElementById('btn-sz-wide').classList.add('active');
+        if (document.fullscreenElement) document.exitFullscreen();
+    } 
+    else if (size === 'full') {
+        container.classList.add('size-full');
+        document.getElementById('btn-sz-full').classList.add('active');
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(e => console.log(e));
+        }
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+        setGameSize('wide');
+    }
+});
+
+// ==========================================
+// 2. LOGIQUE PRINCIPALE DU JEU
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // ==========================================
+    // DICTIONNAIRE DE LANGUES
+    // ==========================================
+    const translations = {
+        fr: {
+            settings_title: "Paramètres", language: "Langue 🌍", sound: "Audio 🎵",
+            sound_on: "🔊 SON: ON", sound_off: "🔇 SON: OFF",
+            screen_size: "Format de l'Écran 🖥️", size_small: "Petit", size_wide: "Plein Page", size_full: "Plein Écran",
+            close: "Fermer", stop_test: "🛑 STOP TEST",
+            score_label: "SCORE:", hi_score_label: "HI-SCORE:", fireflies_label: "LUCIOLES:", deaths_label: "MORTS:",
+            status_menu: "MENU", status_endless: "COURSE INFINIE", status_test: "TEST DE MAP", status_shared: "MAP PARTAGÉE", status_editor: "MODE ÉDITEUR",
+            crash: "CRASH CRITIQUE", level_complete: "NIVEAU ACCOMPLI !",
+            back_menu: "RETOUR MENU", back_editor: "RETOUR ÉDITEUR",
+            replay: "REJOUER", play_map_code: "LANCER LA MAP", press_space: "Appuyez sur ESPACE pour rejouer",
+            btn_test: "TESTER", btn_export: "📤 EXPORTER", btn_quit: "QUITTER"
+        },
+        en: {
+            settings_title: "Settings", language: "Language 🌍", sound: "Audio 🎵",
+            sound_on: "🔊 SOUND: ON", sound_off: "🔇 SOUND: OFF",
+            screen_size: "Screen Size 🖥️", size_small: "Small", size_wide: "Wide Page", size_full: "Full Screen",
+            close: "Close", stop_test: "🛑 STOP TEST",
+            score_label: "SCORE:", hi_score_label: "HI-SCORE:", fireflies_label: "FIREFLIES:", deaths_label: "DEATHS:",
+            status_menu: "MENU", status_endless: "ENDLESS RUN", status_test: "MAP TEST", status_shared: "SHARED MAP", status_editor: "EDITOR MODE",
+            crash: "CRITICAL CRASH", level_complete: "LEVEL COMPLETED!",
+            back_menu: "BACK TO MENU", back_editor: "BACK TO EDITOR",
+            replay: "REPLAY", play_map_code: "PLAY MAP", press_space: "Press SPACE to replay",
+            btn_test: "TEST", btn_export: "📤 EXPORT", btn_quit: "QUIT"
+        }
+    };
+
+    let currentLang = localStorage.getItem('slimeDashLang') || 'fr';
+
+    // Rendre la fonction accessible globalement via window
+    window.setLanguage = function(lang) {
+        currentLang = lang;
+        localStorage.setItem('slimeDashLang', lang);
+        
+        // Mettre à jour les boutons FR/EN visuellement
+        document.getElementById('btn-lang-fr').classList.toggle('active', lang === 'fr');
+        document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
+        
+        // Traduire l'image du Retour Hub 
+        const hubImg = document.getElementById('img-retour-hub');
+        if(hubImg) {
+            hubImg.src = lang === 'fr' ? '../img/retourhub.png' : '../img/returbhub.png';
+        }
+        
+        updateMuteButton();
+
+        // Traduire le texte statique (data-i18n)
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[lang][key]) {
+                el.innerText = translations[lang][key];
+            }
+        });
+
+        updateStatusText();
+    };
+
+    function updateStatusText() {
+        const sText = document.getElementById('status-text');
+        if (!sText) return;
+        if (gameState === 'START') sText.innerText = translations[currentLang].status_menu;
+        else if (gameState === 'PLAYING_ENDLESS') sText.innerText = translations[currentLang].status_endless;
+        else if (gameState === 'EDITOR') sText.innerText = translations[currentLang].status_editor;
+        else if (gameState === 'PLAYING_CUSTOM') sText.innerText = currentIsTest ? translations[currentLang].status_test : translations[currentLang].status_shared;
+    }
+
+    let ytPlayer;
+    let audioStarted = false;
+    let isMuted = localStorage.getItem('isMuted') === 'true';
+    const btnMute = document.getElementById('btn-mute');
+    
+    function updateMuteButton() {
+        if (isMuted) {
+            btnMute.innerText = translations[currentLang].sound_off;
+            btnMute.style.color = "var(--neon-pink)";
+            btnMute.style.borderColor = "var(--neon-pink)";
+        } else {
+            btnMute.innerText = translations[currentLang].sound_on;
+            btnMute.style.color = "var(--neon-cyan)";
+            btnMute.style.borderColor = "var(--neon-cyan)";
+        }
+    }
+    
+    // Initialisation
+    setLanguage(currentLang);
+
+    btnMute.addEventListener('click', () => {
+        isMuted = !isMuted;
+        localStorage.setItem('isMuted', isMuted);
+        updateMuteButton();
+        
+        if (isMuted) {
+            if (ytPlayer && typeof ytPlayer.mute === 'function') ytPlayer.mute();
+        } else {
+            if (ytPlayer && typeof ytPlayer.unMute === 'function') {
+                ytPlayer.unMute();
+                ytPlayer.setVolume(10);
+            }
+        }
+    });
+
+    window.onYouTubeIframeAPIReady = function() {
+        ytPlayer = new YT.Player('yt-player', {
+            height: '0', width: '0', videoId: '0QjHiah9Z3I', 
+            playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
+            events: { 
+                'onReady': (e) => {
+                    e.target.setVolume(10);
+                    if (isMuted) e.target.mute();
+                }, 
+                'onStateChange': (e) => { if (e.data === YT.PlayerState.ENDED) ytPlayer.playVideo(); } 
+            }
+        });
+    };
+
+    function initAudio() {
+        if (!audioStarted && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+            try { 
+                ytPlayer.playVideo(); 
+                if (isMuted) ytPlayer.mute(); else ytPlayer.unMute();
+                audioStarted = true; 
+            } 
+            catch(e) { console.warn("Erreur Audio Youtube :", e); }
+        }
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const menuScreen = document.getElementById('menu-screen');
+    const gameOverScreen = document.getElementById('gameover-screen');
+    const editorPanel = document.getElementById('editor-panel');
+    const statusText = document.getElementById('status-text');
+    const stopTestBtn = document.getElementById('btn-stop-test');
+
+    let width, height;
+    let gameState = 'START'; 
+    let currentActiveMode = 'PLAYING_ENDLESS'; 
+    let currentIsTest = false; 
+    
+    const GRID_SIZE = 60; 
+    const GROUND_HEIGHT = 90;
+    let gameSpeed = 300; 
+    
+    const GRAVITY = 3600; 
+    const JUMP_FORCE = -1050; 
+    let jumpBufferTimer = 0; 
+
+    let cameraX = 0;
+    let editorCamTarget = 0;
+    let score = 0;
+    
+    let currentEndlessSeed = 12345;
+    let activePRNGSeed = 12345;
+    function resetSeed(s) { activePRNGSeed = s; }
+    function seededRandom() {
+        let t = activePRNGSeed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+    
+    let hiScore = localStorage.getItem('slimeDashHiScore') || 0;
+    const hiScoreElem = document.getElementById('hi-score');
+    if (hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
+
+    let deaths = localStorage.getItem('slimeDashDeaths') || 0;
+    const deathElem = document.getElementById('death-count');
+    if (deathElem) deathElem.innerText = deaths;
+
+    let totalFireflies = parseInt(localStorage.getItem('slimeDashFireflies')) || 0;
+    const firefliesElem = document.getElementById('fireflies-count');
+    if (firefliesElem) firefliesElem.innerText = totalFireflies;
+
+    let particles = [];
+    let shakeTimer = 0, shakeIntensity = 0;
+
+    let levelData = []; 
+    let endlessLevelData = []; 
+    let nextEndlessSpawnX = 0; 
+    let consecutiveObstacles = 0;
+
+    let defaultLevel = [
+        {x: 10, y: 0, type: 'block'}, {x: 11, y: 0, type: 'block'}, {x: 12, y: 1, type: 'block'},
+        {x: 15, y: 3, type: 'coin'}, {x: 16, y: 3, type: 'coin'},
+        {x: 17, y: 0, type: 'spike'}, {x: 22, y: 0, type: 'hole'},  {x: 23, y: 0, type: 'hole'},
+        {x: 26, y: 0, type: 'pad'}, {x: 28, y: 4, type: 'block'}, {x: 29, y: 4, type: 'holo'}, {x: 30, y: 4, type: 'block'},
+        {x: 35, y: 0, type: 'flag'}
+    ];
+
+    try {
+        let savedLvl = localStorage.getItem('slimeDashLevel');
+        if(savedLvl && savedLvl !== "null" && savedLvl !== "undefined") { 
+            levelData = JSON.parse(savedLvl);
+        } else {
+            levelData = JSON.parse(JSON.stringify(defaultLevel));
+        }
+    } catch (err) {
+        levelData = JSON.parse(JSON.stringify(defaultLevel));
+    }
+
+    const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7, 'start_flag': 8 };
+    const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin', 8: 'start_flag' };
+
+    const sprites = { idle: [], run: [], jump: [], land: [] };
+    const bgImages = []; 
+    const platformImg = new Image();
+    const lucioleImg = new Image(); 
+    const carreImg = new Image();     
+    const triangleImg = new Image();  
+    const rebonImg = new Image();     
+    
+    function loadFrames(category, filenames) {
+        filenames.forEach(file => { 
+            const img = new Image(); 
+            img.src = 'img/' + file; 
+            sprites[category].push(img); 
+        });
+    }
+    
+    loadFrames('idle', ['slm1.png', 'slm2.png', 'slm3.png', 'slm4.png']);
+    loadFrames('run',  ['slm5.png', 'slm6.png', 'slm7.png', 'slm8.png']);
+    loadFrames('jump', ['slm10.png', 'slm11.png', 'slm12.png', 'slm13.png', 'slm14.png', 'slm15.png', 'slm16.png']);
+    loadFrames('land', ['slm17.png', 'slm18.png', 'slm19.png', 'slm20.png']);
+
+    for(let i = 1; i <= 5; i++) {
+        let img = new Image();
+        img.src = `img/img${i}.jpg`;
+        bgImages.push(img);
+    }
+    platformImg.src = 'img/base.png'; 
+    lucioleImg.src = 'img/luciole.png';
+    carreImg.src = 'img/carre.png';       
+    triangleImg.src = 'img/triangle.png'; 
+    rebonImg.src = 'img/rebon.png';       
+
+    const player = {
+        x: 150, y: 0, prevY: 0, size: 60, vy: 0, isGrounded: false,
+        animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1
+    };
+
+    function setAnimState(newState) {
+        if (player.animState === newState) return;
+        player.animState = newState; player.frameIndex = 0; player.animTimer = 0;
+        if (newState === 'LAND') player.animSpeed = 0.05;
+        else if (newState === 'RECOVER') player.animSpeed = 0.08;
+        else if (newState === 'RUN') player.animSpeed = 0.08;
+        else if (newState === 'JUMP') player.animSpeed = 0.06;
+        else player.animSpeed = 0.15;
+    }
+
+    function resize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        width = rect.width; height = rect.height;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr; canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+        if(gameState === 'START' || gameState === 'EDITOR') {
+            player.y = height - GROUND_HEIGHT - player.size;
+            player.prevY = player.y;
+        }
+    }
+    window.addEventListener('resize', resize); resize();
+
+    function spawnParticles(x, y, color, count = 10) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 200 + 50;
+            particles.push({
+                x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                size: Math.random() * 5 + 2, color: color, alpha: 1, decay: Math.random() * 2 + 1.5
+            });
+        }
+    }
+    function triggerShake(duration, intensity) { shakeTimer = duration; shakeIntensity = intensity; }
+
+    document.getElementById('btn-play-endless').addEventListener('click', () => {
+        currentEndlessSeed = Math.floor(Math.random() * 10000000);
+        startGame('PLAYING_ENDLESS', false);
+    });
+
+    document.getElementById('btn-create-map').addEventListener('click', () => startEditor());
+    
+    document.getElementById('btn-play-code').addEventListener('click', () => {
+        const sec = document.getElementById('code-section');
+        sec.style.display = sec.style.display === 'flex' ? 'none' : 'flex';
+    });
+
+    document.getElementById('test-btn').addEventListener('click', () => startGame('PLAYING_CUSTOM', true));
+
+    document.getElementById('btn-replay').addEventListener('click', () => {
+        gameOverScreen.style.display = 'none';
+        startGame(currentActiveMode, currentIsTest);
+    });
+
+    document.getElementById('btn-back-menu').addEventListener('click', () => {
+        gameOverScreen.style.display = 'none';
+        if (currentIsTest) {
+            startEditor();
+        } else {
+            showMenu("Slime-Dash", "var(--neon-cyan)");
+        }
+    });
+
+    stopTestBtn.addEventListener('click', () => {
+        stopTestBtn.style.display = 'none';
+        startEditor();
+    });
+
+    function startGame(mode, isTest = false) {
+        initAudio();
+        currentActiveMode = mode; 
+        currentIsTest = isTest;
+        gameState = mode;
+        menuScreen.style.display = 'none';
+        gameOverScreen.style.display = 'none';
+        editorPanel.style.display = 'none';
+        
+        if (isTest) stopTestBtn.style.display = 'block';
+        else stopTestBtn.style.display = 'none';
+        
+        player.vy = 0; jumpBufferTimer = 0;
+        setAnimState('RUN');
+        score = 0; particles = []; shakeTimer = 0;
+        
+        if (levelData && Array.isArray(levelData)) {
+            levelData.forEach(obs => obs.collected = false);
+        }
+        
+        if (mode === 'PLAYING_ENDLESS') {
+            gameSpeed = 300; 
+            endlessLevelData = [];
+            consecutiveObstacles = 0;
+            nextEndlessSpawnX = Math.floor(width / GRID_SIZE) + 10;
+            resetSeed(currentEndlessSeed); 
+            statusText.style.color = "var(--neon-pink)";
+            cameraX = 0;
+            player.y = height - GROUND_HEIGHT - player.size;
+            player.prevY = player.y;
+        } else {
+            gameSpeed = 350; 
+            statusText.style.color = "var(--neon-green)";
+            const startPoint = levelData.find(o => o.type === 'start_flag');
+            if (startPoint) {
+                cameraX = (startPoint.x * GRID_SIZE) - player.x;
+                player.y = height - GROUND_HEIGHT - player.size - (startPoint.y * GRID_SIZE);
+            } else {
+                cameraX = 0;
+                player.y = height - GROUND_HEIGHT - player.size;
+            }
+            player.prevY = player.y;
+        }
+        updateStatusText();
+    }
+
+    function startEditor() {
+        initAudio();
+        gameState = 'EDITOR';
+        menuScreen.style.display = 'none';
+        gameOverScreen.style.display = 'none';
+        stopTestBtn.style.display = 'none';
+        
+        editorPanel.style.transform = 'translateX(-50%)';
+        editorPanel.style.left = '50%';
+        editorPanel.style.top = '20px';
+        editorPanel.style.display = 'flex';
+        
+        if (levelData && Array.isArray(levelData)) {
+            levelData.forEach(obs => obs.collected = false);
+        }
+        
+        player.y = height - GROUND_HEIGHT - player.size;
+        setAnimState('IDLE');
+        statusText.style.color = "var(--neon-yellow)";
+        updateStatusText();
+
+        const startPoint = levelData.find(o => o.type === 'start_flag');
+        if (startPoint) {
+            cameraX = (startPoint.x * GRID_SIZE) - 150; 
+            editorCamTarget = cameraX;
+        } else {
+            cameraX = 0; 
+            editorCamTarget = 0;
+        }
+    }
+
+    function gameOver(isVictory = false) {
+        triggerShake(0.4, 15);
+        setAnimState('IDLE');
+        stopTestBtn.style.display = 'none'; 
+        
+        // Traduction du bouton retour
+        document.getElementById('btn-back-menu').innerText = currentIsTest ? translations[currentLang].back_editor : translations[currentLang].back_menu;
+
+        if (isVictory) {
+            gameState = 'VICTORY';
+            spawnParticles(player.x + player.size/2, player.y, 'var(--neon-yellow)', 50);
+            
+            document.getElementById('go-title').innerText = translations[currentLang].level_complete;
+            document.getElementById('go-title').style.color = "var(--neon-yellow)";
+            document.getElementById('go-score').innerText = Math.floor(score);
+            gameOverScreen.style.border = "2px solid var(--neon-yellow)";
+            gameOverScreen.style.boxShadow = "0 0 25px var(--neon-yellow)";
+            gameOverScreen.style.display = 'block';
+        } else {
+            gameState = 'GAMEOVER';
+            spawnParticles(player.x + player.size/2, player.y + player.size/2, '#ff007f', 40);
+            
+            deaths++;
+            localStorage.setItem('slimeDashDeaths', deaths);
+            if (deathElem) deathElem.innerText = deaths;
+
+            if (score > hiScore) {
+                hiScore = score;
+                localStorage.setItem('slimeDashHiScore', hiScore);
+                if(hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
+            }
+
+            document.getElementById('go-title').innerText = translations[currentLang].crash;
+            document.getElementById('go-title').style.color = "var(--neon-pink)";
+            document.getElementById('go-score').innerText = Math.floor(score);
+            gameOverScreen.style.border = "2px solid var(--neon-pink)";
+            gameOverScreen.style.boxShadow = "0 0 25px var(--neon-pink)";
+            gameOverScreen.style.display = 'block';
+        }
+    }
+
+    function showMenu(title, color) {
+        gameState = 'START';
+        menuScreen.style.display = 'block';
+        gameOverScreen.style.display = 'none';
+        editorPanel.style.display = 'none';
+        stopTestBtn.style.display = 'none';
+        document.getElementById('code-section').style.display = 'none';
+        
+        // On n'affiche plus le titre car tu as le roller.png, mais la logique reste si tu as un H1
+        const mTitle = document.getElementById('menu-title');
+        mTitle.innerText = title; mTitle.style.color = color; mTitle.style.textShadow = `0 0 15px ${color}`;
+        
+        statusText.style.color = "var(--neon-cyan)";
+        updateStatusText();
+        
+        try {
+            let savedLvl = localStorage.getItem('slimeDashLevel');
+            if(savedLvl && savedLvl !== "null") levelData = JSON.parse(savedLvl);
+        } catch(e) {}
+    }
+
+    let isDraggingPanel = false;
+    let panelOffsetX, panelOffsetY;
+
+    editorPanel.addEventListener('mousedown', (e) => {
+        if(e.target.closest('.tool-btn') || e.target.closest('.action-btn')) return;
+        isDraggingPanel = true;
+        const rect = editorPanel.getBoundingClientRect();
+        editorPanel.style.transform = 'none'; 
+        panelOffsetX = e.clientX - rect.left;
+        panelOffsetY = e.clientY - rect.top;
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (!isDraggingPanel) return;
+        editorPanel.style.left = (e.clientX - panelOffsetX) + 'px';
+        editorPanel.style.top = (e.clientY - panelOffsetY) + 'px';
+    });
+    document.addEventListener('mouseup', () => { isDraggingPanel = false; });
+
+    editorPanel.addEventListener('touchstart', (e) => {
+        if(e.target.closest('.tool-btn') || e.target.closest('.action-btn')) return;
+        isDraggingPanel = true;
+        const rect = editorPanel.getBoundingClientRect();
+        editorPanel.style.transform = 'none'; 
+        panelOffsetX = e.touches[0].clientX - rect.left;
+        panelOffsetY = e.touches[0].clientY - rect.top;
+    }, {passive: false});
+    document.addEventListener('touchmove', (e) => {
+        if (!isDraggingPanel) return;
+        editorPanel.style.left = (e.touches[0].clientX - panelOffsetX) + 'px';
+        editorPanel.style.top = (e.touches[0].clientY - panelOffsetY) + 'px';
+    }, {passive: false});
+    document.addEventListener('touchend', () => { isDraggingPanel = false; });
+
+    let currentTool = 'block';
+    let isBuilding = false;
+    let hoverGridX = -1, hoverGridY = -1;
+    let isHovering = false;
+
+    document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active'); 
+            currentTool = e.currentTarget.getAttribute('data-tool');
+        });
+    });
+
+    document.getElementById('cam-left').addEventListener('click', () => editorCamTarget -= GRID_SIZE * 6);
+    document.getElementById('cam-right').addEventListener('click', () => editorCamTarget += GRID_SIZE * 6);
+    
+    canvas.addEventListener('wheel', (e) => {
+        if(gameState === 'EDITOR') {
+            e.preventDefault();
+            editorCamTarget += Math.sign(e.deltaY) * GRID_SIZE * 2;
+        }
+    }, { passive: false });
+
+    document.getElementById('exit-btn').addEventListener('click', () => {
+        localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); 
+        showMenu("Slime-Dash", "var(--neon-cyan)");
+    });
+
+    document.getElementById('export-btn').addEventListener('click', () => {
+        try {
+            const minified = levelData.map(o => [o.x, o.y, typeMap[o.type]]);
+            const baseCode = btoa(JSON.stringify(minified));
+            prompt("Code de ta Map à partager :", baseCode);
+        } catch (e) { alert("Erreur d'exportation."); }
+    });
+
+    document.getElementById('load-code-btn').addEventListener('click', () => {
+        const inputVal = document.getElementById('map-code-input').value.trim();
+        if(inputVal !== "") {
+            try {
+                const minified = JSON.parse(atob(inputVal));
+                const newLevel = minified.map(arr => ({ x: arr[0], y: arr[1], type: revTypeMap[arr[2]] }));
+                if (!Array.isArray(newLevel) || newLevel.length === 0) throw new Error();
+                levelData = newLevel;
+                document.getElementById('map-code-input').value = "";
+                startGame('PLAYING_CUSTOM', false); 
+            } catch (e) { alert("Erreur : Code Invalide."); }
+        } else { alert("Veuillez coller un code."); }
+    });
+
+    function updateEditorCursor(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const mouseX = (clientX - rect.left) * (canvas.width / rect.width / (window.devicePixelRatio || 1));
+        const mouseY = (clientY - rect.top) * (canvas.height / rect.height / (window.devicePixelRatio || 1));
+        const worldX = mouseX + cameraX;
+        
+        hoverGridX = Math.floor(worldX / GRID_SIZE);
+        const groundY = height - GROUND_HEIGHT;
+        hoverGridY = Math.floor((groundY - mouseY) / GRID_SIZE);
+        isHovering = true;
+    }
+
+    function placeBlockAtCursor() {
+        if (hoverGridY < 0 && currentTool !== 'hole') return; 
+        
+        if (currentTool === 'flag') levelData = levelData.filter(o => o.type !== 'flag'); 
+        if (currentTool === 'start_flag') levelData = levelData.filter(o => o.type !== 'start_flag'); 
+
+        if (currentTool === 'coin') {
+            const currentCoins = levelData.filter(o => o.type === 'coin').length;
+            const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
+            if (existingIndex === -1 || levelData[existingIndex].type !== 'coin') {
+                if (currentCoins >= 20) return; 
+            }
+        }
+
+        if (currentTool === 'hole') {
+            const existingIndex1 = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === 0);
+            if (existingIndex1 !== -1) levelData.splice(existingIndex1, 1);
+            const existingIndex2 = levelData.findIndex(obj => obj.x === hoverGridX + 1 && obj.y === 0);
+            if (existingIndex2 !== -1) levelData.splice(existingIndex2, 1);
+            
+            levelData.push({x: hoverGridX, y: 0, type: 'hole'});
+            levelData.push({x: hoverGridX + 1, y: 0, type: 'hole'});
+        } else {
+            const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
+            if (currentTool === 'eraser') {
+                if (existingIndex !== -1) levelData.splice(existingIndex, 1);
+            } else {
+                if (existingIndex !== -1 && levelData[existingIndex].type === currentTool) return;
+                if (existingIndex !== -1) levelData.splice(existingIndex, 1);
+                levelData.push({x: hoverGridX, y: hoverGridY, type: currentTool});
+            }
+        }
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (gameState.startsWith('PLAYING')) { e.preventDefault(); triggerJump(); return; }
+        if (gameState !== 'EDITOR') return;
+        isBuilding = true; updateEditorCursor(e); placeBlockAtCursor();
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if (gameState !== 'EDITOR') return;
+        updateEditorCursor(e); if (isBuilding) placeBlockAtCursor();
+    });
+    canvas.addEventListener('mouseup', () => {
+        if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
+    });
+    canvas.addEventListener('mouseleave', () => {
+        isHovering = false;
+        if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
+    });
+    canvas.addEventListener('touchstart', (e) => {
+        if (gameState.startsWith('PLAYING')) { e.preventDefault(); triggerJump(); return; }
+        if (gameState !== 'EDITOR') return;
+        isBuilding = true; updateEditorCursor(e); placeBlockAtCursor();
+    }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => {
+        if (gameState !== 'EDITOR') return;
+        updateEditorCursor(e); if (isBuilding) placeBlockAtCursor();
+    }, {passive: false});
+    canvas.addEventListener('touchend', () => {
+        if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; isHovering = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
+    });
+
+    function updateEndlessGeneration() {
+        const currentGridX = Math.floor(cameraX / GRID_SIZE);
+        const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 6; 
+
+        if (nextEndlessSpawnX < targetGridX) {
+            const r = seededRandom();
+            let type = 'coin';
+            let y = 0;
+            let gap = 2; 
+
+            if (consecutiveObstacles >= 2) {
+                type = 'coin'; y = 1; gap = 2; consecutiveObstacles = 0;
+            } else {
+                if (r > 0.85) { type = 'hole'; gap = 5; consecutiveObstacles = 0; }
+                else if (r > 0.65) { type = 'spike'; gap = 3; consecutiveObstacles++; }
+                else if (r > 0.4) { type = 'block'; y = seededRandom() > 0.5 ? 1 : 0; gap = 2; consecutiveObstacles++; }
+                else if (r > 0.25) { type = 'pad'; gap = 2; consecutiveObstacles = 0; }
+                else { type = 'coin'; y = 1; gap = 2; consecutiveObstacles = 0; }
+            }
+
+            if (type === 'hole') {
+                endlessLevelData.push({x: nextEndlessSpawnX, y: 0, type: 'hole', collected: false});
+                endlessLevelData.push({x: nextEndlessSpawnX + 1, y: 0, type: 'hole', collected: false});
+            } else {
+                endlessLevelData.push({x: nextEndlessSpawnX, y: y, type: type, collected: false});
+            }
+            
+            nextEndlessSpawnX += gap;
+        }
+
+        if (endlessLevelData.length > 50 && endlessLevelData[0].x < currentGridX - 10) {
+            endlessLevelData.shift();
+        }
+    }
+
+    function executeJump() {
+        player.vy = JUMP_FORCE; 
+        player.isGrounded = false;
+        setAnimState('JUMP');
+        if(!isMuted) spawnParticles(player.x + player.size/2, player.y + player.size, 'var(--neon-green)', 15);
+    }
+
+    function triggerJump() {
+        if (gameState.startsWith('PLAYING')) {
+            if (player.isGrounded) executeJump();
+            else jumpBufferTimer = 0.15;
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+            if (gameState.startsWith('PLAYING')) {
+                e.preventDefault(); triggerJump();
+            } else if (gameState === 'GAMEOVER' || gameState === 'VICTORY') {
+                e.preventDefault();
+                gameOverScreen.style.display = 'none';
+                startGame(currentActiveMode, currentIsTest);
+            }
+        }
+    });
+
+    function checkCollisions(activeLevelData) {
+        if (!activeLevelData || !Array.isArray(activeLevelData)) return;
+
+        const playerWorldX = player.x + cameraX;
+        const playerCenterGridX = Math.floor((playerWorldX + player.size/2) / GRID_SIZE);
+        
+        const holeUnder = activeLevelData.find(o => o.type === 'hole' && o.x === playerCenterGridX);
+        const currentGroundLevel = holeUnder ? 9999 : (height - GROUND_HEIGHT - player.size);
+
+        if (holeUnder && player.y >= (height - GROUND_HEIGHT - player.size)) {
+            gameOver(false); return;
+        }
+
+        if (player.y >= currentGroundLevel) {
+            player.y = currentGroundLevel; player.vy = 0;
+            if (!player.isGrounded) {
+                player.isGrounded = true; setAnimState('LAND');
+                if(!isMuted) spawnParticles(player.x + player.size/2, player.y + player.size, 'rgba(57, 255, 20, 0.7)', 8);
+                if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
+            }
+        } else {
+            player.isGrounded = false;
+            if (player.animState !== 'JUMP') setAnimState('JUMP');
+        }
+
+        if (player.y > height + 100) { gameOver(false); return; }
+
+        const nearbyObjects = activeLevelData.filter(o => o.type !== 'hole' && Math.abs((o.x * GRID_SIZE) - playerWorldX) < 200);
+        
+        for (let obs of nearbyObjects) {
+            if(obs.collected || obs.type === 'holo' || obs.type === 'start_flag') continue; 
+
+            const obsScreenX = (obs.x * GRID_SIZE) - cameraX;
+            const obsScreenY = height - GROUND_HEIGHT - ((obs.y + 1) * GRID_SIZE);
+            const obsSize = GRID_SIZE;
+            const tolX = 12, tolY = 12;
+            const hitX = (player.x + tolX < obsScreenX + obsSize) && (player.x + player.size - tolX > obsScreenX);
+            
+            if (obs.type === 'coin') {
+                const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
+                if (hitX && hitY) {
+                    obs.collected = true; score += 500;
+                    totalFireflies++; localStorage.setItem('slimeDashFireflies', totalFireflies);
+                    if(firefliesElem) firefliesElem.innerText = totalFireflies;
+                    if(!isMuted) spawnParticles(obsScreenX + obsSize/2, obsScreenY + obsSize/2, '#ccff00', 20);
+                }
+                continue; 
+            }
+
+            if (obs.type === 'pad') {
+                const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
+                if (hitX && hitY) {
+                    player.vy = JUMP_FORCE * 1.5; player.isGrounded = false; setAnimState('JUMP');
+                    if(!isMuted) spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 20);
+                    continue;
+                }
+            }
+
+            if (obs.type === 'block') {
+                const hitY = (player.y + tolY < obsScreenY + obsSize) && (player.y + player.size - tolY > obsScreenY);
+                if (hitX && hitY) {
+                    if (player.vy > 0 && player.prevY + player.size <= obsScreenY + 25) {
+                        player.y = obsScreenY - player.size; player.vy = 0; 
+                        if(!player.isGrounded) { 
+                            player.isGrounded = true; setAnimState('LAND'); 
+                            if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
+                        }
+                        continue; 
+                    }
+                    gameOver(false); return;
+                }
+            } 
+            else if (obs.type === 'spike') {
+                let inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
+                let hitY = false;
+                if (inverted) hitY = (player.y + tolY < obsScreenY + obsSize * 0.6) && (player.y + player.size - tolY > obsScreenY);
+                else hitY = (player.y + player.size - tolY > obsScreenY + obsSize * 0.4) && (player.y + tolY < obsScreenY + obsSize);
+                if (hitX && hitY) { gameOver(false); return; }
+            }
+            else if (obs.type === 'flag') {
+                const hitY = (player.y + tolY < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
+                if (hitX && hitY) { gameOver(true); return; } 
+            }
+        }
+    }
+
+    let lastTime = performance.now();
+
+    function mainLoop(currentTime) {
+        const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+        lastTime = currentTime;
+        update(dt); draw();
+        requestAnimationFrame(mainLoop);
+    }
+
+    function update(dt) {
+        if (jumpBufferTimer > 0) jumpBufferTimer -= dt;
+
+        player.animTimer += dt;
+        if (player.animTimer >= player.animSpeed) {
+            player.animTimer = 0; player.frameIndex++;
+            if (player.animState === 'JUMP') { if (player.frameIndex >= sprites.jump.length) player.frameIndex = sprites.jump.length - 1; } 
+            else if (player.animState === 'LAND') { if (player.frameIndex >= sprites.land.length) setAnimState('RECOVER'); }
+            else if (player.animState === 'RECOVER') { if (player.frameIndex >= sprites.idle.length) setAnimState('RUN'); }
+            else if (player.animState === 'IDLE') { player.frameIndex = player.frameIndex % sprites.idle.length; }
+            else if (player.animState === 'RUN') { player.frameIndex = player.frameIndex % sprites.run.length; }
+        }
+
+        particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.alpha -= p.decay * dt; if (p.alpha <= 0) particles.splice(i, 1); });
+        if (shakeTimer > 0) shakeTimer -= dt;
+
+        if (gameState === 'START') cameraX += 30 * dt;
+
+        if (gameState.startsWith('PLAYING')) {
+            cameraX += gameSpeed * dt;
+            player.prevY = player.y; 
+            player.vy += GRAVITY * dt;
+            player.y += player.vy * dt;
+
+            score += gameSpeed * dt * 0.1;
+            const scoreElem = document.getElementById('score');
+            if (scoreElem) scoreElem.innerText = Math.floor(score);
+
+            if (gameState === 'PLAYING_ENDLESS') {
+                gameSpeed += dt * 5; 
+                updateEndlessGeneration();
+                checkCollisions(endlessLevelData);
+            } else {
+                checkCollisions(levelData); 
+            }
+        } 
+        else if (gameState === 'EDITOR') {
+            cameraX += (editorCamTarget - cameraX) * 10 * dt;
+            if(cameraX < 0) { cameraX = 0; editorCamTarget = 0; }
+        }
+    }
+
+    function drawImageBackground() {
+        let seqW = 0; let widths = [];
+        for (let i = 0; i < bgImages.length; i++) {
+            let img = bgImages[i];
+            if (img.complete && img.naturalHeight > 0) {
+                let w = (height / img.naturalHeight) * img.naturalWidth;
+                widths.push(w); seqW += w;
+            } else widths.push(0);
+        }
+
+        if (seqW === 0) return; 
+        let scrollX = cameraX * 0.15; let startX = -(scrollX % seqW); let currentX = startX;
+
+        while (currentX < width) {
+            for (let i = 0; i < bgImages.length; i++) {
+                let img = bgImages[i]; let imgW = widths[i];
+                if (imgW > 0 && currentX + imgW > 0 && currentX < width) ctx.drawImage(img, currentX, 0, imgW, height);
+                currentX += imgW;
+            }
+        }
+    }
+
+    function drawEditorObject(type, screenX, screenY, alpha = 1, isInverted = false) {
+        ctx.globalAlpha = alpha;
+        const VISUAL_SCALE = 1.5; 
+        const drawW = Math.floor(GRID_SIZE * VISUAL_SCALE);
+        const drawH = Math.floor(GRID_SIZE * VISUAL_SCALE);
+        const drawX = Math.floor(screenX - (drawW - GRID_SIZE) / 2);
+        
+        const BLOCK_SCALE = 1.65;
+        const blockW = Math.floor(GRID_SIZE * BLOCK_SCALE);
+        const blockH = Math.floor(GRID_SIZE * BLOCK_SCALE);
+        const blockX = Math.floor(screenX - (blockW - GRID_SIZE) / 2);
+        const blockAlignBottomY = screenY + GRID_SIZE - blockH;
+        const alignBottomY = screenY + GRID_SIZE - drawH;
+
+        if (type === 'block') {
+            if (carreImg.complete && carreImg.naturalWidth > 0) ctx.drawImage(carreImg, blockX, blockAlignBottomY + 27, blockW, blockH); 
+            else {
+                ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+                ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+            }
+        } 
+        else if (type === 'pad') {
+            if (rebonImg.complete && rebonImg.naturalWidth > 0) ctx.drawImage(rebonImg, drawX, alignBottomY + 20, drawW, drawH); 
+            else {
+                ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
+                ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+            }
+        }
+        else if (type === 'holo') {
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.15)'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+            ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.setLineDash([]);
+        }
+        else if (type === 'coin') {
+            const floatY = Math.floor(screenY + Math.sin(performance.now()/150) * 8); 
+            const coinY = Math.floor(floatY - (drawH - GRID_SIZE) / 2);
+            if (lucioleImg.complete && lucioleImg.naturalWidth > 0) {
+                ctx.shadowBlur = 15; ctx.shadowColor = '#ccff00';
+                ctx.drawImage(lucioleImg, drawX, coinY, drawW, drawH);
+                ctx.shadowBlur = 0;
+            } else {
+                ctx.shadowBlur = 20; ctx.shadowColor = '#ccff00'; ctx.fillStyle = '#eaff80';
+                ctx.beginPath(); ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+            }
+        }
+        else if (type === 'spike') {
+            if (isInverted) {
+                ctx.save(); ctx.translate(screenX + GRID_SIZE/2, screenY + GRID_SIZE/2);
+                ctx.scale(1, -1); ctx.translate(-(screenX + GRID_SIZE/2), -(screenY + GRID_SIZE/2));
+            }
+            if (triangleImg.complete && triangleImg.naturalWidth > 0) ctx.drawImage(triangleImg, drawX, alignBottomY + 25, drawW, drawH); 
+            else {
+                ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
+                ctx.lineTo(screenX, screenY + GRID_SIZE); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+            }
+            if (isInverted) ctx.restore();
+        }
+        else if (type === 'flag' || type === 'start_flag') {
+            const fColor = type === 'flag' ? 'var(--neon-yellow)' : 'var(--neon-green)';
+            ctx.shadowBlur = 15; ctx.shadowColor = fColor; ctx.fillStyle = fColor;
+            ctx.fillRect(screenX + GRID_SIZE/2 - 2, screenY - GRID_SIZE, 4, GRID_SIZE * 2); 
+            ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE); ctx.lineTo(screenX + GRID_SIZE, screenY - GRID_SIZE + 20);
+            ctx.lineTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE + 40); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    function draw() {
+        ctx.save();
+        if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
+        ctx.clearRect(0, 0, width, height);
+
+        drawImageBackground(); 
+
+        if (gameState === 'EDITOR') {
+            ctx.strokeStyle = `rgba(57, 255, 20, 0.2)`; ctx.lineWidth = 1; ctx.beginPath();
+            const offsetX = cameraX % GRID_SIZE;
+            for(let x = -offsetX; x < width; x += GRID_SIZE) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+            for(let y = (height - GROUND_HEIGHT) % GRID_SIZE; y < height; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+            ctx.stroke();
+        }
+
+        const groundY = height - GROUND_HEIGHT;
+
+        if (platformImg.complete && platformImg.naturalWidth > 0) {
+            const scale = GROUND_HEIGHT / platformImg.naturalHeight;
+            const pWidth = Math.ceil(platformImg.naturalWidth * scale); 
+            let scrollX = Math.floor(cameraX) % pWidth;
+            for (let i = -scrollX; i < width; i += pWidth) ctx.drawImage(platformImg, i, groundY, pWidth, GROUND_HEIGHT);
+        } else {
+            ctx.fillStyle = '#050508'; ctx.fillRect(0, groundY, width, GROUND_HEIGHT);
+            ctx.shadowBlur = 10; ctx.shadowColor = 'var(--neon-green)'; ctx.strokeStyle = 'var(--neon-green)'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width, groundY); ctx.stroke(); ctx.shadowBlur = 0;
+        }
+
+        const activeLevelData = gameState === 'PLAYING_ENDLESS' ? endlessLevelData : levelData;
+        for (let screenX = 0; screenX <= width; screenX += GRID_SIZE) {
+            const worldX = screenX + cameraX; const gridX = Math.floor(worldX / GRID_SIZE);
+            if (activeLevelData.some(o => o.type === 'hole' && o.x === gridX)) { 
+                const exactScreenX = (gridX * GRID_SIZE) - cameraX;
+                ctx.clearRect(exactScreenX, groundY, GRID_SIZE, GROUND_HEIGHT);
+                ctx.fillStyle = '#000'; ctx.fillRect(exactScreenX, groundY, GRID_SIZE, GROUND_HEIGHT);
+            } 
+        }
+
+        if(activeLevelData && Array.isArray(activeLevelData)) {
+            activeLevelData.forEach(obs => {
+                if (obs.type === 'hole' || obs.collected) return; 
+                const screenX = (obs.x * GRID_SIZE) - cameraX; const screenY = groundY - ((obs.y + 1) * GRID_SIZE);
+                if(screenX + GRID_SIZE < 0 || screenX > width) return;
+                let inverted = false;
+                if (obs.type === 'spike') inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
+                drawEditorObject(obs.type, screenX, screenY, 1, inverted);
+            });
+        }
+
+        if (gameState === 'EDITOR' && isHovering) {
+            const ghostScreenX = (hoverGridX * GRID_SIZE) - cameraX;
+            const ghostScreenY = currentTool === 'hole' ? groundY : groundY - ((hoverGridY + 1) * GRID_SIZE);
+            if (currentTool === 'eraser') { 
+                ctx.fillStyle = 'rgba(255, 0, 127, 0.4)'; ctx.fillRect(ghostScreenX, ghostScreenY, GRID_SIZE, GRID_SIZE); 
+            } else { 
+                let inverted = false;
+                if (currentTool === 'spike') inverted = levelData.some(o => o.x === hoverGridX && o.y === hoverGridY + 1 && o.type === 'block');
+                drawEditorObject(currentTool, ghostScreenX, ghostScreenY, 0.5, inverted); 
+            }
+        }
+
+        let currentArray = sprites.idle;
+        if(player.animState === 'RUN') currentArray = sprites.run;
+        else if(player.animState === 'JUMP') currentArray = sprites.jump;
+        else if(player.animState === 'LAND') currentArray = sprites.land;
+        
+        let safeIndex = player.frameIndex % currentArray.length;
+        if (player.animState === 'JUMP' && player.frameIndex >= currentArray.length) safeIndex = currentArray.length - 1;
+        const activeImg = currentArray[safeIndex];
+
+        if (activeImg && activeImg.complete && activeImg.naturalWidth > 0) {
+            ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)';
+            ctx.drawImage(activeImg, Math.floor(player.x), Math.floor(player.y), player.size, player.size);
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.fillStyle = '#0b0c10'; ctx.fillRect(Math.floor(player.x), Math.floor(player.y), player.size, player.size);
+            ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 3; ctx.strokeRect(Math.floor(player.x), Math.floor(player.y), player.size, player.size);
+        }
+
+        particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.alpha); ctx.fillRect(p.x, p.y, p.size, p.size); });
+        ctx.globalAlpha = 1;
+        ctx.restore();
+    }
+
+    requestAnimationFrame(mainLoop);
+});
