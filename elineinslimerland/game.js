@@ -6,6 +6,7 @@ const menuTranslations = {
 
 let currentLang = 'fr'; 
 let currentDialogIndex = 0; 
+let uiTriggered = false; // Permet de savoir si l'interface a déjà été affichée
 
 // --- LE SCÉNARIO DU JEU ---
 const story = {
@@ -41,7 +42,7 @@ const story = {
         en: { topText: "Fleeing...", bottomText: "Eline runs to escape, but trips and falls into the strange portal!", choices: [{ text: "Where does it go?", targetScene: "eline3" }] }
     },
     eline3: {
-        videoSrc: "assets/ELINE3.mp4", loop: true, showUIAtEnd: false, 
+        videoSrc: "assets/ELINE3.mp4", loop: false, showUIAtEnd: false, 
         fr: {
             topText: "Un nouveau chemin",
             dialogues: [
@@ -70,7 +71,7 @@ const story = {
         }
     },
     ville_miao: {
-        videoSrc: "assets/MIAO.mp4", loop: true, showUIAtEnd: false, 
+        videoSrc: "assets/MIAO.mp4", loop: false, showUIAtEnd: false, 
         fr: {
             topText: "La Ville des Slimes",
             dialogues: [
@@ -93,7 +94,7 @@ const story = {
         }
     },
     eline4: {
-        videoSrc: "assets/ELINE4.mp4", loop: true, showUIAtEnd: false,
+        videoSrc: "assets/ELINE4.mp4", loop: false, showUIAtEnd: false,
         fr: {
             topText: "La Forêt Sombre",
             dialogues: [
@@ -128,41 +129,51 @@ const story = {
     },
     choix4: { 
         videoSrc: "assets/CHOIX4.mp4", loop: false, showUIAtEnd: true,
-        fr: { topText: "Plein d'amour", bottomText: "L'empathie d'Éline fait des miracles. Le slime fond de bonheur sous le câlin !", choices: [{ text: "Reprendre la route", targetScene: "eline5" }] },
-        en: { topText: "Full of love", bottomText: "Eline's empathy works wonders. The slime melts with happiness under the hug!", choices: [{ text: "Hit the road again", targetScene: "eline5" }] }
+        fr: { topText: "Alerte !", bottomText: "Son talisman se met à briller, ce qui énerve les petits slimes..!", choices: [{ text: "Vite, fuir !", targetScene: "eline5" }] },
+        en: { topText: "Alert!", bottomText: "Her talisman starts glowing, which angers the little slimes..!", choices: [{ text: "Run away quickly!", targetScene: "eline5" }] }
     },
+    
+    // --- LA GROSSE SCÈNE FUSIONNÉE (ELINE 5 + ELINE 6) ---
     eline5: {
-        videoSrc: "assets/ELINE5.mp4", loop: false, showUIAtEnd: true,
-        fr: { topText: "Toujours plus loin...", bottomText: "Éline avance prudemment, mais une silhouette bouge dans la brume.", choices: [{ text: "S'approcher", targetScene: "eline6" }] },
-        en: { topText: "Deeper and deeper...", bottomText: "Eline moves carefully, but a silhouette moves in the mist.", choices: [{ text: "Approach", targetScene: "eline6" }] }
-    },
-    eline6: {
-        videoSrc: "assets/ELINE6.mp4", loop: true, showUIAtEnd: false,
+        videoSrc: "assets/ELINE5.mp4", 
+        nextVideoAutoPlay: "assets/ELINE6.mp4", // S'enchaîne automatiquement !
+        loop: false, 
+        loopNext: false, // Eline6 se fige à la fin en attendant le choix
+        showUIAtTime: 15, // Le dialogue démarre à pile 15 secondes
         fr: {
-            topText: "L'Étranger",
+            topText: "La Rencontre",
             dialogues: [
-                "L'ombre se dissipe légèrement. Quelqu'un fait signe à Éline de le suivre très vite.",
-                "Éline : Je ne sais pas si c'est une très bonne idée de suivre un inconnu ici..."
+                "Éline : « Attends... tu parles ?! C’est quoi ici ? Qu'est-ce que je fais là ? »",
+                "Le Renard : « Oh, une rebelle ! Bienvenue sur le territoire des slimes, gamine. Surtout après avoir eu la brillante idée de piquer leur artefact... »",
+                "Éline : « Quoi ? Quel artefact ? Et comment tu peux savoir tout ça sur moi, toi ? »",
+                "Le Renard : « Disons que ton petit pendentif, là, autour de ton cou, brille un peu trop fort pour passer inaperçu. »",
+                "Éline : « Ce truc ? Je l'ai juste... trouvé par terre ! »",
+                "Le Renard : « À Slimerland, on ne 'trouve' rien, on signe son arrêt de mort. Bon... tu veux qu'on s'associe pour survivre, ou je te laisse finir en apéritif pour baveux ? »"
             ],
-            bottomText: "Que faire face à cette ombre ?",
+            bottomText: "Que faire face à lui ?",
             choices: [
-                { text: "Faire confiance et le suivre", targetScene: "eline7" },
+                { text: "Faire confiance et s'associer", targetScene: "eline7" },
                 { text: "FUIR dans l'autre sens !", targetScene: "fin1" }
             ]
         },
         en: {
-            topText: "The Stranger",
+            topText: "The Encounter",
             dialogues: [
-                "The shadow dissipates slightly. Someone waves at Eline to follow them quickly.",
-                "Eline: I don't know if following a stranger here is a good idea..."
+                "Eline: « Wait... you can talk?! What is this place? What am I doing here? »",
+                "The Fox: « Oh, a rebel! Welcome to slime territory, kid. Especially after your brilliant idea to steal their artifact... »",
+                "Eline: « What? What artifact? And how do you know all this about me? »",
+                "The Fox: « Let's just say your little pendant there, around your neck, is glowing a bit too brightly to go unnoticed. »",
+                "Eline: « This thing? I just... found it on the ground! »",
+                "The Fox: « In Slimerland, you don't 'find' things, you sign your own death warrant. So... wanna team up to survive, or should I leave you as an appetizer for the slimes? »"
             ],
-            bottomText: "What to do with this shadow?",
+            bottomText: "What to do?",
             choices: [
-                { text: "Trust and follow", targetScene: "eline7" },
+                { text: "Trust and team up", targetScene: "eline7" },
                 { text: "FLEE the other way!", targetScene: "fin1" }
             ]
         }
     },
+    
     fin1: {
         videoSrc: "assets/FIN1.mp4", loop: false, showUIAtEnd: true,
         fr: { topText: "Fin de l'Aventure", bottomText: "Éline a paniqué et s'est perdue à jamais dans les méandres de Slimerland.", choices: [{ text: "Recommencer", targetScene: "menu" }] },
@@ -182,7 +193,24 @@ const bottomTextElement = document.getElementById('bottom-text');
 const choicesContainer = document.getElementById('choices-container');
 const gameContainer = document.getElementById('game-container');
 const mainMenu = document.getElementById('main-menu');
-let currentSceneData = null;
+
+function triggerUI() {
+    const langData = currentSceneData[currentLang];
+    if (langData.dialogues && langData.dialogues.length > 0) {
+        currentDialogIndex = 0;
+        showNextDialogLine();
+    } else {
+        bottomTextElement.innerText = langData.bottomText || "";
+        langData.choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = choice.text;
+            btn.onclick = () => loadScene(choice.targetScene);
+            choicesContainer.appendChild(btn);
+        });
+        showInterface();
+    }
+}
 
 function loadScene(sceneId) {
     if (sceneId === "menu") {
@@ -195,6 +223,7 @@ function loadScene(sceneId) {
 
     currentSceneData = story[sceneId];
     const langData = currentSceneData[currentLang];
+    uiTriggered = false; // Réinitialise le déclencheur d'UI
     
     topTextElement.classList.remove('visible');
     bottomTextElement.classList.remove('visible');
@@ -209,25 +238,17 @@ function loadScene(sceneId) {
     if (playPromise !== undefined) {
         playPromise.catch(error => { 
             console.log("Lecture bloquée : ", error); 
-            showInterface();
+            uiTriggered = true;
+            triggerUI();
         });
     }
 
     topTextElement.innerText = langData.topText || "";
     
-    if (langData.dialogues && langData.dialogues.length > 0) {
-        currentDialogIndex = 0;
-        showNextDialogLine();
-    } else {
-        bottomTextElement.innerText = langData.bottomText || "";
-        langData.choices.forEach(choice => {
-            const btn = document.createElement('button');
-            btn.className = 'choice-btn';
-            btn.innerText = choice.text;
-            btn.onclick = () => loadScene(choice.targetScene);
-            choicesContainer.appendChild(btn);
-        });
-        if (!currentSceneData.showUIAtEnd) showInterface();
+    // Si l'UI doit s'afficher immédiatement (ni timer, ni attente de fin)
+    if (!currentSceneData.showUIAtTime && !currentSceneData.showUIAtEnd) {
+        uiTriggered = true;
+        triggerUI();
     }
 }
 
@@ -265,9 +286,29 @@ function showInterface() {
     if (choicesContainer.innerHTML !== "") choicesContainer.classList.add('visible');
 }
 
+// Gestion du Timecode (Apparition de l'UI à un moment précis)
+videoElement.ontimeupdate = () => {
+    if (currentSceneData && currentSceneData.showUIAtTime && !uiTriggered) {
+        if (videoElement.currentTime >= currentSceneData.showUIAtTime) {
+            uiTriggered = true;
+            triggerUI();
+        }
+    }
+};
+
+// Gestion de la fin de vidéo (Enchaînement et Apparition de l'UI)
 videoElement.onended = () => {
-    if (currentSceneData.showUIAtEnd && !currentSceneData.loop) {
-        showInterface();
+    // Si la vidéo doit enchaîner sur une autre (comme Eline5 vers Eline6)
+    if (currentSceneData && currentSceneData.nextVideoAutoPlay) {
+        videoElement.src = currentSceneData.nextVideoAutoPlay;
+        videoElement.loop = currentSceneData.loopNext || false;
+        videoElement.play();
+    }
+    
+    // Si l'UI devait attendre la fin pour apparaître
+    if (currentSceneData && currentSceneData.showUIAtEnd && !uiTriggered) {
+        uiTriggered = true;
+        triggerUI();
     }
 };
 
@@ -297,6 +338,5 @@ function startNewGame() {
 }
 
 function quitGame() { 
-    // Retourne au Hub (fichier index à la racine)
     window.location.href = "../index.html"; 
 }
