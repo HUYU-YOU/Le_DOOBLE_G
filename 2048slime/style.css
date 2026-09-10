@@ -47,15 +47,33 @@ body {
 .size-full #game-container { width: 80vh; height: 80vh; max-width: 95vw; max-height: 95vw; }
 .size-full #game-header { width: 80vh; max-width: 95vw; }
 
-/* --- BOUTONS FLOTTANTS --- */
-.hub-link { 
-    position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; 
-    font-weight: bold; font-size: 1.2rem; background: rgba(0,0,0,0.5); padding: 10px 20px; 
-    border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
-    transition: all 0.3s ease; z-index: 100;
+/* --- BOUTON RETOUR IMAGE --- */
+.hub-link-img { 
+    position: absolute; 
+    top: 15px; 
+    left: 15px; 
+    z-index: 100;
+    width: 150px; /* Ajuste cette valeur si besoin */
+    transition: transform 0.3s ease;
 }
-.hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
 
+.hub-link-img img {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.4));
+    transition: filter 0.3s ease;
+}
+
+.hub-link-img:hover { 
+    transform: scale(1.05) translateX(-3px); 
+}
+
+.hub-link-img:hover img {
+    filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.8));
+}
+
+/* BOUTON PARAMÈTRES */
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
 .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
@@ -96,7 +114,7 @@ h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin: 0; tex
     background-repeat: no-repeat;
     
     border-radius: 15px; 
-    padding: 10px; 
+    padding: 10px; /* Ajuste cette valeur si les slimes sont décalés par rapport aux cases de ton image */
     box-sizing: border-box; 
     
     box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
