@@ -13,9 +13,10 @@
     <!-- MENU PRINCIPAL -->
     <div id="main-menu">
         <div class="menu-buttons">
-            <button id="menu-text-start" class="choice-btn" onclick="startNewGame()">Nouvelle partie</button>
-            <button id="menu-text-option" class="choice-btn" onclick="toggleSettings()">Options</button>
-            <button id="menu-text-leave" class="choice-btn" onclick="quitGame()">Quitter</button>
+            <!-- On utilise la classe "menu-btn" ici pour qu'ils soient transparents -->
+            <button id="menu-text-start" class="menu-btn" onclick="startNewGame()">Nouvelle partie</button>
+            <button id="menu-text-option" class="menu-btn" onclick="toggleSettings()">Options</button>
+            <button id="menu-text-leave" class="menu-btn" onclick="quitGame()">Quitter</button>
         </div>
     </div>
 
@@ -42,6 +43,7 @@
             </select>
             
             <br><br><br>
+            <!-- Bouton classique pour fermer -->
             <button id="modal-text-close" onclick="toggleSettings()" class="choice-btn">Fermer</button>
         </div>
     </div>
