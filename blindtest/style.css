@@ -6,7 +6,9 @@
     --p2: #ff007f; 
     --sys: #39ff14;
     --gold: #f1c40f;
-    --font-main: 'Rajdhani', sans-serif;
+    /* Nouvelles polices Slime */
+    --font-main: 'Itim', cursive;
+    --font-title: 'Creepster', cursive;
 }
 
 body { 
@@ -22,10 +24,31 @@ body {
     min-height: 100vh; overflow-x: hidden; 
 }
 
+/* --- TOP BOUTONS (LANGUE ET HUB) --- */
+.hub-link { 
+    position: absolute; top: 20px; left: 20px; z-index: 1000; 
+    transition: transform 0.3s;
+}
+.hub-link:hover { transform: scale(1.05); }
+.hub-link img { height: 50px; /* Ajuste la taille de l'image ici selon ton besoin */ }
+
+#lang-toggle {
+    position: absolute; top: 20px; right: 20px; z-index: 1000;
+    background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 8px;
+    border: 2px solid var(--sys); color: var(--sys); cursor: pointer;
+    font-family: var(--font-main); font-weight: bold; font-size: 1.2em;
+    backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+    transition: 0.3s;
+}
+#lang-toggle:hover {
+    background: var(--sys); color: #000; box-shadow: 0 0 20px var(--sys);
+}
+
 h1 { 
     color: #fff; text-transform: uppercase; letter-spacing: 8px; margin-top: 0; 
     text-shadow: 0 0 15px var(--p1), 0 0 30px var(--p1); 
     text-align: center; font-size: 2.5em; font-weight: 700;
+    font-family: var(--font-title);
 }
 
 #game-container { 
@@ -39,17 +62,36 @@ h1 {
 
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(5, 5, 8, 0.7); 
+    background: transparent; /* Rendu transparent pour voir le fond car l'UI est cachée */
     display: flex; flex-direction: column; 
     align-items: center; justify-content: center; z-index: 10; text-align: center; 
-    padding: 20px; box-sizing: border-box; backdrop-filter: blur(4px); 
+    padding: 20px; box-sizing: border-box; 
 }
 
 .menu-title { 
-    font-size: 2.8em; font-weight: 700; margin-bottom: 25px; 
-    color: #7FFF00; 
-    text-transform: uppercase; letter-spacing: 3px; 
-    text-shadow: 0 0 15px rgba(127, 255, 0, 0.6);
+    font-family: var(--font-title);
+    font-size: 3.5em; margin-bottom: 25px; 
+    color: #7FFF00; /* Vert Slime */
+    text-transform: uppercase; letter-spacing: 5px; 
+    text-shadow: 0 0 20px rgba(127, 255, 0, 0.8);
+}
+
+/* CLASSE POUR LES BOUTONS IMAGES (THEME SLIME) */
+.btn-img {
+    background-color: transparent;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    min-height: 85px; 
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.2s;
+    outline: none;
+}
+.btn-img:hover {
+    transform: scale(1.05) translateY(-3px);
+    filter: drop-shadow(0 8px 15px rgba(0, 240, 255, 0.4)) brightness(1.1);
 }
 
 .btn-main { 
@@ -74,24 +116,6 @@ h1 {
 .btn-sys { border-color: var(--sys); color: var(--sys); background: rgba(57, 255, 20, 0.05); }
 .btn-sys:hover { background: var(--sys); color: #000; box-shadow: 0 0 20px var(--sys); }
 
-/* CLASSE POUR LES BOUTONS IMAGES (THEME SLIME) */
-.btn-img {
-    background-color: transparent;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    min-height: 85px; 
-    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.2s;
-    outline: none;
-}
-.btn-img:hover {
-    transform: scale(1.05) translateY(-3px);
-    filter: drop-shadow(0 8px 15px rgba(0, 240, 255, 0.4)) brightness(1.1);
-}
-
 #game-header { 
     display: flex; justify-content: space-between; align-items: center; 
     background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 12px; 
@@ -105,9 +129,10 @@ h1 {
     backdrop-filter: blur(4px);
 }
 #timer-box { 
-    font-size: 3em; color: var(--gold); font-weight: 700; 
+    font-family: var(--font-title);
+    font-size: 3.5em; color: var(--gold); font-weight: 400; 
     text-shadow: 0 0 15px var(--gold); margin-left: 15px; min-width: 60px; text-align: center; 
-    line-height: 1;
+    line-height: 1; letter-spacing: 2px;
 }
 
 #track-info { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; align-items: center; width: 100%; }
@@ -161,14 +186,6 @@ h1 {
 
 .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--p1); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 25px auto; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-.hub-link { 
-    position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.6); 
-    text-decoration: none; font-weight: 600; font-size: 1.1em; z-index: 1000; 
-    background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; 
-    border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; backdrop-filter: blur(5px);
-}
-.hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
 
 .msg { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.2em; font-weight: 500; backdrop-filter: blur(4px); }
 .msg-sys { 
