@@ -1,1057 +1,658 @@
-// ==========================================
-// 1. EVENT LISTENERS GLOBAUX ET UI
-// ==========================================
-
-document.addEventListener('touchstart', (e) => { 
-    if(e.target.closest('.no-swipe')) e.stopPropagation(); 
-}, { passive: false });
-
-const settingsBtnImg = document.getElementById('settings-btn-img');
-const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
-let hoverInterval; let currentFrame = 0;
-
-function startSettingsAnim() {
-    if (hoverInterval) return;
-    currentFrame = 0;
-    settingsBtnImg.src = animFrames[currentFrame];
-    hoverInterval = setInterval(() => {
-        currentFrame = (currentFrame + 1) % animFrames.length;
-        settingsBtnImg.src = animFrames[currentFrame];
-    }, 100); 
-}
-
-function stopSettingsAnim() {
-    clearInterval(hoverInterval); hoverInterval = null;
-    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
-}
-
-function clickSettingsAnim() {
-    clearInterval(hoverInterval); hoverInterval = null;
-    settingsBtnImg.src = '../img/settings4.png';
-    toggleSettings();
-    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
-}
-
-function toggleSettings() {
-    document.getElementById('settings-modal').classList.toggle('show');
-}
-
-function setGameSize(size) {
-    const container = document.getElementById('game-container');
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fuslime</title>
     
-    document.getElementById('btn-sz-classic').classList.remove('active');
-    document.getElementById('btn-sz-wide').classList.remove('active');
-    document.getElementById('btn-sz-full').classList.remove('active');
-
-    container.classList.remove('size-classic', 'size-wide', 'size-full');
+    <!-- Police Rajdhani pour le look Cyber/Arcade -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     
-    if (size === 'classic') {
-        container.classList.add('size-classic');
-        document.getElementById('btn-sz-classic').classList.add('active');
-        if (document.fullscreenElement) document.exitFullscreen();
-    } 
-    else if (size === 'wide') {
-        container.classList.add('size-wide');
-        document.getElementById('btn-sz-wide').classList.add('active');
-        if (document.fullscreenElement) document.exitFullscreen();
-    } 
-    else if (size === 'full') {
-        container.classList.add('size-full');
-        document.getElementById('btn-sz-full').classList.add('active');
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(e => console.log(e));
+    <style>
+        :root { 
+            --bg: #050811; 
+            --panel: rgba(10, 15, 28, 0.85); 
+            --p1: #00f0ff; 
+            --grid-bg: rgba(26, 26, 46, 0.8); 
+            --cell-bg: rgba(42, 42, 64, 0.6); 
+            --btn-green: #39ff14;
         }
-    }
-}
 
-document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
-        setGameSize('wide');
-    }
-});
-
-// ==========================================
-// 2. LOGIQUE PRINCIPALE DU JEU
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', () => {
-
-    const translations = {
-        fr: {
-            settings_title: "Paramètres", language: "Langue 🌍", sound: "Audio 🎵",
-            sound_on: "🔊 SON: ON", sound_off: "🔇 SON: OFF",
-            screen_size: "Format de l'Écran 🖥️", size_small: "Petit", size_wide: "Plein Page", size_full: "Plein Écran",
-            close: "Fermer", stop_test: "🛑 STOP TEST",
-            score_label: "SCORE:", hi_score_label: "HI-SCORE:", fireflies_label: "LUCIOLES:", deaths_label: "MORTS:",
-            status_menu: "MENU", status_endless: "COURSE INFINIE", status_test: "TEST DE MAP", status_shared: "MAP PARTAGÉE", status_editor: "MODE ÉDITEUR",
-            crash: "CRASH CRITIQUE", level_complete: "NIVEAU ACCOMPLI !",
-            back_menu: "RETOUR MENU", back_editor: "RETOUR ÉDITEUR",
-            replay: "REJOUER", play_map_code: "LANCER LA MAP", press_space: "Appuyez sur ESPACE pour rejouer",
-            btn_test: "TESTER", btn_export: "📤 EXPORTER", btn_quit: "QUITTER"
-        },
-        en: {
-            settings_title: "Settings", language: "Language 🌍", sound: "Audio 🎵",
-            sound_on: "🔊 SOUND: ON", sound_off: "🔇 SOUND: OFF",
-            screen_size: "Screen Size 🖥️", size_small: "Small", size_wide: "Wide Page", size_full: "Full Screen",
-            close: "Close", stop_test: "🛑 STOP TEST",
-            score_label: "SCORE:", hi_score_label: "HI-SCORE:", fireflies_label: "FIREFLIES:", deaths_label: "DEATHS:",
-            status_menu: "MENU", status_endless: "ENDLESS RUN", status_test: "MAP TEST", status_shared: "SHARED MAP", status_editor: "EDITOR MODE",
-            crash: "CRITICAL CRASH", level_complete: "LEVEL COMPLETED!",
-            back_menu: "BACK TO MENU", back_editor: "BACK TO EDITOR",
-            replay: "REPLAY", play_map_code: "PLAY MAP", press_space: "Press SPACE to replay",
-            btn_test: "TEST", btn_export: "📤 EXPORT", btn_quit: "QUIT"
+        body { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: var(--bg); color: #fff; margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden; touch-action: none; 
         }
-    };
 
-    let currentLang = localStorage.getItem('slimeDashLang') || 'fr';
-
-    window.setLanguage = function(lang) {
-        currentLang = lang;
-        localStorage.setItem('slimeDashLang', lang);
-        
-        document.getElementById('btn-lang-fr').classList.toggle('active', lang === 'fr');
-        document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
-        
-        const hubImg = document.getElementById('img-retour-hub');
-        if(hubImg) {
-            hubImg.src = lang === 'fr' ? '../img/retourhub.png' : '../img/returbhub.png';
+        /* --- VIDÉO DE FOND --- */
+        .bg-video-main {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            object-fit: cover; z-index: -5; pointer-events: none;
+            filter: blur(10px); 
+            transform: scale(1.05); 
         }
-        
-        updateMuteButton();
 
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (translations[lang][key]) {
-                el.innerText = translations[lang][key];
-            }
-        });
+        .bg-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(5, 8, 17, 0.5); 
+            z-index: -4; pointer-events: none;
+        }
 
-        updateStatusText();
-    };
+        /* --- WRAPPER DYNAMIQUE (Pour changer la taille) --- */
+        #main-wrapper {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1; 
+        }
 
-    function updateStatusText() {
-        const sText = document.getElementById('status-text');
-        if (!sText) return;
-        // Vérifie que gameState existe avant d'essayer de s'en servir
-        if (typeof gameState === 'undefined') return; 
-        
-        if (gameState === 'START') sText.innerText = translations[currentLang].status_menu;
-        else if (gameState === 'PLAYING_ENDLESS') sText.innerText = translations[currentLang].status_endless;
-        else if (gameState === 'EDITOR') sText.innerText = translations[currentLang].status_editor;
-        else if (gameState === 'PLAYING_CUSTOM') sText.innerText = currentIsTest ? translations[currentLang].status_test : translations[currentLang].status_shared;
-    }
+        /* Tailles de jeu */
+        .size-classic #game-container { width: 400px; height: 400px; }
+        .size-classic #game-header { width: 400px; }
+        .size-wide #game-container { width: 600px; height: 600px; }
+        .size-wide #game-header { width: 600px; }
+        .size-full #game-container { width: 80vh; height: 80vh; max-width: 95vw; max-height: 95vw; }
+        .size-full #game-header { width: 80vh; max-width: 95vw; }
 
-    let ytPlayer;
-    let audioStarted = false;
-    let isMuted = localStorage.getItem('isMuted') === 'true';
-    const btnMute = document.getElementById('btn-mute');
+        /* --- BOUTON RETOUR IMAGE --- */
+        .hub-link-img { 
+            position: absolute; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 100;
+            width: 150px; 
+            transition: transform 0.3s ease;
+        }
+        .hub-link-img img {
+            width: 100%; height: auto; display: block;
+            filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.4));
+            transition: filter 0.3s ease;
+        }
+        .hub-link-img:hover { transform: scale(1.05) translateX(-3px); }
+        .hub-link-img:hover img { filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.8)); }
+
+        /* BOUTON PARAMÈTRES */
+        .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+        .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+        .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+        .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--btn-green); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--btn-green), 0 0 5px #ffffff; }
+        .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+        .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+        @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MODAL PARAMETRES */
+        #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        #settings-modal.show { opacity: 1; pointer-events: auto; }
+        .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
+        .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'Rajdhani'; font-weight: bold; transition: 0.2s; }
+        .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
+        .btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+        .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+        /* --- HEADER & SCORES --- */
+        #game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; transition: width 0.4s ease; }
+        h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin: 0; text-shadow: 0 0 15px var(--p1); font-size: 3em; }
+
+        .scores-wrapper { display: flex; gap: 15px; }
+        .score-box { background: rgba(0,0,0,0.6); padding: 10px 25px; border-radius: 12px; border: 1px solid rgba(0, 240, 255, 0.3); text-align: center; box-shadow: 0 5px 20px rgba(0, 240, 255, 0.15); backdrop-filter: blur(5px); }
+        .score-title { font-size: 1em; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
+        .score-value { font-size: 2em; font-weight: bold; margin-top: 5px; text-shadow: 0 0 10px var(--p1); }
+
+        #best-score { color: #f39c12; text-shadow: 0 0 10px #f39c12; }
+        #best-title { color: #f39c12; }
+
+        /* LE PLATEAU DE JEU AVEC TON IMAGE */
+        #game-container { 
+            position: relative; 
+            background-image: url('img/background.png'); 
+            background-size: 100% 100%; 
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            border-radius: 15px; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            border: 2px solid rgba(0, 240, 255, 0.3); 
+            backdrop-filter: blur(10px);
+            transition: width 0.4s ease, height 0.4s ease;
+        }
+
+        .grid-background { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; width: 100%; height: 100%; }
+
+        /* On rend les anciennes cases transparentes ! */
+        .grid-cell { 
+            background-color: transparent; 
+            border-radius: 10px; 
+        }
+
+        /* LES TUILES (Les Slimes) */
+        #tiles-container { position: absolute; top: 10px; left: 10px; width: calc(100% - 20px); height: calc(100% - 20px); pointer-events: none; z-index: 10;}
+        .tile { 
+            position: absolute; width: calc(25% - 7.5px); height: calc(25% - 7.5px); border-radius: 10px; 
+            display: flex; justify-content: center; align-items: center; font-size: 2.5em; font-weight: bold; 
+            color: white; text-shadow: 2px 2px 5px rgba(0,0,0,0.8); background-size: contain; background-position: center; 
+            background-repeat: no-repeat; transition: transform 150ms ease-in-out, top 150ms ease-in-out, left 150ms ease-in-out; 
+            font-family: sans-serif;
+        }
+
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .tile-merged { animation: pop 200ms ease-in-out; }
+        .tile-new { animation: pop 200ms ease-in-out; }
+
+        /* ÉCRAN DE FIN */
+        #game-over { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); 
+            display: none; flex-direction: column; align-items: center; justify-content: center; 
+            border-radius: 15px; z-index: 100; backdrop-filter: blur(8px); 
+        }
+        #game-over h2 { font-size: 4em; margin-bottom: 10px; color: var(--p1); text-shadow: 0 0 20px var(--p1); margin-top: 0;}
+        #game-over p { font-size: 1.5em; color: #fff; margin-bottom: 20px;}
+        .btn-restart { 
+            background: rgba(0,0,0,0.5); color: #fff; border: 2px solid var(--p1); padding: 15px 35px; 
+            font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 8px; 
+            cursor: pointer; text-transform: uppercase; transition: 0.3s; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); 
+        }
+        .btn-restart:hover { transform: scale(1.05); background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); }
+
+        @media (max-width: 650px) {
+            .size-wide #game-container, .size-classic #game-container { width: 90vw; height: 90vw; }
+            .size-wide #game-header, .size-classic #game-header { width: 90vw; flex-direction: column; gap: 15px;}
+            h1 { font-size: 2.5em; }
+            .scores-wrapper { gap: 10px; }
+            .score-box { padding: 10px 15px; }
+            .score-value { font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
     
-    function updateMuteButton() {
-        if (isMuted) {
-            btnMute.innerText = translations[currentLang].sound_off;
-            btnMute.style.color = "var(--neon-pink)";
-            btnMute.style.borderColor = "var(--neon-pink)";
-        } else {
-            btnMute.innerText = translations[currentLang].sound_on;
-            btnMute.style.color = "var(--neon-cyan)";
-            btnMute.style.borderColor = "var(--neon-cyan)";
-        }
-    }
+    <!-- VIDÉO DE FOND -->
+    <video autoplay loop muted playsinline class="bg-video-main" id="bg-video">
+        <source src="img/background.mp4" type="video/mp4">
+    </video>
+    <div class="bg-overlay"></div>
 
-    btnMute.addEventListener('click', () => {
-        isMuted = !isMuted;
-        localStorage.setItem('isMuted', isMuted);
-        updateMuteButton();
-        
-        if (isMuted) {
-            if (ytPlayer && typeof ytPlayer.mute === 'function') ytPlayer.mute();
-        } else {
-            if (ytPlayer && typeof ytPlayer.unMute === 'function') {
-                ytPlayer.unMute();
-                ytPlayer.setVolume(10);
-            }
-        }
-    });
+    <!-- BOUTONS FLOTTANTS -->
+    <a href="../index.html" class="hub-link-img">
+        <img src="img/retourhub.png" alt="Retour au Hub" id="btn-return-hub">
+    </a>
+    
+    <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+        <div class="orbit-container"><div class="orbit-slime"></div></div>
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+    </div>
 
-    window.onYouTubeIframeAPIReady = function() {
-        ytPlayer = new YT.Player('yt-player', {
-            height: '0', width: '0', videoId: '0QjHiah9Z3I', 
-            playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
-            events: { 
-                'onReady': (e) => {
-                    e.target.setVolume(10);
-                    if (isMuted) e.target.mute();
-                }, 
-                'onStateChange': (e) => { if (e.data === YT.PlayerState.ENDED) ytPlayer.playVideo(); } 
-            }
-        });
-    };
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Taille du Plateau 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Large</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Maximal</button>
+                </div>
+            </div>
+            
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+    
+    <!-- MAIN WRAPPER -->
+    <div id="main-wrapper" class="size-wide">
+        <div id="game-header">
+            <h1>FUSLIME</h1>
+            
+            <!-- SCORES AVEC BEST SCORE -->
+            <div class="scores-wrapper">
+                <div class="score-box">
+                    <div class="score-title">Score</div>
+                    <div class="score-value" id="score">0</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-title" id="best-title">Best</div>
+                    <div class="score-value" id="best-score">0</div>
+                </div>
+            </div>
+            
+        </div>
 
-    function initAudio() {
-        if (!audioStarted && ytPlayer && typeof ytPlayer.playVideo === 'function') {
-            try { 
-                ytPlayer.playVideo(); 
-                if (isMuted) ytPlayer.mute(); else ytPlayer.unMute();
-                audioStarted = true; 
+        <div id="game-container">
+            <!-- Grille visuelle statique -->
+            <div class="grid-background" id="grid-bg"></div>
+            <!-- Conteneur des tuiles animées -->
+            <div id="tiles-container"></div>
+            
+            <!-- Ecran de fin -->
+            <div id="game-over">
+                <h2>GAME OVER</h2>
+                <p>Les slimes sont coincés !</p>
+                <button class="btn-restart" onclick="resetGame()">Rejouer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT GESTION DU JEU COMPLET -->
+    <script>
+        // ==========================================
+        // GESTION TAILLE ÉCRAN & ANIMATION SETTINGS
+        // ==========================================
+
+        window.addEventListener('DOMContentLoaded', () => { setGameSize('wide'); });
+
+        function setGameSize(size) {
+            const wrapper = document.getElementById('main-wrapper');
+            const btns = document.querySelectorAll('.btn-size');
+            btns.forEach(b => b.classList.remove('active'));
+
+            wrapper.classList.remove('size-classic', 'size-wide', 'size-full');
+            
+            if (size === 'classic') {
+                wrapper.classList.add('size-classic');
+                document.getElementById('btn-sz-classic').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
             } 
-            catch(e) { console.warn("Erreur Audio Youtube :", e); }
+            else if (size === 'wide') {
+                wrapper.classList.add('size-wide');
+                document.getElementById('btn-sz-wide').classList.add('active');
+                if (document.fullscreenElement) document.exitFullscreen();
+            } 
+            else if (size === 'full') {
+                wrapper.classList.add('size-full');
+                document.getElementById('btn-sz-full').classList.add('active');
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            }
+            setTimeout(updateTileElements, 50);
         }
-    }
 
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const menuScreen = document.getElementById('menu-screen');
-    const gameOverScreen = document.getElementById('gameover-screen');
-    const editorPanel = document.getElementById('editor-panel');
-    const statusText = document.getElementById('status-text');
-    const stopTestBtn = document.getElementById('btn-stop-test');
-    const uiLayer = document.getElementById('ui-layer');
-
-    let width, height;
-    let gameState = 'START'; 
-    let currentActiveMode = 'PLAYING_ENDLESS'; 
-    let currentIsTest = false; 
-    
-    const GRID_SIZE = 60; 
-    const GROUND_HEIGHT = 90;
-    let gameSpeed = 300; 
-    
-    const GRAVITY = 3600; 
-    const JUMP_FORCE = -1050; 
-    let jumpBufferTimer = 0; 
-
-    let cameraX = 0;
-    let editorCamTarget = 0;
-    let score = 0;
-    
-    let currentEndlessSeed = 12345;
-    let activePRNGSeed = 12345;
-    function resetSeed(s) { activePRNGSeed = s; }
-    function seededRandom() {
-        let t = activePRNGSeed += 0x6D2B79F5;
-        t = Math.imul(t ^ t >>> 15, t | 1);
-        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    }
-    
-    let hiScore = localStorage.getItem('slimeDashHiScore') || 0;
-    const hiScoreElem = document.getElementById('hi-score');
-    if (hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
-
-    let deaths = localStorage.getItem('slimeDashDeaths') || 0;
-    const deathElem = document.getElementById('death-count');
-    if (deathElem) deathElem.innerText = deaths;
-
-    let totalFireflies = parseInt(localStorage.getItem('slimeDashFireflies')) || 0;
-    const firefliesElem = document.getElementById('fireflies-count');
-    if (firefliesElem) firefliesElem.innerText = totalFireflies;
-
-    let particles = [];
-    let shakeTimer = 0, shakeIntensity = 0;
-
-    let levelData = []; 
-    let endlessLevelData = []; 
-    let nextEndlessSpawnX = 0; 
-    let consecutiveObstacles = 0;
-
-    let defaultLevel = [
-        {x: 10, y: 0, type: 'block'}, {x: 11, y: 0, type: 'block'}, {x: 12, y: 1, type: 'block'},
-        {x: 15, y: 3, type: 'coin'}, {x: 16, y: 3, type: 'coin'},
-        {x: 17, y: 0, type: 'spike'}, {x: 22, y: 0, type: 'hole'},  {x: 23, y: 0, type: 'hole'},
-        {x: 26, y: 0, type: 'pad'}, {x: 28, y: 4, type: 'block'}, {x: 29, y: 4, type: 'holo'}, {x: 30, y: 4, type: 'block'},
-        {x: 35, y: 0, type: 'flag'}
-    ];
-
-    try {
-        let savedLvl = localStorage.getItem('slimeDashLevel');
-        if(savedLvl && savedLvl !== "null" && savedLvl !== "undefined") { 
-            levelData = JSON.parse(savedLvl);
-        } else {
-            levelData = JSON.parse(JSON.stringify(defaultLevel));
-        }
-    } catch (err) {
-        levelData = JSON.parse(JSON.stringify(defaultLevel));
-    }
-
-    const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7, 'start_flag': 8 };
-    const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin', 8: 'start_flag' };
-
-    const sprites = { idle: [], run: [], jump: [], land: [] };
-    const bgImages = []; 
-    const platformImg = new Image();
-    const lucioleImg = new Image(); 
-    const carreImg = new Image();     
-    const triangleImg = new Image();  
-    const rebonImg = new Image();     
-    
-    function loadFrames(category, filenames) {
-        filenames.forEach(file => { 
-            const img = new Image(); 
-            img.src = 'img/' + file; 
-            sprites[category].push(img); 
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.getElementById('main-wrapper').classList.contains('size-full')) {
+                setGameSize('wide');
+            }
         });
-    }
-    
-    loadFrames('idle', ['slm1.png', 'slm2.png', 'slm3.png', 'slm4.png']);
-    loadFrames('run',  ['slm5.png', 'slm6.png', 'slm7.png', 'slm8.png']);
-    loadFrames('jump', ['slm10.png', 'slm11.png', 'slm12.png', 'slm13.png', 'slm14.png', 'slm15.png', 'slm16.png']);
-    loadFrames('land', ['slm17.png', 'slm18.png', 'slm19.png', 'slm20.png']);
 
-    for(let i = 1; i <= 5; i++) {
-        let img = new Image();
-        img.src = `img/img${i}.jpg`;
-        bgImages.push(img);
-    }
-    platformImg.src = 'img/base.png'; 
-    lucioleImg.src = 'img/luciole.png';
-    carreImg.src = 'img/carre.png';       
-    triangleImg.src = 'img/triangle.png'; 
-    rebonImg.src = 'img/rebon.png';       
+        // Animation du Bouton Settings
+        const settingsBtnImg = document.getElementById('settings-btn-img');
+        const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+        let hoverInterval; let currentFrame = 0;
 
-    const player = {
-        x: 150, y: 0, prevY: 0, size: 60, vy: 0, isGrounded: false,
-        animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1
-    };
-
-    function setAnimState(newState) {
-        if (player.animState === newState) return;
-        player.animState = newState; player.frameIndex = 0; player.animTimer = 0;
-        if (newState === 'LAND') player.animSpeed = 0.05;
-        else if (newState === 'RECOVER') player.animSpeed = 0.08;
-        else if (newState === 'RUN') player.animSpeed = 0.08;
-        else if (newState === 'JUMP') player.animSpeed = 0.06;
-        else player.animSpeed = 0.15;
-    }
-
-    function resize() {
-        const rect = canvas.parentElement.getBoundingClientRect();
-        width = rect.width; height = rect.height;
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = width * dpr; canvas.height = height * dpr;
-        ctx.scale(dpr, dpr);
-        if(gameState === 'START' || gameState === 'EDITOR') {
-            player.y = height - GROUND_HEIGHT - player.size;
-            player.prevY = player.y;
+        function startSettingsAnim() {
+            if (hoverInterval) return;
+            currentFrame = 0;
+            settingsBtnImg.src = animFrames[currentFrame];
+            hoverInterval = setInterval(() => {
+                currentFrame = (currentFrame + 1) % animFrames.length;
+                settingsBtnImg.src = animFrames[currentFrame];
+            }, 100); 
         }
-    }
-    window.addEventListener('resize', resize); resize();
 
-    function spawnParticles(x, y, color, count = 10) {
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 200 + 50;
-            particles.push({
-                x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-                size: Math.random() * 5 + 2, color: color, alpha: 1, decay: Math.random() * 2 + 1.5
+        function stopSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+        }
+
+        function clickSettingsAnim() {
+            clearInterval(hoverInterval); hoverInterval = null;
+            settingsBtnImg.src = '../img/settings4.png';
+            toggleSettings();
+            setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-modal').classList.toggle('show');
+        }
+
+        // ==========================================
+        // GESTION DE LA LANGUE
+        // ==========================================
+        function setLanguage(lang) {
+            const btnReturnHub = document.getElementById('btn-return-hub');
+            if (lang === 'en') { btnReturnHub.src = 'img/returbhub.png'; } 
+            else { btnReturnHub.src = 'img/retourhub.png'; }
+        }
+
+        // ==========================================
+        // MOTEUR DE JEU JAVASCRIPT
+        // ==========================================
+
+        let audioCtx;
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } 
+        catch(e) { console.warn("Audio bloqué par le navigateur en local."); }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'merge') {
+                osc.type = 'sine'; 
+                let baseFreq = 700 + (Math.random() * 400); 
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.1); 
+                gain.gain.setValueAtTime(0.0, now);
+                gain.gain.linearRampToValueAtTime(0.15, now + 0.02); 
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15); 
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'move') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.03, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'gameover') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            }
+        }
+
+        const slimeImages = {
+            2: 'img/slime1.png', 4: 'img/slime2.png', 8: 'img/slime3.png',
+            16: 'img/slime4.png', 32: 'img/slime5.png', 64: 'img/slime6.png',
+            128: 'img/slime7.png', 256: 'img/slime8.png', 512: 'img/slime9.png',
+            1024: 'img/slime10.png', 2048: 'img/slime11.png', 4096: 'img/slime12.png',
+            8192: 'img/slime13.png',
+        };
+
+        const gridBg = document.getElementById('grid-bg');
+        const tilesContainer = document.getElementById('tiles-container');
+        const scoreElement = document.getElementById('score');
+        const bestScoreElement = document.getElementById('best-score');
+        const gameOverScreen = document.getElementById('game-over');
+
+        let board = [];
+        let score = 0;
+        let tileIdCounter = 0;
+        let tiles = {};
+
+        // Récupération sécurisée du Best Score
+        let bestScore = 0;
+        try { bestScore = localStorage.getItem('fuslime1_best_score') || 0; } 
+        catch(e) { console.warn("Sauvegarde bloquée en local."); }
+        bestScoreElement.innerText = bestScore;
+
+        for (let i = 0; i < 16; i++) {
+            let cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            gridBg.appendChild(cell);
+        }
+
+        function initBoard() {
+            board = [[null,null,null,null],[null,null,null,null],[null,null,null,null],[null,null,null,null]];
+            tiles = {};
+            tilesContainer.innerHTML = '';
+            score = 0;
+            updateScore();
+            gameOverScreen.style.display = 'none';
+            addRandomTile();
+            addRandomTile();
+        }
+
+        function addRandomTile() {
+            let emptyCells = [];
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    if (!board[r][c]) emptyCells.push({r, c});
+                }
+            }
+            if (emptyCells.length === 0) return;
+
+            let randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            let value = Math.random() < 0.9 ? 2 : 4;
+            
+            let id = tileIdCounter++;
+            let tileObj = { id: id, value: value, r: randomCell.r, c: randomCell.c };
+            
+            board[randomCell.r][randomCell.c] = tileObj;
+            tiles[id] = tileObj;
+            
+            createTileElement(tileObj, true);
+        }
+
+        function getPosition(index) { return `calc(${index * 25}% + ${index * 10 / 3}px)`; }
+
+        function createTileElement(tile, isNew = false) {
+            let div = document.createElement('div');
+            div.className = `tile tile-${tile.value}`;
+            div.id = `tile-${tile.id}`;
+            div.innerText = tile.value; 
+            
+            if(slimeImages[tile.value]) {
+                div.style.backgroundImage = `url('${slimeImages[tile.value]}')`;
+                div.style.color = 'transparent'; 
+                div.style.backgroundColor = 'transparent'; 
+                div.style.boxShadow = 'none'; 
+            }
+
+            div.style.top = getPosition(tile.r);
+            div.style.left = getPosition(tile.c);
+            
+            if (isNew) div.classList.add('tile-new');
+            tilesContainer.appendChild(div);
+        }
+
+        function updateTileElements() {
+            for (let id in tiles) {
+                let tile = tiles[id];
+                let div = document.getElementById(`tile-${tile.id}`);
+                if (div) {
+                    div.style.top = getPosition(tile.r);
+                    div.style.left = getPosition(tile.c);
+                }
+            }
+        }
+
+        function removeTileElement(id, targetR, targetC) {
+            let div = document.getElementById(`tile-${id}`);
+            if (div) {
+                div.style.zIndex = "1"; 
+                if (targetR !== undefined && targetC !== undefined) {
+                    div.style.top = getPosition(targetR); 
+                    div.style.left = getPosition(targetC);
+                }
+                setTimeout(() => { div.remove(); }, 150); 
+            }
+            delete tiles[id]; 
+        }
+
+        function updateScore() { 
+            scoreElement.innerText = score; 
+            if (score > bestScore) {
+                bestScore = score;
+                try { localStorage.setItem('fuslime1_best_score', bestScore); } catch(e) {}
+                bestScoreElement.innerText = bestScore;
+            }
+        }
+
+        function move(direction) {
+            let moved = false; let moveMerged = false; 
+            let merged = [[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false]];
+
+            const moveTile = (r, c, dr, dc) => {
+                let tile = board[r][c];
+                if (!tile) return false;
+
+                let currR = r; let currC = c;
+                let nextR = r + dr; let nextC = c + dc;
+
+                while (nextR >= 0 && nextR < 4 && nextC >= 0 && nextC < 4) {
+                    let nextTile = board[nextR][nextC];
+                    
+                    if (!nextTile) {
+                        board[nextR][nextC] = tile;
+                        board[currR][currC] = null;
+                        tile.r = nextR; tile.c = nextC;
+                        currR = nextR; currC = nextC;
+                        nextR += dr; nextC += dc;
+                        moved = true;
+                    } else if (nextTile.value === tile.value && !merged[nextR][nextC]) {
+                        let newValue = tile.value * 2;
+                        score += newValue;
+                        
+                        removeTileElement(tile.id, nextR, nextC);
+                        removeTileElement(nextTile.id, nextR, nextC);
+                        
+                        let newId = tileIdCounter++;
+                        let newTile = { id: newId, value: newValue, r: nextR, c: nextC };
+                        board[nextR][nextC] = newTile;
+                        board[currR][currC] = null;
+                        tiles[newId] = newTile;
+                        
+                        merged[nextR][nextC] = true;
+                        
+                        createTileElement(newTile);
+                        document.getElementById(`tile-${newId}`).classList.add('tile-merged');
+                        
+                        playSound('merge');
+                        moveMerged = true; moved = true;
+                        break;
+                    } else { break; }
+                }
+                return moved;
+            };
+
+            if (direction === 'up') { for(let c=0; c<4; c++) for(let r=1; r<4; r++) moveTile(r,c,-1,0); }
+            if (direction === 'down') { for(let c=0; c<4; c++) for(let r=2; r>=0; r--) moveTile(r,c,1,0); }
+            if (direction === 'left') { for(let r=0; r<4; r++) for(let c=1; c<4; c++) moveTile(r,c,0,-1); }
+            if (direction === 'right') { for(let r=0; r<4; r++) for(let c=2; c>=0; c--) moveTile(r,c,0,1); }
+
+            if (moved) {
+                if (!moveMerged) playSound('move');
+                updateTileElements();
+                updateScore();
+                setTimeout(() => { addRandomTile(); checkGameOver(); }, 150); 
+            }
+        }
+
+        function checkGameOver() {
+            for(let r=0; r<4; r++) for(let c=0; c<4; c++) if(!board[r][c]) return;
+            for(let r=0; r<4; r++) {
+                for(let c=0; c<4; c++) {
+                    let val = board[r][c].value;
+                    if(c < 3 && val === board[r][c+1].value) return;
+                    if(r < 3 && val === board[r+1][c].value) return;
+                }
+            }
+            playSound('gameover');
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function resetGame() { initBoard(); }
+
+        document.addEventListener('keydown', (e) => {
+            if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+            if (e.key === 'ArrowUp') move('up');
+            if (e.key === 'ArrowDown') move('down');
+            if (e.key === 'ArrowLeft') move('left');
+            if (e.key === 'ArrowRight') move('right');
+        });
+
+        const gameContainer = document.getElementById('game-container');
+        let gameTouchX = 0, gameTouchY = 0;
+
+        gameContainer.addEventListener('touchstart', e => {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
+            gameTouchX = e.touches[0].clientX; gameTouchY = e.touches[0].clientY;
+            e.stopPropagation();
+        }, {passive: false});
+
+        gameContainer.addEventListener('touchend', e => {
+            if (!gameTouchX || !gameTouchY) return;
+            let diffX = e.changedTouches[0].clientX - gameTouchX;
+            let diffY = e.changedTouches[0].clientY - gameTouchY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX > 50) move('right'); else if (diffX < -50) move('left');
+            } else {
+                if (diffY > 50) move('down'); else if (diffY < -50) move('up');
+            }
+            gameTouchX = 0; gameTouchY = 0; e.stopPropagation(); 
+        }, {passive: false});
+
+        gameContainer.addEventListener('touchmove', e => { e.preventDefault(); }, {passive: false});
+
+        initBoard();
+
+        // ==========================================
+        // NAVIGATION PAR SWIPE (TACTILE & SOURIS)
+        // ==========================================
+        const gamesHubList = [
+            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
+            "../worms/index.html"
+        ];
+        let globalTouchStartX = 0; let globalTouchStartY = 0;
+        let globalTouchEndX = 0; let globalTouchEndY = 0; let isDragging = false; 
+
+        function handleSwipeGesture() {
+            const swipeThreshold = 75; 
+            let diffX = globalTouchEndX - globalTouchStartX;
+            let diffY = globalTouchEndY - globalTouchStartY;
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX < -swipeThreshold) navigateGames(1);       
+                else if (diffX > swipeThreshold) navigateGames(-1);  
+            } else {
+                if (diffY < -swipeThreshold) navigateGames(1);       
+                else if (diffY > swipeThreshold) navigateGames(-1);  
+            }
+        }
+
+        function navigateGames(direction) {
+            const currentPath = window.location.pathname;
+            let currentIndex = gamesHubList.findIndex(game => {
+                let folderName = game.split('/')[1]; 
+                return currentPath.includes(folderName);
             });
+            if (currentIndex === -1) return;
+            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
+            window.location.href = gamesHubList[nextIndex];
         }
-    }
-    function triggerShake(duration, intensity) { shakeTimer = duration; shakeIntensity = intensity; }
 
-    document.getElementById('btn-play-endless').addEventListener('click', () => {
-        currentEndlessSeed = Math.floor(Math.random() * 10000000);
-        startGame('PLAYING_ENDLESS', false);
-    });
-
-    document.getElementById('btn-create-map').addEventListener('click', () => startEditor());
-    
-    document.getElementById('btn-play-code').addEventListener('click', () => {
-        const sec = document.getElementById('code-section');
-        sec.style.display = sec.style.display === 'flex' ? 'none' : 'flex';
-    });
-
-    document.getElementById('test-btn').addEventListener('click', () => startGame('PLAYING_CUSTOM', true));
-
-    document.getElementById('btn-replay').addEventListener('click', () => {
-        gameOverScreen.style.display = 'none';
-        startGame(currentActiveMode, currentIsTest);
-    });
-
-    document.getElementById('btn-back-menu').addEventListener('click', () => {
-        gameOverScreen.style.display = 'none';
-        if (currentIsTest) {
-            startEditor();
-        } else {
-            showMenu("Slime-Dash", "var(--neon-cyan)");
+        function isExcludedElement(target) {
+            const tag = target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
+            if (target.closest('#game-container') || target.closest('#game-wrapper')) return true;
+            return false;
         }
-    });
 
-    stopTestBtn.addEventListener('click', () => {
-        stopTestBtn.style.display = 'none';
-        startEditor();
-    });
-
-    function startGame(mode, isTest = false) {
-        initAudio();
-        currentActiveMode = mode; 
-        currentIsTest = isTest;
-        gameState = mode;
-        menuScreen.style.display = 'none';
-        gameOverScreen.style.display = 'none';
-        editorPanel.style.display = 'none';
-        uiLayer.style.display = 'flex'; 
-        
-        if (isTest) stopTestBtn.style.display = 'block';
-        else stopTestBtn.style.display = 'none';
-        
-        player.vy = 0; jumpBufferTimer = 0;
-        setAnimState('RUN');
-        score = 0; particles = []; shakeTimer = 0;
-        
-        if (levelData && Array.isArray(levelData)) {
-            levelData.forEach(obs => obs.collected = false);
-        }
-        
-        if (mode === 'PLAYING_ENDLESS') {
-            gameSpeed = 300; 
-            endlessLevelData = [];
-            consecutiveObstacles = 0;
-            nextEndlessSpawnX = Math.floor(width / GRID_SIZE) + 10;
-            resetSeed(currentEndlessSeed); 
-            statusText.style.color = "var(--neon-pink)";
-            cameraX = 0;
-            player.y = height - GROUND_HEIGHT - player.size;
-            player.prevY = player.y;
-        } else {
-            gameSpeed = 350; 
-            statusText.style.color = "var(--neon-green)";
-            const startPoint = levelData.find(o => o.type === 'start_flag');
-            if (startPoint) {
-                cameraX = (startPoint.x * GRID_SIZE) - player.x;
-                player.y = height - GROUND_HEIGHT - player.size - (startPoint.y * GRID_SIZE);
-            } else {
-                cameraX = 0;
-                player.y = height - GROUND_HEIGHT - player.size;
-            }
-            player.prevY = player.y;
-        }
-        updateStatusText();
-    }
-
-    function startEditor() {
-        initAudio();
-        gameState = 'EDITOR';
-        menuScreen.style.display = 'none';
-        gameOverScreen.style.display = 'none';
-        stopTestBtn.style.display = 'none';
-        uiLayer.style.display = 'flex'; 
-        
-        editorPanel.style.transform = 'translateX(-50%)';
-        editorPanel.style.left = '50%';
-        editorPanel.style.top = '20px';
-        editorPanel.style.display = 'flex';
-        
-        if (levelData && Array.isArray(levelData)) {
-            levelData.forEach(obs => obs.collected = false);
-        }
-        
-        player.y = height - GROUND_HEIGHT - player.size;
-        setAnimState('IDLE');
-        statusText.style.color = "var(--neon-yellow)";
-        updateStatusText();
-
-        const startPoint = levelData.find(o => o.type === 'start_flag');
-        if (startPoint) {
-            cameraX = (startPoint.x * GRID_SIZE) - 150; 
-            editorCamTarget = cameraX;
-        } else {
-            cameraX = 0; 
-            editorCamTarget = 0;
-        }
-    }
-
-    function gameOver(isVictory = false) {
-        triggerShake(0.4, 15);
-        setAnimState('IDLE');
-        stopTestBtn.style.display = 'none'; 
-        
-        document.getElementById('btn-back-menu').innerText = currentIsTest ? translations[currentLang].back_editor : translations[currentLang].back_menu;
-
-        if (isVictory) {
-            gameState = 'VICTORY';
-            spawnParticles(player.x + player.size/2, player.y, 'var(--neon-yellow)', 50);
-            
-            document.getElementById('go-title').innerText = translations[currentLang].level_complete;
-            document.getElementById('go-title').style.color = "var(--neon-yellow)";
-            document.getElementById('go-score').innerText = Math.floor(score);
-            gameOverScreen.style.border = "2px solid var(--neon-yellow)";
-            gameOverScreen.style.boxShadow = "0 0 25px var(--neon-yellow)";
-            gameOverScreen.style.display = 'block';
-        } else {
-            gameState = 'GAMEOVER';
-            spawnParticles(player.x + player.size/2, player.y + player.size/2, '#ff007f', 40);
-            
-            deaths++;
-            localStorage.setItem('slimeDashDeaths', deaths);
-            if (deathElem) deathElem.innerText = deaths;
-
-            if (score > hiScore) {
-                hiScore = score;
-                localStorage.setItem('slimeDashHiScore', hiScore);
-                if(hiScoreElem) hiScoreElem.innerText = Math.floor(hiScore);
-            }
-
-            document.getElementById('go-title').innerText = translations[currentLang].crash;
-            document.getElementById('go-title').style.color = "var(--neon-pink)";
-            document.getElementById('go-score').innerText = Math.floor(score);
-            gameOverScreen.style.border = "2px solid var(--neon-pink)";
-            gameOverScreen.style.boxShadow = "0 0 25px var(--neon-pink)";
-            gameOverScreen.style.display = 'block';
-        }
-    }
-
-    function showMenu(title, color) {
-        gameState = 'START';
-        menuScreen.style.display = 'flex'; 
-        gameOverScreen.style.display = 'none';
-        editorPanel.style.display = 'none';
-        stopTestBtn.style.display = 'none';
-        document.getElementById('code-section').style.display = 'none';
-        uiLayer.style.display = 'none'; 
-        
-        statusText.style.color = "var(--neon-cyan)";
-        updateStatusText();
-        
-        try {
-            let savedLvl = localStorage.getItem('slimeDashLevel');
-            if(savedLvl && savedLvl !== "null") levelData = JSON.parse(savedLvl);
-        } catch(e) {}
-    }
-
-    let isDraggingPanel = false;
-    let panelOffsetX, panelOffsetY;
-
-    editorPanel.addEventListener('mousedown', (e) => {
-        if(e.target.closest('.tool-btn') || e.target.closest('.action-btn')) return;
-        isDraggingPanel = true;
-        const rect = editorPanel.getBoundingClientRect();
-        editorPanel.style.transform = 'none'; 
-        panelOffsetX = e.clientX - rect.left;
-        panelOffsetY = e.clientY - rect.top;
-    });
-    document.addEventListener('mousemove', (e) => {
-        if (!isDraggingPanel) return;
-        editorPanel.style.left = (e.clientX - panelOffsetX) + 'px';
-        editorPanel.style.top = (e.clientY - panelOffsetY) + 'px';
-    });
-    document.addEventListener('mouseup', () => { isDraggingPanel = false; });
-
-    editorPanel.addEventListener('touchstart', (e) => {
-        if(e.target.closest('.tool-btn') || e.target.closest('.action-btn')) return;
-        isDraggingPanel = true;
-        const rect = editorPanel.getBoundingClientRect();
-        editorPanel.style.transform = 'none'; 
-        panelOffsetX = e.touches[0].clientX - rect.left;
-        panelOffsetY = e.touches[0].clientY - rect.top;
-    }, {passive: false});
-    document.addEventListener('touchmove', (e) => {
-        if (!isDraggingPanel) return;
-        editorPanel.style.left = (e.touches[0].clientX - panelOffsetX) + 'px';
-        editorPanel.style.top = (e.touches[0].clientY - panelOffsetY) + 'px';
-    }, {passive: false});
-    document.addEventListener('touchend', () => { isDraggingPanel = false; });
-
-    let currentTool = 'block';
-    let isBuilding = false;
-    let hoverGridX = -1, hoverGridY = -1;
-    let isHovering = false;
-
-    document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
-            e.currentTarget.classList.add('active'); 
-            currentTool = e.currentTarget.getAttribute('data-tool');
+        document.addEventListener('touchstart', e => {
+            if (isExcludedElement(e.target)) return;
+            globalTouchStartX = e.changedTouches[0].screenX; globalTouchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+        document.addEventListener('touchend', e => {
+            if (isExcludedElement(e.target)) return;
+            globalTouchEndX = e.changedTouches[0].screenX; globalTouchEndY = e.changedTouches[0].screenY;
+            handleSwipeGesture();
+        }, { passive: true });
+        document.addEventListener('mousedown', e => {
+            if (e.button !== 0 || isExcludedElement(e.target)) return; 
+            isDragging = true; globalTouchStartX = e.clientX; globalTouchStartY = e.clientY;
         });
-    });
-
-    document.getElementById('cam-left').addEventListener('click', () => editorCamTarget -= GRID_SIZE * 6);
-    document.getElementById('cam-right').addEventListener('click', () => editorCamTarget += GRID_SIZE * 6);
-    
-    canvas.addEventListener('wheel', (e) => {
-        if(gameState === 'EDITOR') {
-            e.preventDefault();
-            editorCamTarget += Math.sign(e.deltaY) * GRID_SIZE * 2;
-        }
-    }, { passive: false });
-
-    document.getElementById('exit-btn').addEventListener('click', () => {
-        localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); 
-        showMenu("Slime-Dash", "var(--neon-cyan)");
-    });
-
-    document.getElementById('export-btn').addEventListener('click', () => {
-        try {
-            const minified = levelData.map(o => [o.x, o.y, typeMap[o.type]]);
-            const baseCode = btoa(JSON.stringify(minified));
-            prompt("Code de ta Map à partager :", baseCode);
-        } catch (e) { alert("Erreur d'exportation."); }
-    });
-
-    document.getElementById('load-code-btn').addEventListener('click', () => {
-        const inputVal = document.getElementById('map-code-input').value.trim();
-        if(inputVal !== "") {
-            try {
-                const minified = JSON.parse(atob(inputVal));
-                const newLevel = minified.map(arr => ({ x: arr[0], y: arr[1], type: revTypeMap[arr[2]] }));
-                if (!Array.isArray(newLevel) || newLevel.length === 0) throw new Error();
-                levelData = newLevel;
-                document.getElementById('map-code-input').value = "";
-                startGame('PLAYING_CUSTOM', false); 
-            } catch (e) { alert("Erreur : Code Invalide."); }
-        } else { alert("Veuillez coller un code."); }
-    });
-
-    function updateEditorCursor(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const mouseX = (clientX - rect.left) * (canvas.width / rect.width / (window.devicePixelRatio || 1));
-        const mouseY = (clientY - rect.top) * (canvas.height / rect.height / (window.devicePixelRatio || 1));
-        const worldX = mouseX + cameraX;
-        
-        hoverGridX = Math.floor(worldX / GRID_SIZE);
-        const groundY = height - GROUND_HEIGHT;
-        hoverGridY = Math.floor((groundY - mouseY) / GRID_SIZE);
-        isHovering = true;
-    }
-
-    function placeBlockAtCursor() {
-        if (hoverGridY < 0 && currentTool !== 'hole') return; 
-        
-        if (currentTool === 'flag') levelData = levelData.filter(o => o.type !== 'flag'); 
-        if (currentTool === 'start_flag') levelData = levelData.filter(o => o.type !== 'start_flag'); 
-
-        if (currentTool === 'coin') {
-            const currentCoins = levelData.filter(o => o.type === 'coin').length;
-            const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
-            if (existingIndex === -1 || levelData[existingIndex].type !== 'coin') {
-                if (currentCoins >= 20) return; 
-            }
-        }
-
-        if (currentTool === 'hole') {
-            const existingIndex1 = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === 0);
-            if (existingIndex1 !== -1) levelData.splice(existingIndex1, 1);
-            const existingIndex2 = levelData.findIndex(obj => obj.x === hoverGridX + 1 && obj.y === 0);
-            if (existingIndex2 !== -1) levelData.splice(existingIndex2, 1);
-            
-            levelData.push({x: hoverGridX, y: 0, type: 'hole'});
-            levelData.push({x: hoverGridX + 1, y: 0, type: 'hole'});
-        } else {
-            const existingIndex = levelData.findIndex(obj => obj.x === hoverGridX && obj.y === hoverGridY);
-            if (currentTool === 'eraser') {
-                if (existingIndex !== -1) levelData.splice(existingIndex, 1);
-            } else {
-                if (existingIndex !== -1 && levelData[existingIndex].type === currentTool) return;
-                if (existingIndex !== -1) levelData.splice(existingIndex, 1);
-                levelData.push({x: hoverGridX, y: hoverGridY, type: currentTool});
-            }
-        }
-    }
-
-    canvas.addEventListener('mousedown', (e) => {
-        if (gameState.startsWith('PLAYING')) { e.preventDefault(); triggerJump(); return; }
-        if (gameState !== 'EDITOR') return;
-        isBuilding = true; updateEditorCursor(e); placeBlockAtCursor();
-    });
-    canvas.addEventListener('mousemove', (e) => {
-        if (gameState !== 'EDITOR') return;
-        updateEditorCursor(e); if (isBuilding) placeBlockAtCursor();
-    });
-    canvas.addEventListener('mouseup', () => {
-        if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
-    });
-    canvas.addEventListener('mouseleave', () => {
-        isHovering = false;
-        if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
-    });
-    canvas.addEventListener('touchstart', (e) => {
-        if (gameState.startsWith('PLAYING')) { e.preventDefault(); triggerJump(); return; }
-        if (gameState !== 'EDITOR') return;
-        isBuilding = true; updateEditorCursor(e); placeBlockAtCursor();
-    }, {passive: false});
-    canvas.addEventListener('touchmove', (e) => {
-        if (gameState !== 'EDITOR') return;
-        updateEditorCursor(e); if (isBuilding) placeBlockAtCursor();
-    }, {passive: false});
-    canvas.addEventListener('touchend', () => {
-        if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; isHovering = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
-    });
-
-    function updateEndlessGeneration() {
-        const currentGridX = Math.floor(cameraX / GRID_SIZE);
-        const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 6; 
-
-        if (nextEndlessSpawnX < targetGridX) {
-            const r = seededRandom();
-            let type = 'coin';
-            let y = 0;
-            let gap = 2; 
-
-            if (consecutiveObstacles >= 2) {
-                type = 'coin'; y = 1; gap = 2; consecutiveObstacles = 0;
-            } else {
-                if (r > 0.85) { type = 'hole'; gap = 5; consecutiveObstacles = 0; }
-                else if (r > 0.65) { type = 'spike'; gap = 3; consecutiveObstacles++; }
-                else if (r > 0.4) { type = 'block'; y = seededRandom() > 0.5 ? 1 : 0; gap = 2; consecutiveObstacles++; }
-                else if (r > 0.25) { type = 'pad'; gap = 2; consecutiveObstacles = 0; }
-                else { type = 'coin'; y = 1; gap = 2; consecutiveObstacles = 0; }
-            }
-
-            if (type === 'hole') {
-                endlessLevelData.push({x: nextEndlessSpawnX, y: 0, type: 'hole', collected: false});
-                endlessLevelData.push({x: nextEndlessSpawnX + 1, y: 0, type: 'hole', collected: false});
-            } else {
-                endlessLevelData.push({x: nextEndlessSpawnX, y: y, type: type, collected: false});
-            }
-            
-            nextEndlessSpawnX += gap;
-        }
-
-        if (endlessLevelData.length > 50 && endlessLevelData[0].x < currentGridX - 10) {
-            endlessLevelData.shift();
-        }
-    }
-
-    function executeJump() {
-        player.vy = JUMP_FORCE; 
-        player.isGrounded = false;
-        setAnimState('JUMP');
-        if(!isMuted) spawnParticles(player.x + player.size/2, player.y + player.size, 'var(--neon-green)', 15);
-    }
-
-    function triggerJump() {
-        if (gameState.startsWith('PLAYING')) {
-            if (player.isGrounded) executeJump();
-            else jumpBufferTimer = 0.15;
-        }
-    }
-
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' || e.code === 'ArrowUp') {
-            if (gameState.startsWith('PLAYING')) {
-                e.preventDefault(); triggerJump();
-            } else if (gameState === 'GAMEOVER' || gameState === 'VICTORY') {
-                e.preventDefault();
-                gameOverScreen.style.display = 'none';
-                startGame(currentActiveMode, currentIsTest);
-            }
-        }
-    });
-
-    function checkCollisions(activeLevelData) {
-        if (!activeLevelData || !Array.isArray(activeLevelData)) return;
-
-        const playerWorldX = player.x + cameraX;
-        const playerCenterGridX = Math.floor((playerWorldX + player.size/2) / GRID_SIZE);
-        
-        const holeUnder = activeLevelData.find(o => o.type === 'hole' && o.x === playerCenterGridX);
-        const currentGroundLevel = holeUnder ? 9999 : (height - GROUND_HEIGHT - player.size);
-
-        if (holeUnder && player.y >= (height - GROUND_HEIGHT - player.size)) {
-            gameOver(false); return;
-        }
-
-        if (player.y >= currentGroundLevel) {
-            player.y = currentGroundLevel; player.vy = 0;
-            if (!player.isGrounded) {
-                player.isGrounded = true; setAnimState('LAND');
-                if(!isMuted) spawnParticles(player.x + player.size/2, player.y + player.size, 'rgba(57, 255, 20, 0.7)', 8);
-                if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
-            }
-        } else {
-            player.isGrounded = false;
-            if (player.animState !== 'JUMP') setAnimState('JUMP');
-        }
-
-        if (player.y > height + 100) { gameOver(false); return; }
-
-        const nearbyObjects = activeLevelData.filter(o => o.type !== 'hole' && Math.abs((o.x * GRID_SIZE) - playerWorldX) < 200);
-        
-        for (let obs of nearbyObjects) {
-            if(obs.collected || obs.type === 'holo' || obs.type === 'start_flag') continue; 
-
-            const obsScreenX = (obs.x * GRID_SIZE) - cameraX;
-            const obsScreenY = height - GROUND_HEIGHT - ((obs.y + 1) * GRID_SIZE);
-            const obsSize = GRID_SIZE;
-            const tolX = 12, tolY = 12;
-            const hitX = (player.x + tolX < obsScreenX + obsSize) && (player.x + player.size - tolX > obsScreenX);
-            
-            if (obs.type === 'coin') {
-                const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
-                if (hitX && hitY) {
-                    obs.collected = true; score += 500;
-                    totalFireflies++; localStorage.setItem('slimeDashFireflies', totalFireflies);
-                    if(firefliesElem) firefliesElem.innerText = totalFireflies;
-                    if(!isMuted) spawnParticles(obsScreenX + obsSize/2, obsScreenY + obsSize/2, '#ccff00', 20);
-                }
-                continue; 
-            }
-
-            if (obs.type === 'pad') {
-                const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
-                if (hitX && hitY) {
-                    player.vy = JUMP_FORCE * 1.5; player.isGrounded = false; setAnimState('JUMP');
-                    if(!isMuted) spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 20);
-                    continue;
-                }
-            }
-
-            if (obs.type === 'block') {
-                const hitY = (player.y + tolY < obsScreenY + obsSize) && (player.y + player.size - tolY > obsScreenY);
-                if (hitX && hitY) {
-                    if (player.vy > 0 && player.prevY + player.size <= obsScreenY + 25) {
-                        player.y = obsScreenY - player.size; player.vy = 0; 
-                        if(!player.isGrounded) { 
-                            player.isGrounded = true; setAnimState('LAND'); 
-                            if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
-                        }
-                        continue; 
-                    }
-                    gameOver(false); return;
-                }
-            } 
-            else if (obs.type === 'spike') {
-                let inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
-                let hitY = false;
-                if (inverted) hitY = (player.y + tolY < obsScreenY + obsSize * 0.6) && (player.y + player.size - tolY > obsScreenY);
-                else hitY = (player.y + player.size - tolY > obsScreenY + obsSize * 0.4) && (player.y + tolY < obsScreenY + obsSize);
-                if (hitX && hitY) { gameOver(false); return; }
-            }
-            else if (obs.type === 'flag') {
-                const hitY = (player.y + tolY < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
-                if (hitX && hitY) { gameOver(true); return; } 
-            }
-        }
-    }
-
-    let lastTime = performance.now();
-
-    function mainLoop(currentTime) {
-        const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
-        lastTime = currentTime;
-        update(dt); draw();
-        requestAnimationFrame(mainLoop);
-    }
-
-    function update(dt) {
-        if (jumpBufferTimer > 0) jumpBufferTimer -= dt;
-
-        player.animTimer += dt;
-        if (player.animTimer >= player.animSpeed) {
-            player.animTimer = 0; player.frameIndex++;
-            if (player.animState === 'JUMP') { if (player.frameIndex >= sprites.jump.length) player.frameIndex = sprites.jump.length - 1; } 
-            else if (player.animState === 'LAND') { if (player.frameIndex >= sprites.land.length) setAnimState('RECOVER'); }
-            else if (player.animState === 'RECOVER') { if (player.frameIndex >= sprites.idle.length) setAnimState('RUN'); }
-            else if (player.animState === 'IDLE') { player.frameIndex = player.frameIndex % sprites.idle.length; }
-            else if (player.animState === 'RUN') { player.frameIndex = player.frameIndex % sprites.run.length; }
-        }
-
-        particles.forEach((p, i) => { p.x += p.vx * dt; p.y += p.vy * dt; p.alpha -= p.decay * dt; if (p.alpha <= 0) particles.splice(i, 1); });
-        if (shakeTimer > 0) shakeTimer -= dt;
-
-        if (gameState === 'START') cameraX += 30 * dt;
-
-        if (gameState.startsWith('PLAYING')) {
-            cameraX += gameSpeed * dt;
-            player.prevY = player.y; 
-            player.vy += GRAVITY * dt;
-            player.y += player.vy * dt;
-
-            score += gameSpeed * dt * 0.1;
-            const scoreElem = document.getElementById('score');
-            if (scoreElem) scoreElem.innerText = Math.floor(score);
-
-            if (gameState === 'PLAYING_ENDLESS') {
-                gameSpeed += dt * 5; 
-                updateEndlessGeneration();
-                checkCollisions(endlessLevelData);
-            } else {
-                checkCollisions(levelData); 
-            }
-        } 
-        else if (gameState === 'EDITOR') {
-            cameraX += (editorCamTarget - cameraX) * 10 * dt;
-            if(cameraX < 0) { cameraX = 0; editorCamTarget = 0; }
-        }
-    }
-
-    function drawImageBackground() {
-        let seqW = 0; let widths = [];
-        for (let i = 0; i < bgImages.length; i++) {
-            let img = bgImages[i];
-            if (img.complete && img.naturalHeight > 0) {
-                let w = (height / img.naturalHeight) * img.naturalWidth;
-                widths.push(w); seqW += w;
-            } else widths.push(0);
-        }
-
-        if (seqW === 0) return; 
-        let scrollX = cameraX * 0.15; let startX = -(scrollX % seqW); let currentX = startX;
-
-        while (currentX < width) {
-            for (let i = 0; i < bgImages.length; i++) {
-                let img = bgImages[i]; let imgW = widths[i];
-                if (imgW > 0 && currentX + imgW > 0 && currentX < width) ctx.drawImage(img, currentX, 0, imgW, height);
-                currentX += imgW;
-            }
-        }
-    }
-
-    function drawEditorObject(type, screenX, screenY, alpha = 1, isInverted = false) {
-        ctx.globalAlpha = alpha;
-        const VISUAL_SCALE = 1.5; 
-        const drawW = Math.floor(GRID_SIZE * VISUAL_SCALE);
-        const drawH = Math.floor(GRID_SIZE * VISUAL_SCALE);
-        const drawX = Math.floor(screenX - (drawW - GRID_SIZE) / 2);
-        
-        const BLOCK_SCALE = 1.65;
-        const blockW = Math.floor(GRID_SIZE * BLOCK_SCALE);
-        const blockH = Math.floor(GRID_SIZE * BLOCK_SCALE);
-        const blockX = Math.floor(screenX - (blockW - GRID_SIZE) / 2);
-        const blockAlignBottomY = screenY + GRID_SIZE - blockH;
-        const alignBottomY = screenY + GRID_SIZE - drawH;
-
-        if (type === 'block') {
-            if (carreImg.complete && carreImg.naturalWidth > 0) ctx.drawImage(carreImg, blockX, blockAlignBottomY + 27, blockW, blockH); 
-            else {
-                ctx.fillStyle = '#111'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
-                ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
-            }
-        } 
-        else if (type === 'pad') {
-            if (rebonImg.complete && rebonImg.naturalWidth > 0) ctx.drawImage(rebonImg, drawX, alignBottomY + 20, drawW, drawH); 
-            else {
-                ctx.fillStyle = 'rgba(0, 240, 255, 0.2)'; ctx.fillRect(screenX, screenY + GRID_SIZE/2, GRID_SIZE, GRID_SIZE/2);
-                ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 2; ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
-            }
-        }
-        else if (type === 'holo') {
-            ctx.fillStyle = 'rgba(0, 240, 255, 0.15)'; ctx.fillRect(screenX, screenY, GRID_SIZE, GRID_SIZE);
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
-            ctx.strokeRect(screenX, screenY, GRID_SIZE, GRID_SIZE); ctx.setLineDash([]);
-        }
-        else if (type === 'coin') {
-            const floatY = Math.floor(screenY + Math.sin(performance.now()/150) * 8); 
-            const coinY = Math.floor(floatY - (drawH - GRID_SIZE) / 2);
-            if (lucioleImg.complete && lucioleImg.naturalWidth > 0) {
-                ctx.shadowBlur = 15; ctx.shadowColor = '#ccff00';
-                ctx.drawImage(lucioleImg, drawX, coinY, drawW, drawH);
-                ctx.shadowBlur = 0;
-            } else {
-                ctx.shadowBlur = 20; ctx.shadowColor = '#ccff00'; ctx.fillStyle = '#eaff80';
-                ctx.beginPath(); ctx.arc(screenX + GRID_SIZE/2, floatY + GRID_SIZE/2, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
-            }
-        }
-        else if (type === 'spike') {
-            if (isInverted) {
-                ctx.save(); ctx.translate(screenX + GRID_SIZE/2, screenY + GRID_SIZE/2);
-                ctx.scale(1, -1); ctx.translate(-(screenX + GRID_SIZE/2), -(screenY + GRID_SIZE/2));
-            }
-            if (triangleImg.complete && triangleImg.naturalWidth > 0) ctx.drawImage(triangleImg, drawX, alignBottomY + 25, drawW, drawH); 
-            else {
-                ctx.shadowBlur = 10; ctx.shadowColor = '#ff007f'; ctx.fillStyle = '#111'; ctx.strokeStyle = '#ff007f'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY); ctx.lineTo(screenX + GRID_SIZE, screenY + GRID_SIZE);
-                ctx.lineTo(screenX, screenY + GRID_SIZE); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
-            }
-            if (isInverted) ctx.restore();
-        }
-        else if (type === 'flag' || type === 'start_flag') {
-            const fColor = type === 'flag' ? 'var(--neon-yellow)' : 'var(--neon-green)';
-            ctx.shadowBlur = 15; ctx.shadowColor = fColor; ctx.fillStyle = fColor;
-            ctx.fillRect(screenX + GRID_SIZE/2 - 2, screenY - GRID_SIZE, 4, GRID_SIZE * 2); 
-            ctx.beginPath(); ctx.moveTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE); ctx.lineTo(screenX + GRID_SIZE, screenY - GRID_SIZE + 20);
-            ctx.lineTo(screenX + GRID_SIZE/2, screenY - GRID_SIZE + 40); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
-        }
-        ctx.globalAlpha = 1;
-    }
-
-    function draw() {
-        ctx.save();
-        if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
-        ctx.clearRect(0, 0, width, height);
-
-        drawImageBackground(); 
-
-        if (gameState === 'EDITOR') {
-            ctx.strokeStyle = `rgba(57, 255, 20, 0.2)`; ctx.lineWidth = 1; ctx.beginPath();
-            const offsetX = cameraX % GRID_SIZE;
-            for(let x = -offsetX; x < width; x += GRID_SIZE) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
-            for(let y = (height - GROUND_HEIGHT) % GRID_SIZE; y < height; y += GRID_SIZE) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
-            ctx.stroke();
-        }
-
-        const groundY = height - GROUND_HEIGHT;
-
-        if (platformImg.complete && platformImg.naturalWidth > 0) {
-            const scale = GROUND_HEIGHT / platformImg.naturalHeight;
-            const pWidth = Math.ceil(platformImg.naturalWidth * scale); 
-            let scrollX = Math.floor(cameraX) % pWidth;
-            for (let i = -scrollX; i < width; i += pWidth) ctx.drawImage(platformImg, i, groundY, pWidth, GROUND_HEIGHT);
-        } else {
-            ctx.fillStyle = '#050508'; ctx.fillRect(0, groundY, width, GROUND_HEIGHT);
-            ctx.shadowBlur = 10; ctx.shadowColor = 'var(--neon-green)'; ctx.strokeStyle = 'var(--neon-green)'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width, groundY); ctx.stroke(); ctx.shadowBlur = 0;
-        }
-
-        const activeLevelData = gameState === 'PLAYING_ENDLESS' ? endlessLevelData : levelData;
-        for (let screenX = 0; screenX <= width; screenX += GRID_SIZE) {
-            const worldX = screenX + cameraX; const gridX = Math.floor(worldX / GRID_SIZE);
-            if (activeLevelData.some(o => o.type === 'hole' && o.x === gridX)) { 
-                const exactScreenX = (gridX * GRID_SIZE) - cameraX;
-                ctx.clearRect(exactScreenX, groundY, GRID_SIZE, GROUND_HEIGHT);
-                ctx.fillStyle = '#000'; ctx.fillRect(exactScreenX, groundY, GRID_SIZE, GROUND_HEIGHT);
-            } 
-        }
-
-        if(activeLevelData && Array.isArray(activeLevelData)) {
-            activeLevelData.forEach(obs => {
-                if (obs.type === 'hole' || obs.collected) return; 
-                const screenX = (obs.x * GRID_SIZE) - cameraX; const screenY = groundY - ((obs.y + 1) * GRID_SIZE);
-                if(screenX + GRID_SIZE < 0 || screenX > width) return;
-                let inverted = false;
-                if (obs.type === 'spike') inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
-                drawEditorObject(obs.type, screenX, screenY, 1, inverted);
-            });
-        }
-
-        if (gameState === 'EDITOR' && isHovering) {
-            const ghostScreenX = (hoverGridX * GRID_SIZE) - cameraX;
-            const ghostScreenY = currentTool === 'hole' ? groundY : groundY - ((hoverGridY + 1) * GRID_SIZE);
-            if (currentTool === 'eraser') { 
-                ctx.fillStyle = 'rgba(255, 0, 127, 0.4)'; ctx.fillRect(ghostScreenX, ghostScreenY, GRID_SIZE, GRID_SIZE); 
-            } else { 
-                let inverted = false;
-                if (currentTool === 'spike') inverted = levelData.some(o => o.x === hoverGridX && o.y === hoverGridY + 1 && o.type === 'block');
-                drawEditorObject(currentTool, ghostScreenX, ghostScreenY, 0.5, inverted); 
-            }
-        }
-
-        let currentArray = sprites.idle;
-        if(player.animState === 'RUN') currentArray = sprites.run;
-        else if(player.animState === 'JUMP') currentArray = sprites.jump;
-        else if(player.animState === 'LAND') currentArray = sprites.land;
-        
-        let safeIndex = player.frameIndex % currentArray.length;
-        if (player.animState === 'JUMP' && player.frameIndex >= currentArray.length) safeIndex = currentArray.length - 1;
-        const activeImg = currentArray[safeIndex];
-
-        if (activeImg && activeImg.complete && activeImg.naturalWidth > 0) {
-            ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)';
-            ctx.drawImage(activeImg, Math.floor(player.x), Math.floor(player.y), player.size, player.size);
-            ctx.shadowBlur = 0;
-        } else {
-            ctx.fillStyle = '#0b0c10'; ctx.fillRect(Math.floor(player.x), Math.floor(player.y), player.size, player.size);
-            ctx.strokeStyle = 'var(--neon-cyan)'; ctx.lineWidth = 3; ctx.strokeRect(Math.floor(player.x), Math.floor(player.y), player.size, player.size);
-        }
-
-        particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.alpha); ctx.fillRect(p.x, p.y, p.size, p.size); });
-        ctx.globalAlpha = 1;
-        ctx.restore();
-    }
-
-    // Initialisation au bon moment !
-    setLanguage(currentLang);
-    showMenu("Slime-Dash", "var(--neon-cyan)");
-    requestAnimationFrame(mainLoop);
-});
+        document.addEventListener('mouseup', e => {
+            if (!isDragging) return; isDragging = false;
+            if (isExcludedElement(e.target)) return;
+            globalTouchEndX = e.clientX; globalTouchEndY = e.clientY;
+            handleSwipeGesture();
+        });
+    </script>
+</body>
+</html>
