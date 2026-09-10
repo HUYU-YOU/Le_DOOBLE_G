@@ -53,7 +53,7 @@ body {
     top: 15px; 
     left: 15px; 
     z-index: 100;
-    width: 150px; /* Ajuste cette valeur si besoin */
+    width: 150px; 
     transition: transform 0.3s ease;
 }
 
@@ -108,13 +108,14 @@ h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin: 0; tex
 /* LE PLATEAU DE JEU AVEC TON IMAGE */
 #game-container { 
     position: relative; 
-    background-image: url('img/grid-bg.png'); 
+    /* Le bon chemin avec ton image background.png */
+    background-image: url('img/background.png'); 
     background-size: 100% 100%; 
     background-position: center;
     background-repeat: no-repeat;
     
     border-radius: 15px; 
-    padding: 10px; /* Ajuste cette valeur si les slimes sont décalés par rapport aux cases de ton image */
+    padding: 10px; 
     box-sizing: border-box; 
     
     box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
@@ -125,7 +126,7 @@ h1 { color: #fff; text-transform: uppercase; letter-spacing: 5px; margin: 0; tex
 
 .grid-background { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; width: 100%; height: 100%; }
 
-/* On rend les anciennes cases transparentes */
+/* On rend les anciennes cases transparentes pour voir ton image ! */
 .grid-cell { 
     background-color: transparent; 
     border-radius: 10px; 
