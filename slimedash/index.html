@@ -9,12 +9,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- BOUTON RETOUR AU HUB (Image dynamique) -->
+    <!-- BOUTON RETOUR AU HUB -->
     <a href="../index.html" id="btn-retour-hub">
         <img id="img-retour-hub" src="../img/retourhub.png" alt="Retour Hub">
     </a>
 
-    <!-- BOUTON SETTINGS & ORBITE -->
+    <!-- BOUTON SETTINGS -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <div class="orbit-container"><div class="orbit-slime"></div></div>
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
@@ -24,7 +24,6 @@
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 2px;" data-i18n="settings_title">Paramètres</h2>
-            
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 25px;">
                 <span data-i18n="language">Langue / Language 🌍</span>
                 <div class="size-options">
@@ -32,12 +31,10 @@
                     <button id="btn-lang-en" class="btn-size" onclick="setLanguage('en')">EN</button>
                 </div>
             </div>
-
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 25px;">
                 <span data-i18n="sound">Audio 🎵</span>
                 <button id="btn-mute" class="btn-size" style="width: 100%;">🔊 SON: ON</button>
             </div>
-
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span data-i18n="screen_size">Format de l'Écran 🖥️</span>
                 <div class="size-options">
@@ -46,7 +43,6 @@
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')" data-i18n="size_full">Plein Écran</button>
                 </div>
             </div>
-            
             <button onclick="toggleSettings()" class="close-btn" data-i18n="close">Fermer</button>
         </div>
     </div>
@@ -62,11 +58,11 @@
 
         <canvas id="gameCanvas"></canvas>
         
-        <!-- INTERFACE UTILISATEUR (UI) - Sera masquée sur l'écran d'accueil -->
+        <!-- UI: On a supprimé le mot MENU ici -->
         <div id="ui-layer">
             <div class="score-board">
                 <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <div id="status-text">MENU</div>
+                    <div id="status-text" style="display: none;"></div>
                     <div id="completion-text" style="color:var(--neon-yellow); display:none;" data-i18n="level_complete">NIVEAU ACCOMPLI !</div>
                 </div>
                 <div style="text-align: right; font-size: 1.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan);">
@@ -80,22 +76,18 @@
 
         <!-- ECRAN TITRE ORGANIQUE -->
         <div id="menu-screen">
-            <!-- LE TEXTE A ÉTÉ SUPPRIMÉ ICI -->
-            
-            <div class="btn-group">
-                <button id="btn-play-endless" class="image-btn">
-                    <img src="img/play.png" alt="Jouer (Infini)">
-                </button>
-                <div class="btn-row">
-                    <button id="btn-create-map" class="image-btn">
-                        <img src="img/edit.png" alt="Créer une map">
-                    </button>
-                    <button id="btn-play-code" class="image-btn">
-                        <img src="img/code.png" alt="Jouer un code">
-                    </button>
-                </div>
-            </div>
+            <!-- Boutons positionnés en absolu -->
+            <button id="btn-play-endless" class="image-btn">
+                <img src="img/play.png" alt="Jouer">
+            </button>
+            <button id="btn-create-map" class="image-btn">
+                <img src="img/edit.png" alt="Créer">
+            </button>
+            <button id="btn-play-code" class="image-btn">
+                <img src="img/code.png" alt="Code">
+            </button>
 
+            <!-- Menu de saisie du code -->
             <div id="code-section">
                 <input type="text" id="map-code-input" placeholder="Coller le code ici...">
                 <button id="load-code-btn" class="action-btn-main btn-code" style="width: auto; padding: 10px 40px;" data-i18n="play_map_code">LANCER LA MAP</button>
@@ -107,7 +99,6 @@
             <h2 id="go-title">CRASH CRITIQUE</h2>
             <p id="go-desc"><span data-i18n="score_label">Score :</span> <span id="go-score" style="color: var(--neon-green); font-size: 1.5em; text-shadow: 0 0 10px var(--neon-green);">0</span></p>
             <p style="font-size: 0.9rem; color: #aaa; margin-top: -15px;" data-i18n="press_space">Appuyez sur ESPACE pour rejouer</p>
-            
             <div class="btn-group" style="margin-bottom: 0; width: 100%;">
                 <button id="btn-replay" class="action-btn-main btn-play" data-i18n="replay">REJOUER</button>
                 <button id="btn-back-menu" class="action-btn-main btn-edit" data-i18n="back_menu">RETOUR MENU</button>
@@ -125,18 +116,15 @@
             <button class="tool-btn" data-tool="start_flag" title="Point de Départ (Un seul)">🟢</button>
             <button class="tool-btn" data-tool="flag" title="Fin du niveau">🏁</button>
             <button class="tool-btn" data-tool="eraser" title="Gomme">❌</button>
-            
             <div class="divider"></div>
             <button class="tool-btn" id="cam-left" title="Caméra Gauche">◀</button>
             <button class="tool-btn" id="cam-right" title="Caméra Droite">▶</button>
             <div class="divider"></div>
-
             <button id="test-btn" class="action-btn action-tester" data-i18n="btn_test">TESTER</button>
             <button id="export-btn" class="action-btn action-exporter" data-i18n="btn_export">📤 EXPORTER</button>
             <button id="exit-btn" class="action-btn action-quitter" data-i18n="btn_quit">QUITTER</button>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
