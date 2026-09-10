@@ -39,40 +39,24 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
     width: 100vw; height: 100vh; border-radius: 0; border: none; object-fit: fill;
 }
 
-/* --- BOUTON RETOUR AU HUB --- */
+/* --- BOUTONS FLOTTANTS ET RETOUR --- */
 #btn-retour-hub {
     position: fixed; top: 20px; left: 20px; z-index: 9999;
     display: flex; align-items: center; 
     background: transparent; border: none; padding: 0; box-shadow: none;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-#btn-retour-hub img {
-    max-height: 55px; 
-    object-fit: contain;
-    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6));
-    transition: filter 0.3s ease;
-}
-#btn-retour-hub:hover {
-    transform: scale(1.08) translateX(5px);
-}
-#btn-retour-hub:hover img {
-    filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6)) brightness(1.1);
-}
+#btn-retour-hub img { max-height: 55px; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6)); transition: filter 0.3s ease; }
+#btn-retour-hub:hover { transform: scale(1.08) translateX(5px); }
+#btn-retour-hub:hover img { filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6)) brightness(1.1); }
 
-/* --- BOUTONS OPTIONS FLOTTANTS --- */
-.floating-controls {
-    position: absolute; top: 20px; right: 80px; z-index: 1000;
-    display: flex; gap: 15px;
-}
+.floating-controls { position: absolute; top: 20px; right: 80px; z-index: 1000; display: flex; gap: 15px; }
 #btn-stop-test {
-    background-color: rgba(0, 0, 0, 0.5); border: 1px solid var(--neon-cyan);
-    padding: 8px 15px; font-family: inherit; font-size: 1.1rem; border-radius: 8px; 
-    cursor: pointer; font-weight: bold; transition: 0.2s ease; backdrop-filter: blur(5px);
-    border-color: var(--neon-pink); color: var(--neon-pink); display: none;
+    background-color: rgba(0, 0, 0, 0.5); border: 1px solid var(--neon-cyan); padding: 8px 15px; font-family: inherit; font-size: 1.1rem; border-radius: 8px; 
+    cursor: pointer; font-weight: bold; transition: 0.2s ease; backdrop-filter: blur(5px); border-color: var(--neon-pink); color: var(--neon-pink); display: none;
 }
 #btn-stop-test:hover { background-color: rgba(255, 0, 127, 0.15); box-shadow: 0 0 15px rgba(255, 0, 127, 0.5); color: #fff; }
 
-/* --- BOUTON SETTINGS & ORBITE --- */
 .settings-btn-wrapper { position: fixed; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 9999; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
 .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
@@ -81,7 +65,7 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
 @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* --- MODAL PARAMETRES & TAILLE D'ÉCRAN --- */
+/* --- MODAL PARAMETRES --- */
 #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
 #settings-modal.show { opacity: 1; pointer-events: auto; }
 .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--neon-cyan); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
@@ -93,92 +77,103 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 .close-btn { margin-top: 25px; background: var(--neon-cyan); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 .close-btn:hover { box-shadow: 0 0 20px var(--neon-cyan); transform: scale(1.05); }
 
-/* --- INTERFACE UTILISATEUR (UI) --- */
+/* --- UI EN JEU --- */
 #ui-layer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; display: flex; flex-direction: column;
     justify-content: space-between; padding: 25px; box-sizing: border-box;
-    z-index: 50;
-    display: none; /* Masqué par défaut sur l'écran d'accueil */
+    z-index: 50; display: none;
 }
-
 .score-board {
     display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: bold;
     color: var(--neon-pink); text-shadow: 0 0 12px var(--neon-pink); letter-spacing: 2px;
     pointer-events: auto; padding-top: 60px;
 }
 
-/* --- NOUVEAU MENU ORGANIQUE (roller.png) --- */
+/* ========================================================
+   NOUVEAU MENU ORGANIQUE (POSITIONNEMENT ABSOLU)
+   ======================================================== */
 #menu-screen {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    text-align: center; pointer-events: auto; 
-    
     background: url('img/roller.png') center/100% 100% no-repeat;
     
-    padding: 160px 80px 70px 80px; 
-    border: none; 
-    box-shadow: none;
-    border-radius: 20px; 
-    z-index: 100; 
+    /* Plus de background noir derrière ! On force un format 16:9 
+       pour que les boutons soient toujours parfaitement alignés 
+       avec le fond, quelle que soit la taille de l'écran. */
+    aspect-ratio: 16 / 9;
+    width: 95vw; 
+    max-width: 1000px;
     
-    width: 90%; max-width: 900px; /* Élargi pour les nouveaux gros boutons */
-    
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    border: none; box-shadow: none; border-radius: 20px; 
+    z-index: 100; pointer-events: none; /* Laisse passer les clics à travers les espaces vides */
 }
 
-#gameover-screen { 
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    text-align: center; pointer-events: auto; 
-    background: rgba(10, 15, 28, 0.8); backdrop-filter: blur(15px);
-    padding: 40px 60px; border-radius: 20px; z-index: 100; width: 90%; max-width: 600px;
-    border: 2px solid rgba(255, 0, 127, 0.3); 
-    box-shadow: 0 15px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 0, 127, 0.1); 
-    display: none; 
-}
-
-h2 { margin-top: 0; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--neon-green); text-transform: uppercase; font-size: 3.5rem; letter-spacing: 5px; }
-p { color: #ccc; margin-bottom: 25px; font-size: 1.2rem; line-height: 1.5; font-weight: bold;}
-
-/* --- STYLE DES BOUTONS IMAGES --- */
-.btn-group { 
-    display: flex; flex-direction: column; gap: 30px; 
-    justify-content: center; align-items: center; 
-    width: 100%; margin-bottom: 20px;
-}
-.btn-row { 
-    display: flex; gap: 30px; 
-    justify-content: center; width: 100%; 
-}
-
+/* --- BOUTONS IMAGES --- */
 .image-btn {
+    position: absolute; /* Placement exact sur les coordonnées */
+    transform: translate(-50%, -50%); /* Permet de centrer sur le point donné */
     background: transparent; border: none; padding: 0; cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease;
-    outline: none; display: flex; justify-content: center; align-items: center;
-    width: 100%;
+    outline: none; z-index: 10; pointer-events: auto; /* Active le clic */
 }
 
 .image-btn img {
-    display: block; 
-    width: 100%; 
-    height: auto;
+    display: block; width: 100%; height: auto;
     filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6));
 }
 
-/* TAILLES AGRANDIES */
-#btn-play-endless { max-width: 400px; } /* +20% */
-#btn-create-map, #btn-play-code { max-width: 310px; } /* +40% */
+/* ⚠️ TWEAK COORDONNÉES ⚠️ 
+   J'ai calculé ces positions grâce à ta capture d'écran.
+   Si c'est décalé d'un poil, modifie la ligne "top: xx%" ! 
+*/
 
+#btn-play-endless { 
+    top: 52%;   /* Hauteur (50% = milieu de l'écran) */
+    left: 50%;  /* Gauche-Droite (50% = milieu) */
+    width: 48%; /* Agrandit de 20% par rapport à l'original ! */
+} 
+
+#btn-create-map { 
+    top: 75%;   /* Vers le bas */
+    left: 33%;  /* Coté gauche */
+    width: 32%; /* Agrandit de 40% ! */
+}
+
+#btn-play-code { 
+    top: 75%;   /* Vers le bas */
+    left: 67%;  /* Coté droit */
+    width: 32%; /* Agrandit de 40% ! */
+}
+
+/* Effets de survol (Attention: on doit garder le translate !) */
 .image-btn:hover {
-    transform: scale(1.08) translateY(-4px);
+    transform: translate(-50%, -50%) scale(1.08); 
     filter: brightness(1.15) drop-shadow(0 10px 15px rgba(57, 255, 20, 0.3));
 }
-.image-btn:active { transform: scale(0.95); filter: brightness(0.9); }
+.image-btn:active { 
+    transform: translate(-50%, -50%) scale(0.95); 
+    filter: brightness(0.9); 
+}
+
+/* --- OVERLAY CODE INPUT --- */
+#code-section {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(10, 15, 28, 0.95); border: 2px solid var(--neon-pink);
+    padding: 30px; border-radius: 15px; box-shadow: 0 0 30px #000;
+    z-index: 20; display: none; flex-direction: column; gap: 15px; align-items: center; 
+    width: 80%; max-width: 400px; pointer-events: auto;
+}
+
+input[type="text"] {
+    background: rgba(0,0,0,0.8); border: 1px solid var(--neon-pink); color: #fff;
+    padding: 15px; font-size: 1.2rem; font-family: inherit; font-weight: bold; outline: none; 
+    text-align: center; width: 80%; border-radius: 8px;
+}
+input[type="text"]:focus { box-shadow: 0 0 15px var(--neon-pink); }
 
 /* --- BOUTONS CLASSIQUES (Game Over / Code Input) --- */
 .action-btn-main {
-    width: 100%; max-width: 400px; padding: 15px; margin: 5px 0;
+    width: 100%; padding: 15px; margin: 5px 0;
     font-size: 1.3rem; font-family: 'Rajdhani', sans-serif; font-weight: bold;
     color: #fff; text-transform: uppercase; letter-spacing: 1px;
     background: rgba(0,0,0,0.5); border: 2px solid transparent; border-radius: 10px; 
@@ -191,30 +186,23 @@ p { color: #ccc; margin-bottom: 25px; font-size: 1.2rem; line-height: 1.5; font-
 .btn-edit { border-color: var(--neon-yellow); box-shadow: 0 0 15px rgba(252, 232, 3, 0.2); }
 .btn-edit:hover { background: var(--neon-yellow); box-shadow: 0 10px 30px rgba(252, 232, 3, 0.6); color:#000;}
 
-#code-section {
-    border-top: 1px solid rgba(255,255,255,0.1); padding-top: 25px; margin-top: 15px;
-    display: none; flex-direction: column; gap: 15px; align-items: center; width: 100%;
+#gameover-screen { 
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; pointer-events: auto; 
+    background: rgba(10, 15, 28, 0.8); backdrop-filter: blur(15px);
+    padding: 40px 60px; border-radius: 20px; z-index: 100; width: 90%; max-width: 600px;
+    border: 2px solid rgba(255, 0, 127, 0.3); 
+    box-shadow: 0 15px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 0, 127, 0.1); 
+    display: none; 
 }
-input[type="text"] {
-    background: rgba(0,0,0,0.8); border: 1px solid var(--neon-pink); color: #fff;
-    padding: 15px; font-size: 1.2rem; font-family: inherit; font-weight: bold; outline: none; 
-    text-align: center; width: 80%; border-radius: 8px;
-}
-input[type="text"]:focus { box-shadow: 0 0 15px var(--neon-pink); }
+h2 { margin-top: 0; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--neon-green); text-transform: uppercase; font-size: 3.5rem; letter-spacing: 5px; }
+p { color: #ccc; margin-bottom: 25px; font-size: 1.2rem; line-height: 1.5; font-weight: bold;}
+.btn-group { display: flex; flex-direction: column; gap: 30px; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px;}
 
-#editor-panel {
-    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-    background: rgba(11, 12, 16, 0.95); border: 2px solid var(--neon-yellow);
-    padding: 15px 20px; border-radius: 10px; display: none; gap: 10px; pointer-events: auto;
-    box-shadow: 0 0 15px var(--neon-yellow); z-index: 100; align-items: center; flex-wrap: nowrap; 
-    cursor: grab;
-}
+/* --- EDITOR PANEL --- */
+#editor-panel { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(11, 12, 16, 0.95); border: 2px solid var(--neon-yellow); padding: 15px 20px; border-radius: 10px; display: none; gap: 10px; pointer-events: auto; box-shadow: 0 0 15px var(--neon-yellow); z-index: 100; align-items: center; flex-wrap: nowrap; cursor: grab; }
 #editor-panel:active { cursor: grabbing; }
-
-.tool-btn { 
-    padding: 10px; font-size: 1.3rem; border-color: gray; color: gray; min-width: 45px; 
-    background: #000; cursor: pointer; border-radius: 5px; border-style: solid; border-width: 2px;
-}
+.tool-btn { padding: 10px; font-size: 1.3rem; border-color: gray; color: gray; min-width: 45px; background: #000; cursor: pointer; border-radius: 5px; border-style: solid; border-width: 2px; }
 .tool-btn.active { border-color: var(--neon-yellow); color: var(--neon-yellow); box-shadow: 0 0 10px var(--neon-yellow); }
 .divider { width: 2px; height: 40px; background: gray; margin: 0 5px; }
 .action-btn { padding: 10px 15px; font-size: 1rem; border-radius: 5px; cursor: pointer; text-transform: uppercase; font-weight: bold; background: #000; font-family: inherit; }
