@@ -38,7 +38,6 @@ function toggleSettings() {
 
 function setGameSize(size) {
     const container = document.getElementById('game-container');
-    const btns = document.querySelectorAll('.btn-size');
     
     document.getElementById('btn-sz-classic').classList.remove('active');
     document.getElementById('btn-sz-wide').classList.remove('active');
@@ -133,6 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateStatusText() {
         const sText = document.getElementById('status-text');
         if (!sText) return;
+        if (typeof gameState === 'undefined') return; 
+        
         if (gameState === 'START') sText.innerText = translations[currentLang].status_menu;
         else if (gameState === 'PLAYING_ENDLESS') sText.innerText = translations[currentLang].status_endless;
         else if (gameState === 'EDITOR') sText.innerText = translations[currentLang].status_editor;
@@ -155,8 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnMute.style.borderColor = "var(--neon-cyan)";
         }
     }
-    
-    setLanguage(currentLang);
 
     btnMute.addEventListener('click', () => {
         isMuted = !isMuted;
@@ -205,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editorPanel = document.getElementById('editor-panel');
     const statusText = document.getElementById('status-text');
     const stopTestBtn = document.getElementById('btn-stop-test');
-    const uiLayer = document.getElementById('ui-layer'); // Nouvelle référence à l'UI
+    const uiLayer = document.getElementById('ui-layer');
 
     let width, height;
     let gameState = 'START'; 
@@ -389,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
         menuScreen.style.display = 'none';
         gameOverScreen.style.display = 'none';
         editorPanel.style.display = 'none';
-        uiLayer.style.display = 'flex'; // On affiche les scores quand on joue !
+        uiLayer.style.display = 'flex'; 
         
         if (isTest) stopTestBtn.style.display = 'block';
         else stopTestBtn.style.display = 'none';
@@ -434,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
         menuScreen.style.display = 'none';
         gameOverScreen.style.display = 'none';
         stopTestBtn.style.display = 'none';
-        uiLayer.style.display = 'flex'; // On affiche l'UI dans l'éditeur !
+        uiLayer.style.display = 'flex'; 
         
         editorPanel.style.transform = 'translateX(-50%)';
         editorPanel.style.left = '50%';
@@ -502,12 +501,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showMenu(title, color) {
         gameState = 'START';
-        menuScreen.style.display = 'flex'; // On affiche le conteneur du menu
+        menuScreen.style.display = 'flex'; 
         gameOverScreen.style.display = 'none';
         editorPanel.style.display = 'none';
         stopTestBtn.style.display = 'none';
         document.getElementById('code-section').style.display = 'none';
-        uiLayer.style.display = 'none'; // MASQUE le bloc de score + "MENU"
+        uiLayer.style.display = 'none'; 
         
         statusText.style.color = "var(--neon-cyan)";
         updateStatusText();
@@ -1050,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.restore();
     }
 
-    // Lance l'écran de démarrage à l'initialisation du jeu.
+    setLanguage(currentLang);
     showMenu("Slime-Dash", "var(--neon-cyan)");
     requestAnimationFrame(mainLoop);
 });
