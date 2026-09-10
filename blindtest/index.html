@@ -203,7 +203,7 @@
             </div>
         </div>
 
-        <!-- MENU CATÉGORIE (AFFICHÉ PAR DÉFAUT AU LANCEMENT) -->
+        <!-- MENU CATÉGORIE -->
         <div class="overlay" id="category-menu">
             <div class="menu-title" style="color:var(--sys); text-shadow: 0 0 15px var(--sys);">SÉLECTION DE LA PLAYLIST</div>
             <p id="lobby-count" style="color:#0ff; font-weight:700; font-size:1.3em; display:none; margin-bottom: 5px;">1 joueur(s) dans le salon</p>
@@ -286,7 +286,7 @@
         let peer = null; 
         let conns = []; 
         let scores = { 1: 0 }; 
-        let playerNames = { 1: "Solo" }; // Map Pid -> Nom
+        let playerNames = { 1: "Solo" };
         let playerColors = ['#00f0ff', '#ff007f', '#f1c40f', '#39ff14', '#ff8800', '#b800ff', '#00ffaa', '#ff0000'];
 
         let playlist = [];
@@ -294,8 +294,8 @@
         let currentTrack = null;
         let audioPlayer = new Audio();
 
-        // État de la manche
-        let state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, disneyFound: false, timeLeft: 20 };
+        // État de la manche modifié pour stocker les joueurs qui ont trouvé (système de points dégressif)
+        let state = { artistFoundBy: [], titleFoundBy: [], animeFoundBy: [], filmFoundBy: [], disneyFoundBy: [], timeLeft: 20 };
         let roundInterval = null;
         let isRoundActive = false;
 
@@ -394,26 +394,22 @@
             });
 
             peer.on('connection', c => { 
-                c.on('open', () => {
-                    // Ne rien initialiser tant que le client n'a pas envoyé son nom
-                });
+                c.on('open', () => { });
 
                 c.on('data', data => { 
                     if (data.type === 'join') {
                         let newPid = Object.keys(scores).length + 1; 
                         c.pid = newPid; 
                         scores[newPid] = 0; 
-                        playerNames[newPid] = data.name.substring(0, 15); // Sécurité taille
+                        playerNames[newPid] = data.name.substring(0, 15); 
                         conns.push(c); 
 
                         status.style.color = "var(--sys)";
                         status.innerText = `${conns.length + 1} joueur(s) connectés !`;
                         document.getElementById('lobby-count').innerText = Object.keys(scores).length + " joueur(s) dans le salon";
 
-                        // Sync le nouveau joueur
                         c.send({ type: 'init', pid: newPid, playerNames: playerNames, scores: scores, category: currentCategory });
 
-                        // Informer tout le monde
                         let msg = `${playerNames[newPid]} a rejoint la partie !`;
                         broadcast({ type: 'sys', msg: msg, playerNames: playerNames, scores: scores });
                         displaySys(msg); updateScoreUI();
@@ -428,7 +424,7 @@
         function goToLobby() {
             document.getElementById('network-menu').style.display = 'none';
             document.getElementById('category-menu').style.display = 'flex';
-            document.getElementById('btn-multi-toggle').style.display = 'none'; // L'hôte ne peut plus cliquer sur "Jouer en Multi" puisqu'il y est déjà.
+            document.getElementById('btn-multi-toggle').style.display = 'none';
             document.getElementById('lobby-count').style.display = 'block';
             updateScoreUI();
         }
@@ -451,7 +447,6 @@
 
                 conn.on('open', () => {
                     conns = [conn]; 
-                    // Envoyer mon nom à l'hôte
                     conn.send({ type: 'join', name: myName });
 
                     document.getElementById('network-menu').style.display = 'none';
@@ -488,7 +483,7 @@
 
         function broadcast(data) { conns.forEach(c => { if (c.open) c.send(data); }); }
 
-        // --- FETCH DYNAMIQUE DE LA PLAYLIST (API BASÉE SUR LES CATALOGUES) ---
+        // --- FETCH DYNAMIQUE DE LA PLAYLIST ---
         async function launchGame(cat) {
             setupUIForCategory(cat);
             if (gameMode === 'host') broadcast({ type: 'start_game', category: cat });
@@ -497,57 +492,40 @@
             document.getElementById('loading-api').style.display = 'flex';
 
             let selectedTracks = [];
-            // Mélange le tableau complet d'artistes (ici on utilise catalogs chargé depuis music.js)
             let shuffled = catalogs[cat].sort(() => Math.random() - 0.5);
 
             for (let i = 0; i < shuffled.length; i++) {
-                if (selectedTracks.length >= 10) break; // S'arrête quand on a nos 10 pistes pour la manche
+                if (selectedTracks.length >= 10) break;
                 try {
                     let searchItem = shuffled[i];
                     let searchTerm = searchItem.search || searchItem;
 
-                    // On filtre brutalement les covers via l'API iTunes en analysant finement les resultats.
                     let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=fr&media=music&entity=song&limit=20`);
                     let data = await res.json();
 
-                    // ANTI COVER & ANTI VERSIONS SUSPECTES FILTER
                     let validTracks = data.results.filter(t => {
                         if (!t.previewUrl) return false;
                         let n = t.trackName.toLowerCase();
                         let a = t.artistName.toLowerCase();
-                        // Exclure les mots-clés problématiques
                         if (/cover|tribute|karaoke|instrumental|8-bit|lullaby|version|remix/i.test(n)) return false;
                         if (/cover|tribute|karaoke/i.test(a)) return false;
                         return true;
                     });
 
-                    // Si on a été trop stricte on prend quand même ce qu'il y a
                     if (validTracks.length === 0 && data.results.length > 0) {
                         validTracks = data.results.filter(t => t.previewUrl);
                     }
 
                     if (validTracks.length > 0) {
-                        // FIX MAJEUR: On ne prend PAS un résultat random. L'API d'iTunes trie par pertinence. 
-                        // Le [0] est l'original 99% du temps. Prendre du random donnait souvent des remix.
                         let rTrack = validTracks[0];
 
                         if (cat === 'ANIME') {
-                            selectedTracks.push({
-                                animeName: searchItem.anime, aliases: searchItem.aliases,
-                                previewUrl: rTrack.previewUrl
-                            });
+                            selectedTracks.push({ animeName: searchItem.anime, aliases: searchItem.aliases, previewUrl: rTrack.previewUrl });
                         } else if (cat === 'FILMS') {
-                            selectedTracks.push({
-                                filmName: searchItem.film, aliases: searchItem.aliases,
-                                previewUrl: rTrack.previewUrl
-                            });
+                            selectedTracks.push({ filmName: searchItem.film, aliases: searchItem.aliases, previewUrl: rTrack.previewUrl });
                         } else if (cat === 'DISNEY') {
-                            selectedTracks.push({
-                                disneyName: searchItem.disney, aliases: searchItem.aliases,
-                                previewUrl: rTrack.previewUrl
-                            });
+                            selectedTracks.push({ disneyName: searchItem.disney, aliases: searchItem.aliases, previewUrl: rTrack.previewUrl });
                         } else {
-                            // On utilise le nom d'artiste PROPRE de notre base de données s'il existe ! (ex: Hugo TSR au lieu de Hugo (TSR))
                             selectedTracks.push({
                                 artistName: searchItem.artist || rTrack.artistName, 
                                 trackName: rTrack.trackName, 
@@ -588,7 +566,7 @@
             if (currentTrackIndex >= playlist.length) { endGame(); return; }
 
             currentTrack = playlist[currentTrackIndex];
-            state = { artistFound: false, titleFound: false, animeFound: false, filmFound: false, disneyFound: false, timeLeft: 20 };
+            state = { artistFoundBy: [], titleFoundBy: [], animeFoundBy: [], filmFoundBy: [], disneyFoundBy: [], timeLeft: 20 };
 
             clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
 
@@ -597,7 +575,6 @@
             audioPlayer.play().catch(e => console.log("Autoplay bloqué"));
 
             isRoundActive = true;
-            // FIX RÉSEAU : Envoi explicite du numéro de la manche au Guest !
             if (gameMode === 'host') broadcast({ type: 'start_round', track: { previewUrl: currentTrack.previewUrl }, round: currentTrackIndex + 1 });
 
             displaySys(`▶️ MANCHE ${currentTrackIndex + 1} / 10`);
@@ -608,6 +585,8 @@
                 if (state.timeLeft <= 3) timerBox.style.color = '#ff0000'; else timerBox.style.color = 'var(--gold)';
                 if (state.timeLeft === 3) startFadeOut();
                 if (gameMode === 'host') broadcast({ type: 'update_state', stateData: { ...state, scores: scores, playerNames: playerNames } });
+                
+                // La musique tourne jusqu'au bout, on ne l'arrête plus prématurément.
                 if (state.timeLeft <= 0) endRound();
             }, 1000);
         }
@@ -645,23 +624,24 @@
 
             updateScoreUI(stateData.scores); 
 
+            // Met à jour la box MYSTÈRE *seulement* si le joueur actuel a trouvé, pour ne pas spoil l'écran des autres.
             if (currentCategory === 'ANIME') {
-                if (stateData.animeFound && !boxAnime.classList.contains('found')) {
+                if (stateData.animeFoundBy.includes(myPid) && !boxAnime.classList.contains('found')) {
                     boxAnime.classList.add('found'); boxAnime.innerText = "📺 ANIME TROUVÉ !";
                 }
             } else if (currentCategory === 'FILMS') {
-                if (stateData.filmFound && !boxAnime.classList.contains('found')) {
+                if (stateData.filmFoundBy.includes(myPid) && !boxAnime.classList.contains('found')) {
                     boxAnime.classList.add('found'); boxAnime.innerText = "🎬 FILM TROUVÉ !";
                 }
             } else if (currentCategory === 'DISNEY') {
-                if (stateData.disneyFound && !boxAnime.classList.contains('found')) {
+                if (stateData.disneyFoundBy.includes(myPid) && !boxAnime.classList.contains('found')) {
                     boxAnime.classList.add('found'); boxAnime.innerText = "🏰 DISNEY TROUVÉ !";
                 }
             } else {
-                if (stateData.artistFound && !boxArtist.classList.contains('found')) {
+                if (stateData.artistFoundBy.includes(myPid) && !boxArtist.classList.contains('found')) {
                     boxArtist.classList.add('found'); boxArtist.innerText = "🧑‍🎤 ARTISTE TROUVÉ !";
                 }
-                if (stateData.titleFound && !boxTitle.classList.contains('found')) {
+                if (stateData.titleFoundBy.includes(myPid) && !boxTitle.classList.contains('found')) {
                     boxTitle.classList.add('found'); boxTitle.innerText = "🎵 TITRE TROUVÉ !";
                 }
             }
@@ -672,26 +652,15 @@
             revealAnswers(track); displaySys(`Fin de la manche. Préparation de la suivante...`);
         }
 
-        // --- ALGORITHME DE CORRECTION ORTHOGRAPHIQUE (LEVENSHTEIN ET CLEAN) ---
+        // --- ALGORITHME DE CORRECTION ORTHOGRAPHIQUE ---
         function cleanText(str) {
             if (!str) return '';
             let s = str.toLowerCase();
-
-            // On supprime les "feat." et tout ce qui est après
             s = s.split(/feat\.|ft\.|featuring/i)[0];
-
-            // On supprime les informations gênantes entre crochets
             s = s.replace(/\[.*?\]/g, ''); 
-
-            // On supprime les mots spécifiques (souvent entre parenthèses) qui gênent, sans pour autant TOUT supprimer dans les parenthèses
             s = s.replace(/\(?(remastered|remaster|radio edit|live|version|instrumental).*?\)?/gi, '');
-
-            // Retrait des accents
             s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
-
-            // Retrait de TOUT ce qui n'est pas une lettre ou un chiffre (supprime les espaces, les parenthèses restantes)
             s = s.replace(/[^a-z0-9]/g, '');
-
             return s;
         }
 
@@ -713,15 +682,10 @@
         function checkMatch(guess, target) {
             let g = cleanText(guess); let t = cleanText(target);
             if (g.length < 2) return false;
-
-            // Si c'est exact, ou que le mot est contenu à au moins 75%
             if (g === t || (t.includes(g) && g.length >= t.length * 0.75) || (g.includes(t) && t.length >= g.length * 0.75)) return true;
-
-            // Tolérance aux fautes de frappe (Levenshtein)
             let distance = levenshtein(g, t);
-            if (t.length > 5 && distance <= 2) return true; // 2 erreurs max pour mots longs
-            if (t.length <= 5 && distance <= 1) return true; // 1 erreur max pour mots courts
-
+            if (t.length > 5 && distance <= 2) return true; 
+            if (t.length <= 5 && distance <= 1) return true; 
             return false;
         }
 
@@ -737,9 +701,10 @@
         function processGuess(text, pid) {
             let correct = false;
             let playerPseudo = playerNames[pid] || `Joueur ${pid}`;
+            let numPlayers = Object.keys(scores).length; // Nombre total de joueurs
 
             if (currentCategory === 'ANIME') {
-                if (state.animeFound) return;
+                if (state.animeFoundBy.includes(pid)) return; // Le joueur a déjà trouvé
 
                 correct = checkMatch(text, currentTrack.animeName);
                 if (!correct && currentTrack.aliases) {
@@ -747,16 +712,19 @@
                 }
 
                 if (correct) {
-                    state.animeFound = true; scores[pid]++;
-                    let msg = `🔥 ${playerPseudo} a trouvé l'Anime !`;
+                    state.animeFoundBy.push(pid);
+                    let pts = numPlayers - state.animeFoundBy.length + 1;
+                    scores[pid] += pts;
+                    let msg = `🔥 ${playerPseudo} a trouvé l'Anime ! (+${pts} pts)`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
-                    boxAnime.classList.add('found');
-                    boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : "📺 ANIME TROUVÉ !";
-                    if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
+                    if (pid === myPid) { // Met à jour uniquement sur l'écran du joueur concerné
+                        boxAnime.classList.add('found');
+                        boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : "📺 ANIME TROUVÉ !";
+                    }
                 }
             } else if (currentCategory === 'FILMS') {
-                if (state.filmFound) return;
+                if (state.filmFoundBy.includes(pid)) return;
 
                 correct = checkMatch(text, currentTrack.filmName);
                 if (!correct && currentTrack.aliases) {
@@ -764,16 +732,19 @@
                 }
 
                 if (correct) {
-                    state.filmFound = true; scores[pid]++;
-                    let msg = `🔥 ${playerPseudo} a trouvé le Film !`;
+                    state.filmFoundBy.push(pid);
+                    let pts = numPlayers - state.filmFoundBy.length + 1;
+                    scores[pid] += pts;
+                    let msg = `🔥 ${playerPseudo} a trouvé le Film ! (+${pts} pts)`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
-                    boxAnime.classList.add('found');
-                    boxAnime.innerText = gameMode === 'solo' ? `🎬 ${currentTrack.filmName}` : "🎬 FILM TROUVÉ !";
-                    if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
+                    if (pid === myPid) {
+                        boxAnime.classList.add('found');
+                        boxAnime.innerText = gameMode === 'solo' ? `🎬 ${currentTrack.filmName}` : "🎬 FILM TROUVÉ !";
+                    }
                 }
             } else if (currentCategory === 'DISNEY') {
-                if (state.disneyFound) return;
+                if (state.disneyFoundBy.includes(pid)) return;
 
                 correct = checkMatch(text, currentTrack.disneyName);
                 if (!correct && currentTrack.aliases) {
@@ -781,35 +752,55 @@
                 }
 
                 if (correct) {
-                    state.disneyFound = true; scores[pid]++;
-                    let msg = `🔥 ${playerPseudo} a trouvé le Disney !`;
+                    state.disneyFoundBy.push(pid);
+                    let pts = numPlayers - state.disneyFoundBy.length + 1;
+                    scores[pid] += pts;
+                    let msg = `🔥 ${playerPseudo} a trouvé le Disney ! (+${pts} pts)`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
-                    boxAnime.classList.add('found');
-                    boxAnime.innerText = gameMode === 'solo' ? `🏰 ${currentTrack.disneyName}` : "🏰 DISNEY TROUVÉ !";
-                    if (state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
+                    if (pid === myPid) {
+                        boxAnime.classList.add('found');
+                        boxAnime.innerText = gameMode === 'solo' ? `🏰 ${currentTrack.disneyName}` : "🏰 DISNEY TROUVÉ !";
+                    }
                 }
             } else {
-                let aMatch = !state.artistFound && checkMatch(text, currentTrack.artistName);
-                if (!aMatch && currentTrack.aliases) {
-                    for (let alias of currentTrack.aliases) { if (checkMatch(text, alias)) { aMatch = true; break; } }
+                let aMatch = false;
+                if (!state.artistFoundBy.includes(pid)) {
+                    aMatch = checkMatch(text, currentTrack.artistName);
+                    if (!aMatch && currentTrack.aliases) {
+                        for (let alias of currentTrack.aliases) { if (checkMatch(text, alias)) { aMatch = true; break; } }
+                    }
                 }
 
-                let tMatch = !state.titleFound && checkMatch(text, currentTrack.trackName);
+                let tMatch = false;
+                if (!state.titleFoundBy.includes(pid)) {
+                    tMatch = checkMatch(text, currentTrack.trackName);
+                }
 
                 if (aMatch) {
-                    state.artistFound = true; scores[pid]++; correct = true;
-                    let msg = `🔥 ${playerPseudo} a trouvé l'Artiste !`;
+                    state.artistFoundBy.push(pid);
+                    let pts = numPlayers - state.artistFoundBy.length + 1;
+                    scores[pid] += pts; correct = true;
+                    let msg = `🔥 ${playerPseudo} a trouvé l'Artiste ! (+${pts} pts)`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
-                    boxArtist.classList.add('found'); boxArtist.innerText = gameMode === 'solo' ? `🧑‍🎤 ${currentTrack.artistName}` : "🧑‍🎤 ARTISTE TROUVÉ !";
+                    
+                    if (pid === myPid) {
+                        boxArtist.classList.add('found'); 
+                        boxArtist.innerText = gameMode === 'solo' ? `🧑‍🎤 ${currentTrack.artistName}` : "🧑‍🎤 ARTISTE TROUVÉ !";
+                    }
                 }
                 if (tMatch) {
-                    state.titleFound = true; scores[pid]++; correct = true;
-                    let msg = `🔥 ${playerPseudo} a trouvé le Titre !`;
+                    state.titleFoundBy.push(pid);
+                    let pts = numPlayers - state.titleFoundBy.length + 1;
+                    scores[pid] += pts; correct = true;
+                    let msg = `🔥 ${playerPseudo} a trouvé le Titre ! (+${pts} pts)`;
                     displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
-                    boxTitle.classList.add('found'); boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : "🎵 TITRE TROUVÉ !";
+                    
+                    if (pid === myPid) {
+                        boxTitle.classList.add('found'); 
+                        boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : "🎵 TITRE TROUVÉ !";
+                    }
                 }
-                if (state.artistFound && state.titleFound && state.timeLeft > 3) { state.timeLeft = 3; startFadeOut(); }
             }
 
             updateScoreUI();
