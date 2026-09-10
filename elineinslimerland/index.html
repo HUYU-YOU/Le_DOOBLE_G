@@ -5,60 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Éline in Slimerland</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Polices Slimesques -->
     <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Rubik+Bubbles&display=swap" rel="stylesheet">
 </head>
 <body>
 
+    <!-- MENU PRINCIPAL -->
     <div id="main-menu">
-        <div class="menu-container">
-            <img src="assets/start.png" alt="Nouvelle partie" class="menu-btn-img" onclick="startNewGame()">
-            <img src="assets/option.png" alt="Options" class="menu-btn-img" onclick="toggleSettings()">
-            <img src="assets/leave.png" alt="Quitter" class="menu-btn-img" onclick="quitGame()">
+        <div class="menu-buttons">
+            <button id="menu-text-start" class="choice-btn" onclick="startNewGame()">Nouvelle partie</button>
+            <button id="menu-text-option" class="choice-btn" onclick="toggleSettings()">Options</button>
+            <button id="menu-text-leave" class="choice-btn" onclick="quitGame()">Quitter</button>
         </div>
     </div>
 
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <h2>Options</h2>
-            
-            <div class="setting-item">
-                <span>Langue 🌍</span>
-                <select id="lang-select">
-                    <option value="fr">Français</option>
-                    <option value="en">English</option>
-                </select>
-            </div>
-
-            <div class="setting-item">
-                <span>Mode Sombre 🌙</span>
-                <label class="switch">
-                    <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-
-            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
-        </div>
-    </div>
-
-    <div id="game-ui">
-        <h1 class="in-game-title">Éline in Slimerland</h1>
-    </div>
-    
-    <div id="game-container">
+    <!-- ZONE DE JEU (Cachée au démarrage) -->
+    <div id="game-container" style="display: none;">
         <video id="story-video" playsinline></video>
         
-        <div id="video-ui">
-            <h2 id="top-text" class="story-text"></h2>
-            
-            <div id="bottom-section">
-                <p id="bottom-text" class="story-text"></p>
-                <div id="choices-container">
-                    </div>
-            </div>
+        <div id="ui-layer">
+            <div id="top-text" class="ui-text"></div>
+            <div id="bottom-text" class="ui-text"></div>
+            <div id="choices-container"></div>
         </div>
     </div>
 
+    <!-- FENÊTRE DES OPTIONS (Cachée au démarrage) -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title-options">Options</h2>
+            
+            <label id="modal-text-lang" for="lang-select">Langue 🌍 : </label>
+            <select id="lang-select" onchange="changeLanguage()">
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+            </select>
+            
+            <br><br><br>
+            <button id="modal-text-close" onclick="toggleSettings()" class="choice-btn">Fermer</button>
+        </div>
+    </div>
+
+    <!-- Connexion au script -->
     <script src="game.js"></script>
 </body>
 </html>
