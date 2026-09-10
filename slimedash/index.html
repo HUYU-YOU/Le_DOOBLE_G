@@ -6,7 +6,6 @@
     <title>Slime-Dash : Infinite Run</title>
     <script src="https://www.youtube.com/iframe_api"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -63,11 +62,11 @@
 
         <canvas id="gameCanvas"></canvas>
         
-        <!-- INTERFACE UTILISATEUR (UI) -->
+        <!-- INTERFACE UTILISATEUR (UI) - Sera masquée sur l'écran d'accueil -->
         <div id="ui-layer">
             <div class="score-board">
                 <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <!-- LE MOT "MENU" A ÉTÉ SUPPRIMÉ ICI -->
+                    <div id="status-text">MENU</div>
                     <div id="completion-text" style="color:var(--neon-yellow); display:none;" data-i18n="level_complete">NIVEAU ACCOMPLI !</div>
                 </div>
                 <div style="text-align: right; font-size: 1.5rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan);">
@@ -81,7 +80,7 @@
 
         <!-- ECRAN TITRE ORGANIQUE -->
         <div id="menu-screen">
-            <!-- Les anciens textes (h1 et p) ont été retirés pour laisser la place à ton logo -->
+            <!-- LE TEXTE A ÉTÉ SUPPRIMÉ ICI -->
             
             <div class="btn-group">
                 <button id="btn-play-endless" class="image-btn">
