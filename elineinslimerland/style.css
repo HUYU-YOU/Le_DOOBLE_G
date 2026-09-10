@@ -12,7 +12,7 @@ body {
 }
 
 /* ================================
-   LE MENU PRINCIPAL (ACCUEIL)
+   LE MENU PRINCIPAL AVEC TON FOND
 ================================ */
 #main-menu {
     display: flex;
@@ -22,42 +22,58 @@ body {
     width: 100vw;
     height: 100vh;
     
-    /* ⚠️ Remplace par le nom de ton image d'accueil ! */
-    background-image: url('assets/nom_de_ton_image.jpg'); 
-    
+    /* Ton fond d'écran exact */
+    background-image: url('assets/maingame.png'); 
     background-size: cover;
     background-position: center;
     position: absolute;
     z-index: 10;
 }
 
-/* Conteneur des textes du menu */
 .menu-buttons {
     display: flex;
     flex-direction: column;
     align-items: center;
-    
-    /* 🛠️ MODIFIE CES VALEURS pour caler les textes sur tes encadrés */
-    margin-top: 150px; /* Aligne le bloc plus ou moins bas */
-    gap: 45px; /* Écarte les textes pour qu'ils tombent pile dans tes cadres */
+    gap: 20px; 
+    margin-top: 150px; /* Pour descendre les boutons sous ton logo */
 }
 
-/* Les textes transparents du menu */
+/* LE DESIGN DE TES TOUCHES VIDES AVEC TEXTE DESSUS */
 .menu-btn {
-    background: transparent;
+    background-color: transparent;
+    background-size: 100% 100%; /* L'image s'adapte au bouton */
+    background-position: center;
+    background-repeat: no-repeat;
     border: none;
+    
+    /* Le texte par-dessus */
     color: white;
     font-family: 'Chewy', system-ui;
-    font-size: 35px;
+    font-size: 28px;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+    
+    /* La taille de tes boutons */
+    width: 250px; 
+    height: 70px; 
+    
+    /* Centre le texte au milieu de ton image */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
     cursor: pointer;
-    text-shadow: 2px 2px 5px rgba(0,0,0,1); /* Ombre pour que le texte ressorte bien */
     transition: transform 0.2s, color 0.2s;
 }
 
 .menu-btn:hover {
-    transform: scale(1.1);
-    color: #ff66cc; /* Rose au survol */
+    transform: scale(1.05); /* Petit effet de rebond */
+    color: #ff66cc; /* Le texte devient rose au survol */
 }
+
+/* ASSIGNATION DE TES IMAGES AUX BOUTONS */
+#menu-text-start { background-image: url('assets/start.png'); }
+#menu-text-option { background-image: url('assets/option.png'); }
+#menu-text-leave { background-image: url('assets/leave.png'); }
 
 
 /* ================================
@@ -152,7 +168,6 @@ video {
     transform: scale(1.05);
     filter: brightness(1.2);
 }
-
 
 /* ================================
    FENÊTRE DES OPTIONS (MODAL)
