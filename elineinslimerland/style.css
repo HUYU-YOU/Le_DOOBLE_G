@@ -11,7 +11,9 @@ body {
     overflow: hidden;
 }
 
-/* LE MENU PRINCIPAL */
+/* ================================
+   LE MENU PRINCIPAL (ACCUEIL)
+================================ */
 #main-menu {
     display: flex;
     flex-direction: column;
@@ -19,22 +21,48 @@ body {
     justify-content: center;
     width: 100vw;
     height: 100vh;
-    /* Mets ici le nom exact de ton image d'accueil ! */
-    background-image: url('assets/fond_menu.jpg'); 
+    
+    /* ⚠️ Remplace par le nom de ton image d'accueil ! */
+    background-image: url('assets/nom_de_ton_image.jpg'); 
+    
     background-size: cover;
     background-position: center;
     position: absolute;
     z-index: 10;
 }
 
+/* Conteneur des textes du menu */
 .menu-buttons {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    margin-top: 250px; /* Baisse les boutons pour qu'ils soient sous ton logo */
+    align-items: center;
+    
+    /* 🛠️ MODIFIE CES VALEURS pour caler les textes sur tes encadrés */
+    margin-top: 150px; /* Aligne le bloc plus ou moins bas */
+    gap: 45px; /* Écarte les textes pour qu'ils tombent pile dans tes cadres */
 }
 
-/* LE MOTEUR DE JEU */
+/* Les textes transparents du menu */
+.menu-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: 'Chewy', system-ui;
+    font-size: 35px;
+    cursor: pointer;
+    text-shadow: 2px 2px 5px rgba(0,0,0,1); /* Ombre pour que le texte ressorte bien */
+    transition: transform 0.2s, color 0.2s;
+}
+
+.menu-btn:hover {
+    transform: scale(1.1);
+    color: #ff66cc; /* Rose au survol */
+}
+
+
+/* ================================
+   LE MOTEUR DE JEU ET L'INTERFACE
+================================ */
 #game-container {
     position: relative;
     width: 100vw;
@@ -80,7 +108,7 @@ video {
 
 #top-text {
     font-family: 'Rubik Bubbles', system-ui;
-    color: #ff66cc; /* Rose fluo */
+    color: #ff66cc;
     align-self: center;
     font-size: 32px;
 }
@@ -105,7 +133,7 @@ video {
     transition: opacity 0.5s ease;
 }
 
-/* LES BOUTONS */
+/* Les boutons de choix PENDANT LE JEU */
 .choice-btn {
     pointer-events: auto;
     font-family: 'Chewy', system-ui;
@@ -125,7 +153,10 @@ video {
     filter: brightness(1.2);
 }
 
-/* LA FENÊTRE OPTIONS (MODAL) */
+
+/* ================================
+   FENÊTRE DES OPTIONS (MODAL)
+================================ */
 .modal {
     display: none;
     position: absolute;
