@@ -125,63 +125,6 @@
             <button id="exit-btn" class="action-btn action-quitter" data-i18n="btn_quit">QUITTER</button>
         </div>
     </div>
-
-    <!-- OUTIL DE CALIBRAGE DES BOUTONS (À SUPPRIMER QUAND C'EST FINI) -->
-    <div id="drag-info" style="position:fixed; top:20px; right:20px; background:rgba(0,0,0,0.9); color:#39ff14; padding:20px; border-radius:10px; border:2px solid #39ff14; z-index:999999; font-family:monospace; pointer-events:none;">
-        🛠️ <b>MODE CALIBRAGE</b><br>
-        Reste appuyé sur un bouton<br>et déplace-le sur le dessin.<br>
-        <br><span id="drag-coord" style="color:white;">En attente de déplacement...</span>
-    </div>
-
-    <script>
-        const menuBlock = document.getElementById('menu-screen');
-        const dBtns = document.querySelectorAll('.image-btn');
-        const dCoord = document.getElementById('drag-coord');
-        let dragTarget = null;
-
-        dBtns.forEach(btn => {
-            btn.addEventListener('mousedown', (e) => {
-                dragTarget = btn;
-                btn.style.transition = 'none';
-            });
-            btn.addEventListener('touchstart', (e) => {
-                dragTarget = btn;
-                btn.style.transition = 'none';
-            }, {passive: false});
-        });
-
-        function moveButton(clientX, clientY) {
-            if (!dragTarget) return;
-            const rect = menuBlock.getBoundingClientRect();
-            
-            let x = clientX - rect.left;
-            let y = clientY - rect.top;
-
-            let pctX = (x / rect.width) * 100;
-            let pctY = (y / rect.height) * 100;
-
-            dragTarget.style.left = pctX.toFixed(2) + '%';
-            dragTarget.style.top = pctY.toFixed(2) + '%';
-
-            dCoord.innerHTML = `
-                <b style="color:var(--neon-pink)">${dragTarget.id}</b><br>
-                top: ${pctY.toFixed(2)}%;<br>
-                left: ${pctX.toFixed(2)}%;
-            `;
-        }
-
-        window.addEventListener('mousemove', (e) => { moveButton(e.clientX, e.clientY); });
-        window.addEventListener('mouseup', () => { 
-            if (dragTarget) { dragTarget.style.transition = ''; dragTarget = null; } 
-        });
-
-        window.addEventListener('touchmove', (e) => { 
-            if(dragTarget) { e.preventDefault(); moveButton(e.touches[0].clientX, e.touches[0].clientY); }
-        }, {passive: false});
-        window.addEventListener('touchend', () => { 
-            if (dragTarget) { dragTarget.style.transition = ''; dragTarget = null; } 
-        });
-    </script>
     
     <script src="script.js"></script>
 </body>
