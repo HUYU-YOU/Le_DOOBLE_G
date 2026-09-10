@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Card of Slime - Final Polish</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <!-- NOUVEAU : Ajout de la police "Creepster" pour le style Slimesque -->
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body onclick="startMusic()">
@@ -53,7 +54,6 @@
         <div id="game-timer" style="display: none;">3:00</div>
         <div id="alert-message" style="display: none;">DOUBLE SLIME !</div>
 
-        <!-- ÉMOTES (Mise à jour avec PNG) -->
         <div id="emote-panel" style="display: none;">
             <button onclick="sendEmote('emojilol.png')"><img src="assets/skins/emojilol.png" alt="lol"></button>
             <button onclick="sendEmote('emojicolere.png')"><img src="assets/skins/emojicolere.png" alt="colere"></button>
@@ -61,11 +61,12 @@
             <button onclick="sendEmote('emojipouce.png')"><img src="assets/skins/emojipouce.png" alt="pouce"></button>
         </div>
 
+        <!-- NOUVEAU : Remplacement des boutons textes par tes images personnalisées -->
         <div id="main-menu" class="menu-overlay">
             <h2 class="menu-subtitle">Choisis ton mode</h2>
-            <button class="btn-main" onclick="openDeckBuilder()">🃏 Composer mon Deck</button>
-            <button class="btn-main green" onclick="startSoloGame()">🎮 Mode Solo (vs IA)</button>
-            <button class="btn-main red" onclick="openMultiMenu()">🌐 Multijoueur (Code COS)</button>
+            <img src="assets/skins/deck.png" alt="Composer mon Deck" class="menu-img-btn" onclick="openDeckBuilder()">
+            <img src="assets/skins/VSIA.png" alt="Mode Solo (VS IA)" class="menu-img-btn" onclick="startSoloGame()">
+            <img src="assets/skins/MULTI.png" alt="Multijoueur" class="menu-img-btn" onclick="openMultiMenu()">
         </div>
 
         <div id="multi-menu" class="menu-overlay" style="display: none;">
@@ -80,7 +81,7 @@
         </div>
 
         <div id="deck-builder-menu" class="menu-overlay" style="display: none;">
-            <h2 class="menu-subtitle">Compose ton Deck (6 Cartes)</h2>
+            <h2 class="menu-subtitle">Compose ton Deck</h2>
             <div id="deck-pool" class="card-grid"></div>
             <p id="deck-counter" style="margin: 10px 0; font-weight: bold; color: #39ff14;">Sélectionnées : 0 / 6</p>
             <button class="btn-main" id="validate-deck-btn" onclick="saveCustomDeck()" disabled>Valider</button>
