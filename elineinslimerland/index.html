@@ -10,10 +10,9 @@
 </head>
 <body>
 
-    <!-- MENU PRINCIPAL -->
+    <!-- MENU PRINCIPAL (Avec tes images) -->
     <div id="main-menu">
         <div class="menu-buttons">
-            <!-- On utilise la classe "menu-btn" ici pour qu'ils soient transparents -->
             <button id="menu-text-start" class="menu-btn" onclick="startNewGame()">Nouvelle partie</button>
             <button id="menu-text-option" class="menu-btn" onclick="toggleSettings()">Options</button>
             <button id="menu-text-leave" class="menu-btn" onclick="quitGame()">Quitter</button>
@@ -31,7 +30,7 @@
         </div>
     </div>
 
-    <!-- FENÊTRE DES OPTIONS (Cachée au démarrage) -->
+    <!-- FENÊTRE DES OPTIONS -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2 id="modal-title-options">Options</h2>
@@ -43,7 +42,6 @@
             </select>
             
             <br><br><br>
-            <!-- Bouton classique pour fermer -->
             <button id="modal-text-close" onclick="toggleSettings()" class="choice-btn">Fermer</button>
         </div>
     </div>
