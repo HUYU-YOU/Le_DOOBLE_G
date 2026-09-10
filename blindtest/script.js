@@ -1,4 +1,24 @@
 // ==========================================
+// GESTION DE LA LANGUE ET UI THEME
+// ==========================================
+let currentLang = 'FR';
+
+function toggleLanguage() {
+    const langBtn = document.getElementById('lang-toggle');
+    const hubImg = document.getElementById('hub-img');
+
+    if (currentLang === 'FR') {
+        currentLang = 'EN';
+        langBtn.innerText = '🇫🇷 FR'; // Clique ici pour remettre en FR
+        hubImg.src = 'returbhub.png'; // Affiche l'image en Anglais
+    } else {
+        currentLang = 'FR';
+        langBtn.innerText = '🇬🇧 EN'; // Clique ici pour mettre en EN
+        hubImg.src = 'retourhub.png'; // Affiche l'image en Français
+    }
+}
+
+// ==========================================
 // LOGIQUE PRINCIPALE DU JEU BLIND TEST
 // ==========================================
 
@@ -18,15 +38,12 @@ let currentTrackIndex = -1;
 let currentTrack = null;
 let audioPlayer = new Audio();
 
-// État de la manche modifié pour stocker les joueurs qui ont trouvé (système de points dégressif)
 let state = { artistFoundBy: [], titleFoundBy: [], animeFoundBy: [], filmFoundBy: [], disneyFoundBy: [], timeLeft: 20 };
 let roundInterval = null;
 let isRoundActive = false;
-
 let fadeInterval = null;
 let isFading = false;
 
-// --- UI Elements ---
 const chatMsgs = document.getElementById('chat-messages');
 const guessInput = document.getElementById('guess-input');
 const timerBox = document.getElementById('timer-box');
@@ -34,7 +51,6 @@ const boxArtist = document.getElementById('box-artist');
 const boxTitle = document.getElementById('box-title');
 const boxAnime = document.getElementById('box-anime');
 
-// Initialisation automatique du mode solo au chargement
 window.addEventListener('DOMContentLoaded', () => {
     updateScoreUI();
 });
@@ -71,28 +87,28 @@ function setupUIForCategory(cat) {
         boxTitle.style.display = 'none';
         boxAnime.style.display = 'block';
         if (cat === 'ANIME') {
-            guessInput.placeholder = "Tapez le nom de l'anime (ex: SNK, Jojo...)";
+            guessInput.placeholder = currentLang === 'FR' ? "Nom de l'anime (ex: SNK...)" : "Anime name (e.g., AOT...)";
             boxAnime.innerText = "📺 ANIME : ? ? ?";
         } else if (cat === 'FILMS') {
-            guessInput.placeholder = "Tapez le nom du film (ex: Interstellar...)";
+            guessInput.placeholder = currentLang === 'FR' ? "Nom du film (ex: Interstellar...)" : "Movie name (e.g., Inception...)";
             boxAnime.innerText = "🎬 FILM : ? ? ?";
         } else if (cat === 'DISNEY') {
-            guessInput.placeholder = "Tapez le nom du Disney (ex: Le Roi Lion...)";
+            guessInput.placeholder = currentLang === 'FR' ? "Nom du Disney (ex: Le Roi Lion...)" : "Disney movie (e.g., Lion King...)";
             boxAnime.innerText = "🏰 DISNEY : ? ? ?";
         }
     } else {
         boxAnime.style.display = 'none';
         boxArtist.style.display = 'block';
         boxTitle.style.display = 'block';
-        guessInput.placeholder = "Tapez l'artiste ou le titre ici...";
+        guessInput.placeholder = currentLang === 'FR' ? "Tapez l'artiste ou le titre ici..." : "Type artist or title here...";
     }
 }
 
-// --- GESTION RÉSEAU (PEERJS) ---
+// --- GESTION RÉSEAU ---
 function hostGame() { 
     let status = document.getElementById('conn-status');
     let pseudoInput = document.getElementById('player-name-input').value.trim();
-    myName = pseudoInput ? pseudoInput : "Hôte";
+    myName = pseudoInput ? pseudoInput : "Host";
     playerNames[1] = myName;
 
     status.style.color = "var(--p1)";
@@ -108,7 +124,7 @@ function hostGame() {
         try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e=>{}); } catch(e) {}
 
         status.style.color = "var(--sys)";
-        status.innerText = "Serveur prêt ! Donnez le code à vos amis."; 
+        status.innerText = "Serveur prêt ! / Server Ready !"; 
 
         document.getElementById('btn-host').style.display = 'none';
         document.getElementById('btn-start-host').style.display = 'inline-block';
@@ -141,8 +157,7 @@ function hostGame() {
             if (data.type === 'guess') processGuess(data.text, c.pid); 
         });
     }); 
-
-    peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = "Erreur de création : " + err.type; });
+    peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = "Erreur : " + err.type; });
 }
 
 function goToLobby() {
@@ -156,12 +171,12 @@ function goToLobby() {
 function joinGame() { 
     let id = document.getElementById('join-id').value.trim().toUpperCase(); 
     let pseudoInput = document.getElementById('player-name-input').value.trim();
-    myName = pseudoInput ? pseudoInput : "Joueur";
+    myName = pseudoInput ? pseudoInput : "Guest";
 
     if (!id) return; 
 
     let status = document.getElementById('conn-status');
-    status.style.color = "var(--p1)"; status.innerText = "Connexion au salon..."; 
+    status.style.color = "var(--p1)"; status.innerText = "Connexion..."; 
 
     if (peer) peer.destroy(); peer = new Peer(); 
 
@@ -200,9 +215,9 @@ function joinGame() {
             if (data.type === 'end_round') { clientEndRound(data.track); }
             if (data.type === 'end_game') { showEndScreen(data.scores); }
         });
-        conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Échec de connexion."; });
+        conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Échec."; });
     });
-    peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = err.type === 'peer-unavailable' ? "Le salon n'existe pas !" : "Erreur réseau."; });
+    peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = "Erreur réseau."; });
 }
 
 function broadcast(data) { conns.forEach(c => { if (c.open) c.send(data); }); }
@@ -267,7 +282,10 @@ async function launchGame(cat) {
     }
 
     playlist = selectedTracks;
+    
+    // ON CACHE TOUS LES OVERLAYS ET ON AFFICHE ENFIN L'INTERFACE DE JEU !
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
+    document.getElementById('in-game-ui').style.display = 'flex';
 
     if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a lancé la catégorie ${cat} !` });
     displaySys(`🎵 DÉBUT DE LA PARTIE (${playlist.length} Manches) 🎵`);
@@ -319,7 +337,7 @@ function endRound() {
     clearInterval(roundInterval); clearInterval(fadeInterval); audioPlayer.pause();
 
     revealAnswers(currentTrack);
-    displaySys(`Fin de la manche. Préparation de la suivante...`);
+    displaySys(`Fin de la manche...`);
 
     if (gameMode === 'host') broadcast({ type: 'end_round', track: currentTrack });
     setTimeout(startNextRound, 5000); 
@@ -333,7 +351,10 @@ function endGame() {
 // --- LOGIQUE CLIENT ---
 function clientStartRound(track, round) {
     currentTrack = track;
+    
+    // On cache les overlays et affiche le conteneur du jeu principal
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
+    document.getElementById('in-game-ui').style.display = 'flex';
 
     clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
     resetRoundUI(); audioPlayer.src = track.previewUrl; audioPlayer.play().catch(e => console.log(e));
@@ -371,10 +392,10 @@ function clientUpdateState(stateData) {
 
 function clientEndRound(track) {
     isRoundActive = false; clearInterval(fadeInterval); audioPlayer.pause();
-    revealAnswers(track); displaySys(`Fin de la manche. Préparation de la suivante...`);
+    revealAnswers(track); displaySys(`Fin de la manche...`);
 }
 
-// --- ALGORITHME DE CORRECTION ORTHOGRAPHIQUE ---
+// --- ALGORITHME DE CORRECTION ---
 function cleanText(str) {
     if (!str) return '';
     let s = str.toLowerCase();
@@ -538,7 +559,6 @@ function processGuess(text, pid) {
 function displayChat(msg, pid) {
     let div = document.createElement('div'); div.className = 'msg'; let color = getPlayerColor(pid);
     div.style.alignSelf = pid === myPid ? 'flex-end' : 'flex-start';
-
     let pseudo = playerNames[pid] || `Joueur ${pid}`;
 
     if (pid === myPid) {
@@ -605,6 +625,7 @@ function revealAnswers(trackObj) {
 
 function showEndScreen(finalScores = scores) {
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
+    document.getElementById('in-game-ui').style.display = 'none'; // Cacher le jeu final
     document.getElementById('end-screen').style.display = 'flex';
     let t = document.getElementById('final-scores-text');
 
