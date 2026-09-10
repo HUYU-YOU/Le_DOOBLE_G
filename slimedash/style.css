@@ -17,7 +17,6 @@ body, html {
     display: flex; justify-content: center; align-items: center;
 }
 
-/* --- CONTENEUR PRINCIPAL DU JEU --- */
 #game-container {
     position: relative; width: 100%; height: 100%; max-width: 1200px; max-height: 700px;
     background: var(--panel); box-shadow: 0 0 30px rgba(57, 255, 20, 0.2);
@@ -28,7 +27,6 @@ body, html {
 
 canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 
-/* --- GESTION DES 3 TAILLES D'ÉCRAN --- */
 .size-classic canvas { width: 100%; height: 100%; }
 
 #game-container.size-wide, #game-container.size-full {
@@ -41,7 +39,7 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
     width: 100vw; height: 100vh; border-radius: 0; border: none; object-fit: fill;
 }
 
-/* --- BOUTON RETOUR AU HUB (Image dynamique) --- */
+/* --- BOUTON RETOUR AU HUB --- */
 #btn-retour-hub {
     position: fixed; top: 20px; left: 20px; z-index: 9999;
     display: flex; align-items: center; 
@@ -114,14 +112,20 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
     text-align: center; pointer-events: auto; 
     
     background: url('img/roller.png') center/100% 100% no-repeat;
-    background-color: rgba(5, 20, 15, 0.7); 
-    padding: 80px 70px 60px 70px; 
+    
+    /* On ajoute beaucoup d'espace en haut pour décaler les boutons sous le logo Slime */
+    padding: 160px 80px 70px 80px; 
     
     border: none; 
-    box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+    box-shadow: none; /* L'ombre géante qui rendait tout noir est retirée */
     border-radius: 20px; 
     z-index: 100; 
-    width: 90%; max-width: 650px;
+    
+    width: 90%; max-width: 800px; /* Plus large pour la taille des boutons */
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #gameover-screen { 
@@ -134,23 +138,37 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
     display: none; 
 }
 
-h1 { margin-top: 0; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--neon-green); text-transform: uppercase; font-size: 3.5rem; letter-spacing: 5px; }
+h2, h1 { margin-top: 0; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--neon-green); text-transform: uppercase; font-size: 3.5rem; letter-spacing: 5px; }
 p { color: #ccc; margin-bottom: 25px; font-size: 1.2rem; line-height: 1.5; font-weight: bold;}
 
-.btn-group { display: flex; flex-direction: column; gap: 20px; justify-content: center; align-items: center; margin-bottom: 20px;}
-.btn-row { display: flex; gap: 20px; justify-content: center; width: 100%; }
-
 /* --- STYLE DES BOUTONS IMAGES --- */
+.btn-group { 
+    display: flex; flex-direction: column; gap: 30px; 
+    justify-content: center; align-items: center; 
+    width: 100%; margin-bottom: 20px;
+}
+.btn-row { 
+    display: flex; gap: 30px; 
+    justify-content: center; width: 100%; 
+}
+
 .image-btn {
     background: transparent; border: none; padding: 0; cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease;
-    outline: none;
+    outline: none; display: flex; justify-content: center; align-items: center;
+    width: 100%;
 }
+
 .image-btn img {
-    display: block; width: 100%; max-height: 80px; object-fit: contain;
+    display: block; 
+    width: 100%; 
+    height: auto;
     filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6));
 }
-#btn-play-endless img { max-height: 110px; }
+
+/* Tailles ciblées pour s'adapter parfaitement aux emplacements de roller.png */
+#btn-play-endless { max-width: 330px; } 
+#btn-create-map, #btn-play-code { max-width: 220px; }
 
 .image-btn:hover {
     transform: scale(1.08) translateY(-4px);
@@ -158,7 +176,7 @@ p { color: #ccc; margin-bottom: 25px; font-size: 1.2rem; line-height: 1.5; font-
 }
 .image-btn:active { transform: scale(0.95); filter: brightness(0.9); }
 
-/* Boutons classiques conservés pour codes/erreurs */
+/* --- BOUTONS CLASSIQUES (Game Over / Code Input) --- */
 .action-btn-main {
     width: 100%; max-width: 400px; padding: 15px; margin: 5px 0;
     font-size: 1.3rem; font-family: 'Rajdhani', sans-serif; font-weight: bold;
