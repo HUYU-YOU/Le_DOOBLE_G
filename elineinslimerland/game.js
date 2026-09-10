@@ -1,11 +1,11 @@
 // --- TRADUCTIONS DU MENU ---
 const menuTranslations = {
-    fr: { start: "Commencer l'aventure", option: "Options..!", leave: "Quitter", optionsTitle: "Options", langue: "Langue 🌍", theme: "Mode Sombre 🌙", close: "Fermer", next: "▶ Suivant" },
-    en: { start: "Ready to start", option: "Options..!", leave: "Leave", optionsTitle: "Settings", langue: "Language 🌍", theme: "Dark Mode 🌙", close: "Close", next: "▶ Next" }
+    fr: { start: "Nouvelle partie", option: "Options", leave: "Quitter", optionsTitle: "Options", langue: "Langue 🌍", close: "Fermer", next: "▶ Suivant" },
+    en: { start: "New Game", option: "Options", leave: "Quit", optionsTitle: "Settings", langue: "Language 🌍", close: "Close", next: "▶ Next" }
 };
 
 let currentLang = 'fr'; // Langue par défaut
-let currentDialogIndex = 0; // Pour le système de textes qui défilent
+let currentDialogIndex = 0; 
 
 // --- LE SCÉNARIO DU JEU ---
 const story = {
@@ -40,8 +40,6 @@ const story = {
         fr: { topText: "La fuite...", bottomText: "Éline court pour fuir, mais trébuche et tombe dans l'étrange portail !", choices: [{ text: "Où ça mène ?", targetScene: "eline3" }] },
         en: { topText: "Fleeing...", bottomText: "Eline runs to escape, but trips and falls into the strange portal!", choices: [{ text: "Where does it go?", targetScene: "eline3" }] }
     },
-
-    // --- LE GRAND CARREFOUR : FORÊT OU VILLE ---
     eline3: {
         videoSrc: "assets/ELINE3.mp4", loop: true, showUIAtEnd: false, 
         fr: {
@@ -71,8 +69,6 @@ const story = {
             ]
         }
     },
-
-    // --- BRANCHE 1 : LA VILLE ET MIAO ---
     ville_miao: {
         videoSrc: "assets/MIAO.mp4", loop: true, showUIAtEnd: false, 
         fr: {
@@ -96,8 +92,6 @@ const story = {
             choices: [{ text: "Back to menu", targetScene: "menu" }]
         }
     },
-
-    // --- BRANCHE 2 : LA FORÊT ET LE CHOIX D'EMPATHIE ---
     eline4: {
         videoSrc: "assets/ELINE4.mp4", loop: true, showUIAtEnd: false,
         fr: {
@@ -127,7 +121,6 @@ const story = {
             ]
         }
     },
-
     choix3: { 
         videoSrc: "assets/CHOIX3.mp4", loop: false, showUIAtEnd: true,
         fr: { topText: "Aïe...", bottomText: "Le slime n'a pas aimé ça du tout. Il s'enfuit en pleurant.", choices: [{ text: "Reprendre la route", targetScene: "eline5" }] },
@@ -138,7 +131,6 @@ const story = {
         fr: { topText: "Plein d'amour", bottomText: "L'empathie d'Éline fait des miracles. Le slime fond de bonheur sous le câlin !", choices: [{ text: "Reprendre la route", targetScene: "eline5" }] },
         en: { topText: "Full of love", bottomText: "Eline's empathy works wonders. The slime melts with happiness under the hug!", choices: [{ text: "Hit the road again", targetScene: "eline5" }] }
     },
-
     eline5: {
         videoSrc: "assets/ELINE5.mp4", loop: false, showUIAtEnd: true,
         fr: { topText: "Toujours plus loin...", bottomText: "Éline avance prudemment, mais une silhouette bouge dans la brume.", choices: [{ text: "S'approcher", targetScene: "eline6" }] },
@@ -171,7 +163,6 @@ const story = {
             ]
         }
     },
-
     fin1: {
         videoSrc: "assets/FIN1.mp4", loop: false, showUIAtEnd: true,
         fr: { topText: "Fin de l'Aventure", bottomText: "Éline a paniqué et s'est perdue à jamais dans les méandres de Slimerland.", choices: [{ text: "Recommencer", targetScene: "menu" }] },
@@ -189,11 +180,14 @@ const videoElement = document.getElementById('story-video');
 const topTextElement = document.getElementById('top-text');
 const bottomTextElement = document.getElementById('bottom-text');
 const choicesContainer = document.getElementById('choices-container');
+const gameContainer = document.getElementById('game-container');
+const mainMenu = document.getElementById('main-menu');
 let currentSceneData = null;
 
 function loadScene(sceneId) {
     if (sceneId === "menu") {
-        document.getElementById('main-menu').style.display = 'flex';
+        gameContainer.style.display = 'none';
+        mainMenu.style.display = 'flex';
         videoElement.pause();
         currentSceneData = null;
         return;
@@ -214,20 +208,17 @@ function loadScene(sceneId) {
     let playPromise = videoElement.play();
     if (playPromise !== undefined) {
         playPromise.catch(error => { 
-            console.log("Lecture bloquée (Autoplay ou fichier introuvable) : ", error); 
-            // SÉCURITÉ GITHUB/MOBILE : On affiche quand même les boutons si la vidéo plante !
+            console.log("Lecture bloquée : ", error); 
             showInterface();
         });
     }
 
     topTextElement.innerText = langData.topText || "";
     
-    // Si c'est une scène avec des dialogues qui défilent
     if (langData.dialogues && langData.dialogues.length > 0) {
         currentDialogIndex = 0;
         showNextDialogLine();
     } else {
-        // Scène classique avec juste un texte et un choix
         bottomTextElement.innerText = langData.bottomText || "";
         langData.choices.forEach(choice => {
             const btn = document.createElement('button');
@@ -283,39 +274,29 @@ videoElement.onended = () => {
 // --- GESTION DES MENUS ET OPTIONS ---
 function changeLanguage() {
     const langSelect = document.getElementById('lang-select');
-    if (langSelect) {
-        currentLang = langSelect.value;
-    }
+    if (langSelect) currentLang = langSelect.value;
     
     const texts = menuTranslations[currentLang];
     
-    // On met à jour les textes seulement si les éléments existent dans le HTML
-    const elStart = document.getElementById('menu-text-start');
-    if(elStart) elStart.innerText = texts.start;
-    
-    const elOption = document.getElementById('menu-text-option');
-    if(elOption) elOption.innerText = texts.option;
-    
-    const elLeave = document.getElementById('menu-text-leave');
-    if(elLeave) elLeave.innerText = texts.leave;
-    
-    const elTitle = document.getElementById('modal-title-options');
-    if(elTitle) elTitle.innerText = texts.optionsTitle;
-    
-    const elLang = document.getElementById('modal-text-lang');
-    if(elLang) elLang.innerText = texts.langue;
-    
-    const elTheme = document.getElementById('modal-text-theme');
-    if(elTheme) elTheme.innerText = texts.theme;
-    
-    const elClose = document.getElementById('modal-text-close');
-    if(elClose) elClose.innerText = texts.close;
+    if(document.getElementById('menu-text-start')) document.getElementById('menu-text-start').innerText = texts.start;
+    if(document.getElementById('menu-text-option')) document.getElementById('menu-text-option').innerText = texts.option;
+    if(document.getElementById('menu-text-leave')) document.getElementById('menu-text-leave').innerText = texts.leave;
+    if(document.getElementById('modal-title-options')) document.getElementById('modal-title-options').innerText = texts.optionsTitle;
+    if(document.getElementById('modal-text-lang')) document.getElementById('modal-text-lang').innerText = texts.langue;
+    if(document.getElementById('modal-text-close')) document.getElementById('modal-text-close').innerText = texts.close;
 }
 
-// S'assure que la langue est bien chargée au lancement du site
 window.addEventListener('DOMContentLoaded', changeLanguage);
 
 function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
-function toggleTheme() { document.body.classList.toggle('dark-mode'); }
-function startNewGame() { document.getElementById('main-menu').style.display = 'none'; loadScene('partie1'); }
-function quitGame() { window.location.href = "../index.html"; }
+
+function startNewGame() { 
+    mainMenu.style.display = 'none'; 
+    gameContainer.style.display = 'flex';
+    loadScene('partie1'); 
+}
+
+function quitGame() { 
+    // Ferme l'onglet ou redirige
+    window.location.href = "https://google.com"; 
+}
