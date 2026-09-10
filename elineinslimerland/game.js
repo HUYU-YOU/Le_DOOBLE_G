@@ -4,7 +4,7 @@ const menuTranslations = {
     en: { start: "New Game", option: "Options", leave: "Quit", optionsTitle: "Settings", langue: "Language 🌍", close: "Close", next: "▶ Next" }
 };
 
-let currentLang = 'fr'; // Langue par défaut
+let currentLang = 'fr'; 
 let currentDialogIndex = 0; 
 
 // --- LE SCÉNARIO DU JEU ---
@@ -297,6 +297,6 @@ function startNewGame() {
 }
 
 function quitGame() { 
-    // Ferme l'onglet ou redirige
-    window.location.href = "https://google.com"; 
+    // Retourne au Hub (fichier index à la racine)
+    window.location.href = "../index.html"; 
 }
