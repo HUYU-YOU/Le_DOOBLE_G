@@ -92,11 +92,19 @@ body, html {
 /* Conteneurs pour les images du menu Multijoueur */
 .net-panel { position: relative; width: 90%; max-width: 420px; margin-bottom: 25px; }
 .net-panel img.bg { width: 100%; display: block; }
-.net-slot { position: absolute; top: 29%; left: 12%; width: 76%; height: 25%; display: flex; align-items: center; justify-content: center; }
+
+/* Bloc de base de l'input */
+.net-slot { position: absolute; left: 12%; width: 76%; height: 25%; display: flex; align-items: center; justify-content: center; }
+
+/* Les hauteurs réglées séparément */
+.net-slot.host-slot { top: 36%; }
+.net-slot.join-slot { top: 22%; }
+
 .net-id-text { color: var(--p1); font-size: 2.2em; font-weight: bold; letter-spacing: 5px; text-shadow: 0 0 15px var(--p1); }
 .net-input { width: 100%; height: 100%; background: transparent; border: none; color: #fff; font-size: 2em; text-align: center; text-transform: uppercase; outline: none; font-family: 'Rajdhani', sans-serif; letter-spacing: 4px; }
 .net-input::placeholder { color: rgba(255, 255, 255, 0.3); }
 .net-input:focus { background: rgba(255, 255, 255, 0.05); border-radius: 8px; }
+
 .net-btn-zone { position: absolute; cursor: pointer; transition: background 0.3s; }
 .net-btn-zone.host-zone { bottom: 8%; left: 35%; width: 30%; height: 25%; border-radius: 50%; }
 .net-btn-zone.host-zone:hover { background: rgba(0, 240, 255, 0.2); box-shadow: 0 0 15px rgba(0,240,255,0.4); }
