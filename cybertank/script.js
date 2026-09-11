@@ -53,7 +53,7 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 /* ==============================================================
-   2. GESTION DES PARAMÈTRES ET DE LA LANGUE
+   2. GESTION DES PARAMÈTRES ET DE LA LANGUE (../img/)
 ============================================================== */
 let currentLanguage = 'fr';
 
@@ -66,16 +66,16 @@ function setLanguage(lang) {
     if (lang === 'fr') {
         btnFr.classList.add('active');
         btnEn.classList.remove('active');
-        hubImg.src = './img/retourhub.png';
+        hubImg.src = '../img/retourhub.png';
     } else if (lang === 'en') {
         btnEn.classList.add('active');
         btnFr.classList.remove('active');
-        hubImg.src = './img/returbhub.png';
+        hubImg.src = '../img/returbhub.png';
     }
 }
 
 const settingsBtnImg = document.getElementById('settings-btn-img');
-const animFrames = ['./img/settings1.png', './img/settings2.png', './img/settings3.png', './img/settings5.png'];
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
 let hoverInterval; let currentFrame = 0;
 
 function startSettingsAnim() {
@@ -89,13 +89,13 @@ function startSettingsAnim() {
 }
 function stopSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
-    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = './img/setting.png'; }
+    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
 }
 function clickSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
-    settingsBtnImg.src = './img/settings4.png';
+    settingsBtnImg.src = '../img/settings4.png';
     toggleSettings();
-    setTimeout(() => { settingsBtnImg.src = './img/setting.png'; }, 300);
+    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
 }
 function toggleSettings() {
     document.getElementById('settings-modal').classList.toggle('show');
@@ -200,7 +200,7 @@ function updateEngineSound(isMoving) {
 }
 
 /* ==============================================================
-   4. ASSETS ET CLASSES DU JEU
+   4. ASSETS ET CLASSES DU JEU (./img/ Local au jeu)
 ============================================================== */
 const imgs = {};
 const imgFiles = {
