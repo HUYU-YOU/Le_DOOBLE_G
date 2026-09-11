@@ -81,7 +81,6 @@ function toggleSettings() {
     document.getElementById('settings-modal').classList.toggle('show');
 }
 
-
 // --- GAME ENGINE ---
 const canvas = document.getElementById('gameCanvas'); 
 const ctx = canvas.getContext('2d');
