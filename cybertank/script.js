@@ -66,16 +66,16 @@ function setLanguage(lang) {
     if (lang === 'fr') {
         btnFr.classList.add('active');
         btnEn.classList.remove('active');
-        hubImg.src = 'img/retourhub.png';
+        hubImg.src = './img/retourhub.png';
     } else if (lang === 'en') {
         btnEn.classList.add('active');
         btnFr.classList.remove('active');
-        hubImg.src = 'img/returbhub.png';
+        hubImg.src = './img/returbhub.png';
     }
 }
 
 const settingsBtnImg = document.getElementById('settings-btn-img');
-const animFrames = ['img/settings1.png', 'img/settings2.png', 'img/settings3.png', 'img/settings5.png'];
+const animFrames = ['./img/settings1.png', './img/settings2.png', './img/settings3.png', './img/settings5.png'];
 let hoverInterval; let currentFrame = 0;
 
 function startSettingsAnim() {
@@ -89,13 +89,13 @@ function startSettingsAnim() {
 }
 function stopSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
-    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = 'img/setting.png'; }
+    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = './img/setting.png'; }
 }
 function clickSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
-    settingsBtnImg.src = 'img/settings4.png';
+    settingsBtnImg.src = './img/settings4.png';
     toggleSettings();
-    setTimeout(() => { settingsBtnImg.src = 'img/setting.png'; }, 300);
+    setTimeout(() => { settingsBtnImg.src = './img/setting.png'; }, 300);
 }
 function toggleSettings() {
     document.getElementById('settings-modal').classList.toggle('show');
@@ -204,15 +204,15 @@ function updateEngineSound(isMoving) {
 ============================================================== */
 const imgs = {};
 const imgFiles = {
-    'map': 'img/maptankslime.png',
-    'obs1': 'img/obs1.png', 
-    'obs2': 'img/obs2.png', 
-    'obs3': 'img/obs3.png', 
-    'obs4': 'img/obs4.png', 
-    'obs5': 'img/obs5.png',
-    'slime_bleu': 'img/slimebleu.png', 
-    'slime_rouge': 'img/slimerouge.png', 
-    'slime_noir': 'img/slimenoir.png'
+    'map': './img/maptankslime.png',
+    'obs1': './img/obs1.png', 
+    'obs2': './img/obs2.png', 
+    'obs3': './img/obs3.png', 
+    'obs4': './img/obs4.png', 
+    'obs5': './img/obs5.png',
+    'slime_bleu': './img/slimebleu.png', 
+    'slime_rouge': './img/slimerouge.png', 
+    'slime_noir': './img/slimenoir.png'
 };
 Object.keys(imgFiles).forEach(k => { 
     imgs[k] = new Image(); 
