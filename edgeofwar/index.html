@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Slime War - Tactical Multiplayer</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- Remplacement par la police "Chewy" pour l'effet Slime -->
+    <!-- Police "Chewy" pour l'effet Slime -->
     <link href="https://fonts.googleapis.com/css2?family=Chewy&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,7 +13,8 @@
 
     <!-- BOUTON RETOUR HUB AVEC IMAGE -->
     <a href="../index.html" class="hub-link">
-        <img src="Le_DOOBLE_G/img/returbhub.png" alt="Return to Hub" class="hub-img">
+        <img src="Le_DOOBLE_G/img/retourhub.png" alt="Return to Hub" class="hub-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <span style="display:none; color:white; font-size:1.5em; text-shadow: 0 0 10px #fff;">⬅ HUB</span>
     </a>
 
     <!-- BOUTON PARAMÈTRES -->
@@ -26,7 +27,6 @@
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;">Settings</h2>
-            
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Screen Format 🖥️</span>
                 <div class="size-options">
@@ -35,7 +35,6 @@
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Fullscreen</button>
                 </div>
             </div>
-            
             <button onclick="toggleSettings()" class="close-btn">Close</button>
         </div>
     </div>
@@ -44,18 +43,19 @@
     <div id="game-container" class="size-wide">
         
         <!-- MENU PRINCIPAL AVEC LES 5 SKINS -->
-        <div class="overlay" id="main-menu" style="background: url('Le_DOOBLE_G/edgeofwar/img/backgroundwos.png') no-repeat center center / cover;">
+        <div class="overlay" id="main-menu" style="background: radial-gradient(circle, rgba(10,15,28,0.8), #020205), url('Le_DOOBLE_G/edgeofwar/img/backgroundwos.png') no-repeat center center / cover;">
+            
             <!-- Titre Image -->
             <img src="Le_DOOBLE_G/edgeofwar/img/choose.png" alt="CHOOSE YOUR BATTLE" class="menu-title-img">
             
-            <!-- Boutons Images -->
+            <!-- Boutons Images (Skins) -->
             <div id="solo-buttons" class="image-buttons-container">
-                <img src="Le_DOOBLE_G/edgeofwar/img/solo.png" alt="Solo Campaign" class="menu-img-btn" onclick="autoFullscreen(); startSolo('solo')">
+                <img src="Le_DOOBLE_G/edgeofwar/img/solo.png" alt="Solo Campaign" class="menu-img-btn blue-glow" onclick="autoFullscreen(); startSolo('solo')">
                 <img src="Le_DOOBLE_G/edgeofwar/img/survival.png" alt="Extreme Survival" class="menu-img-btn red-glow" onclick="autoFullscreen(); startSolo('hardcore')">
                 <img src="Le_DOOBLE_G/edgeofwar/img/local.png" alt="Local Versus" class="menu-img-btn purple-glow" onclick="autoFullscreen(); startLocal()">
             </div>
             
-            <hr id="menu-separator" style="width: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
+            <hr id="menu-separator" style="width: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
             
             <div id="net-button" style="width:100%; display:flex; justify-content:center;">
                 <button class="btn-main green" onclick="autoFullscreen(); showNetworkMenu()">🌐 Network War (PVP)</button>
@@ -64,33 +64,31 @@
 
         <!-- TERMINAL RÉSEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <h2 style="color: var(--primary); font-size: 2.5em; margin-bottom: 20px; text-transform: uppercase;">NETWORK TERMINAL</h2>
-            
+            <h2 style="color: var(--primary); font-size: 3em; margin-bottom: 20px; text-transform: uppercase;">NETWORK TERMINAL</h2>
             <div class="net-box host-box">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.3em;">HOST A GAME (WEST)</h3>
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.5em;">HOST A GAME (WEST)</h3>
                 <button class="btn-main" onclick="hostGame()" style="width: 100%; margin: 10px 0; padding: 12px;">Generate Access Code</button>
                 <div id="my-id" class="id-display">...</div>
             </div>
-
             <div class="net-box join-box">
-                <h3 style="color: #fff; margin-top: 0; font-size: 1.3em;">JOIN THE FRONT (EAST)</h3>
+                <h3 style="color: #fff; margin-top: 0; font-size: 1.5em;">JOIN THE FRONT (EAST)</h3>
                 <input type="text" id="join-id" class="net-input" placeholder="TRANSMISSION CODE">
                 <button class="btn-main red" onclick="joinGame()" style="width: 100%; margin: 10px 0; padding: 12px;">Infiltrate</button>
             </div>
-            
-            <p id="status-text" style="color: #ccc; margin-top: 20px; font-weight:bold; font-size: 1.3em;"></p>
+            <p id="status-text" style="color: #ccc; margin-top: 20px; font-weight:bold; font-size: 1.5em;"></p>
             <button class="btn-main" style="border: none; box-shadow:none; color: #888; background:transparent;" onclick="hideOnlineMenu()">Cancel</button>
         </div>
 
         <!-- ÉCRAN FIN DE JEU -->
         <div class="overlay" id="game-over" style="display: none;">
-            <h2 id="end-message" style="font-size: 4em; margin-bottom: 10px; text-transform: uppercase; text-align: center;"></h2>
-            <p id="end-stats" style="font-size: 1.5em; color: #aaa; margin-bottom: 30px;"></p>
+            <h2 id="end-message" style="font-size: 4.5em; margin-bottom: 10px; text-transform: uppercase; text-align: center;"></h2>
+            <p id="end-stats" style="font-size: 2em; color: #aaa; margin-bottom: 30px;"></p>
             <button class="btn-main" onclick="location.reload()">New Battle</button>
         </div>
 
         <!-- HUD -->
         <div class="hud" id="game-hud" style="visibility: hidden;">
+            <!-- JOUEUR 1 (WEST) -->
             <div class="base-stats">
                 <button id="btn-evolve-p1" class="btn-evolve" onclick="sendAction(1, 'evolve', null)">TECH UP!</button>
                 <div class="base-name player-name">WEST BASE (T<span id="p1-age">1</span>)</div>
@@ -98,6 +96,7 @@
                 <div class="xp-container"><div id="p1-xp-bar" class="xp-fill"></div></div>
             </div>
             
+            <!-- ECONOMIE (CENTRE) -->
             <div class="economy">
                 <div class="eco-box" id="p1-gold-container">
                     <div class="gold"><span id="p1-gold">50</span> 💰</div>
@@ -109,7 +108,7 @@
                 </div>
             </div>
             
-            <!-- Le style inline text-align: right; a été retiré pour laisser le CSS gérer l'alignement vers le centre -->
+            <!-- JOUEUR 2 (EAST) -->
             <div class="base-stats">
                 <button id="btn-evolve-p2" class="btn-evolve" onclick="sendAction(2, 'evolve', null)">TECH UP!</button>
                 <div class="base-name enemy-name">EAST BASE (T<span id="p2-age">1</span>)</div>
