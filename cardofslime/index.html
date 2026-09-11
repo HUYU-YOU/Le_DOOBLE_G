@@ -5,14 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Card of Slime - Final Polish</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <!-- NOUVEAU : Ajout de la police "Creepster" pour le style Slimesque -->
     <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Luckiest+Guy&family=Roboto:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body onclick="startMusic()">
     
     <h1 class="game-title">Card of Slime</h1>
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    
+    <!-- BOUTON RETOUR HUB (Image avec changement FR/EN) -->
+    <a href="../index.html" class="hub-btn-wrapper">
+        <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-btn-img">
+    </a>
     
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
@@ -22,6 +25,15 @@
         <div class="settings-content">
             <h2>Paramètres</h2>
             
+            <!-- NOUVEAU : Toggle Langue FR/EN -->
+            <div class="setting-item">
+                <span>Langue (FR/EN) 🌍</span>
+                <label class="switch">
+                    <input type="checkbox" id="lang-toggle" onchange="toggleLanguage()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
             <div class="setting-item">
                 <span>Mode Sombre 🌙</span>
                 <label class="switch">
@@ -61,9 +73,8 @@
             <button onclick="sendEmote('emojipouce.png')"><img src="assets/skins/emojipouce.png" alt="pouce"></button>
         </div>
 
-        <!-- NOUVEAU : Remplacement des boutons textes par tes images personnalisées -->
+        <!-- MENU PRINCIPAL : Uniquement les 3 PNG, sans fond, sans texte ! -->
         <div id="main-menu" class="menu-overlay">
-            <h2 class="menu-subtitle">Choisis ton mode</h2>
             <img src="assets/skins/deck.png" alt="Composer mon Deck" class="menu-img-btn" onclick="openDeckBuilder()">
             <img src="assets/skins/VSIA.png" alt="Mode Solo (VS IA)" class="menu-img-btn" onclick="startSoloGame()">
             <img src="assets/skins/MULTI.png" alt="Multijoueur" class="menu-img-btn" onclick="openMultiMenu()">
