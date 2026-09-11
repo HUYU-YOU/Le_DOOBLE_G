@@ -22,10 +22,27 @@ function changeLanguage(lang) {
     
     if (lang === 'FR') {
         document.getElementById('btn-lang-fr').classList.add('active');
-        hubImg.src = '../img/retourhub.png'; // IMAGE GLOBALE HUB FR
+        hubImg.src = '../img/retourhub.png'; // IMAGE FRANCAISE
+        
         if (playlistTitle) playlistTitle.innerText = "SÉLECTION DE LA PLAYLIST";
         document.getElementById('btn-replay').innerText = "Rejouer une partie";
         
+        // TRADUCTIONS DU MENU RÉSEAU (FR)
+        document.getElementById('net-title').innerText = "RÉSEAU";
+        document.getElementById('net-pseudo-label').innerText = "VOTRE PSEUDO :";
+        document.getElementById('player-name-input').placeholder = "EX: CYBERSLIME";
+        document.getElementById('net-create-title').innerText = "CRÉER UN SALON";
+        document.getElementById('net-code-label').innerText = "Code de votre salon :";
+        document.getElementById('btn-host').innerText = "1. GÉNÉRER LE CODE";
+        document.getElementById('btn-start-host').innerText = "2. CONFIGURER ➔";
+        document.getElementById('net-join-title').innerText = "REJOINDRE";
+        document.getElementById('join-id').placeholder = "Code de l'hôte...";
+        document.getElementById('btn-join').innerText = "INFILTRER";
+        document.getElementById('btn-back').innerText = "RETOUR";
+        document.getElementById('wait-title').innerText = "CONNEXION ÉTABLIE";
+        document.getElementById('waiting-text').innerText = "En attente du lancement par l'hôte...";
+        document.getElementById('loading-text').innerText = "Génération en cours...";
+
         if (currentCategory === 'ANIME') document.getElementById('guess-input').placeholder = "Nom de l'anime (ex: SNK...)";
         else if (currentCategory === 'FILMS') document.getElementById('guess-input').placeholder = "Nom du film (ex: Interstellar...)";
         else if (currentCategory === 'DISNEY') document.getElementById('guess-input').placeholder = "Nom du Disney (ex: Le Roi Lion...)";
@@ -33,9 +50,26 @@ function changeLanguage(lang) {
         
     } else {
         document.getElementById('btn-lang-en').classList.add('active');
-        hubImg.src = '../img/returbhub.png'; // IMAGE GLOBALE HUB EN
+        hubImg.src = '../img/returbhub.png'; // IMAGE ANGLAISE
+        
         if (playlistTitle) playlistTitle.innerText = "PLAYLIST SELECTION";
         document.getElementById('btn-replay').innerText = "Play Again";
+
+        // TRADUCTIONS DU MENU RÉSEAU (EN)
+        document.getElementById('net-title').innerText = "NETWORK";
+        document.getElementById('net-pseudo-label').innerText = "YOUR NICKNAME :";
+        document.getElementById('player-name-input').placeholder = "E.g.: CYBERSLIME";
+        document.getElementById('net-create-title').innerText = "CREATE A ROOM";
+        document.getElementById('net-code-label').innerText = "Your room code :";
+        document.getElementById('btn-host').innerText = "1. GENERATE CODE";
+        document.getElementById('btn-start-host').innerText = "2. SETUP ➔";
+        document.getElementById('net-join-title').innerText = "JOIN ROOM";
+        document.getElementById('join-id').placeholder = "Host code...";
+        document.getElementById('btn-join').innerText = "JOIN GAME";
+        document.getElementById('btn-back').innerText = "BACK";
+        document.getElementById('wait-title').innerText = "CONNECTION ESTABLISHED";
+        document.getElementById('waiting-text').innerText = "Waiting for host to start...";
+        document.getElementById('loading-text').innerText = "Generating tracks...";
 
         if (currentCategory === 'ANIME') document.getElementById('guess-input').placeholder = "Anime name (e.g., AOT...)";
         else if (currentCategory === 'FILMS') document.getElementById('guess-input').placeholder = "Movie name (e.g., Inception...)";
