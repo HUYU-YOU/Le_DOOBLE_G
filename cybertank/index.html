@@ -6,19 +6,19 @@
     <title>Cyber Slime - Neon Arena</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <!-- Lien vers le fichier CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     
-    <!-- BOUTONS FLOTTANTS -->
+    <!-- BOUTONS FLOTTANTS (Retour Hub) -->
     <a href="../index.html" class="hub-link" id="hub-link-btn">
-        <img src="img/retourhub.png" alt="Retour au Hub" id="hub-img">
+        <img src="./img/retourhub.png" alt="Retour au Hub" id="hub-img">
     </a>
 
+    <!-- BOUTONS FLOTTANTS (Paramètres) -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <div class="orbit-container"><div class="orbit-slime"></div></div>
-        <img src="img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        <img src="./img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
     <!-- MODAL PARAMETRES -->
@@ -48,18 +48,15 @@
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
-
-    <h1 class="game-title">Cyber Slime Arena</h1>
     
     <div id="game-container" class="size-wide">
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <!-- Tu peux supprimer ce h1 si "ARENA OS" est déjà dessiné dans ton backgroundtank.png -->
-            <h1 style="font-size: 3.5em; margin-bottom: 20px; text-shadow: 0 0 20px var(--p1);">ARENA OS</h1>
+            <!-- TEXTE ARENA OS SUPPRIMÉ ! -->
             
             <div id="solo-buttons" style="display:flex; flex-direction:column; align-items:center; width:100%;">
-                <img src="img/survie.png" alt="Survie" class="img-btn" onclick="autoFullscreen(); startMode('solo_survival')">
-                <img src="img/duelbot.png" alt="Duel Bot" class="img-btn" onclick="autoFullscreen(); startMode('solo_1v1')">
+                <img src="./img/survie.png" alt="Survie" class="img-btn" onclick="autoFullscreen(); startMode('solo_survival')">
+                <img src="./img/duelbot.png" alt="Duel Bot" class="img-btn" onclick="autoFullscreen(); startMode('solo_1v1')">
             </div>
             
             <hr id="menu-separator" style="width: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
@@ -74,7 +71,7 @@
             
             <!-- BLOC CRÉER (Host) -->
             <div class="net-panel">
-                <img src="img/generate.png" class="bg" alt="Créer une arène">
+                <img src="./img/generate.png" class="bg" alt="Créer une arène">
                 <div class="net-slot">
                     <div id="my-id" class="net-id-text">...</div>
                 </div>
@@ -83,7 +80,7 @@
 
             <!-- BLOC REJOINDRE (Join) -->
             <div class="net-panel">
-                <img src="img/join.png" class="bg" alt="Rejoindre">
+                <img src="./img/join.png" class="bg" alt="Rejoindre">
                 <div class="net-slot">
                     <input type="text" id="join-id" class="net-input" placeholder="CODE">
                 </div>
@@ -118,7 +115,6 @@
         </div>
     </div>
 
-    <!-- Lien vers le fichier JS -->
     <script src="script.js"></script>
 </body>
 </html>
