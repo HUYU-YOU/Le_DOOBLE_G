@@ -22,11 +22,10 @@ function changeLanguage(lang) {
     
     if (lang === 'FR') {
         document.getElementById('btn-lang-fr').classList.add('active');
-        hubImg.src = 'img/retourhub.png';
+        hubImg.src = 'img/retourhub.png'; // IMAGE FRANCAISE
         if (playlistTitle) playlistTitle.innerText = "SÉLECTION DE LA PLAYLIST";
         document.getElementById('btn-replay').innerText = "Rejouer une partie";
         
-        // MAJ des placeholders en FR si une catégorie est active
         if (currentCategory === 'ANIME') document.getElementById('guess-input').placeholder = "Nom de l'anime (ex: SNK...)";
         else if (currentCategory === 'FILMS') document.getElementById('guess-input').placeholder = "Nom du film (ex: Interstellar...)";
         else if (currentCategory === 'DISNEY') document.getElementById('guess-input').placeholder = "Nom du Disney (ex: Le Roi Lion...)";
@@ -34,11 +33,10 @@ function changeLanguage(lang) {
         
     } else {
         document.getElementById('btn-lang-en').classList.add('active');
-        hubImg.src = 'img/returnhub.png'; 
+        hubImg.src = 'img/returnhub.png'; // IMAGE ANGLAISE
         if (playlistTitle) playlistTitle.innerText = "PLAYLIST SELECTION";
         document.getElementById('btn-replay').innerText = "Play Again";
 
-        // MAJ des placeholders en EN si une catégorie est active
         if (currentCategory === 'ANIME') document.getElementById('guess-input').placeholder = "Anime name (e.g., AOT...)";
         else if (currentCategory === 'FILMS') document.getElementById('guess-input').placeholder = "Movie name (e.g., Inception...)";
         else if (currentCategory === 'DISNEY') document.getElementById('guess-input').placeholder = "Disney movie (e.g., Lion King...)";
