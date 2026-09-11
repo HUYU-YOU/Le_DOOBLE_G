@@ -47,16 +47,38 @@ function clickSettingsAnim() {
     setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
 }
 
-// --- GESTION AUDIO GLOBALE ---
+// --- GESTION AUDIO ET LANGUE GLOBALE ---
 let isMuted = localStorage.getItem('isMuted') === 'true';
 let musicStarted = false;
+let currentLang = localStorage.getItem('gameLang') || 'fr'; // Sauvegarde de la langue
 
 document.addEventListener('DOMContentLoaded', () => {
     const musicToggle = document.getElementById('music-toggle');
     if (musicToggle) musicToggle.checked = !isMuted;
     const settingsBtnImg = document.getElementById('settings-btn-img');
     if(settingsBtnImg) settingsBtnImg.src = '../img/setting.png';
+
+    // Langue initiale
+    const langToggle = document.getElementById('lang-toggle');
+    if (langToggle) langToggle.checked = (currentLang === 'en');
+    updateLanguageUI();
 });
+
+// NOUVEAU : Fonction de bascule de langue (FR/EN)
+function toggleLanguage() {
+    const langToggle = document.getElementById('lang-toggle');
+    currentLang = langToggle.checked ? 'en' : 'fr';
+    localStorage.setItem('gameLang', currentLang);
+    updateLanguageUI();
+}
+
+function updateLanguageUI() {
+    const hubBtnImg = document.getElementById('hub-btn-img');
+    if (hubBtnImg) {
+        // Alterne l'image du bouton Retour au Hub en fonction de la langue
+        hubBtnImg.src = currentLang === 'en' ? '../img/returbhub.png' : '../img/retourhub.png';
+    }
+}
 
 function toggleMusic() {
     const musicToggle = document.getElementById('music-toggle');
@@ -79,7 +101,7 @@ function playSound(id) {
 }
 
 // ==========================================
-// 2. BASE DE DONNÉES DES SKINS
+// 2. BASE DE DONNÉES EXACTE DES SKINS
 // ==========================================
 const cardDatabase = {
     slime: { 
@@ -167,7 +189,7 @@ const cardDatabase = {
     }
 };
 
-let playerDeck = ["slime", "slimeuse", "dragon", "tornade", "boule_sort", "marais"];
+let playerDeck = ["slime", "slimeuse", "dragon", "canon", "boule_sort", "marais"];
 let tempSelectedDeck = [...playerDeck];
 
 function getCardBackgroundStyle(card) {
@@ -274,9 +296,8 @@ function showEmote(emojiPath, team) {
 function startMultiplayerGame() { document.getElementById('multi-menu').style.display = 'none'; initGameEngine(); }
 function startSoloGame() { document.getElementById('main-menu').style.display = 'none'; initGameEngine(); setInterval(enemyAI, 2000); }
 
-
 // ==========================================
-// 4. MOTEUR DE JEU ET IA AVANCÉE
+// 4. MOTEUR DE JEU (GAME ENGINE)
 // ==========================================
 const MAX_SLIME = 10;
 let currentSlime = 5; let enemySlime = 5; 
@@ -317,7 +338,6 @@ function createTower(id, team, x, y, hp, img, width, height) {
     arena.appendChild(el);
     
     let lane = x < 50 ? 'left' : (x > 50 ? 'right' : 'center');
-    // Note: speed: 0 indique un bâtiment, targetsAir: true permet de tirer sur les volants
     activeEntities.push({ id: id, team: team, x: x, y: y, lane: lane, hp: hp, maxHp: hp, dmg: 50, range: 35, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
 }
 
@@ -386,7 +406,7 @@ function handleArenaClick(e) {
     if (cardData.type.includes('spell')) castSpell(cardData, 'player', clickX, clickY);
     else spawnEntity(cardData, 'player', clickX, clickY);
 
-    if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY, spellType: cardData.type });
+    if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY });
 
     drawPile.push(hand[selectedCardIndex]); hand[selectedCardIndex] = nextCard; nextCard = drawPile.shift();
     selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
@@ -428,7 +448,6 @@ function spawnEntity(data, team, x, y) {
     });
 }
 
-// LANCER DE SORT (GESTION DES PROJECTILES ET DÉPLOIEMENT)
 function castSpell(spellData, casterTeam, targetX, targetY) {
     if (spellData.projectile) {
         let originX = 50; let originY = casterTeam === 'player' ? 95 : 5;
@@ -450,7 +469,6 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
     }
 }
 
-// L'IMPACT DE SORT APRÈS L'ATTERRISSAGE (OU DIRECTEMENT)
 function executeSpellImpact(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
         for(let i=0; i<3; i++) {
@@ -489,56 +507,43 @@ function executeSpellImpact(spellData, casterTeam, targetX, targetY) {
     }
 }
 
-// IA STRATÉGIQUE (Analyse le terrain)
 function enemyAI() {
     if (isGameOver || conn) return;
-    
-    // Détection des menaces proches de la base ennemie (y < 50)
     let playerTroops = activeEntities.filter(e => e.team === 'player' && e.speed > 0);
     let enemyThreats = playerTroops.filter(e => e.y < 50); 
-    
     const playableCards = Object.values(cardDatabase).filter(c => c.cost <= enemySlime && !c.hidden);
     if (playableCards.length === 0) return;
-
-    if (Math.random() > 0.3) return; // Ne joue que 30% du temps pour ne pas vider son énergie d'un coup
+    if (Math.random() > 0.3) return; 
 
     let cardToPlay = null;
     let spawnX = Math.random() > 0.5 ? 27 : 73;
     let spawnY = 15;
 
     if (enemyThreats.length > 0) {
-        // Mode Défense
         enemyThreats.sort((a, b) => a.y - b.y);
         let threat = enemyThreats[0];
         spawnX = threat.x < 50 ? 27 : 73; 
-        spawnY = Math.max(10, threat.y - 15); // Invoque devant la menace
+        spawnY = Math.max(10, threat.y - 15);
 
-        // Pas de cible-bâtiments en défense
         let defensiveCards = playableCards.filter(c => !c.targetBuilding);
-        
-        // Si volant, il FAUT un anti-air ou un sort
         if (threat.isFlying) {
             let antiAir = defensiveCards.filter(c => c.targetsAir || c.type.includes('spell'));
             if (antiAir.length > 0) defensiveCards = antiAir;
         }
-
         if (defensiveCards.length > 0) {
             cardToPlay = defensiveCards[Math.floor(Math.random() * defensiveCards.length)];
         } else {
             cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
         }
-
         if (cardToPlay && cardToPlay.type.includes('spell')) {
             spawnX = threat.x; spawnY = threat.y;
         }
     } else {
-        // Mode Attaque
         let attackCards = playableCards;
         if (Math.random() > 0.4) {
-            attackCards = playableCards.filter(c => c.id !== 'boule'); // Réduit le spam aveugle de la boule
+            attackCards = playableCards.filter(c => c.id !== 'boule'); 
         }
         if (attackCards.length === 0) attackCards = playableCards;
-        
         cardToPlay = attackCards[Math.floor(Math.random() * attackCards.length)];
 
         if (cardToPlay.type.includes('spell')) {
@@ -554,7 +559,7 @@ function enemyAI() {
         enemySlime -= cardToPlay.cost;
         if (cardToPlay.type.includes('spell')) castSpell(cardToPlay, 'enemy', spawnX, spawnY);
         else {
-            spawnY = Math.min(45, Math.max(10, spawnY)); // Respecte sa zone
+            spawnY = Math.min(45, Math.max(10, spawnY)); 
             spawnEntity(cardToPlay, 'enemy', spawnX, spawnY);
         }
         playSound('sfx-spawn');
@@ -611,7 +616,6 @@ function gameLoop(currentTime) {
     if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
     if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
 
-    // ANIMATIONS DES SORTS (Tornade dynamique & Lancer Balistique)
     activeSpells = activeSpells.filter(spell => {
         if (spell.type === 'throw') {
             spell.progress += dt * 1.5;
@@ -709,7 +713,6 @@ function gameLoop(currentTime) {
         }
     });
 
-    // CIBLAGE ET DÉPLACEMENT (Correction du ciblage pour éviter le skip des tours)
     activeEntities.forEach(unit => {
         let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
         if (unit.stunTimer > 0) { unit.stunTimer -= dt; unit.state = 'idle'; unit.element.classList.add('stunned'); return; } 
@@ -724,7 +727,6 @@ function gameLoop(currentTime) {
         let closestTarget = null; let minDistance = 999;
 
         if (unit.speed === 0) {
-            // LES TOURS ET BÂTIMENTS
             activeEntities.forEach(target => {
                 if (target.team !== unit.team && target.speed > 0) {
                     if (target.isFlying && !unit.targetsAir) return; 
@@ -733,7 +735,6 @@ function gameLoop(currentTime) {
                 }
             });
         } else {
-            // LES TROUPES
             let aggroRadius = 25;
             if (!unit.targetBuilding) {
                 activeEntities.forEach(target => {
