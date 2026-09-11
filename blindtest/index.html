@@ -13,9 +13,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Bouton Retour au Hub avec ton Image -->
+    <!-- Bouton Retour au Hub avec ton Image (Corrigé) -->
     <a href="../index.html" class="hub-link">
-        <img id="hub-img" src="retourhub.png" alt="Retour au Hub">
+        <img id="hub-img" src="img/retourhub.png" alt="Retour au Hub">
     </a>
 
     <!-- Sélecteur de Langue en haut à droite -->
@@ -30,16 +30,16 @@
             <p id="lobby-count" style="color:#0ff; font-weight:700; font-size:1.3em; display:none; margin-bottom: 5px;">1 joueur(s) dans le salon</p>
 
             <div class="cat-grid" id="cat-buttons">
-                <!-- BOUTONS IMAGES -->
-                <button class="btn-img" style="background-image: url('rap.png');" onclick="launchGame('RAP')"></button>
-                <button class="btn-img" style="background-image: url('variet.png');" onclick="launchGame('FR')"></button>
-                <button class="btn-img" style="background-image: url('pop.png');" onclick="launchGame('POP')"></button>
-                <button class="btn-img" style="background-image: url('anime.png');" onclick="launchGame('ANIME')"></button>
-                <button class="btn-img" style="background-image: url('movies.png');" onclick="launchGame('FILMS')"></button>
-                <button class="btn-img" style="background-image: url('disney.png');" onclick="launchGame('DISNEY')"></button>
+                <!-- BOUTONS IMAGES (Chemins corrigés) -->
+                <button class="btn-img" style="background-image: url('img/rap.png');" onclick="launchGame('RAP')"></button>
+                <button class="btn-img" style="background-image: url('img/variet.png');" onclick="launchGame('FR')"></button>
+                <button class="btn-img" style="background-image: url('img/pop.png');" onclick="launchGame('POP')"></button>
+                <button class="btn-img" style="background-image: url('img/anime.png');" onclick="launchGame('ANIME')"></button>
+                <button class="btn-img" style="background-image: url('img/movies.png');" onclick="launchGame('FILMS')"></button>
+                <button class="btn-img" style="background-image: url('img/disney.png');" onclick="launchGame('DISNEY')"></button>
                 
                 <!-- BOUTON MULTIJOUEUR EN PLEINE LARGEUR -->
-                <button class="btn-img" id="btn-multi-toggle" style="background-image: url('multi.png'); grid-column: 1 / -1; margin-top: 15px; min-height: 100px;" onclick="openMenu('network')"></button>
+                <button class="btn-img" id="btn-multi-toggle" style="background-image: url('img/multi.png'); grid-column: 1 / -1; margin-top: 15px; min-height: 100px;" onclick="openMenu('network')"></button>
             </div>
 
             <div id="loading-api" style="display: none; flex-direction: column; align-items: center;">
