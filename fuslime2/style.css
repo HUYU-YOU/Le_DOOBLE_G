@@ -34,18 +34,39 @@ body.dark-mode .bg-overlay {
     background: rgba(0, 0, 0, 0.5); 
 }
 
-/* Bouton Retour Hub */
+/* --- BOUTON RETOUR HUB AVEC SKIN --- */
 .btn-hub {
     position: absolute;
-    top: 20px; left: 20px;
-    background-color: rgba(26, 26, 46, 0.8); color: white; text-decoration: none;
-    border: 1px solid #00e5ff; padding: 8px 15px; border-radius: 8px;
-    font-weight: bold; font-size: 14px; transition: 0.3s; z-index: 100;
+    top: 20px; 
+    left: 20px;
+    width: 150px; /* Ajuste la largeur selon la vraie taille de ton image */
+    height: 45px; /* Ajuste la hauteur selon la vraie taille de ton image */
+    
+    /* Skin Français par défaut */
+    background-image: url('../img/retourhub.png'); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-color: transparent;
+    
+    /* On rend le vieux texte HTML transparent pour ne voir que l'image */
+    color: transparent; 
+    text-decoration: none;
+    border: none;
+    transition: transform 0.3s ease, filter 0.3s ease; 
+    z-index: 100;
 }
+
 .btn-hub:hover {
-    background-color: rgba(0, 229, 255, 0.3);
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    transform: scale(1.05) translateX(-3px);
+    filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.8));
 }
+
+/* Skin Anglais (S'active si le <body> a la classe "en") */
+body.en .btn-hub {
+    background-image: url('../img/returbhub.png');
+}
+
 
 /* Bouton Paramètres */
 .settings-btn-wrapper {
