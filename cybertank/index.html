@@ -10,15 +10,15 @@
 </head>
 <body>
     
-    <!-- BOUTONS FLOTTANTS (Retour Hub) -->
+    <!-- BOUTONS FLOTTANTS (Retour Hub -> Racine) -->
     <a href="../index.html" class="hub-link" id="hub-link-btn">
-        <img src="./img/retourhub.png" alt="Retour au Hub" id="hub-img">
+        <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-img">
     </a>
 
-    <!-- BOUTONS FLOTTANTS (Paramètres) -->
+    <!-- BOUTONS FLOTTANTS (Paramètres -> Racine) -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <div class="orbit-container"><div class="orbit-slime"></div></div>
-        <img src="./img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
     <!-- MODAL PARAMETRES -->
@@ -52,9 +52,9 @@
     <div id="game-container" class="size-wide">
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <!-- TEXTE ARENA OS SUPPRIMÉ ! -->
             
             <div id="solo-buttons" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+                <!-- Images du jeu -> Dossier local -->
                 <img src="./img/survie.png" alt="Survie" class="img-btn" onclick="autoFullscreen(); startMode('solo_survival')">
                 <img src="./img/duelbot.png" alt="Duel Bot" class="img-btn" onclick="autoFullscreen(); startMode('solo_1v1')">
             </div>
