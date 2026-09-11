@@ -18,13 +18,31 @@ function changeLanguage(lang) {
     document.getElementById('btn-lang-en').classList.remove('active');
     
     const hubImg = document.getElementById('hub-img');
+    const playlistTitle = document.getElementById('playlist-title');
     
     if (lang === 'FR') {
         document.getElementById('btn-lang-fr').classList.add('active');
         hubImg.src = 'img/retourhub.png';
+        if (playlistTitle) playlistTitle.innerText = "SÉLECTION DE LA PLAYLIST";
+        document.getElementById('btn-replay').innerText = "Rejouer une partie";
+        
+        // MAJ des placeholders en FR si une catégorie est active
+        if (currentCategory === 'ANIME') document.getElementById('guess-input').placeholder = "Nom de l'anime (ex: SNK...)";
+        else if (currentCategory === 'FILMS') document.getElementById('guess-input').placeholder = "Nom du film (ex: Interstellar...)";
+        else if (currentCategory === 'DISNEY') document.getElementById('guess-input').placeholder = "Nom du Disney (ex: Le Roi Lion...)";
+        else document.getElementById('guess-input').placeholder = "Tapez l'artiste ou le titre ici...";
+        
     } else {
         document.getElementById('btn-lang-en').classList.add('active');
-        hubImg.src = 'img/returnhub.png'; // L'image passera bien en EN ici !
+        hubImg.src = 'img/returnhub.png'; 
+        if (playlistTitle) playlistTitle.innerText = "PLAYLIST SELECTION";
+        document.getElementById('btn-replay').innerText = "Play Again";
+
+        // MAJ des placeholders en EN si une catégorie est active
+        if (currentCategory === 'ANIME') document.getElementById('guess-input').placeholder = "Anime name (e.g., AOT...)";
+        else if (currentCategory === 'FILMS') document.getElementById('guess-input').placeholder = "Movie name (e.g., Inception...)";
+        else if (currentCategory === 'DISNEY') document.getElementById('guess-input').placeholder = "Disney movie (e.g., Lion King...)";
+        else document.getElementById('guess-input').placeholder = "Type artist or title here...";
     }
 }
 
@@ -122,7 +140,7 @@ function hostGame() {
     playerNames[1] = myName;
 
     status.style.color = "var(--p1)";
-    status.innerText = "Création du serveur..."; 
+    status.innerText = currentLang === 'FR' ? "Création du serveur..." : "Creating server..."; 
 
     let code = 'BLD' + Math.floor(1000 + Math.random() * 9000);
 
@@ -134,7 +152,7 @@ function hostGame() {
         try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e=>{}); } catch(e) {}
 
         status.style.color = "var(--sys)";
-        status.innerText = "Serveur prêt ! / Server Ready !"; 
+        status.innerText = currentLang === 'FR' ? "Serveur prêt !" : "Server Ready !"; 
 
         document.getElementById('btn-host').style.display = 'none';
         document.getElementById('btn-start-host').style.display = 'inline-block';
@@ -155,12 +173,12 @@ function hostGame() {
                 conns.push(c); 
 
                 status.style.color = "var(--sys)";
-                status.innerText = `${conns.length + 1} joueur(s) connectés !`;
-                document.getElementById('lobby-count').innerText = Object.keys(scores).length + " joueur(s) dans le salon";
+                status.innerText = currentLang === 'FR' ? `${conns.length + 1} joueur(s) connectés !` : `${conns.length + 1} player(s) connected!`;
+                document.getElementById('lobby-count').innerText = currentLang === 'FR' ? Object.keys(scores).length + " joueur(s) dans le salon" : Object.keys(scores).length + " player(s) in lobby";
 
                 c.send({ type: 'init', pid: newPid, playerNames: playerNames, scores: scores, category: currentCategory });
 
-                let msg = `${playerNames[newPid]} a rejoint la partie !`;
+                let msg = currentLang === 'FR' ? `${playerNames[newPid]} a rejoint la partie !` : `${playerNames[newPid]} joined the game!`;
                 broadcast({ type: 'sys', msg: msg, playerNames: playerNames, scores: scores });
                 displaySys(msg); updateScoreUI();
             }
@@ -176,9 +194,7 @@ function goToLobby() {
     document.getElementById('btn-multi-toggle').style.display = 'none';
     document.getElementById('lobby-count').style.display = 'block';
     
-    // Si on retourne au hub, on retire la boite de fond de jeu
     document.getElementById('game-container').classList.remove('playing');
-    
     updateScoreUI();
 }
 
@@ -242,6 +258,7 @@ async function launchGame(cat) {
     if (gameMode === 'host') broadcast({ type: 'start_game', category: cat });
 
     document.getElementById('cat-buttons').style.display = 'none';
+    document.getElementById('btn-multi-toggle').style.display = 'none';
     document.getElementById('loading-api').style.display = 'flex';
 
     let selectedTracks = [];
@@ -291,7 +308,7 @@ async function launchGame(cat) {
     }
 
     if (selectedTracks.length === 0) {
-        alert("Erreur réseau : Impossible de contacter la base de données musicale iTunes.");
+        alert(currentLang === 'FR' ? "Erreur : Impossible de contacter la base de données musicale iTunes." : "Error: Cannot reach iTunes database.");
         location.reload(); return;
     }
 
@@ -302,8 +319,8 @@ async function launchGame(cat) {
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
     document.getElementById('in-game-ui').style.display = 'flex';
 
-    if (gameMode === 'host') broadcast({ type: 'sys', msg: `L'hôte a lancé la catégorie ${cat} !` });
-    displaySys(`🎵 DÉBUT DE LA PARTIE (${playlist.length} Manches) 🎵`);
+    if (gameMode === 'host') broadcast({ type: 'sys', msg: currentLang === 'FR' ? `L'hôte a lancé la catégorie ${cat} !` : `Host launched category ${cat}!` });
+    displaySys(currentLang === 'FR' ? `🎵 DÉBUT DE LA PARTIE (${playlist.length} Manches) 🎵` : `🎵 GAME START (${playlist.length} Rounds) 🎵`);
 
     setTimeout(startNextRound, 2000);
 }
@@ -334,7 +351,7 @@ function startNextRound() {
     isRoundActive = true;
     if (gameMode === 'host') broadcast({ type: 'start_round', track: { previewUrl: currentTrack.previewUrl }, round: currentTrackIndex + 1 });
 
-    displaySys(`▶️ MANCHE ${currentTrackIndex + 1} / 10`);
+    displaySys(currentLang === 'FR' ? `▶️ MANCHE ${currentTrackIndex + 1} / 10` : `▶️ ROUND ${currentTrackIndex + 1} / 10`);
 
     clearInterval(roundInterval);
     roundInterval = setInterval(() => {
@@ -352,7 +369,7 @@ function endRound() {
     clearInterval(roundInterval); clearInterval(fadeInterval); audioPlayer.pause();
 
     revealAnswers(currentTrack);
-    displaySys(`Fin de la manche...`);
+    displaySys(currentLang === 'FR' ? `Fin de la manche...` : `Round over...`);
 
     if (gameMode === 'host') broadcast({ type: 'end_round', track: currentTrack });
     setTimeout(startNextRound, 5000); 
@@ -367,14 +384,13 @@ function endGame() {
 function clientStartRound(track, round) {
     currentTrack = track;
     
-    // On affiche le conteneur du jeu principal et son fond
     document.getElementById('game-container').classList.add('playing');
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
     document.getElementById('in-game-ui').style.display = 'flex';
 
     clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
     resetRoundUI(); audioPlayer.src = track.previewUrl; audioPlayer.play().catch(e => console.log(e));
-    isRoundActive = true; displaySys(`▶️ MANCHE ${round} / 10`);
+    isRoundActive = true; displaySys(currentLang === 'FR' ? `▶️ MANCHE ${round} / 10` : `▶️ ROUND ${round} / 10`);
 }
 
 function clientUpdateState(stateData) {
@@ -386,29 +402,29 @@ function clientUpdateState(stateData) {
 
     if (currentCategory === 'ANIME') {
         if (stateData.animeFoundBy.includes(myPid) && !boxAnime.classList.contains('found')) {
-            boxAnime.classList.add('found'); boxAnime.innerText = "📺 ANIME TROUVÉ !";
+            boxAnime.classList.add('found'); boxAnime.innerText = currentLang === 'FR' ? "📺 ANIME TROUVÉ !" : "📺 ANIME FOUND !";
         }
     } else if (currentCategory === 'FILMS') {
         if (stateData.filmFoundBy.includes(myPid) && !boxAnime.classList.contains('found')) {
-            boxAnime.classList.add('found'); boxAnime.innerText = "🎬 FILM TROUVÉ !";
+            boxAnime.classList.add('found'); boxAnime.innerText = currentLang === 'FR' ? "🎬 FILM TROUVÉ !" : "🎬 MOVIE FOUND !";
         }
     } else if (currentCategory === 'DISNEY') {
         if (stateData.disneyFoundBy.includes(myPid) && !boxAnime.classList.contains('found')) {
-            boxAnime.classList.add('found'); boxAnime.innerText = "🏰 DISNEY TROUVÉ !";
+            boxAnime.classList.add('found'); boxAnime.innerText = currentLang === 'FR' ? "🏰 DISNEY TROUVÉ !" : "🏰 DISNEY FOUND !";
         }
     } else {
         if (stateData.artistFoundBy.includes(myPid) && !boxArtist.classList.contains('found')) {
-            boxArtist.classList.add('found'); boxArtist.innerText = "🧑‍🎤 ARTISTE TROUVÉ !";
+            boxArtist.classList.add('found'); boxArtist.innerText = currentLang === 'FR' ? "🧑‍🎤 ARTISTE TROUVÉ !" : "🧑‍🎤 ARTIST FOUND !";
         }
         if (stateData.titleFoundBy.includes(myPid) && !boxTitle.classList.contains('found')) {
-            boxTitle.classList.add('found'); boxTitle.innerText = "🎵 TITRE TROUVÉ !";
+            boxTitle.classList.add('found'); boxTitle.innerText = currentLang === 'FR' ? "🎵 TITRE TROUVÉ !" : "🎵 TITLE FOUND !";
         }
     }
 }
 
 function clientEndRound(track) {
     isRoundActive = false; clearInterval(fadeInterval); audioPlayer.pause();
-    revealAnswers(track); displaySys(`Fin de la manche...`);
+    revealAnswers(track); displaySys(currentLang === 'FR' ? `Fin de la manche...` : `Round over...`);
 }
 
 // --- ALGORITHME DE CORRECTION ---
@@ -474,12 +490,12 @@ function processGuess(text, pid) {
             state.animeFoundBy.push(pid);
             let pts = numPlayers - state.animeFoundBy.length + 1;
             scores[pid] += pts;
-            let msg = `🔥 ${playerPseudo} a trouvé l'Anime ! (+${pts} pts)`;
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé l'Anime ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Anime! (+${pts} pts)`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
             if (pid === myPid) {
                 boxAnime.classList.add('found');
-                boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : "📺 ANIME TROUVÉ !";
+                boxAnime.innerText = gameMode === 'solo' ? `📺 ${currentTrack.animeName}` : (currentLang === 'FR' ? "📺 ANIME TROUVÉ !" : "📺 ANIME FOUND!");
             }
         }
     } else if (currentCategory === 'FILMS') {
@@ -494,12 +510,12 @@ function processGuess(text, pid) {
             state.filmFoundBy.push(pid);
             let pts = numPlayers - state.filmFoundBy.length + 1;
             scores[pid] += pts;
-            let msg = `🔥 ${playerPseudo} a trouvé le Film ! (+${pts} pts)`;
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Film ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Movie! (+${pts} pts)`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
             if (pid === myPid) {
                 boxAnime.classList.add('found');
-                boxAnime.innerText = gameMode === 'solo' ? `🎬 ${currentTrack.filmName}` : "🎬 FILM TROUVÉ !";
+                boxAnime.innerText = gameMode === 'solo' ? `🎬 ${currentTrack.filmName}` : (currentLang === 'FR' ? "🎬 FILM TROUVÉ !" : "🎬 MOVIE FOUND!");
             }
         }
     } else if (currentCategory === 'DISNEY') {
@@ -514,12 +530,12 @@ function processGuess(text, pid) {
             state.disneyFoundBy.push(pid);
             let pts = numPlayers - state.disneyFoundBy.length + 1;
             scores[pid] += pts;
-            let msg = `🔥 ${playerPseudo} a trouvé le Disney ! (+${pts} pts)`;
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Disney ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Disney! (+${pts} pts)`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
             if (pid === myPid) {
                 boxAnime.classList.add('found');
-                boxAnime.innerText = gameMode === 'solo' ? `🏰 ${currentTrack.disneyName}` : "🏰 DISNEY TROUVÉ !";
+                boxAnime.innerText = gameMode === 'solo' ? `🏰 ${currentTrack.disneyName}` : (currentLang === 'FR' ? "🏰 DISNEY TROUVÉ !" : "🏰 DISNEY FOUND!");
             }
         }
     } else {
@@ -540,24 +556,24 @@ function processGuess(text, pid) {
             state.artistFoundBy.push(pid);
             let pts = numPlayers - state.artistFoundBy.length + 1;
             scores[pid] += pts; correct = true;
-            let msg = `🔥 ${playerPseudo} a trouvé l'Artiste ! (+${pts} pts)`;
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé l'Artiste ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Artist! (+${pts} pts)`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
             
             if (pid === myPid) {
                 boxArtist.classList.add('found'); 
-                boxArtist.innerText = gameMode === 'solo' ? `🧑‍🎤 ${currentTrack.artistName}` : "🧑‍🎤 ARTISTE TROUVÉ !";
+                boxArtist.innerText = gameMode === 'solo' ? `🧑‍🎤 ${currentTrack.artistName}` : (currentLang === 'FR' ? "🧑‍🎤 ARTISTE TROUVÉ !" : "🧑‍🎤 ARTIST FOUND!");
             }
         }
         if (tMatch) {
             state.titleFoundBy.push(pid);
             let pts = numPlayers - state.titleFoundBy.length + 1;
             scores[pid] += pts; correct = true;
-            let msg = `🔥 ${playerPseudo} a trouvé le Titre ! (+${pts} pts)`;
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Titre ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Title! (+${pts} pts)`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
             
             if (pid === myPid) {
                 boxTitle.classList.add('found'); 
-                boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : "🎵 TITRE TROUVÉ !";
+                boxTitle.innerText = gameMode === 'solo' ? `🎵 ${currentTrack.trackName.split('(')[0]}` : (currentLang === 'FR' ? "🎵 TITRE TROUVÉ !" : "🎵 TITLE FOUND!");
             }
         }
     }
@@ -648,12 +664,12 @@ function showEndScreen(finalScores = scores) {
 
     if (gameMode === 'solo') {
         let maxPts = (currentCategory === 'ANIME' || currentCategory === 'FILMS' || currentCategory === 'DISNEY') ? 10 : 20;
-        t.innerHTML = `Score Final : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>`;
+        t.innerHTML = currentLang === 'FR' ? `Score Final : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>` : `Final Score : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>`;
     } else {
         let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
         let winnerPid = sortedPids[0]; let winnerColor = getPlayerColor(winnerPid);
         let winnerName = playerNames[winnerPid] || `JOUEUR ${winnerPid}`;
-        t.innerHTML = `<span style="color:${winnerColor}; font-weight:700; text-shadow: 0 0 15px ${winnerColor}; text-transform: uppercase;">${winnerName} REMPORTE LA PARTIE !</span><br><br>`;
+        t.innerHTML = currentLang === 'FR' ? `<span style="color:${winnerColor}; font-weight:700; text-shadow: 0 0 15px ${winnerColor}; text-transform: uppercase;">${winnerName} REMPORTE LA PARTIE !</span><br><br>` : `<span style="color:${winnerColor}; font-weight:700; text-shadow: 0 0 15px ${winnerColor}; text-transform: uppercase;">${winnerName} WINS THE GAME !</span><br><br>`;
         sortedPids.forEach(pid => { 
             let pseudo = playerNames[pid] || `Joueur ${pid}`;
             t.innerHTML += `<div style="color:${getPlayerColor(pid)}; margin: 8px; font-weight:600; font-size: 1.2em;">${pseudo} : ${finalScores[pid]} pts</div>`; 
