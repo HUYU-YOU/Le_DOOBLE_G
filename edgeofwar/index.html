@@ -7,11 +7,11 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <!-- Remplacement par la police "Chewy" pour l'effet Slime -->
     <link href="https://fonts.googleapis.com/css2?family=Chewy&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css"> <!-- Ton fichier CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- BOUTON RETOUR HUB AVEC IMAGE (Version Anglaise) -->
+    <!-- BOUTON RETOUR HUB AVEC IMAGE -->
     <a href="../index.html" class="hub-link">
         <img src="Le_DOOBLE_G/img/returbhub.png" alt="Return to Hub" class="hub-img">
     </a>
@@ -22,7 +22,7 @@
         <img src="../img/setting.png" alt="Settings" id="settings-btn-img" class="settings-btn">
     </div>
 
-    <!-- MODAL PARAMÈTRES (Traduit en Anglais) -->
+    <!-- MODAL PARAMÈTRES -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;">Settings</h2>
@@ -43,7 +43,7 @@
     <!-- GAME CONTAINER -->
     <div id="game-container" class="size-wide">
         
-        <!-- MENU PRINCIPAL AVEC IMAGES (Chemins mis à jour) -->
+        <!-- MENU PRINCIPAL AVEC LES 5 SKINS -->
         <div class="overlay" id="main-menu" style="background: url('Le_DOOBLE_G/edgeofwar/img/backgroundwos.png') no-repeat center center / cover;">
             <!-- Titre Image -->
             <img src="Le_DOOBLE_G/edgeofwar/img/choose.png" alt="CHOOSE YOUR BATTLE" class="menu-title-img">
@@ -109,7 +109,8 @@
                 </div>
             </div>
             
-            <div class="base-stats" style="text-align: right;">
+            <!-- Le style inline text-align: right; a été retiré pour laisser le CSS gérer l'alignement vers le centre -->
+            <div class="base-stats">
                 <button id="btn-evolve-p2" class="btn-evolve" onclick="sendAction(2, 'evolve', null)">TECH UP!</button>
                 <div class="base-name enemy-name">EAST BASE (T<span id="p2-age">1</span>)</div>
                 <div class="health-bar-container"><div class="health-bar" id="p2-hp-bar"></div></div>
@@ -126,7 +127,6 @@
         <div class="controls-container" id="deployment-controls"></div>
     </div>
 
-    <!-- Import de ton script -->
     <script src="game.js"></script>
 </body>
 </html>
