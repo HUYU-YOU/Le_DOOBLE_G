@@ -22,7 +22,7 @@ function changeLanguage(lang) {
     
     if (lang === 'FR') {
         document.getElementById('btn-lang-fr').classList.add('active');
-        hubImg.src = 'img/retourhub.png'; // IMAGE FRANCAISE
+        hubImg.src = '../img/retourhub.png'; // IMAGE GLOBALE HUB FR
         if (playlistTitle) playlistTitle.innerText = "SÉLECTION DE LA PLAYLIST";
         document.getElementById('btn-replay').innerText = "Rejouer une partie";
         
@@ -33,7 +33,7 @@ function changeLanguage(lang) {
         
     } else {
         document.getElementById('btn-lang-en').classList.add('active');
-        hubImg.src = 'img/returbhub.png'; // IMAGE ANGLAISE ("returbhub.png")
+        hubImg.src = '../img/returbhub.png'; // IMAGE GLOBALE HUB EN
         if (playlistTitle) playlistTitle.innerText = "PLAYLIST SELECTION";
         document.getElementById('btn-replay').innerText = "Play Again";
 
@@ -258,6 +258,7 @@ async function launchGame(cat) {
     document.getElementById('cat-buttons').style.display = 'none';
     document.getElementById('btn-multi-toggle').style.display = 'none';
     document.getElementById('loading-api').style.display = 'flex';
+    document.getElementById('playlist-title').style.display = 'none'; 
 
     let selectedTracks = [];
     let shuffled = catalogs[cat].sort(() => Math.random() - 0.5);
