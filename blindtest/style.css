@@ -1,6 +1,6 @@
 :root { 
     --bg: #050508; 
-    --panel: rgba(15, 18, 28, 0.75); 
+    --panel: rgba(15, 18, 28, 0.85); 
     --panel-border: rgba(0, 240, 255, 0.2);
     --p1: #00f0ff; 
     --p2: #ff007f; 
@@ -24,59 +24,68 @@ body {
     min-height: 100vh; overflow-x: hidden; 
 }
 
-/* --- TOP BOUTONS (LANGUE ET HUB) --- */
+/* --- TOP BOUTONS (HUB & SETTINGS) --- */
 .hub-link { 
-    position: absolute; top: 20px; left: 20px; z-index: 1000; 
-    transition: transform 0.3s;
+    position: absolute; top: 15px; left: 15px; z-index: 1000; 
 }
-.hub-link:hover { transform: scale(1.05); }
-.hub-link img { height: 50px; }
-
-#lang-toggle {
-    position: absolute; top: 20px; right: 20px; z-index: 1000;
-    background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 8px;
-    border: 2px solid var(--sys); color: var(--sys); cursor: pointer;
-    font-family: var(--font-main); font-weight: bold; font-size: 1.2em;
-    backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
-    transition: 0.3s;
+.hub-link img { 
+    height: 60px; /* Taille fixe pour éviter les images géantes */
+    width: auto;
+    transition: transform 0.3s, filter 0.3s; 
 }
-#lang-toggle:hover {
-    background: var(--sys); color: #000; box-shadow: 0 0 20px var(--sys);
+.hub-link:hover img { 
+    transform: scale(1.05) translateX(-5px); 
+    filter: drop-shadow(0 0 15px var(--sys)); 
 }
 
-h1 { 
-    color: #fff; text-transform: uppercase; letter-spacing: 8px; margin-top: 0; 
-    text-shadow: 0 0 15px var(--p1), 0 0 30px var(--p1); 
-    text-align: center; font-size: 2.5em; font-weight: 700;
-    font-family: var(--font-title);
-}
+.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 1000; }
+.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.8)); }
+.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15) rotate(90deg); }
 
+/* --- MODAL PARAMÈTRES --- */
+#settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+#settings-modal.show { opacity: 1; pointer-events: auto; }
+.settings-content { background: rgba(10, 15, 25, 0.95); border: 2px solid var(--sys); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(57,255,20,0.4); min-width: 320px; }
+.settings-content h2 { font-family: var(--font-title); color: var(--sys); font-size: 2.5em; letter-spacing: 2px; margin-top: 0; }
+.size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--sys); padding: 10px 25px; border-radius: 5px; cursor: pointer; font-family: var(--font-main); font-size: 1.2em; font-weight: bold; transition: 0.2s; }
+.btn-size:hover { background: rgba(57, 255, 20, 0.2); }
+.btn-size.active { background: var(--sys); color: #000; box-shadow: 0 0 15px var(--sys); }
+.close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-family: var(--font-main);}
+.close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
+
+/* --- CONTENEUR DE JEU --- */
 #game-container { 
-    position: relative; background: var(--panel); border-radius: 20px; 
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.05); 
-    padding: 25px; border: 1px solid var(--panel-border); 
+    position: relative; 
     width: 100%; max-width: 800px; height: 680px; 
     display: flex; flex-direction: column; overflow: hidden; 
+    transition: all 0.4s ease;
+}
+
+/* On ajoute le carré sombre SEULEMENT en jeu (plus sur le menu) */
+#game-container.playing {
+    background: var(--panel); border-radius: 20px; 
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.05); 
+    padding: 25px; border: 1px solid var(--panel-border); 
     backdrop-filter: blur(12px);
 }
 
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-    background: transparent; 
+    background: transparent; /* Transparent pour voir le backgroundBLD ! */
     display: flex; flex-direction: column; 
-    align-items: center; justify-content: center; z-index: 10; text-align: center; 
+    align-items: center; justify-content: flex-start; z-index: 10; text-align: center; 
     padding: 20px; box-sizing: border-box; 
 }
 
-.menu-title { 
-    font-family: var(--font-title);
-    font-size: 3.5em; margin-bottom: 25px; 
-    color: #7FFF00; 
-    text-transform: uppercase; letter-spacing: 5px; 
-    text-shadow: 0 0 20px rgba(127, 255, 0, 0.8);
-}
-
 /* CLASSE POUR LES BOUTONS IMAGES (THEME SLIME) */
+.cat-grid { 
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; 
+    width: 90%; max-width: 650px; 
+    margin-top: 15vh; /* DESCEND LES BOUTONS SUR L'IMAGE */
+}
+@media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; margin-top: 10vh; } }
+
 .btn-img {
     background-color: transparent;
     background-size: contain;
@@ -96,23 +105,16 @@ h1 {
 
 .btn-main { 
     background: rgba(255,255,255,0.05); color: #fff; border: 2px solid #555; 
-    padding: 15px 35px; font-size: 1.3em; font-weight: 700; font-family: var(--font-main);
+    padding: 15px 35px; font-size: 1.3em; font-family: var(--font-main);
     border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); margin: 10px; 
     position: relative; overflow: hidden;
 }
-.btn-main::before {
-    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: 0.5s;
-}
-.btn-main:hover::before { left: 100%; }
 .btn-main:hover { transform: translateY(-3px); box-shadow: 0 5px 20px rgba(255,255,255,0.2); border-color: #fff; }
-
 .btn-cyan { border-color: var(--p1); color: var(--p1); background: rgba(0, 240, 255, 0.05); }
-.btn-cyan:hover { background: var(--p1); color: #000; box-shadow: 0 0 20px var(--p1); border-color: var(--p1); }
+.btn-cyan:hover { background: var(--p1); color: #000; box-shadow: 0 0 20px var(--p1); }
 .btn-pink { border-color: var(--p2); color: var(--p2); background: rgba(255, 0, 127, 0.05); }
-.btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 20px var(--p2); border-color: var(--p2); }
+.btn-pink:hover { background: var(--p2); color: #fff; box-shadow: 0 0 20px var(--p2); }
 .btn-sys { border-color: var(--sys); color: var(--sys); background: rgba(57, 255, 20, 0.05); }
 .btn-sys:hover { background: var(--sys); color: #000; box-shadow: 0 0 20px var(--sys); }
 
@@ -124,13 +126,13 @@ h1 {
 }
 #scores-container { display: flex; gap: 15px; flex-wrap: wrap; flex: 1; justify-content: flex-start; }
 .score-box { 
-    font-size: 1.3em; font-weight: 700; padding: 6px 18px; border-radius: 8px; 
+    font-size: 1.3em; padding: 6px 18px; border-radius: 8px; 
     background: rgba(0,0,0,0.6); border: 1px solid; letter-spacing: 1px;
     backdrop-filter: blur(4px);
 }
 #timer-box { 
     font-family: var(--font-title);
-    font-size: 3.5em; color: var(--gold); font-weight: 400; 
+    font-size: 3.5em; color: var(--gold); 
     text-shadow: 0 0 15px var(--gold); margin-left: 15px; min-width: 60px; text-align: center; 
     line-height: 1; letter-spacing: 2px;
 }
@@ -140,7 +142,7 @@ h1 {
 .mystery-box { 
     width: 90%; background: linear-gradient(135deg, rgba(20,25,40,0.8), rgba(10,12,20,0.9)); 
     padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
-    font-size: 1.6em; font-weight: 600; text-align: center; letter-spacing: 3px; 
+    font-size: 1.6em; text-align: center; letter-spacing: 3px; 
     text-transform: uppercase; transition: all 0.4s ease;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative; overflow: hidden;
     color: #888;
@@ -178,7 +180,7 @@ h1 {
 #guess-input:focus { border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
 
 #btn-send { 
-    background: var(--p1); color: #000; border: none; font-weight: 700; font-family: var(--font-main);
+    background: var(--p1); color: #000; border: none; font-family: var(--font-main);
     padding: 0 30px; margin-left: 15px; border-radius: 8px; cursor: pointer; font-size: 1.3em; 
     letter-spacing: 1px; transition: 0.2s; text-transform: uppercase;
 }
@@ -187,20 +189,17 @@ h1 {
 .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--p1); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 25px auto; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.msg { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.2em; font-weight: 500; backdrop-filter: blur(4px); }
+.msg { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.2em; backdrop-filter: blur(4px); }
 .msg-sys { 
     background: rgba(57, 255, 20, 0.05); color: var(--sys); align-self: center; 
-    border: 1px solid rgba(57, 255, 20, 0.3); font-weight: 700; text-align: center; 
+    border: 1px solid rgba(57, 255, 20, 0.3); text-align: center; 
     width: 90%; margin-top: 5px; box-shadow: 0 0 10px rgba(57, 255, 20, 0.1);
 }
-
-.cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 90%; max-width: 650px; margin-top: 20px;}
-@media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; } }
 
 .input-pseudo {
     padding: 15px; font-size: 1.4em; border-radius: 8px; border: 1px solid #444; 
     background: #111; color: #fff; outline:none; text-align:center; width: 100%; 
-    box-sizing: border-box; text-transform: uppercase; font-family: var(--font-main); font-weight: 700;
+    box-sizing: border-box; text-transform: uppercase; font-family: var(--font-main);
     margin-bottom: 20px; transition: 0.3s;
 }
 .input-pseudo:focus { border-color: var(--gold); box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
