@@ -33,7 +33,7 @@ function changeLanguage(lang) {
         
     } else {
         document.getElementById('btn-lang-en').classList.add('active');
-        hubImg.src = 'img/returnhub.png'; // IMAGE ANGLAISE
+        hubImg.src = 'img/returbhub.png'; // IMAGE ANGLAISE ("returbhub.png")
         if (playlistTitle) playlistTitle.innerText = "PLAYLIST SELECTION";
         document.getElementById('btn-replay').innerText = "Play Again";
 
