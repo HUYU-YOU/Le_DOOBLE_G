@@ -24,13 +24,15 @@ body {
     min-height: 100vh; overflow-x: hidden; 
 }
 
-/* --- TOP BOUTONS (HUB & SETTINGS) --- */
+/* --- BOUTON RETOUR HUB --- */
 .hub-link { 
     position: absolute; top: 15px; left: 15px; z-index: 1000; 
+    display: block;
 }
 .hub-link img { 
-    height: 60px; /* Taille fixe pour éviter les images géantes */
-    width: auto;
+    width: 220px; /* Force l'image à être bien visible et proportionnée */
+    height: auto;
+    object-fit: contain;
     transition: transform 0.3s, filter 0.3s; 
 }
 .hub-link:hover img { 
@@ -38,9 +40,34 @@ body {
     filter: drop-shadow(0 0 15px var(--sys)); 
 }
 
-.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 1000; }
-.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.8)); }
-.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15) rotate(90deg); }
+/* --- BOUTON PARAMÈTRES (ANIMATION FRAME PAR FRAME) --- */
+.settings-btn-wrapper { 
+    position: absolute; top: 20px; right: 20px; 
+    width: 60px; height: 60px; cursor: pointer; z-index: 1000; 
+}
+.settings-btn { 
+    width: 100%; height: 100%; 
+    background-image: url('img/setting.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: transform 0.2s ease; 
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.8)); 
+}
+.settings-btn-wrapper:hover .settings-btn { 
+    transform: scale(1.15); 
+    /* Lancement de l'animation des frames au survol */
+    animation: slimeSettings 0.8s infinite;
+}
+
+@keyframes slimeSettings {
+    0% { background-image: url('img/settings1.png'); }
+    20% { background-image: url('img/settings2.png'); }
+    40% { background-image: url('img/settings3.png'); }
+    60% { background-image: url('img/settings4.png'); }
+    80% { background-image: url('img/settings5.png'); }
+    100% { background-image: url('img/settings1.png'); }
+}
 
 /* --- MODAL PARAMÈTRES --- */
 #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
@@ -48,7 +75,7 @@ body {
 .settings-content { background: rgba(10, 15, 25, 0.95); border: 2px solid var(--sys); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(57,255,20,0.4); min-width: 320px; }
 .settings-content h2 { font-family: var(--font-title); color: var(--sys); font-size: 2.5em; letter-spacing: 2px; margin-top: 0; }
 .size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
-.btn-size { background: #222; color: #fff; border: 1px solid var(--sys); padding: 10px 25px; border-radius: 5px; cursor: pointer; font-family: var(--font-main); font-size: 1.2em; font-weight: bold; transition: 0.2s; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--sys); padding: 10px 25px; border-radius: 5px; cursor: pointer; font-family: var(--font-main); font-size: 1.2em; transition: 0.2s; }
 .btn-size:hover { background: rgba(57, 255, 20, 0.2); }
 .btn-size.active { background: var(--sys); color: #000; box-shadow: 0 0 15px var(--sys); }
 .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-family: var(--font-main);}
@@ -57,12 +84,11 @@ body {
 /* --- CONTENEUR DE JEU --- */
 #game-container { 
     position: relative; 
-    width: 100%; max-width: 800px; height: 680px; 
+    width: 100%; max-width: 850px; height: 750px; 
     display: flex; flex-direction: column; overflow: hidden; 
     transition: all 0.4s ease;
 }
 
-/* On ajoute le carré sombre SEULEMENT en jeu (plus sur le menu) */
 #game-container.playing {
     background: var(--panel); border-radius: 20px; 
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.05); 
@@ -72,19 +98,26 @@ body {
 
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-    background: transparent; /* Transparent pour voir le backgroundBLD ! */
+    background: transparent; 
     display: flex; flex-direction: column; 
     align-items: center; justify-content: flex-start; z-index: 10; text-align: center; 
     padding: 20px; box-sizing: border-box; 
 }
 
-/* CLASSE POUR LES BOUTONS IMAGES (THEME SLIME) */
-.cat-grid { 
-    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; 
-    width: 90%; max-width: 650px; 
-    margin-top: 15vh; /* DESCEND LES BOUTONS SUR L'IMAGE */
+.menu-title { 
+    font-family: var(--font-title);
+    font-size: 3.5em; margin-bottom: 20px; margin-top: 10px;
+    color: #7FFF00; 
+    text-transform: uppercase; letter-spacing: 5px; 
+    text-shadow: 0 0 20px rgba(127, 255, 0, 0.8);
 }
-@media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; margin-top: 10vh; } }
+
+/* --- BOUTONS CATÉGORIES (GARDÉS EN GRILLE ET GROSSIS) --- */
+.cat-grid { 
+    display: grid; grid-template-columns: 1fr 1fr; gap: 25px; 
+    width: 90%; max-width: 750px; 
+}
+@media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; } }
 
 .btn-img {
     background-color: transparent;
@@ -94,13 +127,33 @@ body {
     border: none;
     cursor: pointer;
     width: 100%;
-    min-height: 85px; 
+    min-height: 110px; /* Plus gros */
     transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.2s;
     outline: none;
 }
 .btn-img:hover {
     transform: scale(1.05) translateY(-3px);
     filter: drop-shadow(0 8px 15px rgba(0, 240, 255, 0.4)) brightness(1.1);
+}
+
+/* --- BOUTON MULTIJOUEUR HORS DE LA GRILLE --- */
+.btn-multi {
+    background-color: transparent;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: none;
+    cursor: pointer;
+    width: 90%;
+    max-width: 600px;
+    min-height: 110px;
+    margin-top: 30px; /* Séparation claire */
+    transition: transform 0.2s, filter 0.2s;
+    outline: none;
+}
+.btn-multi:hover {
+    transform: scale(1.05) translateY(-3px);
+    filter: drop-shadow(0 8px 15px rgba(255, 0, 127, 0.4)) brightness(1.1);
 }
 
 .btn-main { 
@@ -128,7 +181,7 @@ body {
 .score-box { 
     font-size: 1.3em; padding: 6px 18px; border-radius: 8px; 
     background: rgba(0,0,0,0.6); border: 1px solid; letter-spacing: 1px;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px); font-family: var(--font-main);
 }
 #timer-box { 
     font-family: var(--font-title);
@@ -142,7 +195,7 @@ body {
 .mystery-box { 
     width: 90%; background: linear-gradient(135deg, rgba(20,25,40,0.8), rgba(10,12,20,0.9)); 
     padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
-    font-size: 1.6em; text-align: center; letter-spacing: 3px; 
+    font-size: 1.6em; text-align: center; letter-spacing: 3px; font-family: var(--font-main);
     text-transform: uppercase; transition: all 0.4s ease;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative; overflow: hidden;
     color: #888;
@@ -189,7 +242,7 @@ body {
 .loader { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--p1); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 25px auto; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.msg { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.2em; backdrop-filter: blur(4px); }
+.msg { padding: 10px 15px; border-radius: 10px; max-width: 80%; word-wrap: break-word; font-size: 1.2em; backdrop-filter: blur(4px); font-family: var(--font-main);}
 .msg-sys { 
     background: rgba(57, 255, 20, 0.05); color: var(--sys); align-self: center; 
     border: 1px solid rgba(57, 255, 20, 0.3); text-align: center; 
