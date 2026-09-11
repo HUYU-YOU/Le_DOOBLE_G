@@ -61,6 +61,17 @@ body.dark-mode .bg-overlay {
 }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
+/* Fallback si ../img/ n'est pas disponible (jeu lancé hors du hub) */
+.settings-fallback {
+    font-size: 36px;
+    line-height: 45px;
+    display: block;
+    text-align: center;
+    filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
+    transition: transform 0.2s ease;
+}
+.settings-btn-wrapper:hover .settings-fallback { transform: scale(1.15); }
+
 /* Modal Paramètres */
 .modal {
     display: none; position: fixed;
