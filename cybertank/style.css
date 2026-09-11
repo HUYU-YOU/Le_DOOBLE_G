@@ -15,8 +15,6 @@ body, html {
     background-image: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05), transparent 60%);
 }
 
-h1.game-title { margin-top: 15px; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 8px; text-shadow: 0 0 20px #fff, 0 0 30px var(--p1); font-size: 3rem; text-align: center;}
-
 /* --- CONTENEUR PRINCIPAL DU JEU --- */
 #game-container { 
     position: relative; background: var(--panel); padding: 15px; border-radius: 15px; 
@@ -87,7 +85,7 @@ h1.game-title { margin-top: 15px; margin-bottom: 15px; color: #fff; text-transfo
 .btn-main.red:hover { background: var(--p2); color:#fff; box-shadow: 0 0 25px var(--p2); }
 
 /* Boutons images du menu principal (Avec le bon background) */
-#main-menu { background-image: url('img/backgroundtank.png'); background-size: cover; background-position: center; }
+#main-menu { background-image: url('./img/backgroundtank.png'); background-size: cover; background-position: center; }
 .img-btn { width: 80%; max-width: 300px; margin: 15px; cursor: pointer; transition: transform 0.2s, filter 0.2s; }
 .img-btn:hover { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.6)); }
 
@@ -121,6 +119,5 @@ canvas { background: #030408; border-radius: 8px; border: 1px solid rgba(255,255
 .joystick-zone.right .joystick-knob { background: var(--p2); box-shadow: 0 0 15px var(--p2); }
 
 @media (max-width: 800px) {
-    h1.game-title { font-size: 1.8em; margin-top: 40px; }
     #mobile-controls { display: flex; }
 }
