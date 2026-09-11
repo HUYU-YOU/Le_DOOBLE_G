@@ -9,34 +9,41 @@
 </head>
 <body>
 
-    <!-- BOUTONS FLOTTANTS HORS DU CONTAINER -->
+    <!-- BOUTON RETOUR AU HUB AVEC LE BON CHEMIN -->
     <a href="../index.html" class="hub-link">
         <img id="hub-img" src="Le_DOOBLE_G/img/retourhub.png" alt="Retour au Hub">
     </a>
 
-    <!-- SELECTEUR DE LANGUE -->
-    <div id="lang-toggle-wrapper">
-        <button onclick="setLanguage('fr')" id="btn-fr" class="lang-btn active">FR</button>
-        <button onclick="setLanguage('en')" id="btn-en" class="lang-btn">EN</button>
-    </div>
-
+    <!-- BOUTON PARAMÈTRES FLOTTANT -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <div class="orbit-container"><div class="orbit-slime"></div></div>
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
     </div>
 
-    <!-- MODAL PARAMETRES -->
+    <!-- MODAL PARAMÈTRES (AVEC LANGUE + FORMAT D'ÉCRAN) -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 data-i18n="settingsTitle" style="margin-top: 0; color: var(--cyan); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
-            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
-                <span data-i18n="screenFormat">Format de l'Écran 🖥️</span>
+            
+            <!-- CHOIX DE LA LANGUE -->
+            <div class="setting-item" style="margin-bottom: 25px;">
+                <span data-i18n="langLabel" style="display: block; margin-bottom: 10px;">Langue / Language 🌍</span>
+                <div class="size-options">
+                    <button id="btn-fr" class="btn-size active" onclick="setLanguage('fr')">FRANÇAIS</button>
+                    <button id="btn-en" class="btn-size" onclick="setLanguage('en')">ENGLISH</button>
+                </div>
+            </div>
+
+            <!-- FORMAT DE L'ÉCRAN -->
+            <div class="setting-item" style="margin-bottom: 30px;">
+                <span data-i18n="screenFormat" style="display: block; margin-bottom: 10px;">Format de l'Écran 🖥️</span>
                 <div class="size-options">
                     <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')" data-i18n="btnClassic">Classique</button>
                     <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')" data-i18n="btnWide">Pleine Page</button>
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')" data-i18n="btnFull">Plein Écran</button>
                 </div>
             </div>
+
             <button onclick="toggleSettings()" class="close-btn" data-i18n="btnClose">Fermer</button>
         </div>
     </div>
