@@ -72,7 +72,8 @@
             <!-- BLOC CRÉER (Host) -->
             <div class="net-panel">
                 <img src="./img/generate.png" class="bg" alt="Créer une arène">
-                <div class="net-slot">
+                <!-- Ajout de host-slot pour descendre le texte -->
+                <div class="net-slot host-slot">
                     <div id="my-id" class="net-id-text">...</div>
                 </div>
                 <div class="net-btn-zone host-zone" onclick="hostGame()" title="Générer un code"></div>
@@ -81,7 +82,8 @@
             <!-- BLOC REJOINDRE (Join) -->
             <div class="net-panel">
                 <img src="./img/join.png" class="bg" alt="Rejoindre">
-                <div class="net-slot">
+                <!-- Ajout de join-slot pour monter le texte -->
+                <div class="net-slot join-slot">
                     <input type="text" id="join-id" class="net-input" placeholder="CODE">
                 </div>
                 <div class="net-btn-zone join-zone" onclick="joinGame()" title="Infiltration"></div>
