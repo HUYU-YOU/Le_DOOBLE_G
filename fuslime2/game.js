@@ -2,37 +2,52 @@
 // 1. PARAMÈTRES, VIDÉO DE FOND ET ENGRENAGE
 // =========================================================
 
+// --- BOUTON PARAMÈTRES (compatible Hub : images dans ../img/) ---
+// En standalone (hors du hub), ../img/ n'existe pas → fallback ⚙️ en CSS.
 const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings4.png', '../img/settings5.png'];
+const SETTINGS_BASE_IMG = '../img/setting.png';
 let hoverInterval = null;
 let currentFrame = 0;
 const settingsBtnImg = document.getElementById('settings-btn-img');
+let settingsImgOk = !!settingsBtnImg;
+
+if (settingsBtnImg) {
+    settingsBtnImg.addEventListener('error', () => {
+        settingsImgOk = false;
+        settingsBtnImg.style.display = 'none';
+        const fallback = document.createElement('span');
+        fallback.className = 'settings-fallback';
+        fallback.textContent = '⚙️';
+        settingsBtnImg.parentElement.appendChild(fallback);
+    });
+}
 
 function startSettingsAnim() {
-    if (hoverInterval) return;
+    if (!settingsImgOk || hoverInterval) return;
     currentFrame = 0;
-    if (settingsBtnImg) settingsBtnImg.src = animFrames[currentFrame];
+    settingsBtnImg.src = animFrames[currentFrame];
     hoverInterval = setInterval(() => {
         currentFrame = (currentFrame + 1) % animFrames.length;
-        if (settingsBtnImg) settingsBtnImg.src = animFrames[currentFrame];
-    }, 100); 
+        settingsBtnImg.src = animFrames[currentFrame];
+    }, 100);
 }
 
 function stopSettingsAnim() {
-    clearInterval(hoverInterval); 
+    clearInterval(hoverInterval);
     hoverInterval = null;
-    if (settingsBtnImg && !settingsBtnImg.src.includes('settings4.png')) { 
-        settingsBtnImg.src = '../img/setting.png'; 
+    if (settingsImgOk && !settingsBtnImg.src.includes('settings4.png')) {
+        settingsBtnImg.src = SETTINGS_BASE_IMG;
     }
 }
 
 function clickSettingsAnim() {
-    clearInterval(hoverInterval); 
+    clearInterval(hoverInterval);
     hoverInterval = null;
-    if (settingsBtnImg) settingsBtnImg.src = '../img/settings4.png';
+    if (settingsImgOk) {
+        settingsBtnImg.src = animFrames[3];
+        setTimeout(() => { settingsBtnImg.src = SETTINGS_BASE_IMG; }, 300);
+    }
     toggleSettings();
-    setTimeout(() => { 
-        if (settingsBtnImg) settingsBtnImg.src = '../img/setting.png'; 
-    }, 300);
 }
 
 function toggleSettings() {
@@ -96,23 +111,32 @@ function onYouTubeIframeAPIReady() {
 // 2. MOTEUR DU JEU FUSLIME 2 (MATTER.JS & PHYSIQUE)
 // =========================================================
 
-const isLocalFile = window.location.protocol === 'file:';
+// NOTE FIX : avant, les sprites étaient désactivés en file:// (isLocalFile),
+// ce qui faisait apparaître des cercles colorés au lieu des slimes.
+// Matter.js fait juste un drawImage → ça marche très bien en local.
+const isLocalFile = false;
 
-const TAILLE_IMAGE_EN_PIXELS = 256; 
+// FIX HITBOX : les PNG ont tous des tailles différentes ET du padding transparent.
+// Avant, le scale utilisait une fausse constante 256px → le cercle physique
+// dépassait largement le dessin du slime.
+// `opaqueMin` = plus petit côté de la zone RÉELLEMENT visible (bbox alpha mesurée).
+// Le sprite est calé pour que le dessin fasse ~2% de plus que le hitbox.
+// `fit` optionnel par niveau permet d'écarter l'image du cercle (art plus grand que la hitbox).
+const HITBOX_FIT = 0.98;
 
 const SLIMES = [
-    { level: 1,  radius: 25,  zoom: 1.85, points: 2,    texture: 'assets/slime2.png',  color: '#aaffaa' }, 
-    { level: 2,  radius: 36,  zoom: 1.66, points: 4,    texture: 'assets/slime3.png',  color: '#aaaaff' }, 
-    { level: 3,  radius: 50,  zoom: 1.22, points: 8,    texture: 'assets/slime4.png',  color: '#ffffaa' }, 
-    { level: 4,  radius: 65,  zoom: 1.36, points: 16,   texture: 'assets/slime5.png',  color: '#ffaaff' }, 
-    { level: 5,  radius: 82,  zoom: 1.26, points: 32,   texture: 'assets/slime6.png',  color: '#aaffff' }, 
-    { level: 6,  radius: 100, zoom: 1.07, points: 64,   texture: 'assets/slime7.png',  color: '#ffccaa' }, 
-    { level: 7,  radius: 120, zoom: 1.12, points: 128,  texture: 'assets/slime8.png',  color: '#aaccff' }, 
-    { level: 8,  radius: 140, zoom: 1.07, points: 256,  texture: 'assets/slime9.png',  color: '#ccaaff' }, 
-    { level: 9,  radius: 165, zoom: 0.86, points: 512,  texture: 'assets/slime10.png', color: '#ff9999' },
-    { level: 10, radius: 190, zoom: 0.60, points: 1024, texture: 'assets/slime11.png', color: '#99ff99' },
-    { level: 11, radius: 215, zoom: 0.60, points: 2048, texture: 'assets/slime12.png', color: '#9999ff' },
-    { level: 12, radius: 245, zoom: 1.07, points: 4096, texture: 'assets/slime13.png', color: '#ffffff' }  
+    { level: 1,  radius: 25,  opaqueMin: 88,  points: 2,    texture: 'assets/slime1.png',  color: '#aaffaa' }, 
+    { level: 2,  radius: 36,  opaqueMin: 108, points: 4,    texture: 'assets/slime2.png',  color: '#aaaaff' }, 
+    { level: 3,  radius: 50,  opaqueMin: 144, points: 8,    texture: 'assets/slime3.png',  color: '#ffffaa' }, 
+    { level: 4,  radius: 65,  opaqueMin: 191, points: 16,   texture: 'assets/slime4.png',  color: '#ffaaff' }, 
+    { level: 5,  radius: 82,  opaqueMin: 188, fit: 1.18, points: 32,   texture: 'assets/slime5.png',  color: '#aaffff' }, 
+    { level: 6,  radius: 100, opaqueMin: 203, fit: 1.06, points: 64,   texture: 'assets/slime6.png',  color: '#ffccaa' }, 
+    { level: 7,  radius: 120, opaqueMin: 224, points: 128,  texture: 'assets/slime7.png',  color: '#aaccff' }, 
+    { level: 8,  radius: 140, opaqueMin: 262, points: 256,  texture: 'assets/slime8.png',  color: '#ccaaff' }, 
+    { level: 9,  radius: 165, opaqueMin: 281, points: 512,  texture: 'assets/slime9.png',  color: '#ff9999' },
+    { level: 10, radius: 190, opaqueMin: 333, points: 1024, texture: 'assets/slime10.png', color: '#99ff99' },
+    { level: 11, radius: 215, opaqueMin: 535, points: 2048, texture: 'assets/slime11.png', color: '#9999ff' },
+    { level: 12, radius: 245, opaqueMin: 583, points: 4096, texture: 'assets/slime12.png', color: '#ffffff' }  
 ];
 
 SLIMES.forEach(slime => {
@@ -258,9 +282,11 @@ function updateScore(points) {
     }
 }
 
-// L'échelle prend en compte le zoom individuel
-function getScale(radius, customZoom) {
-    return (radius * 2 * customZoom) / TAILLE_IMAGE_EN_PIXELS;
+// L'échelle est calculée sur la zone opaque réelle du PNG :
+// le dessin visible fait HITBOX_FIT × diamètre du hitbox (légèrement plus grand que le cercle)
+function getScale(radius, slimeData) {
+    const fit = slimeData.fit || HITBOX_FIT;
+    return (radius * 2 * fit) / slimeData.opaqueMin;
 }
 
 function getRenderOptions(slimeData, isGhost = false) {
@@ -272,10 +298,11 @@ function getRenderOptions(slimeData, isGhost = false) {
     };
 
     if (slimeData.imageLoaded && !isLocalFile) {
+        const scale = getScale(slimeData.radius, slimeData);
         options.sprite = {
             texture: slimeData.texture,
-            xScale: getScale(slimeData.radius, slimeData.zoom),
-            yScale: getScale(slimeData.radius, slimeData.zoom)
+            xScale: scale,
+            yScale: scale
         };
     }
     return options;
@@ -406,6 +433,16 @@ Events.on(engine, 'collisionStart', (event) => {
             }
         }
     }
+});
+
+// --- Z-ORDER : petits slimes TOUJOURS devant les gros ---
+// Matter.js dessine les bodies dans l'ordre du world (le premier = le plus en arrière).
+// On re-trie chaque frame par niveau DÉCROISSANT : niveau 12 en premier (fond),
+// niveau 1 en dernier (premier plan). Les petits slimes ne sont donc jamais
+// cachés par les gros ou leurs accessoires visuels.
+Events.on(engine, 'beforeUpdate', () => {
+    world.bodies.sort((a, b) => (b.slimeLevel || 0) - (a.slimeLevel || 0));
+    if (world.cache) world.cache.allBodies = null;
 });
 
 // --- GAME OVER : ANTI-SPAM SYSTEM ---
