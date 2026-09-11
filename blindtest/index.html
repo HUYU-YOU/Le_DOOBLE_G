@@ -5,20 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Slime Blind Test - Multiplayer</title>
     
-    <!-- Liens externes (PeerJS et Nouvelles Polices) -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Itim&display=swap" rel="stylesheet">
-    
-    <!-- Lien vers ton fichier CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Bouton Retour au Hub (Géré dynamiquement par le JS selon la langue) -->
+    <!-- Bouton Retour au Hub (Asset Global -> ../img/) -->
     <a href="../index.html" class="hub-link">
-        <img id="hub-img" src="img/retourhub.png" alt="">
+        <img id="hub-img" src="../img/retourhub.png" alt="">
     </a>
 
-    <!-- Bouton Paramètres (Engrenage Animé) -->
+    <!-- Bouton Paramètres -->
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
         <div class="settings-btn"></div>
     </div>
@@ -40,12 +37,11 @@
         <!-- MENU CATÉGORIE -->
         <div class="overlay" id="category-menu">
             
-            <!-- TITRE DE SÉLECTION -->
             <div class="menu-title" id="playlist-title">SÉLECTION DE LA PLAYLIST</div>
             <p id="lobby-count" style="color:#0ff; font-weight:700; font-size:1.3em; display:none; margin-top: -10px;">1 joueur(s) dans le salon</p>
 
-            <!-- BOUTONS DES CATÉGORIES -->
             <div class="cat-grid" id="cat-buttons">
+                <!-- BOUTONS IMAGES (Asset Local -> img/) -->
                 <button class="btn-img" style="background-image: url('img/rap.png');" onclick="launchGame('RAP')"></button>
                 <button class="btn-img" style="background-image: url('img/variet.png');" onclick="launchGame('FR')"></button>
                 <button class="btn-img" style="background-image: url('img/pop.png');" onclick="launchGame('POP')"></button>
@@ -54,10 +50,9 @@
                 <button class="btn-img" style="background-image: url('img/disney.png');" onclick="launchGame('DISNEY')"></button>
             </div>
 
-            <!-- BOUTON MULTIJOUEUR (PLACÉ EN DESSOUS) -->
-            <button class="btn-multi" id="btn-multi-toggle" style="background-image: url('img/multi.png');" onclick="openMenu('network')"></button>
+            <!-- BOUTON MULTIJOUEUR EN DESSOUS (Asset Local -> img/multii.png) -->
+            <button class="btn-multi" id="btn-multi-toggle" style="background-image: url('img/multii.png');" onclick="openMenu('network')"></button>
 
-            <!-- CHARGEMENT -->
             <div id="loading-api" style="display: none; flex-direction: column; align-items: center; margin-top: 5vh;">
                 <div class="loader"></div>
                 <p id="loading-text" style="font-weight:700; color:var(--sys); font-size:1.5em; margin-top: 15px; font-family: 'Itim', cursive;">Génération en cours...</p>
@@ -101,7 +96,7 @@
             <div class="loader"></div>
         </div>
 
-        <!-- INTERFACE DE JEU (MASQUÉE JUSQU'AU LANCEMENT) -->
+        <!-- INTERFACE DE JEU -->
         <div id="in-game-ui" style="display: none; flex-direction: column; height: 100%;">
             <div id="game-header">
                 <div id="scores-container"></div>
@@ -131,7 +126,6 @@
         </div>
     </div>
 
-    <!-- INCLUSION DES SCRIPTS JS -->
     <script src="js/music.js"></script>
     <script src="script.js"></script>
 </body>
