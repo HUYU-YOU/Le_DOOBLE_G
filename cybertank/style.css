@@ -47,7 +47,7 @@ h1.game-title { margin-top: 15px; margin-bottom: 15px; color: #fff; text-transfo
     transition: 0.2s; 
 }
 .hub-link img {
-    height: 45px; /* Ajuste la hauteur si l'image est trop grande/petite */
+    height: 45px;
     width: auto;
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
 }
@@ -86,8 +86,8 @@ h1.game-title { margin-top: 15px; margin-bottom: 15px; color: #fff; text-transfo
 .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
 .btn-main.red:hover { background: var(--p2); color:#fff; box-shadow: 0 0 25px var(--p2); }
 
-/* Boutons images du menu principal */
-#main-menu { background-image: url('../img/backgroundtank.png'); background-size: cover; background-position: center; }
+/* Boutons images du menu principal (Avec le bon background) */
+#main-menu { background-image: url('img/backgroundtank.png'); background-size: cover; background-position: center; }
 .img-btn { width: 80%; max-width: 300px; margin: 15px; cursor: pointer; transition: transform 0.2s, filter 0.2s; }
 .img-btn:hover { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.6)); }
 
