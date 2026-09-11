@@ -10,11 +10,11 @@ function toggleLanguage() {
     if (currentLang === 'FR') {
         currentLang = 'EN';
         langBtn.innerText = '🇫🇷 FR'; // Clique ici pour remettre en FR
-        hubImg.src = 'returbhub.png'; // Affiche l'image en Anglais
+        hubImg.src = 'img/returbhub.png'; // Affiche l'image en Anglais
     } else {
         currentLang = 'FR';
         langBtn.innerText = '🇬🇧 EN'; // Clique ici pour mettre en EN
-        hubImg.src = 'retourhub.png'; // Affiche l'image en Français
+        hubImg.src = 'img/retourhub.png'; // Affiche l'image en Français
     }
 }
 
