@@ -30,7 +30,7 @@ body {
     display: block;
 }
 .hub-link img { 
-    width: 220px; /* Force l'image à être bien visible et proportionnée */
+    width: 220px; /* Force l'image à être bien visible */
     height: auto;
     object-fit: contain;
     transition: transform 0.3s, filter 0.3s; 
@@ -47,7 +47,7 @@ body {
 }
 .settings-btn { 
     width: 100%; height: 100%; 
-    background-image: url('img/setting.png');
+    background-image: url('img/settings1.png'); /* Image par défaut */
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -56,8 +56,7 @@ body {
 }
 .settings-btn-wrapper:hover .settings-btn { 
     transform: scale(1.15); 
-    /* Lancement de l'animation des frames au survol */
-    animation: slimeSettings 0.8s infinite;
+    animation: slimeSettings 0.8s infinite; /* L'animation se lance au survol */
 }
 
 @keyframes slimeSettings {
@@ -96,6 +95,7 @@ body {
     backdrop-filter: blur(12px);
 }
 
+/* --- OVERLAY MENU (RÉGLAGE POUR TOUT DESCENDRE) --- */
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
     background: transparent; 
@@ -104,18 +104,22 @@ body {
     padding: 20px; box-sizing: border-box; 
 }
 
+#category-menu {
+    padding-top: 150px; /* C'EST ÇA QUI POUSSE TOUT VERS LE BAS DANS LE CARRE ! */
+}
+
 .menu-title { 
     font-family: var(--font-title);
-    font-size: 3.5em; margin-bottom: 20px; margin-top: 10px;
+    font-size: 3.2em; margin-bottom: 20px; margin-top: 0;
     color: #7FFF00; 
     text-transform: uppercase; letter-spacing: 5px; 
     text-shadow: 0 0 20px rgba(127, 255, 0, 0.8);
 }
 
-/* --- BOUTONS CATÉGORIES (GARDÉS EN GRILLE ET GROSSIS) --- */
+/* --- BOUTONS CATÉGORIES ET MULTI --- */
 .cat-grid { 
-    display: grid; grid-template-columns: 1fr 1fr; gap: 25px; 
-    width: 90%; max-width: 750px; 
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
+    width: 90%; max-width: 650px; 
 }
 @media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; } }
 
@@ -127,7 +131,9 @@ body {
     border: none;
     cursor: pointer;
     width: 100%;
-    min-height: 110px; /* Plus gros */
+    height: 10vh;
+    min-height: 60px;
+    max-height: 90px;
     transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.2s;
     outline: none;
 }
@@ -136,7 +142,6 @@ body {
     filter: drop-shadow(0 8px 15px rgba(0, 240, 255, 0.4)) brightness(1.1);
 }
 
-/* --- BOUTON MULTIJOUEUR HORS DE LA GRILLE --- */
 .btn-multi {
     background-color: transparent;
     background-size: contain;
@@ -146,8 +151,10 @@ body {
     cursor: pointer;
     width: 90%;
     max-width: 600px;
-    min-height: 110px;
-    margin-top: 30px; /* Séparation claire */
+    height: 10vh;
+    min-height: 60px;
+    max-height: 90px;
+    margin-top: 15px; 
     transition: transform 0.2s, filter 0.2s;
     outline: none;
 }
