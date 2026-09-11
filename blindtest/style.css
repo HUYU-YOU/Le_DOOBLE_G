@@ -47,7 +47,7 @@ body {
 }
 .settings-btn { 
     width: 100%; height: 100%; 
-    background-image: url('img/settings1.png'); /* Image par défaut */
+    background-image: url('img/setting.png'); /* Image par défaut */
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
