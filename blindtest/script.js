@@ -1,20 +1,30 @@
 // ==========================================
-// GESTION DE LA LANGUE ET UI THEME
+// GESTION DES PARAMÈTRES ET DE LA LANGUE
 // ==========================================
 let currentLang = 'FR';
 
-function toggleLanguage() {
-    const langBtn = document.getElementById('lang-toggle');
-    const hubImg = document.getElementById('hub-img');
-
-    if (currentLang === 'FR') {
-        currentLang = 'EN';
-        langBtn.innerText = '🇫🇷 FR'; // Clique ici pour remettre en FR
-        hubImg.src = 'img/returbhub.png'; // Affiche l'image en Anglais
+function toggleSettings() {
+    const modal = document.getElementById('settings-modal');
+    if (modal.classList.contains('show')) {
+        modal.classList.remove('show');
     } else {
-        currentLang = 'FR';
-        langBtn.innerText = '🇬🇧 EN'; // Clique ici pour mettre en EN
-        hubImg.src = 'img/retourhub.png'; // Affiche l'image en Français
+        modal.classList.add('show');
+    }
+}
+
+function changeLanguage(lang) {
+    currentLang = lang;
+    document.getElementById('btn-lang-fr').classList.remove('active');
+    document.getElementById('btn-lang-en').classList.remove('active');
+    
+    const hubImg = document.getElementById('hub-img');
+    
+    if (lang === 'FR') {
+        document.getElementById('btn-lang-fr').classList.add('active');
+        hubImg.src = 'img/retourhub.png';
+    } else {
+        document.getElementById('btn-lang-en').classList.add('active');
+        hubImg.src = 'img/returnhub.png'; // L'image passera bien en EN ici !
     }
 }
 
@@ -165,6 +175,10 @@ function goToLobby() {
     document.getElementById('category-menu').style.display = 'flex';
     document.getElementById('btn-multi-toggle').style.display = 'none';
     document.getElementById('lobby-count').style.display = 'block';
+    
+    // Si on retourne au hub, on retire la boite de fond de jeu
+    document.getElementById('game-container').classList.remove('playing');
+    
     updateScoreUI();
 }
 
@@ -283,7 +297,8 @@ async function launchGame(cat) {
 
     playlist = selectedTracks;
     
-    // ON CACHE TOUS LES OVERLAYS ET ON AFFICHE ENFIN L'INTERFACE DE JEU !
+    // ON AFFICHE LE FOND SOMBRE ET L'INTERFACE DE JEU
+    document.getElementById('game-container').classList.add('playing');
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
     document.getElementById('in-game-ui').style.display = 'flex';
 
@@ -352,7 +367,8 @@ function endGame() {
 function clientStartRound(track, round) {
     currentTrack = track;
     
-    // On cache les overlays et affiche le conteneur du jeu principal
+    // On affiche le conteneur du jeu principal et son fond
+    document.getElementById('game-container').classList.add('playing');
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
     document.getElementById('in-game-ui').style.display = 'flex';
 
@@ -624,8 +640,9 @@ function revealAnswers(trackObj) {
 }
 
 function showEndScreen(finalScores = scores) {
+    document.getElementById('game-container').classList.remove('playing');
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
-    document.getElementById('in-game-ui').style.display = 'none'; // Cacher le jeu final
+    document.getElementById('in-game-ui').style.display = 'none'; 
     document.getElementById('end-screen').style.display = 'flex';
     let t = document.getElementById('final-scores-text');
 
