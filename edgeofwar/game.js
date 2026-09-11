@@ -1,0 +1,960 @@
+// --- URL PARAMS & STARTUP ---
+const urlParams = new URLSearchParams(window.location.search);
+const forceMode = urlParams.get('mode');
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (forceMode === 'solo') {
+        document.getElementById('net-button').style.display = 'none';
+        document.getElementById('menu-separator').style.display = 'none';
+    } else if (forceMode === 'multi') {
+        document.getElementById('main-menu').style.display = 'none';
+        showNetworkMenu();
+    }
+});
+
+// --- SETTINGS ---
+function autoFullscreen() {
+    if (!document.getElementById('game-container').classList.contains('size-full')) {
+        setGameSize('wide');
+    }
+}
+
+function setGameSize(size) {
+    const container = document.getElementById('game-container');
+    const btns = document.querySelectorAll('.btn-size');
+    btns.forEach(b => b.classList.remove('active'));
+
+    container.classList.remove('size-classic', 'size-wide', 'size-full');
+    
+    if (size === 'classic') {
+        container.classList.add('size-classic');
+        document.getElementById('btn-sz-classic').classList.add('active');
+        if (document.fullscreenElement) document.exitFullscreen();
+    } 
+    else if (size === 'wide') {
+        container.classList.add('size-wide');
+        document.getElementById('btn-sz-wide').classList.add('active');
+        if (document.fullscreenElement) document.exitFullscreen();
+    } 
+    else if (size === 'full') {
+        container.classList.add('size-full');
+        document.getElementById('btn-sz-full').classList.add('active');
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(e => console.log(e));
+        }
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && document.getElementById('game-container').classList.contains('size-full')) {
+        setGameSize('wide');
+    }
+});
+
+const settingsBtnImg = document.getElementById('settings-btn-img');
+const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
+let hoverInterval; let currentFrame = 0;
+
+function startSettingsAnim() {
+    if (hoverInterval) return;
+    currentFrame = 0;
+    settingsBtnImg.src = animFrames[currentFrame];
+    hoverInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % animFrames.length;
+        settingsBtnImg.src = animFrames[currentFrame];
+    }, 100); 
+}
+
+function stopSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+}
+
+function clickSettingsAnim() {
+    clearInterval(hoverInterval); hoverInterval = null;
+    settingsBtnImg.src = '../img/settings4.png';
+    toggleSettings();
+    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+}
+
+function toggleSettings() {
+    document.getElementById('settings-modal').classList.toggle('show');
+}
+
+
+// --- GAME ENGINE ---
+const canvas = document.getElementById('gameCanvas'); 
+const ctx = canvas.getContext('2d');
+
+const WORLD_WIDTH = 2500; 
+let cameraX = 0;
+let scrollSpeed = 0;
+let isDraggingCam = false;
+let lastTouchX = 0;
+
+const imgs = {};
+const imgFiles = {
+    'map1': 'img/map1.png', 'map2': 'img/map2.png',
+    'map1_tech1': 'img/map1_tech1.png', 'map2_tech1': 'img/map2_tech1.png',
+    'map1_tech2': 'img/map1_tech2.png', 'map2_tech2': 'img/map2_tech2.png',
+    'slimewest1': 'img/slimewest1.png', 'slimewest2': 'img/slimewest2.png', 'slimewest3': 'img/slimewest3.png',
+    'fantassin_est': 'img/fantassin_est.png', 'tirreur_est': 'img/tirreur_est.png',
+    'drone': 'img/drone.png', 'blaster': 'img/blaster.png', 'mech': 'img/mech.png', 'sniper1': 'img/sniper1.png',
+    'drone2': 'img/drone2.png', 'blaster2': 'img/blaster2.png', 'mech2': 'img/mech2.png', 'sniper2': 'img/sniper2.png', 'titan2': 'img/titan2.png'
+};
+
+Object.keys(imgFiles).forEach(k => {
+    imgs[k] = new Image();
+    imgs[k].src = imgFiles[k];
+});
+
+let peer = null, conn = null, gameMode = null, myTeam = 1, gameActive = false, timeElapsed = 0;
+let screenShake = 0;
+let globalOffset = 0; 
+
+let gameState = {
+    p1: { gold: 75, xp: 0, age: 1, renderedAge: 0, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 },
+    p2: { gold: 75, xp: 0, age: 1, renderedAge: 0, hp: 1000, maxHp: 1000, spells: { 1: 0, 2: 0 }, incomeRate: 3, incomeCost: 50, turretCd: 0 }, 
+    units: [], effects: [] 
+};
+
+const xpToEvolve = [150, 400, 9999]; 
+const bases = { 
+    1: { x: 0, w: 120, h: 160, spawnX: 120, dir: 1, color: '#00f0ff' }, 
+    2: { x: WORLD_WIDTH - 120, w: 120, h: 160, spawnX: WORLD_WIDTH - 120, dir: -1, color: '#ff0055' } 
+};
+const floorY = 250;
+
+const unitStats = {
+    slime:        { cost: 15,  hp: 50,  dmg: 8,  spd: 1.2, rng: 20,  cd: 40, w: 25, h: 29,  type: 'melee', rew: 10, xp: 10, imgKey: 'slimewest1', nativeFace: 'left', tech: 1 },
+    spear_slime:  { cost: 30,  hp: 40,  dmg: 15, spd: 1.0, rng: 150, cd: 60, w: 25, h: 32,  type: 'ranged', rew: 15, xp: 15, imgKey: 'slimewest2', nativeFace: 'left', tech: 1, projectile: true },
+    dino_slime:   { cost: 60,  hp: 150, dmg: 25, spd: 0.8, rng: 30,  cd: 70, w: 90, h: 100, type: 'melee', rew: 30, xp: 25, imgKey: 'slimewest3', nativeFace: 'left', tech: 1 },
+    warrior_slime:{ cost: 100, hp: 250, dmg: 45, spd: 1.1, rng: 25,  cd: 45, w: 29, h: 36,  type: 'melee', rew: 50, xp: 40, imgKey: 'drone', nativeFace: 'right', tech: 2 },
+    mage_slime:   { cost: 150, hp: 120, dmg: 70, spd: 0.9, rng: 200, cd: 70, w: 25, h: 36,  type: 'ranged', rew: 70, xp: 60, imgKey: 'blaster', nativeFace: 'right', tech: 2 },
+    mega_slime:   { cost: 250, hp: 600, dmg: 90, spd: 0.7, rng: 35,  cd: 60, w: 46, h: 50,type: 'melee', rew: 120, xp: 90, imgKey: 'mech', nativeFace: 'right', tech: 2 },
+    sniper_slime: { cost: 350, hp: 150, dmg: 120,spd: 0.8, rng: 350, cd: 100,w: 29, h: 38,  type: 'ranged', rew: 150, xp: 120, imgKey: 'sniper1', nativeFace: 'right', tech: 2 },
+    cyber_slime:  { cost: 400, hp: 800, dmg: 110, spd: 1.3, rng: 30,  cd: 40, w: 34, h: 40,  type: 'melee', rew: 200, xp: 150, imgKey: 'drone2', nativeFace: 'right', tech: 3 },
+    shooter_slime:{ cost: 500, hp: 400, dmg: 150, spd: 1.0, rng: 250, cd: 50, w: 34, h: 40,  type: 'ranged', rew: 250, xp: 180, imgKey: 'blaster2', nativeFace: 'right', tech: 3 },
+    mecha_slime:  { cost: 800, hp: 1800,dmg: 250, spd: 0.8, rng: 40,  cd: 60, w: 63,h: 71, type: 'melee', rew: 350, xp: 250, imgKey: 'mech2', nativeFace: 'right', tech: 3 },
+    sniper_slime_3:{ cost: 1000,hp: 350, dmg: 400, spd: 0.9, rng: 450, cd: 110,w: 34, h: 42,  type: 'ranged', rew: 450, xp: 350, imgKey: 'sniper2', nativeFace: 'right', tech: 3 },
+    dragon_slime: { cost: 1500,hp: 3000,dmg: 500, spd: 1.0, rng: 150, cd: 70, w: 132,h: 132, type: 'ranged',rew: 600, xp: 500, imgKey: 'titan2', nativeFace: 'right', tech: 3 }
+};
+
+const spellStats = { 
+    1: { cost: [50, 100, 200], cdMax: [125, 126, 127], names: ['ARROW RAIN', 'CARPET BOMB', 'ORBITAL STRIKE'], icons: ['🏹', '💣', '☄️'] }, 
+    2: { cost: [0, 0, 150], cdMax: [0, 0, 128], names: ['LOCKED', 'LOCKED', 'NANO REPAIR'], icons: ['🔒', '🔒', '🔧'] } 
+};
+
+class Unit {
+    constructor(team, type) {
+        const s = unitStats[type]; 
+        this.id = Math.random().toString(36).substr(2, 9);
+        this.team = team; this.type = type;
+        this.w = s.w; this.h = s.h; 
+        this.x = team === 1 ? bases[1].spawnX : bases[2].spawnX - this.w; 
+        const PATH_Y = 180;
+        this.y = PATH_Y - this.h; 
+        this.speed = s.spd * bases[team].dir; 
+        this.hp = s.hp; this.maxHp = s.hp; this.dmg = s.dmg; this.rng = s.rng; 
+        this.cdMax = s.cd; this.cd = 0; 
+        this.rew = s.rew; this.xp = s.xp;
+        this.action = 'walk'; this.animCycle = 0;
+    }
+}
+
+// Camera Controls
+canvas.addEventListener('mousemove', (e) => {
+    let rect = canvas.getBoundingClientRect();
+    let mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    if (mouseX < 80) scrollSpeed = -15;
+    else if (mouseX > canvas.width - 80) scrollSpeed = 15;
+    else scrollSpeed = 0;
+});
+canvas.addEventListener('mouseleave', () => scrollSpeed = 0);
+canvas.addEventListener('touchstart', (e) => { lastTouchX = e.touches[0].clientX; isDraggingCam = true; }, { passive: true });
+canvas.addEventListener('touchmove', (e) => {
+    if (!isDraggingCam) return;
+    let currentX = e.touches[0].clientX;
+    let delta = currentX - lastTouchX;
+    cameraX -= delta * 1.5; 
+    lastTouchX = currentX;
+    if (cameraX < 0) cameraX = 0;
+    if (cameraX > WORLD_WIDTH - canvas.width) cameraX = WORLD_WIDTH - canvas.width;
+}, { passive: true });
+canvas.addEventListener('touchend', () => isDraggingCam = false);
+
+function jumpToEnemy() {
+    let enemyTeam = myTeam === 1 ? 2 : 1;
+    let vanguard = null;
+    gameState.units.forEach(u => {
+        if (u.team === enemyTeam) {
+            if (!vanguard) vanguard = u;
+            else {
+                if (myTeam === 1 && u.x < vanguard.x) vanguard = u; 
+                if (myTeam === 2 && u.x > vanguard.x) vanguard = u; 
+            }
+        }
+    });
+    if (vanguard) {
+        cameraX = vanguard.x - canvas.width / 2;
+        if (cameraX < 0) cameraX = 0;
+        if (cameraX > WORLD_WIDTH - canvas.width) cameraX = WORLD_WIDTH - canvas.width;
+    }
+}
+
+// Start Modes
+function startSolo(mode) { gameMode = mode; myTeam = 1; startGame(); }
+function startLocal() { gameMode = 'local'; myTeam = 1; startGame(); }
+function showNetworkMenu() {
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('network-menu').style.display = 'flex';
+}
+function hideOnlineMenu() {
+    document.getElementById('network-menu').style.display = 'none';
+    if(forceMode === 'multi') {
+        window.location.href = '../index.html';
+    } else {
+        document.getElementById('main-menu').style.display = 'flex';
+    }
+}
+
+// Multiplayer Logic
+function hostGame() {
+    let status = document.getElementById('status-text');
+    status.style.color = "var(--primary)"; status.innerText = "Generating secure channel..."; 
+    let code = 'EOW' + Math.floor(1000 + Math.random() * 9000);
+    if (peer) peer.destroy(); peer = new Peer(code);
+    peer.on('open', id => {
+        document.getElementById('my-id').innerText = id;
+        try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(id).catch(e=>{}); } catch(e) {}
+        status.style.color = "var(--spell)"; status.innerText = "Code copied! Waiting for an opponent...";
+        gameMode = 'host'; myTeam = 1;
+    });
+    peer.on('connection', connection => {
+        conn = connection;
+        conn.on('open', () => { status.innerText = "Opponent detected! Launching..."; setTimeout(startGame, 1000); });
+        setupConnection();
+    });
+    peer.on('error', err => { status.style.color = "var(--enemy)"; status.innerText = "Error: " + err.type; });
+}
+
+function joinGame() {
+    const hostId = document.getElementById('join-id').value.trim().toUpperCase();
+    if(!hostId) return;
+    let status = document.getElementById('status-text');
+    status.style.color = "var(--enemy)"; status.innerText = "Connecting to enemy base...";
+    if (peer) peer.destroy(); peer = new Peer();
+    peer.on('open', () => {
+        conn = peer.connect(hostId, { reliable: true }); gameMode = 'client'; myTeam = 2;
+        conn.on('open', () => { status.style.color = "var(--spell)"; status.innerText = "Connected! Deploying..."; setTimeout(startGame, 1000); });
+        setupConnection();
+    });
+    peer.on('error', err => { status.style.color = "var(--enemy)"; status.innerText = err.type === 'peer-unavailable' ? "Lobby does not exist!" : "Network error."; });
+}
+
+function setupConnection() {
+    conn.on('data', data => {
+        if (gameMode === 'host' && data.type === 'action') processAction(2, data.action, data.val);
+        if (gameMode === 'client' && data.type === 'state') {
+            gameState = data.state; updateHUD();
+        }
+    });
+}
+
+function buildControlsContainer(team) {
+    return `<div class="team-controls" id="team-controls-${team}"></div>`;
+}
+
+function renderTeamControls(team) {
+    let p = team === 1 ? gameState.p1 : gameState.p2;
+    let pre = team === 1 ? 'p1' : 'p2';
+    let tName = team === 1 ? 'WEST' : 'EAST';
+    let color = team === 1 ? 'var(--primary)' : 'var(--enemy)';
+    
+    let keysText = team === 1 ? "(1,2,3,4,5)" : "(Num 1,2,3,4,5)";
+    if (gameMode !== 'local') keysText = "(1,2,3,4,5)";
+
+    let availableUnits = Object.keys(unitStats).filter(k => unitStats[k].tech === p.age);
+    
+    let unitBtnsHtml = availableUnits.map((uKey, i) => {
+        let u = unitStats[uKey];
+        let displayName = uKey.replace(/_/g, ' ').toUpperCase();
+        let imgSrc = imgFiles[u.imgKey]; 
+        
+        return `<button class="unit-btn" id="btn-${pre}-u${i+1}" onclick="sendAction(${team}, 'spawn', '${uKey}')">
+                    <img src="${imgSrc}" style="height: 38px; max-width: 100%; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));" alt="icon">
+                    ${displayName} 
+                    <span class="unit-cost">${u.cost} 💰</span>
+                </button>`;
+    }).join('');
+
+    let spell1Cost = spellStats[1].cost[p.age - 1];
+    let spell1Name = spellStats[1].names[p.age - 1];
+    let spell1Icon = spellStats[1].icons[p.age - 1];
+
+    let spell2Html = '';
+    if (p.age < 3) {
+        spell2Html = `<button class="spell-btn" disabled>🔒 NANO REPAIR (TECH 3)</button>`;
+    } else {
+        let spell2Cost = spellStats[2].cost[p.age - 1];
+        spell2Html = `<button class="spell-btn" id="btn-${pre}-spell2" onclick="sendAction(${team}, 'spell', 2)">🔧 NANO REPAIR (${spell2Cost} 💰)<div class="cooldown-overlay" id="cd-${pre}-spell2"></div></button>`;
+    }
+
+    let html = `
+        <div style="border-top: 3px solid ${color}; width:100%; padding-top:10px;">
+            <div class="ctrl-header">
+                <h3 style="color:${color}">${tName} <span style="font-size:0.7em; color:#888;">${keysText}</span></h3>
+                <button class="btn-upgrade-eco" id="btn-${pre}-eco" onclick="sendAction(${team}, 'upgradeEco', null)">
+                    + ECO (${p.incomeCost}💰)
+                </button>
+            </div>
+            <div class="spells" style="margin-top:10px; margin-bottom:10px;">
+                <button class="spell-btn" id="btn-${pre}-spell1" onclick="sendAction(${team}, 'spell', 1)">${spell1Icon} ${spell1Name} (${spell1Cost} 💰)<div class="cooldown-overlay" id="cd-${pre}-spell1"></div></button>
+                ${spell2Html}
+            </div>
+            <div class="controls" id="units-container-${pre}">
+                ${unitBtnsHtml}
+            </div>
+        </div>
+    `;
+    document.getElementById(`team-controls-${team}`).innerHTML = html;
+}
+
+function startGame() {
+    document.querySelectorAll('.overlay').forEach(e => e.style.display = 'none');
+    document.getElementById('game-hud').style.visibility = 'visible';
+    
+    if (myTeam === 2) cameraX = WORLD_WIDTH - canvas.width;
+    else cameraX = 0;
+
+    if (gameMode === 'local') {
+        document.getElementById('deployment-controls').innerHTML = buildControlsContainer(1) + buildControlsContainer(2);
+        document.getElementById('p2-gold-container').style.display = 'block';
+        document.getElementById('p1-income-txt').innerText = `+${gameState.p1.incomeRate}/s`;
+        document.getElementById('p2-income-txt').innerText = `+${gameState.p2.incomeRate}/s`;
+        renderTeamControls(1);
+        renderTeamControls(2);
+    } else {
+        document.getElementById('deployment-controls').innerHTML = buildControlsContainer(myTeam);
+        let rate = myTeam === 1 ? gameState.p1.incomeRate : gameState.p2.incomeRate;
+        document.getElementById('p1-income-txt').innerText = `+${rate}/s`;
+        renderTeamControls(myTeam);
+    }
+
+    gameActive = true;
+    if(gameMode === 'host' || gameMode === 'solo' || gameMode === 'hardcore' || gameMode === 'local') {
+        setInterval(economyTick, 1000);
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+function economyTick() {
+    if(!gameActive) return;
+    timeElapsed++;
+    gameState.p1.gold += gameState.p1.incomeRate;
+    gameState.p2.gold += gameState.p2.incomeRate;
+    
+    if(gameMode === 'solo' || gameMode === 'hardcore') {
+        let ai = gameState.p2;
+        let r = Math.random();
+        let isHard = (gameMode === 'hardcore');
+
+        if (isHard) ai.gold += Math.floor(timeElapsed / 10) + 2; 
+
+        if (ai.xp >= xpToEvolve[ai.age - 1]) processAction(2, 'evolve', null);
+        if (ai.gold > ai.incomeCost * 2 && r > 0.4) processAction(2, 'upgradeEco', null);
+
+        let p1Units = gameState.units.filter(u => u.team === 1);
+        let p2Units = gameState.units.filter(u => u.team === 2);
+        let p1Count = p1Units.length;
+        let p2Count = p2Units.length;
+        let p1RangedCount = p1Units.filter(u => unitStats[u.type].type === 'ranged').length;
+        let p1MeleeCount = p1Units.filter(u => unitStats[u.type].type === 'melee').length;
+
+        if (p1Count >= p2Count + 2 && ai.gold >= spellStats[1].cost[ai.age - 1]) {
+            processAction(2, 'spell', 1);
+        }
+        if (ai.age >= 3 && ai.hp < ai.maxHp * 0.3 && ai.gold >= spellStats[2].cost[ai.age - 1]) {
+            processAction(2, 'spell', 2);
+        }
+
+        let availableUnits = Object.keys(unitStats).filter(k => unitStats[k].tech === ai.age);
+        let chosenSpawn = null;
+        for (let idx = availableUnits.length - 1; idx >= 0; idx--) {
+            let uKey = availableUnits[idx];
+            let uData = unitStats[uKey];
+
+            if (ai.gold >= uData.cost) {
+                if (p1RangedCount > p1MeleeCount + 1 && uData.type === 'melee') {
+                    chosenSpawn = uKey;
+                    break;
+                }
+                
+                let aiRangedCount = p2Units.filter(u => unitStats[u.type].type === 'ranged').length;
+                let aiMeleeCount = p2Units.filter(u => unitStats[u.type].type === 'melee').length;
+                
+                if (r > 0.4 && (aiMeleeCount === aiRangedCount || (aiMeleeCount > aiRangedCount && uData.type === 'ranged') || (aiRangedCount > aiMeleeCount && uData.type === 'melee'))) {
+                    chosenSpawn = uKey; 
+                    break;
+                }
+            }
+        }
+        
+        if (!chosenSpawn && p1Count > p2Count + 1) {
+            let cheapestUnit = availableUnits[0];
+            if (ai.gold >= unitStats[cheapestUnit].cost) {
+                chosenSpawn = cheapestUnit;
+            }
+        }
+        
+        if (chosenSpawn) processAction(2, 'spawn', chosenSpawn);
+    }
+    
+    [gameState.p1, gameState.p2].forEach(p => { 
+        p.spells[1] = Math.max(0, p.spells[1] - 1); 
+        p.spells[2] = Math.max(0, p.spells[2] - 1); 
+    });
+}
+
+function sendAction(team, action, val) {
+    if(gameMode === 'client' && team === 2) conn.send({type: 'action', action: action, val: val});
+    else if (gameMode === 'host' && team === 1) processAction(1, action, val);
+    else if (gameMode !== 'client') processAction(team, action, val);
+}
+
+function processAction(team, action, val) {
+    let p = team === 1 ? gameState.p1 : gameState.p2;
+    if(action === 'spawn' && p.gold >= unitStats[val].cost) {
+        p.gold -= unitStats[val].cost;
+        gameState.units.push(new Unit(team, val));
+    }
+    else if (action === 'upgradeEco' && p.gold >= p.incomeCost) {
+        p.gold -= p.incomeCost;
+        p.incomeRate += 2;
+        p.incomeCost = Math.floor(p.incomeCost * 1.5);
+        addEffect('text', bases[team].spawnX, 100, team, '+ECO');
+    }
+    else if(action === 'spell') {
+        let sCost = spellStats[val].cost[p.age - 1];
+        if(p.age >= (val === 2 ? 3 : 1) && p.gold >= sCost && p.spells[val] === 0) {
+            p.gold -= sCost;
+            p.spells[val] = spellStats[val].cdMax[p.age - 1];
+            
+            if(val === 1) { 
+                let dmg = 0;
+                if(p.age === 1) {
+                    addEffect('arrows', 0, 0, team); screenShake = 8; dmg = 50;
+                } else if(p.age === 2) {
+                    addEffect('bombs', 0, 0, team); screenShake = 15; dmg = 150;
+                } else {
+                    addEffect('orbital', 0, 0, team); screenShake = 25; dmg = 400;
+                }
+
+                for (let i = gameState.units.length - 1; i >= 0; i--) {
+                    let u = gameState.units[i];
+                    if (u.team !== team) {
+                        u.hp -= dmg;
+                        if (u.hp <= 0) {
+                            p.gold += u.rew;
+                            if (p.age < 3) p.xp += u.xp;
+                            addEffect('text', u.x, u.y, team, `+${u.rew}💰`);
+                            addEffect('explosion', u.x + u.w/2, u.y + u.h/2, u.team);
+                            gameState.units.splice(i, 1);
+                        }
+                    }
+                }
+            } else if(val === 2) { 
+                addEffect('heal', 0, 0, team);
+                gameState.units.filter(u => u.team === team).forEach(u => u.hp = Math.min(u.maxHp, u.hp + 500));
+                p.hp = Math.min(p.maxHp, p.hp + 1000);
+            }
+        }
+    }
+    else if(action === 'evolve' && p.age < 3 && p.xp >= xpToEvolve[p.age - 1]) {
+        p.xp -= xpToEvolve[p.age - 1];
+        p.age++; 
+        p.maxHp += 1000; p.hp += 1000; 
+        addEffect('text', bases[team].spawnX, 80, team, 'TECH UP!');
+        screenShake = 10;
+    }
+}
+
+function addEffect(type, x, y, team, text='') {
+    gameState.effects.push({ type, x, y, team, text, life: 30, maxLife: 30 });
+}
+
+function addSpear(x, y, team, damage) {
+    gameState.effects.push({ type: 'spear', x, y, team, damage, speed: 15 * bases[team].dir, w: 20, h: 4 });
+}
+
+function updatePhysics() {
+    cameraX += scrollSpeed;
+    if (cameraX < 0) cameraX = 0;
+    if (cameraX > WORLD_WIDTH - canvas.width) cameraX = WORLD_WIDTH - canvas.width;
+
+    [1, 2].forEach(t => {
+        let p = t === 1 ? gameState.p1 : gameState.p2;
+        if (p.turretCd > 0) p.turretCd--;
+        else {
+            let target = null; let bx = bases[t].spawnX;
+            for (let i=0; i<gameState.units.length; i++) {
+                let u = gameState.units[i];
+                if (u.team !== t && Math.abs(u.x - bx) < 300) { target = u; break; }
+            }
+            if (target) {
+                target.hp -= 15; p.turretCd = 60; 
+                addEffect('laser', bx, 100, t, target.x + target.w/2);
+                addEffect('hit', target.x + target.w/2, target.y + target.h/2, t);
+            }
+        }
+    });
+
+    for(let i = gameState.effects.length-1; i >= 0; i--) {
+        let eff = gameState.effects[i];
+        if(eff.type === 'spear') {
+            eff.x += eff.speed;
+            let target = null;
+            let enemyTeam = eff.team === 1 ? 2 : 1;
+            
+            for (let j = 0; j < gameState.units.length; j++) {
+                let u = gameState.units[j];
+                if(u.team === enemyTeam && eff.x > u.x && eff.x < u.x + u.w) { target = u; break; }
+            }
+            
+            if(!target) {
+                let base = bases[enemyTeam];
+                if((enemyTeam === 2 && eff.x > base.x) || (enemyTeam === 1 && eff.x < base.x + base.w)) { target = enemyTeam === 2 ? gameState.p2 : gameState.p1; }
+            }
+            
+            if(target) {
+                target.hp -= eff.damage;
+                addEffect('hit', eff.x, eff.y, eff.team);
+                gameState.effects.splice(i, 1);
+            } else if (eff.x < 0 || eff.x > WORLD_WIDTH) {
+                gameState.effects.splice(i, 1);
+            }
+        } else {
+            eff.life--;
+            if(eff.life <= 0) gameState.effects.splice(i, 1);
+        }
+    }
+
+    for (let i = gameState.units.length - 1; i >= 0; i--) {
+        let u = gameState.units[i]; let target = null; u.action = 'walk';
+        
+        for (let j = 0; j < gameState.units.length; j++) { 
+            let other = gameState.units[j]; 
+            if (u.team !== other.team) { 
+                let dist = u.team === 1 ? (other.x - (u.x + u.w)) : (u.x - (other.x + other.w)); 
+                if (dist <= u.rng && dist >= -20) { target = other; break; } 
+            } 
+        }
+        if (!target) { 
+            let distToBase = u.team === 1 ? (bases[2].x - (u.x + u.w)) : (u.x - (bases[1].x + bases[1].w)); 
+            if (distToBase <= u.rng) target = u.team === 1 ? gameState.p2 : gameState.p1; 
+        }
+        
+        if (target) { 
+            u.action = 'attack'; 
+            if (u.cd <= 0) { 
+                u.cd = u.cdMax; 
+                let ty = (target === gameState.p1 || target === gameState.p2) ? 180 : target.y + target.h/2;
+                let tx = (target === gameState.p1 || target === gameState.p2) ? (u.team===1? bases[2].x : bases[1].x+bases[1].w) : target.x + target.w/2;
+                
+                let s = unitStats[u.type];
+                if(s.projectile) {
+                     addSpear(u.x + (u.team === 1 ? u.w : 0), u.y + 10, u.team, u.dmg);
+                } else if (unitStats[u.type].type === 'ranged') {
+                    addEffect('laser', u.x + (u.team===1?u.w:0), u.y + 10, u.team, tx);
+                    addEffect('hit', tx, ty, u.team);
+                    target.hp -= u.dmg;
+                } else {
+                     if (u.type === 'titan' || u.type === 'dragon_slime') { screenShake = 5; }
+                     addEffect('hit', tx, ty, u.team);
+                     target.hp -= u.dmg;
+                }
+            } 
+        } else {
+            let canMove = true; let hitboxSpacing = u.w + 10;
+            for (let j = 0; j < gameState.units.length; j++) {
+                let other = gameState.units[j];
+                if (u.team === other.team && u.id !== other.id) {
+                    if (u.team === 1 && other.x > u.x && (other.x - u.x) < hitboxSpacing) canMove = false;
+                    if (u.team === 2 && u.x > other.x && (u.x - other.x) < hitboxSpacing) canMove = false;
+                }
+            }
+            if(canMove) u.x += u.speed;
+        }
+        
+        if (u.cd > 0) u.cd--;
+        if (u.hp <= 0) { 
+            let killer = u.team === 1 ? gameState.p2 : gameState.p1;
+            killer.gold += u.rew; 
+            if (killer.age < 3) killer.xp += u.xp; 
+            addEffect('text', u.x, u.y, u.team === 1 ? 2 : 1, `+${u.rew}💰`);
+            addEffect('explosion', u.x + u.w/2, u.y + u.h/2, u.team);
+            gameState.units.splice(i, 1); 
+        }
+    }
+
+    if (gameState.p1.hp <= 0 || gameState.p2.hp <= 0) {
+        gameActive = false; document.getElementById('game-over').style.display = 'flex'; 
+        const msg = document.getElementById('end-message');
+        document.getElementById('end-stats').innerText = `TIME ELAPSED: ${timeElapsed}s`;
+        if (gameMode === 'hardcore') {
+            msg.innerText = gameState.p2.hp <= 0 ? "LEGEND: YOU BEAT EXTREME AI" : "THE RESISTANCE HAS FALLEN";
+            msg.style.color = gameState.p2.hp <= 0 ? 'var(--gold)' : 'var(--enemy)';
+        } else {
+            let p1Won = gameState.p2.hp <= 0;
+            if ((p1Won && myTeam === 1) || (!p1Won && myTeam === 2) || (gameMode === 'local' && p1Won)) {
+                msg.innerText = "TOTAL VICTORY"; msg.style.color = 'var(--primary)'; msg.style.textShadow = '0 0 20px var(--primary)';
+            } else {
+                msg.innerText = "TACTICAL DEFEAT"; msg.style.color = 'var(--enemy)'; msg.style.textShadow = '0 0 20px var(--enemy)';
+            }
+        }
+    }
+}
+
+window.addEventListener('keydown', e => {
+    if(!gameActive) return; let k = e.key.toLowerCase();
+    
+    let trigger = (idx, team) => {
+        let p = team === 1 ? gameState.p1 : gameState.p2;
+        let available = Object.keys(unitStats).filter(u => unitStats[u].tech === p.age);
+        if(available[idx]) sendAction(team, 'spawn', available[idx]);
+    };
+
+    if (myTeam === 1 || gameMode === 'local') {
+        if(k==='1') trigger(0, 1);
+        if(k==='2') trigger(1, 1);
+        if(k==='3') trigger(2, 1);
+        if(k==='4') trigger(3, 1);
+        if(k==='5') trigger(4, 1);
+        if(k==='q' || k==='a') sendAction(1, 'spell', 1);
+        if(k==='s') sendAction(1, 'spell', 2);
+        if(k==='d') sendAction(1, 'evolve', null);
+    }
+    
+    if (myTeam === 2 && gameMode === 'client') {
+        if(k==='1') trigger(0, 2);
+        if(k==='2') trigger(1, 2);
+        if(k==='3') trigger(2, 2);
+        if(k==='4') trigger(3, 2);
+        if(k==='5') trigger(4, 2);
+        if(k==='q' || k==='a') sendAction(2, 'spell', 1);
+        if(k==='s') sendAction(2, 'spell', 2);
+        if(k==='d') sendAction(2, 'evolve', null);
+    }
+
+    if (gameMode === 'local') {
+        if(e.code === 'Numpad1') trigger(0, 2);
+        if(e.code === 'Numpad2') trigger(1, 2);
+        if(e.code === 'Numpad3') trigger(2, 2);
+        if(e.code === 'Numpad4') trigger(3, 2);
+        if(e.code === 'Numpad5') trigger(4, 2);
+        if(e.code === 'Numpad7') sendAction(2, 'spell', 1);
+        if(e.code === 'Numpad8') sendAction(2, 'spell', 2);
+        if(e.code === 'Numpad9') sendAction(2, 'evolve', null);
+    }
+});
+
+// --- RENDER (CANVAS) ---
+function drawShape(type, x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.shadowBlur = 10; ctx.shadowColor = color;
+    ctx.beginPath();
+    if (type.includes('slime') || type.includes('drone')) { ctx.moveTo(x, y+h/2); ctx.lineTo(x+w/2, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w/2, y+h); }
+    else if (type.includes('blaster') || type.includes('mage')) { ctx.moveTo(x+w/2, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w/2, y+h); ctx.lineTo(x, y+h/2); }
+    else if (type.includes('mech') || type.includes('warrior') || type.includes('mega')) { ctx.moveTo(x+w*0.2, y); ctx.lineTo(x+w*0.8, y); ctx.lineTo(x+w, y+h/2); ctx.lineTo(x+w*0.8, y+h); ctx.lineTo(x+w*0.2, y+h); ctx.lineTo(x, y+h/2); }
+    else if (type.includes('sniper') || type.includes('spear')) { ctx.fillRect(x, y, w*0.4, h); ctx.fillRect(x, y+h*0.3, w, h*0.2); }
+    else if (type.includes('titan') || type.includes('dragon')) { ctx.moveTo(x+w/2, y); ctx.lineTo(x+w, y+h*0.3); ctx.lineTo(x+w*0.8, y+h); ctx.lineTo(x+w*0.2, y+h); ctx.lineTo(x, y+h*0.3); }
+    else { ctx.fillRect(x, y, w, h); }
+    ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
+}
+
+function drawGame() {
+    ctx.save();
+    if (screenShake > 0) {
+        ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+        screenShake *= 0.9; if(screenShake < 0.5) screenShake = 0;
+    }
+
+    let grad = ctx.createLinearGradient(0, 0, 0, floorY);
+    grad.addColorStop(0, '#020205'); grad.addColorStop(1, '#0a1025');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(-cameraX, 0);
+
+    let p1MapName = gameState.p1.age === 1 ? 'map1' : (gameState.p1.age === 2 ? 'map1_tech1' : 'map1_tech2');
+    let p2MapName = gameState.p2.age === 1 ? 'map2' : (gameState.p2.age === 2 ? 'map2_tech1' : 'map2_tech2');
+    
+    let img1 = imgs[p1MapName];
+    if (img1 && img1.complete && img1.naturalWidth !== 0) {
+        ctx.drawImage(img1, 0, 0, WORLD_WIDTH / 2, floorY);
+    }
+    
+    let img2 = imgs[p2MapName];
+    if (img2 && img2.complete && img2.naturalWidth !== 0) {
+        ctx.drawImage(img2, WORLD_WIDTH / 2, 0, WORLD_WIDTH / 2, floorY);
+    }
+
+    ctx.shadowBlur = 15; ctx.shadowColor = '#00f0ff'; ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+    ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(WORLD_WIDTH, floorY); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    globalOffset = (globalOffset + 1) % 40;
+    ctx.strokeStyle = 'rgba(255, 0, 127, 0.2)'; ctx.lineWidth = 1;
+    
+    for(let i = floorY; i < canvas.height; i += (i - floorY + 10) * 0.2) {
+        let y = i + (globalOffset/40) * ((i - floorY + 10) * 0.2);
+        if(y < canvas.height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_WIDTH, y); ctx.stroke(); }
+    }
+    for(let x = 0; x <= WORLD_WIDTH; x += 100) {
+        ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x - 50, canvas.height); ctx.stroke();
+    }
+
+    gameState.units.forEach(u => {
+        let color = u.team === 1 ? '#00f0ff' : '#ff0055';
+        let stat = unitStats[u.type];
+        
+        ctx.save();
+        ctx.translate(u.x + u.w/2, u.y + u.h/2);
+        
+        if (u.action === 'walk') {
+            u.animCycle += 0.15 * Math.abs(u.speed);
+            ctx.translate(0, -Math.abs(Math.sin(u.animCycle)) * 4);
+        } else if (u.action === 'attack') {
+            let pct = (u.cdMax - u.cd) / u.cdMax;
+            if(stat.type === 'melee') ctx.translate(u.team===1 ? (pct<0.3?10:0) : (pct<0.3?-10:0), 0);
+        }
+        
+        let imgName = stat.imgKey;
+        let img = imgs[imgName];
+        
+        if (img && img.complete && img.naturalWidth !== 0) {
+            let flip = false;
+            if (u.team === 1 && stat.nativeFace === 'left') flip = true;
+            if (u.team === 2 && stat.nativeFace === 'right') flip = true;
+
+            if (flip) ctx.scale(-1, 1);
+            
+            let ratio = img.naturalWidth / img.naturalHeight;
+            let drawW = u.h * ratio;
+            
+            ctx.drawImage(img, -drawW/2, -u.h/2, drawW, u.h);
+        } else {
+            drawShape(u.type, -u.w/2, -u.h/2, u.w, u.h, color); 
+        }
+        
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(u.x, u.y - 12, u.w, 4); 
+        ctx.fillStyle = '#39ff14'; ctx.fillRect(u.x, u.y - 12, u.w * (u.hp / u.maxHp), 4);
+    });
+
+    gameState.effects.forEach(eff => {
+        let prog = eff.life / eff.maxLife;
+        let color = eff.team === 1 ? '#00f0ff' : '#ff0055';
+
+        if (eff.type === 'laser') {
+            ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.strokeStyle = color; ctx.lineWidth = prog * 4;
+            ctx.beginPath(); ctx.moveTo(eff.x, eff.y); ctx.lineTo(eff.text, eff.y); ctx.stroke();
+        } else if (eff.type === 'hit' || eff.type === 'explosion') {
+            ctx.fillStyle = color; ctx.globalAlpha = prog;
+            ctx.beginPath(); ctx.arc(eff.x, eff.y, (1-prog)* (eff.type==='explosion'?30:15), 0, Math.PI*2); ctx.fill();
+        } else if (eff.type === 'orbital') {
+            ctx.fillStyle = color; ctx.globalAlpha = prog * 0.5;
+            ctx.fillRect(0, 0, WORLD_WIDTH, canvas.height); 
+            ctx.globalAlpha = 1; ctx.shadowBlur = 20; ctx.shadowColor = color;
+            for(let i=0; i<30; i++) { ctx.fillRect(Math.random()*WORLD_WIDTH, 0, 5, canvas.height); }
+        } else if (eff.type === 'arrows') {
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.globalAlpha = prog;
+            for(let i=0; i<30; i++) {
+                let ax = Math.random()*WORLD_WIDTH;
+                ctx.beginPath(); ctx.moveTo(ax - 20, (1-prog)*canvas.height - 40); ctx.lineTo(ax, (1-prog)*canvas.height); ctx.stroke();
+            }
+        } else if (eff.type === 'bombs') {
+            ctx.fillStyle = '#ff5500'; ctx.globalAlpha = prog;
+            for(let i=0; i<10; i++) {
+                let bx = Math.random()*WORLD_WIDTH;
+                ctx.beginPath(); ctx.arc(bx, floorY, (1-prog)*100 + Math.random()*50, 0, Math.PI*2); ctx.fill();
+            }
+        } else if (eff.type === 'heal') {
+            ctx.fillStyle = '#39ff14'; ctx.globalAlpha = prog;
+            gameState.units.filter(u => u.team === eff.team).forEach(u => {
+                ctx.font = "bold 20px Chewy"; ctx.fillText('+', u.x+u.w/2-5, u.y - (30-eff.life)); 
+            });
+        } else if (eff.type === 'text') {
+            ctx.fillStyle = eff.text.includes('💰') ? '#ffd700' : '#fff';
+            ctx.font = "bold 20px Chewy"; ctx.shadowBlur = 5; ctx.shadowColor = '#000';
+            ctx.globalAlpha = prog;
+            ctx.fillText(eff.text, eff.x, eff.y - (30-eff.life));
+        } else if (eff.type === 'spear') {
+             ctx.fillStyle = eff.team === 1 ? '#00f0ff' : '#ff0055';
+             ctx.fillRect(eff.x, eff.y, eff.w, eff.h);
+             ctx.beginPath();
+             ctx.moveTo(eff.x + (eff.team === 1 ? eff.w : 0), eff.y - 3);
+             ctx.lineTo(eff.x + (eff.team === 1 ? eff.w + 6 : -6), eff.y + eff.h/2);
+             ctx.lineTo(eff.x + (eff.team === 1 ? eff.w : 0), eff.y + eff.h + 3);
+             ctx.fill();
+        }
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    });
+
+    ctx.restore(); 
+    ctx.restore(); 
+}
+
+function updateHUD() {
+    if (!gameState.p1.renderedAge || gameState.p1.renderedAge !== gameState.p1.age) {
+        if (myTeam === 1 || gameMode === 'local') renderTeamControls(1);
+        gameState.p1.renderedAge = gameState.p1.age;
+    }
+    if (!gameState.p2.renderedAge || gameState.p2.renderedAge !== gameState.p2.age) {
+        if (gameMode === 'local') renderTeamControls(2);
+        gameState.p2.renderedAge = gameState.p2.age;
+    }
+
+    document.getElementById('p1-gold').innerText = Math.floor(myTeam === 1 ? gameState.p1.gold : gameState.p2.gold);
+    if(gameMode === 'local') {
+        document.getElementById('p1-gold').innerText = Math.floor(gameState.p1.gold);
+        document.getElementById('p2-gold').innerText = Math.floor(gameState.p2.gold);
+    }
+
+    document.getElementById('p1-hp-bar').style.width = (gameState.p1.hp / gameState.p1.maxHp * 100) + '%'; 
+    document.getElementById('p2-hp-bar').style.width = (gameState.p2.hp / gameState.p2.maxHp * 100) + '%';
+
+    [1, 2].forEach(t => {
+        let p = t === 1 ? gameState.p1 : gameState.p2;
+        let pre = t === 1 ? 'p1' : 'p2';
+        
+        document.getElementById(`${pre}-age`).innerText = p.age;
+        let xpBar = document.getElementById(`${pre}-xp-bar`);
+        let btnEvolve = document.getElementById(`btn-evolve-${pre}`);
+        
+        if (p.age < 3) {
+            let req = xpToEvolve[p.age - 1];
+            if(xpBar) xpBar.style.width = Math.min(100, (p.xp / req * 100)) + '%'; 
+            if(btnEvolve && p.xp >= req && (myTeam === t || gameMode === 'local')) btnEvolve.style.display = 'block'; else if(btnEvolve) btnEvolve.style.display = 'none';
+        } else {
+            if(xpBar) xpBar.style.width = '100%'; 
+            if(btnEvolve) btnEvolve.style.display = 'none';
+        }
+
+        if (gameMode === 'local' || myTeam === t) {
+            let availableUnits = Object.keys(unitStats).filter(k => unitStats[k].tech === p.age);
+            availableUnits.forEach((uKey, i) => { 
+                let b = document.getElementById(`btn-${pre}-u${i+1}`); 
+                if(b) b.disabled = p.gold < unitStats[uKey].cost; 
+            });
+            
+            let btnEco = document.getElementById(`btn-${pre}-eco`);
+            if (btnEco) {
+                btnEco.innerText = `+ ECO (${p.incomeCost}💰)`;
+                btnEco.disabled = p.gold < p.incomeCost;
+            }
+
+            let btn1 = document.getElementById(`btn-${pre}-spell1`);
+            if(btn1) {
+                btn1.disabled = (p.gold < spellStats[1].cost[p.age-1]) || (p.spells[1] > 0);
+                document.getElementById(`cd-${pre}-spell1`).style.width = (p.spells[1] / spellStats[1].cdMax[p.age-1] * 100) + '%';
+            }
+            if(p.age >= 3) {
+                let btn2 = document.getElementById(`btn-${pre}-spell2`);
+                if(btn2) {
+                    btn2.disabled = (p.gold < spellStats[2].cost[p.age-1]) || (p.spells[2] > 0);
+                    document.getElementById(`cd-${pre}-spell2`).style.width = (p.spells[2] / spellStats[2].cdMax[p.age-1] * 100) + '%';
+                }
+            }
+        }
+    });
+
+    let alertEl = document.getElementById('enemy-alert');
+    if (alertEl && gameMode !== 'local') {
+        let enemyTeam = myTeam === 1 ? 2 : 1;
+        let vanguard = null;
+
+        gameState.units.forEach(u => {
+            if (u.team === enemyTeam) {
+                if (!vanguard) vanguard = u;
+                else {
+                    if (myTeam === 1 && u.x < vanguard.x) vanguard = u;
+                    if (myTeam === 2 && u.x > vanguard.x) vanguard = u;
+                }
+            }
+        });
+
+        if (vanguard) {
+            let isOffscreen = false;
+            if (myTeam === 1 && vanguard.x > cameraX + canvas.width) isOffscreen = true; 
+            if (myTeam === 2 && vanguard.x < cameraX) isOffscreen = true; 
+
+            if (isOffscreen) {
+                alertEl.style.display = 'block';
+                if (myTeam === 1) {
+                    alertEl.style.left = 'auto'; alertEl.style.right = '15px'; alertEl.innerHTML = '⚠️ ENEMIES ▶';
+                } else {
+                    alertEl.style.right = 'auto'; alertEl.style.left = '15px'; alertEl.innerHTML = '◀ ENEMIES ⚠️';
+                }
+            } else { alertEl.style.display = 'none'; }
+        } else { alertEl.style.display = 'none'; }
+    }
+}
+
+function gameLoop() {
+    if(!gameActive) return;
+    if(gameMode === 'host' || gameMode === 'solo' || gameMode === 'hardcore' || gameMode === 'local') {
+        updatePhysics();
+        if(gameMode === 'host' && conn && conn.open) conn.send({type: 'state', state: gameState});
+    }
+    updateHUD();
+    drawGame();
+    requestAnimationFrame(gameLoop);
+}
+
+const gamesHubList = [
+    "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
+    "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
+    "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html", "../worms/index.html"
+];
+
+let globalTouchStartX = 0, globalTouchStartY = 0, globalTouchEndX = 0, globalTouchEndY = 0;
+
+function handleSwipeGesture() {
+    const swipeThreshold = 75; 
+    let diffX = globalTouchEndX - globalTouchStartX; let diffY = globalTouchEndY - globalTouchStartY;
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < -swipeThreshold) navigateGames(1);       
+        else if (diffX > swipeThreshold) navigateGames(-1);  
+    } else {
+        if (diffY < -swipeThreshold) navigateGames(1);       
+        else if (diffY > swipeThreshold) navigateGames(-1);  
+    }
+}
+
+function navigateGames(direction) {
+    const currentPath = window.location.pathname;
+    let currentIndex = gamesHubList.findIndex(game => { let folderName = game.split('/')[1]; return currentPath.includes(folderName); });
+    if (currentIndex === -1) return;
+    let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
+    window.location.href = gamesHubList[nextIndex];
+}
+
+function isExcludedElement(target) {
+    const tag = target.tagName.toLowerCase();
+    if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select' || target.id === 'enemy-alert') return true;
+    if (target.closest('#game-container') || target.closest('.hud') || target.closest('.controls-container') || target.closest('#settings-modal') || target.closest('.settings-btn-wrapper')) return true;
+    return false;
+}
+
+document.addEventListener('touchstart', e => {
+    if (isExcludedElement(e.target)) return;
+    globalTouchStartX = e.changedTouches[0].screenX; globalTouchStartY = e.changedTouches[0].screenY;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+    if (isExcludedElement(e.target)) return;
+    globalTouchEndX = e.changedTouches[0].screenX; globalTouchEndY = e.changedTouches[0].screenY;
+    handleSwipeGesture();
+}, { passive: true });
