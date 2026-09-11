@@ -4,12 +4,13 @@
 body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); color: white; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; transition: background 0.3s; }
 body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d1a 100%); }
 
-/* NOUVEAU : Application de la police Creepster aux titres */
 .game-title { font-family: 'Creepster', cursive; color: #39ff14; text-shadow: 3px 3px 0px #000; margin-bottom: 10px; z-index: 10; font-size: 3.5em; letter-spacing: 4px; }
 .menu-subtitle { font-family: 'Creepster', cursive; font-size: 3em; color: #39ff14; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 5px #000; }
 
-.hub-link { position: absolute; top: 20px; left: 20px; color: #39ff14; text-decoration: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; font-size: 1.2em; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 5px; border: 1px solid #39ff14; z-index: 100; transition: 0.2s; }
-.hub-link:hover { background: #39ff14; color: black; }
+/* BOUTON RETOUR HUB (IMAGE PNG) */
+.hub-btn-wrapper { position: absolute; top: 20px; left: 20px; z-index: 100; cursor: pointer; transition: transform 0.2s ease; width: 140px; }
+#hub-btn-img { width: 100%; height: auto; filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6)); }
+.hub-btn-wrapper:hover { transform: scale(1.1); }
 
 .settings-btn-wrapper { position: absolute; top: 20px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2; }
@@ -39,8 +40,6 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 
 #game-timer { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 10px; border: 2px solid #fff; font-family: 'Luckiest Guy', cursive; font-size: 1.5em; z-index: 20; color: white; }
 .timer-danger { color: #ff3366 !important; border-color: #ff3366 !important; animation: pulse 1s infinite; }
-
-/* NOUVEAU : Police Creepster pour les alertes */
 #alert-message { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-family: 'Creepster', cursive; font-size: 4em; color: #ff3366; text-shadow: 0 0 20px #000; z-index: 50; animation: flash 2s ease-out forwards; pointer-events: none; letter-spacing: 2px;}
 @keyframes flash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
 @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); } }
@@ -55,25 +54,26 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 
 .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 25, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; text-align: center; }
 
-/* NOUVEAU : Rendu des boutons en image pour le menu principal */
+/* BOUTONS PNG DU MENU SANS FOND */
 .menu-img-btn {
-    width: 260px; /* Taille similaire aux anciens boutons */
+    width: 240px; 
     height: auto;
     object-fit: contain;
     cursor: pointer;
-    margin: 10px;
+    margin: 15px;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     transition: transform 0.2s ease, filter 0.2s ease;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
 }
 .menu-img-btn:hover {
     transform: scale(1.08);
-    filter: drop-shadow(0 0 15px #39ff14); /* Halo Slime au survol ! */
+    filter: drop-shadow(0 0 15px #39ff14);
 }
-.menu-img-btn:active {
-    transform: scale(0.95);
-}
+.menu-img-btn:active { transform: scale(0.95); }
 
-/* Boutons classiques conservés pour le retour, héberger, etc. */
 .btn-main { background: #39ff14; color: #000; border: none; padding: 12px 25px; font-size: 1.3em; font-family: 'Rajdhani', sans-serif; font-weight: bold; cursor: pointer; border-radius: 10px; margin: 8px; transition: 0.2s; text-transform: uppercase; width: 260px; box-shadow: 0 4px 0 #1f8a0e; }
 .btn-main.red { background: #ff3366; box-shadow: 0 4px 0 #a11335; color: white; }
 .btn-main.green { background: #00ffcc; box-shadow: 0 4px 0 #00997a; color: black; }
@@ -101,7 +101,6 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 .card.disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
 .card.mini { width: 45px; height: 65px; font-size: 9px; margin-top: 5px; pointer-events: none; }
 .card .cost { position: absolute; top: -8px; left: -8px; background: #39ff14; color: #000; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-family: 'Luckiest Guy', cursive; border: 2px solid #111; z-index: 2; }
-.card .name { margin-top: auto; text-align: center; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.8); border-radius: 4px; padding: 2px; }
 
 #slime-bar-container { height: 25px; background: #222; border-radius: 12px; border: 2px solid #555; position: relative; overflow: hidden; margin-top: 10px; }
 #slime-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #1f8a0e, #39ff14); transition: width 0.3s linear; }
@@ -115,9 +114,7 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
     border: none !important;
     box-shadow: none !important; 
 }
-
 .entity.building { display: flex; justify-content: center; align-items: center; z-index: 3; }
-
 .entity[data-id="mega"] { width: 80px; height: 80px; z-index: 5; }
 .entity[data-id="slimeuse"] { width: 44px; height: 44px; }
 .entity[data-id="slime_marais"] { width: 30px; height: 30px; }
@@ -149,8 +146,6 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 
 #game-over-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
 .game-over-content { text-align: center; }
-
-/* NOUVEAU : Police Creepster pour l'écran de victoire/défaite */
 #game-over-title { font-family: 'Creepster', cursive; font-size: 5em; margin-bottom: 20px; text-shadow: 2px 2px 10px #000; letter-spacing: 4px; }
 
 .particle { position: absolute; width: 12px; height: 12px; border-radius: 50%; pointer-events: none; z-index: 5; animation: splatter 0.5s ease-out forwards; }
