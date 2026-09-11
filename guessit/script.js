@@ -1,4 +1,4 @@
-// --- LOCALIZATION SYSTEM (i18n) ---
+// --- LOCALISATION COMPLÈTE (i18n) ---
 const i18n = {
     fr: {
         bestScore: "🏆 MEILLEUR SCORE : ",
@@ -13,12 +13,13 @@ const i18n = {
         replayBtn: "Rejouer",
         noRecord: "Aucun record.",
         settingsTitle: "PARAMÈTRES",
+        langLabel: "Langue / Language 🌍",
         screenFormat: "Format de l'Écran 🖥️",
         btnClassic: "Classique",
         btnWide: "Pleine Page",
         btnFull: "Plein Écran",
         btnClose: "Fermer",
-        hubImgPath: "Le_DOOBLE_G/img/retourhub.png" // Image française
+        hubImgPath: "Le_DOOBLE_G/img/retourhub.png"
     },
     en: {
         bestScore: "🏆 BEST SCORE : ",
@@ -33,12 +34,13 @@ const i18n = {
         replayBtn: "Play Again",
         noRecord: "No records.",
         settingsTitle: "SETTINGS",
+        langLabel: "Language / Langue 🌍",
         screenFormat: "Screen Format 🖥️",
         btnClassic: "Classic",
         btnWide: "Wide Page",
         btnFull: "Full Screen",
         btnClose: "Close",
-        hubImgPath: "Le_DOOBLE_G/img/returbhub.png" // Image anglaise
+        hubImgPath: "Le_DOOBLE_G/img/returbhub.png"
     }
 };
 
@@ -47,11 +49,11 @@ let currentLang = 'fr';
 function setLanguage(lang) {
     currentLang = lang;
     
-    // Boutons de langues
+    // Activer visuellement le bon bouton dans les settings
     document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
     document.getElementById('btn-en').classList.toggle('active', lang === 'en');
 
-    // Traduction des textes avec data-i18n
+    // Traduction de tous les éléments dynamiques de l'interface
     document.querySelector('[data-i18n="bestScore"]').innerText = i18n[lang].bestScore;
     document.querySelector('[data-i18n="modeText"]').innerHTML = i18n[lang].modeText;
     document.querySelector('[data-i18n="initBtn"]').innerText = i18n[lang].initBtn;
@@ -63,27 +65,25 @@ function setLanguage(lang) {
     document.querySelector('[data-i18n="hallOfFame"]').innerText = i18n[lang].hallOfFame;
     document.querySelector('[data-i18n="replayBtn"]').innerText = i18n[lang].replayBtn;
     document.querySelector('[data-i18n="settingsTitle"]').innerText = i18n[lang].settingsTitle;
+    document.querySelector('[data-i18n="langLabel"]').innerText = i18n[lang].langLabel;
     document.querySelector('[data-i18n="screenFormat"]').innerText = i18n[lang].screenFormat;
     document.querySelector('[data-i18n="btnClassic"]').innerText = i18n[lang].btnClassic;
     document.querySelector('[data-i18n="btnWide"]').innerText = i18n[lang].btnWide;
     document.querySelector('[data-i18n="btnFull"]').innerText = i18n[lang].btnFull;
     document.querySelector('[data-i18n="btnClose"]').innerText = i18n[lang].btnClose;
 
-    // Mise à jour de l'image de retour au hub
-    document.getElementById('hub-img').src = i18n[lang].hubImgPath;
+    // Mise à jour de l'image de retour au hub selon la langue
+    const hubImg = document.getElementById('hub-img');
+    if (hubImg) hubImg.src = i18n[lang].hubImgPath;
 
-    // Actualiser le texte dynamique
+    // Actualiser l'affichage du classement
     displayLeaderboard();
 }
 
-// --- GESTION PARAMÈTRES & UI ---
-function autoFullscreen() {
-    if (!document.getElementById('game-container').classList.contains('size-full')) setGameSize('wide');
-}
-
+// --- GESTION PARAMÈTRES & TAILLES ---
 function setGameSize(size) {
     const container = document.getElementById('game-container');
-    const btns = document.querySelectorAll('.btn-size');
+    const btns = document.querySelectorAll('.setting-item:nth-child(2) .btn-size');
     btns.forEach(b => b.classList.remove('active'));
 
     container.classList.remove('size-classic', 'size-wide', 'size-full');
@@ -197,13 +197,11 @@ const screens = { start: document.getElementById('start-screen'), game: document
 const ui = { img: document.getElementById('manga-image'), opt: document.getElementById('options-area'), timer: document.getElementById('timer-bar'), container: document.getElementById('game-container') };
 
 window.addEventListener('DOMContentLoaded', () => {
-    // Initialise langue par défaut et UI
-    setLanguage('fr');
-    
+    setLanguage('fr'); // Langue par défaut
     let display = document.getElementById('best-score-display');
     if (display) display.innerText = bestMangaScore;
     displayLeaderboard();
-    setGameSize('wide'); // Format par défaut
+    setGameSize('wide');
 });
 
 function startGame() { 
@@ -419,13 +417,8 @@ let touchendX = 0;
 
 function handleSwipeGesture() {
     const swipeThreshold = 75; 
-    
-    if (touchendX < touchstartX - swipeThreshold) {
-        navigateGames(1);
-    }
-    if (touchendX > touchstartX + swipeThreshold) {
-        navigateGames(-1);
-    }
+    if (touchendX < touchstartX - swipeThreshold) navigateGames(1);
+    if (touchendX > touchstartX + swipeThreshold) navigateGames(-1);
 }
 
 function navigateGames(direction) {
@@ -436,7 +429,6 @@ function navigateGames(direction) {
     });
     
     if (currentIndex === -1) return;
-
     let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
     window.location.href = gamesHubList[nextIndex];
 }
