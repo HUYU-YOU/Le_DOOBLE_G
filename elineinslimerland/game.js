@@ -8,7 +8,7 @@ let currentLang = 'fr';
 let currentDialogIndex = 0; 
 let uiTriggered = false; // Permet de savoir si l'interface a déjà été affichée
 
-// --- LE SCÉNARIO DU JEU ---
+// --- LE SCÉNARIO COMPLET DU JEU ---
 const story = {
     partie1: {
         videoSrc: "assets/ELINE0.mp4", loop: false, showUIAtEnd: false, 
@@ -41,6 +41,8 @@ const story = {
         fr: { topText: "La fuite...", bottomText: "Éline court pour fuir, mais trébuche et tombe dans l'étrange portail !", choices: [{ text: "Où ça mène ?", targetScene: "eline3" }] },
         en: { topText: "Fleeing...", bottomText: "Eline runs to escape, but trips and falls into the strange portal!", choices: [{ text: "Where does it go?", targetScene: "eline3" }] }
     },
+
+    // --- LE GRAND CARREFOUR : FORÊT OU VILLE ---
     eline3: {
         videoSrc: "assets/ELINE3.mp4", loop: false, showUIAtEnd: false, 
         fr: {
@@ -70,29 +72,76 @@ const story = {
             ]
         }
     },
+
+    // ==========================================
+    // BRANCHE 1 : LA VILLE ET MIAO
+    // ==========================================
     ville_miao: {
-        videoSrc: "assets/MIAO.mp4", loop: false, showUIAtEnd: false, 
+        videoSrc: "assets/MIAO.mp4", 
+        loop: false, 
+        showUIAtTime: 22, // L'interface apparaît pile à 22 secondes !
         fr: {
             topText: "La Ville des Slimes",
             dialogues: [
-                "Éline : C'est... bruyant. Et absolument tout est en gélatine.",
-                "Une forme violette glisse nonchalamment vers elle en soupirant bruyamment.",
-                "Miao : Mrrr... Encore une touriste humaine. Qu'est-ce que ça me saoule..."
+                "Éline : « …Ok. Je suis définitivement plus chez moi. »",
+                "Éline : « Euh… pourquoi tout le monde me regarde comme ça ? »",
+                "Éline : « C'était toi le gros chat ? »"
             ],
-            bottomText: "Miao le chat-slime fait son apparition !",
-            choices: [{ text: "Retour au menu", targetScene: "menu" }] 
+            bottomText: "Miao la fixe avec insistance...",
+            choices: [{ text: "Attendre sa réaction", targetScene: "miao2" }] 
         },
         en: {
             topText: "Slime City",
             dialogues: [
-                "Eline: It's... loud. And absolutely everything is made of jelly.",
-                "A purple shape slides nonchalantly towards her, sighing loudly.",
-                "Miao: Mrrr... Another human tourist. This is so annoying..."
+                "Eline: « ...Ok. I'm definitely not home anymore. »",
+                "Eline: « Uh... why is everyone looking at me like that? »",
+                "Eline: « Were you the big cat? »"
             ],
-            bottomText: "Miao the slime-cat appears!",
-            choices: [{ text: "Back to menu", targetScene: "menu" }]
+            bottomText: "Miao stares at her intensely...",
+            choices: [{ text: "Wait for his reaction", targetScene: "miao2" }]
         }
     },
+    miao2: {
+        videoSrc: "assets/MIAO2.mp4", 
+        loop: false, 
+        showUIAtEnd: true, 
+        fr: {
+            topText: "Le Talisman",
+            dialogues: [
+                "Miao : « …Où tu as trouvé ça ? »",
+                "Éline : « Dans la forêt. Pourquoi ? »",
+                "Miao : « Il ne fallait pas que tu le trouves. »"
+            ],
+            bottomText: "Miao semble très sérieux. Que répondre ?",
+            choices: [
+                { text: "« Qu'est-ce que tu sais sur ce talisman ? »", targetScene: "miao_scenario1" },
+                { text: "« Pourquoi je devrais te faire confiance ? »", targetScene: "miao_scenario2" },
+                { text: "« Tu es beaucoup moins effrayant maintenant. »", targetScene: "miao_scenario3" }
+            ]
+        },
+        en: {
+            topText: "The Talisman",
+            dialogues: [
+                "Miao: « ...Where did you find that? »",
+                "Eline: « In the forest. Why? »",
+                "Miao: « You shouldn't have found it. »"
+            ],
+            bottomText: "Miao looks very serious. What to answer?",
+            choices: [
+                { text: "« What do you know about this talisman? »", targetScene: "miao_scenario1" },
+                { text: "« Why should I trust you? »", targetScene: "miao_scenario2" },
+                { text: "« You're much less scary now. »", targetScene: "miao_scenario3" }
+            ]
+        }
+    },
+    // FIN TEMPORAIRE DE LA VILLE
+    miao_scenario1: { videoSrc: "assets/MIAO_C1.mp4", loop: false, showUIAtEnd: true, fr: { topText: "À suivre...", bottomText: "Scénario 1 en préparation...", choices: [{ text: "Retour au menu", targetScene: "menu" }] }, en: { topText: "To be continued...", bottomText: "Scenario 1 in development...", choices: [{ text: "Back to menu", targetScene: "menu" }] } },
+    miao_scenario2: { videoSrc: "assets/MIAO_C2.mp4", loop: false, showUIAtEnd: true, fr: { topText: "À suivre...", bottomText: "Scénario 2 en préparation...", choices: [{ text: "Retour au menu", targetScene: "menu" }] }, en: { topText: "To be continued...", bottomText: "Scenario 2 in development...", choices: [{ text: "Back to menu", targetScene: "menu" }] } },
+    miao_scenario3: { videoSrc: "assets/MIAO_C3.mp4", loop: false, showUIAtEnd: true, fr: { topText: "À suivre...", bottomText: "Scénario 3 en préparation...", choices: [{ text: "Retour au menu", targetScene: "menu" }] }, en: { topText: "To be continued...", bottomText: "Scenario 3 in development...", choices: [{ text: "Back to menu", targetScene: "menu" }] } },
+
+    // ==========================================
+    // BRANCHE 2 : LA FORÊT ET LE RENARD
+    // ==========================================
     eline4: {
         videoSrc: "assets/ELINE4.mp4", loop: false, showUIAtEnd: false,
         fr: {
@@ -132,13 +181,11 @@ const story = {
         fr: { topText: "Alerte !", bottomText: "Son talisman se met à briller, ce qui énerve les petits slimes..!", choices: [{ text: "Vite, fuir !", targetScene: "eline5" }] },
         en: { topText: "Alert!", bottomText: "Her talisman starts glowing, which angers the little slimes..!", choices: [{ text: "Run away quickly!", targetScene: "eline5" }] }
     },
-    
-    // --- LA GROSSE SCÈNE FUSIONNÉE (ELINE 5 + ELINE 6) ---
     eline5: {
         videoSrc: "assets/ELINE5.mp4", 
         nextVideoAutoPlay: "assets/ELINE6.mp4", // S'enchaîne automatiquement !
         loop: false, 
-        loopNext: false, // Eline6 se fige à la fin en attendant le choix
+        loopNext: false, 
         showUIAtTime: 15, // Le dialogue démarre à pile 15 secondes
         fr: {
             topText: "La Rencontre",
@@ -173,7 +220,6 @@ const story = {
             ]
         }
     },
-    
     fin1: {
         videoSrc: "assets/FIN1.mp4", loop: false, showUIAtEnd: true,
         fr: { topText: "Fin de l'Aventure", bottomText: "Éline a paniqué et s'est perdue à jamais dans les méandres de Slimerland.", choices: [{ text: "Recommencer", targetScene: "menu" }] },
@@ -181,8 +227,8 @@ const story = {
     },
     eline7: {
         videoSrc: "assets/ELINE7.mp4", loop: false, showUIAtEnd: true,
-        fr: { topText: "La poursuite", bottomText: "Éline prend son courage à deux mains et s'élance à la suite de l'inconnu !", choices: [] }, 
-        en: { topText: "The pursuit", bottomText: "Eline gathers her courage and rushes after the stranger!", choices: [] }
+        fr: { topText: "La poursuite", bottomText: "Éline prend son courage à deux mains et s'élance à la suite du renard !", choices: [] }, 
+        en: { topText: "The pursuit", bottomText: "Eline gathers her courage and rushes after the fox!", choices: [] }
     }
 };
 
@@ -223,7 +269,7 @@ function loadScene(sceneId) {
 
     currentSceneData = story[sceneId];
     const langData = currentSceneData[currentLang];
-    uiTriggered = false; // Réinitialise le déclencheur d'UI
+    uiTriggered = false; 
     
     topTextElement.classList.remove('visible');
     bottomTextElement.classList.remove('visible');
@@ -245,7 +291,7 @@ function loadScene(sceneId) {
 
     topTextElement.innerText = langData.topText || "";
     
-    // Si l'UI doit s'afficher immédiatement (ni timer, ni attente de fin)
+    // Si l'UI doit s'afficher immédiatement (sans timecode et sans attendre la fin)
     if (!currentSceneData.showUIAtTime && !currentSceneData.showUIAtEnd) {
         uiTriggered = true;
         triggerUI();
@@ -286,7 +332,7 @@ function showInterface() {
     if (choicesContainer.innerHTML !== "") choicesContainer.classList.add('visible');
 }
 
-// Gestion du Timecode (Apparition de l'UI à un moment précis)
+// Gestion du Timecode (Apparition de l'UI à un moment précis : ex à 15s ou 22s)
 videoElement.ontimeupdate = () => {
     if (currentSceneData && currentSceneData.showUIAtTime && !uiTriggered) {
         if (videoElement.currentTime >= currentSceneData.showUIAtTime) {
@@ -296,16 +342,16 @@ videoElement.ontimeupdate = () => {
     }
 };
 
-// Gestion de la fin de vidéo (Enchaînement et Apparition de l'UI)
+// Gestion de la fin de vidéo (Enchaînement Auto et/ou UI)
 videoElement.onended = () => {
-    // Si la vidéo doit enchaîner sur une autre (comme Eline5 vers Eline6)
+    // Si la vidéo doit s'enchaîner (ex: Eline5 vers Eline6)
     if (currentSceneData && currentSceneData.nextVideoAutoPlay) {
         videoElement.src = currentSceneData.nextVideoAutoPlay;
         videoElement.loop = currentSceneData.loopNext || false;
         videoElement.play();
     }
     
-    // Si l'UI devait attendre la fin pour apparaître
+    // Si l'UI devait attendre la fin de la vidéo (ex: Miao2)
     if (currentSceneData && currentSceneData.showUIAtEnd && !uiTriggered) {
         uiTriggered = true;
         triggerUI();
