@@ -30,18 +30,27 @@ function setGameSize(size) {
     if (size === 'classic') {
         container.classList.add('size-classic');
         document.getElementById('btn-sz-classic').classList.add('active');
-        if (document.fullscreenElement) document.exitFullscreen();
+        if (document.fullscreenElement) document.exitFullscreen().catch(e=>{});
     } 
     else if (size === 'wide') {
         container.classList.add('size-wide');
         document.getElementById('btn-sz-wide').classList.add('active');
-        if (document.fullscreenElement) document.exitFullscreen();
+        if (document.fullscreenElement) document.exitFullscreen().catch(e=>{});
     } 
     else if (size === 'full') {
         container.classList.add('size-full');
         document.getElementById('btn-sz-full').classList.add('active');
+        
+        // Code renforcé pour forcer le plein écran sur tous les navigateurs / mobiles
+        const docEl = document.documentElement;
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(e => console.log(e));
+            if (docEl.requestFullscreen) {
+                docEl.requestFullscreen().catch(e => console.log(e));
+            } else if (docEl.webkitRequestFullscreen) { /* Safari */
+                docEl.webkitRequestFullscreen();
+            } else if (docEl.msRequestFullscreen) { /* IE11 */
+                docEl.msRequestFullscreen();
+            }
         }
     }
 }
