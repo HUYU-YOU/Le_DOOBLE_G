@@ -822,8 +822,16 @@ function updateHUD() {
         document.getElementById('p2-gold').innerText = Math.floor(gameState.p2.gold);
     }
 
-    document.getElementById('p1-hp-bar').style.width = (gameState.p1.hp / gameState.p1.maxHp * 100) + '%'; 
-    document.getElementById('p2-hp-bar').style.width = (gameState.p2.hp / gameState.p2.maxHp * 100) + '%';
+    // MISE A JOUR DES BARRES ET POURCENTAGES HP
+    let p1HpPct = Math.max(0, Math.round((gameState.p1.hp / gameState.p1.maxHp) * 100));
+    document.getElementById('p1-hp-bar').style.width = p1HpPct + '%'; 
+    let p1HpTxt = document.getElementById('p1-hp-text');
+    if(p1HpTxt) p1HpTxt.innerText = p1HpPct + '%';
+
+    let p2HpPct = Math.max(0, Math.round((gameState.p2.hp / gameState.p2.maxHp) * 100));
+    document.getElementById('p2-hp-bar').style.width = p2HpPct + '%';
+    let p2HpTxt = document.getElementById('p2-hp-text');
+    if(p2HpTxt) p2HpTxt.innerText = p2HpPct + '%';
 
     [1, 2].forEach(t => {
         let p = t === 1 ? gameState.p1 : gameState.p2;
@@ -831,14 +839,19 @@ function updateHUD() {
         
         document.getElementById(`${pre}-age`).innerText = p.age;
         let xpBar = document.getElementById(`${pre}-xp-bar`);
+        let xpTxt = document.getElementById(`${pre}-xp-text`);
         let btnEvolve = document.getElementById(`btn-evolve-${pre}`);
         
         if (p.age < 3) {
             let req = xpToEvolve[p.age - 1];
-            if(xpBar) xpBar.style.width = Math.min(100, (p.xp / req * 100)) + '%'; 
+            let xpPct = Math.min(100, Math.floor((p.xp / req) * 100));
+            if(xpBar) xpBar.style.width = xpPct + '%'; 
+            if(xpTxt) xpTxt.innerText = xpPct + '%';
+            
             if(btnEvolve && p.xp >= req && (myTeam === t || gameMode === 'local')) btnEvolve.style.display = 'block'; else if(btnEvolve) btnEvolve.style.display = 'none';
         } else {
             if(xpBar) xpBar.style.width = '100%'; 
+            if(xpTxt) xpTxt.innerText = 'MAX';
             if(btnEvolve) btnEvolve.style.display = 'none';
         }
 
