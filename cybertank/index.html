@@ -52,15 +52,12 @@
         <!-- MENU PRINCIPAL -->
         <div class="overlay menu-bg" id="main-menu">
             
-            <!-- Image du titre "CHOOSE YOUR BATTLE" (Redimensionnable et fluide) -->
             <img src="./img/chooseyourbattle.png" alt="CHOOSE YOUR BATTLE" class="menu-title-img" onerror="this.style.display='none'">
 
             <div id="solo-buttons" class="btn-container">
-                <!-- Images des modes -> Dossier local -->
                 <img src="./img/duelbot.png" alt="Duel Bot" class="img-btn" onclick="autoFullscreen(); startMode('solo_1v1')">
                 <img src="./img/survie.png" alt="Survie" class="img-btn" onclick="autoFullscreen(); startMode('solo_survival')">
                 
-                <!-- Bouton Réseau -->
                 <button class="btn-main red" onclick="autoFullscreen(); showNetworkMenu()">🌐 Duel PVP</button>
             </div>
             
@@ -72,7 +69,6 @@
             <!-- BLOC CRÉER (Host) -->
             <div class="net-panel">
                 <img src="./img/generate.png" class="bg" alt="Créer une arène">
-                <!-- Zone du texte bien descendue (host-slot) -->
                 <div class="net-slot host-slot">
                     <div id="my-id" class="net-id-text">...</div>
                 </div>
@@ -82,7 +78,6 @@
             <!-- BLOC REJOINDRE (Join) -->
             <div class="net-panel">
                 <img src="./img/join.png" class="bg" alt="Rejoindre">
-                <!-- Zone du texte bien remontée (join-slot) -->
                 <div class="net-slot join-slot">
                     <input type="text" id="join-id" class="net-input" placeholder="CODE">
                 </div>
