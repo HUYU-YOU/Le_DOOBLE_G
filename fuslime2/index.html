@@ -19,7 +19,7 @@
     </video>
     <div class="bg-overlay"></div> 
 
-<!-- Bouton de retour au Hub (Skin Image) -->
+    <!-- Bouton de retour au Hub (Skin Image via CSS) -->
     <a href="../index.html" class="btn-hub"></a>
 
     <!-- Bouton Paramètres -->
@@ -56,18 +56,16 @@
         </div>
     </div>
 
-    <!-- Interface Scores -->
+    <!-- Interface Scores (Alignement horizontal et centré) -->
     <div id="game-ui">
+        <div class="score-container">Score: <span id="score">0</span></div>
         <h1>Fuslime 2</h1>
-        <div class="scores-wrapper">
-            <div class="score-container">Score: <span id="score">0</span></div>
-            <div class="best-score-container">Best: <span id="best-score">0</span></div>
-        </div>
+        <div class="best-score-container">Best: <span id="best-score">0</span></div>
     </div>
     
     <!-- Zone de jeu -->
     <div id="game-container">
-        <!-- 🔥 LE NOUVEAU CADRE MAGIQUE EST LÀ 🔥 -->
+        <!-- 🔥 LE CADRE MAGIQUE (Ajusté en pourcentages) 🔥 -->
         <img src="assets/cadre.png" id="game-frame" alt="Cadre">
 
         <canvas id="game-canvas" width="600" height="800"></canvas>
