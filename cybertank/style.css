@@ -9,13 +9,27 @@
 }
 
 body, html { 
-    font-family: 'Rajdhani', sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; 
-    display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; 
-    user-select: none; touch-action: none; overflow: hidden; 
-    background-image: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05), transparent 60%);
+    font-family: 'Rajdhani', sans-serif; 
+    background-color: var(--bg); 
+    color: white; 
+    margin: 0; 
+    padding: 0; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    min-height: 100vh; 
+    user-select: none; 
+    touch-action: none; 
+    overflow: hidden; 
+    /* IMAGE DE FOND PERMANENTE (Visible dans les menus ET pendant le jeu) */
+    background-image: url('./img/backgroundtank.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
 }
 
-/* --- CONTENEUR PRINCIPAL DU JEU (TOUS LES CADRES SONT SUPPRIMÉS) --- */
+/* --- CONTENEUR PRINCIPAL DU JEU --- */
 #game-container { 
     position: relative; 
     width: 100%; 
@@ -25,7 +39,6 @@ body, html {
     flex-direction: column; 
     align-items: center;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    /* Cadres supprimés : */
     background: transparent;
     border: none;
     box-shadow: none;
@@ -54,7 +67,7 @@ body, html {
     transition: 0.2s; 
 }
 .hub-link img {
-    height: clamp(35px, 6vw, 45px); /* Fluide et adapté Mobile/PC */
+    height: clamp(35px, 6vw, 45px); 
     width: auto;
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
 }
@@ -82,27 +95,16 @@ body, html {
 .close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: clamp(1rem, 2.5vw, 1.2rem); font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
 
-/* --- Overlays Menus (Sans fond noir par défaut) --- */
+/* --- Overlays Menus --- */
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
     z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; 
-    background: transparent; /* Fond effacé */
-    backdrop-filter: none;   /* Flou effacé */
+    background: transparent; 
+    backdrop-filter: none;
     border-radius: 0;
 }
-
-/* On remet un fond propre uniquement pour l'écran de Game Over */
-#game-over {
-    background: rgba(5, 10, 15, 0.95);
-    backdrop-filter: blur(10px);
-}
-
-/* Fond général pour les menus Main et Network */
-.menu-bg { 
-    background-image: url('./img/backgroundtank.png'); 
-    background-size: cover; 
-    background-position: center; 
-}
+#game-over { background: rgba(5, 10, 15, 0.95); backdrop-filter: blur(10px); }
+.menu-bg { background: transparent; /* Fond effacé ici pour laisser voir le body */ }
 
 /* Boutons classiques */
 .btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: clamp(1.1rem, 3vw, 1.3rem); font-family: 'Rajdhani', sans-serif; border-radius: 8px; cursor: pointer; text-transform: uppercase; font-weight: bold; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 2%; transition: 0.3s; width: 80%; max-width: 350px; position: relative; overflow: hidden; pointer-events: auto;}
@@ -112,44 +114,22 @@ body, html {
 .btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255, 0, 127, 0.2); }
 .btn-main.red:hover { background: var(--p2); color:#fff; box-shadow: 0 0 25px var(--p2); }
 
-/* --- DESIGN DES TITRES ET BOUTONS DU MENU (Fluide) --- */
-.menu-title-img {
-    width: clamp(200px, 50vw, 450px); /* Taille max réduite et responsive */
-    margin-bottom: 4vh;
-    filter: drop-shadow(0 0 15px rgba(0, 255, 100, 0.4));
-}
-
-.btn-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: clamp(15px, 3vh, 30px); /* Espacement responsive au lieu de margin */
-}
-
-.img-btn { 
-    width: clamp(160px, 35vw, 280px); /* Adapté téléphone/PC */
-    cursor: pointer; 
-    transition: transform 0.2s, filter 0.2s; 
-}
+/* DESIGN TITRES ET BOUTONS DU MENU */
+.menu-title-img { width: clamp(200px, 50vw, 450px); margin-bottom: 4vh; filter: drop-shadow(0 0 15px rgba(0, 255, 100, 0.4)); }
+.btn-container { display: flex; flex-direction: column; align-items: center; width: 100%; gap: clamp(15px, 3vh, 30px); }
+.img-btn { width: clamp(160px, 35vw, 280px); cursor: pointer; transition: transform 0.2s, filter 0.2s; }
 .img-btn:hover { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.6)); }
 
 /* Conteneurs pour les images du menu Multijoueur */
 .net-panel { position: relative; width: clamp(260px, 85%, 420px); margin-bottom: 5%; }
 .net-panel img.bg { width: 100%; display: block; }
-
-/* Bloc de base de l'input */
 .net-slot { position: absolute; left: 12%; width: 76%; height: 25%; display: flex; align-items: center; justify-content: center; }
-
-/* Décalages ajustés au millimètre */
 .net-slot.host-slot { top: 36%; }
 .net-slot.join-slot { top: 22%; }
-
 .net-id-text { color: var(--p1); font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: bold; letter-spacing: 5px; text-shadow: 0 0 15px var(--p1); }
 .net-input { width: 100%; height: 100%; background: transparent; border: none; color: #fff; font-size: clamp(1.5rem, 5vw, 2.2rem); text-align: center; text-transform: uppercase; outline: none; font-family: 'Rajdhani', sans-serif; letter-spacing: 4px; }
 .net-input::placeholder { color: rgba(255, 255, 255, 0.3); }
 .net-input:focus { background: rgba(255, 255, 255, 0.05); border-radius: 8px; }
-
 .net-btn-zone { position: absolute; cursor: pointer; transition: background 0.3s; }
 .net-btn-zone.host-zone { bottom: 8%; left: 35%; width: 30%; height: 25%; border-radius: 50%; }
 .net-btn-zone.host-zone:hover { background: rgba(0, 240, 255, 0.2); box-shadow: 0 0 15px rgba(0,240,255,0.4); }
@@ -158,13 +138,24 @@ body, html {
 
 .status-txt { color: #ccc; margin-top: 2%; font-weight:bold; font-size: clamp(1rem, 3vw, 1.2rem); min-height: 25px; }
 
-/* --- HUD & CANVAS --- */
-#hud { display: none; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 2%; box-sizing: border-box;}
+/* --- HUD (VAGUES) RECENTRÉ ET DESCENDU --- */
+#hud { 
+    display: none; 
+    width: 100%; 
+    justify-content: center; /* Centré au milieu (loin des bords) */
+    gap: 15vw; /* Espace entre les deux textes */
+    align-items: center; 
+    margin-top: 65px; /* Poussé vers le bas pour ne plus toucher le bouton Hub */
+    margin-bottom: 10px; 
+    padding: 0; 
+    box-sizing: border-box;
+}
 .score-box { font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: bold; text-transform: uppercase; color: var(--p1); text-shadow: 0 0 10px var(--p1); }
 .score-box.enemy { color: var(--p2); text-shadow: 0 0 10px var(--p2); }
 .score-box.boss { color: var(--boss); text-shadow: 0 0 15px var(--boss); animation: pulse 1s infinite; }
 @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-canvas { background: #030408; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: auto; aspect-ratio: 4/3; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); cursor: crosshair; }
+
+canvas { background: transparent; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 800px; height: auto; aspect-ratio: 4/3; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); cursor: crosshair; }
 
 /* --- Controles Mobiles --- */
 #mobile-controls { display: none; width: 100%; justify-content: space-between; padding: 5% 10%; box-sizing: border-box; position: absolute; bottom: 2%; pointer-events: none; z-index: 100;}
