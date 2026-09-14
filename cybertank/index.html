@@ -6,6 +6,7 @@
     <title>Cyber Slime - Neon Arena</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Lien vers ton fichier CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -52,7 +53,6 @@
     <div id="game-container" class="size-wide">
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            
             <div id="solo-buttons" style="display:flex; flex-direction:column; align-items:center; width:100%;">
                 <!-- Images du jeu -> Dossier local -->
                 <img src="./img/survie.png" alt="Survie" class="img-btn" onclick="autoFullscreen(); startMode('solo_survival')">
@@ -72,7 +72,7 @@
             <!-- BLOC CRÉER (Host) -->
             <div class="net-panel">
                 <img src="./img/generate.png" class="bg" alt="Créer une arène">
-                <!-- Ajout de host-slot pour descendre le texte -->
+                <!-- Zone du texte descendue (host-slot) -->
                 <div class="net-slot host-slot">
                     <div id="my-id" class="net-id-text">...</div>
                 </div>
@@ -82,22 +82,22 @@
             <!-- BLOC REJOINDRE (Join) -->
             <div class="net-panel">
                 <img src="./img/join.png" class="bg" alt="Rejoindre">
-                <!-- Ajout de join-slot pour monter le texte -->
+                <!-- Zone du texte remontée (join-slot) -->
                 <div class="net-slot join-slot">
                     <input type="text" id="join-id" class="net-input" placeholder="CODE">
                 </div>
                 <div class="net-btn-zone join-zone" onclick="joinGame()" title="Infiltration"></div>
             </div>
             
-            <p id="status-text" style="color: #ccc; margin-top: 5px; font-weight:bold; font-size: 1.2em; min-height: 25px;"></p>
+            <p id="status-text" class="status-txt"></p>
             <button class="btn-main" style="border: none; box-shadow:none; color: #888; background:transparent; padding: 10px;" onclick="hideOnlineMenu()">Annuler</button>
         </div>
 
         <!-- ECRAN DE FIN -->
         <div class="overlay" id="game-over" style="display: none;">
-            <h2 id="end-message" style="font-size: 4em; margin-bottom: 10px; text-transform: uppercase;"></h2>
-            <p id="end-stats" style="font-size: 1.5em; color: #aaa; margin-bottom: 30px;"></p>
-            <div style="display: flex; gap: 15px;">
+            <h2 id="end-message" style="font-size: clamp(2.5rem, 8vw, 4rem); margin-bottom: 10px; text-transform: uppercase;"></h2>
+            <p id="end-stats" style="font-size: clamp(1.2rem, 4vw, 1.5rem); color: #aaa; margin-bottom: 30px;"></p>
+            <div style="display: flex; gap: 15px; width: 80%; justify-content: center;">
                 <button class="btn-main" onclick="requestRestart()">Rejouer</button>
                 <button class="btn-main" onclick="location.reload()" style="background:transparent; border-color:#555; color:#aaa; box-shadow:none;">Quitter</button>
             </div>
@@ -117,6 +117,7 @@
         </div>
     </div>
 
+    <!-- Lien vers ton fichier JS -->
     <script src="script.js"></script>
 </body>
 </html>
