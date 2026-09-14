@@ -6,7 +6,6 @@
     <title>Cyber Slime - Neon Arena</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <!-- Lien vers ton fichier CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,7 +26,6 @@
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
             
-            <!-- Choix de la langue -->
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
                 <span>Langue / Language 🌍</span>
                 <div class="size-options">
@@ -36,7 +34,6 @@
                 </div>
             </div>
 
-            <!-- Choix de la taille -->
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
@@ -51,28 +48,31 @@
     </div>
     
     <div id="game-container" class="size-wide">
+        
         <!-- MENU PRINCIPAL -->
-        <div class="overlay" id="main-menu">
-            <div id="solo-buttons" style="display:flex; flex-direction:column; align-items:center; width:100%;">
-                <!-- Images du jeu -> Dossier local -->
-                <img src="./img/survie.png" alt="Survie" class="img-btn" onclick="autoFullscreen(); startMode('solo_survival')">
+        <div class="overlay menu-bg" id="main-menu">
+            
+            <!-- Image du titre "CHOOSE YOUR BATTLE" (Redimensionnable et fluide) -->
+            <img src="./img/chooseyourbattle.png" alt="CHOOSE YOUR BATTLE" class="menu-title-img" onerror="this.style.display='none'">
+
+            <div id="solo-buttons" class="btn-container">
+                <!-- Images des modes -> Dossier local -->
                 <img src="./img/duelbot.png" alt="Duel Bot" class="img-btn" onclick="autoFullscreen(); startMode('solo_1v1')">
-            </div>
-            
-            <hr id="menu-separator" style="width: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
-            
-            <div id="net-button" style="width:100%; display:flex; justify-content:center;">
+                <img src="./img/survie.png" alt="Survie" class="img-btn" onclick="autoFullscreen(); startMode('solo_survival')">
+                
+                <!-- Bouton Réseau -->
                 <button class="btn-main red" onclick="autoFullscreen(); showNetworkMenu()">🌐 Duel PVP</button>
             </div>
+            
         </div>
 
         <!-- MENU RÉSEAU -->
-        <div class="overlay" id="network-menu" style="display: none;">
+        <div class="overlay menu-bg" id="network-menu" style="display: none;">
             
             <!-- BLOC CRÉER (Host) -->
             <div class="net-panel">
                 <img src="./img/generate.png" class="bg" alt="Créer une arène">
-                <!-- Zone du texte descendue (host-slot) -->
+                <!-- Zone du texte bien descendue (host-slot) -->
                 <div class="net-slot host-slot">
                     <div id="my-id" class="net-id-text">...</div>
                 </div>
@@ -82,7 +82,7 @@
             <!-- BLOC REJOINDRE (Join) -->
             <div class="net-panel">
                 <img src="./img/join.png" class="bg" alt="Rejoindre">
-                <!-- Zone du texte remontée (join-slot) -->
+                <!-- Zone du texte bien remontée (join-slot) -->
                 <div class="net-slot join-slot">
                     <input type="text" id="join-id" class="net-input" placeholder="CODE">
                 </div>
@@ -117,7 +117,6 @@
         </div>
     </div>
 
-    <!-- Lien vers ton fichier JS -->
     <script src="script.js"></script>
 </body>
 </html>
