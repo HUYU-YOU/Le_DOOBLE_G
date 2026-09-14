@@ -34,7 +34,6 @@ body, html {
     z-index: -10; pointer-events: none; 
 }
 
-/* 💡 MODE JEU : On force le fond à rester 100% proportionnel sans jamais couper l'image */
 body.in-game { 
     background-image: url('assets/tetrisback.jpeg') !important; 
     background-size: contain !important;
@@ -106,7 +105,7 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #game-ui { 
     transition: transform 0.3s ease; 
     transform-origin: center center; 
-    gap: 1.5vmin !important; /* 💡 Espace proportionnel */
+    gap: 1.5vmin !important; 
 }
 
 .side-panel { 
@@ -123,7 +122,7 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 .panel-val { 
-    font-size: 3.8vmin; /* 💡 Taille texte fluide */
+    font-size: 3.8vmin; 
     color: #fff; 
     text-shadow: 0 0 1vmin var(--p1), 0 0.2vmin 0.4vmin rgba(0,0,0,0.8); 
     line-height: 1; 
@@ -137,27 +136,25 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 /* =========================================
-   🕹️ ALIGNEMENT PROPORTIONNEL (Tes Valeurs 100% Adaptables)
+   🕹️ ALIGNEMENT MANUEL PRÉCIS (Valeurs en vmin)
    ========================================= */
 
-/* Tailles de boîtes calculées en proportion de l'écran */
 .box-score { width: 12vmin; height: 8.3vmin; }
 .box-lines { width: 12vmin; height: 8.3vmin; }
 .box-next  { width: 14vmin; height: 14vmin; }
 
-/* Tes coordonnées traduites en vmin (Viewport Minimum) */
 .box-score {
-    transform: translate(0.37vmin, -11.2vmin) scale(1) !important;
+    transform: translate(-4vmin, -13.7vmin) scale(1) !important;
     transform-origin: center center !important;
 }
 
 .box-lines {
-    transform: translate(0.37vmin, -6.6vmin) scale(1) !important;
+    transform: translate(-3.9vmin, -7vmin) scale(1) !important;
     transform-origin: center center !important;
 }
 
 .box-next {
-    transform: translate(2.13vmin, 0.92vmin) scale(1) !important;
+    transform: translate(6.4vmin, 0.8vmin) scale(1) !important;
     transform-origin: center center !important;
 }
 
@@ -166,11 +163,10 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     backdrop-filter: none !important; padding: 0 !important; 
     margin: 0 !important; 
     
-    transform: translate(0.37vmin, -1.01vmin) scale(1.03) !important;
+    transform: translate(0.4vmin, 0.3vmin) scale(1.22) !important;
     transform-origin: center center !important; 
 }
 
-/* 💡 On force les canvas à se redimensionner dynamiquement sans casser le code JS */
 #tetris-canvas {
     width: 27.7vmin !important;
     height: 55.5vmin !important;
