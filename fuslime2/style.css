@@ -39,8 +39,8 @@ body.dark-mode .bg-overlay {
     position: absolute;
     top: 20px; 
     left: 20px;
-    width: 150px; /* Ajuste selon la taille de ton image */
-    height: 45px; /* Ajuste selon la taille de ton image */
+    width: 150px; 
+    height: 45px; 
     background-image: url('../img/retourhub.png'); 
     background-size: contain;
     background-repeat: no-repeat;
@@ -75,17 +75,6 @@ body.en .btn-hub {
     filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
 }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
-
-/* Fallback si ../img/ n'est pas disponible (jeu lancé hors du hub) */
-.settings-fallback {
-    font-size: 36px;
-    line-height: 45px;
-    display: block;
-    text-align: center;
-    filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
-    transition: transform 0.2s ease;
-}
-.settings-btn-wrapper:hover .settings-fallback { transform: scale(1.15); }
 
 /* Modal Paramètres */
 .modal {
@@ -123,11 +112,43 @@ input:checked + .slider:before { transform: translateX(26px); }
 .close-btn:hover { box-shadow: 0 0 20px #00e5ff; transform: scale(1.05); }
 
 /* Interface du Jeu & Scores */
-#game-ui { text-align: center; margin-top: 10px; margin-bottom: 10px; z-index: 10; text-shadow: 0 0 10px #000; }
-h1 { font-size: 32px; color: #00e5ff; margin-bottom: 5px; }
-.scores-wrapper { display: flex; justify-content: center; gap: 25px; align-items: baseline; }
-.score-container { font-size: 26px; font-weight: bold; color: #4ecca3; transition: transform 0.1s; }
-.best-score-container { font-size: 18px; color: #f39c12; font-weight: bold; }
+#game-ui { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    width: 600px; 
+    max-width: 80vw; 
+    margin-top: 15px; 
+    margin-bottom: 25px; 
+    z-index: 10; 
+    text-shadow: 0 0 10px #000; 
+}
+
+h1 { 
+    font-size: 38px; 
+    color: #00e5ff; 
+    margin: 0; 
+    text-align: center; 
+    flex: 1; 
+}
+
+.score-container { 
+    font-size: 26px; 
+    font-weight: bold; 
+    color: #4ecca3; 
+    transition: transform 0.1s; 
+    text-align: left; 
+    width: 150px; 
+}
+
+.best-score-container { 
+    font-size: 20px; 
+    color: #f39c12; 
+    font-weight: bold; 
+    text-align: right; 
+    width: 150px; 
+}
+
 .score-bump { transform: scale(1.4); color: #fff; }
 
 /* LE SEAU */
@@ -158,13 +179,13 @@ body.dark-mode #game-container {
     z-index: 1;
 }
 
-/* 🔥 LE DESIGN DU CADRE (ÉLARGI SUR LES CÔTÉS) 🔥 */
+/* 🔥 LE DESIGN DU CADRE (ÉLARGI SUR LES CÔTÉS ET DESCENDU) 🔥 */
+/* Protégé par les pourcentages pour s'adapter à toutes les résolutions */
 #game-frame {
     position: absolute !important;
-    top: 53% !important; 
+    top: 57% !important; 
     left: 50% !important;
     
-    /* On passe de 116% à 118% pour écarter un peu plus les bords gauche et droite */
     width: 118% !important; 
     height: 122% !important; 
     
