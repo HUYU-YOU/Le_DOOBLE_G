@@ -34,7 +34,12 @@ body, html {
     z-index: -10; pointer-events: none; 
 }
 
-body.in-game { background-image: url('assets/tetrisback.jpeg') !important; }
+/* 💡 MODE JEU : On force le fond à rester 100% proportionnel sans jamais couper l'image */
+body.in-game { 
+    background-image: url('assets/tetrisback.jpeg') !important; 
+    background-size: contain !important;
+    background-position: center center !important;
+}
 body.in-game #menu-bg-video { display: none; }
 
 .hub-link { 
@@ -95,20 +100,20 @@ input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-fam
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 /* =========================================
-   UI DU JEU TETRIS
+   UI DU JEU TETRIS (Responsive vmin)
    ========================================= */
 
 #game-ui { 
     transition: transform 0.3s ease; 
     transform-origin: center center; 
-    gap: 15px !important; 
+    gap: 1.5vmin !important; /* 💡 Espace proportionnel */
 }
 
 .side-panel { 
     display: flex; 
     flex-direction: column; 
     justify-content: flex-start;
-    width: 160px; 
+    width: 14.8vmin; 
 }
 
 .panel-box {
@@ -118,52 +123,69 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 }
 
 .panel-val { 
-    font-size: 2.3em; 
+    font-size: 3.8vmin; /* 💡 Taille texte fluide */
     color: #fff; 
-    text-shadow: 0 0 10px var(--p1), 0 2px 4px rgba(0,0,0,0.8); 
+    text-shadow: 0 0 1vmin var(--p1), 0 0.2vmin 0.4vmin rgba(0,0,0,0.8); 
     line-height: 1; 
-    margin-bottom: 5px; 
+    margin-bottom: 0.5vmin; 
 }
 .best-score-text {
-    font-size: 0.9rem; 
+    font-size: 1.3vmin; 
     color: var(--gold);
-    text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    text-shadow: 0 0.2vmin 0.4vmin rgba(0,0,0,0.9);
     margin-top: 0px; 
 }
 
 /* =========================================
-   🕹️ ALIGNEMENT MANUEL PRÉCIS (Tes Valeurs Finales)
+   🕹️ ALIGNEMENT PROPORTIONNEL (Tes Valeurs 100% Adaptables)
    ========================================= */
 
-.box-score { width: 130px; height: 90px; }
-.box-lines { width: 130px; height: 90px; }
-.box-next  { width: 150px; height: 150px; }
+/* Tailles de boîtes calculées en proportion de l'écran */
+.box-score { width: 12vmin; height: 8.3vmin; }
+.box-lines { width: 12vmin; height: 8.3vmin; }
+.box-next  { width: 14vmin; height: 14vmin; }
 
+/* Tes coordonnées traduites en vmin (Viewport Minimum) */
 .box-score {
-    transform: translate(4px, -121px) scale(1) !important;
+    transform: translate(0.37vmin, -11.2vmin) scale(1) !important;
     transform-origin: center center !important;
 }
 
 .box-lines {
-    transform: translate(4px, -72px) scale(1) !important;
+    transform: translate(0.37vmin, -6.6vmin) scale(1) !important;
     transform-origin: center center !important;
 }
 
 .box-next {
-    transform: translate(23px, 10px) scale(1) !important;
+    transform: translate(2.13vmin, 0.92vmin) scale(1) !important;
     transform-origin: center center !important;
 }
 
 .board-wrapper {
     background: transparent !important; box-shadow: none !important; 
     backdrop-filter: none !important; padding: 0 !important; 
+    margin: 0 !important; 
     
-    margin: 0 !important; /* On tue la marge parasite pour que tes calculs marchent */
-    transform: translate(4px, -11px) scale(1.03) !important;
+    transform: translate(0.37vmin, -1.01vmin) scale(1.03) !important;
     transform-origin: center center !important; 
 }
 
-canvas { display: block; border-radius: 5px; }
+/* 💡 On force les canvas à se redimensionner dynamiquement sans casser le code JS */
+#tetris-canvas {
+    width: 27.7vmin !important;
+    height: 55.5vmin !important;
+    display: block; border-radius: 0.5vmin;
+}
+#next-canvas {
+    width: 14.8vmin !important;
+    height: 14.8vmin !important;
+    display: block; border-radius: 0.5vmin;
+}
+#opponent-canvas {
+    width: 13.8vmin !important;
+    height: 27.7vmin !important;
+    display: block; border-radius: 0.5vmin;
+}
 
 #mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
 .m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); font-family: 'SlimeBox', sans-serif; }
@@ -173,6 +195,6 @@ canvas { display: block; border-radius: 5px; }
     #game-ui { flex-direction: column !important; padding-top: 60px !important; transform: scale(0.9) !important;}
     .side-panel { flex-direction: row; width: 100%; max-width: 320px; justify-content: space-between; }
     .panel-box { padding: 5px; flex: 1; margin: 0 5px; }
-    .board-wrapper canvas { width: 250px; height: 500px; }
+    .board-wrapper canvas { width: 50vmin !important; height: 100vmin !important; }
     #mobile-controls { display: flex; }
 }
