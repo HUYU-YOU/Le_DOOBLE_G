@@ -138,13 +138,13 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 #btn-create-map { 
     top: 78.36%;   
     left: 34.50%;  
-    width: 34%; 
+    width: 28%; /* Réduit pour éviter le chevauchement */
 }
 
 #btn-play-code { 
     top: 78.89%;   
     left: 65.90%;  
-    width: 34%; 
+    width: 28%; /* Réduit pour éviter le chevauchement */
 }
 
 .image-btn:hover {
