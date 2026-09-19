@@ -1,5 +1,5 @@
 // =========================================================================
-// OPEN FRONT - MOTEUR DE JEU & GUERRE TERRITORIALE (TACHE D'HUILE)
+// OPEN FRONT - MOTEUR DE JEU & GUERRE TERRITORIALE
 // =========================================================================
 
 const SIM_W = 512;
@@ -22,7 +22,6 @@ let playerCapitalMesh = null;
 let playerStats = { pop: 500, maxPop: 1000, gold: 500, territory: 0, alive: true, cityCount: 0 };
 let tradeShips = []; 
 
-// --- PALETTE DE COULEURS ---
 const FACTIONS = [
     { id: 0, name: "Joueur", rgb: [0, 240, 255], hex: 0x00f0ff, css: '#00f0ff' }, 
     { id: 1, name: "Empire Crimson", rgb: [255, 0, 68], hex: 0xff0044 }, 
@@ -37,9 +36,13 @@ const FACTIONS = [
     { id: 10, name: "Fédération Menthe", rgb: [46, 196, 182], hex: 0x2ec4b6 } 
 ];
 
+// Archétypes d'IA
+const AI_PERSONALITIES = ['expansionist', 'turtle', 'balanced', 'economic'];
+
 let ais = [];
 const grid = new Int8Array(SIM_W * SIM_H);
 const frontierMap = new Map(); 
+let particles = []; // Pour les explosions
 
 const overlayCanvas = document.createElement('canvas');
 overlayCanvas.width = SIM_W; overlayCanvas.height = SIM_H;
@@ -54,7 +57,6 @@ const terrainImg = new Image();
 
 terrainImg.src = 'assets/map_globe_terreste.png'; 
 terrainImg.onerror = () => { if(terrainImg.src.includes('terrestre')) terrainImg.src = 'assets/map_globe_terrestre.png'; };
-
 terrainImg.onload = () => {
     terrainCanvas.width = SIM_W; terrainCanvas.height = SIM_H;
     terrainCtx.drawImage(terrainImg, 0, 0, SIM_W, SIM_H);
@@ -80,13 +82,43 @@ function isWaterPixel(x, y) {
     return grid[y * SIM_W + x] === -2;
 }
 
-// --- 2. MENUS ---
+// --- 2. MENUS & HUD ---
 window.openMenu = function(menuId) { document.getElementById('main-menu').style.display = 'none'; document.getElementById('local-menu').style.display = 'none'; document.getElementById('network-menu').style.display = 'none'; if(menuId !== 'main') document.getElementById(menuId + '-menu').style.display = 'flex'; else document.getElementById('main-menu').style.display = 'flex'; }
 window.joinNetworkGame = function() { alert("Multijoueur en dev !"); }
 window.toggleSettings = function() { document.getElementById('settings-modal').classList.toggle('show'); }
 window.toggleTheme = function() { document.body.classList.toggle('dark-mode'); }
 window.toggleFullscreen = function() { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{}); else if (document.exitFullscreen) document.exitFullscreen(); }
 window.setGameSize = function(size) { const c = document.getElementById('game-container'); if (!c) return; document.querySelectorAll('.btn-size').forEach(b => b.classList.remove('active')); c.classList.remove('size-classic', 'size-wide', 'size-full'); if (size === 'classic') c.classList.add('size-classic'); else if (size === 'wide') c.classList.add('size-wide'); if (typeof window.resize3DEnvironment === "function") { setTimeout(window.resize3DEnvironment, 50); setTimeout(window.resize3DEnvironment, 400); } }
+
+// UI Flottante pour feedbacks
+function showFloatingText(text, pos3D, color = '#ffbf00') {
+    const el = document.createElement('div');
+    el.innerText = text;
+    el.style.position = 'absolute';
+    el.style.color = color;
+    el.style.fontWeight = 'bold';
+    el.style.fontSize = '1.5rem';
+    el.style.pointerEvents = 'none';
+    el.style.textShadow = '0 0 10px #000';
+    el.style.zIndex = 100;
+    el.style.transition = 'transform 2s ease-out, opacity 2s ease-out';
+    document.getElementById('game-container').appendChild(el);
+
+    const tempV = pos3D.clone();
+    tempV.project(window.gameCamera);
+    const x = (tempV.x *  .5 + .5) * window.innerWidth;
+    const y = (tempV.y * -.5 + .5) * window.innerHeight;
+    
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    el.style.transform = 'translate(-50%, -50%)';
+
+    requestAnimationFrame(() => {
+        el.style.transform = 'translate(-50%, -150px) scale(1.5)';
+        el.style.opacity = '0';
+    });
+    setTimeout(() => el.remove(), 2000);
+}
 
 // --- 3. DÉMARRAGE ---
 window.startGame = function(mode) {
@@ -145,7 +177,7 @@ function updateHUD() {
     document.getElementById('ui-gold').innerText = playerStats.gold;
 }
 
-// --- 4. GESTION DES POSITIONS & DE LA CAPITALE ---
+// --- 4. GESTION DES POSITIONS ---
 function get3DPosFromUV(u, v) {
     let phi = (1 - v) * Math.PI; let theta = u * Math.PI * 2; 
     let x = -5 * Math.sin(phi) * Math.cos(theta); let y = 5 * Math.cos(phi); let z = 5 * Math.sin(phi) * Math.sin(theta);
@@ -163,21 +195,18 @@ function getRandomLandUV() {
 }
 
 function setPlayerCapital(uv, pos3D) {
-    // Nettoie l'ancien spawn si déplacé
     if (playerCapitalMesh) { 
         window.gameScene.remove(playerCapitalMesh); 
         entities = entities.filter(e => e.mesh !== playerCapitalMesh); 
     }
     if (playerCapitalUV) { 
         let oldGx = Math.floor(playerCapitalUV.x * SIM_W); let oldGy = Math.floor((1 - playerCapitalUV.y) * SIM_H); 
-        // Force l'oubli de cette case pour éviter l'expansion fantôme
         grid[oldGy * SIM_W + oldGx] = -1;
         updateFrontierPixel(oldGx, oldGy, -1);
     }
 
     playerCapitalUV = uv.clone(); buildTargetPosition = pos3D;
 
-    // Cristal de Capitale
     const geometry = new THREE.OctahedronGeometry(0.18, 0); geometry.scale(1, 1.8, 1);
     const material = new THREE.MeshStandardMaterial({ color: 0xffbf00, roughness: 0.1, metalness: 0.8 });
     playerCapitalMesh = new THREE.Mesh(geometry, material);
@@ -198,14 +227,12 @@ function setPlayerCapital(uv, pos3D) {
     if (tCont) { tCont.querySelector('h2').innerText = "CAPITALE PLACÉE !"; tCont.querySelector('p').innerText = "Tu peux recliquer sur la terre pour la déplacer."; }
 }
 
-// --- 5. MOTEUR D'EXPANSION (TACHE D'HUILE CORRECTE) ---
+// --- 5. MOTEUR D'EXPANSION ---
 function updateFrontierPixel(x, y, factionId) {
-    // 1. Nettoie la position de TOUTES les frontières existantes
     for(let i=0; i<=10; i++) {
         if(frontierMap.has(i)) frontierMap.get(i).delete(`${x},${y}`);
     }
-
-    if (factionId < 0) return; // L'eau, la terre neutre et les irradiations n'ont pas de frontière
+    if (factionId < 0) return; 
 
     if (!frontierMap.has(factionId)) frontierMap.set(factionId, new Set());
     const set = frontierMap.get(factionId);
@@ -238,7 +265,6 @@ function claimPixel(x, y, factionId) {
     updateMaxPop(factionId);
     if (oldOwner >= 0) updateMaxPop(oldOwner);
 
-    // Mets à jour ce pixel et ses 4 voisins dans les registres de frontières
     updateFrontierPixel(x, y, factionId);
     const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
     for(let [dx, dy] of dirs) {
@@ -266,7 +292,6 @@ function expandFactionTerritory(factionId, pixelsToClaim, targetPoint = null) {
 
     let frontierArray = Array.from(frontierSet);
     
-    // Trie pour démarrer la tache d'huile depuis le point le plus proche du clic
     if (targetPoint) {
         frontierArray.sort((a, b) => {
             let [ax, ay] = a.split(',').map(Number); let [bx, by] = b.split(',').map(Number);
@@ -281,7 +306,6 @@ function expandFactionTerritory(factionId, pixelsToClaim, targetPoint = null) {
     let claimed = 0; 
     const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
     
-    // Algorithme BFS (Breadth-First Search) pour que ça ne saute jamais de cases !
     let queue = [...frontierArray];
     let visited = new Set(queue);
 
@@ -318,7 +342,7 @@ function renderGridToCanvas() {
         if (owner >= 0 && owner < FACTIONS.length) {
             const rgb = FACTIONS[owner].rgb;
             data[idx] = rgb[0]; data[idx + 1] = rgb[1]; data[idx + 2] = rgb[2]; data[idx + 3] = 200; 
-        } else if (owner === -3) {
+        } else if (owner === -3) { // Terres irradiées
             data[idx] = 120; data[idx + 1] = 255; data[idx + 2] = 20; data[idx + 3] = 220; 
         } else { data[idx + 3] = 0; }
     }
@@ -326,12 +350,19 @@ function renderGridToCanvas() {
     if (overlayTexture) overlayTexture.needsUpdate = true;
 }
 
-// --- 6. GESTION DE L'IA ---
+// --- 6. GESTION DE L'IA (Avec Personnalités) ---
 function spawnAllAIs() {
     ais = []; const isEmpire = (aiMode === 'smart_bots');
     for (let id = 1; id <= 10; id++) {
         let uv = getRandomLandUV(); let pos3D = get3DPosFromUV(uv.x, uv.y); let faction = FACTIONS[id];
-        let ai = { id: id, name: faction.name, hex: faction.hex, uv: uv, pos3D: pos3D, pop: isEmpire ? 3000 : 500, maxPop: isEmpire ? 10000 : 1500, gold: isEmpire ? 1500 : 500, territory: 0, alive: true, cityCount: 0 };
+        let personality = AI_PERSONALITIES[Math.floor(Math.random() * AI_PERSONALITIES.length)];
+
+        let ai = { 
+            id: id, name: faction.name, hex: faction.hex, uv: uv, pos3D: pos3D, 
+            pop: isEmpire ? 3000 : 500, maxPop: isEmpire ? 10000 : 1500, 
+            gold: isEmpire ? 1500 : 500, territory: 0, alive: true, cityCount: 0,
+            personality: personality 
+        };
 
         const geo = new THREE.OctahedronGeometry(0.18, 0); geo.scale(1, 1.8, 1);
         const mat = new THREE.MeshStandardMaterial({ color: faction.hex, roughness: 0.1, metalness: 0.8 });
@@ -351,11 +382,17 @@ function updateAllAIs() {
     const isEmpire = (aiMode === 'smart_bots');
     ais.forEach(ai => {
         if (!ai.alive) return;
+        
         let growthRate = isEmpire ? 0.08 : 0.04;
+        if (ai.personality === 'economic') growthRate *= 1.2;
+        
         ai.pop = Math.min(ai.maxPop, ai.pop + Math.max(2, Math.floor(ai.pop * growthRate)));
-        ai.gold += Math.floor(ai.territory * 0.15) + 2;
+        ai.gold += Math.floor(ai.territory * (ai.personality === 'economic' ? 0.2 : 0.15)) + 2;
 
         let expandProb = isEmpire ? 0.6 : 0.35;
+        if (ai.personality === 'expansionist') expandProb += 0.3;
+        if (ai.personality === 'turtle') expandProb -= 0.15;
+
         if (Math.random() < expandProb && ai.pop > 100) {
             let troopsToSend = Math.floor(ai.pop * (Math.random() * 0.3 + 0.2));
             ai.pop -= troopsToSend;
@@ -363,8 +400,9 @@ function updateAllAIs() {
             expandFactionTerritory(ai.id, pixels);
         }
 
-        if (ai.gold >= 1500 && Math.random() < 0.05) {
-            ai.gold -= 1500;
+        let cityGoldThreshold = ai.personality === 'turtle' ? 1000 : 1500;
+        if (ai.gold >= cityGoldThreshold && Math.random() < 0.05) {
+            ai.gold -= cityGoldThreshold;
             let frontiers = Array.from(frontierMap.get(ai.id) || []);
             if (frontiers.length > 0) {
                 let randKey = frontiers[Math.floor(Math.random() * frontiers.length)];
@@ -398,7 +436,11 @@ function eliminateFaction(defeatedAI, conquerorId) {
     });
 
     let stolenGold = defeatedAI.gold;
-    if (conquerorId === 0) { playerStats.gold += stolenGold; alert(`🏆 VICTOIRE : ${defeatedAI.name} éliminé ! +${stolenGold} Or.`); updateHUD(); } 
+    if (conquerorId === 0) { 
+        playerStats.gold += stolenGold; 
+        showFloatingText(`+${stolenGold} Or`, defeatedAI.pos3D);
+        updateHUD(); 
+    } 
     else { let winnerAI = ais.find(a => a.id === conquerorId); if (winnerAI) winnerAI.gold += stolenGold; }
 }
 
@@ -408,7 +450,7 @@ function checkPlayerElimination() {
     }
 }
 
-// --- 7. CONTRÔLES SOURIS (CIBLAGE DE L'ATTAQUE) ---
+// --- 7. CONTRÔLES SOURIS ---
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -474,7 +516,6 @@ window.addEventListener('contextmenu', function(event) {
         let gx = Math.floor(hit.uv.x * SIM_W); let gy = Math.floor((1 - hit.uv.y) * SIM_H);
         let owner = grid[gy * SIM_W + gx];
 
-        // SÉCURITÉ : Ne peut construire QUE sur sa propre zone (0)
         if (owner === 0) openActionMenu(event.clientX, event.clientY, null, 'Terre');
         else if (owner === -2) openActionMenu(event.clientX, event.clientY, null, 'Eau');
         else closeActionMenu();
@@ -543,7 +584,7 @@ window.executeAction = function(action, isCapital = false) {
     updateHUD();
 }
 
-// --- 9. NAVIRES DE COMMERCE ---
+// --- 9. NAVIRES ET ANIMATIONS GLOBALES ---
 function manageTradeRoutes() {
     let ports = entities.filter(e => e.type === 'port');
     if (ports.length >= 2 && Math.random() < 0.4) {
@@ -569,12 +610,17 @@ function customAnimations() {
         if (ent.type === 'capital' && ent.mesh) ent.mesh.rotateY(0.02);
     });
 
+    // Animation des bateaux
     for (let i = tradeShips.length - 1; i >= 0; i--) {
         let ship = tradeShips[i];
         ship.progress += 0.003; 
         if (ship.progress >= 1) {
             window.gameScene.remove(ship.mesh);
-            if (ship.owner === 'player') { playerStats.gold += 150; updateHUD(); }
+            if (ship.owner === 'player') { 
+                playerStats.gold += 150; 
+                showFloatingText("+150 Or", ship.end, '#00f0ff');
+                updateHUD(); 
+            }
             tradeShips.splice(i, 1);
         } else {
             let t = ship.progress; let u = 1 - t;
@@ -588,9 +634,20 @@ function customAnimations() {
             ship.mesh.position.copy(pos); ship.mesh.lookAt(nextPos);
         }
     }
+
+    // Animation des particules d'explosion
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.mesh.position.add(p.velocity);
+        p.life -= 0.02;
+        p.mesh.material.opacity = p.life;
+        if (p.life <= 0) {
+            window.gameScene.remove(p.mesh);
+            particles.splice(i, 1);
+        }
+    }
 }
 customAnimations();
-
 
 // --- 10. ARMES NUCLÉAIRES & IRRADIATION ---
 window.updateTroopVal = function(val) { troopPercentage = val; let elem = document.getElementById('troop-val'); if(elem) elem.innerText = val + "%"; }
@@ -619,13 +676,27 @@ function launchMissile(siloEntity, targetPos, targetUV) {
 }
 
 function createExplosion(pos, uv) {
-    const geo = new THREE.SphereGeometry(0.5, 16, 16); const mat = new THREE.MeshBasicMaterial({ color: 0x88ff00, transparent: true, opacity: 0.9 }); const explosion = new THREE.Mesh(geo, mat);
-    explosion.position.copy(pos); window.gameScene.add(explosion);
-    let scale = 1;
-    function animateBoom() {
-        scale += 0.15; explosion.scale.set(scale, scale, scale); mat.opacity -= 0.05;
-        if (mat.opacity > 0) requestAnimationFrame(animateBoom); else window.gameScene.remove(explosion);
-    } animateBoom();
+    // SCREEN SHAKE
+    if (window.gameCamera) window.shakeIntensity = 0.5;
+
+    // SYSTÈME DE PARTICULES (Remplace la sphère)
+    for(let i=0; i<30; i++) {
+        let geo = new THREE.SphereGeometry(Math.random() * 0.1 + 0.05, 4, 4);
+        let mat = new THREE.MeshBasicMaterial({ color: 0x88ff00, transparent: true, opacity: 1 });
+        let mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(pos);
+        
+        let velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.2,
+            (Math.random() - 0.5) * 0.2,
+            (Math.random() - 0.5) * 0.2
+        );
+        // Pousse les particules vers l'extérieur de la planète
+        velocity.add(pos.clone().normalize().multiplyScalar(0.1));
+
+        window.gameScene.add(mesh);
+        particles.push({ mesh: mesh, velocity: velocity, life: 1.0 });
+    }
 
     let cx = Math.floor(uv.x * SIM_W); let cy = Math.floor((1 - uv.y) * SIM_H); let nRadius = 12;
     for(let y = cy - nRadius; y <= cy + nRadius; y++) {
