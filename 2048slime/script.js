@@ -1,9 +1,6 @@
-// DÉTECTEUR D'ERREURS GLOBAUX (Affiche un message en rouge s'il y a un plantage)
+// DÉTECTEUR D'ERREURS GLOBAUX
 window.onerror = function(msg, url, line) {
-    const errDiv = document.createElement('div');
-    errDiv.style.cssText = "position:absolute; top:0; left:0; background:red; color:white; z-index:9999; padding:10px; font-weight:bold;";
-    errDiv.innerText = "🚨 Erreur JavaScript : " + msg + " (Ligne " + line + ")";
-    document.body.appendChild(errDiv);
+    console.error("Erreur JS:", msg, "Ligne:", line);
 };
 
 // ==========================================
@@ -73,13 +70,6 @@ function toggleSettings() {
     document.getElementById('settings-modal').classList.toggle('show');
 }
 
-// CORRECTION DU CHEMIN POUR LE BOUTON RETOUR
-function setLanguage(lang) {
-    const btnReturnHub = document.getElementById('btn-return-hub');
-    if (lang === 'en') { btnReturnHub.src = '../img/returbhub.png'; } 
-    else { btnReturnHub.src = '../img/retourhub.png'; }
-}
-
 // ==========================================
 // MOTEUR DE JEU JAVASCRIPT
 // ==========================================
@@ -115,10 +105,10 @@ function playSound(type) {
             gain.gain.setValueAtTime(0.03, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
             osc.start(now); osc.stop(now + 0.1);
-        } else if (type === 'gameover') {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(400, now);
-            osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+        } else if (type === 'gameover' || type === 'win') {
+            osc.type = type === 'win' ? 'square' : 'triangle';
+            osc.frequency.setValueAtTime(type === 'win' ? 600 : 400, now);
+            osc.frequency.exponentialRampToValueAtTime(type === 'win' ? 1200 : 50, now + 0.5);
             gain.gain.setValueAtTime(0.1, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
             osc.start(now); osc.stop(now + 0.5);
@@ -139,9 +129,12 @@ const tilesContainer = document.getElementById('tiles-container');
 const scoreElement = document.getElementById('score');
 const bestScoreElement = document.getElementById('best-score');
 const gameOverScreen = document.getElementById('game-over');
+const gameWinScreen = document.getElementById('game-win');
 
 let board = []; let score = 0; let tileIdCounter = 0; let tiles = {};
 let bestScore = 0;
+let hasWon = false; // Flag pour vérifier si on a déjà atteint 2048
+
 try { bestScore = localStorage.getItem('fuslime1_best_score') || 0; } catch(e) {}
 bestScoreElement.innerText = bestScore;
 
@@ -154,7 +147,10 @@ for (let i = 0; i < 16; i++) {
 function initBoard() {
     board = [[null,null,null,null],[null,null,null,null],[null,null,null,null],[null,null,null,null]];
     tiles = {}; tilesContainer.innerHTML = ''; score = 0;
-    updateScore(); gameOverScreen.style.display = 'none';
+    hasWon = false;
+    updateScore(); 
+    gameOverScreen.style.display = 'none';
+    gameWinScreen.style.display = 'none';
     addRandomTile(); addRandomTile();
 }
 
@@ -185,7 +181,6 @@ function createTileElement(tile, isNew = false) {
     
     if(slimeImages[tile.value]) {
         div.style.backgroundImage = `url('${slimeImages[tile.value]}')`;
-        // Le texte est légèrement transparent, mais reste VISIBLE !
         div.style.color = 'rgba(255, 255, 255, 0.7)'; 
     }
 
@@ -212,6 +207,20 @@ function removeTileElement(id, targetR, targetC) {
     delete tiles[id]; 
 }
 
+// Fonction pour l'animation de score flottante
+function createFloatingScore(points) {
+    const floatDiv = document.createElement('div');
+    floatDiv.className = 'floating-score';
+    floatDiv.innerText = `+${points}`;
+    document.getElementById('score-box').appendChild(floatDiv);
+    
+    // Un léger rebond sur le texte du score principal
+    scoreElement.style.transform = "scale(1.2)";
+    setTimeout(() => { scoreElement.style.transform = "scale(1)"; }, 150);
+    
+    setTimeout(() => { floatDiv.remove(); }, 800);
+}
+
 function updateScore() { 
     scoreElement.innerText = score; 
     if (score > bestScore) {
@@ -224,6 +233,7 @@ function updateScore() {
 function move(direction) {
     let moved = false; let moveMerged = false; 
     let merged = [[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false]];
+    let turnScore = 0;
 
     const moveTile = (r, c, dr, dc) => {
         let tile = board[r][c];
@@ -236,13 +246,24 @@ function move(direction) {
                 board[nextR][nextC] = tile; board[currR][currC] = null;
                 tile.r = nextR; tile.c = nextC; currR = nextR; currC = nextC; nextR += dr; nextC += dc; moved = true;
             } else if (nextTile.value === tile.value && !merged[nextR][nextC]) {
-                let newValue = tile.value * 2; score += newValue;
+                let newValue = tile.value * 2; 
+                score += newValue;
+                turnScore += newValue;
+                
                 removeTileElement(tile.id, nextR, nextC); removeTileElement(nextTile.id, nextR, nextC);
                 let newId = tileIdCounter++;
                 let newTile = { id: newId, value: newValue, r: nextR, c: nextC };
                 board[nextR][nextC] = newTile; board[currR][currC] = null; tiles[newId] = newTile; merged[nextR][nextC] = true;
-                createTileElement(newTile); document.getElementById(`tile-${newId}`).classList.add('tile-merged');
-                playSound('merge'); moveMerged = true; moved = true; break;
+                createTileElement(newTile); 
+                document.getElementById(`tile-${newId}`).classList.add('tile-merged');
+                playSound('merge'); moveMerged = true; moved = true; 
+                
+                // Vérification Victoire
+                if (newValue === 2048 && !hasWon) {
+                    hasWon = true;
+                    setTimeout(triggerWin, 300);
+                }
+                break;
             } else { break; }
         }
         return moved;
@@ -255,9 +276,20 @@ function move(direction) {
 
     if (moved) {
         if (!moveMerged) playSound('move');
+        if (turnScore > 0) createFloatingScore(turnScore); // Animation de point
+        
         updateTileElements(); updateScore();
         setTimeout(() => { addRandomTile(); checkGameOver(); }, 150); 
     }
+}
+
+function triggerWin() {
+    playSound('win');
+    gameWinScreen.style.display = 'flex';
+}
+
+function continueGame() {
+    gameWinScreen.style.display = 'none';
 }
 
 function checkGameOver() {
@@ -274,7 +306,13 @@ function checkGameOver() {
 
 function resetGame() { initBoard(); }
 
+// ==========================================
+// EVENTS & CONTROLES
+// ==========================================
 document.addEventListener('keydown', (e) => {
+    // Si un écran modal est actif (victoire ou game over), on bloque les inputs clavier pour le jeu
+    if (gameOverScreen.style.display === 'flex' || gameWinScreen.style.display === 'flex') return;
+
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
     if (e.key === 'ArrowUp') move('up');
     if (e.key === 'ArrowDown') move('down');
@@ -285,7 +323,6 @@ document.addEventListener('keydown', (e) => {
 const gameContainer = document.getElementById('game-container');
 let gameTouchX = 0, gameTouchY = 0;
 
-// CONTRÔLES TACTILES (Mobile)
 gameContainer.addEventListener('touchstart', e => {
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
     gameTouchX = e.touches[0].clientX; gameTouchY = e.touches[0].clientY;
@@ -308,7 +345,6 @@ gameContainer.addEventListener('touchend', e => {
 
 gameContainer.addEventListener('touchmove', e => { e.preventDefault(); }, {passive: false});
 
-// CONTRÔLES SOURIS (PC)
 let isGameMouseDragging = false;
 gameContainer.addEventListener('mousedown', e => {
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
@@ -335,7 +371,7 @@ document.addEventListener('mouseup', e => {
 initBoard();
 
 // ==========================================
-// NAVIGATION PAR SWIPE (HUB GLOBAL)
+// NAVIGATION PAR SWIPE (HUB GLOBAL) - INCHANGÉE
 // ==========================================
 const gamesHubList = [
     "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
