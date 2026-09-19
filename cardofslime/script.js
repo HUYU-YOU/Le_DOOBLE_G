@@ -1,11 +1,15 @@
 // ==========================================
-// 1. GESTION DES PARAMETRES
+// 1. GESTION DES PARAMETRES ET DU THEME
 // ==========================================
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('show');
 }
-function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+function toggleTheme() { 
+    document.body.classList.toggle('dark-mode'); 
+}
+
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => console.log(err));
@@ -13,11 +17,13 @@ function toggleFullscreen() {
         if (document.exitFullscreen) document.exitFullscreen();
     }
 }
+
 document.addEventListener('fullscreenchange', () => {
     const fsToggle = document.getElementById('fs-toggle');
     if(fsToggle) fsToggle.checked = !!document.fullscreenElement;
 });
 
+// ANIMATION DU BOUTON PARAMETRES (Hover / Click)
 let hoverInterval; 
 let currentFrame = 0;
 const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
@@ -32,19 +38,25 @@ function startSettingsAnim() {
         settingsBtnImg.src = animFrames[currentFrame];
     }, 100); 
 }
+
 function stopSettingsAnim() {
-    clearInterval(hoverInterval); hoverInterval = null;
+    clearInterval(hoverInterval); 
+    hoverInterval = null;
     const settingsBtnImg = document.getElementById('settings-btn-img');
     if (!settingsBtnImg.src.includes('settings4.png')) { 
         settingsBtnImg.src = '../img/setting.png'; 
     }
 }
+
 function clickSettingsAnim() {
-    clearInterval(hoverInterval); hoverInterval = null;
+    clearInterval(hoverInterval); 
+    hoverInterval = null;
     const settingsBtnImg = document.getElementById('settings-btn-img');
     settingsBtnImg.src = '../img/settings4.png';
     toggleSettings();
-    setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
+    setTimeout(() => { 
+        settingsBtnImg.src = '../img/setting.png'; 
+    }, 300);
 }
 
 // --- GESTION AUDIO ET LANGUE GLOBALE ---
@@ -55,6 +67,7 @@ let currentLang = localStorage.getItem('gameLang') || 'fr';
 document.addEventListener('DOMContentLoaded', () => {
     const musicToggle = document.getElementById('music-toggle');
     if (musicToggle) musicToggle.checked = !isMuted;
+    
     const settingsBtnImg = document.getElementById('settings-btn-img');
     if(settingsBtnImg) settingsBtnImg.src = '../img/setting.png';
 
@@ -69,63 +82,168 @@ function toggleLanguage() {
     localStorage.setItem('gameLang', currentLang);
     updateLanguageUI();
 }
+
 function updateLanguageUI() {
     const hubBtnImg = document.getElementById('hub-btn-img');
-    if (hubBtnImg) hubBtnImg.src = currentLang === 'en' ? '../img/returbhub.png' : '../img/retourhub.png';
+    if (hubBtnImg) {
+        hubBtnImg.src = currentLang === 'en' ? '../img/returbhub.png' : '../img/retourhub.png';
+    }
 }
+
 function toggleMusic() {
     const musicToggle = document.getElementById('music-toggle');
     isMuted = !musicToggle.checked;
     localStorage.setItem('isMuted', isMuted);
+    
     const bgm = document.getElementById('bg-music');
-    if (bgm) { if (!isMuted) bgm.play().catch(()=>{}); else bgm.pause(); }
+    if (bgm) { 
+        if (!isMuted) bgm.play().catch(()=>{}); 
+        else bgm.pause(); 
+    }
 }
+
 function startMusic() {
     if(!musicStarted && !isMuted) {
         const bgm = document.getElementById('bg-music');
-        if(bgm) { bgm.volume = 0.3; bgm.play().catch(()=>{}); }
+        if(bgm) { 
+            bgm.volume = 0.3; 
+            bgm.play().catch(()=>{}); 
+        }
         musicStarted = true;
     }
 }
+
 function playSound(id) {
     if (isMuted) return;
     const sound = document.getElementById(id);
-    if(sound) { sound.currentTime = 0; sound.volume = 0.5; sound.play().catch(()=>{}); }
+    if(sound) { 
+        sound.currentTime = 0; 
+        sound.volume = 0.5; 
+        sound.play().catch(()=>{}); 
+    }
 }
 
 // ==========================================
-// 2. BASE DE DONNÉES DES SKINS
+// 2. BASE DE DONNÉES EXACTE DES CARTES/SKINS
 // ==========================================
 const cardDatabase = {
-    slime: { id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, targetsAir: false, skins: { front: { idle: ['assets/skins/slime.png'], attack: ['assets/skins/slimeattack1.png', 'assets/skins/slimeattack2.png'] }, back:  { idle: ['assets/skins/slimeback.png'], attack: ['assets/skins/slimeback.png'] } } },
-    slimeuse: { id: "slimeuse", type: "troop", name: "Slimeuse", cost: 3, hp: 200, dmg: 90, range: 25, speed: 5, atkSpeed: 1000, isRanged: true, targetsAir: true, skins: { front: { idle: ['assets/skins/slimeuse.png'], attack: ['assets/skins/slimeuseattack.png'] }, back:  { idle: ['assets/skins/slimeuseback.png'], attack: ['assets/skins/slimeuseback.png'] } } },
-    mega: { id: "mega", type: "troop", name: "MEGA", cost: 8, hp: 2500, dmg: 150, range: 5, speed: 2, atkSpeed: 2000, targetsAir: false, skins: { front: { idle: ['assets/skins/golem.png'], attack: ['assets/skins/golemattack.png'] }, back:  { idle: ['assets/skins/golemback.png'], attack: ['assets/skins/golemattackback.png'] } } },
-    boule: { id: "boule", type: "troop", name: "La Boule", cost: 4, hp: 800, dmg: 100, range: 4, speed: 7, atkSpeed: 1500, targetBuilding: true, targetsAir: false, skins: { front: { idle: ['assets/skins/boule.png'], attack: ['assets/skins/boule.png'] }, back:  { idle: ['assets/skins/bouleback.png'], attack: ['assets/skins/bouleback.png'] } } },
-    helicoton: { id: "helicoton", type: "troop", name: "Hélicoton", cost: 3, hp: 300, dmg: 50, range: 20, speed: 5, atkSpeed: 900, isRanged: true, isFlying: true, targetsAir: true, skins: { front: { idle: ['assets/skins/helicoton.png'], attack: ['assets/skins/helicotonattack.png'] }, back:  { idle: ['assets/skins/helictonback.png'], attack: ['assets/skins/helictonback.png'] } } },
-    dragon: { id: "dragon", type: "troop", name: "Dragon", cost: 4, hp: 800, dmg: 80, range: 15, speed: 4, atkSpeed: 1200, isRanged: true, isFlying: true, targetsAir: true, skins: { front: { idle: ['assets/skins/drake1.png', 'assets/skins/drake2.png'], attack: ['assets/skins/drake1.png', 'assets/skins/drake2.png'] }, back:  { idle: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'], attack: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'] } } },
-    usine: { id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0, isStacked: true, skins: { front: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }, back: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' } } },
-    barriere: { id: "barriere", type: "building", name: "Barrière", cost: 4, hp: 1000, lifetime: 40, dmg: 20, range: 15, speed: 0, atkSpeed: 1000, stunDuration: 0.5, isRanged: true, targetsAir: false, skins: { front: { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] }, back:  { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] } } },
-    canon: { id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 30, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, hasTurret: true, skins: { front: { base: 'assets/skins/supportcanon.png', turret: 'assets/skins/canon.png' }, back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' } } },
-    tornade: { id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png'] },
-    boule_sort: { id: "boule_sort", type: "spell_puddle", name: "Boule Sort", cost: 2, dmg: 50, radius: 15, pushback: true, slowDuration: 3, duration: 5000, projectile: 'assets/skins/boulespell.png', anim: ['assets/skins/splashboule.png'] },
-    marais: { id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "slime_marais", radius: 15, anim: ['assets/skins/marais1.png', 'assets/skins/marais2.png', 'assets/skins/marais3.png'] },
-    slime_marais: { id: "slime_marais", type: "troop", name: "Slime Marais", hp: 300, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true, skins: { front: { idle: ['assets/skins/slimemarais.png'], attack: ['assets/skins/slimemarais.png'] }, back:  { idle: ['assets/skins/slimemaraisback.png'], attack: ['assets/skins/slimemaraisback.png'] } } }
+    slime: { 
+        id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, targetsAir: false, 
+        skins: { 
+            front: { idle: ['assets/skins/slime.png'], attack: ['assets/skins/slimeattack1.png', 'assets/skins/slimeattack2.png'] }, 
+            back:  { idle: ['assets/skins/slimeback.png'], attack: ['assets/skins/slimeback.png'] } 
+        } 
+    },
+    slimeuse: { 
+        id: "slimeuse", type: "troop", name: "Slimeuse", cost: 3, hp: 200, dmg: 90, range: 25, speed: 5, atkSpeed: 1000, isRanged: true, targetsAir: true, 
+        skins: { 
+            front: { idle: ['assets/skins/slimeuse.png'], attack: ['assets/skins/slimeuseattack.png'] }, 
+            back:  { idle: ['assets/skins/slimeuseback.png'], attack: ['assets/skins/slimeuseback.png'] } 
+        } 
+    },
+    mega: { 
+        id: "mega", type: "troop", name: "MEGA", cost: 8, hp: 2500, dmg: 150, range: 5, speed: 2, atkSpeed: 2000, targetsAir: false, 
+        skins: { 
+            front: { idle: ['assets/skins/golem.png'], attack: ['assets/skins/golemattack.png'] }, 
+            back:  { idle: ['assets/skins/golemback.png'], attack: ['assets/skins/golemattackback.png'] } 
+        } 
+    },
+    boule: { 
+        id: "boule", type: "troop", name: "La Boule", cost: 4, hp: 800, dmg: 100, range: 4, speed: 7, atkSpeed: 1500, targetBuilding: true, targetsAir: false, 
+        skins: { 
+            front: { idle: ['assets/skins/boule.png'], attack: ['assets/skins/boule.png'] }, 
+            back:  { idle: ['assets/skins/bouleback.png'], attack: ['assets/skins/bouleback.png'] } 
+        } 
+    },
+    helicoton: { 
+        id: "helicoton", type: "troop", name: "Hélicoton", cost: 3, hp: 300, dmg: 50, range: 20, speed: 5, atkSpeed: 900, isRanged: true, isFlying: true, targetsAir: true, 
+        skins: { 
+            front: { idle: ['assets/skins/helicoton.png'], attack: ['assets/skins/helicotonattack.png'] }, 
+            back:  { idle: ['assets/skins/helictonback.png'], attack: ['assets/skins/helictonback.png'] } 
+        } 
+    },
+    dragon: { 
+        id: "dragon", type: "troop", name: "Dragon", cost: 4, hp: 800, dmg: 80, range: 15, speed: 4, atkSpeed: 1200, isRanged: true, isFlying: true, targetsAir: true, 
+        skins: { 
+            front: { idle: ['assets/skins/drake1.png', 'assets/skins/drake2.png'], attack: ['assets/skins/drake1.png', 'assets/skins/drake2.png'] }, 
+            back:  { idle: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'], attack: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'] } 
+        } 
+    },
+    usine: { 
+        id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0, isStacked: true, 
+        skins: { 
+            front: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }, 
+            back: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' } 
+        } 
+    },
+    barriere: { 
+        id: "barriere", type: "building", name: "Barrière", cost: 4, hp: 1000, lifetime: 40, dmg: 20, range: 15, speed: 0, atkSpeed: 1000, stunDuration: 0.5, isRanged: true, targetsAir: false, 
+        skins: { 
+            front: { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] }, 
+            back:  { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] } 
+        } 
+    },
+    canon: { 
+        id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 30, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, hasTurret: true, 
+        skins: { 
+            front: { base: 'assets/skins/supportcanon.png', turret: 'assets/skins/canon.png' }, 
+            back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' } 
+        } 
+    },
+    tornade: { 
+        id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, 
+        anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png'] 
+    },
+    boule_sort: { 
+        id: "boule_sort", type: "spell_puddle", name: "Boule Sort", cost: 2, dmg: 50, radius: 15, pushback: true, slowDuration: 3, duration: 5000, projectile: 'assets/skins/boulespell.png', 
+        anim: ['assets/skins/splashboule.png'] 
+    },
+    marais: { 
+        id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "slime_marais", radius: 15, 
+        anim: ['assets/skins/marais1.png', 'assets/skins/marais2.png', 'assets/skins/marais3.png'] 
+    },
+    slime_marais: { 
+        id: "slime_marais", type: "troop", name: "Slime Marais", hp: 300, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true, 
+        skins: { 
+            front: { idle: ['assets/skins/slimemarais.png'], attack: ['assets/skins/slimemarais.png'] }, 
+            back:  { idle: ['assets/skins/slimemaraisback.png'], attack: ['assets/skins/slimemaraisback.png'] } 
+        } 
+    }
 };
 
 let playerDeck = ["slime", "slimeuse", "dragon", "canon", "boule_sort", "marais"];
 let tempSelectedDeck = [...playerDeck];
 
+// FONCTION POUR AFFICHER LES CARTES
 function getCardBackgroundStyle(card) {
-    if (card.hasTurret) return { img: `url('${card.skins.front.turret}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
-    else if (card.isStacked) return { img: `url('${card.skins.front.top}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
-    else return { img: `url('${card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0])}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
+    if (card.hasTurret) {
+        return { img: `url('${card.skins.front.turret}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
+    } else if (card.isStacked) {
+        return { img: `url('${card.skins.front.top}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
+    } else {
+        let singleImg = card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]);
+        return { img: `url('${singleImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
+    }
 }
 
-function openDeckBuilder() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('deck-builder-menu').style.display = 'flex'; renderDeckPool(); }
-function closeDeckBuilder() { document.getElementById('deck-builder-menu').style.display = 'none'; document.getElementById('main-menu').style.display = 'flex'; }
+// ==========================================
+// 3. DECK BUILDER ET MENUS
+// ==========================================
+function openDeckBuilder() { 
+    document.getElementById('main-menu').style.display = 'none'; 
+    document.getElementById('deck-builder-menu').style.display = 'flex'; 
+    renderDeckPool(); 
+}
+
+function closeDeckBuilder() { 
+    document.getElementById('deck-builder-menu').style.display = 'none'; 
+    document.getElementById('main-menu').style.display = 'flex'; 
+}
 
 function renderDeckPool() {
-    const pool = document.getElementById('deck-pool'); pool.innerHTML = '';
+    const pool = document.getElementById('deck-pool'); 
+    pool.innerHTML = '';
+
     Object.keys(cardDatabase).filter(k => !cardDatabase[k].hidden).forEach(cardId => {
         const card = cardDatabase[cardId];
         const div = document.createElement('div');
@@ -138,87 +256,197 @@ function renderDeckPool() {
         div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
 
         div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000; font-size:14px;">${card.cost}</span>`;
+        
         div.onclick = () => {
-            if (tempSelectedDeck.includes(cardId)) { if(tempSelectedDeck.length > 1) tempSelectedDeck = tempSelectedDeck.filter(id => id !== cardId); } 
-            else { if (tempSelectedDeck.length < 6) tempSelectedDeck.push(cardId); }
+            if (tempSelectedDeck.includes(cardId)) { 
+                if(tempSelectedDeck.length > 1) {
+                    tempSelectedDeck = tempSelectedDeck.filter(id => id !== cardId); 
+                }
+            } else { 
+                if (tempSelectedDeck.length < 6) {
+                    tempSelectedDeck.push(cardId); 
+                }
+            }
             renderDeckPool();
         };
         pool.appendChild(div);
     });
+
     document.getElementById('deck-counter').innerText = `Sélectionnées : ${tempSelectedDeck.length} / 6`;
     document.getElementById('validate-deck-btn').disabled = tempSelectedDeck.length !== 6;
 }
-function saveCustomDeck() { playerDeck = [...tempSelectedDeck]; closeDeckBuilder(); }
+
+function saveCustomDeck() { 
+    playerDeck = [...tempSelectedDeck]; 
+    closeDeckBuilder(); 
+}
 
 // ==========================================
-// 3. MULTIJOUEUR ET ÉMOTES
+// 4. MULTIJOUEUR (PEER JS) ET ÉMOTES
 // ==========================================
-let peer = null, conn = null, isHost = false, currentCOSCode = "";
-function generateCOSCode() { return "COS" + Math.floor(1000 + Math.random() * 9000); }
-function openMultiMenu() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('multi-menu').style.display = 'flex'; currentCOSCode = generateCOSCode(); document.getElementById('cos-code-display').innerText = currentCOSCode; }
-function closeMultiMenu() { document.getElementById('multi-menu').style.display = 'none'; document.getElementById('main-menu').style.display = 'flex'; if(peer) peer.destroy(); }
-function hostGame() {
-    document.getElementById('net-status').innerText = "Ouverture du salon " + currentCOSCode + "..."; peer = new Peer(currentCOSCode);
-    peer.on('open', () => { isHost = true; document.getElementById('net-status').innerText = "En attente d'un adversaire..."; });
-    peer.on('connection', (connection) => { conn = connection; setupConnectionEvents(); document.getElementById('net-status').innerText = "Connecté ! Lancement..."; setTimeout(startMultiplayerGame, 1000); });
+let peer = null;
+let conn = null;
+let isHost = false;
+let currentCOSCode = "";
+
+function generateCOSCode() { 
+    return "COS" + Math.floor(1000 + Math.random() * 9000); 
 }
+
+function openMultiMenu() { 
+    document.getElementById('main-menu').style.display = 'none'; 
+    document.getElementById('multi-menu').style.display = 'flex'; 
+    currentCOSCode = generateCOSCode(); 
+    document.getElementById('cos-code-display').innerText = currentCOSCode; 
+}
+
+function closeMultiMenu() { 
+    document.getElementById('multi-menu').style.display = 'none'; 
+    document.getElementById('main-menu').style.display = 'flex'; 
+    if(peer) peer.destroy(); 
+}
+
+function hostGame() {
+    document.getElementById('net-status').innerText = "Ouverture du salon " + currentCOSCode + "..."; 
+    peer = new Peer(currentCOSCode);
+    peer.on('open', () => { 
+        isHost = true; 
+        document.getElementById('net-status').innerText = "En attente d'un adversaire..."; 
+    });
+    peer.on('connection', (connection) => { 
+        conn = connection; 
+        setupConnectionEvents(); 
+        document.getElementById('net-status').innerText = "Connecté ! Lancement..."; 
+        setTimeout(startMultiplayerGame, 1000); 
+    });
+}
+
 function joinGame() {
     const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-    if (!code.startsWith("COS") || code.length !== 7) { document.getElementById('net-status').innerText = "Format invalide"; return; }
-    document.getElementById('net-status').innerText = "Recherche de " + code + "..."; peer = new Peer();
+    if (!code.startsWith("COS") || code.length !== 7) { 
+        document.getElementById('net-status').innerText = "Format invalide"; 
+        return; 
+    }
+    document.getElementById('net-status').innerText = "Recherche de " + code + "..."; 
+    peer = new Peer();
     peer.on('open', () => {
-        isHost = false; conn = peer.connect(code); setupConnectionEvents();
+        isHost = false; 
+        conn = peer.connect(code); 
+        setupConnectionEvents();
         setTimeout(() => {
-            if(conn && conn.open) { document.getElementById('net-status').innerText = "Connecté !"; startMultiplayerGame(); } 
-            else { document.getElementById('net-status').innerText = "Impossible de joindre la partie."; }
+            if(conn && conn.open) { 
+                document.getElementById('net-status').innerText = "Connecté !"; 
+                startMultiplayerGame(); 
+            } else { 
+                document.getElementById('net-status').innerText = "Impossible de joindre la partie."; 
+            }
         }, 1500);
     });
 }
+
 function setupConnectionEvents() {
     conn.on('data', (data) => {
         if (data.type === 'spawn') {
             const cardData = cardDatabase[data.cardId];
-            if (cardData.type.includes('spell')) castSpell(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
-            else spawnEntity(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
-        } else if (data.type === 'emote') { showEmote(data.emotePath, 'enemy'); }
+            if (cardData.type.includes('spell')) {
+                castSpell(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            } else {
+                spawnEntity(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+            }
+        } else if (data.type === 'emote') { 
+            showEmote(data.emotePath, 'enemy'); 
+        }
     });
 }
-function sendEmote(emojiFileName) { let path = `assets/skins/${emojiFileName}`; showEmote(path, 'player'); if(conn && conn.open) conn.send({type: 'emote', emotePath: path}); }
-function showEmote(emojiPath, team) {
-    const base = activeEntities.find(e => e.id === (team === 'player' ? 'base_p' : 'base_e')); if(!base) return;
-    const b = document.createElement('div'); b.className = 'emote-bubble'; b.innerHTML = `<img src="${emojiPath}" alt="emote">`;
-    b.style.left = `${base.x}%`; b.style.top = `${base.y}%`; arena.appendChild(b); setTimeout(() => b.remove(), 2000);
+
+function sendEmote(emojiFileName) { 
+    let path = `assets/skins/${emojiFileName}`; 
+    showEmote(path, 'player'); 
+    if(conn && conn.open) {
+        conn.send({type: 'emote', emotePath: path}); 
+    }
 }
-function startMultiplayerGame() { document.getElementById('multi-menu').style.display = 'none'; initGameEngine(); }
-function startSoloGame() { document.getElementById('main-menu').style.display = 'none'; initGameEngine(); setInterval(enemyAI, 2000); }
+
+function showEmote(emojiPath, team) {
+    const base = activeEntities.find(e => e.id === (team === 'player' ? 'base_p' : 'base_e')); 
+    if(!base) return;
+    
+    const b = document.createElement('div'); 
+    b.className = 'emote-bubble'; 
+    b.innerHTML = `<img src="${emojiPath}" alt="emote">`;
+    b.style.left = `${base.x}%`; 
+    b.style.top = `${base.y}%`; 
+    arena.appendChild(b); 
+    
+    setTimeout(() => b.remove(), 2000);
+}
+
+function startMultiplayerGame() { 
+    document.getElementById('multi-menu').style.display = 'none'; 
+    initGameEngine(); 
+}
+
+function startSoloGame() { 
+    document.getElementById('main-menu').style.display = 'none'; 
+    initGameEngine(); 
+    setInterval(enemyAI, 2000); 
+}
 
 // ==========================================
-// 4. MOTEUR DE JEU (GAME ENGINE - POURCENTAGES)
+// 5. MOTEUR DE JEU (GAME ENGINE INIT)
 // ==========================================
-const MAX_SLIME = 10; let currentSlime = 5; let enemySlime = 5; 
-let hand = [], drawPile = [], nextCard = null;
-let activeEntities = [], activeProjectiles = [], activeSpells = [];
-let lastTime = performance.now(); let selectedCardIndex = null; let isGameOver = false;
+const MAX_SLIME = 10; 
+let currentSlime = 5; 
+let enemySlime = 5; 
 
-let gameTime = 180; let slimeRate = 2.5; let slimeAcc = 0; let enemySlimeAcc = 0; let doubleSlimeActive = false;
-const arena = document.getElementById('arena'); const deployZone = document.getElementById('deploy-zone');
+let hand = [];
+let drawPile = [];
+let nextCard = null;
+
+let activeEntities = [];
+let activeProjectiles = [];
+let activeSpells = [];
+
+let lastTime = performance.now(); 
+let selectedCardIndex = null; 
+let isGameOver = false;
+
+let gameTime = 180; 
+let slimeRate = 2.5; 
+let slimeAcc = 0; 
+let enemySlimeAcc = 0; 
+let doubleSlimeActive = false;
+
+const arena = document.getElementById('arena'); 
+const deployZone = document.getElementById('deploy-zone');
 
 function initGameEngine() {
-    arena.style.display = 'block'; document.getElementById('ui-container').style.display = 'flex';
-    document.getElementById('game-timer').style.display = 'block'; document.getElementById('emote-panel').style.display = 'flex';
+    arena.style.display = 'block'; 
+    document.getElementById('ui-container').style.display = 'flex';
+    document.getElementById('game-timer').style.display = 'block'; 
+    document.getElementById('emote-panel').style.display = 'flex';
+    
     drawPile = [...playerDeck].sort(() => Math.random() - 0.5);
-    for(let i = 0; i < 4; i++) hand.push(drawPile.shift()); nextCard = drawPile.shift();
-    setupTowers(); updateUI();
+    for(let i = 0; i < 4; i++) {
+        hand.push(drawPile.shift()); 
+    }
+    nextCard = drawPile.shift();
+    
+    setupTowers(); 
+    updateUI();
+    
     arena.addEventListener('click', handleArenaClick);
-    lastTime = performance.now(); requestAnimationFrame(gameLoop);
+    lastTime = performance.now(); 
+    requestAnimationFrame(gameLoop);
 }
 
-// Les tailles (12, 9) représentent les pourcentages de la map (width: 12%)
 function setupTowers() {
+    // Joueur (En bas)
     createTower('base_p', 'player', 50, 87, 5000, "assets/skins/tourroyaleback.png", 12);
     createTower('tower_p_l', 'player', 27, 76, 2500, "assets/skins/tourback.png", 9);
     createTower('tower_p_r', 'player', 73, 76, 2500, "assets/skins/tourback.png", 9);
 
+    // Ennemi (En haut)
     createTower('base_e', 'enemy', 50, 18, 5000, "assets/skins/touroryale.png", 12);
     createTower('tower_e_l', 'enemy', 27, 26, 2500, "assets/skins/tour.png", 9);
     createTower('tower_e_r', 'enemy', 73, 26, 2500, "assets/skins/tour.png", 9);
@@ -227,123 +455,204 @@ function setupTowers() {
 function createTower(id, team, x, y, hp, img, sizePct) {
     const el = document.createElement('div');
     el.className = `entity building team-${team}`;
-    el.style.left = `${x}%`; el.style.top = `${y}%`; 
+    el.style.left = `${x}%`; 
+    el.style.top = `${y}%`; 
     el.style.width = `${sizePct}%`; 
     el.style.aspectRatio = '1'; 
     el.style.height = 'auto';
     el.style.backgroundImage = `url('${img}')`;
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
     arena.appendChild(el);
+    
     let lane = x < 50 ? 'left' : (x > 50 ? 'right' : 'center');
-    activeEntities.push({ id: id, team: team, x: x, y: y, lane: lane, hp: hp, maxHp: hp, dmg: 50, range: 35, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
+    
+    activeEntities.push({ 
+        id: id, team: team, x: x, y: y, lane: lane, hp: hp, maxHp: hp, dmg: 50, range: 35, 
+        speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, 
+        targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, 
+        hpBar: el.querySelector('.entity-hp-fill') 
+    });
 }
 
 function restartGame() {
-    isGameOver = false; document.getElementById('game-over-overlay').style.display = 'none';
+    isGameOver = false; 
+    document.getElementById('game-over-overlay').style.display = 'none';
     document.querySelectorAll('.entity, .projectile, .particle, .dmg-text, .spell-puddle, .spell-anim, .spell-throw-anim').forEach(e => e.remove());
-    activeEntities = []; activeProjectiles = []; activeSpells = [];
-    currentSlime = 5; enemySlime = 5; updateSlimeUI();
-    gameTime = 180; slimeRate = 2.5; doubleSlimeActive = false; document.getElementById('game-timer').classList.remove('timer-danger');
+    
+    activeEntities = []; 
+    activeProjectiles = []; 
+    activeSpells = [];
+    currentSlime = 5; 
+    enemySlime = 5; 
+    
+    updateSlimeUI();
+    gameTime = 180; 
+    slimeRate = 2.5; 
+    doubleSlimeActive = false; 
+    document.getElementById('game-timer').classList.remove('timer-danger');
     setupTowers();
 }
 
 function endGame(winnerTeam) {
-    isGameOver = true; document.getElementById('game-over-overlay').style.display = 'flex';
+    isGameOver = true; 
+    document.getElementById('game-over-overlay').style.display = 'flex';
     const title = document.getElementById('game-over-title');
-    if (winnerTeam === 'player') { title.innerText = "VICTOIRE !"; title.style.color = "#39ff14"; } 
-    else if (winnerTeam === 'enemy') { title.innerText = "DÉFAITE !"; title.style.color = "#ff3366"; }
-    else { title.innerText = "ÉGALITÉ !"; title.style.color = "#fff"; }
+    if (winnerTeam === 'player') { 
+        title.innerText = "VICTOIRE !"; 
+        title.style.color = "#39ff14"; 
+    } else if (winnerTeam === 'enemy') { 
+        title.innerText = "DÉFAITE !"; 
+        title.style.color = "#ff3366"; 
+    } else { 
+        title.innerText = "ÉGALITÉ !"; 
+        title.style.color = "#fff"; 
+    }
 }
 
+// ==========================================
+// 6. UI PENDANT LE JEU
+// ==========================================
 function updateSlimeUI() {
     document.getElementById('slime-bar-fill').style.width = `${(currentSlime / MAX_SLIME) * 100}%`;
     document.getElementById('slime-count').innerText = `${currentSlime} / 10`;
 }
 
 function updateUI() {
-    const handContainer = document.getElementById('hand'); handContainer.innerHTML = '';
+    const handContainer = document.getElementById('hand'); 
+    handContainer.innerHTML = '';
+    
     hand.forEach((cardId, index) => {
         const div = document.createElement('div');
         div.className = `card ${selectedCardIndex === index ? 'selected' : ''} ${currentSlime < cardDatabase[cardId].cost ? 'disabled' : ''}`;
+        
         let bg = getCardBackgroundStyle(cardDatabase[cardId]);
-        div.style.backgroundImage = bg.img; div.style.backgroundSize = 'contain, cover, cover'; div.style.backgroundPosition = 'center, center, center'; div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
-        div.dataset.cost = cardDatabase[cardId].cost; div.innerHTML = `<div class="cost">${cardDatabase[cardId].cost}</div>`;
-        div.addEventListener('click', () => selectCard(index)); handContainer.appendChild(div);
+        div.style.backgroundImage = bg.img; 
+        div.style.backgroundSize = 'contain, cover, cover'; 
+        div.style.backgroundPosition = 'center, center, center'; 
+        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
+        div.dataset.cost = cardDatabase[cardId].cost; 
+        div.innerHTML = `<div class="cost">${cardDatabase[cardId].cost}</div>`;
+        
+        div.addEventListener('click', () => selectCard(index)); 
+        handContainer.appendChild(div);
     });
+    
     let nextBg = getCardBackgroundStyle(cardDatabase[nextCard]);
-    document.getElementById('next-card').style.backgroundImage = nextBg.img;
-    document.getElementById('next-card').style.backgroundSize = 'contain, cover, cover';
-    document.getElementById('next-card').style.backgroundPosition = 'center, center, center';
-    document.getElementById('next-card').style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
-    document.getElementById('next-card').innerHTML = `<div class="cost">${cardDatabase[nextCard].cost}</div>`;
+    const nextCardEl = document.getElementById('next-card');
+    nextCardEl.style.backgroundImage = nextBg.img;
+    nextCardEl.style.backgroundSize = 'contain, cover, cover';
+    nextCardEl.style.backgroundPosition = 'center, center, center';
+    nextCardEl.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
+    nextCardEl.innerHTML = `<div class="cost">${cardDatabase[nextCard].cost}</div>`;
 }
 
 function selectCard(index) {
     if (currentSlime < cardDatabase[hand[index]].cost) return; 
     selectedCardIndex = selectedCardIndex === index ? null : index;
-    deployZone.style.display = selectedCardIndex !== null ? 'flex' : 'none'; updateUI();
+    deployZone.style.display = selectedCardIndex !== null ? 'flex' : 'none'; 
+    updateUI();
 }
 
 function handleArenaClick(e) {
     if (selectedCardIndex === null || isGameOver) return;
+    
     const rect = arena.getBoundingClientRect();
-    const clickX = ((e.clientX - rect.left) / rect.width) * 100; const clickY = ((e.clientY - rect.top) / rect.height) * 100;
+    const clickX = ((e.clientX - rect.left) / rect.width) * 100; 
+    const clickY = ((e.clientY - rect.top) / rect.height) * 100;
     const cardData = cardDatabase[hand[selectedCardIndex]];
 
     if (!cardData.type.includes('spell') && clickY < 50) return;
-    currentSlime -= cardData.cost; updateSlimeUI(); playSound('sfx-spawn');
+    
+    currentSlime -= cardData.cost; 
+    updateSlimeUI(); 
+    playSound('sfx-spawn');
 
-    if (cardData.type.includes('spell')) castSpell(cardData, 'player', clickX, clickY);
-    else spawnEntity(cardData, 'player', clickX, clickY);
+    if (cardData.type.includes('spell')) {
+        castSpell(cardData, 'player', clickX, clickY);
+    } else {
+        spawnEntity(cardData, 'player', clickX, clickY);
+    }
 
-    if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY });
-    drawPile.push(hand[selectedCardIndex]); hand[selectedCardIndex] = nextCard; nextCard = drawPile.shift();
-    selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
+    if (conn && conn.open) {
+        conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY });
+    }
+    
+    drawPile.push(hand[selectedCardIndex]); 
+    hand[selectedCardIndex] = nextCard; 
+    nextCard = drawPile.shift();
+    selectedCardIndex = null; 
+    deployZone.style.display = 'none'; 
+    updateUI();
 }
 
+// ==========================================
+// 7. GESTION DES ENTITÉS ET SORTS (SPAWN)
+// ==========================================
 function spawnEntity(data, team, x, y) {
     const el = document.createElement('div');
     el.className = `entity team-${team} ${data.type === 'building' ? 'building' : ''} ${data.isFlying ? 'is-flying' : ''}`;
     el.dataset.id = data.id;
+    
     let initFacing = team === 'player' ? 'back' : 'front';
     let initLane = x < 50 ? 'left' : 'right';
 
-    el.style.left = `${x}%`; el.style.top = `${y}%`;
+    el.style.left = `${x}%`; 
+    el.style.top = `${y}%`;
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
     
-    let turretEl = null; let topEl = null;
+    let turretEl = null; 
+    let topEl = null;
+    
     if (data.hasTurret) {
         el.style.backgroundImage = `url('${data.skins[initFacing].base}')`;
-        turretEl = document.createElement('div'); turretEl.className = 'turret';
-        turretEl.style.backgroundImage = `url('${data.skins[initFacing].turret}')`; el.appendChild(turretEl);
+        turretEl = document.createElement('div'); 
+        turretEl.className = 'turret';
+        turretEl.style.backgroundImage = `url('${data.skins[initFacing].turret}')`; 
+        el.appendChild(turretEl);
     } else if (data.isStacked) {
         el.style.backgroundImage = `url('${data.skins[initFacing].base}')`;
-        topEl = document.createElement('div'); topEl.className = 'stacked-top';
-        topEl.style.backgroundImage = `url('${data.skins[initFacing].top}')`; el.appendChild(topEl);
+        topEl = document.createElement('div'); 
+        topEl.className = 'stacked-top';
+        topEl.style.backgroundImage = `url('${data.skins[initFacing].top}')`; 
+        el.appendChild(topEl);
     }
 
     arena.appendChild(el);
+    
     activeEntities.push({
-        id: Math.random().toString(36).substr(2, 9), team: team, x: x, y: y, lane: initLane, color: data.color, hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, 
-        range: data.range, speed: data.speed, atkSpeed: data.atkSpeed || 1000, isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
-        isFlying: data.isFlying || false, targetsAir: data.targetsAir || false, hasTurret: data.hasTurret || false, isStacked: data.isStacked || false, skins: data.skins, facing: initFacing,
-        state: 'idle', animTimer: 0, animFrame: 0, stunDuration: data.stunDuration || null, lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0,
+        id: Math.random().toString(36).substr(2, 9), 
+        team: team, x: x, y: y, lane: initLane, color: data.color, hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, 
+        range: data.range, speed: data.speed, atkSpeed: data.atkSpeed || 1000, 
+        isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
+        isFlying: data.isFlying || false, targetsAir: data.targetsAir || false, 
+        hasTurret: data.hasTurret || false, isStacked: data.isStacked || false, skins: data.skins, facing: initFacing,
+        state: 'idle', animTimer: 0, animFrame: 0, stunDuration: data.stunDuration || null, 
+        lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0,
         stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, turretElement: turretEl, hpBar: el.querySelector('.entity-hp-fill')
     });
 }
 
 function castSpell(spellData, casterTeam, targetX, targetY) {
     if (spellData.projectile) {
-        let originX = 50; let originY = casterTeam === 'player' ? 95 : 5;
+        let originX = 50; 
+        let originY = casterTeam === 'player' ? 95 : 5;
         let base = activeEntities.find(e => e.id === (casterTeam === 'player' ? 'base_p' : 'base_e'));
-        if (base) { originX = base.x; originY = base.y; }
+        if (base) { 
+            originX = base.x; 
+            originY = base.y; 
+        }
 
-        const proj = document.createElement('div'); proj.className = 'spell-throw-anim';
+        const proj = document.createElement('div'); 
+        proj.className = 'spell-throw-anim';
         proj.style.backgroundImage = `url('${spellData.projectile}')`;
-        proj.style.left = `${originX}%`; proj.style.top = `${originY}%`;
+        proj.style.left = `${originX}%`; 
+        proj.style.top = `${originY}%`;
         arena.appendChild(proj);
 
-        activeSpells.push({ type: 'throw', team: casterTeam, startX: originX, startY: originY, targetX: targetX, targetY: targetY, progress: 0, element: proj, spellData: spellData });
+        activeSpells.push({ 
+            type: 'throw', team: casterTeam, startX: originX, startY: originY, targetX: targetX, targetY: targetY, 
+            progress: 0, element: proj, spellData: spellData 
+        });
     } else {
         executeSpellImpact(spellData, casterTeam, targetX, targetY);
     }
@@ -351,142 +660,284 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
 
 function executeSpellImpact(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
-        for(let i=0; i<3; i++) {
-            const fx = document.createElement('div'); fx.className = 'spell-anim';
-            fx.style.width = '10%'; fx.style.aspectRatio = '1'; fx.style.height = 'auto';
+        for(let i = 0; i < 3; i++) {
+            const fx = document.createElement('div'); 
+            fx.className = 'spell-anim';
+            fx.style.width = '10%'; 
+            fx.style.aspectRatio = '1'; 
+            fx.style.height = 'auto';
             arena.appendChild(fx);
-            let offsetX = (Math.random() - 0.5) * 10; let offsetY = (Math.random() - 0.5) * 10;
-            activeSpells.push({ type: 'tornado', team: casterTeam, originX: targetX, originY: targetY, x: targetX + offsetX, y: targetY + offsetY, vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), duration: 3500, dmg: spellData.dmg, tickTimer: 0 });
+            
+            let offsetX = (Math.random() - 0.5) * 10; 
+            let offsetY = (Math.random() - 0.5) * 10;
+            
+            activeSpells.push({ 
+                type: 'tornado', team: casterTeam, originX: targetX, originY: targetY, 
+                x: targetX + offsetX, y: targetY + offsetY, vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, 
+                anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), duration: 3500, dmg: spellData.dmg, tickTimer: 0 
+            });
         }
     } else if (spellData.type === 'spell_puddle' || spellData.type === 'spell_spawn') {
-        const puddle = document.createElement('div'); puddle.className = 'spell-puddle';
-        puddle.style.left = `${targetX}%`; puddle.style.top = `${targetY}%`;
-        puddle.style.width = `${spellData.radius * 2}%`; puddle.style.aspectRatio = '1'; puddle.style.height = 'auto';
-        if(spellData.anim && spellData.anim.length > 0) { puddle.style.backgroundImage = `url('${spellData.anim[0]}')`; }
+        const puddle = document.createElement('div'); 
+        puddle.className = 'spell-puddle';
+        puddle.style.left = `${targetX}%`; 
+        puddle.style.top = `${targetY}%`;
+        puddle.style.width = `${spellData.radius * 2}%`; 
+        puddle.style.aspectRatio = '1'; 
+        puddle.style.height = 'auto';
+        
+        if(spellData.anim && spellData.anim.length > 0) { 
+            puddle.style.backgroundImage = `url('${spellData.anim[0]}')`; 
+        }
         arena.appendChild(puddle);
-        activeSpells.push({ type: spellData.type === 'spell_puddle' ? 'puddle' : 'spawner', team: casterTeam, x: targetX, y: targetY, radius: spellData.radius, duration: spellData.duration, spawnRate: spellData.spawnRate, spawnId: spellData.spawnId, lastSpawn: 0, anim: spellData.anim, element: puddle, timer: 0, frame: 0, dmg: spellData.dmg, slowDuration: spellData.slowDuration, pushback: spellData.pushback, triggered: false });
+        
+        activeSpells.push({ 
+            type: spellData.type === 'spell_puddle' ? 'puddle' : 'spawner', team: casterTeam, x: targetX, y: targetY, 
+            radius: spellData.radius, duration: spellData.duration, spawnRate: spellData.spawnRate, spawnId: spellData.spawnId, 
+            lastSpawn: 0, anim: spellData.anim, element: puddle, timer: 0, frame: 0, dmg: spellData.dmg, 
+            slowDuration: spellData.slowDuration, pushback: spellData.pushback, triggered: false 
+        });
     } else {
-        const fx = document.createElement('div'); fx.className = 'spell-anim';
-        fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`;
-        fx.style.width = `${spellData.radius * 2}%`; fx.style.aspectRatio = '1'; fx.style.height = 'auto';
+        const fx = document.createElement('div'); 
+        fx.className = 'spell-anim';
+        fx.style.left = `${targetX}%`; 
+        fx.style.top = `${targetY}%`;
+        fx.style.width = `${spellData.radius * 2}%`; 
+        fx.style.aspectRatio = '1'; 
+        fx.style.height = 'auto';
         arena.appendChild(fx);
-        activeSpells.push({ type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, timer: 0, frame: 0, maxTime: 0.8 });
+        
+        activeSpells.push({ 
+            type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, timer: 0, frame: 0, maxTime: 0.8 
+        });
+        
         const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
-        activeEntities.forEach(ent => { if (ent.team === targetTeam && Math.hypot(ent.x - targetX, ent.y - targetY) < spellData.radius) takeDamage(ent, spellData.dmg); });
+        activeEntities.forEach(ent => { 
+            if (ent.team === targetTeam && Math.hypot(ent.x - targetX, ent.y - targetY) < spellData.radius) {
+                takeDamage(ent, spellData.dmg);
+            }
+        });
     }
 }
 
+// ==========================================
+// 8. INTELLIGENCE ARTIFICIELLE (ENNEMI)
+// ==========================================
 function enemyAI() {
     if (isGameOver || conn) return;
+    
     let playerTroops = activeEntities.filter(e => e.team === 'player' && e.speed > 0);
     let enemyThreats = playerTroops.filter(e => e.y < 50); 
     const playableCards = Object.values(cardDatabase).filter(c => c.cost <= enemySlime && !c.hidden);
+    
     if (playableCards.length === 0) return;
     if (Math.random() > 0.3) return; 
 
-    let cardToPlay = null; let spawnX = Math.random() > 0.5 ? 27 : 73; let spawnY = 15;
+    let cardToPlay = null; 
+    let spawnX = Math.random() > 0.5 ? 27 : 73; 
+    let spawnY = 15;
+
     if (enemyThreats.length > 0) {
-        enemyThreats.sort((a, b) => a.y - b.y); let threat = enemyThreats[0];
-        spawnX = threat.x < 50 ? 27 : 73; spawnY = Math.max(10, threat.y - 15);
+        enemyThreats.sort((a, b) => a.y - b.y); 
+        let threat = enemyThreats[0];
+        
+        spawnX = threat.x < 50 ? 27 : 73; 
+        spawnY = Math.max(10, threat.y - 15);
+        
         let defensiveCards = playableCards.filter(c => !c.targetBuilding);
-        if (threat.isFlying) { let antiAir = defensiveCards.filter(c => c.targetsAir || c.type.includes('spell')); if (antiAir.length > 0) defensiveCards = antiAir; }
-        if (defensiveCards.length > 0) cardToPlay = defensiveCards[Math.floor(Math.random() * defensiveCards.length)];
-        else cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
-        if (cardToPlay && cardToPlay.type.includes('spell')) { spawnX = threat.x; spawnY = threat.y; }
+        
+        if (threat.isFlying) { 
+            let antiAir = defensiveCards.filter(c => c.targetsAir || c.type.includes('spell')); 
+            if (antiAir.length > 0) defensiveCards = antiAir; 
+        }
+        
+        if (defensiveCards.length > 0) {
+            cardToPlay = defensiveCards[Math.floor(Math.random() * defensiveCards.length)];
+        } else {
+            cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
+        }
+        
+        if (cardToPlay && cardToPlay.type.includes('spell')) { 
+            spawnX = threat.x; 
+            spawnY = threat.y; 
+        }
     } else {
         let attackCards = playableCards;
-        if (Math.random() > 0.4) attackCards = playableCards.filter(c => c.id !== 'boule'); 
-        if (attackCards.length === 0) attackCards = playableCards;
+        if (Math.random() > 0.4) {
+            attackCards = playableCards.filter(c => c.id !== 'boule'); 
+        }
+        if (attackCards.length === 0) {
+            attackCards = playableCards;
+        }
         cardToPlay = attackCards[Math.floor(Math.random() * attackCards.length)];
+        
         if (cardToPlay.type.includes('spell')) {
             let playerTowers = activeEntities.filter(e => e.team === 'player' && e.speed === 0);
-            if (playerTowers.length > 0) { let targetTower = playerTowers[Math.floor(Math.random() * playerTowers.length)]; spawnX = targetTower.x; spawnY = targetTower.y; }
+            if (playerTowers.length > 0) { 
+                let targetTower = playerTowers[Math.floor(Math.random() * playerTowers.length)]; 
+                spawnX = targetTower.x; 
+                spawnY = targetTower.y; 
+            }
         }
     }
+    
     if (cardToPlay) {
         enemySlime -= cardToPlay.cost;
-        if (cardToPlay.type.includes('spell')) castSpell(cardToPlay, 'enemy', spawnX, spawnY);
-        else { spawnY = Math.min(45, Math.max(10, spawnY)); spawnEntity(cardToPlay, 'enemy', spawnX, spawnY); }
+        if (cardToPlay.type.includes('spell')) {
+            castSpell(cardToPlay, 'enemy', spawnX, spawnY);
+        } else { 
+            spawnY = Math.min(45, Math.max(10, spawnY)); 
+            spawnEntity(cardToPlay, 'enemy', spawnX, spawnY); 
+        }
         playSound('sfx-spawn');
     }
 }
 
+// ==========================================
+// 9. MÉCANIQUES DE COMBAT ET DÉGÂTS
+// ==========================================
 function createParticles(x, y, color) {
     for(let i=0; i<6; i++) {
-        const p = document.createElement('div'); p.className = 'particle'; p.style.backgroundColor = color || '#39ff14'; 
-        p.style.left = `${x}%`; p.style.top = `${y}%`;
-        const angle = Math.random() * Math.PI * 2; const dist = 2 + Math.random() * 5; // Distance en %
-        p.style.setProperty('--tx', `${Math.cos(angle) * dist}%`); p.style.setProperty('--ty', `${Math.sin(angle) * dist}%`);
-        arena.appendChild(p); setTimeout(() => p.remove(), 500);
+        const p = document.createElement('div'); 
+        p.className = 'particle'; 
+        p.style.backgroundColor = color || '#39ff14'; 
+        p.style.left = `${x}%`; 
+        p.style.top = `${y}%`;
+        const angle = Math.random() * Math.PI * 2; 
+        const dist = 2 + Math.random() * 5; 
+        p.style.setProperty('--tx', `${Math.cos(angle) * dist}%`); 
+        p.style.setProperty('--ty', `${Math.sin(angle) * dist}%`);
+        arena.appendChild(p); 
+        setTimeout(() => p.remove(), 500);
     }
 }
 
 function takeDamage(entity, amount) {
-    if (entity.hp <= 0) return; entity.hp -= amount; playSound('sfx-hit');
-    const txt = document.createElement('div'); txt.className = `dmg-text team-${entity.team}`; txt.innerText = `-${Math.round(amount)}`; txt.style.left = `${entity.x}%`; txt.style.top = `${entity.y}%`;
-    arena.appendChild(txt); setTimeout(() => txt.remove(), 1000);
+    if (entity.hp <= 0) return; 
+    entity.hp -= amount; 
+    playSound('sfx-hit');
+    
+    const txt = document.createElement('div'); 
+    txt.className = `dmg-text team-${entity.team}`; 
+    txt.innerText = `-${Math.round(amount)}`; 
+    txt.style.left = `${entity.x}%`; 
+    txt.style.top = `${entity.y}%`;
+    arena.appendChild(txt); 
+    setTimeout(() => txt.remove(), 1000);
+    
     if(entity.element) {
-        entity.element.style.filter = 'brightness(2) contrast(1.5)'; setTimeout(() => { if(entity.element) entity.element.style.filter = 'none'; }, 100);
-        if (entity.hpBar) entity.hpBar.style.width = `${Math.max(0, (entity.hp / entity.maxHp) * 100)}%`;
+        entity.element.style.filter = 'brightness(2) contrast(1.5)'; 
+        setTimeout(() => { 
+            if(entity.element) entity.element.style.filter = 'none'; 
+        }, 100);
+        if (entity.hpBar) {
+            entity.hpBar.style.width = `${Math.max(0, (entity.hp / entity.maxHp) * 100)}%`;
+        }
     }
 }
 
 function shootProjectile(attacker, target) {
-    const proj = document.createElement('div'); proj.className = 'projectile'; 
-    proj.style.left = `${attacker.x}%`; proj.style.top = `${attacker.y}%`; 
+    const proj = document.createElement('div'); 
+    proj.className = 'projectile'; 
+    proj.style.left = `${attacker.x}%`; 
+    proj.style.top = `${attacker.y}%`; 
+    
     if(cardDatabase['boule_sort'] && cardDatabase['boule_sort'].projectile) {
-        proj.style.backgroundImage = `url('${cardDatabase['boule_sort'].projectile}')`; proj.style.backgroundColor = 'transparent'; 
+        proj.style.backgroundImage = `url('${cardDatabase['boule_sort'].projectile}')`; 
+        proj.style.backgroundColor = 'transparent'; 
     }
+    
     arena.appendChild(proj);
-    activeProjectiles.push({ x: attacker.x, y: attacker.y, target: target, dmg: attacker.dmg, team: attacker.team, stunDuration: attacker.stunDuration, element: proj, speed: 40 });
+    activeProjectiles.push({ 
+        x: attacker.x, y: attacker.y, target: target, dmg: attacker.dmg, team: attacker.team, 
+        stunDuration: attacker.stunDuration, element: proj, speed: 40 
+    });
 }
 
 // ==========================================
-// 6. BOUCLE PRINCIPALE (GAME LOOP)
+// 10. LA BOUCLE PRINCIPALE (GAME LOOP)
 // ==========================================
 function gameLoop(currentTime) {
-    if (isGameOver) { requestAnimationFrame(gameLoop); return; }
+    if (isGameOver) { 
+        requestAnimationFrame(gameLoop); 
+        return; 
+    }
     const dt = (currentTime - lastTime) / 1000; 
     lastTime = currentTime;
 
+    // GESTION DU TEMPS ET DE L'ELIXIR (DOUBLE SLIME)
     gameTime -= dt;
     if (gameTime <= 60 && !doubleSlimeActive) {
-        doubleSlimeActive = true; slimeRate = 1.25; 
-        document.getElementById('game-timer').classList.add('timer-danger'); document.getElementById('alert-message').style.display = 'block';
+        doubleSlimeActive = true; 
+        slimeRate = 1.25; 
+        document.getElementById('game-timer').classList.add('timer-danger'); 
+        document.getElementById('alert-message').style.display = 'block';
     }
-    if (gameTime <= 0) { endGame('tie'); return; }
-    const mins = Math.floor(gameTime / 60); const secs = Math.floor(gameTime % 60);
+    if (gameTime <= 0) { 
+        endGame('tie'); 
+        return; 
+    }
+    
+    const mins = Math.floor(gameTime / 60); 
+    const secs = Math.floor(gameTime % 60);
     document.getElementById('game-timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
-    slimeAcc += dt; enemySlimeAcc += dt;
-    if(slimeAcc >= slimeRate) { slimeAcc = 0; if(currentSlime < MAX_SLIME) { currentSlime++; updateSlimeUI(); updateUI(); } }
-    if(enemySlimeAcc >= slimeRate && !conn) { enemySlimeAcc = 0; if(enemySlime < MAX_SLIME) enemySlime++; }
+    slimeAcc += dt; 
+    enemySlimeAcc += dt;
+    
+    if(slimeAcc >= slimeRate) { 
+        slimeAcc = 0; 
+        if(currentSlime < MAX_SLIME) { 
+            currentSlime++; 
+            updateSlimeUI(); 
+            updateUI(); 
+        } 
+    }
+    if(enemySlimeAcc >= slimeRate && !conn) { 
+        enemySlimeAcc = 0; 
+        if(enemySlime < MAX_SLIME) enemySlime++; 
+    }
 
+    // ANIMATIONS DES SORTS
     activeSpells = activeSpells.filter(spell => {
+        // Lancer balistique
         if (spell.type === 'throw') {
             spell.progress += dt * 1.5;
-            if (spell.progress >= 1) { spell.element.remove(); executeSpellImpact(spell.spellData, spell.team, spell.targetX, spell.targetY); return false; }
+            if (spell.progress >= 1) { 
+                spell.element.remove(); 
+                executeSpellImpact(spell.spellData, spell.team, spell.targetX, spell.targetY); 
+                return false; 
+            }
             let currentX = spell.startX + (spell.targetX - spell.startX) * spell.progress;
             let currentY = spell.startY + (spell.targetY - spell.startY) * spell.progress;
             let arc = Math.sin(spell.progress * Math.PI) * 20; 
-            spell.element.style.left = `${currentX}%`; spell.element.style.top = `${currentY - arc}%`;
+            spell.element.style.left = `${currentX}%`; 
+            spell.element.style.top = `${currentY - arc}%`;
             spell.element.style.transform = `translate(-50%, -50%) rotate(${spell.progress * 1080}deg)`;
             return true;
         }
 
+        // Animation frame by frame
         spell.timer += dt;
         if(spell.timer > 0.15 && spell.anim && spell.anim.length > 1) { 
-            spell.timer = 0; spell.frame++;
+            spell.timer = 0; 
+            spell.frame++;
             spell.element.style.backgroundImage = `url('${spell.anim[spell.frame % spell.anim.length]}')`;
         }
         
+        // Physique de la tornade
         if (spell.type === 'tornado') {
             spell.duration -= dt * 1000;
-            let dxOrig = spell.originX - spell.x; let dyOrig = spell.originY - spell.y;
-            spell.vx += dxOrig * dt * 5; spell.vy += dyOrig * dt * 5;
-            spell.vx *= 0.98; spell.vy *= 0.98;
-            spell.x += spell.vx * dt; spell.y += spell.vy * dt;
-            spell.element.style.left = `${spell.x}%`; spell.element.style.top = `${spell.y}%`;
+            let dxOrig = spell.originX - spell.x; 
+            let dyOrig = spell.originY - spell.y;
+            spell.vx += dxOrig * dt * 5; 
+            spell.vy += dyOrig * dt * 5;
+            spell.vx *= 0.98; 
+            spell.vy *= 0.98;
+            spell.x += spell.vx * dt; 
+            spell.y += spell.vy * dt;
+            spell.element.style.left = `${spell.x}%`; 
+            spell.element.style.top = `${spell.y}%`;
 
             spell.tickTimer += dt;
             if(spell.tickTimer > 0.3) {
@@ -495,15 +946,28 @@ function gameLoop(currentTime) {
                 activeEntities.forEach(ent => {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
                         takeDamage(ent, spell.dmg);
-                        if (!ent.id.includes('base') && !ent.id.includes('tower')) { ent.x += (spell.originX - ent.x) * 0.1; ent.y += (spell.originY - ent.y) * 0.1; }
+                        if (!ent.id.includes('base') && !ent.id.includes('tower')) { 
+                            ent.x += (spell.originX - ent.x) * 0.1; 
+                            ent.y += (spell.originY - ent.y) * 0.1; 
+                        }
                     }
                 });
             }
-            if(spell.duration <= 0) { spell.element.remove(); return false; }
+            if(spell.duration <= 0) { 
+                spell.element.remove(); 
+                return false; 
+            }
         }
+        // Sort instantané
         else if (spell.type === 'instant') {
-            spell.maxTime -= dt; if(spell.maxTime <= 0) { spell.element.remove(); return false; }
-        } else {
+            spell.maxTime -= dt; 
+            if(spell.maxTime <= 0) { 
+                spell.element.remove(); 
+                return false; 
+            }
+        } 
+        // Flaques et spawners (Marais)
+        else {
             spell.duration -= dt * 1000;
             if (spell.type === 'puddle' && !spell.triggered) {
                 spell.triggered = true;
@@ -512,7 +976,10 @@ function gameLoop(currentTime) {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < spell.radius) {
                         takeDamage(ent, spell.dmg);
                         if(spell.pushback && !ent.id.includes('base') && !ent.id.includes('tower')) {
-                            const angle = Math.atan2(ent.y - spell.y, ent.x - spell.x); ent.x += Math.cos(angle) * 8; ent.y += Math.sin(angle) * 8; ent.slowTimer = spell.slowDuration;
+                            const angle = Math.atan2(ent.y - spell.y, ent.x - spell.x); 
+                            ent.x += Math.cos(angle) * 8; 
+                            ent.y += Math.sin(angle) * 8; 
+                            ent.slowTimer = spell.slowDuration;
                         }
                     }
                 });
@@ -520,71 +987,131 @@ function gameLoop(currentTime) {
             if (spell.type === 'spawner') {
                 spell.lastSpawn += dt * 1000;
                 if(spell.lastSpawn >= spell.spawnRate) {
-                    spell.lastSpawn = 0; const angle = Math.random() * Math.PI * 2; const dist = Math.random() * spell.radius;
+                    spell.lastSpawn = 0; 
+                    const angle = Math.random() * Math.PI * 2; 
+                    const dist = Math.random() * spell.radius;
                     spawnEntity(cardDatabase[spell.spawnId], spell.team, spell.x + Math.cos(angle) * dist, spell.y + Math.sin(angle) * dist);
                 }
             }
-            if(spell.duration <= 0) { spell.element.remove(); return false; }
+            if(spell.duration <= 0) { 
+                spell.element.remove(); 
+                return false; 
+            }
         }
         return true;
     });
 
+    // NETTOYAGE DES MORTS
     activeEntities = activeEntities.filter(ent => {
         if (ent.hp <= 0) {
-            playSound('sfx-die'); createParticles(ent.x, ent.y, ent.color || '#fff');
+            playSound('sfx-die'); 
+            createParticles(ent.x, ent.y, ent.color || '#fff');
             if (ent.element) ent.element.remove();
-            if(ent.id === 'base_p') endGame('enemy'); if(ent.id === 'base_e') endGame('player');
+            if(ent.id === 'base_p') endGame('enemy'); 
+            if(ent.id === 'base_e') endGame('player');
             return false;
         }
         return true;
     });
 
+    // PROJECTILES
     activeProjectiles = activeProjectiles.filter(p => {
-        if(p.target.hp <= 0) { p.element.remove(); return false; } 
-        const dx = p.target.x - p.x; const dy = p.target.y - p.y;
+        if(p.target.hp <= 0) { 
+            p.element.remove(); 
+            return false; 
+        } 
+        const dx = p.target.x - p.x; 
+        const dy = p.target.y - p.y;
         if (Math.hypot(dx, dy) < 2) { 
             takeDamage(p.target, p.dmg); 
             if(p.stunDuration) p.target.stunTimer = p.stunDuration;
-            p.element.remove(); return false; 
+            p.element.remove(); 
+            return false; 
         } else {
-            const angle = Math.atan2(dy, dx); p.x += Math.cos(angle) * p.speed * dt; p.y += Math.sin(angle) * p.speed * dt;
-            p.element.style.left = `${p.x}%`; p.element.style.top = `${p.y}%`; return true;
+            const angle = Math.atan2(dy, dx); 
+            p.x += Math.cos(angle) * p.speed * dt; 
+            p.y += Math.sin(angle) * p.speed * dt;
+            p.element.style.left = `${p.x}%`; 
+            p.element.style.top = `${p.y}%`; 
+            return true;
         }
     });
 
+    // UNITÉS ET CIBLAGE (Logique globale)
     activeEntities.forEach(unit => {
-        let currentSpeed = unit.speed; let currentAtkSpeed = unit.atkSpeed;
-        if (unit.stunTimer > 0) { unit.stunTimer -= dt; unit.state = 'idle'; unit.element.classList.add('stunned'); return; } 
-        else { unit.element.classList.remove('stunned'); }
+        
+        // STUN & SLOW
+        let currentSpeed = unit.speed; 
+        let currentAtkSpeed = unit.atkSpeed;
+        
+        if (unit.stunTimer > 0) { 
+            unit.stunTimer -= dt; 
+            unit.state = 'idle'; 
+            unit.element.classList.add('stunned'); 
+            return; 
+        } else { 
+            unit.element.classList.remove('stunned'); 
+        }
 
-        if (unit.slowTimer > 0) { unit.slowTimer -= dt; currentSpeed *= 0.5; currentAtkSpeed *= 2; unit.element.classList.add('slowed'); } 
-        else { unit.element.classList.remove('slowed'); }
+        if (unit.slowTimer > 0) { 
+            unit.slowTimer -= dt; 
+            currentSpeed *= 0.5; 
+            currentAtkSpeed *= 2; 
+            unit.element.classList.add('slowed'); 
+        } else { 
+            unit.element.classList.remove('slowed'); 
+        }
 
-        if (unit.spawnRate) { unit.lastSpawn += dt * 1000; if (unit.lastSpawn >= unit.spawnRate) { unit.lastSpawn = 0; spawnEntity(cardDatabase[unit.spawnId], unit.team, unit.x, unit.y + (unit.team === 'player' ? -5 : 5)); } }
-        if (unit.lifetime) { unit.hp -= (unit.maxHp / unit.lifetime) * dt; if (unit.hpBar) unit.hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`; }
+        // BÂTIMENTS SPAWNERS ET DURÉE DE VIE
+        if (unit.spawnRate) { 
+            unit.lastSpawn += dt * 1000; 
+            if (unit.lastSpawn >= unit.spawnRate) { 
+                unit.lastSpawn = 0; 
+                spawnEntity(cardDatabase[unit.spawnId], unit.team, unit.x, unit.y + (unit.team === 'player' ? -5 : 5)); 
+            } 
+        }
+        if (unit.lifetime) { 
+            unit.hp -= (unit.maxHp / unit.lifetime) * dt; 
+            if (unit.hpBar) {
+                unit.hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`;
+            }
+        }
 
-        let closestTarget = null; let minDistance = 999;
+        let closestTarget = null; 
+        let minDistance = 999;
 
+        // LES TOURS DÉFENDENT
         if (unit.speed === 0) {
             activeEntities.forEach(target => {
                 if (target.team !== unit.team && target.speed > 0) {
                     if (target.isFlying && !unit.targetsAir) return; 
                     let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
-                    if (dist <= unit.range && dist < minDistance) { minDistance = dist; closestTarget = target; }
+                    if (dist <= unit.range && dist < minDistance) { 
+                        minDistance = dist; 
+                        closestTarget = target; 
+                    }
                 }
             });
-        } else {
+        } 
+        // LES TROUPES CHERCHENT LEUR CIBLE
+        else {
             let aggroRadius = 25;
+            
+            // 1. Priorité agressive : Attaquer les ennemis proches
             if (!unit.targetBuilding) {
                 activeEntities.forEach(target => {
                     if (target.team !== unit.team && target.speed > 0) {
                         if (target.isFlying && !unit.targetsAir) return;
                         let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
-                        if (dist < aggroRadius && dist < minDistance) { minDistance = dist; closestTarget = target; }
+                        if (dist < aggroRadius && dist < minDistance) { 
+                            minDistance = dist; 
+                            closestTarget = target; 
+                        }
                     }
                 });
             }
 
+            // 2. Si pas d'ennemi, cibler une tour dans sa propre lane
             if (!closestTarget) {
                 let minLaneDist = 999;
                 activeEntities.forEach(target => {
@@ -592,27 +1119,40 @@ function gameLoop(currentTime) {
                         let targetLane = target.x < 50 ? 'left' : (target.x > 50 ? 'right' : 'center');
                         if (targetLane === unit.lane || targetLane === 'center' || target.id.includes('base')) {
                             let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
-                            if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
+                            if (dist < minLaneDist) { 
+                                minLaneDist = dist; 
+                                closestTarget = target; 
+                            }
                         }
                     }
                 });
+                
+                // 3. Repli : si plus de tour dans sa lane, cibler le bâtiment restant le plus proche
                 if (!closestTarget) {
                     activeEntities.forEach(target => {
                         if (target.team !== unit.team && target.speed === 0) {
                             let dist = Math.hypot(unit.x - target.x, unit.y - target.y);
-                            if (dist < minLaneDist) { minLaneDist = dist; closestTarget = target; }
+                            if (dist < minLaneDist) { 
+                                minLaneDist = dist; 
+                                closestTarget = target; 
+                            }
                         }
                     });
                 }
             }
         }
 
+        // ACTIONS VERS LA CIBLE TROUVÉE
         if (closestTarget) {
             let distToTarget = Math.hypot(unit.x - closestTarget.x, unit.y - closestTarget.y);
-            if(!unit.id.includes('base') && !unit.id.includes('tower')) { unit.facing = (closestTarget.y < unit.y) ? 'back' : 'front'; }
+            
+            if(!unit.id.includes('base') && !unit.id.includes('tower')) { 
+                unit.facing = (closestTarget.y < unit.y) ? 'back' : 'front'; 
+            }
 
             if (unit.hasTurret) {
-                let dx = closestTarget.x - unit.x; let dy = closestTarget.y - unit.y;
+                let dx = closestTarget.x - unit.x; 
+                let dy = closestTarget.y - unit.y;
                 let angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
                 unit.turretElement.style.transform = `translate(-50%, -50%) rotate(${angleDeg + 90}deg)`;
             }
@@ -620,7 +1160,11 @@ function gameLoop(currentTime) {
             if (distToTarget <= unit.range) {
                 unit.state = 'attack';
                 if (currentTime - unit.lastAttack >= currentAtkSpeed) {
-                    if (unit.isRanged) shootProjectile(unit, closestTarget); else takeDamage(closestTarget, unit.dmg);
+                    if (unit.isRanged) {
+                        shootProjectile(unit, closestTarget); 
+                    } else {
+                        takeDamage(closestTarget, unit.dmg);
+                    }
                     unit.lastAttack = currentTime;
                 }
             } else if (unit.speed > 0) {
@@ -628,40 +1172,65 @@ function gameLoop(currentTime) {
                 let targetX = closestTarget.x; 
                 let targetY = closestTarget.y;
                 
+                // PATHFINDING EN L POUR LES PONTS
                 if (!unit.isFlying && closestTarget.speed === 0) {
                     let laneX = unit.lane === 'left' ? 27 : 73;
                     
                     if (closestTarget.x === 50) {
-                        if (Math.abs(unit.y - closestTarget.y) > 5) { targetX = laneX; targetY = closestTarget.y; } 
-                        else { targetX = closestTarget.x; targetY = closestTarget.y; }
-                    } else { targetX = closestTarget.x; targetY = closestTarget.y; }
+                        if (Math.abs(unit.y - closestTarget.y) > 5) { 
+                            targetX = laneX; 
+                            targetY = closestTarget.y; 
+                        } else { 
+                            targetX = closestTarget.x; 
+                            targetY = closestTarget.y; 
+                        }
+                    } else { 
+                        targetX = closestTarget.x; 
+                        targetY = closestTarget.y; 
+                    }
 
                     if ((unit.y > 50 && closestTarget.y < 50) || (unit.y < 50 && closestTarget.y > 50)) {
-                        targetY = 50; targetX = laneX;
+                        targetY = 50; 
+                        targetX = laneX;
                     }
+                    
                     if (Math.abs(unit.x - laneX) > 2 && Math.abs(unit.y - 50) > 20) {
-                        targetX = laneX; targetY = unit.y; 
+                        targetX = laneX; 
+                        targetY = unit.y; 
                     }
                 }
                 
-                const dx = targetX - unit.x; const dy = targetY - unit.y; const angle = Math.atan2(dy, dx);
+                const dx = targetX - unit.x; 
+                const dy = targetY - unit.y; 
+                const angle = Math.atan2(dy, dx);
+                
                 unit.x += Math.cos(angle) * currentSpeed * dt * (arena.offsetHeight / arena.offsetWidth);
                 unit.y += Math.sin(angle) * currentSpeed * dt;
                 
-                unit.x = Math.max(15, Math.min(85, unit.x)); unit.y = Math.max(10, Math.min(95, unit.y));
+                // Limites de carte strictes
+                unit.x = Math.max(15, Math.min(85, unit.x)); 
+                unit.y = Math.max(10, Math.min(95, unit.y));
 
-                unit.element.style.left = `${unit.x}%`; unit.element.style.top = `${unit.y}%`;
+                unit.element.style.left = `${unit.x}%`; 
+                unit.element.style.top = `${unit.y}%`;
             }
-        } else { unit.state = 'idle'; }
+        } else { 
+            unit.state = 'idle'; 
+        }
 
+        // MISE A JOUR DU VISUEL (SKINS ANIMES)
         if (unit.skins && !unit.hasTurret && !unit.isStacked && !unit.id.includes('base') && !unit.id.includes('tower')) {
             unit.animTimer += dt;
             if (unit.animTimer > 0.15) { 
-                unit.animTimer = 0; unit.animFrame++;
+                unit.animTimer = 0; 
+                unit.animFrame++;
                 let skinState = unit.skins[unit.facing][unit.state] || unit.skins[unit.facing]['idle'];
-                if(skinState) { unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`; }
+                if(skinState) { 
+                    unit.element.style.backgroundImage = `url('${skinState[unit.animFrame % skinState.length]}')`; 
+                }
             }
         }
     });
+    
     requestAnimationFrame(gameLoop);
 }
