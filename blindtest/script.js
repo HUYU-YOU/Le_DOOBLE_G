@@ -2,6 +2,7 @@
 // GESTION DES PARAMÈTRES ET DE LA LANGUE
 // ==========================================
 let currentLang = 'FR';
+let currentVolume = 1;
 
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
@@ -22,12 +23,11 @@ function changeLanguage(lang) {
     
     if (lang === 'FR') {
         document.getElementById('btn-lang-fr').classList.add('active');
-        hubImg.src = '../img/retourhub.png'; // IMAGE FRANCAISE
+        hubImg.src = '../img/retourhub.png'; 
         
         if (playlistTitle) playlistTitle.innerText = "SÉLECTION DE LA PLAYLIST";
         document.getElementById('btn-replay').innerText = "Rejouer une partie";
         
-        // TRADUCTIONS DU MENU RÉSEAU (FR)
         document.getElementById('net-title').innerText = "RÉSEAU";
         document.getElementById('net-pseudo-label').innerText = "VOTRE PSEUDO :";
         document.getElementById('player-name-input').placeholder = "EX: CYBERSLIME";
@@ -50,12 +50,11 @@ function changeLanguage(lang) {
         
     } else {
         document.getElementById('btn-lang-en').classList.add('active');
-        hubImg.src = '../img/returbhub.png'; // IMAGE ANGLAISE
+        hubImg.src = '../img/returbhub.png'; 
         
         if (playlistTitle) playlistTitle.innerText = "PLAYLIST SELECTION";
         document.getElementById('btn-replay').innerText = "Play Again";
 
-        // TRADUCTIONS DU MENU RÉSEAU (EN)
         document.getElementById('net-title').innerText = "NETWORK";
         document.getElementById('net-pseudo-label').innerText = "YOUR NICKNAME :";
         document.getElementById('player-name-input').placeholder = "E.g.: CYBERSLIME";
@@ -76,6 +75,11 @@ function changeLanguage(lang) {
         else if (currentCategory === 'DISNEY') document.getElementById('guess-input').placeholder = "Disney movie (e.g., Lion King...)";
         else document.getElementById('guess-input').placeholder = "Type artist or title here...";
     }
+}
+
+function setGameVolume(val) {
+    currentVolume = parseFloat(val);
+    audioPlayer.volume = currentVolume;
 }
 
 // ==========================================
@@ -216,6 +220,24 @@ function hostGame() {
             }
             if (data.type === 'guess') processGuess(data.text, c.pid); 
         });
+
+        // GESTION DÉCONNEXION CLIENT
+        c.on('close', () => {
+            if (!c.pid) return;
+            let leftName = playerNames[c.pid] || `Joueur ${c.pid}`;
+            conns = conns.filter(conn => conn !== c);
+            delete scores[c.pid];
+            delete playerNames[c.pid];
+
+            let msg = currentLang === 'FR' ? `⚠️ ${leftName} s'est déconnecté.` : `⚠️ ${leftName} disconnected.`;
+            displaySys(msg);
+            updateScoreUI();
+            broadcast({ type: 'sys', msg: msg, playerNames: playerNames, scores: scores });
+        });
+
+        c.on('error', () => {
+            conns = conns.filter(conn => conn !== c);
+        });
     }); 
     peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = "Erreur : " + err.type; });
 }
@@ -277,6 +299,18 @@ function joinGame() {
             if (data.type === 'end_round') { clientEndRound(data.track); }
             if (data.type === 'end_game') { showEndScreen(data.scores); }
         });
+
+        // GESTION DÉCONNEXION HÔTE
+        conn.on('close', () => {
+            audioPlayer.pause();
+            clearInterval(roundInterval);
+            clearInterval(fadeInterval);
+            alert(currentLang === 'FR' 
+                ? "L'hôte s'est déconnecté. Retour au menu principal." 
+                : "The host has disconnected. Returning to main menu.");
+            location.reload();
+        });
+
         conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Échec."; });
     });
     peer.on('error', err => { status.style.color = "var(--p2)"; status.innerText = "Erreur réseau."; });
@@ -285,6 +319,25 @@ function joinGame() {
 function broadcast(data) { conns.forEach(c => { if (c.open) c.send(data); }); }
 
 // --- FETCH DYNAMIQUE DE LA PLAYLIST ---
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function fetchTrackWithTimeout(term, timeoutMs = 4000) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(
+            `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&country=fr&media=music&entity=song&limit=20`,
+            { signal: controller.signal }
+        );
+        clearTimeout(timeout);
+        if (!res.ok) return null; 
+        return await res.json();
+    } catch (err) {
+        clearTimeout(timeout);
+        return null;
+    }
+}
+
 async function launchGame(cat) {
     setupUIForCategory(cat);
     if (gameMode === 'host') broadcast({ type: 'start_game', category: cat });
@@ -299,18 +352,18 @@ async function launchGame(cat) {
 
     for (let i = 0; i < shuffled.length; i++) {
         if (selectedTracks.length >= 10) break;
-        try {
-            let searchItem = shuffled[i];
-            let searchTerm = searchItem.search || searchItem;
+        
+        let searchItem = shuffled[i];
+        let searchTerm = searchItem.search || searchItem;
 
-            let res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&country=fr&media=music&entity=song&limit=20`);
-            let data = await res.json();
+        let data = await fetchTrackWithTimeout(searchTerm);
 
+        if (data && data.results) {
             let validTracks = data.results.filter(t => {
                 if (!t.previewUrl) return false;
                 let n = t.trackName.toLowerCase();
                 let a = t.artistName.toLowerCase();
-                if (/cover|tribute|karaoke|instrumental|8-bit|lullaby|version|remix/i.test(n)) return false;
+                if (/cover|tribute|karaoke|instrumental|8-bit|lullaby|remix/i.test(n)) return false;
                 if (/cover|tribute|karaoke/i.test(a)) return false;
                 return true;
             });
@@ -337,7 +390,8 @@ async function launchGame(cat) {
                     });
                 }
             }
-        } catch (e) { console.warn("Échec pour : ", shuffled[i]); }
+        }
+        await sleep(150); // Pause pour éviter l'erreur 429 iTunes
     }
 
     if (selectedTracks.length === 0) {
@@ -347,7 +401,6 @@ async function launchGame(cat) {
 
     playlist = selectedTracks;
     
-    // ON AFFICHE LE FOND SOMBRE ET L'INTERFACE DE JEU
     document.getElementById('game-container').classList.add('playing');
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none'); 
     document.getElementById('in-game-ui').style.display = 'flex';
@@ -375,7 +428,7 @@ function startNextRound() {
     currentTrack = playlist[currentTrackIndex];
     state = { artistFoundBy: [], titleFoundBy: [], animeFoundBy: [], filmFoundBy: [], disneyFoundBy: [], timeLeft: 20 };
 
-    clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
+    clearInterval(fadeInterval); isFading = false; audioPlayer.volume = currentVolume;
 
     resetRoundUI();
     audioPlayer.src = currentTrack.previewUrl;
@@ -421,7 +474,7 @@ function clientStartRound(track, round) {
     document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
     document.getElementById('in-game-ui').style.display = 'flex';
 
-    clearInterval(fadeInterval); isFading = false; audioPlayer.volume = 1;
+    clearInterval(fadeInterval); isFading = false; audioPlayer.volume = currentVolume;
     resetRoundUI(); audioPlayer.src = track.previewUrl; audioPlayer.play().catch(e => console.log(e));
     isRoundActive = true; displaySys(currentLang === 'FR' ? `▶️ MANCHE ${round} / 10` : `▶️ ROUND ${round} / 10`);
 }
@@ -464,11 +517,29 @@ function clientEndRound(track) {
 function cleanText(str) {
     if (!str) return '';
     let s = str.toLowerCase();
-    s = s.split(/feat\.|ft\.|featuring/i)[0];
+    
+    // Supprime "feat.", "ft.", "featuring", "with"
+    s = s.split(/\s+(feat\.?|ft\.?|featuring|with)\s+/i)[0];
+    
+    // Supprime le contenu entre crochets [...]
     s = s.replace(/\[.*?\]/g, ''); 
-    s = s.replace(/\(?(remastered|remaster|radio edit|live|version|instrumental).*?\)?/gi, '');
+    
+    // Supprime les parenthèses de métadonnées
+    s = s.replace(/\((?:from|soundtrack|ost|bande originale|version|edit|live|bonus|deluxe|mono|stereo|single|radio).*?\)/gi, '');
+    s = s.replace(/\(\d{4}.*?\)/g, '');
+    
+    // Supprime la ponctuation
+    s = s.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'’]/g, ' ');
+    
+    // Normalise les accents
     s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+    
+    // Supprime les articles de début de titre
+    s = s.trim().replace(/^(the|le|la|les|l)\s+/i, '');
+    
+    // Alphanumérique uniquement
     s = s.replace(/[^a-z0-9]/g, '');
+    
     return s;
 }
 
@@ -497,6 +568,14 @@ function checkMatch(guess, target) {
     return false;
 }
 
+function calculatePoints(orderRank, totalPlayers, timeLeft) {
+    let basePts = Math.max(1, totalPlayers - orderRank + 1);
+    let speedBonus = 0;
+    if (timeLeft >= 15) speedBonus = 2;
+    else if (timeLeft >= 10) speedBonus = 1;
+    return { total: basePts + speedBonus, speedBonus: speedBonus };
+}
+
 function submitGuess() {
     const text = guessInput.value.trim();
     if (!text || !isRoundActive) return;
@@ -521,9 +600,11 @@ function processGuess(text, pid) {
 
         if (correct) {
             state.animeFoundBy.push(pid);
-            let pts = numPlayers - state.animeFoundBy.length + 1;
-            scores[pid] += pts;
-            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé l'Anime ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Anime! (+${pts} pts)`;
+            let ptsData = calculatePoints(state.animeFoundBy.length, numPlayers, state.timeLeft);
+            scores[pid] += ptsData.total;
+            let bonusMsg = ptsData.speedBonus > 0 ? ` ⚡ (+${ptsData.speedBonus} bonus vitesse)` : '';
+
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé l'Anime ! (+${ptsData.total} pts${bonusMsg})` : `🔥 ${playerPseudo} found the Anime! (+${ptsData.total} pts${bonusMsg})`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
             if (pid === myPid) {
@@ -541,9 +622,11 @@ function processGuess(text, pid) {
 
         if (correct) {
             state.filmFoundBy.push(pid);
-            let pts = numPlayers - state.filmFoundBy.length + 1;
-            scores[pid] += pts;
-            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Film ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Movie! (+${pts} pts)`;
+            let ptsData = calculatePoints(state.filmFoundBy.length, numPlayers, state.timeLeft);
+            scores[pid] += ptsData.total;
+            let bonusMsg = ptsData.speedBonus > 0 ? ` ⚡ (+${ptsData.speedBonus} bonus vitesse)` : '';
+
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Film ! (+${ptsData.total} pts${bonusMsg})` : `🔥 ${playerPseudo} found the Movie! (+${ptsData.total} pts${bonusMsg})`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
             if (pid === myPid) {
@@ -561,9 +644,11 @@ function processGuess(text, pid) {
 
         if (correct) {
             state.disneyFoundBy.push(pid);
-            let pts = numPlayers - state.disneyFoundBy.length + 1;
-            scores[pid] += pts;
-            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Disney ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Disney! (+${pts} pts)`;
+            let ptsData = calculatePoints(state.disneyFoundBy.length, numPlayers, state.timeLeft);
+            scores[pid] += ptsData.total;
+            let bonusMsg = ptsData.speedBonus > 0 ? ` ⚡ (+${ptsData.speedBonus} bonus vitesse)` : '';
+
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Disney ! (+${ptsData.total} pts${bonusMsg})` : `🔥 ${playerPseudo} found the Disney! (+${ptsData.total} pts${bonusMsg})`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
 
             if (pid === myPid) {
@@ -587,9 +672,11 @@ function processGuess(text, pid) {
 
         if (aMatch) {
             state.artistFoundBy.push(pid);
-            let pts = numPlayers - state.artistFoundBy.length + 1;
-            scores[pid] += pts; correct = true;
-            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé l'Artiste ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Artist! (+${pts} pts)`;
+            let ptsData = calculatePoints(state.artistFoundBy.length, numPlayers, state.timeLeft);
+            scores[pid] += ptsData.total; correct = true;
+            let bonusMsg = ptsData.speedBonus > 0 ? ` ⚡ (+${ptsData.speedBonus} bonus vitesse)` : '';
+
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé l'Artiste ! (+${ptsData.total} pts${bonusMsg})` : `🔥 ${playerPseudo} found the Artist! (+${ptsData.total} pts${bonusMsg})`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
             
             if (pid === myPid) {
@@ -599,9 +686,11 @@ function processGuess(text, pid) {
         }
         if (tMatch) {
             state.titleFoundBy.push(pid);
-            let pts = numPlayers - state.titleFoundBy.length + 1;
-            scores[pid] += pts; correct = true;
-            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Titre ! (+${pts} pts)` : `🔥 ${playerPseudo} found the Title! (+${pts} pts)`;
+            let ptsData = calculatePoints(state.titleFoundBy.length, numPlayers, state.timeLeft);
+            scores[pid] += ptsData.total; correct = true;
+            let bonusMsg = ptsData.speedBonus > 0 ? ` ⚡ (+${ptsData.speedBonus} bonus vitesse)` : '';
+
+            let msg = currentLang === 'FR' ? `🔥 ${playerPseudo} a trouvé le Titre ! (+${ptsData.total} pts${bonusMsg})` : `🔥 ${playerPseudo} found the Title! (+${ptsData.total} pts${bonusMsg})`;
             displaySys(msg); if(gameMode === 'host') broadcast({type:'sys', msg:msg});
             
             if (pid === myPid) {
@@ -697,7 +786,7 @@ function showEndScreen(finalScores = scores) {
 
     if (gameMode === 'solo') {
         let maxPts = (currentCategory === 'ANIME' || currentCategory === 'FILMS' || currentCategory === 'DISNEY') ? 10 : 20;
-        t.innerHTML = currentLang === 'FR' ? `Score Final : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>` : `Final Score : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]} / ${maxPts}</b>`;
+        t.innerHTML = currentLang === 'FR' ? `Score Final : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]}</b>` : `Final Score : <br><b style="color:var(--sys); font-size: 1.5em; text-shadow: 0 0 20px var(--sys);">${finalScores[1]}</b>`;
     } else {
         let sortedPids = Object.keys(finalScores).sort((a,b) => finalScores[b] - finalScores[a]);
         let winnerPid = sortedPids[0]; let winnerColor = getPlayerColor(winnerPid);
