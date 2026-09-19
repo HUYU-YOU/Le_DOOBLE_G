@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Slime-Dash : Infinite Run</title>
-    <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- Suppression de l'API YouTube -->
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -47,8 +47,6 @@
         </div>
     </div>
 
-    <div id="yt-player" style="display: none;"></div>
-
     <!-- CONTAINER DU JEU -->
     <div id="game-container" class="no-swipe size-wide">
         
@@ -76,21 +74,11 @@
 
         <!-- ECRAN TITRE ORGANIQUE -->
         <div id="menu-screen">
-            <!-- La boîte qui garde les proportions exactes -->
             <div class="menu-graphic-container">
-                <!-- Image de fond du menu -->
                 <img src="img/roller.png" alt="Menu Fond" class="menu-bg">
-
-                <!-- Boutons positionnés en absolu par dessus roller.png -->
-                <button id="btn-play-endless" class="image-btn">
-                    <img src="img/play.png" alt="Jouer">
-                </button>
-                <button id="btn-create-map" class="image-btn">
-                    <img src="img/edit.png" alt="Créer">
-                </button>
-                <button id="btn-play-code" class="image-btn">
-                    <img src="img/code.png" alt="Code">
-                </button>
+                <button id="btn-play-endless" class="image-btn"><img src="img/play.png" alt="Jouer"></button>
+                <button id="btn-create-map" class="image-btn"><img src="img/edit.png" alt="Créer"></button>
+                <button id="btn-play-code" class="image-btn"><img src="img/code.png" alt="Code"></button>
             </div>
 
             <!-- Menu de saisie du code -->
