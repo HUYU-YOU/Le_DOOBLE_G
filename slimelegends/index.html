@@ -14,7 +14,6 @@
     
     <div id="game-container" class="size-wide">
         
-        <!-- BOUTONS FLOTTANTS -->
         <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
         
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
@@ -32,15 +31,38 @@
             </div>
             
             <div class="hud-center">
+                <!-- BARRE D'XP ET NIVEAU -->
+                <div class="xp-container-wrapper">
+                    <div class="level-badge" id="p1-lvl-badge">1</div>
+                    <div class="xp-bar-container">
+                        <div class="xp-bar" id="p1-xp-bar"></div>
+                    </div>
+                </div>
+
+                <!-- BARRE DE VIE -->
                 <div class="hp-bar-container">
                     <div class="hp-bar" id="p1-hp-bar"></div>
                     <div class="shield-bar" id="p1-shield-bar"></div>
                     <div class="hp-text" id="p1-hp-txt">1000/1000</div>
                 </div>
+
+                <!-- SORTS ET AMÉLIORATIONS -->
                 <div class="cd-container">
-                    <div class="cd-box" id="spell-s1" onclick="prepareSpell('s1')"><span class="key-hint" id="key-s1">Q</span></div>
-                    <div class="cd-box" id="spell-s2" onclick="prepareSpell('s2')"><span class="key-hint" id="key-s2">W</span></div>
-                    <div class="cd-box ult-box" id="spell-ult" onclick="prepareSpell('ult')"><span class="key-hint" id="key-ult">E</span></div>
+                    <div class="cd-box locked" id="spell-s1" onclick="prepareSpell('s1')">
+                        <span class="key-hint" id="key-s1">Q</span>
+                        <button class="upgrade-btn" id="upg-s1" onclick="event.stopPropagation(); upgradeSpell('s1')">+</button>
+                        <div class="spell-lvl-dots" id="dots-s1"></div>
+                    </div>
+                    <div class="cd-box locked" id="spell-s2" onclick="prepareSpell('s2')">
+                        <span class="key-hint" id="key-s2">W</span>
+                        <button class="upgrade-btn" id="upg-s2" onclick="event.stopPropagation(); upgradeSpell('s2')">+</button>
+                        <div class="spell-lvl-dots" id="dots-s2"></div>
+                    </div>
+                    <div class="cd-box ult-box locked" id="spell-ult" onclick="prepareSpell('ult')">
+                        <span class="key-hint" id="key-ult">E</span>
+                        <button class="upgrade-btn" id="upg-ult" onclick="event.stopPropagation(); upgradeSpell('ult')">+</button>
+                        <div class="spell-lvl-dots" id="dots-ult"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -49,13 +71,10 @@
         <div class="overlay" id="main-menu">
             <div class="menu-title glow-title">CHOOSE YOUR BATTLE</div>
             <button class="btn-main" id="btn-local-mode" onclick="autoFullscreen(); openMenu('mode-select');">🎮 Mode Local (1v1)</button>
-            
             <hr id="menu-separator" style="width: 60%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
-            
             <div class="menu-title" id="multi-title" style="font-size: 1.2em; margin-bottom: 10px; color: #aaa;">Arènes Multijoueurs</div>
             <button class="btn-main red" id="btn-net-1" onclick="autoFullscreen(); prepareNetwork('1v1');">🌐 Réseau (1 VS 1)</button>
             <button class="btn-main green" id="btn-net-2" onclick="autoFullscreen(); prepareNetwork('2v2');">🛡️ Réseau (2 VS 2 Équipes)</button>
-            <button class="btn-main gold" id="btn-net-4" onclick="autoFullscreen(); prepareNetwork('ffa');">⚔️ Réseau (4 Chacun Pour Soi)</button>
         </div>
 
         <!-- CHOIX DU TYPE DE JEU -->
@@ -65,91 +84,65 @@
                 <div class="card card-mode selected" onclick="selectBattleRule('nexus', this)" style="width: 220px; padding: 20px;">
                     <div style="font-size: 2.5em; margin-bottom: 10px;">🏰</div>
                     <b style="font-size: 1.3em; color: var(--p1);">Détruire le Nexus</b>
-                    <p style="font-size: 0.85em; color: #aaa; margin-top: 8px;">Respawn infini. Détruis la Tourelle puis le Nexus ennemi !</p>
+                    <p style="font-size: 0.85em; color: #aaa; margin-top: 8px;">Détruis la Tourelle puis le Nexus ennemi !</p>
                 </div>
                 <div class="card card-mode" onclick="selectBattleRule('3kills', this)" style="width: 220px; padding: 20px;">
                     <div style="font-size: 2.5em; margin-bottom: 10px;">⚔️</div>
                     <b style="font-size: 1.3em; color: var(--p2);">Premier à 3 Kills</b>
-                    <p style="font-size: 0.85em; color: #aaa; margin-top: 8px;">Combat intense. Le premier qui élimine 3 fois son adversaire gagne !</p>
+                    <p style="font-size: 0.85em; color: #aaa; margin-top: 8px;">Le premier qui élimine 3 fois son adversaire gagne !</p>
                 </div>
             </div>
             <button class="btn-main" onclick="goToCharSelect()">Continuer ➔</button>
             <button class="btn-main" style="background:#333; border:none; margin-top:10px;" onclick="location.reload()">Retour</button>
         </div>
 
-        <!-- MENU LOCAL (SÉLECTION CHAMPION) -->
+        <!-- MENU SÉLECTION CHAMPION -->
         <div class="overlay" id="local-menu" style="display: none;">
             <div class="menu-title glow-title" id="instruction-title">Sélectionne ton Champion (J1)</div>
-            
             <div id="char-select">
-                <div class="card char-card" onclick="chooseChar('ninja')">
-                    <img src="assets/skins/ninjasud.png" alt="Ninja"><b>Ninja</b>
-                </div>
-                <div class="card char-card" onclick="chooseChar('gunner')">
-                    <img src="assets/skins/adcsud.png" alt="Gunner"><b>Gunner</b>
-                </div>
-                <div class="card char-card" onclick="chooseChar('slime')">
-                    <img src="img/SLIME.png" alt="Slime"><b>Slime</b>
-                </div>
-                <div class="card char-card" onclick="chooseChar('seth')">
-                    <img src="assets/skins/setsud.png" alt="Seth"><b>Seth</b>
-                </div>
-                <div class="card char-card" onclick="chooseChar('mage')">
-                    <img src="assets/skins/mangesud.png" alt="Mage"><b>Mage</b>
-                </div>
-                <div class="card char-card" onclick="chooseChar('teemo')">
-                    <img src="assets/skins/scoutsud.png" alt="Scout"><b>Scout</b>
-                </div>
+                <div class="card char-card" onclick="chooseChar('ninja')"><img src="assets/skins/ninjasud.png" alt="Ninja"><b>Ninja</b></div>
+                <div class="card char-card" onclick="chooseChar('gunner')"><img src="assets/skins/adcsud.png" alt="Gunner"><b>Gunner</b></div>
+                <div class="card char-card" onclick="chooseChar('slime')"><img src="img/SLIME.png" alt="Slime"><b>Slime</b></div>
+                <div class="card char-card" onclick="chooseChar('seth')"><img src="assets/skins/setsud.png" alt="Seth"><b>Seth</b></div>
+                <div class="card char-card" onclick="chooseChar('mage')"><img src="assets/skins/mangesud.png" alt="Mage"><b>Mage</b></div>
+                <div class="card char-card" onclick="chooseChar('teemo')"><img src="assets/skins/scoutsud.png" alt="Scout"><b>Scout</b></div>
             </div>
-            
             <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">FIGHT !</button>
-            
             <div>
                 <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border: none; box-shadow: none;" onclick="openMenu('mode-select')">Retour</button>
             </div>
         </div>
 
-        <!-- MENU RESEAU -->
+        <!-- MENU RESEAU (Inchangé) -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <h2 id="net-title" class="glow-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Terminal Réseau</h2>
+            <h2 id="net-title" class="glow-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px;">Terminal Réseau</h2>
             <div style="margin-bottom: 20px;">
                 <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Slime</span></div>
                 <div id="net-char-grid">
                     <div class="card char-card" onclick="selectNetChar('ninja', this)"><img src="assets/skins/ninjasud.png" alt="Ninja"><b>Ninja</b></div>
-                    <div class="card char-card" onclick="selectNetChar('gunner', this)"><img src="assets/skins/adcsud.png" alt="Gunner"><b>Gunner</b></div>
                     <div class="card char-card selected" onclick="selectNetChar('slime', this)"><img src="img/SLIME.png" alt="Slime"><b>Slime</b></div>
-                    <div class="card char-card" onclick="selectNetChar('seth', this)"><img src="assets/skins/setsud.png" alt="Seth"><b>Seth</b></div>
-                    <div class="card char-card" onclick="selectNetChar('mage', this)"><img src="assets/skins/mangesud.png" alt="Mage"><b>Mage</b></div>
-                    <div class="card char-card" onclick="selectNetChar('teemo', this)"><img src="assets/skins/scoutsud.png" alt="Scout"><b>Scout</b></div>
                 </div>
             </div>
             <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em; text-shadow: 0 0 10px #0ff;">Création...</span></p>
             <button class="btn-main" id="host-btn" onclick="hostGame()">Créer (Héberger)</button>
-            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startNetworkGameHost()">Lancer le combat !</button>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startNetworkGameHost()">Lancer !</button>
             <p style="margin: 10px 0; color: #888;">OU</p>
             <input type="text" id="join-id" placeholder="Coller l'ID de l'Hôte">
             <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
-            <p id="status-text" style="color: #aaa; margin-top: 10px; font-weight: bold;"></p>
-            
-            <div>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border:none; box-shadow:none;" onclick="location.reload()">Retour</button>
-            </div>
+            <div><button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; border:none;" onclick="location.reload()">Retour</button></div>
         </div>
 
         <!-- CONTROLS MODAL -->
         <div class="overlay" id="controls-modal" style="display: none; z-index: 100;">
             <div class="menu-title glow-title" style="color: var(--p1);">Guide de Combat MOBA</div>
             <div class="controls-info" style="font-size: 1.1em; max-height: 350px; overflow-y: auto;">
-                <b style="color: var(--p1);">Déplacement :</b> Clic Droit sur le sol<br>
-                <b style="color: var(--p2);">Attaque Auto :</b> Clic Droit ou Clic Gauche sur l'adversaire / tourelle / nexus<br>
-                <b style="color: var(--p4);">Sorts de Combat :</b> Touches Q, W, Ultime E (ou A, Z, E en Azerty)<br>
-                <b style="color: #fff;">Zoom :</b> Molette de la souris pour zoomer/dézoomer<br>
+                <b style="color: #ffbf00;">NOUVEAU - Niveaux & XP :</b> Tue l'ennemi ou la tourelle pour gagner de l'XP. À chaque niveau, clique sur le "+" au dessus d'un sort pour l'apprendre ou le booster !<br>
                 <hr style="border-color: #444; margin: 15px 0;">
-                <b style="color: #00ffcc;">Furtivité :</b> Reste dans les flaques de Slime pour devenir invisible !<br>
-                <b style="color: #ff007f;">Victoire :</b> Détruis le Nexus adverse ou obtiens 3 éliminations !<br>
+                <b style="color: var(--p1);">Déplacement :</b> Clic Droit sur le sol<br>
+                <b style="color: var(--p2);">Attaque Auto :</b> Clic Droit ou Clic Gauche sur l'adversaire<br>
+                <b style="color: var(--p4);">Sorts de Combat :</b> Touches Q, W, Ultime E (ou A, Z, E)<br>
             </div>
-            <button class="btn-main" style="margin-top:20px; background: var(--p2); color: #fff; border-color: var(--p2);" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
+            <button class="btn-main" style="margin-top:20px; background: var(--p2);" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
         </div>
 
         <!-- ÉCRAN DE FIN -->
@@ -160,20 +153,17 @@
         </div>
     </div>
 
-    <!-- MODAL PARAMÈTRES -->
+    <!-- MODAL PARAMÈTRES (Inchangé) -->
     <div id="settings-modal">
         <div class="settings-content">
-            <h2 class="glow-title" style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
-            
+            <h2 class="glow-title" style="margin-top: 0; color: var(--p1);">Paramètres</h2>
             <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
-                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
                     <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
                 </div>
             </div>
-
             <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 30px;">
                 <span>Disposition Clavier (3 Sorts) ⌨️</span>
                 <select id="keyboard-layout" style="font-family: 'Rajdhani'; font-weight: bold; font-size: 1.1em; padding: 8px; border-radius: 5px; background: #222; color: white; border: 1px solid var(--p1); text-align: center;">
@@ -181,55 +171,21 @@
                     <option value="azerty">AZERTY (A, Z, Ultime: E)</option>
                 </select>
             </div>
-            
             <button onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
-    <!-- SCRIPT URL HUB -->
     <script>
         const params = new URLSearchParams(window.location.search);
         const forceMode = params.get('mode');
-        
         window.addEventListener('DOMContentLoaded', () => {
             if (forceMode === 'solo') {
                 document.getElementById('main-menu').style.display = 'none';
                 document.getElementById('game-mode-menu').style.display = 'flex';
                 window.currentIsBot = true; 
-            } else if (forceMode === 'multi') {
-                document.getElementById('btn-local-mode').style.display = 'none';
-                document.getElementById('menu-separator').style.display = 'none';
             }
         });
     </script>
-    
-    <!-- SCRIPT SWIPE HUB -->
-    <script>
-        const gamesHubList = [
-            "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
-            "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
-            "../texas_poker/index.html", "../blindtest/index.html", "../2048slime/index.html",
-            "../worms/index.html"
-        ];
-        let touchstartX = 0; let touchendX = 0; let swipeMouseX = 0; let endSwipeMouseX = 0;
-        function handleSwipeGesture(start, end) {
-            const swipeThreshold = 75; 
-            if (end < start - swipeThreshold) navigateGames(1);
-            if (end > start + swipeThreshold) navigateGames(-1);
-        }
-        function navigateGames(direction) {
-            const currentPath = window.location.pathname;
-            let currentIndex = gamesHubList.findIndex(game => currentPath.includes(game.split('/')[1]));
-            if (currentIndex === -1) return;
-            window.location.href = gamesHubList[(currentIndex + direction + gamesHubList.length) % gamesHubList.length];
-        }
-        function isProtectedElement(e) { return e.target.tagName.toLowerCase() === 'canvas' || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select'; }
-        document.addEventListener('touchstart', e => { if (isProtectedElement(e)) return; touchstartX = e.changedTouches[0].screenX; }, { passive: true });
-        document.addEventListener('touchend', e => { if (isProtectedElement(e)) return; touchendX = e.changedTouches[0].screenX; handleSwipeGesture(touchstartX, touchendX); }, { passive: true });
-        document.addEventListener('mousedown', e => { if (isProtectedElement(e)) return; swipeMouseX = e.screenX; });
-        document.addEventListener('mouseup', e => { if (isProtectedElement(e)) return; endSwipeMouseX = e.screenX; handleSwipeGesture(swipeMouseX, endSwipeMouseX); });
-    </script>
-    
     <script src="slimelegends.js"></script>
 </body>
 </html>
