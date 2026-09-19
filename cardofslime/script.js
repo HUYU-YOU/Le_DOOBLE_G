@@ -50,7 +50,7 @@ function clickSettingsAnim() {
 // --- GESTION AUDIO ET LANGUE GLOBALE ---
 let isMuted = localStorage.getItem('isMuted') === 'true';
 let musicStarted = false;
-let currentLang = localStorage.getItem('gameLang') || 'fr'; // Sauvegarde de la langue
+let currentLang = localStorage.getItem('gameLang') || 'fr';
 
 document.addEventListener('DOMContentLoaded', () => {
     const musicToggle = document.getElementById('music-toggle');
@@ -58,28 +58,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsBtnImg = document.getElementById('settings-btn-img');
     if(settingsBtnImg) settingsBtnImg.src = '../img/setting.png';
 
-    // Langue initiale
     const langToggle = document.getElementById('lang-toggle');
     if (langToggle) langToggle.checked = (currentLang === 'en');
     updateLanguageUI();
 });
 
-// NOUVEAU : Fonction de bascule de langue (FR/EN)
 function toggleLanguage() {
     const langToggle = document.getElementById('lang-toggle');
     currentLang = langToggle.checked ? 'en' : 'fr';
     localStorage.setItem('gameLang', currentLang);
     updateLanguageUI();
 }
-
 function updateLanguageUI() {
     const hubBtnImg = document.getElementById('hub-btn-img');
-    if (hubBtnImg) {
-        // Alterne l'image du bouton Retour au Hub en fonction de la langue
-        hubBtnImg.src = currentLang === 'en' ? '../img/returbhub.png' : '../img/retourhub.png';
-    }
+    if (hubBtnImg) hubBtnImg.src = currentLang === 'en' ? '../img/returbhub.png' : '../img/retourhub.png';
 }
-
 function toggleMusic() {
     const musicToggle = document.getElementById('music-toggle');
     isMuted = !musicToggle.checked;
@@ -101,123 +94,36 @@ function playSound(id) {
 }
 
 // ==========================================
-// 2. BASE DE DONNÉES EXACTE DES SKINS
+// 2. BASE DE DONNÉES DES SKINS
 // ==========================================
 const cardDatabase = {
-    slime: { 
-        id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, targetsAir: false,
-        skins: { 
-            front: { idle: ['assets/skins/slime.png'], attack: ['assets/skins/slimeattack1.png', 'assets/skins/slimeattack2.png'] },
-            back:  { idle: ['assets/skins/slimeback.png'], attack: ['assets/skins/slimeback.png'] }
-        }
-    },
-    slimeuse: { 
-        id: "slimeuse", type: "troop", name: "Slimeuse", cost: 3, hp: 200, dmg: 90, range: 25, speed: 5, atkSpeed: 1000, isRanged: true, targetsAir: true,
-        skins: {
-            front: { idle: ['assets/skins/slimeuse.png'], attack: ['assets/skins/slimeuseattack.png'] },
-            back:  { idle: ['assets/skins/slimeuseback.png'], attack: ['assets/skins/slimeuseback.png'] }
-        }
-    },
-    mega: { 
-        id: "mega", type: "troop", name: "MEGA", cost: 8, hp: 2500, dmg: 150, range: 5, speed: 2, atkSpeed: 2000, targetsAir: false,
-        skins: {
-            front: { idle: ['assets/skins/golem.png'], attack: ['assets/skins/golemattack.png'] },
-            back:  { idle: ['assets/skins/golemback.png'], attack: ['assets/skins/golemattackback.png'] }
-        }
-    },
-    boule: { 
-        id: "boule", type: "troop", name: "La Boule", cost: 4, hp: 800, dmg: 100, range: 4, speed: 7, atkSpeed: 1500, targetBuilding: true, targetsAir: false,
-        skins: {
-            front: { idle: ['assets/skins/boule.png'], attack: ['assets/skins/boule.png'] },
-            back:  { idle: ['assets/skins/bouleback.png'], attack: ['assets/skins/bouleback.png'] }
-        }
-    },
-    helicoton: { 
-        id: "helicoton", type: "troop", name: "Hélicoton", cost: 3, hp: 300, dmg: 50, range: 20, speed: 5, atkSpeed: 900, isRanged: true, isFlying: true, targetsAir: true,
-        skins: {
-            front: { idle: ['assets/skins/helicoton.png'], attack: ['assets/skins/helicotonattack.png'] },
-            back:  { idle: ['assets/skins/helictonback.png'], attack: ['assets/skins/helictonback.png'] }
-        }
-    },
-    dragon: { 
-        id: "dragon", type: "troop", name: "Dragon", cost: 4, hp: 800, dmg: 80, range: 15, speed: 4, atkSpeed: 1200, isRanged: true, isFlying: true, targetsAir: true,
-        skins: {
-            front: { idle: ['assets/skins/drake1.png', 'assets/skins/drake2.png'], attack: ['assets/skins/drake1.png', 'assets/skins/drake2.png'] },
-            back:  { idle: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'], attack: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'] }
-        }
-    },
-    usine: { 
-        id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0,
-        isStacked: true,
-        skins: {
-            front: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }, 
-            back: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }
-        }
-    },
-    barriere: { 
-        id: "barriere", type: "building", name: "Barrière", cost: 4, hp: 1000, lifetime: 40, dmg: 20, range: 15, speed: 0, atkSpeed: 1000, stunDuration: 0.5, isRanged: true, targetsAir: false,
-        skins: {
-            front: { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] },
-            back:  { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] }
-        }
-    },
-    canon: { 
-        id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 30, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, hasTurret: true,
-        skins: {
-            front: { base: 'assets/skins/supportcanon.png', turret: 'assets/skins/canon.png' },
-            back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' }
-        }
-    },
-    tornade: { 
-        id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, 
-        anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png']
-    },
-    boule_sort: { 
-        id: "boule_sort", type: "spell_puddle", name: "Boule Sort", cost: 2, dmg: 50, radius: 15, pushback: true, slowDuration: 3, duration: 5000,
-        projectile: 'assets/skins/boulespell.png', anim: ['assets/skins/splashboule.png']
-    },
-    marais: { 
-        id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "slime_marais", radius: 15,
-        anim: ['assets/skins/marais1.png', 'assets/skins/marais2.png', 'assets/skins/marais3.png']
-    },
-    slime_marais: { 
-        id: "slime_marais", type: "troop", name: "Slime Marais", hp: 300, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true,
-        skins: {
-            front: { idle: ['assets/skins/slimemarais.png'], attack: ['assets/skins/slimemarais.png'] },
-            back:  { idle: ['assets/skins/slimemaraisback.png'], attack: ['assets/skins/slimemaraisback.png'] }
-        }
-    }
+    slime: { id: "slime", type: "troop", name: "Slime", cost: 3, hp: 600, dmg: 40, range: 4, speed: 4, atkSpeed: 1000, targetsAir: false, skins: { front: { idle: ['assets/skins/slime.png'], attack: ['assets/skins/slimeattack1.png', 'assets/skins/slimeattack2.png'] }, back:  { idle: ['assets/skins/slimeback.png'], attack: ['assets/skins/slimeback.png'] } } },
+    slimeuse: { id: "slimeuse", type: "troop", name: "Slimeuse", cost: 3, hp: 200, dmg: 90, range: 25, speed: 5, atkSpeed: 1000, isRanged: true, targetsAir: true, skins: { front: { idle: ['assets/skins/slimeuse.png'], attack: ['assets/skins/slimeuseattack.png'] }, back:  { idle: ['assets/skins/slimeuseback.png'], attack: ['assets/skins/slimeuseback.png'] } } },
+    mega: { id: "mega", type: "troop", name: "MEGA", cost: 8, hp: 2500, dmg: 150, range: 5, speed: 2, atkSpeed: 2000, targetsAir: false, skins: { front: { idle: ['assets/skins/golem.png'], attack: ['assets/skins/golemattack.png'] }, back:  { idle: ['assets/skins/golemback.png'], attack: ['assets/skins/golemattackback.png'] } } },
+    boule: { id: "boule", type: "troop", name: "La Boule", cost: 4, hp: 800, dmg: 100, range: 4, speed: 7, atkSpeed: 1500, targetBuilding: true, targetsAir: false, skins: { front: { idle: ['assets/skins/boule.png'], attack: ['assets/skins/boule.png'] }, back:  { idle: ['assets/skins/bouleback.png'], attack: ['assets/skins/bouleback.png'] } } },
+    helicoton: { id: "helicoton", type: "troop", name: "Hélicoton", cost: 3, hp: 300, dmg: 50, range: 20, speed: 5, atkSpeed: 900, isRanged: true, isFlying: true, targetsAir: true, skins: { front: { idle: ['assets/skins/helicoton.png'], attack: ['assets/skins/helicotonattack.png'] }, back:  { idle: ['assets/skins/helictonback.png'], attack: ['assets/skins/helictonback.png'] } } },
+    dragon: { id: "dragon", type: "troop", name: "Dragon", cost: 4, hp: 800, dmg: 80, range: 15, speed: 4, atkSpeed: 1200, isRanged: true, isFlying: true, targetsAir: true, skins: { front: { idle: ['assets/skins/drake1.png', 'assets/skins/drake2.png'], attack: ['assets/skins/drake1.png', 'assets/skins/drake2.png'] }, back:  { idle: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'], attack: ['assets/skins/drakeback1.png', 'assets/skins/drakeback2.png'] } } },
+    usine: { id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0, isStacked: true, skins: { front: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }, back: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' } } },
+    barriere: { id: "barriere", type: "building", name: "Barrière", cost: 4, hp: 1000, lifetime: 40, dmg: 20, range: 15, speed: 0, atkSpeed: 1000, stunDuration: 0.5, isRanged: true, targetsAir: false, skins: { front: { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] }, back:  { idle: ['assets/skins/electric1.png', 'assets/skins/electric2.png'], attack: ['assets/skins/electric1.png', 'assets/skins/electric2.png'] } } },
+    canon: { id: "canon", type: "building", name: "Canon", cost: 3, hp: 900, lifetime: 40, dmg: 70, range: 30, speed: 0, atkSpeed: 1100, isRanged: true, targetsAir: true, hasTurret: true, skins: { front: { base: 'assets/skins/supportcanon.png', turret: 'assets/skins/canon.png' }, back:  { base: 'assets/skins/suportcanonback.png', turret: 'assets/skins/canonback_rotatif.png' } } },
+    tornade: { id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png'] },
+    boule_sort: { id: "boule_sort", type: "spell_puddle", name: "Boule Sort", cost: 2, dmg: 50, radius: 15, pushback: true, slowDuration: 3, duration: 5000, projectile: 'assets/skins/boulespell.png', anim: ['assets/skins/splashboule.png'] },
+    marais: { id: "marais", type: "spell_spawn", name: "Marais", cost: 5, duration: 10000, spawnRate: 2000, spawnId: "slime_marais", radius: 15, anim: ['assets/skins/marais1.png', 'assets/skins/marais2.png', 'assets/skins/marais3.png'] },
+    slime_marais: { id: "slime_marais", type: "troop", name: "Slime Marais", hp: 300, dmg: 20, range: 4, speed: 5, atkSpeed: 1000, targetsAir: false, hidden: true, skins: { front: { idle: ['assets/skins/slimemarais.png'], attack: ['assets/skins/slimemarais.png'] }, back:  { idle: ['assets/skins/slimemaraisback.png'], attack: ['assets/skins/slimemaraisback.png'] } } }
 };
 
 let playerDeck = ["slime", "slimeuse", "dragon", "canon", "boule_sort", "marais"];
 let tempSelectedDeck = [...playerDeck];
 
 function getCardBackgroundStyle(card) {
-    if (card.hasTurret) {
-        return {
-            img: `url('${card.skins.front.turret}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`,
-            size: 'contain, contain, cover, cover'
-        };
-    } else if (card.isStacked) {
-        return {
-            img: `url('${card.skins.front.top}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`,
-            size: 'contain, contain, cover, cover'
-        };
-    } else {
-        let singleImg = card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0]);
-        return {
-            img: `url('${singleImg}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')`,
-            size: 'contain, cover, cover'
-        };
-    }
+    if (card.hasTurret) return { img: `url('${card.skins.front.turret}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
+    else if (card.isStacked) return { img: `url('${card.skins.front.top}'), url('${card.skins.front.base}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
+    else return { img: `url('${card.skins ? card.skins.front.idle[0] : (card.projectile || card.anim[0])}'), linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('assets/skins/mapday.jpeg')` };
 }
 
-function openDeckBuilder() {
-    document.getElementById('main-menu').style.display = 'none'; document.getElementById('deck-builder-menu').style.display = 'flex'; renderDeckPool();
-}
-function closeDeckBuilder() {
-    document.getElementById('deck-builder-menu').style.display = 'none'; document.getElementById('main-menu').style.display = 'flex';
-}
+function openDeckBuilder() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('deck-builder-menu').style.display = 'flex'; renderDeckPool(); }
+function closeDeckBuilder() { document.getElementById('deck-builder-menu').style.display = 'none'; document.getElementById('main-menu').style.display = 'flex'; }
+
 function renderDeckPool() {
     const pool = document.getElementById('deck-pool'); pool.innerHTML = '';
     Object.keys(cardDatabase).filter(k => !cardDatabase[k].hidden).forEach(cardId => {
@@ -227,11 +133,11 @@ function renderDeckPool() {
         
         let bg = getCardBackgroundStyle(card);
         div.style.backgroundImage = bg.img;
-        div.style.backgroundSize = bg.size;
-        div.style.backgroundPosition = 'center, center, center, center';
-        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat, no-repeat';
+        div.style.backgroundSize = 'contain, cover, cover';
+        div.style.backgroundPosition = 'center, center, center';
+        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
 
-        div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000;">${card.cost}</span>`;
+        div.innerHTML = `<span style="position:absolute; top:-5px; left:-5px; background:#39ff14; color:#000; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-family:'Luckiest Guy'; border: 1px solid #000; font-size:14px;">${card.cost}</span>`;
         div.onclick = () => {
             if (tempSelectedDeck.includes(cardId)) { if(tempSelectedDeck.length > 1) tempSelectedDeck = tempSelectedDeck.filter(id => id !== cardId); } 
             else { if (tempSelectedDeck.length < 6) tempSelectedDeck.push(cardId); }
@@ -248,12 +154,8 @@ function saveCustomDeck() { playerDeck = [...tempSelectedDeck]; closeDeckBuilder
 // 3. MULTIJOUEUR ET ÉMOTES
 // ==========================================
 let peer = null, conn = null, isHost = false, currentCOSCode = "";
-
 function generateCOSCode() { return "COS" + Math.floor(1000 + Math.random() * 9000); }
-function openMultiMenu() {
-    document.getElementById('main-menu').style.display = 'none'; document.getElementById('multi-menu').style.display = 'flex';
-    currentCOSCode = generateCOSCode(); document.getElementById('cos-code-display').innerText = currentCOSCode;
-}
+function openMultiMenu() { document.getElementById('main-menu').style.display = 'none'; document.getElementById('multi-menu').style.display = 'flex'; currentCOSCode = generateCOSCode(); document.getElementById('cos-code-display').innerText = currentCOSCode; }
 function closeMultiMenu() { document.getElementById('multi-menu').style.display = 'none'; document.getElementById('main-menu').style.display = 'flex'; if(peer) peer.destroy(); }
 function hostGame() {
     document.getElementById('net-status').innerText = "Ouverture du salon " + currentCOSCode + "..."; peer = new Peer(currentCOSCode);
@@ -281,30 +183,22 @@ function setupConnectionEvents() {
         } else if (data.type === 'emote') { showEmote(data.emotePath, 'enemy'); }
     });
 }
-function sendEmote(emojiFileName) { 
-    let path = `assets/skins/${emojiFileName}`;
-    showEmote(path, 'player'); 
-    if(conn && conn.open) conn.send({type: 'emote', emotePath: path}); 
-}
+function sendEmote(emojiFileName) { let path = `assets/skins/${emojiFileName}`; showEmote(path, 'player'); if(conn && conn.open) conn.send({type: 'emote', emotePath: path}); }
 function showEmote(emojiPath, team) {
     const base = activeEntities.find(e => e.id === (team === 'player' ? 'base_p' : 'base_e')); if(!base) return;
-    const b = document.createElement('div'); b.className = 'emote-bubble'; 
-    b.innerHTML = `<img src="${emojiPath}" alt="emote">`;
-    b.style.left = `${base.x}%`; b.style.top = `${base.y}%`; arena.appendChild(b);
-    setTimeout(() => b.remove(), 2000);
+    const b = document.createElement('div'); b.className = 'emote-bubble'; b.innerHTML = `<img src="${emojiPath}" alt="emote">`;
+    b.style.left = `${base.x}%`; b.style.top = `${base.y}%`; arena.appendChild(b); setTimeout(() => b.remove(), 2000);
 }
 function startMultiplayerGame() { document.getElementById('multi-menu').style.display = 'none'; initGameEngine(); }
 function startSoloGame() { document.getElementById('main-menu').style.display = 'none'; initGameEngine(); setInterval(enemyAI, 2000); }
 
 // ==========================================
-// 4. MOTEUR DE JEU (GAME ENGINE)
+// 4. MOTEUR DE JEU (GAME ENGINE - POURCENTAGES)
 // ==========================================
-const MAX_SLIME = 10;
-let currentSlime = 5; let enemySlime = 5; 
+const MAX_SLIME = 10; let currentSlime = 5; let enemySlime = 5; 
 let hand = [], drawPile = [], nextCard = null;
 let activeEntities = [], activeProjectiles = [], activeSpells = [];
-let lastTime = performance.now();
-let selectedCardIndex = null; let isGameOver = false;
+let lastTime = performance.now(); let selectedCardIndex = null; let isGameOver = false;
 
 let gameTime = 180; let slimeRate = 2.5; let slimeAcc = 0; let enemySlimeAcc = 0; let doubleSlimeActive = false;
 const arena = document.getElementById('arena'); const deployZone = document.getElementById('deploy-zone');
@@ -319,24 +213,27 @@ function initGameEngine() {
     lastTime = performance.now(); requestAnimationFrame(gameLoop);
 }
 
+// Les tailles (12, 9) représentent les pourcentages de la map (width: 12%)
 function setupTowers() {
-    createTower('base_p', 'player', 50, 87, 5000, "assets/skins/tourroyaleback.png", 96, 96);
-    createTower('tower_p_l', 'player', 27, 76, 2500, "assets/skins/tourback.png", 72, 72);
-    createTower('tower_p_r', 'player', 73, 76, 2500, "assets/skins/tourback.png", 72, 72);
+    createTower('base_p', 'player', 50, 87, 5000, "assets/skins/tourroyaleback.png", 12);
+    createTower('tower_p_l', 'player', 27, 76, 2500, "assets/skins/tourback.png", 9);
+    createTower('tower_p_r', 'player', 73, 76, 2500, "assets/skins/tourback.png", 9);
 
-    createTower('base_e', 'enemy', 50, 18, 5000, "assets/skins/touroryale.png", 96, 96);
-    createTower('tower_e_l', 'enemy', 27, 26, 2500, "assets/skins/tour.png", 72, 72);
-    createTower('tower_e_r', 'enemy', 73, 26, 2500, "assets/skins/tour.png", 72, 72);
+    createTower('base_e', 'enemy', 50, 18, 5000, "assets/skins/touroryale.png", 12);
+    createTower('tower_e_l', 'enemy', 27, 26, 2500, "assets/skins/tour.png", 9);
+    createTower('tower_e_r', 'enemy', 73, 26, 2500, "assets/skins/tour.png", 9);
 }
 
-function createTower(id, team, x, y, hp, img, width, height) {
+function createTower(id, team, x, y, hp, img, sizePct) {
     const el = document.createElement('div');
     el.className = `entity building team-${team}`;
-    el.style.left = `${x}%`; el.style.top = `${y}%`; el.style.width = `${width}px`; el.style.height = `${height}px`;
+    el.style.left = `${x}%`; el.style.top = `${y}%`; 
+    el.style.width = `${sizePct}%`; 
+    el.style.aspectRatio = '1'; 
+    el.style.height = 'auto';
     el.style.backgroundImage = `url('${img}')`;
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
     arena.appendChild(el);
-    
     let lane = x < 50 ? 'left' : (x > 50 ? 'right' : 'center');
     activeEntities.push({ id: id, team: team, x: x, y: y, lane: lane, hp: hp, maxHp: hp, dmg: 50, range: 35, speed: 0, atkSpeed: 1000, isRanged: true, isFlying: false, targetsAir: true, targetBuilding: false, stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, hpBar: el.querySelector('.entity-hp-fill') });
 }
@@ -368,22 +265,16 @@ function updateUI() {
     hand.forEach((cardId, index) => {
         const div = document.createElement('div');
         div.className = `card ${selectedCardIndex === index ? 'selected' : ''} ${currentSlime < cardDatabase[cardId].cost ? 'disabled' : ''}`;
-        
         let bg = getCardBackgroundStyle(cardDatabase[cardId]);
-        div.style.backgroundImage = bg.img;
-        div.style.backgroundSize = bg.size;
-        div.style.backgroundPosition = 'center, center, center, center';
-        div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat, no-repeat';
-
+        div.style.backgroundImage = bg.img; div.style.backgroundSize = 'contain, cover, cover'; div.style.backgroundPosition = 'center, center, center'; div.style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
         div.dataset.cost = cardDatabase[cardId].cost; div.innerHTML = `<div class="cost">${cardDatabase[cardId].cost}</div>`;
         div.addEventListener('click', () => selectCard(index)); handContainer.appendChild(div);
     });
-    
     let nextBg = getCardBackgroundStyle(cardDatabase[nextCard]);
     document.getElementById('next-card').style.backgroundImage = nextBg.img;
-    document.getElementById('next-card').style.backgroundSize = nextBg.size;
-    document.getElementById('next-card').style.backgroundPosition = 'center, center, center, center';
-    document.getElementById('next-card').style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat, no-repeat';
+    document.getElementById('next-card').style.backgroundSize = 'contain, cover, cover';
+    document.getElementById('next-card').style.backgroundPosition = 'center, center, center';
+    document.getElementById('next-card').style.backgroundRepeat = 'no-repeat, no-repeat, no-repeat';
     document.getElementById('next-card').innerHTML = `<div class="cost">${cardDatabase[nextCard].cost}</div>`;
 }
 
@@ -400,14 +291,12 @@ function handleArenaClick(e) {
     const cardData = cardDatabase[hand[selectedCardIndex]];
 
     if (!cardData.type.includes('spell') && clickY < 50) return;
-
     currentSlime -= cardData.cost; updateSlimeUI(); playSound('sfx-spawn');
 
     if (cardData.type.includes('spell')) castSpell(cardData, 'player', clickX, clickY);
     else spawnEntity(cardData, 'player', clickX, clickY);
 
     if (conn && conn.open) conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY });
-
     drawPile.push(hand[selectedCardIndex]); hand[selectedCardIndex] = nextCard; nextCard = drawPile.shift();
     selectedCardIndex = null; deployZone.style.display = 'none'; updateUI();
 }
@@ -423,7 +312,6 @@ function spawnEntity(data, team, x, y) {
     el.innerHTML = `<div class="entity-hp-container"><div class="entity-hp-fill"></div></div>`;
     
     let turretEl = null; let topEl = null;
-    
     if (data.hasTurret) {
         el.style.backgroundImage = `url('${data.skins[initFacing].base}')`;
         turretEl = document.createElement('div'); turretEl.className = 'turret';
@@ -436,14 +324,10 @@ function spawnEntity(data, team, x, y) {
 
     arena.appendChild(el);
     activeEntities.push({
-        id: Math.random().toString(36).substr(2, 9),
-        team: team, x: x, y: y, lane: initLane, color: data.color, hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, 
-        range: data.range, speed: data.speed, atkSpeed: data.atkSpeed || 1000, 
-        isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
-        isFlying: data.isFlying || false, targetsAir: data.targetsAir || false,
-        hasTurret: data.hasTurret || false, isStacked: data.isStacked || false, skins: data.skins, facing: initFacing,
-        state: 'idle', animTimer: 0, animFrame: 0,
-        stunDuration: data.stunDuration || null, lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0,
+        id: Math.random().toString(36).substr(2, 9), team: team, x: x, y: y, lane: initLane, color: data.color, hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, 
+        range: data.range, speed: data.speed, atkSpeed: data.atkSpeed || 1000, isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
+        isFlying: data.isFlying || false, targetsAir: data.targetsAir || false, hasTurret: data.hasTurret || false, isStacked: data.isStacked || false, skins: data.skins, facing: initFacing,
+        state: 'idle', animTimer: 0, animFrame: 0, stunDuration: data.stunDuration || null, lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0,
         stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, turretElement: turretEl, hpBar: el.querySelector('.entity-hp-fill')
     });
 }
@@ -454,16 +338,12 @@ function castSpell(spellData, casterTeam, targetX, targetY) {
         let base = activeEntities.find(e => e.id === (casterTeam === 'player' ? 'base_p' : 'base_e'));
         if (base) { originX = base.x; originY = base.y; }
 
-        const proj = document.createElement('div');
-        proj.className = 'spell-throw-anim';
+        const proj = document.createElement('div'); proj.className = 'spell-throw-anim';
         proj.style.backgroundImage = `url('${spellData.projectile}')`;
         proj.style.left = `${originX}%`; proj.style.top = `${originY}%`;
         arena.appendChild(proj);
 
-        activeSpells.push({
-            type: 'throw', team: casterTeam, startX: originX, startY: originY, targetX: targetX, targetY: targetY,
-            progress: 0, element: proj, spellData: spellData
-        });
+        activeSpells.push({ type: 'throw', team: casterTeam, startX: originX, startY: originY, targetX: targetX, targetY: targetY, progress: 0, element: proj, spellData: spellData });
     } else {
         executeSpellImpact(spellData, casterTeam, targetX, targetY);
     }
@@ -473,37 +353,26 @@ function executeSpellImpact(spellData, casterTeam, targetX, targetY) {
     if (spellData.id === 'tornade') {
         for(let i=0; i<3; i++) {
             const fx = document.createElement('div'); fx.className = 'spell-anim';
-            fx.style.width = '60px'; fx.style.height = '60px';
+            fx.style.width = '10%'; fx.style.aspectRatio = '1'; fx.style.height = 'auto';
             arena.appendChild(fx);
             let offsetX = (Math.random() - 0.5) * 10; let offsetY = (Math.random() - 0.5) * 10;
-            activeSpells.push({ 
-                type: 'tornado', team: casterTeam, originX: targetX, originY: targetY, 
-                x: targetX + offsetX, y: targetY + offsetY, vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, 
-                anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), 
-                duration: 3500, dmg: spellData.dmg, tickTimer: 0
-            });
+            activeSpells.push({ type: 'tornado', team: casterTeam, originX: targetX, originY: targetY, x: targetX + offsetX, y: targetY + offsetY, vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, anim: spellData.anim, element: fx, timer: 0, frame: Math.floor(Math.random()*4), duration: 3500, dmg: spellData.dmg, tickTimer: 0 });
         }
     } else if (spellData.type === 'spell_puddle' || spellData.type === 'spell_spawn') {
         const puddle = document.createElement('div'); puddle.className = 'spell-puddle';
         puddle.style.left = `${targetX}%`; puddle.style.top = `${targetY}%`;
-        puddle.style.width = `${spellData.radius * 4}px`; puddle.style.height = `${spellData.radius * 4}px`;
+        puddle.style.width = `${spellData.radius * 2}%`; puddle.style.aspectRatio = '1'; puddle.style.height = 'auto';
         if(spellData.anim && spellData.anim.length > 0) { puddle.style.backgroundImage = `url('${spellData.anim[0]}')`; }
         arena.appendChild(puddle);
-        activeSpells.push({
-            type: spellData.type === 'spell_puddle' ? 'puddle' : 'spawner',
-            team: casterTeam, x: targetX, y: targetY, radius: spellData.radius, duration: spellData.duration, 
-            spawnRate: spellData.spawnRate, spawnId: spellData.spawnId, lastSpawn: 0, anim: spellData.anim, element: puddle, timer: 0, frame: 0,
-            dmg: spellData.dmg, slowDuration: spellData.slowDuration, pushback: spellData.pushback, triggered: false
-        });
+        activeSpells.push({ type: spellData.type === 'spell_puddle' ? 'puddle' : 'spawner', team: casterTeam, x: targetX, y: targetY, radius: spellData.radius, duration: spellData.duration, spawnRate: spellData.spawnRate, spawnId: spellData.spawnId, lastSpawn: 0, anim: spellData.anim, element: puddle, timer: 0, frame: 0, dmg: spellData.dmg, slowDuration: spellData.slowDuration, pushback: spellData.pushback, triggered: false });
     } else {
         const fx = document.createElement('div'); fx.className = 'spell-anim';
-        fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`; fx.style.width = `${spellData.radius*4}px`; fx.style.height = `${spellData.radius*4}px`;
+        fx.style.left = `${targetX}%`; fx.style.top = `${targetY}%`;
+        fx.style.width = `${spellData.radius * 2}%`; fx.style.aspectRatio = '1'; fx.style.height = 'auto';
         arena.appendChild(fx);
         activeSpells.push({ type: 'instant', x: targetX, y: targetY, anim: spellData.anim, element: fx, timer: 0, frame: 0, maxTime: 0.8 });
         const targetTeam = casterTeam === 'player' ? 'enemy' : 'player';
-        activeEntities.forEach(ent => {
-            if (ent.team === targetTeam && Math.hypot(ent.x - targetX, ent.y - targetY) < spellData.radius) takeDamage(ent, spellData.dmg);
-        });
+        activeEntities.forEach(ent => { if (ent.team === targetTeam && Math.hypot(ent.x - targetX, ent.y - targetY) < spellData.radius) takeDamage(ent, spellData.dmg); });
     }
 }
 
@@ -515,62 +384,39 @@ function enemyAI() {
     if (playableCards.length === 0) return;
     if (Math.random() > 0.3) return; 
 
-    let cardToPlay = null;
-    let spawnX = Math.random() > 0.5 ? 27 : 73;
-    let spawnY = 15;
-
+    let cardToPlay = null; let spawnX = Math.random() > 0.5 ? 27 : 73; let spawnY = 15;
     if (enemyThreats.length > 0) {
-        enemyThreats.sort((a, b) => a.y - b.y);
-        let threat = enemyThreats[0];
-        spawnX = threat.x < 50 ? 27 : 73; 
-        spawnY = Math.max(10, threat.y - 15);
-
+        enemyThreats.sort((a, b) => a.y - b.y); let threat = enemyThreats[0];
+        spawnX = threat.x < 50 ? 27 : 73; spawnY = Math.max(10, threat.y - 15);
         let defensiveCards = playableCards.filter(c => !c.targetBuilding);
-        if (threat.isFlying) {
-            let antiAir = defensiveCards.filter(c => c.targetsAir || c.type.includes('spell'));
-            if (antiAir.length > 0) defensiveCards = antiAir;
-        }
-        if (defensiveCards.length > 0) {
-            cardToPlay = defensiveCards[Math.floor(Math.random() * defensiveCards.length)];
-        } else {
-            cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
-        }
-        if (cardToPlay && cardToPlay.type.includes('spell')) {
-            spawnX = threat.x; spawnY = threat.y;
-        }
+        if (threat.isFlying) { let antiAir = defensiveCards.filter(c => c.targetsAir || c.type.includes('spell')); if (antiAir.length > 0) defensiveCards = antiAir; }
+        if (defensiveCards.length > 0) cardToPlay = defensiveCards[Math.floor(Math.random() * defensiveCards.length)];
+        else cardToPlay = playableCards[Math.floor(Math.random() * playableCards.length)];
+        if (cardToPlay && cardToPlay.type.includes('spell')) { spawnX = threat.x; spawnY = threat.y; }
     } else {
         let attackCards = playableCards;
-        if (Math.random() > 0.4) {
-            attackCards = playableCards.filter(c => c.id !== 'boule'); 
-        }
+        if (Math.random() > 0.4) attackCards = playableCards.filter(c => c.id !== 'boule'); 
         if (attackCards.length === 0) attackCards = playableCards;
         cardToPlay = attackCards[Math.floor(Math.random() * attackCards.length)];
-
         if (cardToPlay.type.includes('spell')) {
             let playerTowers = activeEntities.filter(e => e.team === 'player' && e.speed === 0);
-            if (playerTowers.length > 0) {
-                let targetTower = playerTowers[Math.floor(Math.random() * playerTowers.length)];
-                spawnX = targetTower.x; spawnY = targetTower.y;
-            }
+            if (playerTowers.length > 0) { let targetTower = playerTowers[Math.floor(Math.random() * playerTowers.length)]; spawnX = targetTower.x; spawnY = targetTower.y; }
         }
     }
-
     if (cardToPlay) {
         enemySlime -= cardToPlay.cost;
         if (cardToPlay.type.includes('spell')) castSpell(cardToPlay, 'enemy', spawnX, spawnY);
-        else {
-            spawnY = Math.min(45, Math.max(10, spawnY)); 
-            spawnEntity(cardToPlay, 'enemy', spawnX, spawnY);
-        }
+        else { spawnY = Math.min(45, Math.max(10, spawnY)); spawnEntity(cardToPlay, 'enemy', spawnX, spawnY); }
         playSound('sfx-spawn');
     }
 }
 
 function createParticles(x, y, color) {
     for(let i=0; i<6; i++) {
-        const p = document.createElement('div'); p.className = 'particle'; p.style.backgroundColor = color || '#39ff14'; p.style.left = `${x}%`; p.style.top = `${y}%`;
-        const angle = Math.random() * Math.PI * 2; const dist = 15 + Math.random() * 40;
-        p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`); p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+        const p = document.createElement('div'); p.className = 'particle'; p.style.backgroundColor = color || '#39ff14'; 
+        p.style.left = `${x}%`; p.style.top = `${y}%`;
+        const angle = Math.random() * Math.PI * 2; const dist = 2 + Math.random() * 5; // Distance en %
+        p.style.setProperty('--tx', `${Math.cos(angle) * dist}%`); p.style.setProperty('--ty', `${Math.sin(angle) * dist}%`);
         arena.appendChild(p); setTimeout(() => p.remove(), 500);
     }
 }
@@ -589,7 +435,7 @@ function shootProjectile(attacker, target) {
     const proj = document.createElement('div'); proj.className = 'projectile'; 
     proj.style.left = `${attacker.x}%`; proj.style.top = `${attacker.y}%`; 
     if(cardDatabase['boule_sort'] && cardDatabase['boule_sort'].projectile) {
-        proj.style.backgroundImage = `url('${cardDatabase['boule_sort'].projectile}')`; proj.style.backgroundColor = 'transparent'; proj.style.width = '20px'; proj.style.height = '20px';
+        proj.style.backgroundImage = `url('${cardDatabase['boule_sort'].projectile}')`; proj.style.backgroundColor = 'transparent'; 
     }
     arena.appendChild(proj);
     activeProjectiles.push({ x: attacker.x, y: attacker.y, target: target, dmg: attacker.dmg, team: attacker.team, stunDuration: attacker.stunDuration, element: proj, speed: 40 });
@@ -619,16 +465,11 @@ function gameLoop(currentTime) {
     activeSpells = activeSpells.filter(spell => {
         if (spell.type === 'throw') {
             spell.progress += dt * 1.5;
-            if (spell.progress >= 1) {
-                spell.element.remove();
-                executeSpellImpact(spell.spellData, spell.team, spell.targetX, spell.targetY);
-                return false;
-            }
+            if (spell.progress >= 1) { spell.element.remove(); executeSpellImpact(spell.spellData, spell.team, spell.targetX, spell.targetY); return false; }
             let currentX = spell.startX + (spell.targetX - spell.startX) * spell.progress;
             let currentY = spell.startY + (spell.targetY - spell.startY) * spell.progress;
             let arc = Math.sin(spell.progress * Math.PI) * 20; 
-            spell.element.style.left = `${currentX}%`;
-            spell.element.style.top = `${currentY - arc}%`;
+            spell.element.style.left = `${currentX}%`; spell.element.style.top = `${currentY - arc}%`;
             spell.element.style.transform = `translate(-50%, -50%) rotate(${spell.progress * 1080}deg)`;
             return true;
         }
@@ -654,9 +495,7 @@ function gameLoop(currentTime) {
                 activeEntities.forEach(ent => {
                     if (ent.team === targetTeam && Math.hypot(ent.x - spell.x, ent.y - spell.y) < 12) {
                         takeDamage(ent, spell.dmg);
-                        if (!ent.id.includes('base') && !ent.id.includes('tower')) {
-                            ent.x += (spell.originX - ent.x) * 0.1; ent.y += (spell.originY - ent.y) * 0.1; 
-                        }
+                        if (!ent.id.includes('base') && !ent.id.includes('tower')) { ent.x += (spell.originX - ent.x) * 0.1; ent.y += (spell.originY - ent.y) * 0.1; }
                     }
                 });
             }
