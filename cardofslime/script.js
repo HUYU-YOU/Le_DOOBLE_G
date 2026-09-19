@@ -170,7 +170,7 @@ const cardDatabase = {
         } 
     },
     usine: { 
-        id: "usine", type: "building", name: "Usine", cost: 4, hp: 800, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0, isStacked: true, 
+        id: "usine", type: "building", name: "Usine", cost: 5, hp: 650, lifetime: 30, spawnRate: 10000, spawnId: "slime", speed: 0, range: 0, isStacked: true, 
         skins: { 
             front: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' }, 
             back: { base: 'assets/skins/usineback.png', top: 'assets/skins/usine.png' } 
@@ -191,7 +191,7 @@ const cardDatabase = {
         } 
     },
     tornade: { 
-        id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 15, radius: 15, 
+        id: "tornade", type: "spell_tornado", name: "Tornade", cost: 3, dmg: 25, radius: 15, 
         anim: ['assets/skins/tornade1.png', 'assets/skins/tornade2.png', 'assets/skins/tornadeback1.png', 'assets/skins/tornadeback2.png'] 
     },
     boule_sort: { 
@@ -1017,6 +1017,8 @@ function gameLoop(currentTime) {
     // PROJECTILES
     activeProjectiles = activeProjectiles.filter(p => {
         if(p.target.hp <= 0) { 
+            // La cible est morte en vol : on joue quand même une petite explosion
+            createParticles(p.x, p.y, '#ffcc00'); 
             p.element.remove(); 
             return false; 
         } 
@@ -1025,6 +1027,10 @@ function gameLoop(currentTime) {
         if (Math.hypot(dx, dy) < 2) { 
             takeDamage(p.target, p.dmg); 
             if(p.stunDuration) p.target.stunTimer = p.stunDuration;
+            
+            // Particules d'impact adaptées à la couleur de l'équipe
+            createParticles(p.target.x, p.target.y, p.team === 'player' ? '#39ff14' : '#ff3366');
+            
             p.element.remove(); 
             return false; 
         } else {
