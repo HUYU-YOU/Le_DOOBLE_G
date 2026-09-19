@@ -10,12 +10,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Bouton Retour au Hub (Asset Global) -->
+    <!-- Bouton Retour au Hub -->
     <a href="../index.html" class="hub-link">
         <img id="hub-img" src="../img/retourhub.png" alt="">
     </a>
 
-    <!-- Bouton Paramètres (Asset Global) -->
+    <!-- Bouton Paramètres -->
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
         <div class="settings-btn"></div>
     </div>
@@ -29,6 +29,10 @@
                 <button class="btn-size active" onclick="changeLanguage('FR')" id="btn-lang-fr">FR</button>
                 <button class="btn-size" onclick="changeLanguage('EN')" id="btn-lang-en">EN</button>
             </div>
+            
+            <p class="lang-title" style="margin-top: 25px; margin-bottom: 10px;">Volume</p>
+            <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" style="width: 80%; cursor: pointer;" oninput="setGameVolume(this.value)">
+            <br>
             <button class="close-btn" onclick="toggleSettings()">Fermer</button>
         </div>
     </div>
@@ -36,12 +40,10 @@
     <div id="game-container">
         <!-- MENU CATÉGORIE -->
         <div class="overlay" id="category-menu">
-            
             <div class="menu-title" id="playlist-title">SÉLECTION DE LA PLAYLIST</div>
             <p id="lobby-count" class="lobby-text">1 joueur(s) dans le salon</p>
 
             <div class="cat-grid" id="cat-buttons">
-                <!-- BOUTONS IMAGES (Assets Locaux -> img/) -->
                 <button class="btn-img" style="background-image: url('img/rap.png');" onclick="launchGame('RAP')"></button>
                 <button class="btn-img" style="background-image: url('img/variet.png');" onclick="launchGame('FR')"></button>
                 <button class="btn-img" style="background-image: url('img/pop.png');" onclick="launchGame('POP')"></button>
@@ -50,7 +52,7 @@
                 <button class="btn-img" style="background-image: url('img/disney.png');" onclick="launchGame('DISNEY')"></button>
             </div>
 
-            <!-- BOUTON MULTIJOUEUR (Asset Local -> img/multii.png) -->
+            <!-- BOUTON MULTIJOUEUR -->
             <button class="btn-multi" id="btn-multi-toggle" style="background-image: url('img/multii.png');" onclick="openMenu('network')"></button>
 
             <div id="loading-api" class="loading-box">
