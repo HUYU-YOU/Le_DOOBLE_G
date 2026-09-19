@@ -83,7 +83,9 @@ function playSound(type) {
         gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
         osc.start(now); osc.stop(now + 0.15);
     } else if (type === 'perfect') {
-        osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+        // NOUVEAU : Le son monte dans les aigus avec le combo !
+        let baseFreq = Math.min(600 + (perfectCount * 100), 1600); 
+        osc.type = 'square'; osc.frequency.setValueAtTime(baseFreq, now); osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, now + 0.1);
         gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
         osc.start(now); osc.stop(now + 0.1);
     } else if (type === 'fail' || type === 'gameover') {
@@ -123,16 +125,18 @@ let bestScore = parseInt(localStorage.getItem('slimyStaxBestScore')) || 0;
 let perfectCount = 0;
 let comboMultiplier = 1;
 
-const BLOCK_SIZE = 80;
+let currentBlockSize = 80; // NOUVEAU : Taille dynamique
 let blocks = [];
 let activeBlock = null;
 
 let cameraY = 0, targetCameraY = 0;
 let towerSway = 0, targetTotalOffset = 0, currentTotalOffset = 0; 
 let swingAngle = 0, swingSpeed = 0.02; 
-const MAX_OFFSET_TOLERANCE = BLOCK_SIZE * 1.1; 
 
-let particles = [], floatingTexts = [], stars = [];
+let shakeAmount = 0; // NOUVEAU : Screen Shake
+let windForce = 0; // NOUVEAU : Vent
+
+let particles = [], floatingTexts = [], stars = [], windLines = [];
 for(let i=0; i<100; i++) {
     stars.push({ x: Math.random() * 1000, y: -Math.random() * 10000, s: Math.random() * 2 + 1, a: Math.random() });
 }
@@ -153,12 +157,14 @@ class FloatingText {
 }
 
 class Block {
-    constructor(x, y, type) {
-        this.x = x; this.y = y; this.type = type;
+    constructor(x, y, type, size, modifier = 'normal') {
+        this.x = x; this.y = y; this.type = type; this.size = size;
+        this.modifier = modifier; // NOUVEAU : 'normal', 'heavy', 'ice'
         this.state = 'swinging'; 
         this.vx = 0; this.vy = 0; 
         this.angle = 0; this.vAngle = 0;
         this.visualX = x; 
+        this.scaleX = 1; this.scaleY = 1; // NOUVEAU : Squash & Stretch
     }
     draw() {
         let drawX = this.x, drawY = this.y;
@@ -175,43 +181,55 @@ class Block {
             this.visualX = this.x;
         }
 
+        // NOUVEAU : Retour élastique du slime
+        this.scaleX += (1 - this.scaleX) * 0.15;
+        this.scaleY += (1 - this.scaleY) * 0.15;
+
         ctx.save();
         ctx.translate(drawX, drawY);
+        ctx.scale(this.scaleX, this.scaleY); // Applique la déformation
 
         if (this.state === 'dead') {
             this.angle += this.vAngle; ctx.rotate(this.angle);
         }
 
+        // Style visuel des modificateurs
+        if (this.modifier === 'heavy') { ctx.filter = 'brightness(50%) grayscale(100%)'; ctx.shadowBlur = 15; ctx.shadowColor = 'black'; }
+        if (this.modifier === 'ice') { ctx.filter = 'hue-rotate(180deg) brightness(150%)'; ctx.shadowBlur = 15; ctx.shadowColor = '#00f0ff'; }
+        
         if (this.type === 8) { ctx.shadowBlur = 20; ctx.shadowColor = 'var(--gold)'; }
         if (this.type === 9) { ctx.shadowBlur = 30; ctx.shadowColor = '#fff'; }
         
         if (imgs[this.type] && imgs[this.type].complete && imgs[this.type].naturalWidth > 0) {
-            ctx.drawImage(imgs[this.type], -BLOCK_SIZE/2, -BLOCK_SIZE/2, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.drawImage(imgs[this.type], -this.size/2, -this.size/2, this.size, this.size);
         } else {
             ctx.fillStyle = fallbackColors[this.type] || '#fff';
-            ctx.fillRect(-BLOCK_SIZE/2, -BLOCK_SIZE/2, BLOCK_SIZE, BLOCK_SIZE);
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(-BLOCK_SIZE/2, -BLOCK_SIZE/2, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
         }
         ctx.restore();
     }
 }
 
 class Particle {
-    constructor(x, y, color) {
+    constructor(x, y, color, drop = false) {
         this.x = x; this.y = y;
-        let angle = Math.random() * Math.PI * 2; let speed = Math.random() * 5 + 2;
-        this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+        let angle = drop ? Math.PI/2 + (Math.random()-0.5) : Math.random() * Math.PI * 2; 
+        let speed = drop ? Math.random() * 2 : Math.random() * 5 + 2;
+        this.vx = Math.cos(angle) * speed; 
+        this.vy = drop ? -Math.random() * 4 : Math.sin(angle) * speed;
         this.color = color; this.life = 1.0; this.decay = Math.random() * 0.05 + 0.02;
+        this.size = Math.random() * 4 + 2;
     }
     update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
     draw() { 
         ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color; 
         ctx.shadowBlur = 10; ctx.shadowColor = this.color; 
-        ctx.fillRect(this.x, this.y, 4, 4); ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; 
+        ctx.fillRect(this.x, this.y, this.size, this.size); ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; 
     }
 }
 
-function createParticles(x, y, color, count) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
+function createParticles(x, y, color, count, drop = false) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color, drop)); }
 
 document.addEventListener("DOMContentLoaded", () => {
     setGameSize('wide');
@@ -223,9 +241,10 @@ function startGame() {
     score = 0; perfectCount = 0; comboMultiplier = 1; 
     targetTotalOffset = 0; currentTotalOffset = 0; 
     cameraY = 0; targetCameraY = 0; towerSway = 0; swingSpeed = 0.02;
-    particles = []; floatingTexts = [];
+    currentBlockSize = 80; windForce = 0; shakeAmount = 0;
+    particles = []; floatingTexts = []; windLines = [];
     
-    blocks = [new Block(canvas.width/2, canvas.height - 50, Math.floor(Math.random()*7)+1)];
+    blocks = [new Block(canvas.width/2, canvas.height - 50, Math.floor(Math.random()*7)+1, currentBlockSize)];
     blocks[0].state = 'landed'; blocks[0].visualX = canvas.width/2;
     
     spawnBlock();
@@ -241,19 +260,40 @@ document.getElementById('btn-replay').addEventListener('click', startGame);
 function spawnBlock() {
     let spawnY = cameraY + 80;
     let type = Math.floor(Math.random() * 7) + 1;
+    let modifier = 'normal';
     
+    // NOUVEAU : Réduction progressive de la taille
+    currentBlockSize = Math.max(45, 80 - (blocks.length * 0.6));
+
+    // NOUVEAU : Activation du vent
+    let windUI = document.getElementById('wind-warning');
+    if (blocks.length > 10 && Math.random() < 0.4) {
+        windForce = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 2 + 1);
+        windUI.style.opacity = 1;
+    } else {
+        windForce = 0;
+        windUI.style.opacity = 0;
+    }
+    
+    // NOUVEAU : Blocs modifiés (Lourd / Glace)
+    if (blocks.length > 5) {
+        let rand = Math.random();
+        if (rand < 0.1) modifier = 'heavy';
+        else if (rand < 0.25) modifier = 'ice';
+    }
+
     if (perfectCount >= 10) {
-        type = 8; perfectCount = 0; playSound('legendary');
+        type = 8; perfectCount = 0; playSound('legendary'); modifier = 'normal';
         floatingTexts.push(new FloatingText(canvas.width/2, spawnY - 50, "GOLDEN CUBE !", "var(--gold)"));
     } else if (Math.random() < 1/30) {
-        type = 9; playSound('legendary');
+        type = 9; playSound('legendary'); modifier = 'normal';
         floatingTexts.push(new FloatingText(canvas.width/2, spawnY - 50, "LEGENDARY !", "#ffffff"));
     }
 
-    activeBlock = new Block(canvas.width/2, spawnY, type);
+    activeBlock = new Block(canvas.width/2, spawnY, type, currentBlockSize, modifier);
     swingAngle = 0;
     swingSpeed = 0.02 + (blocks.length * 0.0015) + (Math.abs(currentTotalOffset) * 0.0001);
-    if (swingSpeed > 0.08) swingSpeed = 0.08; // Cap pour que ça reste jouable
+    if (swingSpeed > 0.08) swingSpeed = 0.08; 
 }
 
 function updateHUD() {
@@ -274,7 +314,7 @@ function updateHUD() {
 function dropBlock() {
     if (gameState !== 'PLAYING' || !activeBlock || activeBlock.state !== 'swinging') return;
     activeBlock.state = 'falling';
-    activeBlock.vy = 2; // Léger boost de chute initial
+    activeBlock.vy = activeBlock.modifier === 'heavy' ? 4 : 2; // Le lourd tombe plus vite
     playSound('drop');
 }
 
@@ -293,16 +333,30 @@ function checkCollision() {
     let topBlock = blocks[blocks.length - 1];
     let topVisualX = topBlock.visualX || topBlock.x;
     
-    if (activeBlock.y + BLOCK_SIZE/2 >= topBlock.y - BLOCK_SIZE/2) {
+    // NOUVEAU : On utilise currentBlockSize pour la collision
+    if (activeBlock.y + activeBlock.size/2 >= topBlock.y - topBlock.size/2) {
         let diffX = activeBlock.x - topVisualX; 
         
-        if (Math.abs(diffX) <= BLOCK_SIZE * 0.55) {
-            activeBlock.y = topBlock.y - BLOCK_SIZE;
+        // NOUVEAU : Tolérance proportionnelle à la taille du bloc
+        let maxTolerance = currentBlockSize * 0.55;
+
+        // Effet Glace : accentue l'erreur si on n'est pas parfait
+        if (activeBlock.modifier === 'ice' && Math.abs(diffX) > 6) {
+            diffX *= 1.4; 
+        }
+
+        if (Math.abs(diffX) <= maxTolerance) {
+            activeBlock.y = topBlock.y - ((activeBlock.size + topBlock.size) / 2);
             activeBlock.state = 'landed';
             
+            // NOUVEAU : SQUASH & STRETCH
+            activeBlock.scaleX = 1.4;
+            activeBlock.scaleY = 0.6;
+            topBlock.scaleY = 0.8; // Ecrase un peu le bloc du dessous
+
             let points = 10; let color = '#fff';
 
-            if (Math.abs(diffX) <= 6) { // Tolérance Perfect
+            if (Math.abs(diffX) <= 8) { // Perfect
                 activeBlock.x = topBlock.x; 
                 points = 50; color = 'var(--perfect)'; perfectCount++;
                 createParticles(topVisualX, activeBlock.y, color, 20);
@@ -314,12 +368,20 @@ function checkCollision() {
                 }
                 floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 20, "PERFECT +50", color));
             } else {
-                activeBlock.x = activeBlock.x - (topVisualX - topBlock.x); 
+                activeBlock.x = activeBlock.x - (topVisualX - topBlock.x) + (activeBlock.modifier === 'ice' ? diffX*0.4 : 0); 
                 perfectCount = 0;
                 targetTotalOffset += diffX; 
                 createParticles(activeBlock.x + (topVisualX - topBlock.x), activeBlock.y, '#fff', 10);
                 playSound('land');
+                shakeAmount = 4; // Shake mineur
                 floatingTexts.push(new FloatingText(activeBlock.x + (topVisualX - topBlock.x), activeBlock.y - 20, "+10", color));
+            }
+
+            // Effet Lourd : Stabilise la tour
+            if (activeBlock.modifier === 'heavy') {
+                targetTotalOffset *= 0.5; // Divise le déséquilibre par 2
+                shakeAmount = 8; // Gros boom
+                floatingTexts.push(new FloatingText(activeBlock.x, activeBlock.y - 40, "STABILIZED!", "#aaa"));
             }
 
             if (activeBlock.type === 9) { points = 500; floatingTexts.push(new FloatingText(topVisualX, activeBlock.y - 50, "+500 LEGENDARY", "#fff")); }
@@ -330,9 +392,9 @@ function checkCollision() {
             if (activeBlock.type === 8) comboMultiplier = 2; else comboMultiplier = 1;
 
             blocks.push(activeBlock); updateHUD();
-            targetCameraY -= BLOCK_SIZE;
+            targetCameraY -= activeBlock.size;
             
-            if (Math.abs(targetTotalOffset) > MAX_OFFSET_TOLERANCE) triggerGameOver();
+            if (Math.abs(targetTotalOffset) > currentBlockSize * 1.1) triggerGameOver();
             else { activeBlock = null; setTimeout(spawnBlock, 150); }
         } else {
             activeBlock.state = 'dead';
@@ -347,6 +409,8 @@ function triggerGameOver() {
     if (gameState === 'GAMEOVER') return;
     gameState = 'GAMEOVER';
     playSound('gameover');
+    shakeAmount = 25; // GROS Shake
+    document.getElementById('wind-warning').style.opacity = 0;
     
     let fallDir = targetTotalOffset > 0 ? 1 : -1;
     if (targetTotalOffset === 0) fallDir = Math.random() > 0.5 ? 1 : -1;
@@ -374,16 +438,33 @@ function triggerGameOver() {
 }
 
 function gameLoop() {
+    // Logique du vent
+    if (windForce !== 0 && gameState === 'PLAYING') {
+        if (Math.random() < 0.1) {
+            windLines.push({
+                x: windForce > 0 ? -100 : canvas.width + 100,
+                y: cameraY + Math.random() * canvas.height,
+                speed: windForce * 15,
+                length: Math.random() * 100 + 50
+            });
+        }
+    }
+
     if (gameState === 'PLAYING') {
         if (activeBlock && activeBlock.state === 'swinging') {
             swingAngle += swingSpeed;
-            let amplitude = canvas.width / 2 - BLOCK_SIZE/2;
+            let amplitude = canvas.width / 2 - currentBlockSize/2;
             activeBlock.x = canvas.width/2 + Math.sin(swingAngle) * amplitude;
         }
         
         if (activeBlock && activeBlock.state === 'falling') {
-            activeBlock.vy += 1.8; // Gravité plus lourde et réactive
+            activeBlock.vy += activeBlock.modifier === 'heavy' ? 2.5 : 1.8; 
             activeBlock.y += activeBlock.vy;
+            activeBlock.x += windForce; // Le vent pousse le bloc !
+            
+            // Effet visuel : Particules de traînée (Trail)
+            if (Math.random() < 0.5) createParticles(activeBlock.x, activeBlock.y - activeBlock.size/2, 'rgba(0, 240, 255, 0.5)', 1, true);
+
             checkCollision();
         }
     }
@@ -401,9 +482,13 @@ function gameLoop() {
 
     cameraY += (targetCameraY - cameraY) * 0.1;
     towerSway += 0.05 + (Math.abs(currentTotalOffset) * 0.0005);
+    
+    // NOUVEAU : Diminution du Screen Shake
+    if (shakeAmount > 0.1) shakeAmount *= 0.9; else shakeAmount = 0;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // --- DESSIN DU FOND ---
     let heightFactor = Math.min(1, Math.abs(cameraY) / 6000); 
     let r = Math.floor(5 * (1 - heightFactor));
     let g = Math.floor(5 * (1 - heightFactor));
@@ -413,6 +498,13 @@ function gameLoop() {
     grad.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
     grad.addColorStop(1, '#020205');
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    
+    // NOUVEAU : Application du Screen Shake global
+    if (shakeAmount > 0) {
+        ctx.translate((Math.random() - 0.5) * shakeAmount, (Math.random() - 0.5) * shakeAmount);
+    }
 
     if (heightFactor > 0.05) {
         ctx.save(); ctx.translate(0, -cameraY * 0.05); 
@@ -429,18 +521,14 @@ function gameLoop() {
     ctx.save(); ctx.translate(0, -parallaxY);
     
     let bg1 = imgs['map1'], bg2 = imgs['map2'], bg3 = imgs['map3']; 
-    
     if (bg1 && bg1.complete && bg1.naturalWidth > 0) {
         let scale1 = canvas.width / bg1.naturalWidth;
-        let h1 = bg1.naturalHeight * scale1;
-        let currentY = canvas.height - h1; 
+        let h1 = bg1.naturalHeight * scale1; let currentY = canvas.height - h1; 
         ctx.drawImage(bg1, 0, currentY, canvas.width, h1);
-        
-        if (bg2 && bg2.complete && bg2.naturalWidth > 0) {
+        if (bg2 && bg2.complete) {
             let scale2 = canvas.width / bg2.naturalWidth; let h2 = bg2.naturalHeight * scale2;
             currentY -= h2; ctx.drawImage(bg2, 0, currentY, canvas.width, h2);
-            
-            if (bg3 && bg3.complete && bg3.naturalWidth > 0) {
+            if (bg3 && bg3.complete) {
                 let scale3 = canvas.width / bg3.naturalWidth; let h3 = bg3.naturalHeight * scale3;
                 currentY -= h3;
                 while (currentY + h3 > parallaxY - canvas.height) {
@@ -457,30 +545,37 @@ function gameLoop() {
     // Dessin de l'Aide Visuelle (Ghost Line)
     if (activeBlock && activeBlock.state === 'swinging') {
         ctx.beginPath();
-        ctx.moveTo(activeBlock.x, activeBlock.y + BLOCK_SIZE/2);
-        ctx.lineTo(activeBlock.x, blocks[blocks.length - 1].y);
-        ctx.setLineDash([10, 10]);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "rgba(0, 240, 255, 0.3)";
-        ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.moveTo(activeBlock.x, activeBlock.y + currentBlockSize/2);
+        ctx.lineTo(activeBlock.x + (windForce * 15), blocks[blocks.length - 1].y); // La ligne se penche avec le vent !
+        ctx.setLineDash([10, 10]); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(0, 240, 255, 0.3)"; ctx.stroke(); ctx.setLineDash([]);
     }
 
     blocks.forEach(b => b.draw());
     if (activeBlock) activeBlock.draw();
     
+    // Particules & Textes
     for(let i=particles.length-1; i>=0; i--) {
         particles[i].update(); particles[i].draw();
         if(particles[i].life <= 0) particles.splice(i, 1);
     }
-    
     for(let i=floatingTexts.length-1; i>=0; i--) {
         floatingTexts[i].update(); floatingTexts[i].draw();
         if(floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
     }
 
-    ctx.restore();
+    ctx.restore(); // Fin Caméra
 
+    // Lignes de vent (UI Level)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    for(let i=windLines.length-1; i>=0; i--) {
+        let wl = windLines[i];
+        ctx.beginPath(); ctx.moveTo(wl.x, wl.y - cameraY); ctx.lineTo(wl.x + wl.length, wl.y - cameraY); ctx.stroke();
+        wl.x += wl.speed;
+        if (wl.x > canvas.width + 200 || wl.x < -200) windLines.splice(i, 1);
+    }
+
+    ctx.restore(); // Fin Shake
     requestAnimationFrame(gameLoop);
 }
 
