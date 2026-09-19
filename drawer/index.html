@@ -2,87 +2,56 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drawer - Arcade</title>
+    
+    <!-- Police Slime (Creepster) -->
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+    
+    <!-- Styles externes -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <style>
-        :root { --bg: #0b0c10; --panel: rgba(31, 40, 51, 0.95); --cyan: #66fcf1; --teal: #45a29e; --text: #c5c6c7; --draw-bg: #ffffff; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; user-select: none; }
-        h1 { color: var(--cyan); text-transform: uppercase; letter-spacing: 3px; margin: 10px 0; text-shadow: 0 0 15px rgba(102, 252, 241, 0.5); }
-        
-        .menu-container { background: var(--panel); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); text-align: center; margin-top: 20px; border: 1px solid rgba(102,252,241,0.3); max-width: 600px; width: 100%; }
-        .input-box { padding: 12px; margin: 10px; border-radius: 8px; border: 1px solid var(--teal); background: #111; color: #fff; text-align: center; font-weight: bold; font-size: 1.1em; width: 80%; }
-        .btn { background: var(--cyan); color: #000; border: none; padding: 12px 25px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; margin: 5px; transition: 0.2s; box-shadow: 0 0 10px rgba(102, 252, 241, 0.3); }
-        .btn:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--cyan); }
-        
-        .flag-container { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
-        .flag { font-size: 3em; cursor: pointer; filter: grayscale(100%) opacity(0.5); transition: 0.3s; }
-        .flag.active { filter: grayscale(0%) opacity(1); transform: scale(1.2); text-shadow: 0 0 15px var(--cyan); }
-
-        #game-layout { display: none; width: 100%; max-width: 1200px; gap: 20px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
-        
-        #left-panel { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px; }
-        .panel-box { background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid var(--teal); }
-        .player-card { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid var(--teal); margin-bottom: 5px; }
-        .player-card.active { border-color: var(--cyan); background: rgba(102, 252, 241, 0.1); }
-        .player-card.done { border-color: #39ff14; }
-        
-        #chat-messages { height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; font-size: 0.9em; margin-bottom: 10px; }
-        .chat-msg { background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 5px; }
-        .chat-sys { color: #f1c40f; font-weight: bold; text-align: center; }
-        .chat-success { background: rgba(57, 255, 20, 0.2); color: #39ff14; font-weight: bold; }
-
-        #center-panel { flex: 3; min-width: 300px; display: flex; flex-direction: column; gap: 10px; background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid rgba(102, 252, 241, 0.3); }
-        #top-bar { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--teal); }
-        #word-display { font-size: 1.8em; letter-spacing: 3px; font-weight: bold; color: #fff; text-align: center; }
-        #timer { font-size: 1.5em; color: #ff007f; font-weight: bold; }
-
-        .canvas-container { position: relative; width: 100%; aspect-ratio: 16/9; background: var(--draw-bg); border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        canvas { width: 100%; height: 100%; cursor: crosshair; touch-action: none; position: absolute; top:0; left:0; }
-        #gartic-image { width: 100%; height: 100%; object-fit: contain; position: absolute; top:0; left:0; background: #fff; display: none; }
-        
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        .gartic-input { font-size: 1.5em; padding: 15px; width: 80%; border-radius: 10px; border: 2px solid var(--cyan); background: #111; color: #fff; text-align: center; margin: 20px 0; }
-
-        #toolbar { display: flex; gap: 8px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; justify-content: center; align-items: center; flex-wrap: wrap; border: 1px solid var(--teal); }
-        .tool-btn { background: #222; border: 1px solid #444; color: white; padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: 0.2s; font-size: 1em; }
-        .tool-btn.active { background: var(--cyan); color: #000; border-color: #fff; font-weight: bold; }
-        input[type="color"] { cursor: pointer; height: 35px; border: none; background: none; }
-
-        #results-screen { display: none; flex-direction: column; gap: 30px; width: 100%; max-width: 800px; margin-top: 20px; }
-        .chain-box { background: var(--panel); border: 1px solid var(--cyan); border-radius: 15px; padding: 20px; }
-        .step-box { background: #111; margin-top: 10px; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid var(--teal); }
-        .step-box img { max-width: 100%; border-radius: 5px; background: #fff; margin-top: 10px; }
-
-        .hub-link { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); z-index: 100; }
-    </style>
 </head>
 <body>
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    <!-- Navigation (Images Hub & Settings) -->
+    <div class="top-nav">
+        <!-- Remplacer les src par tes vraies images "../assets/ton-image.png" -->
+        <a href="../index.html" class="icon-btn" title="Retour au Hub">
+            <img src="../assets/hub-icon.png" alt="Hub" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1946/1946488.png'">
+        </a>
+        <button class="icon-btn" title="Paramètres" onclick="toggleSettings()">
+            <img src="../assets/settings-icon.png" alt="Paramètres" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3524/3524659.png'">
+        </button>
+    </div>
+
     <h1>Drawer</h1>
 
-    <!-- MENU -->
-    <div class="menu-container" id="main-menu">
-        <h2 style="color:var(--cyan);">Join or Create a table</h2>
+    <!-- MENU PRINCIPAL -->
+    <div class="menu-container fade-in" id="main-menu">
+        <h2>Join or Create a table</h2>
         <input type="text" id="player-name" class="input-box" placeholder="Votre Pseudo" value="Joueur">
         
         <div style="margin-top:20px;">
-            <button class="btn" style="padding: 15px 30px; font-size:1.2em;" onclick="hostGame()">Create a table (Hôte)</button>
+            <button class="btn host-btn" onclick="hostGame()">Create a table (Hôte)</button>
         </div>
         
-        <hr style="border-color:#333; margin: 25px 0;">
+        <hr class="divider">
+        
         <input type="text" id="join-id" class="input-box" placeholder="ID de la table">
-        <button class="btn" onclick="joinGame()" style="background:#45a29e; color:#fff;">Join</button>
-        <p id="status-text" style="color: #aaa; margin-top: 15px;"></p>
+        <button class="btn join-btn" onclick="joinGame()">Join</button>
+        <p id="status-text" class="status-text"></p>
     </div>
 
     <!-- LOBBY HÔTE -->
-    <div class="menu-container" id="host-lobby" style="display:none;">
-        <h2 style="color:var(--cyan);">Configuration</h2>
-        <p>Partagez ce code aux joueurs : <b style="color:var(--cyan); font-size:1.5em; user-select:all;" id="my-id">Chargement...</b></p>
+    <div class="menu-container fade-in" id="host-lobby" style="display:none;">
+        <h2>Configuration</h2>
+        <p>Partagez ce code : <b id="my-id" class="code-display">Chargement...</b></p>
         
-        <div class="panel-box" style="margin:20px 0;">
-            <h3>Player connected :</h3>
-            <div id="lobby-players" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div>
+        <div class="panel-box lobby-box">
+            <h3>Players connected :</h3>
+            <div id="lobby-players" class="players-grid"></div>
         </div>
 
         <h3>Dictionary language</h3>
@@ -91,63 +60,65 @@
             <div class="flag" id="flag-en" onclick="setLang('en')">🇬🇧</div>
         </div>
 
-        <button class="btn" style="background:#ff007f; padding: 15px 30px; width:100%; margin-bottom:10px;" onclick="startGame('gartic')">📞 Draw the sentence</button>
-        <button class="btn" style="background:#00f0ff; padding: 15px 30px; width:100%;" onclick="startGame('classic')">🖌️ CLASSIQUE </button>
+        <button class="btn btn-gartic" onclick="startGame('gartic')">📞 Téléphone Arabe</button>
+        <button class="btn btn-classic" onclick="startGame('classic')">🖌️ Classique</button>
     </div>
 
     <!-- ECRAN JEU -->
-    <div id="game-layout">
+    <div id="game-layout" class="fade-in">
+        <!-- Panneau Gauche : Joueurs & Chat -->
         <div id="left-panel">
             <div class="panel-box">
-                <h3 style="margin-top:0; color:var(--cyan); text-align:center;">Players</h3>
+                <h3 class="panel-title">Players</h3>
                 <div id="players-list"></div>
             </div>
 
-            <div class="panel-box" id="chat-box" style="display:none; flex-direction:column;">
+            <div class="panel-box" id="chat-box" style="display:none;">
                 <div id="chat-messages"></div>
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="chat-input" style="flex:1; padding:8px; border-radius:5px; border:none; background:#333; color:white;" placeholder="Devine ici..." onkeypress="if(event.key === 'Enter') sendChat()">
-                    <button class="btn" style="margin:0; padding:8px;" onclick="sendChat()">Go</button>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Devine ici..." onkeypress="if(event.key === 'Enter') sendChat()">
+                    <button class="btn btn-small" onclick="sendChat()">Go</button>
                 </div>
             </div>
         </div>
 
+        <!-- Panneau Central : Dessin -->
         <div id="center-panel">
             <div id="top-bar">
-                <div id="turn-info" style="color:var(--teal); font-weight:bold;">Waiting... </div>
+                <div id="turn-info">Waiting...</div>
                 <div id="word-display">_ _ _</div>
                 <div id="timer">--</div>
             </div>
 
             <div class="canvas-container">
                 <canvas id="drawCanvas" width="800" height="450"></canvas>
-                <img id="gartic-image">
+                <img id="gartic-image" alt="Dessin en cours">
                 
-                <div class="overlay" id="wait-overlay" style="display:none; background:rgba(0,0,0,0.95);">
-                    <h2 style="color:#fff;">Veuillez patienter...</h2>
+                <!-- Overlays Canvas -->
+                <div class="overlay fade-in" id="wait-overlay" style="display:none;">
+                    <h2>Veuillez patienter...</h2>
                     <p id="wait-desc">En attente des autres joueurs.</p>
                 </div>
 
-                <!-- OVERLAY GRAND GAGNANT -->
-                <div class="overlay" id="winner-overlay" style="display:none; background:rgba(0,0,0,0.95); z-index: 1000;">
-                    <h1 style="color:#ff007f; font-size:4em; margin-bottom:10px; text-shadow:0 0 20px #ff007f;">🏆 END OF THE GAME 🏆</h1>
-                    <h2 id="winner-name" style="color:var(--cyan); font-size:3em; text-transform:uppercase;"></h2>
-                    <p style="color:#fff; font-size:1.5em; margin-top:20px;">Return in lobby in 10 seconds...</p>
+                <div class="overlay fade-in" id="winner-overlay" style="display:none; z-index: 1000;">
+                    <h1 class="winner-title">🏆 END OF THE GAME 🏆</h1>
+                    <h2 id="winner-name" class="winner-name"></h2>
+                    <p class="winner-sub">Retour au lobby dans 10 secondes...</p>
                 </div>
             </div>
 
-            <div id="action-overlay" style="display:none; flex-direction:column; align-items:center; background:var(--panel); padding:20px; border-radius:10px; border:1px solid var(--cyan); margin-top:10px; width: 100%; box-sizing: border-box;">
-                <h2 id="action-title" style="color:var(--cyan); margin-top:0;">Action requise</h2>
-                <input type="text" id="action-input" class="gartic-input" placeholder="..." style="margin: 10px 0; width: 90%;">
-                <button class="btn" onclick="submitGarticAction()" style="padding:15px 40px; font-size:1.2em;">Validate</button>
+            <div id="action-overlay" class="fade-in" style="display:none;">
+                <h2 id="action-title">Action requise</h2>
+                <input type="text" id="action-input" class="gartic-input" placeholder="...">
+                <button class="btn btn-validate" onclick="submitGarticAction()">Validate</button>
             </div>
 
-            <div id="toolbar" style="display:none;">
+            <div id="toolbar" class="fade-in" style="display:none;">
                 <button class="tool-btn active" onclick="setTool('pen', this)" title="Pinceau">✏️</button>
                 <button class="tool-btn" onclick="setTool('eraser', this)" title="Gomme">🧹</button>
-                <button class="tool-btn" onclick="setTool('fill', this)" title="Remplissage (Pot de peinture)">🪣</button>
+                <button class="tool-btn" onclick="setTool('fill', this)" title="Remplissage">🪣</button>
                 
-                <select id="shapePicker" class="tool-btn" onchange="setTool(this.value, null)" style="background:#222; color:#fff; border:1px solid #444; border-radius:5px; padding:5px; cursor: pointer;">
+                <select id="shapePicker" class="tool-btn" onchange="setTool(this.value, null)">
                     <option value="pen">Formes...</option>
                     <option value="line">📏 Ligne</option>
                     <option value="rect">⬜ Rectangle</option>
@@ -155,710 +126,36 @@
                     <option value="triangle">🔺 Triangle</option>
                 </select>
 
-                <input type="color" id="colorPicker" value="#000000">
-                <input type="range" id="sizePicker" min="1" max="50" value="5">
+                <input type="color" id="colorPicker" value="#000000" class="color-picker">
+                <input type="range" id="sizePicker" min="1" max="50" value="5" class="size-picker">
                 
                 <button class="tool-btn" title="Annuler (Ctrl+Z)" onclick="undoDraw()">↩️</button>
-                <button class="tool-btn" style="background:#ff2a2a; margin-left:auto;" onclick="clearCanvas()">🗑️ Tout effacer</button>
+                <button class="tool-btn btn-clear" onclick="clearCanvas()">🗑️ Effacer</button>
                 
-                <button class="btn" id="btn-submit-draw" style="display:none; margin-left:auto; background:#39ff14;" onclick="submitGarticAction()">✅ finish !</button>
+                <button class="btn btn-submit-draw" id="btn-submit-draw" onclick="submitGarticAction()">✅ Finish !</button>
             </div>
         </div>
     </div>
 
     <!-- RESULTATS GARTIC -->
-    <div id="results-screen">
-        <h1 style="text-align:center;">Le Téléphone Arabe est arabe !</h1>
+    <div id="results-screen" class="fade-in">
+        <h1>Le Téléphone Arabe est fini !</h1>
         <div id="chains-container"></div>
         <button class="btn" style="margin: 0 auto; display:block;" onclick="location.reload()">Leave</button>
     </div>
 
-    <script>
-        // Dico de secours solide (Au cas où tu n'as pas de words.js)
-        const defaultDict = [
-            {fr:"chat",en:"cat"}, {fr:"voiture",en:"car"}, {fr:"pomme",en:"apple"}, {fr:"soleil",en:"sun"}, {fr:"maison",en:"house"}, 
-            {fr:"ordinateur",en:"computer"}, {fr:"avion",en:"airplane"}, {fr:"poisson",en:"fish"}, {fr:"banane",en:"banana"}, 
-            {fr:"fleur",en:"flower"}, {fr:"chaise",en:"chair"}, {fr:"train",en:"train"}, {fr:"montagne",en:"mountain"}, {fr:"guitare",en:"guitar"}
-        ];
-        let dict = (typeof dictionary !== 'undefined' && dictionary.length > 0) ? dictionary : defaultDict;
-        let availableWords = []; // Le sac à mots pour éviter les répétitions
-
-        // MODIFICATION: peer est maintenant défini avec "let" pour pouvoir le redéclarer avec le code DRW
-        let peer = new Peer();
-        let myId = null, myName = "", isHost = false, myConn = null;
-        let connections = []; 
-        
-        let state = {
-            mode: "", lang: "fr", players: [],
-            // Classic
-            turnIndex: -1, currentWord: "", timeLeft: 0, round: 1, maxRounds: 3,
-            // Gartic
-            chains: []
-        };
-
-        // --- GESTION RESEAU ---
-        // On regroupe l'initialisation des événements de connexion pour éviter la répétition
-        function setupPeerEvents(p) {
-            p.on('open', id => { 
-                myId = id; 
-                if(document.getElementById('my-id')) document.getElementById('my-id').innerText = id; 
-            });
-
-            p.on('connection', conn => {
-                if(!isHost) return;
-                connections.push(conn);
-                conn.on('data', data => {
-                    if(data.type === 'join') {
-                        state.players.push({ id: conn.peer, name: data.name, score: 0, isDone: false });
-                        updateLobbyUI();
-                        broadcastState();
-                    }
-                    if(data.type === 'chat') handleChat(conn.peer, data.msg);
-                    if(data.type === 'draw' || data.type === 'shape') { remoteDraw(data); relayData(data, conn.peer); }
-                    if(data.type === 'clear') { clearCanvasLocal(); relayData(data, conn.peer); }
-                    if(data.type === 'img_sync') { syncImage(data.src); relayData(data, conn.peer); }
-                    if(data.type === 'submit_gartic') handleGarticSubmission(conn.peer, data.content);
-                });
-                conn.on('close', () => {
-                    state.players = state.players.filter(player => player.id !== conn.peer);
-                    connections = connections.filter(c => c.peer !== conn.peer);
-                    broadcastState();
-                });
-            });
-        }
-        
-        // Initialisation par défaut au chargement de la page
-        setupPeerEvents(peer);
-
-        function broadcastState() { if(isHost) connections.forEach(c => c.send({ type: 'state', state })); }
-        function broadcastData(data) { if(isHost) connections.forEach(c => c.send(data)); }
-        function relayData(data, senderId) { if(isHost) connections.forEach(c => { if(c.peer !== senderId) c.send(data); }); }
-
-        // --- MENU ---
-        function setLang(l) {
-            state.lang = l;
-            document.getElementById('flag-fr').classList.remove('active');
-            document.getElementById('flag-en').classList.remove('active');
-            document.getElementById('flag-' + l).classList.add('active');
-        }
-
-        // MODIFICATION: hostGame génère le code DRW + 4 chiffres et recrée le serveur Peer
-        function hostGame() {
-            let code = 'DRW' + Math.floor(1000 + Math.random() * 9000);
-            
-            // On détruit l'ancienne connexion Peer de base et on en crée une nouvelle avec le code fixe DRW
-            peer.destroy();
-            peer = new Peer(code);
-            setupPeerEvents(peer);
-            
-            myName = document.getElementById('player-name').value || "Hôte";
-            isHost = true;
-            state.players = [{ id: 'host', name: myName, score: 0, isDone: false }];
-            
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('host-lobby').style.display = 'block';
-            updateLobbyUI();
-        }
-
-        function joinGame() {
-            myName = document.getElementById('player-name').value || "Joueur";
-            // MODIFICATION: On force le toUpperCase() pour que le joueur puisse taper drw1234 sans que ça bug
-            let hostId = document.getElementById('join-id').value.toUpperCase().trim();
-            if(!hostId) return;
-            document.getElementById('status-text').innerText = "Connexion...";
-            
-            myConn = peer.connect(hostId);
-            myConn.on('open', () => {
-                document.getElementById('main-menu').style.display = 'none';
-                document.getElementById('wait-overlay').style.display = 'flex';
-                document.getElementById('game-layout').style.display = 'flex';
-                myConn.send({ type: 'join', name: myName });
-            });
-            
-            myConn.on('data', data => {
-                if(data.type === 'state') { state = data.state; renderUI(); }
-                if(data.type === 'tick') updateTimerUI(data.time);
-                if(data.type === 'chat') renderChat(data.sender, data.msg, data.sys, data.success);
-                if(data.type === 'draw' || data.type === 'shape') remoteDraw(data);
-                if(data.type === 'img_sync') syncImage(data.src);
-                if(data.type === 'clear') clearCanvasLocal();
-                if(data.type === 'gartic_results') showResults(data.chains);
-                if(data.type === 'end_classic') showWinner(data.winner);
-            });
-        }
-
-        function updateLobbyUI() {
-            document.getElementById('lobby-players').innerHTML = state.players.map(p => 
-                `<div style="background:#222; padding:5px 10px; border-radius:5px; border:1px solid var(--teal);">${p.name}</div>`
-            ).join('');
-        }
-
-        function startGame(mode) {
-            if(state.players.length < 2) { alert("2 joueurs minimum !"); return; }
-            state.mode = mode;
-            document.getElementById('host-lobby').style.display = 'none';
-            document.getElementById('game-layout').style.display = 'flex';
-            
-            if(mode === 'classic') { 
-                state.round = 1; 
-                state.turnIndex = -1; 
-                state.players.forEach(p => p.score = 0);
-                availableWords = []; 
-                nextClassicTurn(); 
-            } 
-            else { startGarticPhone(); }
-        }
-
-  
-        let classicTimer = null;
-        let correctGuessers = [];
-
-        function getRandomWord() {
-            if(availableWords.length === 0) {
-
-                availableWords = [...dict];
-                availableWords.sort(() => Math.random() - 0.5);
-            }
-            return availableWords.pop()[state.lang];
-        }
-
-        function nextClassicTurn() {
-            clearInterval(classicTimer);
-            undoStack = []; 
-            
-            state.turnIndex++;
-            if(state.turnIndex >= state.players.length) {
-                state.turnIndex = 0;
-                state.round++;
-            }
-
-
-            if(state.round > state.maxRounds) {
-                endClassicGame();
-                return;
-            }
-
-            correctGuessers = [];
-            state.currentWord = getRandomWord();
-            state.timeLeft = 60; 
-            
-            clearCanvasLocal();
-            relayData({ type: 'clear' }, 'host');
-            broadcastState();
-
-            classicTimer = setInterval(() => {
-                state.timeLeft--;
-                updateTimerUI(state.timeLeft);
-                broadcastData({ type: 'tick', time: state.timeLeft });
-                
-                if(state.timeLeft <= 0) {
-                    clearInterval(classicTimer);
-                    broadcastData({ type: 'chat', sender: 'Système', msg: `Temps écoulé ! Le mot était : ${state.currentWord}`, sys: true });
-                    if(isHost) renderChat('Système', `Temps écoulé ! Le mot était : ${state.currentWord}`, true);
-                    setTimeout(nextClassicTurn, 4000);
-                }
-            }, 1000);
-            
-            renderUI();
-        }
-
-        function handleChat(peerId, msg) {
-            if(state.mode !== 'classic') return;
-            let p = state.players.find(x => x.id === peerId) || state.players[0];
-            let isDrawer = (state.players[state.turnIndex].id === p.id);
-            if(isDrawer) return; 
-            
-            let guess = msg.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-            let target = state.currentWord.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-            
-            if(guess === target && !correctGuessers.includes(p.id)) {
-                correctGuessers.push(p.id);
-                let pts = state.players.length - correctGuessers.length;
-                p.score += pts;
-                state.players[state.turnIndex].score += 1;
-                
-                broadcastData({ type: 'chat', sender: 'Système', msg: `${p.name} a trouvé ! (+${pts} pts)`, sys: true, success: true });
-                if(isHost) renderChat('Système', `${p.name} a trouvé ! (+${pts} pts)`, true, true);
-                
-                if(correctGuessers.length >= state.players.length - 1) {
-                    clearInterval(classicTimer);
-                    broadcastData({ type: 'chat', sender: 'Système', msg: `Tout le monde a trouvé ! Le mot était ${state.currentWord}`, sys: true });
-                    if(isHost) renderChat('Système', `Tout le monde a trouvé ! Le mot était ${state.currentWord}`, true);
-                    setTimeout(nextClassicTurn, 4000);
-                }
-                broadcastState();
-            } else {
-                broadcastData({ type: 'chat', sender: p.name, msg: msg });
-                if(isHost) renderChat(p.name, msg);
-            }
-        }
-
-        function endClassicGame() {
-            let maxScore = -1;
-            let winners = [];
-            state.players.forEach(p => {
-                if(p.score > maxScore) { maxScore = p.score; winners = [p.name]; }
-                else if(p.score === maxScore) { winners.push(p.name); }
-            });
-            
-            let winnerText = winners.join(' et ') + " avec " + maxScore + " points !";
-            broadcastData({ type: 'end_classic', winner: winnerText });
-            showWinner(winnerText);
-
-            setTimeout(() => { location.reload(); }, 10000); 
-        }
-
-        function showWinner(winnerText) {
-            document.getElementById('winner-name').innerText = winnerText;
-            document.getElementById('winner-overlay').style.display = 'flex';
-        }
-
-        // =====================================
-        // MODE GARTIC PHONE
-        // =====================================
-        function startGarticPhone() {
-            state.round = 0;
-            state.chains = state.players.map(p => ({ originalAuthor: p.name, steps: [] }));
-            state.players.forEach(p => p.isDone = false);
-            undoStack = [];
-            broadcastState();
-            renderUI();
-        }
-
-        function handleGarticSubmission(peerId, content) {
-            let pIndex = state.players.findIndex(x => x.id === peerId);
-            if(pIndex === -1) return;
-            
-            let chainIndex = (pIndex + state.round) % state.players.length;
-            let stepType = (state.round % 2 === 0) ? 'text' : 'img';
-            
-            state.chains[chainIndex].steps.push({ author: state.players[pIndex].name, type: stepType, content: content });
-            state.players[pIndex].isDone = true;
-            
-            broadcastState();
-            renderUI();
-
-            if(state.players.every(p => p.isDone)) {
-                state.round++;
-                state.players.forEach(p => p.isDone = false);
-                undoStack = [];
-                
-                // --- AJOUT DE LA LOGIQUE POUR FINIR SUR UNE PHRASE ---
-                // Si le nombre de joueurs est pair, on ajoute une manche (rounds total = length + 1)
-                // Sinon, le nombre de joueurs est impair, on garde ce nombre tel quel (rounds total = length)
-                let targetRounds = (state.players.length % 2 === 0) ? (state.players.length + 1) : state.players.length;
-
-                if(state.round >= targetRounds) {
-                    broadcastData({ type: 'gartic_results', chains: state.chains });
-                    showResults(state.chains);
-                } else {
-                    broadcastState();
-                    renderUI();
-                }
-            }
-        }
-
-        function submitGarticAction() {
-            let content = (state.round % 2 === 0) 
-                ? (document.getElementById('action-input').value.trim() || "Un mystère...") 
-                : drawCanvas.toDataURL('image/png');
-            
-            document.getElementById('action-overlay').style.display = 'none';
-            document.getElementById('toolbar').style.display = 'none';
-            document.getElementById('wait-overlay').style.display = 'flex';
-            document.getElementById('wait-desc').innerText = "Attente des autres joueurs...";
-            
-            if(isHost) handleGarticSubmission('host', content);
-            else myConn.send({ type: 'submit_gartic', content: content });
-        }
-
-
-        // =====================================
-        // INTERFACE
-        // =====================================
-        let lastRenderedRound = -1;
-
-        function renderUI() {
-            let myPlayerId = isHost ? 'host' : myId;
-            let myIndex = state.players.findIndex(p => p.id === myPlayerId);
-            
-            document.getElementById('players-list').innerHTML = state.players.map((p, i) => {
-                let isActive = (state.mode === 'classic' && i === state.turnIndex);
-                let isDone = (state.mode === 'gartic' && p.isDone);
-                return `<div class="player-card ${isActive?'active':''} ${isDone?'done':''}">
-                            <b>${p.name}</b>
-                            ${state.mode === 'classic' ? `<span>${p.score} pts ${isActive?'🖍️':''}</span>` : (isDone?'✅':'⏳')}
-                        </div>`;
-            }).join('');
-
-            document.getElementById('wait-overlay').style.display = 'none';
-            document.getElementById('action-overlay').style.display = 'none';
-            document.getElementById('toolbar').style.display = 'none';
-            document.getElementById('gartic-image').style.display = 'none';
-            drawCanvas.style.pointerEvents = 'none';
-
-            if(state.mode === 'classic') {
-                document.getElementById('chat-box').style.display = 'flex';
-                document.getElementById('btn-submit-draw').style.display = 'none';
-                updateTimerUI(state.timeLeft);
-                
-                document.getElementById('timer').innerHTML = `Tours : ${state.round}/${state.maxRounds} <br> <span style="color:#ff007f">${state.timeLeft}s</span>`;
-                
-                if(state.turnIndex === myIndex) {
-                    document.getElementById('turn-info').innerText = "À toi de dessiner !";
-                    document.getElementById('word-display').innerText = state.currentWord;
-                    document.getElementById('toolbar').style.display = 'flex';
-                    drawCanvas.style.pointerEvents = 'auto';
-                } else {
-                    let pName = state.players[state.turnIndex] ? state.players[state.turnIndex].name : "?";
-                    document.getElementById('turn-info').innerText = `${pName} dessine...`;
-                    document.getElementById('word-display').innerText = state.currentWord.replace(/[a-zA-Z]/g, '_');
-                }
-            } 
-            else if (state.mode === 'gartic') {
-                document.getElementById('chat-box').style.display = 'none';
-                
-                // --- MISE A JOUR DE L'AFFICHAGE DU NOMBRE DE ROUNDS TOTAL ---
-                let totalRounds = (state.players.length % 2 === 0) ? (state.players.length + 1) : state.players.length;
-                updateTimerUI(`Round ${state.round + 1}/${totalRounds}`);
-                
-                if(state.round !== lastRenderedRound) {
-                    clearCanvasLocal(); 
-                    document.getElementById('action-input').value = "";
-                    lastRenderedRound = state.round;
-                }
-                
-                if(state.players[myIndex] && state.players[myIndex].isDone) {
-                    document.getElementById('wait-overlay').style.display = 'flex';
-                    document.getElementById('turn-info').innerText = "En attente...";
-                    return;
-                }
-                
-                let chainIndex = (myIndex + state.round) % state.players.length;
-                let myChain = state.chains[chainIndex];
-                
-                if(state.round % 2 === 0) {
-                    document.getElementById('action-overlay').style.display = 'flex';
-                    if(state.round === 0) {
-                        document.getElementById('action-title').innerText = "Invente une phrase de ZINZIN !";
-                        document.getElementById('turn-info').innerText = "Écriture du mot secret";
-                    } else {
-                        document.getElementById('action-title').innerText = "Que représente ce dessin ?";
-                        document.getElementById('gartic-image').src = myChain.steps[myChain.steps.length - 1].content;
-                        document.getElementById('gartic-image').style.display = 'block';
-                        document.getElementById('turn-info').innerText = "Devine ce dessin";
-                    }
-                } else {
-                    document.getElementById('word-display').innerText = myChain.steps[myChain.steps.length - 1].content;
-                    document.getElementById('turn-info').innerText = "Dessine moi ca :";
-                    document.getElementById('toolbar').style.display = 'flex';
-                    document.getElementById('btn-submit-draw').style.display = 'block';
-                    drawCanvas.style.pointerEvents = 'auto'; 
-                }
-            }
-        }
-
-        function updateTimerUI(txt) {
-            let t = document.getElementById('timer');
-            if(t && state.mode === 'gartic') t.innerText = txt;
-            else if(t && state.mode === 'classic' && typeof txt === 'number') {
-                 t.innerHTML = `Tours : ${state.round}/${state.maxRounds} <br> <span style="color:#ff007f">${txt}s</span>`;
-            }
-        }
-
-        function sendChat() {
-            let input = document.getElementById('chat-input');
-            let msg = input.value.trim();
-            if(!msg) return;
-            if(isHost) handleChat('host', msg);
-            else myConn.send({ type: 'chat', msg: msg });
-            input.value = "";
-        }
-
-        function renderChat(sender, msg, sys = false, success = false) {
-            let box = document.getElementById('chat-messages');
-            let cls = sys ? 'chat-msg chat-sys' : 'chat-msg';
-            if(success) cls += ' chat-success';
-            box.innerHTML += `<div class="${cls}"><b>${sender}:</b> ${msg}</div>`;
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function showResults(chains) {
-            document.getElementById('game-layout').style.display = 'none';
-            document.getElementById('chains-container').innerHTML = chains.map(chain => `
-                <div class="chain-box">
-                    <h2 style="color:var(--cyan); text-align:center; margin-top:0;">L'histoire de ${chain.originalAuthor}</h2>
-                    ${chain.steps.map(step => `
-                        <div class="step-box">
-                            <b style="color:var(--teal);">${step.author} ${step.type === 'text' ? 'a écrit :' : 'a dessiné :'}</b><br>
-                            ${step.type === 'text' ? `<h3 style="margin:10px 0;">"${step.content}"</h3>` : `<img src="${step.content}">`}
-                        </div>
-                    `).join('')}
-                </div>
-            `).join('');
-            document.getElementById('results-screen').style.display = 'flex';
-        }
-
-        // =====================================
-        // MOTEUR DESSIN CANVAS (AVEC FORMES ET REMPLISSAGE)
-        // =====================================
-        const drawCanvas = document.getElementById('drawCanvas');
-        const ctx = drawCanvas.getContext('2d', { willReadFrequently: true });
-        let isDrawing = false, startX = 0, startY = 0, lastX = 0, lastY = 0, currentTool = 'pen'; 
-        let snapshot; 
-        let undoStack = []; 
-
-        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
-        
-        function getMousePos(e) {
-            let rect = drawCanvas.getBoundingClientRect();
-            let cX = e.touches ? e.touches[0].clientX : e.clientX;
-            let cY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: (cX - rect.left) * (drawCanvas.width / rect.width), y: (cY - rect.top) * (drawCanvas.height / rect.height) };
-        }
-
-        function setTool(tool, btn) {
-            currentTool = tool;
-            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-            if(btn) {
-                btn.classList.add('active');
-                if(btn.tagName !== 'SELECT') document.getElementById('shapePicker').value = 'pen';
-            }
-        }
-
-        function clearCanvas() {
-            saveState(); 
-            clearCanvasLocal();
-            if (state.mode === 'classic') {
-                if(isHost) relayData({ type: 'clear' }, 'host');
-                else myConn.send({ type: 'clear' });
-            }
-        }
-        function clearCanvasLocal() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height); }
-
-        function saveState() {
-            if (undoStack.length > 15) undoStack.shift(); 
-            undoStack.push(drawCanvas.toDataURL('image/png'));
-        }
-
-        function undoDraw() {
-            if (undoStack.length > 0) {
-                let imgData = undoStack.pop();
-                syncImage(imgData); 
-                if (state.mode === 'classic') {
-                    let syncObj = { type: 'img_sync', src: imgData };
-                    if(isHost) relayData(syncObj, 'host'); else myConn.send(syncObj);
-                }
-            }
-        }
-
-        function syncImage(dataUrl) {
-            let img = new Image();
-            img.src = dataUrl;
-            img.onload = () => {
-                clearCanvasLocal();
-                ctx.drawImage(img, 0, 0);
-            };
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undoDraw(); }
-        });
-
-
-        drawCanvas.addEventListener('mousedown', startDraw); drawCanvas.addEventListener('mousemove', drawing);
-        drawCanvas.addEventListener('mouseup', stopDraw); drawCanvas.addEventListener('mouseout', stopDraw);
-        drawCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
-        drawCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawing(e); });
-        drawCanvas.addEventListener('touchend', stopDraw);
-
-        function hexToRgb(hex) {
-            let bigint = parseInt(hex.slice(1), 16);
-            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255, a: 255 };
-        }
-
-        function floodFill(startX, startY, fillColorHex) {
-            let imgData = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
-            let data = imgData.data;
-            let startPos = (Math.floor(startY) * drawCanvas.width + Math.floor(startX)) * 4;
-            
-            let startR = data[startPos], startG = data[startPos + 1], startB = data[startPos + 2], startA = data[startPos + 3];
-            let fillRgb = hexToRgb(fillColorHex);
-
-            if (startR === fillRgb.r && startG === fillRgb.g && startB === fillRgb.b && startA === fillRgb.a) return;
-
-            let stack = [[Math.floor(startX), Math.floor(startY)]];
-            
-            function matchStartColor(pos) { return data[pos] === startR && data[pos + 1] === startG && data[pos + 2] === startB && data[pos + 3] === startA; }
-            function colorPixel(pos) { data[pos] = fillRgb.r; data[pos + 1] = fillRgb.g; data[pos + 2] = fillRgb.b; data[pos + 3] = fillRgb.a; }
-
-            while (stack.length > 0) {
-                let [x, y] = stack.pop();
-                let left = x, right = x;
-                while (left > 0 && matchStartColor((y * drawCanvas.width + (left - 1)) * 4)) left--;
-                while (right < drawCanvas.width - 1 && matchStartColor((y * drawCanvas.width + (right + 1)) * 4)) right++;
-
-                for (let i = left; i <= right; i++) {
-                    colorPixel((y * drawCanvas.width + i) * 4);
-                    if (y > 0 && matchStartColor(((y - 1) * drawCanvas.width + i) * 4)) stack.push([i, y - 1]);
-                    if (y < drawCanvas.height - 1 && matchStartColor(((y + 1) * drawCanvas.width + i) * 4)) stack.push([i, y + 1]);
-                }
-            }
-            ctx.putImageData(imgData, 0, 0);
-        }
-
-        function startDraw(e) { 
-            saveState(); 
-            isDrawing = true; 
-            let pos = getMousePos(e); 
-            startX = pos.x; startY = pos.y; 
-            lastX = pos.x; lastY = pos.y;
-            
-            snapshot = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
-
-   
-            if (currentTool === 'fill') {
-                let color = document.getElementById('colorPicker').value;
-                floodFill(startX, startY, color);
-                isDrawing = false; 
-                
-                if (state.mode === 'classic') {
-                    let fillData = { type: 'img_sync', src: drawCanvas.toDataURL() };
-                    if(isHost) relayData(fillData, 'host'); else myConn.send(fillData);
-                }
-            }
-        }
-
-        function drawing(e) {
-            if (!isDrawing) return; 
-            let pos = getMousePos(e);
-            let color = currentTool === 'eraser' ? '#ffffff' : document.getElementById('colorPicker').value;
-            let size = document.getElementById('sizePicker').value;
-            
-            if (currentTool === 'pen' || currentTool === 'eraser') {
-                drawLineLocal(lastX, lastY, pos.x, pos.y, color, size);
-                if (state.mode === 'classic') {
-                    let drawData = { type: 'draw', x0: lastX, y0: lastY, x1: pos.x, y1: pos.y, color: color, size: size };
-                    if(isHost) relayData(drawData, 'host'); else myConn.send(drawData);
-                }
-                lastX = pos.x; lastY = pos.y;
-            } else if (currentTool !== 'fill') {
-    
-                ctx.putImageData(snapshot, 0, 0); 
-                drawShapeLocal(currentTool, startX, startY, pos.x, pos.y, color, size);
-            }
-        }
-
-        function stopDraw(e) { 
-            if (!isDrawing) return;
-            isDrawing = false; 
-            
-            if (currentTool !== 'pen' && currentTool !== 'eraser' && currentTool !== 'fill') {
-                let pos = getMousePos(e);
-                let color = document.getElementById('colorPicker').value;
-                let size = document.getElementById('sizePicker').value;
-                
-                if (state.mode === 'classic') {
-                    let shapeData = { type: 'shape', shape: currentTool, x0: startX, y0: startY, x1: pos.x, y1: pos.y, color: color, size: size };
-                    if(isHost) relayData(shapeData, 'host'); else myConn.send(shapeData);
-                }
-            }
-        }
-
-
-        function drawLineLocal(x0, y0, x1, y1, color, size) {
-            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = size; ctx.strokeStyle = color; ctx.stroke();
-        }
-
-
-        function drawShapeLocal(shapeType, x0, y0, x1, y1, color, size) {
-            ctx.beginPath();
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = size; ctx.strokeStyle = color;
-            
-            if (shapeType === 'line') {
-                ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
-            } else if (shapeType === 'rect') {
-                ctx.rect(x0, y0, x1 - x0, y1 - y0);
-            } else if (shapeType === 'circle') {
-                let radius = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
-                ctx.arc(x0, y0, radius, 0, 2 * Math.PI);
-            } else if (shapeType === 'triangle') {
-                ctx.moveTo(x0 + (x1 - x0) / 2, y0); 
-                ctx.lineTo(x1, y1);                 
-                ctx.lineTo(x0, y1);                 
-                ctx.closePath();                    
-            }
-            ctx.stroke();
-        }
-
-
-        function remoteDraw(data) { 
-            if(data.type === 'draw') drawLineLocal(data.x0, data.y0, data.x1, data.y1, data.color, data.size); 
-            else if(data.type === 'shape') drawShapeLocal(data.shape, data.x0, data.y0, data.x1, data.y1, data.color, data.size); 
-        }
-    </script>
-    <!-- ========================================== -->
-    <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
-    <!-- ========================================== -->
-    <script>
-
-        const gamesHubList = [
-            "../cybertank/index.html",
-            "../tower_defense/index.html",
-            "../edgeofwar/index.html",
-            "../cyber_smash/index.html",
-            "../guessthemanga/index.html",
-            "../drawer/index.html",
-            "../texas_poker/index.html"
-        ];
-
-        let touchstartX = 0;
-        let touchendX = 0;
-        
-        function handleSwipeGesture() {
-            const swipeThreshold = 75; 
-            
-            if (touchendX < touchstartX - swipeThreshold) {
-
-                navigateGames(1);
-            }
-            if (touchendX > touchstartX + swipeThreshold) {
-    
-                navigateGames(-1);
-            }
-        }
-
-        function navigateGames(direction) {
-            const currentPath = window.location.pathname;
-            
-
-            let currentIndex = gamesHubList.findIndex(game => {
-                let folderName = game.split('/')[1]; 
-                return currentPath.includes(folderName);
-            });
-            
-
-            if (currentIndex === -1) return;
-
-     
-            let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
-
-            window.location.href = gamesHubList[nextIndex];
-        }
-
-
-        document.addEventListener('touchstart', e => {
-
-            if (e.target.tagName.toLowerCase() === 'canvas') return;
-            touchstartX = e.changedTouches[0].screenX;
-        }, { passive: true });
-
-        document.addEventListener('touchend', e => {
-            if (e.target.tagName.toLowerCase() === 'canvas') return;
-            touchendX = e.changedTouches[0].screenX;
-            handleSwipeGesture();
-        }, { passive: true });
-    </script>
+    <!-- MODAL PARAMÈTRES -->
+    <div id="settings-modal" class="overlay fade-in" style="display:none; position: fixed;">
+        <div class="menu-container">
+            <h2>Paramètres</h2>
+            <p>Options du jeu (Volume, Thème, etc.)</p>
+            <!-- Ajoute tes réglages ici plus tard -->
+            <button class="btn" onclick="toggleSettings()" style="margin-top: 20px;">Fermer</button>
+        </div>
+    </div>
+
+    <!-- Scripts (L'ordre est important) -->
+    <script src="words.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
