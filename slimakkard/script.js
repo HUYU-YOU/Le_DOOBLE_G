@@ -96,6 +96,7 @@ let slimeClass = "";
 let isMyTurn = false;
 let placementPhase = false;
 let isHorizontal = true;
+let isAnimating = false; // Bloque les clics pendant les combos
 
 const TOTAL_SHIP_CELLS = 7; 
 let playerGridState = new Array(100).fill(0); 
@@ -179,6 +180,8 @@ function preparerFlotte(className) {
     playerHitsTaken = 0;
     enemyHitsTaken = 0;
     specialDrakkarAlive = true;
+    isAnimating = false;
+    aiTargetQueue = [];
     
     document.getElementById('p-ship-special').innerHTML = "🟢 Drakkar Spécial"; document.getElementById('p-ship-special').style.color = "";
     document.getElementById('p-ship-class').innerHTML = "🟢 Drakkar Classique"; document.getElementById('p-ship-class').style.color = "";
@@ -289,7 +292,10 @@ function renderPlayerShipGraphic(row, col, size, horizontal, imageSrc, baseOrien
     const shipDiv = document.createElement('div');
     shipDiv.classList.add('placed-ship-graphic');
     
-    const cellSize = 48; 
+    // Mesure la taille réelle de la cellule CSS (responsive)
+    const dummyCell = document.querySelector('.cell');
+    const cellSize = dummyCell ? dummyCell.offsetWidth : 48; 
+    
     const gap = 2; 
     const padding = 5;
     
@@ -335,14 +341,18 @@ function genererFlotteIA() {
     const ships = [3, 2, 2];
     ships.forEach((size, index) => {
         let placed = false;
-        while (!placed) {
+        let attempts = 0; // Sécurité pour éviter les boucles infinies
+        
+        while (!placed && attempts < 1000) {
             let randIndex = Math.floor(Math.random() * 100);
             let horizontal = Math.random() > 0.5;
             let cells = getShipCells(randIndex, size, horizontal);
+            
             if (cells && !cells.some(c => enemyGridState[c] !== 0)) {
                 cells.forEach(c => enemyGridState[c] = index + 1);
                 placed = true;
             }
+            attempts++;
         }
     });
 }
@@ -351,7 +361,7 @@ function genererFlotteIA() {
 // PHASE DE COMBAT & PERTE DE POUVOIR
 // ==========================================
 function preparerAttaque(index, cellElement) {
-    if (!isMyTurn || placementPhase || cellElement.classList.contains('hit') || cellElement.classList.contains('miss')) return;
+    if (!isMyTurn || placementPhase || isAnimating || cellElement.classList.contains('hit') || cellElement.classList.contains('miss')) return;
 
     if (!specialDrakkarAlive) {
         executerAttaque(index);
@@ -366,22 +376,42 @@ function preparerAttaque(index, cellElement) {
             mettreAJourStatut(`Berserker : ${berserkerCoupsRestants} 🪓`);
             if (berserkerCoupsRestants <= 0) finDeTour();
             break;
+            
         case 'navigateur':
+            isAnimating = true; // Verrouille
             executerAttaque(index);
-            if (index % 10 !== 9) setTimeout(() => executerAttaque(index + 1), 300);
-            finDeTour();
+            if (index % 10 !== 9) {
+                setTimeout(() => {
+                    executerAttaque(index + 1);
+                    isAnimating = false; // Déverrouille
+                    finDeTour();
+                }, 300);
+            } else {
+                isAnimating = false;
+                finDeTour();
+            }
             break;
+            
         case 'chaman':
+            isAnimating = true; // Verrouille le temps des 3 tirs
             mettreAJourStatut(dict[currentLang]['status-chaos']);
+            
             for (let i = 0; i < 3; i++) {
                 setTimeout(() => {
+                    if (enemyHitsTaken >= TOTAL_SHIP_CELLS) return; // Arrête si on gagne pendant l'anim
+                    
                     let rand;
                     do { rand = Math.floor(Math.random() * 100); } 
                     while (document.querySelectorAll('#adversary-grid .cell')[rand].classList.contains('hit') || document.querySelectorAll('#adversary-grid .cell')[rand].classList.contains('miss'));
+                    
                     executerAttaque(rand);
+                    
+                    if (i === 2) {
+                        isAnimating = false; // Fin du sort
+                        finDeTour();
+                    }
                 }, i * 400);
             }
-            setTimeout(finDeTour, 1200);
             break;
     }
 }
@@ -419,6 +449,8 @@ function executerAttaque(index) {
 }
 
 function finDeTour() {
+    if (enemyHitsTaken >= TOTAL_SHIP_CELLS) return; // Ne passe pas le tour si le jeu est fini
+    
     isMyTurn = false;
     berserkerCoupsRestants = 2; 
     
@@ -434,8 +466,9 @@ function simulerAttaqueAdverse() {
     const playerCells = document.querySelectorAll('#player-grid .cell');
     let target = -1;
 
+    // L'IA pop (prend le plus récent) pour suivre une ligne continue
     while (aiTargetQueue.length > 0) {
-        let potential = aiTargetQueue.shift();
+        let potential = aiTargetQueue.pop(); 
         if (!playerCells[potential].classList.contains('hit') && !playerCells[potential].classList.contains('miss')) {
             target = potential;
             break;
