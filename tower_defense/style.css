@@ -27,18 +27,6 @@ h1 {
     font-size: 2.2em;
 }
 
-#game-container { 
-    transition: transform 0.3s ease; 
-    transform-origin: top center; 
-    display: flex; 
-    gap: 20px; 
-    background: var(--panel); 
-    padding: 20px; 
-    border-radius: 16px; 
-    box-shadow: 0 15px 40px rgba(0,0,0,0.8); 
-    border: 1px solid rgba(16, 185, 129, 0.15); 
-    margin-top: 10px;
-}
 canvas { 
     background-color: #0b0f19; 
     border: 1px solid rgba(255,255,255,0.1); 
@@ -48,14 +36,14 @@ canvas {
 }
 
 #ui-panel { width: 340px; display: flex; flex-direction: column; gap: 10px; }
-.stat-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; flex-wrap: wrap; }
+.stat-box { background: rgba(0,0,0,0.3); padding: 15px; font-size: 16px; font-weight: bold; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; flex-wrap: wrap; }
 .gold { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); } 
 .lives { color: var(--danger); } 
 .wave { color: var(--accent); width: 100%; margin-top: 5px; font-size: 1.1em; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 5px;}
 h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; }
 
 .tower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.tower-btn { background: rgba(255,255,255,0.03); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px; border-radius: 8px; font-size: 11px; cursor: pointer; transition: 0.2s; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 75px;}
+.tower-btn { background: rgba(255,255,255,0.03); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px; font-size: 11px; cursor: pointer; transition: 0.2s; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 75px;}
 .tower-btn img { height: 26px; object-fit: contain; margin-bottom: 3px; }
 .tower-btn b { font-size: 1.1em; margin-bottom: 2px;}
 .tower-btn span { font-size: 0.85em; color: #aaa; margin-bottom: 2px; line-height: 1.1;}
@@ -63,8 +51,8 @@ h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
 .tower-btn.selected { border-color: var(--accent); background: rgba(16, 185, 129, 0.15); box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.2); }
 .tower-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-#upgrade-panel { display: none; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.3); flex-direction: column; gap: 8px; }
-.action-btn { background: var(--accent); color: #000; border: none; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s;}
+#upgrade-panel { display: none; background: rgba(239, 68, 68, 0.1); padding: 12px; flex-direction: column; gap: 8px; }
+.action-btn { background: var(--accent); color: #000; border: none; padding: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s;}
 .action-btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
 
 .sys-btns { display: flex; gap: 10px; margin-top: auto; }
@@ -97,7 +85,65 @@ h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
 .close-btn { margin-top: 25px; background: var(--accent); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 .close-btn:hover { box-shadow: 0 0 20px var(--accent); transform: scale(1.05); }
 
-/* VIdéos d'arrière plan (conservé d'après tes CSS additionnels) */
+/* VIdéos d'arrière plan */
 .bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.4s ease; z-index: 0; pointer-events: none; }
 .game-card:hover .bg-video { opacity: 0.6; }
 .game-icon, .game-title, .game-desc { position: relative; z-index: 1; }
+
+/* --- ESTHÉTIQUE SLIMESQUE --- */
+#game-container { 
+    border-radius: 30px; 
+    border: 3px solid var(--accent); 
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.2), inset 0 0 25px rgba(16, 185, 129, 0.15); 
+    background: var(--panel); 
+    padding: 20px; 
+    display: flex; 
+    gap: 20px;
+    transition: transform 0.3s ease; 
+    transform-origin: top center; 
+    margin-top: 10px;
+}
+.stat-box, .tower-btn, .action-btn { 
+    border-radius: 16px; 
+}
+#upgrade-panel { 
+    background: rgba(17, 24, 39, 0.95); 
+    border: 2px solid var(--accent); 
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); 
+    border-radius: 16px;
+}
+.action-btn {
+    border-radius: 12px;
+}
+
+/* Écran de démarrage par-dessus le Canvas */
+#start-screen {
+    position: absolute;
+    top: 20px; left: 20px;
+    width: 600px; height: 450px; /* Aligné sur le canvas */
+    background: rgba(9, 10, 15, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    border-radius: 8px;
+    transition: opacity 0.5s ease;
+}
+.slime-title {
+    font-size: 2.5em;
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--accent);
+    animation: slimePulse 2s infinite;
+    margin-bottom: 5px;
+}
+.slime-btn {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    box-shadow: 0 0 20px var(--accent);
+}
+@keyframes slimePulse { 
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px var(--accent)); } 
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 25px var(--accent)); } 
+}
