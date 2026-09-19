@@ -1,7 +1,3 @@
-// ==========================================
-// 1. EVENT LISTENERS GLOBAUX ET UI
-// ==========================================
-
 document.addEventListener('touchstart', (e) => { 
     if(e.target.closest('.no-swipe')) e.stopPropagation(); 
 }, { passive: false });
@@ -38,11 +34,9 @@ function toggleSettings() {
 
 function setGameSize(size) {
     const container = document.getElementById('game-container');
-    
     document.getElementById('btn-sz-classic').classList.remove('active');
     document.getElementById('btn-sz-wide').classList.remove('active');
     document.getElementById('btn-sz-full').classList.remove('active');
-
     container.classList.remove('size-classic', 'size-wide', 'size-full');
     
     if (size === 'classic') {
@@ -70,12 +64,8 @@ document.addEventListener('fullscreenchange', () => {
     }
 });
 
-// ==========================================
-// 2. LOGIQUE PRINCIPALE DU JEU
-// ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-
     const translations = {
         fr: {
             settings_title: "Paramètres", language: "Langue 🌍", sound: "Audio 🎵",
@@ -108,31 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
     window.setLanguage = function(lang) {
         currentLang = lang;
         localStorage.setItem('slimeDashLang', lang);
-        
         document.getElementById('btn-lang-fr').classList.toggle('active', lang === 'fr');
         document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
-        
         const hubImg = document.getElementById('img-retour-hub');
-        if(hubImg) {
-            hubImg.src = lang === 'fr' ? '../img/retourhub.png' : '../img/returbhub.png';
-        }
+        if(hubImg) hubImg.src = lang === 'fr' ? '../img/retourhub.png' : '../img/returbhub.png';
         
         updateMuteButton();
-
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (translations[lang][key]) {
-                el.innerText = translations[lang][key];
-            }
+            if (translations[lang][key]) el.innerText = translations[lang][key];
         });
-
         updateStatusText();
     };
 
     function updateStatusText() {
         const sText = document.getElementById('status-text');
-        if (!sText) return;
-        if (typeof gameState === 'undefined') return; 
+        if (!sText || typeof gameState === 'undefined') return; 
         
         if (gameState === 'START') sText.innerText = translations[currentLang].status_menu;
         else if (gameState === 'PLAYING_ENDLESS') sText.innerText = translations[currentLang].status_endless;
@@ -140,20 +121,27 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (gameState === 'PLAYING_CUSTOM') sText.innerText = currentIsTest ? translations[currentLang].status_test : translations[currentLang].status_shared;
     }
 
-    let ytPlayer;
+    // --- AUDIO NATIF HTML5 ---
     let audioStarted = false;
     let isMuted = localStorage.getItem('isMuted') === 'true';
     const btnMute = document.getElementById('btn-mute');
+    
+    // NOUVEAU: Instance Audio
+    const bgm = new Audio('audio/music.mp3'); 
+    bgm.loop = true;
+    bgm.volume = 0.5;
     
     function updateMuteButton() {
         if (isMuted) {
             btnMute.innerText = translations[currentLang].sound_off;
             btnMute.style.color = "var(--neon-pink)";
             btnMute.style.borderColor = "var(--neon-pink)";
+            bgm.muted = true;
         } else {
             btnMute.innerText = translations[currentLang].sound_on;
             btnMute.style.color = "var(--neon-cyan)";
             btnMute.style.borderColor = "var(--neon-cyan)";
+            bgm.muted = false;
         }
     }
 
@@ -161,42 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
         isMuted = !isMuted;
         localStorage.setItem('isMuted', isMuted);
         updateMuteButton();
-        
-        if (isMuted) {
-            if (ytPlayer && typeof ytPlayer.mute === 'function') ytPlayer.mute();
-        } else {
-            if (ytPlayer && typeof ytPlayer.unMute === 'function') {
-                ytPlayer.unMute();
-                ytPlayer.setVolume(10);
-            }
-        }
     });
 
-    window.onYouTubeIframeAPIReady = function() {
-        ytPlayer = new YT.Player('yt-player', {
-            height: '0', width: '0', videoId: '0QjHiah9Z3I', 
-            playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
-            events: { 
-                'onReady': (e) => {
-                    e.target.setVolume(10);
-                    if (isMuted) e.target.mute();
-                }, 
-                'onStateChange': (e) => { if (e.data === YT.PlayerState.ENDED) ytPlayer.playVideo(); } 
-            }
-        });
-    };
-
     function initAudio() {
-        if (!audioStarted && ytPlayer && typeof ytPlayer.playVideo === 'function') {
-            try { 
-                ytPlayer.playVideo(); 
-                if (isMuted) ytPlayer.mute(); else ytPlayer.unMute();
-                audioStarted = true; 
-            } 
-            catch(e) { console.warn("Erreur Audio Youtube :", e); }
+        if (!audioStarted) {
+            bgm.play().catch(e => console.log("L'Audio nécessite une interaction utilisateur au préalable."));
+            updateMuteButton();
+            audioStarted = true;
         }
     }
 
+    // --- VARIABLES DE JEU ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const menuScreen = document.getElementById('menu-screen');
@@ -213,12 +176,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const GRID_SIZE = 60; 
     const GROUND_HEIGHT = 90;
-    let gameSpeed = 300; 
     
+    // NOUVEAU: Constantes physiques
     const GRAVITY = 3600; 
     const JUMP_FORCE = -1050; 
-    let jumpBufferTimer = 0; 
+    let gameSpeed = 300; 
+    const MAX_SPEED = 850; // Plafond de vitesse 
 
+    // NOUVEAU: Coyote Time
+    let jumpBufferTimer = 0; 
+    let coyoteTimer = 0;
+    const COYOTE_TIME_MAX = 0.15; // 150ms pour sauter dans le vide
+    
     let cameraX = 0;
     let editorCamTarget = 0;
     let score = 0;
@@ -251,8 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let levelData = []; 
     let endlessLevelData = []; 
     let nextEndlessSpawnX = 0; 
-    let consecutiveObstacles = 0;
-
+    
     let defaultLevel = [
         {x: 10, y: 0, type: 'block'}, {x: 11, y: 0, type: 'block'}, {x: 12, y: 1, type: 'block'},
         {x: 15, y: 3, type: 'coin'}, {x: 16, y: 3, type: 'coin'},
@@ -275,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const typeMap = { 'block': 1, 'spike': 2, 'hole': 3, 'flag': 4, 'pad': 5, 'holo': 6, 'coin': 7, 'start_flag': 8 };
     const revTypeMap = { 1: 'block', 2: 'spike', 3: 'hole', 4: 'flag', 5: 'pad', 6: 'holo', 7: 'coin', 8: 'start_flag' };
 
+    // --- RESSOURCES ---
     const sprites = { idle: [], run: [], jump: [], land: [] };
     const bgImages = []; 
     const platformImg = new Image();
@@ -309,7 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const player = {
         x: 150, y: 0, prevY: 0, size: 60, vy: 0, isGrounded: false,
-        animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1
+        animState: 'IDLE', frameIndex: 0, animTimer: 0, animSpeed: 0.1,
+        trail: [] // NOUVEAU: Historique pour la traînée
     };
 
     function setAnimState(newState) {
@@ -368,11 +338,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-back-menu').addEventListener('click', () => {
         gameOverScreen.style.display = 'none';
-        if (currentIsTest) {
-            startEditor();
-        } else {
-            showMenu("Slime-Dash", "var(--neon-cyan)");
-        }
+        if (currentIsTest) startEditor();
+        else showMenu("Slime-Dash", "var(--neon-cyan)");
     });
 
     stopTestBtn.addEventListener('click', () => {
@@ -393,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isTest) stopTestBtn.style.display = 'block';
         else stopTestBtn.style.display = 'none';
         
-        player.vy = 0; jumpBufferTimer = 0;
+        player.vy = 0; jumpBufferTimer = 0; coyoteTimer = 0; player.trail = [];
         setAnimState('RUN');
         score = 0; particles = []; shakeTimer = 0;
         
@@ -404,7 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode === 'PLAYING_ENDLESS') {
             gameSpeed = 300; 
             endlessLevelData = [];
-            consecutiveObstacles = 0;
             nextEndlessSpawnX = Math.floor(width / GRID_SIZE) + 10;
             resetSeed(currentEndlessSeed); 
             statusText.style.color = "var(--neon-pink)";
@@ -517,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(e) {}
     }
 
+    // --- ÉDITEUR DRAG & DROP ---
     let isDraggingPanel = false;
     let panelOffsetX, panelOffsetY;
 
@@ -534,21 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
         editorPanel.style.top = (e.clientY - panelOffsetY) + 'px';
     });
     document.addEventListener('mouseup', () => { isDraggingPanel = false; });
-
-    editorPanel.addEventListener('touchstart', (e) => {
-        if(e.target.closest('.tool-btn') || e.target.closest('.action-btn')) return;
-        isDraggingPanel = true;
-        const rect = editorPanel.getBoundingClientRect();
-        editorPanel.style.transform = 'none'; 
-        panelOffsetX = e.touches[0].clientX - rect.left;
-        panelOffsetY = e.touches[0].clientY - rect.top;
-    }, {passive: false});
-    document.addEventListener('touchmove', (e) => {
-        if (!isDraggingPanel) return;
-        editorPanel.style.left = (e.touches[0].clientX - panelOffsetX) + 'px';
-        editorPanel.style.top = (e.touches[0].clientY - panelOffsetY) + 'px';
-    }, {passive: false});
-    document.addEventListener('touchend', () => { isDraggingPanel = false; });
 
     let currentTool = 'block';
     let isBuilding = false;
@@ -575,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('exit-btn').addEventListener('click', () => {
         localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); 
-        showMenu("Slime-Dash", "var(--neon-cyan)");
+        showMenu();
     });
 
     document.getElementById('export-btn').addEventListener('click', () => {
@@ -660,51 +612,41 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseup', () => {
         if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
     });
-    canvas.addEventListener('mouseleave', () => {
-        isHovering = false;
-        if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
-    });
-    canvas.addEventListener('touchstart', (e) => {
-        if (gameState.startsWith('PLAYING')) { e.preventDefault(); triggerJump(); return; }
-        if (gameState !== 'EDITOR') return;
-        isBuilding = true; updateEditorCursor(e); placeBlockAtCursor();
-    }, {passive: false});
-    canvas.addEventListener('touchmove', (e) => {
-        if (gameState !== 'EDITOR') return;
-        updateEditorCursor(e); if (isBuilding) placeBlockAtCursor();
-    }, {passive: false});
-    canvas.addEventListener('touchend', () => {
-        if (gameState === 'EDITOR' && isBuilding) { isBuilding = false; isHovering = false; localStorage.setItem('slimeDashLevel', JSON.stringify(levelData)); }
-    });
+
+    // NOUVEAU: GÉNÉRATION PAR CHUNKS POUR LE MODE INFINI
+    const ENDLESS_CHUNKS = [
+        [{type: 'hole', y:0, offset: 0}, {type: 'hole', y:0, offset: 1}], 
+        [{type: 'spike', y:0, offset: 0}, {type: 'pad', y:0, offset: 3}], 
+        [{type: 'block', y:1, offset: 0}, {type: 'coin', y:2, offset: 0}, {type: 'block', y:1, offset: 2}],
+        [{type: 'spike', y:0, offset: 0}, {type: 'coin', y:1, offset: 1}],
+        [{type: 'pad', y:0, offset: 0}, {type: 'coin', y:3, offset: 1}],
+        [{type: 'block', y:0, offset: 0}, {type: 'spike', y:1, offset: 0}],
+        [{type: 'block', y:1, offset: 0}, {type: 'block', y:2, offset: 2}, {type: 'coin', y:3, offset: 2}]
+    ];
 
     function updateEndlessGeneration() {
         const currentGridX = Math.floor(cameraX / GRID_SIZE);
         const targetGridX = currentGridX + Math.floor(width / GRID_SIZE) + 6; 
 
         if (nextEndlessSpawnX < targetGridX) {
-            const r = seededRandom();
-            let type = 'coin';
-            let y = 0;
-            let gap = 2; 
+            // Sélectionne un chunk au hasard
+            const chunkIndex = Math.floor(seededRandom() * ENDLESS_CHUNKS.length);
+            const chunk = ENDLESS_CHUNKS[chunkIndex];
 
-            if (consecutiveObstacles >= 2) {
-                type = 'coin'; y = 1; gap = 2; consecutiveObstacles = 0;
-            } else {
-                if (r > 0.85) { type = 'hole'; gap = 5; consecutiveObstacles = 0; }
-                else if (r > 0.65) { type = 'spike'; gap = 3; consecutiveObstacles++; }
-                else if (r > 0.4) { type = 'block'; y = seededRandom() > 0.5 ? 1 : 0; gap = 2; consecutiveObstacles++; }
-                else if (r > 0.25) { type = 'pad'; gap = 2; consecutiveObstacles = 0; }
-                else { type = 'coin'; y = 1; gap = 2; consecutiveObstacles = 0; }
-            }
+            let maxOffset = 0;
+            chunk.forEach(item => {
+                endlessLevelData.push({
+                    x: nextEndlessSpawnX + item.offset, 
+                    y: item.y, 
+                    type: item.type, 
+                    collected: false
+                });
+                if (item.offset > maxOffset) maxOffset = item.offset;
+            });
 
-            if (type === 'hole') {
-                endlessLevelData.push({x: nextEndlessSpawnX, y: 0, type: 'hole', collected: false});
-                endlessLevelData.push({x: nextEndlessSpawnX + 1, y: 0, type: 'hole', collected: false});
-            } else {
-                endlessLevelData.push({x: nextEndlessSpawnX, y: y, type: type, collected: false});
-            }
-            
-            nextEndlessSpawnX += gap;
+            // Espace garanti (2 à 4 blocs) entre chaque chunk pour souffler
+            const gap = 2 + Math.floor(seededRandom() * 3);
+            nextEndlessSpawnX += maxOffset + gap;
         }
 
         if (endlessLevelData.length > 50 && endlessLevelData[0].x < currentGridX - 10) {
@@ -715,13 +657,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function executeJump() {
         player.vy = JUMP_FORCE; 
         player.isGrounded = false;
+        coyoteTimer = 0; // Reset après le saut
         setAnimState('JUMP');
         if(!isMuted) spawnParticles(player.x + player.size/2, player.y + player.size, 'var(--neon-green)', 15);
     }
 
     function triggerJump() {
         if (gameState.startsWith('PLAYING')) {
-            if (player.isGrounded) executeJump();
+            // NOUVEAU : Prise en compte du Coyote Time
+            if (player.isGrounded || coyoteTimer > 0) executeJump();
             else jumpBufferTimer = 0.15;
         }
     }
@@ -754,7 +698,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (player.y >= currentGroundLevel) {
             player.y = currentGroundLevel; player.vy = 0;
             if (!player.isGrounded) {
-                player.isGrounded = true; setAnimState('LAND');
+                player.isGrounded = true; 
+                coyoteTimer = COYOTE_TIME_MAX; // NOUVEAU: Réinitialise le coyote timer au sol
+                setAnimState('LAND');
                 if(!isMuted) spawnParticles(player.x + player.size/2, player.y + player.size, 'rgba(57, 255, 20, 0.7)', 8);
                 if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
             }
@@ -790,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (obs.type === 'pad') {
                 const hitY = (player.y < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
                 if (hitX && hitY) {
-                    player.vy = JUMP_FORCE * 1.5; player.isGrounded = false; setAnimState('JUMP');
+                    player.vy = JUMP_FORCE * 1.5; player.isGrounded = false; coyoteTimer = 0; setAnimState('JUMP');
                     if(!isMuted) spawnParticles(obsScreenX + obsSize/2, obsScreenY, 'var(--neon-cyan)', 20);
                     continue;
                 }
@@ -802,7 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (player.vy > 0 && player.prevY + player.size <= obsScreenY + 25) {
                         player.y = obsScreenY - player.size; player.vy = 0; 
                         if(!player.isGrounded) { 
-                            player.isGrounded = true; setAnimState('LAND'); 
+                            player.isGrounded = true; coyoteTimer = COYOTE_TIME_MAX; setAnimState('LAND'); 
                             if (jumpBufferTimer > 0) { executeJump(); jumpBufferTimer = 0; }
                         }
                         continue; 
@@ -813,9 +759,14 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (obs.type === 'spike') {
                 let inverted = activeLevelData.some(o => o.x === obs.x && o.y === obs.y + 1 && o.type === 'block');
                 let hitY = false;
-                if (inverted) hitY = (player.y + tolY < obsScreenY + obsSize * 0.6) && (player.y + player.size - tolY > obsScreenY);
-                else hitY = (player.y + player.size - tolY > obsScreenY + obsSize * 0.4) && (player.y + tolY < obsScreenY + obsSize);
-                if (hitX && hitY) { gameOver(false); return; }
+                // NOUVEAU : Hitboxes Spikes plus tolérantes
+                const sTolX = 16, sTolY = 14; 
+                const spikeHitX = (player.x + sTolX < obsScreenX + obsSize) && (player.x + player.size - sTolX > obsScreenX);
+                
+                if (inverted) hitY = (player.y + sTolY < obsScreenY + obsSize * 0.6) && (player.y + player.size - sTolY > obsScreenY);
+                else hitY = (player.y + player.size - sTolY > obsScreenY + obsSize * 0.4) && (player.y + sTolY < obsScreenY + obsSize);
+                
+                if (spikeHitX && hitY) { gameOver(false); return; }
             }
             else if (obs.type === 'flag') {
                 const hitY = (player.y + tolY < obsScreenY + obsSize) && (player.y + player.size > obsScreenY);
@@ -835,6 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function update(dt) {
         if (jumpBufferTimer > 0) jumpBufferTimer -= dt;
+        if (coyoteTimer > 0 && !player.isGrounded) coyoteTimer -= dt; // Décrémente coyote time
 
         player.animTimer += dt;
         if (player.animTimer >= player.animSpeed) {
@@ -857,12 +809,21 @@ document.addEventListener('DOMContentLoaded', () => {
             player.vy += GRAVITY * dt;
             player.y += player.vy * dt;
 
+            // NOUVEAU: Trail Effect Logic
+            if (gameSpeed > 500) {
+                player.trail.push({x: player.x, y: player.y, frame: player.frameIndex, state: player.animState});
+                if (player.trail.length > 5) player.trail.shift();
+            } else {
+                player.trail = [];
+            }
+
             score += gameSpeed * dt * 0.1;
             const scoreElem = document.getElementById('score');
             if (scoreElem) scoreElem.innerText = Math.floor(score);
 
             if (gameState === 'PLAYING_ENDLESS') {
-                gameSpeed += dt * 5; 
+                // NOUVEAU: Cap de vitesse
+                if (gameSpeed < MAX_SPEED) gameSpeed += dt * 5; 
                 updateEndlessGeneration();
                 checkCollisions(endlessLevelData);
             } else {
@@ -965,6 +926,17 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.globalAlpha = 1;
     }
 
+    function getPlayerImage(state, index) {
+        let currentArray = sprites.idle;
+        if(state === 'RUN') currentArray = sprites.run;
+        else if(state === 'JUMP') currentArray = sprites.jump;
+        else if(state === 'LAND') currentArray = sprites.land;
+        
+        let safeIndex = index % currentArray.length;
+        if (state === 'JUMP' && index >= currentArray.length) safeIndex = currentArray.length - 1;
+        return currentArray[safeIndex];
+    }
+
     function draw() {
         ctx.save();
         if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
@@ -1026,15 +998,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        let currentArray = sprites.idle;
-        if(player.animState === 'RUN') currentArray = sprites.run;
-        else if(player.animState === 'JUMP') currentArray = sprites.jump;
-        else if(player.animState === 'LAND') currentArray = sprites.land;
-        
-        let safeIndex = player.frameIndex % currentArray.length;
-        if (player.animState === 'JUMP' && player.frameIndex >= currentArray.length) safeIndex = currentArray.length - 1;
-        const activeImg = currentArray[safeIndex];
+        // NOUVEAU: Dessin du Trail (Traînée)
+        if (player.trail && player.trail.length > 0) {
+            player.trail.forEach((t, i) => {
+                const trailImg = getPlayerImage(t.state, t.frame);
+                if (trailImg && trailImg.complete) {
+                    ctx.globalAlpha = 0.1 + (i * 0.1); 
+                    ctx.drawImage(trailImg, Math.floor(t.x), Math.floor(t.y), player.size, player.size);
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
 
+        // Dessin Joueur principal
+        const activeImg = getPlayerImage(player.animState, player.frameIndex);
         if (activeImg && activeImg.complete && activeImg.naturalWidth > 0) {
             ctx.shadowBlur = 15; ctx.shadowColor = 'var(--neon-cyan)';
             ctx.drawImage(activeImg, Math.floor(player.x), Math.floor(player.y), player.size, player.size);
