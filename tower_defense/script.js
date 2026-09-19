@@ -50,21 +50,24 @@ function setGameSize(size) {
 document.addEventListener("DOMContentLoaded", () => { setGameSize('wide'); });
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setGameSize('wide'); });
 
-
 /* =========================================
-   2. MOTEUR DE JEU (TOWER DEFENSE)
+   2. VARIABLES GLOBALES ET SETUP
 ========================================= */
+let isGameStarted = false; 
+let shakeAmount = 0;       
+
+const targetModes = ['first', 'closest', 'strongest'];
+const targetModeNames = {'first': 'Premier', 'closest': 'Plus Proche', 'strongest': 'Plus Fort'};
+
 const canvas = document.getElementById('gameCanvas'); 
 const ctx = canvas.getContext('2d'); 
 
-// Configuration de la grille et des dimensions logiques
 const logicalWidth = 600;
 const logicalHeight = 450;
 const tileSize = 30; 
 const cols = 20; 
 const rows = 15;
 
-// Fonction pour rendre le Canvas net sur les écrans HD/Retina
 function resizeCanvas() {
     const ratio = window.devicePixelRatio || 1;
     canvas.width = logicalWidth * ratio;
@@ -78,7 +81,6 @@ resizeCanvas();
 let gold = 150, lives = 20, wave = 0, isWaveActive = false, enemiesToSpawn = [], spawnTimer = 0, gameOver = false;
 let towers = [], enemies = [], projectiles = [], particles = [], empWaves = [], floatingTexts = [];
 let selectedTowerType = 1, hoveredGrid = {x: -1, y: -1}, selectedTowerInstance = null;
-
 let autoWave = false; let gameSpeed = 1; let timeAccumulator = 0; let lastTime = 0;
 let skeletonsUnlocked = false; 
 
@@ -177,7 +179,9 @@ const towerDefs = {
     6: { name: 'Alchimiste', cost: 80, range: 110, damage: 15, cooldown: 60, skin: 'alchimiste', pColor: '#6ee7b7', type: 'poison' } 
 };
 
-// --- GESTION DE LA SOURIS ADAPTÉE AU SCALING DPI ---
+/* =========================================
+   3. GESTION SOURIS & UI
+========================================= */
 canvas.addEventListener('mousemove', (e) => { 
     const rect = canvas.getBoundingClientRect(); 
     const scaleX = logicalWidth / rect.width;
@@ -189,8 +193,7 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mouseleave', () => { hoveredGrid = {x: -1, y: -1}; });
 
 canvas.addEventListener('click', (e) => {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    if (gameOver) return; 
+    if (!isGameStarted || gameOver) return; 
     
     const rect = canvas.getBoundingClientRect(); 
     const scaleX = logicalWidth / rect.width;
@@ -224,7 +227,22 @@ canvas.addEventListener('click', (e) => {
     }
 });
 
-// --- INTERFACE ---
+window.startGame = () => {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    isGameStarted = true;
+    document.getElementById('start-screen').style.opacity = '0';
+    setTimeout(() => document.getElementById('start-screen').style.display = 'none', 500);
+};
+
+window.cycleTargeting = () => {
+    if (selectedTowerInstance) {
+        let idx = targetModes.indexOf(selectedTowerInstance.targetMode);
+        selectedTowerInstance.targetMode = targetModes[(idx + 1) % targetModes.length];
+        document.getElementById('btn-target').innerText = "Cible: " + targetModeNames[selectedTowerInstance.targetMode];
+        playSound('ui_upgrade'); 
+    }
+};
+
 window.selectTower = (t) => { 
     selectedTowerType = t; selectedTowerInstance = null; document.getElementById('upgrade-panel').style.display = 'none'; 
     [1,2,3,4,5,6].forEach(id => document.getElementById(`btn-tower-${id}`).classList.remove('selected')); 
@@ -254,6 +272,7 @@ function updateUpgradePanel() {
     if (selectedTowerInstance) {
         panel.style.display = 'flex'; 
         document.getElementById('tower-name-display').innerText = selectedTowerInstance.name;
+        document.getElementById('btn-target').innerText = "Cible: " + targetModeNames[selectedTowerInstance.targetMode];
         
         let speedBuff = Math.round((1 - selectedTowerInstance.cdMax / towerDefs[selectedTowerInstance.tK].cooldown) * 100);
         
@@ -295,7 +314,9 @@ function generateWaveQueue() {
     } 
 }
 
-// --- TEXTES FLOTTANTS (JUICE) ---
+/* =========================================
+   4. CLASSES DU JEU
+========================================= */
 class FloatingText {
     constructor(x, y, text, color, isCrit = false) {
         this.x = x + (Math.random() - 0.5) * 15;
@@ -321,7 +342,6 @@ class FloatingText {
     }
 }
 
-// --- CLASSES DU JEU ---
 class Enemy {
     constructor(type, currentWave) {
         this.id = Math.random().toString(36).substr(2, 9);
@@ -352,6 +372,10 @@ class Enemy {
 
         ctx.save();
         ctx.translate(this.x, this.y);
+        
+        // Animation de pulsation (Squish Slimesque)
+        let squish = 1 + Math.sin(Date.now() / 150 + this.id.charCodeAt(0)) * 0.12;
+        ctx.scale(1 / squish, squish);
 
         if (this.debuffs['slow'] || this.debuffs['armorBreak'] || this.debuffs['poison']) {
             ctx.beginPath(); ctx.arc(0, 0, this.radius + 6, 0, Math.PI*2); 
@@ -435,6 +459,7 @@ class Tower {
         this.pColor = def.pColor; this.angle = 0; this.level = 1; this.baseCost = def.cost; 
         this.upgradeCost = Math.floor(def.cost * 1.5); this.totalValue = def.cost;
         this.disabledTimer = 0; 
+        this.targetMode = 'first'; // Par défaut
     }
     
     upgrade() { 
@@ -475,10 +500,26 @@ class Tower {
         if (this.disabledTimer > 0) { this.disabledTimer--; return; }
         if (this.cd > 0) this.cd--; 
         
-        let target = null; let minDst = this.range;
+        let target = null;
+        let bestVal = (this.targetMode === 'closest') ? Infinity : -Infinity;
+
         for (let e of enemies) { 
             let d = Math.hypot(e.x - this.x, e.y - this.y); 
-            if (d < minDst) { minDst = d; target = e; } 
+            if (d <= this.range) {
+                if (this.targetMode === 'closest') {
+                    if (d < bestVal) { bestVal = d; target = e; }
+                } 
+                else if (this.targetMode === 'strongest') {
+                    if (e.hp > bestVal) { bestVal = e.hp; target = e; }
+                } 
+                else { 
+                    // 'first' - On estime la progression globale
+                    let nextWp = Math.min(e.wpIndex, e.path.length - 1);
+                    let distToNextWp = Math.hypot(e.path[nextWp].x - e.x, e.path[nextWp].y - e.y);
+                    let progress = (e.wpIndex * 1000) - distToNextWp;
+                    if (progress > bestVal) { bestVal = progress; target = e; }
+                }
+            } 
         }
 
         if (target) {
@@ -491,7 +532,6 @@ class Tower {
             let barrelY = this.y + Math.sin(this.angle) * 15;
 
             if (this.cd <= 0 && Math.abs(diff) < 0.5) { 
-                
                 const soundMap = {1: 'shoot_normal', 2: 'shoot_ricochet', 3: 'shoot_armor', 4: 'shoot_sniper', 5: 'shoot_aoe', 6: 'shoot_poison'};
                 playSound(soundMap[this.tK]);
 
@@ -600,6 +640,9 @@ class Projectile {
     }
 }
 
+/* =========================================
+   5. RENDU ET BOUCLE PRINCIPALE
+========================================= */
 function updateUI() { 
     document.getElementById('gold-display').innerText = gold; 
     document.getElementById('lives-display').innerText = lives; 
@@ -636,7 +679,6 @@ function drawMapAndHover() {
         let occupied = towers.some(t => Math.floor(t.x/tileSize) === hx && Math.floor(t.y/tileSize) === hy);
         let forbidden = (hx < 0 || hx >= cols || hy < 0 || hy >= rows || mapGrid[hx][hy] === 1);
         
-        // SURVOL D'UNE TOUR (Afficher sa portée)
         let hoveredTower = towers.find(t => Math.floor(t.x/tileSize) === hx && Math.floor(t.y/tileSize) === hy);
         if (hoveredTower) {
             ctx.beginPath(); 
@@ -676,6 +718,7 @@ function updateLogic() {
     for (let i = enemies.length - 1; i >= 0; i--) {
         let e = enemies[i], status = e.update();
         if (status === "reached_end") { 
+            shakeAmount = 15; // DÉCLENCHE LE SCREEN SHAKE
             lives -= (e.type.includes('boss')? 10 : 1); enemies.splice(i, 1); 
             playSound('base_damage');
             if (lives <= 0) { 
@@ -694,10 +737,15 @@ function updateLogic() {
 }
 
 function gameLoop(timestamp) {
+    if (!isGameStarted) {
+        requestAnimationFrame(gameLoop);
+        return; 
+    }
+
     if (!lastTime) lastTime = timestamp;
     let deltaTime = (timestamp - lastTime) / (1000 / 60); 
     lastTime = timestamp;
-    if (deltaTime > 5) deltaTime = 5; // Sécurité si on change d'onglet
+    if (deltaTime > 5) deltaTime = 5; 
 
     if (gameOver) return; 
     
@@ -708,6 +756,17 @@ function gameLoop(timestamp) {
     }
 
     ctx.clearRect(0, 0, logicalWidth, logicalHeight); 
+    
+    // APPLICATION DU SCREEN SHAKE
+    ctx.save();
+    if (shakeAmount > 0) {
+        let dx = (Math.random() - 0.5) * shakeAmount;
+        let dy = (Math.random() - 0.5) * shakeAmount;
+        ctx.translate(dx, dy);
+        shakeAmount *= 0.85; // Amortissement
+        if (shakeAmount < 0.5) shakeAmount = 0;
+    }
+
     drawMapAndHover();
     
     for (let i = empWaves.length - 1; i >= 0; i--) {
@@ -722,6 +781,8 @@ function gameLoop(timestamp) {
     particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life / 15); ctx.fillRect(p.x, p.y, 3, 3); ctx.globalAlpha = 1; });
     enemies.forEach(e => e.draw());
     floatingTexts.forEach(ft => ft.draw());
+    
+    ctx.restore(); // Fin du Screen Shake
 
     updateUI(); 
     requestAnimationFrame(gameLoop);
@@ -730,7 +791,7 @@ function gameLoop(timestamp) {
 updateUI(); requestAnimationFrame(gameLoop);
 
 /* =========================================
-   3. GESTION DU SWIPE (TACTILE)
+   6. GESTION DU SWIPE (TACTILE)
 ========================================= */
 const gamesHubList = [
     "../cybertank/index.html",
@@ -747,23 +808,16 @@ let touchendX = 0;
 
 function handleSwipeGesture() {
     const swipeThreshold = 75; 
-    
-    if (touchendX < touchstartX - swipeThreshold) {
-        navigateGames(1);
-    }
-    if (touchendX > touchstartX + swipeThreshold) {
-        navigateGames(-1);
-    }
+    if (touchendX < touchstartX - swipeThreshold) navigateGames(1);
+    if (touchendX > touchstartX + swipeThreshold) navigateGames(-1);
 }
 
 function navigateGames(direction) {
     const currentPath = window.location.pathname;
-    
     let currentIndex = gamesHubList.findIndex(game => {
         let folderName = game.split('/')[1]; 
         return currentPath.includes(folderName);
     });
-    
     if (currentIndex === -1) return;
 
     let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
