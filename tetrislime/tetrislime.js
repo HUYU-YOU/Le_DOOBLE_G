@@ -70,11 +70,12 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 // ==========================================
-// MOTEUR TETRISLIME ET MATRICES EXPLICITES
+// MOTEUR TETRISLIME
 // ==========================================
 const canvas = document.getElementById('tetris-canvas');
 const ctx = canvas.getContext('2d');
 const nextCtx = document.getElementById('next-canvas').getContext('2d');
+const holdCtx = document.getElementById('hold-canvas').getContext('2d');
 
 const ROWS = 20;
 const COLS = 10;
@@ -96,6 +97,7 @@ skinNames.forEach(name => {
     skins[name].onload = () => {
         if (typeof draw === 'function') draw();
         if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 35);
+        if (typeof heldPiece !== 'undefined' && heldPiece) drawPreview(holdCtx, { matrix: SHAPES[heldPiece.type][0], type: heldPiece.type, rotIndex: 0 }, 30);
     };
     skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
 });
@@ -135,19 +137,39 @@ const SHAPES = {
 
 const COLORS = [ null, '#00f0ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#666666'];
 
+// Variables du Jeu
 let board = [];
-let pieceBag = []; // Système de SAC pour tirage équitable
+let pieceBag = []; 
 let piece = null;
 let nextPiece = null;
+
+// Nouvelles mécaniques : HOLD & LOCK DELAY
+let heldPiece = null;
+let canHold = true;
+let lockDelay = 500; // 500ms de grâce au sol
+let lockCounter = 0;
+let lockResets = 0;
+const MAX_LOCK_RESETS = 15;
+let isTouchingGround = false;
+let isSoftDropping = false;
+
+// Variables de progression & réseau
 let dropCounter = 0;
 let dropInterval = 1000;
 let lastTime = 0;
 let score = 0;
 let lines = 0;
-let level = 1; // Gestion du niveau de difficulté
+let level = 1; 
 let gameMode = 'solo'; 
 let isGameOver = false;
 let animationId;
+let wantsRematch = false;
+let oppWantsRematch = false;
+
+// Variables pour l'animation des lignes
+let animatingLines = [];
+let lineAnimTimer = 0;
+const LINE_ANIM_DURATION = 150; // ms de clignotement blanc
 
 let bestScore = parseInt(localStorage.getItem('tetriSlimeBest')) || 0;
 if(document.getElementById('best-score')) {
@@ -157,18 +179,14 @@ if(document.getElementById('best-score')) {
 function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
 
 function randomPiece() {
-    // Si le sac est vide, on le remplit avec nos 5 types de pièces et on le mélange
     if (pieceBag.length === 0) {
         pieceBag = [1, 2, 3, 4, 5];
-        // Mélange de Fisher-Yates
         for (let i = pieceBag.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pieceBag[i], pieceBag[j]] = [pieceBag[j], pieceBag[i]];
         }
     }
-    
     const typeId = pieceBag.pop();
-    
     return {
         matrix: SHAPES[typeId][0],
         pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0][0].length/2), y: 0 },
@@ -280,7 +298,15 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawMatrix(board, {x:0, y:0}, ctx);
     
-    if (piece) {
+    // Animation de clignotement des lignes pleines
+    if (animatingLines.length > 0) {
+        ctx.fillStyle = (Math.floor(lineAnimTimer / 30) % 2 === 0) ? 'white' : 'rgba(255,255,255,0.4)';
+        animatingLines.forEach(y => {
+            ctx.fillRect(0, y * BLOCK_SIZE, COLS * BLOCK_SIZE, BLOCK_SIZE);
+        });
+    }
+    
+    if (piece && animatingLines.length === 0) {
         let ghostY = piece.pos.y;
         while (!collide(board, {matrix: piece.matrix, pos: {x: piece.pos.x, y: ghostY + 1}})) ghostY++;
         ctx.globalAlpha = 0.2;
@@ -341,7 +367,15 @@ function merge(arena, player) {
     });
 }
 
+function resetLockDelay() {
+    if (isTouchingGround && lockResets < MAX_LOCK_RESETS) {
+        lockCounter = 0;
+        lockResets++;
+    }
+}
+
 function playerRotate() {
+    if (animatingLines.length > 0) return;
     const pos = piece.pos.x;
     let offset = 1;
     let nextRot = (piece.rotIndex + 90) % 360;
@@ -353,6 +387,7 @@ function playerRotate() {
     piece.matrix = nextMatrix;
     piece.rotIndex = nextRot;
     
+    let success = true;
     while (collide(board, piece)) {
         piece.pos.x += offset;
         offset = -(offset + (offset > 0 ? 1 : -1));
@@ -360,25 +395,56 @@ function playerRotate() {
             piece.matrix = prevMatrix;
             piece.rotIndex = prevRot;
             piece.pos.x = pos;
-            return;
+            success = false;
+            break;
         }
+    }
+    if (success) resetLockDelay();
+}
+
+function playerMove(dir) { 
+    if (animatingLines.length > 0) return;
+    piece.pos.x += dir; 
+    if (collide(board, piece)) {
+        piece.pos.x -= dir; 
+    } else {
+        resetLockDelay();
     }
 }
 
-function playerMove(dir) { piece.pos.x += dir; if (collide(board, piece)) piece.pos.x -= dir; }
-
-function playerDrop() {
-    piece.pos.y++;
-    if (collide(board, piece)) {
-        piece.pos.y--;
-        merge(board, piece);
+// Fonction pour mettre la pièce en réserve (HOLD)
+function playerHold() {
+    if (!canHold || isGameOver || animatingLines.length > 0) return;
+    
+    if (!heldPiece) {
+        heldPiece = { type: piece.type };
         resetPiece();
-        clearLines();
-        
-        // Mise à jour de l'adversaire dès qu'une pièce se verrouille (sync plus fluide)
+    } else {
+        let tempType = piece.type;
+        piece = {
+            matrix: SHAPES[heldPiece.type][0],
+            pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[heldPiece.type][0][0].length/2), y: 0 },
+            type: heldPiece.type,
+            rotIndex: 0
+        };
+        heldPiece = { type: tempType };
+        lockCounter = 0; lockResets = 0;
+    }
+    canHold = false;
+    drawPreview(holdCtx, { matrix: SHAPES[heldPiece.type][0], type: heldPiece.type, rotIndex: 0 }, 30);
+    
+    if (collide(board, piece)) triggerGameOver();
+}
+
+// Fonction de verrouillage officiel de la pièce
+function lockPiece() {
+    merge(board, piece);
+    checkLinesToAnimate();
+    if (animatingLines.length === 0) {
+        resetPiece();
         if (gameMode === 'multi') broadcastBoard();
     }
-    dropCounter = 0;
+    dropCounter = 0; lockCounter = 0; lockResets = 0;
 }
 
 function resetPiece() {
@@ -386,41 +452,57 @@ function resetPiece() {
     piece = nextPiece;
     nextPiece = randomPiece();
     drawPreview(nextCtx, nextPiece, 35);
+    canHold = true; // On redonne le droit de "Hold"
     if (collide(board, piece)) { triggerGameOver(); }
 }
 
-function clearLines() {
-    let linesCleared = 0;
-    outer: for (let y = ROWS - 1; y >= 0; --y) {
-        for (let x = 0; x < COLS; ++x) if (board[y][x] === 0) continue outer;
-        const row = board.splice(y, 1)[0].fill(0);
-        board.unshift(row);
-        ++y; linesCleared++;
+function checkLinesToAnimate() {
+    animatingLines = [];
+    for (let y = ROWS - 1; y >= 0; --y) {
+        let isFull = true;
+        for (let x = 0; x < COLS; ++x) {
+            if (board[y][x] === 0) { isFull = false; break; }
+        }
+        if (isFull) animatingLines.push(y);
     }
 
-    if (linesCleared > 0) {
-        let points = [0, 40, 100, 300, 1200];
-        // Le score augmente avec le niveau
-        score += points[linesCleared] * level; 
-        lines += linesCleared;
-        
-        // Un niveau toutes les 10 lignes avec accélération exponentielle
-        level = Math.floor(lines / 10) + 1; 
-        dropInterval = Math.max(80, 1000 * Math.pow(0.85, level - 1)); 
-        
-        if(document.getElementById('score')) document.getElementById('score').innerText = score;
-        if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
-        
-        if (score > bestScore) {
-            bestScore = score; localStorage.setItem('tetriSlimeBest', bestScore);
-            if(document.getElementById('best-score')) document.getElementById('best-score').innerText = bestScore;
-        }
-
-        if (gameMode === 'multi' && hostConn && hostConn.open && linesCleared >= 2) {
-            let garbageSent = linesCleared === 4 ? 4 : linesCleared - 1;
-            hostConn.send(JSON.stringify({ type: 'GARBAGE', amount: garbageSent }));
-        }
+    if (animatingLines.length > 0) {
+        lineAnimTimer = LINE_ANIM_DURATION;
     }
+}
+
+function finishClearLines() {
+    let linesCleared = animatingLines.length;
+    
+    animatingLines.sort((a,b) => b - a); // Trier pour supprimer proprement de bas en haut
+    animatingLines.forEach(y => {
+        board.splice(y, 1);
+        board.unshift(Array(COLS).fill(0));
+    });
+    animatingLines = [];
+
+    let points = [0, 40, 100, 300, 1200];
+    score += points[linesCleared] * level; 
+    lines += linesCleared;
+    
+    level = Math.floor(lines / 10) + 1; 
+    dropInterval = Math.max(80, 1000 * Math.pow(0.85, level - 1)); 
+    
+    if(document.getElementById('score')) document.getElementById('score').innerText = score;
+    if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
+    
+    if (score > bestScore) {
+        bestScore = score; localStorage.setItem('tetriSlimeBest', bestScore);
+        if(document.getElementById('best-score')) document.getElementById('best-score').innerText = bestScore;
+    }
+
+    if (gameMode === 'multi' && hostConn && hostConn.open && linesCleared >= 2) {
+        let garbageSent = linesCleared === 4 ? 4 : linesCleared - 1;
+        hostConn.send(JSON.stringify({ type: 'GARBAGE', amount: garbageSent }));
+    }
+    
+    resetPiece();
+    if (gameMode === 'multi') broadcastBoard();
 }
 
 function receiveGarbage(amount) {
@@ -435,6 +517,10 @@ function receiveGarbage(amount) {
 function triggerGameOver() {
     isGameOver = true;
     cancelAnimationFrame(animationId);
+    
+    // SCREEN SHAKE activé à la défaite
+    document.getElementById('game-container').classList.add('shake');
+    
     if(document.getElementById('final-score')) document.getElementById('final-score').innerText = score;
     
     if (gameMode === 'multi') {
@@ -445,65 +531,95 @@ function triggerGameOver() {
         if (hostConn && hostConn.open) hostConn.send(JSON.stringify({ type: 'GAMEOVER' }));
     } else {
         if(document.getElementById('end-title')) document.getElementById('end-title').innerText = "GAME OVER";
+        document.getElementById('end-title').style.color = "var(--p2)";
     }
-    if(document.getElementById('game-over')) document.getElementById('game-over').style.display = 'flex';
+    document.getElementById('game-over').style.display = 'flex';
 }
 
 function update(time = 0) {
     if (isGameOver) return;
     const deltaTime = time - lastTime; lastTime = time;
-    dropCounter += deltaTime;
-    if (dropCounter > dropInterval) playerDrop();
+    
+    if (animatingLines.length > 0) {
+        lineAnimTimer -= deltaTime;
+        if (lineAnimTimer <= 0) finishClearLines();
+    } else {
+        // Logique de gravité & Lock Delay
+        piece.pos.y++;
+        isTouchingGround = collide(board, piece);
+        piece.pos.y--;
+
+        if (isTouchingGround) {
+            lockCounter += deltaTime;
+            if (lockCounter >= lockDelay) lockPiece();
+        } else {
+            lockCounter = 0;
+            dropCounter += deltaTime;
+            
+            // Soft Drop Fluide (on limite à 40ms l'intervalle si le joueur maintient Bas)
+            let currentDropInterval = isSoftDropping ? Math.min(dropInterval, 40) : dropInterval;
+            
+            if (dropCounter > currentDropInterval) {
+                piece.pos.y++;
+                dropCounter = 0;
+                if (isSoftDropping) {
+                    score += 1; // 1 point par bloc en descente douce
+                    if(document.getElementById('score')) document.getElementById('score').innerText = score;
+                }
+            }
+        }
+    }
+
     draw();
     animationId = requestAnimationFrame(update);
 }
 
+// ==========================================
+// CONTRÔLES (Clavier & Tactile)
+// ==========================================
 document.addEventListener('keydown', event => {
     if (isGameOver || document.getElementById('game-ui').style.display === 'none') return;
-    
     if (document.activeElement.tagName === 'INPUT') return;
 
     if (event.keyCode === 68) { 
-        event.preventDefault();
-        isDebug = !isDebug;
-        draw();
+        event.preventDefault(); isDebug = !isDebug; draw();
         if (nextPiece) drawPreview(nextCtx, nextPiece, 35);
+        if (heldPiece) drawPreview(holdCtx, { matrix: SHAPES[heldPiece.type][0], type: heldPiece.type, rotIndex: 0 }, 30);
         return; 
     }
 
     if (event.keyCode === 37) { event.preventDefault(); playerMove(-1); } // Gauche
     else if (event.keyCode === 39) { event.preventDefault(); playerMove(1); } // Droite
-    else if (event.keyCode === 40) { event.preventDefault(); playerDrop(); } // Bas
+    else if (event.keyCode === 40) { event.preventDefault(); isSoftDropping = true; } // Bas (Soft Drop)
     else if (event.keyCode === 38) { event.preventDefault(); playerRotate(); } // Haut
-    else if (event.keyCode === 32) { 
-        event.preventDefault(); 
-        
-        let dropDistance = 0;
-        while (!collide(board, piece)) { 
-            piece.pos.y++; 
-            dropDistance++;
-        }
-        piece.pos.y--; 
-        
-        score += dropDistance * 2;
-        if(document.getElementById('score')) document.getElementById('score').innerText = score;
-        
-        merge(board, piece); 
-        resetPiece(); 
-        clearLines(); 
-        dropCounter = 0;
-        
-        if (gameMode === 'multi') broadcastBoard();
-    } // Espace (Hard Drop)
+    else if (event.keyCode === 32) { event.preventDefault(); doHardDrop(event); } // Espace (Hard Drop)
+    else if (event.keyCode === 67 || event.keyCode === 16) { event.preventDefault(); playerHold(); } // C ou Shift (Hold)
 });
+
+document.addEventListener('keyup', event => {
+    if (event.keyCode === 40) { isSoftDropping = false; }
+});
+
+function doHardDrop(e) { 
+    if (e) e.preventDefault(); 
+    if (animatingLines.length > 0) return;
+    let dropDist = 0;
+    while (!collide(board, piece)) { piece.pos.y++; dropDist++; }
+    piece.pos.y--; 
+    score += dropDist * 2;
+    if(document.getElementById('score')) document.getElementById('score').innerText = score;
+    lockPiece(); 
+}
 
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
 function moveRight(e) { e.preventDefault(); playerMove(1); }
 function rotate(e) { e.preventDefault(); playerRotate(); }
-function drop(e) { e.preventDefault(); playerDrop(); }
+function startSoftDrop(e) { e.preventDefault(); isSoftDropping = true; }
+function endSoftDrop(e) { e.preventDefault(); isSoftDropping = false; }
+function holdBtn(e) { e.preventDefault(); playerHold(); }
 
 // ==========================================
-// FONCTION POUR FORCER LE CHANGEMENT DE FOND (HTML + BODY)
+// FONCTION POUR FORCER LE CHANGEMENT DE FOND
 // ==========================================
 function setBackgroundImage(filename) {
     const bgUrl = `url('assets/${filename}?v=${new Date().getTime()}')`;
@@ -522,42 +638,70 @@ document.addEventListener("DOMContentLoaded", () => {
     const mode = urlParams.get('mode');
     
     if (mode === 'solo') {
-        setTimeout(() => {
-            document.getElementById('main-menu').style.display = 'none';
-            startSolo();
-        }, 50);
+        setTimeout(() => { document.getElementById('main-menu').style.display = 'none'; startSolo(); }, 50);
     } else if (mode === 'multi') {
-        setTimeout(() => {
-            document.getElementById('main-menu').style.display = 'none';
-            openMultiMenu();
-        }, 50);
+        setTimeout(() => { document.getElementById('main-menu').style.display = 'none'; openMultiMenu(); }, 50);
     }
 });
 
 // ==========================================
-// MENUS MULTIJOUEUR ET DÉMARRAGE DE PARTIE
+// RÉINITIALISATION ET MULTIJOUEUR AVEC REMATCH
 // ==========================================
+function initGameSession() {
+    document.getElementById('game-over').style.display = 'none';
+    document.getElementById('game-container').classList.remove('shake');
+    document.getElementById('rematch-status').style.display = 'none';
+    document.getElementById('btn-rematch').style.display = 'inline-block';
+    
+    wantsRematch = false; oppWantsRematch = false;
+    isGameOver = false; animatingLines = []; lineAnimTimer = 0;
+    
+    board = createMatrix(COLS, ROWS);
+    score = 0; lines = 0; level = 1; dropInterval = 1000;
+    if(document.getElementById('score')) document.getElementById('score').innerText = score;
+    if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
+    
+    heldPiece = null; canHold = true;
+    holdCtx.clearRect(0, 0, holdCtx.canvas.width, holdCtx.canvas.height);
+    
+    pieceBag = [];
+    resetPiece();
+}
+
 function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex'; 
-    
     setBackgroundImage('tetrisback.jpeg');
     document.body.classList.add('in-game');
     
     gameMode = 'solo';
-    board = createMatrix(COLS, ROWS);
-    
-    // Réinitialisation des stats
-    score = 0;
-    lines = 0;
-    level = 1;
-    dropInterval = 1000;
-    if(document.getElementById('score')) document.getElementById('score').innerText = score;
-    if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
-    
-    pieceBag = []; // Réinitialise le sac de pièces
-    resetPiece();
+    initGameSession();
     update();
+}
+
+function requestRematch() {
+    if (gameMode === 'solo') {
+        startSolo();
+    } else {
+        wantsRematch = true;
+        document.getElementById('btn-rematch').style.display = 'none';
+        document.getElementById('rematch-status').style.display = 'block';
+        document.getElementById('rematch-status').innerText = "En attente de l'adversaire...";
+        
+        if (hostConn && hostConn.open) {
+            hostConn.send(JSON.stringify({ type: 'REMATCH_REQ' }));
+        }
+        checkRematchCondition();
+    }
+}
+
+function checkRematchCondition() {
+    if (wantsRematch && oppWantsRematch) {
+        startMultiGameDisplay();
+    } else if (oppWantsRematch && !wantsRematch) {
+        document.getElementById('rematch-status').style.display = 'block';
+        document.getElementById('rematch-status').innerText = "L'adversaire veut rejouer !";
+    }
 }
 
 function openMultiMenu() {
@@ -602,6 +746,7 @@ function setupConnectionListeners(conn) {
     });
     conn.on('data', data => {
         if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
+        
         if (data.type === 'START') {
             startMultiGameDisplay();
         } else if (data.type === 'BOARD_UPDATE') {
@@ -619,7 +764,10 @@ function setupConnectionListeners(conn) {
                 document.getElementById('end-title').style.color = "var(--perfect)";
             }
             if(document.getElementById('final-score')) document.getElementById('final-score').innerText = score;
-            if(document.getElementById('game-over')) document.getElementById('game-over').style.display = 'flex';
+            document.getElementById('game-over').style.display = 'flex';
+        } else if (data.type === 'REMATCH_REQ') {
+            oppWantsRematch = true;
+            checkRematchCondition();
         }
     });
 }
@@ -640,18 +788,7 @@ function startMultiGameDisplay() {
     document.body.classList.add('in-game');
     
     gameMode = 'multi';
-    board = createMatrix(COLS, ROWS);
-    
-    // Réinitialisation des stats
-    score = 0;
-    lines = 0;
-    level = 1;
-    dropInterval = 1000;
-    if(document.getElementById('score')) document.getElementById('score').innerText = score;
-    if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
-    
-    pieceBag = [];
-    resetPiece();
+    initGameSession();
     update();
 }
 
