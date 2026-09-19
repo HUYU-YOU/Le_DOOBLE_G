@@ -70,6 +70,26 @@ function playBackgroundMusic() {
 }
 
 // ==========================================
+// EFFETS SONORES (SFX)
+// ==========================================
+const sfx = {
+    draw: new Audio('assets/sounds/draw.mp3'),       // Bruit optionnel pour la pioche
+    steal: new Audio('assets/sounds/steal.mp3'),     // Bruit dynamique de vol
+    error: new Audio('assets/sounds/error.mp3'),     // Bruit de raté
+    success: new Audio('assets/sounds/success.mp3')  // Bruit de famille complétée
+};
+
+// Baisser le volume des SFX
+Object.values(sfx).forEach(audio => audio.volume = 0.6);
+
+function playSFX(soundName) {
+    if (sfx[soundName]) {
+        sfx[soundName].currentTime = 0; 
+        sfx[soundName].play().catch(e => console.log("Audio bloqué :", e));
+    }
+}
+
+// ==========================================
 // LOGIQUE MULTIJOUEUR ET JEU (PEERJS)
 // ==========================================
 
@@ -107,7 +127,8 @@ let gameState = {
     deck: [],
     turnIndex: 0,
     started: false,
-    lastActionSuccess: false, // <-- NOUVEAUTÉ : Indicateur de succès pour l'affichage
+    lastActionSuccess: false, 
+    lastSound: null, // <-- Ajouté au gameState pour synchronisation
     log: "La partie va bientôt commencer..."
 };
 
@@ -201,7 +222,6 @@ function joinGame() {
     peerNet = new Peer(myPlayerId);
 
     peerNet.on('open', () => {
-        // CORRECTION ANTI-FREEZE : Retrait du mode "reliable" capricieux (comme dans Tetris)
         hostConn = peerNet.connect(targetCode);
         
         hostConn.on('open', () => {
@@ -260,7 +280,6 @@ function broadcastState() {
                         safeState.players[targetId].hand = []; 
                     }
                 });
-                // Envoi compressé en texte pour éviter les plantages
                 conn.send(JSON.stringify({ type: 'STATE_UPDATE', state: safeState }));
             } catch(e) { console.error(e); }
         }
@@ -281,7 +300,7 @@ function passTurn() {
     let nextPlayer = gameState.players[gameState.order[gameState.turnIndex]];
     gameState.log += `\n➡️ C'est au tour de ${nextPlayer.pseudo}.`;
     
-    gameState.lastActionSuccess = false; // Remise à zéro de l'indicateur visuel
+    gameState.lastActionSuccess = false; 
 
     broadcastState();
 }
@@ -307,7 +326,10 @@ function handleGameAction(data) {
             target.hand = target.hand.filter(c => c.country !== country);
             asker.hand.push(...cardsToSteal);
             gameState.log = `⚡ ${asker.pseudo} a volé les cartes ${country.toUpperCase()} de ${target.pseudo} ! Il rejoue.`;
-            gameState.lastActionSuccess = true; // Activera le "TU REJOUES !" chez le joueur
+            gameState.lastActionSuccess = true; 
+            
+            gameState.lastSound = 'steal'; // L'hôte assigne le son de vol
+            
             broadcastState(); 
         } else {
             if (gameState.deck.length > 0) {
@@ -318,6 +340,9 @@ function handleGameAction(data) {
                 gameState.log = `❌ Raté ! ${target.pseudo} n'a pas la carte et le seau est vide.`;
             }
             gameState.lastActionSuccess = false;
+            
+            gameState.lastSound = 'error'; // L'hôte assigne le son d'erreur
+            
             passTurn();
         }
     }
@@ -343,6 +368,9 @@ function checkFamiliesCompleted() {
                 player.hand = player.hand.filter(c => c.country !== country);
                 player.score += 1;
                 gameState.log = `🌟 INCROYABLE ! ${player.pseudo} a réuni la famille ${country.toUpperCase()} !`;
+                
+                gameState.lastSound = 'success'; // Son de victoire de famille
+                
                 checkEmptyHands();
             }
         });
@@ -364,6 +392,12 @@ function checkFamiliesCompleted() {
 
 // --- AFFICHAGE ET ACTIONS CLIENT ---
 function renderGameClient() {
+    // --- LECTURE DES SFX ---
+    if (gameState.lastSound) {
+        playSFX(gameState.lastSound);
+        gameState.lastSound = null; // On le vide côté client pour qu'il ne se joue qu'une fois
+    }
+
     document.getElementById('deck-count').innerText = gameState.deck.length;
     document.getElementById('game-log').innerText = gameState.log;
     
@@ -431,15 +465,14 @@ function renderGameClient() {
         
         if (isMyTurn) {
             
-            // --- NOUVEAUTÉ : FEEDBACK VISUEL POUR NE PLUS SE PERDRE ---
             let titleSpan = document.querySelector('#action-panel span');
             if (titleSpan) {
                 if (gameState.lastActionSuccess) {
                     titleSpan.innerText = "🔥 BIEN JOUÉ ! TU REJOUES !";
-                    titleSpan.style.color = "var(--perfect)";
+                    titleSpan.style.color = "var(--p3)"; // Vert "perfect"
                 } else {
                     titleSpan.innerText = "C'EST TON TOUR !";
-                    titleSpan.style.color = "var(--p4)";
+                    titleSpan.style.color = "var(--p4)"; // Jaune par défaut
                 }
             }
 
