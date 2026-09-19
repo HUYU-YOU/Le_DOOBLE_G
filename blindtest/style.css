@@ -113,8 +113,12 @@ body {
 /* On descend légèrement le menu playlist s'il le faut pour le slime */
 #category-menu { padding-top: 15%; } 
 
-/* Fonds d'overlay spécifiques */
-#network-menu, #waiting-menu, #end-screen { background: rgba(5,5,8,0.85); backdrop-filter: blur(10px); }
+/* Fonds d'overlay spécifiques cachés par défaut */
+#network-menu, #waiting-menu, #end-screen { 
+    background: rgba(5,5,8,0.85); 
+    backdrop-filter: blur(10px); 
+    display: none; /* C'est cette ligne qui corrige le problème */
+}
 
 .menu-title { 
     font-family: var(--font-title);
