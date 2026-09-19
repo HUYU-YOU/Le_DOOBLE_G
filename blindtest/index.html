@@ -10,12 +10,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Bouton Retour au Hub -->
+    <!-- Bouton Retour au Hub (Asset Global) -->
     <a href="../index.html" class="hub-link">
         <img id="hub-img" src="../img/retourhub.png" alt="">
     </a>
 
-    <!-- Bouton Paramètres -->
+    <!-- Bouton Paramètres (Asset Global) -->
     <div class="settings-btn-wrapper" onclick="toggleSettings()">
         <div class="settings-btn"></div>
     </div>
@@ -41,15 +41,17 @@
             <p id="lobby-count" class="lobby-text">1 joueur(s) dans le salon</p>
 
             <div class="cat-grid" id="cat-buttons">
-                <button class="btn-img" style="background-image: url('../img/rap.png');" onclick="launchGame('RAP')"></button>
-                <button class="btn-img" style="background-image: url('../img/variet.png');" onclick="launchGame('FR')"></button>
-                <button class="btn-img" style="background-image: url('../img/pop.png');" onclick="launchGame('POP')"></button>
-                <button class="btn-img" style="background-image: url('../img/anime.png');" onclick="launchGame('ANIME')"></button>
-                <button class="btn-img" style="background-image: url('../img/movies.png');" onclick="launchGame('FILMS')"></button>
-                <button class="btn-img" style="background-image: url('../img/disney.png');" onclick="launchGame('DISNEY')"></button>
+                <!-- BOUTONS IMAGES (Assets Locaux -> img/) -->
+                <button class="btn-img" style="background-image: url('img/rap.png');" onclick="launchGame('RAP')"></button>
+                <button class="btn-img" style="background-image: url('img/variet.png');" onclick="launchGame('FR')"></button>
+                <button class="btn-img" style="background-image: url('img/pop.png');" onclick="launchGame('POP')"></button>
+                <button class="btn-img" style="background-image: url('img/anime.png');" onclick="launchGame('ANIME')"></button>
+                <button class="btn-img" style="background-image: url('img/movies.png');" onclick="launchGame('FILMS')"></button>
+                <button class="btn-img" style="background-image: url('img/disney.png');" onclick="launchGame('DISNEY')"></button>
             </div>
 
-            <button class="btn-multi" id="btn-multi-toggle" style="background-image: url('../img/multi.png');" onclick="openMenu('network')"></button>
+            <!-- BOUTON MULTIJOUEUR (Asset Local -> img/multii.png) -->
+            <button class="btn-multi" id="btn-multi-toggle" style="background-image: url('img/multii.png');" onclick="openMenu('network')"></button>
 
             <div id="loading-api" class="loading-box">
                 <div class="loader"></div>
