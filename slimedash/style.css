@@ -39,7 +39,6 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
     width: 100vw; height: 100vh; border-radius: 0; border: none; object-fit: fill;
 }
 
-/* --- BOUTONS FLOTTANTS ET RETOUR --- */
 #btn-retour-hub {
     position: fixed; top: 20px; left: 20px; z-index: 9999;
     display: flex; align-items: center; 
@@ -47,7 +46,7 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 #btn-retour-hub img { 
-    max-height: clamp(25px, 8vh, 55px); /* Protection contre le zoom extrême */
+    max-height: clamp(25px, 8vh, 55px);
     object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6)); transition: filter 0.3s ease; 
 }
 #btn-retour-hub:hover { transform: scale(1.08) translateX(5px); }
@@ -60,12 +59,9 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 }
 #btn-stop-test:hover { background-color: rgba(255, 0, 127, 0.15); box-shadow: 0 0 15px rgba(255, 0, 127, 0.5); color: #fff; }
 
-/* --- BOUTON SETTINGS & ORBITE --- */
 .settings-btn-wrapper { 
     position: fixed; top: 15px; right: 25px; 
-    width: clamp(25px, 8vh, 45px); /* Protection contre le zoom extrême */
-    height: clamp(25px, 8vh, 45px); /* Protection contre le zoom extrême */
-    cursor: pointer; z-index: 9999; 
+    width: clamp(25px, 8vh, 45px); height: clamp(25px, 8vh, 45px); cursor: pointer; z-index: 9999; 
 }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
 .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
@@ -74,7 +70,6 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
 @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* --- MODAL PARAMETRES --- */
 #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
 #settings-modal.show { opacity: 1; pointer-events: auto; }
 .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--neon-cyan); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
@@ -86,7 +81,6 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 .close-btn { margin-top: 25px; background: var(--neon-cyan); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 .close-btn:hover { box-shadow: 0 0 20px var(--neon-cyan); transform: scale(1.05); }
 
-/* --- UI EN JEU --- */
 #ui-layer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; display: flex; flex-direction: column;
@@ -99,92 +93,36 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
     pointer-events: auto; padding-top: 60px;
 }
 
-/* ========================================================
-   MENU ORGANIQUE (POSITIONNEMENT ABSOLU PARFAIT)
-   ======================================================== */
 #menu-screen {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     z-index: 100; pointer-events: none; 
     display: flex; flex-direction: column; align-items: center;
     width: 95vw; max-width: 900px;
 }
-
-.menu-graphic-container {
-    position: relative;
-    width: 100%;
-}
-
-.menu-bg {
-    display: block;
-    width: 100%;
-    height: auto;
-    pointer-events: none; 
-    filter: drop-shadow(0 15px 30px rgba(0,0,0,0.8)); 
-}
-
-/* --- BOUTONS IMAGES --- */
+.menu-graphic-container { position: relative; width: 100%; }
+.menu-bg { display: block; width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.8)); }
 .image-btn {
-    position: absolute; 
-    transform: translate(-50%, -50%); 
-    background: transparent; border: none; padding: 0; cursor: pointer;
+    position: absolute; transform: translate(-50%, -50%); background: transparent; border: none; padding: 0; cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.3s ease;
     outline: none; z-index: 999; pointer-events: auto; 
 }
+.image-btn img { display: block; width: 100%; height: auto; filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6)); pointer-events: none; }
+#btn-play-endless { top: 56.67%; left: 50.40%; width: 44%; } 
+#btn-create-map { top: 78.36%; left: 34.50%; width: 28%; }
+#btn-play-code { top: 78.89%; left: 65.90%; width: 28%; }
+.image-btn:hover { transform: translate(-50%, -50%) scale(1.08); filter: brightness(1.15) drop-shadow(0 10px 15px rgba(57, 255, 20, 0.3)); }
+.image-btn:active { transform: translate(-50%, -50%) scale(0.95); filter: brightness(0.9); }
 
-.image-btn img {
-    display: block; width: 100%; height: auto;
-    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6));
-    pointer-events: none; /* Laisse passer le clic pour le bouton */
-}
-
-/* --- TES COORDONNÉES ET TAILLES PARFAITES --- */
-#btn-play-endless { 
-    top: 56.67%;   
-    left: 50.40%;  
-    width: 44%; 
-} 
-
-#btn-create-map { 
-    top: 78.36%;   
-    left: 34.50%;  
-    width: 28%; 
-}
-
-#btn-play-code { 
-    top: 78.89%;   
-    left: 65.90%;  
-    width: 28%; 
-}
-
-.image-btn:hover {
-    transform: translate(-50%, -50%) scale(1.08); 
-    filter: brightness(1.15) drop-shadow(0 10px 15px rgba(57, 255, 20, 0.3));
-}
-.image-btn:active { 
-    transform: translate(-50%, -50%) scale(0.95); 
-    filter: brightness(0.9); 
-}
-
-/* --- OVERLAY CODE INPUT --- */
 #code-section {
-    background: rgba(10, 15, 28, 0.95); border: 2px solid var(--neon-pink);
-    padding: 30px; border-radius: 15px; box-shadow: 0 0 30px #000;
-    margin-top: 20px;
-    z-index: 1000; display: none; flex-direction: column; gap: 15px; align-items: center; 
+    background: rgba(10, 15, 28, 0.95); border: 2px solid var(--neon-pink); padding: 30px; border-radius: 15px; box-shadow: 0 0 30px #000;
+    margin-top: 20px; z-index: 1000; display: none; flex-direction: column; gap: 15px; align-items: center; 
     width: 80%; max-width: 400px; pointer-events: auto;
 }
-
-input[type="text"] {
-    background: rgba(0,0,0,0.8); border: 1px solid var(--neon-pink); color: #fff;
-    padding: 15px; font-size: 1.2rem; font-family: inherit; font-weight: bold; outline: none; 
-    text-align: center; width: 80%; border-radius: 8px;
-}
+input[type="text"] { background: rgba(0,0,0,0.8); border: 1px solid var(--neon-pink); color: #fff; padding: 15px; font-size: 1.2rem; font-family: inherit; font-weight: bold; outline: none; text-align: center; width: 80%; border-radius: 8px; }
 input[type="text"]:focus { box-shadow: 0 0 15px var(--neon-pink); }
 
-/* --- BOUTONS CLASSIQUES --- */
 .action-btn-main {
-    width: 100%; padding: 15px; margin: 5px 0;
-    font-size: 1.3rem; font-family: 'Rajdhani', sans-serif; font-weight: bold;
+    width: 100%; padding: 15px; margin: 5px 0; font-size: 1.3rem; font-family: 'Rajdhani', sans-serif; font-weight: bold;
     color: #fff; text-transform: uppercase; letter-spacing: 1px;
     background: rgba(0,0,0,0.5); border: 2px solid transparent; border-radius: 10px; 
     cursor: pointer; transition: all 0.3s ease; pointer-events: auto;
@@ -198,18 +136,15 @@ input[type="text"]:focus { box-shadow: 0 0 15px var(--neon-pink); }
 
 #gameover-screen { 
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    text-align: center; pointer-events: auto; 
-    background: rgba(10, 15, 28, 0.8); backdrop-filter: blur(15px);
+    text-align: center; pointer-events: auto; background: rgba(10, 15, 28, 0.8); backdrop-filter: blur(15px);
     padding: 40px 60px; border-radius: 20px; z-index: 100; width: 90%; max-width: 600px;
-    border: 2px solid rgba(255, 0, 127, 0.3); 
-    box-shadow: 0 15px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 0, 127, 0.1); 
+    border: 2px solid rgba(255, 0, 127, 0.3); box-shadow: 0 15px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 0, 127, 0.1); 
     display: none; 
 }
 h2 { margin-top: 0; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--neon-green); text-transform: uppercase; font-size: 3.5rem; letter-spacing: 5px; }
 p { color: #ccc; margin-bottom: 25px; font-size: 1.2rem; line-height: 1.5; font-weight: bold;}
 .btn-group { display: flex; flex-direction: column; gap: 30px; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px;}
 
-/* --- EDITOR PANEL --- */
 #editor-panel { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(11, 12, 16, 0.95); border: 2px solid var(--neon-yellow); padding: 15px 20px; border-radius: 10px; display: none; gap: 10px; pointer-events: auto; box-shadow: 0 0 15px var(--neon-yellow); z-index: 100; align-items: center; flex-wrap: nowrap; cursor: grab; }
 #editor-panel:active { cursor: grabbing; }
 .tool-btn { padding: 10px; font-size: 1.3rem; border-color: gray; color: gray; min-width: 45px; background: #000; cursor: pointer; border-radius: 5px; border-style: solid; border-width: 2px; }
