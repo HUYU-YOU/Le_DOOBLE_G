@@ -26,9 +26,9 @@
         <!-- HUD MOBA -->
         <div id="hud" style="display: none;">
             <div id="match-score-hud">
-                <span id="score-team-blue">J1 : 0</span>
-                <span id="score-mode-title" style="color:#aaa; font-size: 0.8em; margin: 0 15px;">NEXUS BRAWL</span>
-                <span id="score-team-red">J2 : 0</span>
+                <span id="score-team-blue" class="neon-text blue">J1 : 0</span>
+                <span id="score-mode-title" style="color:#aaa; font-size: 0.9em; margin: 0 20px; font-weight: bold; letter-spacing: 2px;">NEXUS BRAWL</span>
+                <span id="score-team-red" class="neon-text red">J2 : 0</span>
             </div>
             
             <div class="hud-center">
@@ -47,7 +47,7 @@
 
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <div class="menu-title">CHOOSE YOUR BATTLE</div>
+            <div class="menu-title glow-title">CHOOSE YOUR BATTLE</div>
             <button class="btn-main" id="btn-local-mode" onclick="autoFullscreen(); openMenu('mode-select');">🎮 Mode Local (1v1)</button>
             
             <hr id="menu-separator" style="width: 60%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
@@ -60,7 +60,7 @@
 
         <!-- CHOIX DU TYPE DE JEU -->
         <div class="overlay" id="game-mode-menu" style="display: none;">
-            <div class="menu-title">Choix du Mode</div>
+            <div class="menu-title glow-title">Choix du Mode</div>
             <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 20px;">
                 <div class="card card-mode selected" onclick="selectBattleRule('nexus', this)" style="width: 220px; padding: 20px;">
                     <div style="font-size: 2.5em; margin-bottom: 10px;">🏰</div>
@@ -79,7 +79,7 @@
 
         <!-- MENU LOCAL (SÉLECTION CHAMPION) -->
         <div class="overlay" id="local-menu" style="display: none;">
-            <div class="menu-title" id="instruction-title">Sélectionne ton Champion (J1)</div>
+            <div class="menu-title glow-title" id="instruction-title">Sélectionne ton Champion (J1)</div>
             
             <div id="char-select">
                 <div class="card char-card" onclick="chooseChar('ninja')">
@@ -112,7 +112,7 @@
 
         <!-- MENU RESEAU -->
         <div class="overlay" id="network-menu" style="display: none;">
-            <h2 id="net-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Terminal Réseau</h2>
+            <h2 id="net-title" class="glow-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Terminal Réseau</h2>
             <div style="margin-bottom: 20px;">
                 <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Slime</span></div>
                 <div id="net-char-grid">
@@ -124,7 +124,7 @@
                     <div class="card char-card" onclick="selectNetChar('teemo', this)"><img src="assets/skins/scoutsud.png" alt="Scout"><b>Scout</b></div>
                 </div>
             </div>
-            <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
+            <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em; text-shadow: 0 0 10px #0ff;">Création...</span></p>
             <button class="btn-main" id="host-btn" onclick="hostGame()">Créer (Héberger)</button>
             <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startNetworkGameHost()">Lancer le combat !</button>
             <p style="margin: 10px 0; color: #888;">OU</p>
@@ -139,13 +139,13 @@
 
         <!-- CONTROLS MODAL -->
         <div class="overlay" id="controls-modal" style="display: none; z-index: 100;">
-            <div class="menu-title" style="color: var(--p1);">Guide de Combat MOBA</div>
-            <div class="controls-info" style="font-size: 1em; max-height: 350px; overflow-y: auto;">
+            <div class="menu-title glow-title" style="color: var(--p1);">Guide de Combat MOBA</div>
+            <div class="controls-info" style="font-size: 1.1em; max-height: 350px; overflow-y: auto;">
                 <b style="color: var(--p1);">Déplacement :</b> Clic Droit sur le sol<br>
                 <b style="color: var(--p2);">Attaque Auto :</b> Clic Droit ou Clic Gauche sur l'adversaire / tourelle / nexus<br>
                 <b style="color: var(--p4);">Sorts de Combat :</b> Touches Q, W, Ultime E (ou A, Z, E en Azerty)<br>
                 <b style="color: #fff;">Zoom :</b> Molette de la souris pour zoomer/dézoomer<br>
-                <hr style="border-color: #333; margin: 10px 0;">
+                <hr style="border-color: #444; margin: 15px 0;">
                 <b style="color: #00ffcc;">Furtivité :</b> Reste dans les flaques de Slime pour devenir invisible !<br>
                 <b style="color: #ff007f;">Victoire :</b> Détruis le Nexus adverse ou obtiens 3 éliminations !<br>
             </div>
@@ -154,8 +154,8 @@
 
         <!-- ÉCRAN DE FIN -->
         <div class="overlay" id="game-over-overlay" style="display: none;">
-            <div class="menu-title" id="winner-text" style="font-size: 3.5em; text-shadow: 0 0 30px #000;"></div>
-            <p id="winner-subtext" style="font-size: 1.4em; color: #ccc; margin-bottom: 25px;"></p>
+            <div class="menu-title glow-title" id="winner-text" style="font-size: 4em; text-shadow: 0 0 30px #000;"></div>
+            <p id="winner-subtext" style="font-size: 1.5em; color: #fff; margin-bottom: 30px; font-weight: bold;"></p>
             <button class="btn-main" id="btn-restart" onclick="location.reload()">Retour au Menu</button>
         </div>
     </div>
@@ -163,7 +163,7 @@
     <!-- MODAL PARAMÈTRES -->
     <div id="settings-modal">
         <div class="settings-content">
-            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <h2 class="glow-title" style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
             
             <div class="setting-item" style="display:flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                 <span>Format de l'Écran 🖥️</span>
@@ -195,7 +195,7 @@
             if (forceMode === 'solo') {
                 document.getElementById('main-menu').style.display = 'none';
                 document.getElementById('game-mode-menu').style.display = 'flex';
-                window.currentIsBot = true; // Configuration du mode IA global
+                window.currentIsBot = true; 
             } else if (forceMode === 'multi') {
                 document.getElementById('btn-local-mode').style.display = 'none';
                 document.getElementById('menu-separator').style.display = 'none';
