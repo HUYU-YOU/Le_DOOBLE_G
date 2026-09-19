@@ -1,24 +1,103 @@
-/* Style pour la vidéo de fond */
-.bg-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Remplit toute la carte */
-    opacity: 0; /* Caché par défaut */
-    transition: opacity 0.4s ease; /* Apparition fluide */
-    z-index: 0;
-    pointer-events: none; /* Empêche la vidéo de bloquer le clic */
+:root { 
+    --bg: #090a0f; 
+    --panel: #111827; 
+    --accent: #10b981; 
+    --danger: #ef4444; 
+    --text: #e5e7eb; 
+    --aoe: #f97316; 
+}
+body { 
+    font-family: 'Segoe UI', system-ui, sans-serif; 
+    background-color: var(--bg); 
+    color: var(--text); 
+    margin: 0; 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    min-height: 100vh; 
+    overflow-x: hidden;
+}
+h1 { 
+    margin-top: 0; 
+    color: var(--accent); 
+    text-transform: uppercase; 
+    letter-spacing: 4px; 
+    text-shadow: 0 0 15px rgba(16, 185, 129, 0.5); 
+    font-size: 2.2em;
 }
 
-/* Quand on survole la carte, la vidéo apparaît */
-.game-card:hover .bg-video {
-    opacity: 0.6; /* Assombri légèrement pour qu'on lise encore le texte */
+#game-container { 
+    transition: transform 0.3s ease; 
+    transform-origin: top center; 
+    display: flex; 
+    gap: 20px; 
+    background: var(--panel); 
+    padding: 20px; 
+    border-radius: 16px; 
+    box-shadow: 0 15px 40px rgba(0,0,0,0.8); 
+    border: 1px solid rgba(16, 185, 129, 0.15); 
+    margin-top: 10px;
+}
+canvas { 
+    background-color: #0b0f19; 
+    border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 8px; 
+    cursor: crosshair; 
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.8); 
 }
 
-/* Assure-toi que le contenu de ta carte reste par-dessus la vidéo */
-.game-icon, .game-title, .game-desc {
-    position: relative;
-    z-index: 1;
-}
+#ui-panel { width: 340px; display: flex; flex-direction: column; gap: 10px; }
+.stat-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; flex-wrap: wrap; }
+.gold { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); } 
+.lives { color: var(--danger); } 
+.wave { color: var(--accent); width: 100%; margin-top: 5px; font-size: 1.1em; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 5px;}
+h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; }
+
+.tower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tower-btn { background: rgba(255,255,255,0.03); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px; border-radius: 8px; font-size: 11px; cursor: pointer; transition: 0.2s; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 75px;}
+.tower-btn img { height: 26px; object-fit: contain; margin-bottom: 3px; }
+.tower-btn b { font-size: 1.1em; margin-bottom: 2px;}
+.tower-btn span { font-size: 0.85em; color: #aaa; margin-bottom: 2px; line-height: 1.1;}
+.tower-btn:hover:not(:disabled) { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
+.tower-btn.selected { border-color: var(--accent); background: rgba(16, 185, 129, 0.15); box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.2); }
+.tower-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+#upgrade-panel { display: none; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.3); flex-direction: column; gap: 8px; }
+.action-btn { background: var(--accent); color: #000; border: none; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.2s;}
+.action-btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+
+.sys-btns { display: flex; gap: 10px; margin-top: auto; }
+.sys-btns button { flex: 1; font-size: 0.9em; padding: 12px 5px; }
+
+#btn-wave { background: var(--danger); color: white; padding: 15px; font-size: 1.1em;}
+#btn-wave:hover:not(:disabled) { background: #dc2626; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+#game-over { display: none; text-align: center; margin-top: 20px;}
+
+/* BOUTONS FLOTTANTS ET SETTINGS */
+.hub-link-top { position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.7); text-decoration: none; font-weight: bold; z-index: 1000; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; backdrop-filter: blur(5px); }
+.hub-link-top:hover { color: #fff; background: rgba(16, 185, 129, 0.3); border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+
+.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.8)); position: relative; z-index: 2;}
+.orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
+.orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--accent); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--accent), 0 0 5px #ffffff; }
+.settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
+.settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
+@keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* MODAL PARAMETRES */
+#settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+#settings-modal.show { opacity: 1; pointer-events: auto; }
+.settings-content { background: var(--panel); border: 2px solid var(--accent); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(16,185,129,0.4); min-width: 380px; }
+.size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--accent); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: inherit; font-weight: bold; transition: 0.2s; }
+.btn-size:hover { background: rgba(16, 185, 129, 0.2); }
+.btn-size.active { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
+.close-btn { margin-top: 25px; background: var(--accent); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+.close-btn:hover { box-shadow: 0 0 20px var(--accent); transform: scale(1.05); }
+
+/* VIdéos d'arrière plan (conservé d'après tes CSS additionnels) */
+.bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.4s ease; z-index: 0; pointer-events: none; }
+.game-card:hover .bg-video { opacity: 0.6; }
+.game-icon, .game-title, .game-desc { position: relative; z-index: 1; }
