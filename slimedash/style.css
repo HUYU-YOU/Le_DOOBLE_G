@@ -46,7 +46,10 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
     background: transparent; border: none; padding: 0; box-shadow: none;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-#btn-retour-hub img { max-height: 55px; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6)); transition: filter 0.3s ease; }
+#btn-retour-hub img { 
+    max-height: clamp(25px, 8vh, 55px); /* Protection contre le zoom extrême */
+    object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.6)); transition: filter 0.3s ease; 
+}
 #btn-retour-hub:hover { transform: scale(1.08) translateX(5px); }
 #btn-retour-hub:hover img { filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6)) brightness(1.1); }
 
@@ -57,7 +60,13 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 }
 #btn-stop-test:hover { background-color: rgba(255, 0, 127, 0.15); box-shadow: 0 0 15px rgba(255, 0, 127, 0.5); color: #fff; }
 
-.settings-btn-wrapper { position: fixed; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 9999; }
+/* --- BOUTON SETTINGS & ORBITE --- */
+.settings-btn-wrapper { 
+    position: fixed; top: 15px; right: 25px; 
+    width: clamp(25px, 8vh, 45px); /* Protection contre le zoom extrême */
+    height: clamp(25px, 8vh, 45px); /* Protection contre le zoom extrême */
+    cursor: pointer; z-index: 9999; 
+}
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
 .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
 .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--neon-green); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--neon-green), 0 0 5px #ffffff; }
@@ -138,13 +147,13 @@ canvas { display: block; width: 100%; height: 100%; border-radius: inherit; }
 #btn-create-map { 
     top: 78.36%;   
     left: 34.50%;  
-    width: 28%; /* Réduit pour éviter le chevauchement */
+    width: 28%; 
 }
 
 #btn-play-code { 
     top: 78.89%;   
     left: 65.90%;  
-    width: 28%; /* Réduit pour éviter le chevauchement */
+    width: 28%; 
 }
 
 .image-btn:hover {
