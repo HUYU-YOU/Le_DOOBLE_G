@@ -41,6 +41,21 @@ body.in-game {
 }
 body.in-game #menu-bg-video { display: none; }
 
+/* Animation Screen Shake (Game Over uniquement) */
+@keyframes shakeAnim {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    15% { transform: translate(-3px, -1px) rotate(-1deg); }
+    30% { transform: translate(3px, 2px) rotate(1deg); }
+    45% { transform: translate(-3px, 1px) rotate(0deg); }
+    60% { transform: translate(2px, -1px) rotate(1deg); }
+    75% { transform: translate(-1px, 2px) rotate(-1deg); }
+    90% { transform: translate(2px, 1px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+.shake { 
+    animation: shakeAnim 0.5s ease-in-out; 
+}
+
 /* --- RESPONSIVE FIXE (Boutons Hub et Menu) --- */
 .hub-link { 
     position: absolute; top: 2vh; left: 2vw; z-index: 100;
@@ -104,7 +119,7 @@ input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-fam
 input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 /* =========================================
-   UI DU JEU TETRIS (Alignement par VH pour l'ordi)
+   UI DU JEU TETRIS 
    ========================================= */
 
 #game-ui { 
@@ -144,6 +159,16 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 .box-lines { width: 12vh; height: 8.3vh; }
 .box-next  { width: 14vh; height: 14vh; }
 
+/* La nouvelle boîte HOLD stylisée pour s'intégrer même sans le dessin du fond */
+.box-hold { 
+    width: 11vh; height: 11vh; 
+    background: rgba(0, 0, 0, 0.75) !important;
+    border: 2px solid var(--p3); border-radius: 8px;
+    transform: translate(-3.9vh, -15vh) scale(1) !important; 
+    transform-origin: center center !important; 
+}
+
+/* Réajustement des positions de tes boîtes par défaut */
 .box-score { transform: translate(-4vh, -13.7vh) scale(1) !important; transform-origin: center center !important; }
 .box-lines { transform: translate(-3.9vh, -7vh) scale(1) !important; transform-origin: center center !important; }
 .box-next { transform: translate(6.4vh, 0.8vh) scale(1) !important; transform-origin: center center !important; }
@@ -156,15 +181,16 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 #tetris-canvas { width: 27.7vh !important; height: 55.5vh !important; display: block; border-radius: 5px; }
 #next-canvas { width: 14.8vh !important; height: 14.8vh !important; display: block; border-radius: 5px; }
+#hold-canvas { width: 10vh !important; height: 10vh !important; display: block; border-radius: 5px; }
 #opponent-canvas { width: 13.8vh !important; height: 27.7vh !important; display: block; border-radius: 5px; }
 
 #mobile-controls { display: none; }
 
 /* =========================================
-   📱 SÉCURITÉ MOBILE / ZOOM EXTRÊME
+   📱 SÉCURITÉ MOBILE ET BOUTONS AVANCÉS
    ========================================= */
 @media (max-width: 900px) or (orientation: portrait) {
-    #game-ui { flex-direction: column !important; padding-top: 12vh !important; transform: none !important; gap: 10px !important;}
+    #game-ui { flex-direction: column !important; padding-top: 10vh !important; transform: none !important; gap: 10px !important;}
     
     .side-panel { flex-direction: row; width: 100%; max-width: 400px; justify-content: space-around; }
     
@@ -172,28 +198,33 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
         background: rgba(0,0,0,0.7) !important; 
         border: 2px solid var(--p1) !important; 
         border-radius: 8px !important;
-        padding: 10px !important; 
-        width: 30vw !important; height: auto !important;
+        padding: 5px !important; 
+        width: 25vw !important; height: auto !important;
     }
+    .box-hold { border-color: var(--p3) !important; }
     
-    .box-score { transform: none !important; }
-    .box-lines { transform: none !important; }
-    .box-next { transform: none !important; }
-    .board-wrapper { transform: none !important; margin-top: 20px !important; }
+    .box-score, .box-lines, .box-next, .box-hold { transform: none !important; }
+    .board-wrapper { transform: none !important; margin-top: 10px !important; }
     
     #tetris-canvas { width: 65vw !important; height: 130vw !important; max-width: 300px !important; max-height: 600px !important; }
+    #hold-canvas { width: 60px !important; height: 60px !important; }
     
+    /* Layout des boutons mobiles sur 2 lignes pour la jouabilité */
     #mobile-controls { 
-        display: flex; width: 100%; max-width: 400px; justify-content: space-around; 
-        position: absolute; bottom: 5vh; left: 50%; transform: translateX(-50%); z-index: 40;
+        display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; 
+        position: absolute; bottom: 3vh; left: 50%; transform: translateX(-50%); z-index: 40;
     }
+    .mobile-row { display: flex; justify-content: space-around; width: 100%; }
+    
     .m-btn { 
-        width: 15vw; height: 15vw; 
-        max-width: 70px; max-height: 70px; 
-        font-size: 6vw; 
+        width: 14vw; height: 14vw; 
+        max-width: 65px; max-height: 65px; 
+        font-size: 5vw; 
         background: rgba(0,0,0,0.8); border: 2px solid var(--p1); color: white; border-radius: 50%; 
         display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3);
-        touch-action: manipulation; /* EMPÊCHE LE ZOOM TACTILE */
+        touch-action: manipulation;
     }
+    .m-btn-small { width: 11vw; height: 11vw; max-width: 50px; max-height: 50px; border-color: var(--p3); }
     .m-btn:active { background: var(--p1); color: #000; }
+    .m-btn-small:active { background: var(--p3); color: #fff; }
 }
