@@ -202,4 +202,16 @@ canvas { border-radius: 10px; width: 100%; display: block; box-shadow: 0 0 20px 
 @media (max-width: 800px) {
     .economy { width: 100%; position: absolute; top: 10px; left: 0; gap: 10px;}
     .hud { padding-top: 50px; }
+    
+    /* Nouvelles règles pour le mobile */
+    .controls-container { flex-direction: column; gap: 5px; }
+    .spells { grid-template-columns: 1fr; }
+    .spell-btn { font-size: 1em; padding: 6px; }
+    
+    .controls { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; justify-content: flex-start; }
+    .unit-btn { flex: 0 0 auto; min-width: 75px; font-size: 0.9em; padding: 5px; }
+    .unit-cost { font-size: 1.1em; }
+    
+    .ctrl-header h3 { font-size: 1.2em; }
+    .btn-upgrade-eco { font-size: 1em; padding: 4px 8px; }
 }
