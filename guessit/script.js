@@ -49,11 +49,9 @@ let currentLang = 'fr';
 function setLanguage(lang) {
     currentLang = lang;
     
-    // Activer visuellement le bon bouton dans les settings
     document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
     document.getElementById('btn-en').classList.toggle('active', lang === 'en');
 
-    // Traduction de tous les éléments dynamiques de l'interface
     document.querySelector('[data-i18n="bestScore"]').innerText = i18n[lang].bestScore;
     document.querySelector('[data-i18n="modeText"]').innerHTML = i18n[lang].modeText;
     document.querySelector('[data-i18n="initBtn"]').innerText = i18n[lang].initBtn;
@@ -72,11 +70,9 @@ function setLanguage(lang) {
     document.querySelector('[data-i18n="btnFull"]').innerText = i18n[lang].btnFull;
     document.querySelector('[data-i18n="btnClose"]').innerText = i18n[lang].btnClose;
 
-    // Mise à jour de l'image de retour au hub selon la langue
     const hubImg = document.getElementById('hub-img');
     if (hubImg) hubImg.src = i18n[lang].hubImgPath;
 
-    // Actualiser l'affichage du classement
     displayLeaderboard();
 }
 
@@ -189,7 +185,8 @@ const baseMangaList = [
 ];
 
 let questionsData = [];
-let currentQuestionIndex = 0; let score = 0; let lives = 3; let combo = 1; let timeLeft = 100; let timerInterval; let isAnswering = false;
+let currentQuestionIndex = 0; let score = 0; let lives = 3; let combo = 1; let timeLeft = 100;
+let timerReq; const TIME_TO_ANSWER = 8000; let isAnswering = false;
 
 let bestMangaScore = localStorage.getItem('guessitBestScore') || 0;
 
@@ -197,7 +194,7 @@ const screens = { start: document.getElementById('start-screen'), game: document
 const ui = { img: document.getElementById('manga-image'), opt: document.getElementById('options-area'), timer: document.getElementById('timer-bar'), container: document.getElementById('game-container') };
 
 window.addEventListener('DOMContentLoaded', () => {
-    setLanguage('fr'); // Langue par défaut
+    setLanguage('fr');
     let display = document.getElementById('best-score-display');
     if (display) display.innerText = bestMangaScore;
     displayLeaderboard();
@@ -236,36 +233,69 @@ function updateHUD() {
     document.getElementById('lives-display').innerText = "❤️".repeat(lives) + "🖤".repeat(3 - lives);
 }
 
-function loadQuestion() {
+// FONCTION FACTORISÉE pour afficher la question proprement
+function renderCurrentQuestion() {
     const q = questionsData[currentQuestionIndex];
     ui.img.src = q.img; 
     ui.img.style.filter = "blur(25px)";
     ui.opt.innerHTML = "";
+    
     q.options.forEach((opt, idx) => {
-        const btn = document.createElement('button'); btn.className = 'option-btn'; btn.innerText = opt;
-        btn.onclick = () => checkAnswer(idx, btn); ui.opt.appendChild(btn);
+        const btn = document.createElement('button'); 
+        btn.className = 'option-btn'; 
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(idx, btn); 
+        ui.opt.appendChild(btn);
     });
     
     isAnswering = false; 
-    timeLeft = 100; 
+    timeLeft = 100; // Reset pour le calcul du score plus tard
     updateHUD();
+    
     ui.timer.style.width = "100%"; 
     ui.timer.style.backgroundColor = "var(--cyan)";
     
     startTimer();
 }
 
+function loadQuestion() {
+    renderCurrentQuestion();
+}
+
+function nextQuestion() { 
+    currentQuestionIndex++; 
+    if (currentQuestionIndex < questionsData.length) {
+        renderCurrentQuestion();
+    } else {
+        endGame(); 
+    }
+}
+
+// NOUVEAU TIMER ULTRA-FLUIDE (requestAnimationFrame)
 function startTimer() {
-    clearInterval(timerInterval); 
-    timerInterval = setInterval(() => {
-        timeLeft -= 0.6; 
-        ui.timer.style.width = Math.max(0, timeLeft) + "%";
-        ui.img.style.filter = `blur(${Math.max(0, (timeLeft / 100) * 25)}px)`;
+    cancelAnimationFrame(timerReq);
+    let startTime = performance.now();
+
+    function updateTimer(timestamp) {
+        let elapsed = timestamp - startTime;
+        let progress = 1 - (elapsed / TIME_TO_ANSWER);
+        timeLeft = progress * 100; // Utilisé pour le calcul du score
+
+        if (progress < 0) progress = 0;
+
+        ui.timer.style.width = (progress * 100) + "%";
+        ui.img.style.filter = `blur(${progress * 25}px)`;
         
-        if(timeLeft <= 50) ui.timer.style.backgroundColor = "#f1c40f";
-        if(timeLeft <= 25) ui.timer.style.backgroundColor = "var(--red)";
-        if (timeLeft <= 0) { clearInterval(timerInterval); checkAnswer(-1, null); }
-    }, 50);
+        if (progress <= 0.5 && progress > 0.25) ui.timer.style.backgroundColor = "#f1c40f";
+        else if (progress <= 0.25) ui.timer.style.backgroundColor = "var(--red)";
+
+        if (progress > 0 && !isAnswering) {
+            timerReq = requestAnimationFrame(updateTimer);
+        } else if (progress <= 0 && !isAnswering) {
+            checkAnswer(-1, null);
+        }
+    }
+    timerReq = requestAnimationFrame(updateTimer);
 }
 
 function playSlimeTransition(callback) {
@@ -298,27 +328,16 @@ function playSlimeTransition(callback) {
     }, 80); 
 }
 
+// NETTOYAGE DU CODE DE LA VÉRIFICATION DES RÉPONSES
 function checkAnswer(selectedIndex, buttonClicked) {
     if (isAnswering) return; 
     isAnswering = true; 
-    clearInterval(timerInterval);
+    cancelAnimationFrame(timerReq);
     
     ui.img.style.filter = "blur(0px)"; 
     const q = questionsData[currentQuestionIndex]; 
     const buttons = ui.opt.querySelectorAll('.option-btn');
     buttons.forEach(b => b.disabled = true); 
-
-    if (selectedIndex === -1) {
-        playFeedbackSound('wrong');
-        buttons[q.correct].classList.add('correct');
-        lives--; combo = 1;
-        ui.container.classList.add('shake'); 
-        setTimeout(() => ui.container.classList.remove('shake'), 400);
-        updateHUD();
-        if (lives <= 0) setTimeout(() => playSlimeTransition(endGame), 1500); 
-        else setTimeout(() => playSlimeTransition(nextQuestion), 1500);
-        return;
-    }
 
     buttons[q.correct].classList.add('correct');
 
@@ -326,40 +345,24 @@ function checkAnswer(selectedIndex, buttonClicked) {
         playFeedbackSound('correct'); 
         score += Math.floor(100 + (timeLeft * 2)) * combo; 
         combo++;
-        const cEl = document.getElementById('combo-display'); cEl.classList.add('combo-active');
+        
+        const cEl = document.getElementById('combo-display'); 
+        cEl.classList.add('combo-active');
         setTimeout(() => cEl.classList.remove('combo-active'), 300);
         
         setTimeout(() => playSlimeTransition(nextQuestion), 1000);
     } else {
         playFeedbackSound('wrong'); 
         if (buttonClicked) buttonClicked.classList.add('wrong');
-        lives--; combo = 1;
-        ui.container.classList.add('shake'); setTimeout(() => ui.container.classList.remove('shake'), 400);
+        
+        lives--; 
+        combo = 1;
+        ui.container.classList.add('shake'); 
+        setTimeout(() => ui.container.classList.remove('shake'), 400);
         updateHUD();
         
-        if (lives <= 0) setTimeout(() => playSlimeTransition(endGame), 1500); 
-        else setTimeout(() => playSlimeTransition(nextQuestion), 1500);
-    }
-}
-
-function nextQuestion() { 
-    currentQuestionIndex++; 
-    if (currentQuestionIndex < questionsData.length) {
-        const q = questionsData[currentQuestionIndex];
-        ui.img.src = q.img; 
-        ui.img.style.filter = "blur(25px)";
-        ui.opt.innerHTML = "";
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button'); btn.className = 'option-btn'; btn.innerText = opt;
-            btn.onclick = () => checkAnswer(idx, btn); ui.opt.appendChild(btn);
-        });
-        isAnswering = false; 
-        timeLeft = 100; 
-        updateHUD();
-        ui.timer.style.width = "100%"; 
-        ui.timer.style.backgroundColor = "var(--cyan)";
-    } else {
-        endGame(); 
+        const nextAction = (lives <= 0) ? endGame : nextQuestion;
+        setTimeout(() => playSlimeTransition(nextAction), 1500);
     }
 }
 
