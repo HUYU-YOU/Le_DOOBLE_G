@@ -76,6 +76,17 @@ body.en .btn-hub {
 }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
+/* Fallback si ../img/ n'est pas disponible (jeu lancé hors du hub) */
+.settings-fallback {
+    font-size: 36px;
+    line-height: 45px;
+    display: block;
+    text-align: center;
+    filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8));
+    transition: transform 0.2s ease;
+}
+.settings-btn-wrapper:hover .settings-fallback { transform: scale(1.15); }
+
 /* Modal Paramètres */
 .modal {
     display: none; position: fixed;
@@ -179,11 +190,10 @@ body.dark-mode #game-container {
     z-index: 1;
 }
 
-/* 🔥 LE DESIGN DU CADRE (ÉLARGI SUR LES CÔTÉS ET DESCENDU) 🔥 */
-/* Protégé par les pourcentages pour s'adapter à toutes les résolutions */
+/* 🔥 LE DESIGN DU CADRE (ÉLARGI SUR LES CÔTÉS ET REMONTÉ À 52%) 🔥 */
 #game-frame {
     position: absolute !important;
-    top: 57% !important; 
+    top: 52% !important; 
     left: 50% !important;
     
     width: 118% !important; 
@@ -233,6 +243,7 @@ body.dark-mode #game-container {
 }
 #game-over button:hover { background: #ff5277; }
 .hidden { display: none !important; }
+
 /* --- ADAPTATION MOBILE ET GROS ZOOM --- */
 @media (max-width: 800px) {
     /* On pousse les scores vers le bas pour ne pas toucher les boutons */
@@ -256,32 +267,6 @@ body.dark-mode #game-container {
 
     /* On remonte un poil le cadre pour compenser la marge du haut */
     #game-frame {
-        top: 55% !important;
-    }
-}
-/* --- ADAPTATION MOBILE ET GROS ZOOM --- */
-@media (max-width: 800px) {
-    /* On pousse les scores vers le bas pour ne pas toucher les boutons */
-    #game-ui {
-        margin-top: 75px; 
-        width: 90vw;
-    }
-    
-    /* On réduit un peu la taille des textes pour que tout rentre */
-    h1 { 
-        font-size: 28px; 
-    }
-    .score-container { 
-        font-size: 20px; 
-        width: auto; 
-    }
-    .best-score-container { 
-        font-size: 16px; 
-        width: auto; 
-    }
-
-    /* On remonte un poil le cadre pour compenser la marge du haut */
-    #game-frame {
-        top: 55% !important;
+        top: 50% !important;
     }
 }
