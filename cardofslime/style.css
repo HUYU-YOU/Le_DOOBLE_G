@@ -98,16 +98,26 @@ body.dark-mode #game-container { background: url('assets/skins/mapnight.png') ce
 /* === ENTITÉS ET SKINS EN POURCENTAGE (S'adapte à l'écran) === */
 .entity { 
     position: absolute; 
-    width: 8%; /* 8% de la map = taille parfaite */
-    aspect-ratio: 1; /* Reste carré */
+    width: 8%; 
+    aspect-ratio: 1; 
     height: auto; 
     color: transparent; 
-    transform: translate(-50%, -50%); background-size: contain; background-repeat: no-repeat; background-position: center; 
-    z-index: 4; transition: filter 0.2s;
+    transform: translate(-50%, -50%); 
+    background-size: contain; 
+    background-repeat: no-repeat; 
+    background-position: center; 
+    z-index: 4; 
+    transition: left 0.1s linear, top 0.1s linear, filter 0.2s;
+    animation: spawnPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important; 
 }
+@keyframes spawnPop {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
 .entity.building { display: flex; justify-content: center; align-items: center; z-index: 3; }
 
 /* Tailles proportionnelles */
