@@ -95,7 +95,6 @@ skinNames.forEach(name => {
     skins[name] = new Image();
     skins[name].onload = () => {
         if (typeof draw === 'function') draw();
-        // 💡 TAILLE PIÈCE SUIVANTE RÉDUITE À 35
         if (typeof nextPiece !== 'undefined' && nextPiece) drawPreview(nextCtx, nextPiece, 35);
     };
     skins[name].src = `assets/${name}.png?v=${new Date().getTime()}`;
@@ -137,6 +136,7 @@ const SHAPES = {
 const COLORS = [ null, '#00f0ff', '#ffaa00', '#ffd700', '#39ff14', '#b82aff', '#666666'];
 
 let board = [];
+let pieceBag = []; // Système de SAC pour tirage équitable
 let piece = null;
 let nextPiece = null;
 let dropCounter = 0;
@@ -144,6 +144,7 @@ let dropInterval = 1000;
 let lastTime = 0;
 let score = 0;
 let lines = 0;
+let level = 1; // Gestion du niveau de difficulté
 let gameMode = 'solo'; 
 let isGameOver = false;
 let animationId;
@@ -156,7 +157,18 @@ if(document.getElementById('best-score')) {
 function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
 
 function randomPiece() {
-    const typeId = Math.floor(Math.random() * 5) + 1;
+    // Si le sac est vide, on le remplit avec nos 5 types de pièces et on le mélange
+    if (pieceBag.length === 0) {
+        pieceBag = [1, 2, 3, 4, 5];
+        // Mélange de Fisher-Yates
+        for (let i = pieceBag.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pieceBag[i], pieceBag[j]] = [pieceBag[j], pieceBag[i]];
+        }
+    }
+    
+    const typeId = pieceBag.pop();
+    
     return {
         matrix: SHAPES[typeId][0],
         pos: { x: Math.floor(COLS/2) - Math.floor(SHAPES[typeId][0][0].length/2), y: 0 },
@@ -362,6 +374,9 @@ function playerDrop() {
         merge(board, piece);
         resetPiece();
         clearLines();
+        
+        // Mise à jour de l'adversaire dès qu'une pièce se verrouille (sync plus fluide)
+        if (gameMode === 'multi') broadcastBoard();
     }
     dropCounter = 0;
 }
@@ -370,7 +385,6 @@ function resetPiece() {
     if (!nextPiece) nextPiece = randomPiece();
     piece = nextPiece;
     nextPiece = randomPiece();
-    // 💡 TAILLE PIÈCE SUIVANTE RÉDUITE À 35
     drawPreview(nextCtx, nextPiece, 35);
     if (collide(board, piece)) { triggerGameOver(); }
 }
@@ -386,9 +400,13 @@ function clearLines() {
 
     if (linesCleared > 0) {
         let points = [0, 40, 100, 300, 1200];
-        score += points[linesCleared];
+        // Le score augmente avec le niveau
+        score += points[linesCleared] * level; 
         lines += linesCleared;
-        dropInterval = Math.max(100, 1000 - (lines * 10)); 
+        
+        // Un niveau toutes les 10 lignes avec accélération exponentielle
+        level = Math.floor(lines / 10) + 1; 
+        dropInterval = Math.max(80, 1000 * Math.pow(0.85, level - 1)); 
         
         if(document.getElementById('score')) document.getElementById('score').innerText = score;
         if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
@@ -403,7 +421,6 @@ function clearLines() {
             hostConn.send(JSON.stringify({ type: 'GARBAGE', amount: garbageSent }));
         }
     }
-    if (gameMode === 'multi') broadcastBoard();
 }
 
 function receiveGarbage(amount) {
@@ -450,7 +467,6 @@ document.addEventListener('keydown', event => {
         event.preventDefault();
         isDebug = !isDebug;
         draw();
-        // 💡 TAILLE PIÈCE SUIVANTE RÉDUITE À 35 
         if (nextPiece) drawPreview(nextCtx, nextPiece, 35);
         return; 
     }
@@ -461,9 +477,24 @@ document.addEventListener('keydown', event => {
     else if (event.keyCode === 38) { event.preventDefault(); playerRotate(); } // Haut
     else if (event.keyCode === 32) { 
         event.preventDefault(); 
-        while (!collide(board, piece)) { piece.pos.y++; }
-        piece.pos.y--; merge(board, piece); resetPiece(); clearLines(); dropCounter = 0;
-    } // Espace
+        
+        let dropDistance = 0;
+        while (!collide(board, piece)) { 
+            piece.pos.y++; 
+            dropDistance++;
+        }
+        piece.pos.y--; 
+        
+        score += dropDistance * 2;
+        if(document.getElementById('score')) document.getElementById('score').innerText = score;
+        
+        merge(board, piece); 
+        resetPiece(); 
+        clearLines(); 
+        dropCounter = 0;
+        
+        if (gameMode === 'multi') broadcastBoard();
+    } // Espace (Hard Drop)
 });
 
 function moveLeft(e) { e.preventDefault(); playerMove(-1); }
@@ -504,7 +535,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// MENUS MULTIJOUEUR
+// MENUS MULTIJOUEUR ET DÉMARRAGE DE PARTIE
 // ==========================================
 function startSolo() {
     document.getElementById('main-menu').style.display = 'none';
@@ -515,6 +546,16 @@ function startSolo() {
     
     gameMode = 'solo';
     board = createMatrix(COLS, ROWS);
+    
+    // Réinitialisation des stats
+    score = 0;
+    lines = 0;
+    level = 1;
+    dropInterval = 1000;
+    if(document.getElementById('score')) document.getElementById('score').innerText = score;
+    if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
+    
+    pieceBag = []; // Réinitialise le sac de pièces
     resetPiece();
     update();
 }
@@ -600,6 +641,16 @@ function startMultiGameDisplay() {
     
     gameMode = 'multi';
     board = createMatrix(COLS, ROWS);
+    
+    // Réinitialisation des stats
+    score = 0;
+    lines = 0;
+    level = 1;
+    dropInterval = 1000;
+    if(document.getElementById('score')) document.getElementById('score').innerText = score;
+    if(document.getElementById('lines')) document.getElementById('lines').innerText = lines;
+    
+    pieceBag = [];
     resetPiece();
     update();
 }
