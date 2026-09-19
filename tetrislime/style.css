@@ -36,7 +36,7 @@ body, html {
 
 body.in-game { 
     background-image: url('assets/tetrisback.jpeg') !important; 
-    background-size: cover !important; /* On remet cover pour éviter les barres noires */
+    background-size: cover !important;
     background-position: center center !important;
 }
 body.in-game #menu-bg-video { display: none; }
@@ -54,9 +54,8 @@ body.in-game #menu-bg-video { display: none; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 1vh rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-/* Correction du bug des boutons SOLO/MULTI qui explosent */
 .menu-btn {
-    height: 10vh; /* On fixe la hauteur plutôt que la largeur pour qu'ils soient identiques */
+    height: 10vh;
     width: auto;
     min-height: 60px;
     cursor: pointer;
@@ -141,7 +140,6 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     margin-top: 0px; 
 }
 
-/* Tes réglages exacts passés en VH pour coller au fond d'écran */
 .box-score { width: 12vh; height: 8.3vh; }
 .box-lines { width: 12vh; height: 8.3vh; }
 .box-next  { width: 14vh; height: 14vh; }
@@ -160,27 +158,24 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #next-canvas { width: 14.8vh !important; height: 14.8vh !important; display: block; border-radius: 5px; }
 #opponent-canvas { width: 13.8vh !important; height: 27.7vh !important; display: block; border-radius: 5px; }
 
-/* Boutons cachés sur ordi */
 #mobile-controls { display: none; }
 
 /* =========================================
    📱 SÉCURITÉ MOBILE / ZOOM EXTRÊME
    ========================================= */
 @media (max-width: 900px) or (orientation: portrait) {
-    /* Sur mobile, le fond peint est coupé sur les côtés, donc on recrée des vraies boîtes lisibles ! */
     #game-ui { flex-direction: column !important; padding-top: 12vh !important; transform: none !important; gap: 10px !important;}
     
     .side-panel { flex-direction: row; width: 100%; max-width: 400px; justify-content: space-around; }
     
     .panel-box { 
-        background: rgba(0,0,0,0.7) !important; /* Boîtes sombres pour être lisibles */
+        background: rgba(0,0,0,0.7) !important; 
         border: 2px solid var(--p1) !important; 
         border-radius: 8px !important;
         padding: 10px !important; 
         width: 30vw !important; height: auto !important;
     }
     
-    /* On annule tes translations car le dessin de fond n'est plus là */
     .box-score { transform: none !important; }
     .box-lines { transform: none !important; }
     .box-next { transform: none !important; }
@@ -188,17 +183,17 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     
     #tetris-canvas { width: 65vw !important; height: 130vw !important; max-width: 300px !important; max-height: 600px !important; }
     
-    /* Règle le problème des boutons tactiles géants */
     #mobile-controls { 
         display: flex; width: 100%; max-width: 400px; justify-content: space-around; 
         position: absolute; bottom: 5vh; left: 50%; transform: translateX(-50%); z-index: 40;
     }
     .m-btn { 
         width: 15vw; height: 15vw; 
-        max-width: 70px; max-height: 70px; /* Sécurité anti-bouton géant */
+        max-width: 70px; max-height: 70px; 
         font-size: 6vw; 
         background: rgba(0,0,0,0.8); border: 2px solid var(--p1); color: white; border-radius: 50%; 
-        display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); 
+        display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3);
+        touch-action: manipulation; /* EMPÊCHE LE ZOOM TACTILE */
     }
     .m-btn:active { background: var(--p1); color: #000; }
 }
