@@ -16,7 +16,7 @@
 
 body, html { 
     font-family: 'SlimeBox', sans-serif; 
-    letter-spacing: 0.2vmin; 
+    letter-spacing: 2px; 
     background-color: var(--bg); 
     background-size: cover;
     background-position: top center; 
@@ -36,36 +36,47 @@ body, html {
 
 body.in-game { 
     background-image: url('assets/tetrisback.jpeg') !important; 
-    background-size: contain !important;
+    background-size: cover !important; /* On remet cover pour éviter les barres noires */
     background-position: center center !important;
 }
 body.in-game #menu-bg-video { display: none; }
 
-/* --- RESPONSIVE BUTTONS (Adaptés au zoom et aux écrans Mac) --- */
+/* --- RESPONSIVE FIXE (Boutons Hub et Menu) --- */
 .hub-link { 
-    position: absolute; top: 2vmin; left: 2vmin; z-index: 100;
+    position: absolute; top: 2vh; left: 2vw; z-index: 100;
     background: transparent !important; border: none !important; 
     box-shadow: none !important; padding: 0 !important; backdrop-filter: none !important;
 }
-.hub-link img { width: 18vmin; transition: 0.3s; filter: drop-shadow(0 0.5vmin 1vmin rgba(0,0,0,0.5)); }
-.hub-link:hover img { transform: scale(1.05) translateY(-0.2vmin); filter: drop-shadow(0 0 1.5vmin var(--p1)); }
+.hub-link img { width: 15vh; min-width: 120px; transition: 0.3s; filter: drop-shadow(0 0.5vh 1vh rgba(0,0,0,0.5)); }
+.hub-link:hover img { transform: scale(1.05) translateY(-2px); filter: drop-shadow(0 0 1.5vh var(--p1)); }
 
-.settings-btn-wrapper { position: absolute; top: 2vmin; right: 3vmin; width: 4.5vmin; height: 4.5vmin; cursor: pointer; z-index: 100; }
-.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 1vmin rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
+.settings-btn-wrapper { position: absolute; top: 2vh; right: 2vw; width: 5vh; height: 5vh; min-width: 40px; min-height: 40px; cursor: pointer; z-index: 100; }
+.settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 1vh rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-/* --- MENUS & MODALES (Ajustés en vmin) --- */
+/* Correction du bug des boutons SOLO/MULTI qui explosent */
+.menu-btn {
+    height: 10vh; /* On fixe la hauteur plutôt que la largeur pour qu'ils soient identiques */
+    width: auto;
+    min-height: 60px;
+    cursor: pointer;
+    transition: transform 0.3s, filter 0.3s;
+    filter: drop-shadow(0 1vh 1.5vh rgba(0,0,0,0.6)); 
+    margin: 1vh;
+}
+.menu-btn:hover { transform: scale(1.05) translateY(-5px); filter: drop-shadow(0 0 2vh rgba(255, 255, 255, 0.3)); }
+
 #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
 #settings-modal.show { opacity: 1; pointer-events: auto; }
-.settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 1.5vmin; padding: 3vmin 4vmin; color: white; text-align: center; box-shadow: 0 0 3vmin rgba(0,229,255,0.4); min-width: 38vmin; }
-.size-options { display: flex; justify-content: center; gap: 1vmin; margin-top: 1.5vmin; }
-.btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 1vmin 1.5vmin; border-radius: 0.5vmin; cursor: pointer; font-family: 'SlimeBox', sans-serif; font-size: 2vmin; transition: 0.2s; }
+.settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 300px; }
+.size-options { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+.btn-size { background: #222; color: #fff; border: 1px solid var(--p1); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-family: 'SlimeBox', sans-serif; font-size: 1.2rem; transition: 0.2s; }
 .btn-size:hover { background: rgba(0, 240, 255, 0.2); }
-.btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 1.5vmin var(--p1); }
-.close-btn { margin-top: 2.5vmin; background: var(--p1); color: #000; border: none; padding: 1vmin 2.5vmin; font-size: 2vmin; border-radius: 0.8vmin; cursor: pointer; transition: 0.2s; }
+.btn-size.active { background: var(--p1); color: #000; box-shadow: 0 0 15px var(--p1); }
+.close-btn { margin-top: 25px; background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.3rem; border-radius: 8px; cursor: pointer; transition: 0.2s; }
 
 #game-container { 
-    position: relative; border-radius: 1.5vmin; width: 100%; max-width: 900px; height: 80vh; 
+    position: relative; border-radius: 15px; width: 100%; max-width: 900px; height: 80vh; 
     box-sizing: border-box; display: flex; flex-direction: column; align-items: center;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); overflow: hidden;
     border: none; background: transparent; backdrop-filter: none; box-shadow: none;
@@ -80,34 +91,34 @@ body.in-game #menu-bg-video { display: none; }
 .overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; 
     display: flex; flex-direction: column; align-items: center; justify-content: center; 
-    text-align: center; border-radius: 1.5vmin; background: rgba(10, 15, 28, 0.4); 
+    text-align: center; border-radius: 15px; background: rgba(10, 15, 28, 0.4); 
 }
 
 #main-menu { background: transparent !important; backdrop-filter: none !important; }
 
-.btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 1.5vmin 3.5vmin; font-size: 2.5vmin; font-family: 'SlimeBox', sans-serif; border-radius: 0.8vmin; cursor: pointer; box-shadow: 0 0 1.5vmin rgba(0, 240, 255, 0.2); margin: 1vmin; transition: 0.3s; width: 80%; max-width: 35vmin;}
-.btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 2.5vmin var(--p1); transform: translateY(-0.3vmin); }
-.btn-main.red { border-color: var(--p2); box-shadow: 0 0 1.5vmin rgba(255,0,127,0.2); }
-.btn-main.red:hover { background: var(--p2); box-shadow: 0 0 2.5vmin var(--p2); color: #000; }
+.btn-main { background: rgba(0,0,0,0.5); color: white; border: 2px solid var(--p1); padding: 15px 35px; font-size: 1.8em; font-family: 'SlimeBox', sans-serif; border-radius: 8px; cursor: pointer; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); margin: 10px; transition: 0.3s; width: 80%; max-width: 350px;}
+.btn-main:hover { background: var(--p1); color: #000; box-shadow: 0 0 25px var(--p1); transform: translateY(-3px); }
+.btn-main.red { border-color: var(--p2); box-shadow: 0 0 15px rgba(255,0,127,0.2); }
+.btn-main.red:hover { background: var(--p2); box-shadow: 0 0 25px var(--p2); color: #000; }
 
-input { padding: 1.2vmin; border-radius: 0.8vmin; border: 1px solid var(--p1); font-family: 'SlimeBox', sans-serif; font-size: 2vmin; text-align: center; margin: 1vmin; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 30vmin;}
-input:focus { outline: none; box-shadow: 0 0 1.5vmin var(--p1); }
+input { padding: 12px; border-radius: 8px; border: 1px solid var(--p1); font-family: 'SlimeBox', sans-serif; font-size: 1.5rem; text-align: center; margin: 10px; background: rgba(0,0,0,0.8); color: #fff; width: 80%; max-width: 300px;}
+input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 /* =========================================
-   UI DU JEU TETRIS (Responsive vmin)
+   UI DU JEU TETRIS (Alignement par VH pour l'ordi)
    ========================================= */
 
 #game-ui { 
     transition: transform 0.3s ease; 
     transform-origin: center center; 
-    gap: 1.5vmin !important; 
+    gap: 1.5vh !important; 
 }
 
 .side-panel { 
     display: flex; 
     flex-direction: column; 
     justify-content: flex-start;
-    width: 14.8vmin; 
+    width: 14.8vh; 
 }
 
 .panel-box {
@@ -117,76 +128,77 @@ input:focus { outline: none; box-shadow: 0 0 1.5vmin var(--p1); }
 }
 
 .panel-val { 
-    font-size: 3.8vmin; 
+    font-size: 3.8vh; 
     color: #fff; 
-    text-shadow: 0 0 1vmin var(--p1), 0 0.2vmin 0.4vmin rgba(0,0,0,0.8); 
+    text-shadow: 0 0 1vh var(--p1), 0 0.2vh 0.4vh rgba(0,0,0,0.8); 
     line-height: 1; 
-    margin-bottom: 0.5vmin; 
+    margin-bottom: 0.5vh; 
 }
 .best-score-text {
-    font-size: 1.3vmin; 
+    font-size: 1.3vh; 
     color: var(--gold);
-    text-shadow: 0 0.2vmin 0.4vmin rgba(0,0,0,0.9);
+    text-shadow: 0 0.2vh 0.4vh rgba(0,0,0,0.9);
     margin-top: 0px; 
 }
 
-/* =========================================
-   🕹️ ALIGNEMENT MANUEL PRÉCIS (Tes Valeurs en vmin)
-   ========================================= */
+/* Tes réglages exacts passés en VH pour coller au fond d'écran */
+.box-score { width: 12vh; height: 8.3vh; }
+.box-lines { width: 12vh; height: 8.3vh; }
+.box-next  { width: 14vh; height: 14vh; }
 
-.box-score { width: 12vmin; height: 8.3vmin; }
-.box-lines { width: 12vmin; height: 8.3vmin; }
-.box-next  { width: 14vmin; height: 14vmin; }
-
-.box-score {
-    transform: translate(-4vmin, -13.7vmin) scale(1) !important;
-    transform-origin: center center !important;
-}
-
-.box-lines {
-    transform: translate(-3.9vmin, -7vmin) scale(1) !important;
-    transform-origin: center center !important;
-}
-
-.box-next {
-    transform: translate(6.4vmin, 0.8vmin) scale(1) !important;
-    transform-origin: center center !important;
-}
+.box-score { transform: translate(-4vh, -13.7vh) scale(1) !important; transform-origin: center center !important; }
+.box-lines { transform: translate(-3.9vh, -7vh) scale(1) !important; transform-origin: center center !important; }
+.box-next { transform: translate(6.4vh, 0.8vh) scale(1) !important; transform-origin: center center !important; }
 
 .board-wrapper {
-    background: transparent !important; box-shadow: none !important; 
-    backdrop-filter: none !important; padding: 0 !important; 
-    margin: 0 !important; 
-    
-    transform: translate(0.4vmin, 0.3vmin) scale(1.22) !important;
+    background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; padding: 0 !important; margin: 0 !important; 
+    transform: translate(0.4vh, 0.3vh) scale(1.22) !important;
     transform-origin: center center !important; 
 }
 
-#tetris-canvas {
-    width: 27.7vmin !important;
-    height: 55.5vmin !important;
-    display: block; border-radius: 0.5vmin;
-}
-#next-canvas {
-    width: 14.8vmin !important;
-    height: 14.8vmin !important;
-    display: block; border-radius: 0.5vmin;
-}
-#opponent-canvas {
-    width: 13.8vmin !important;
-    height: 27.7vmin !important;
-    display: block; border-radius: 0.5vmin;
-}
+#tetris-canvas { width: 27.7vh !important; height: 55.5vh !important; display: block; border-radius: 5px; }
+#next-canvas { width: 14.8vh !important; height: 14.8vh !important; display: block; border-radius: 5px; }
+#opponent-canvas { width: 13.8vh !important; height: 27.7vh !important; display: block; border-radius: 5px; }
 
-/* On garde les px pour les contrôles tactiles car ils sont indépendants de l'image de fond */
-#mobile-controls { display: none; width: 100%; max-width: 350px; justify-content: space-around; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40;}
-.m-btn { background: rgba(0,0,0,0.6); border: 2px solid var(--p1); color: white; border-radius: 50%; width: 60px; height: 60px; font-size: 1.8em; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); font-family: 'SlimeBox', sans-serif; }
-.m-btn:active { background: var(--p1); color: #000; }
+/* Boutons cachés sur ordi */
+#mobile-controls { display: none; }
 
-@media (max-width: 900px) {
-    #game-ui { flex-direction: column !important; padding-top: 60px !important; transform: scale(0.9) !important;}
-    .side-panel { flex-direction: row; width: 100%; max-width: 320px; justify-content: space-between; }
-    .panel-box { padding: 5px; flex: 1; margin: 0 5px; }
-    .board-wrapper canvas { width: 50vmin !important; height: 100vmin !important; }
-    #mobile-controls { display: flex; }
+/* =========================================
+   📱 SÉCURITÉ MOBILE / ZOOM EXTRÊME
+   ========================================= */
+@media (max-width: 900px) or (orientation: portrait) {
+    /* Sur mobile, le fond peint est coupé sur les côtés, donc on recrée des vraies boîtes lisibles ! */
+    #game-ui { flex-direction: column !important; padding-top: 12vh !important; transform: none !important; gap: 10px !important;}
+    
+    .side-panel { flex-direction: row; width: 100%; max-width: 400px; justify-content: space-around; }
+    
+    .panel-box { 
+        background: rgba(0,0,0,0.7) !important; /* Boîtes sombres pour être lisibles */
+        border: 2px solid var(--p1) !important; 
+        border-radius: 8px !important;
+        padding: 10px !important; 
+        width: 30vw !important; height: auto !important;
+    }
+    
+    /* On annule tes translations car le dessin de fond n'est plus là */
+    .box-score { transform: none !important; }
+    .box-lines { transform: none !important; }
+    .box-next { transform: none !important; }
+    .board-wrapper { transform: none !important; margin-top: 20px !important; }
+    
+    #tetris-canvas { width: 65vw !important; height: 130vw !important; max-width: 300px !important; max-height: 600px !important; }
+    
+    /* Règle le problème des boutons tactiles géants */
+    #mobile-controls { 
+        display: flex; width: 100%; max-width: 400px; justify-content: space-around; 
+        position: absolute; bottom: 5vh; left: 50%; transform: translateX(-50%); z-index: 40;
+    }
+    .m-btn { 
+        width: 15vw; height: 15vw; 
+        max-width: 70px; max-height: 70px; /* Sécurité anti-bouton géant */
+        font-size: 6vw; 
+        background: rgba(0,0,0,0.8); border: 2px solid var(--p1); color: white; border-radius: 50%; 
+        display: flex; justify-content: center; align-items: center; box-shadow: 0 0 15px rgba(0,240,255,0.3); 
+    }
+    .m-btn:active { background: var(--p1); color: #000; }
 }
