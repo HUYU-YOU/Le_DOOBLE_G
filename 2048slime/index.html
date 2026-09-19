@@ -19,7 +19,7 @@
     </video>
     <div class="bg-overlay"></div>
 
-    <!-- BOUTONS FLOTTANTS (Chemin corrigé pour le skin) -->
+    <!-- BOUTONS FLOTTANTS -->
     <a href="../index.html" class="hub-link-img">
         <img src="../img/retourhub.png" alt="Retour au Hub" id="btn-return-hub">
     </a>
@@ -50,11 +50,15 @@
     <!-- MAIN WRAPPER -->
     <div id="main-wrapper" class="size-wide">
         <div id="game-header">
-            <h1>FuSlime</h1>
+            <div class="title-container">
+                <h1>FuSlime</h1>
+                <!-- NOUVEAU : Bouton Rejouer toujours accessible -->
+                <button class="btn-restart-header" onclick="resetGame()">🔄 Rejouer</button>
+            </div>
             
             <!-- SCORES AVEC BEST SCORE -->
             <div class="scores-wrapper">
-                <div class="score-box">
+                <div class="score-box" id="score-box">
                     <div class="score-title">Score</div>
                     <div class="score-value" id="score">0</div>
                 </div>
@@ -63,7 +67,6 @@
                     <div class="score-value" id="best-score">0</div>
                 </div>
             </div>
-            
         </div>
 
         <div id="game-container">
@@ -72,8 +75,18 @@
             <!-- Conteneur des tuiles animées -->
             <div id="tiles-container"></div>
             
+            <!-- Écran de victoire (NOUVEAU) -->
+            <div id="game-win" class="overlay-screen">
+                <h2>VICTOIRE !</h2>
+                <p>Tu as créé le FuSlime Ultime (2048) !</p>
+                <div class="btn-group">
+                    <button class="btn-restart" onclick="continueGame()">Continuer</button>
+                    <button class="btn-restart" onclick="resetGame()">Rejouer</button>
+                </div>
+            </div>
+
             <!-- Ecran de fin -->
-            <div id="game-over">
+            <div id="game-over" class="overlay-screen">
                 <h2>GAME OVER</h2>
                 <p>Les slimes sont coincés !</p>
                 <button class="btn-restart" onclick="resetGame()">Rejouer</button>
