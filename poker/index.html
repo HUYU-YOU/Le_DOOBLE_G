@@ -52,7 +52,7 @@
         /* Chat */
         #chat-area { width: 100%; max-width: 800px; background: var(--panel); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(102,252,241,0.2); margin-top: 20px; }
         #chat-messages { padding: 15px; overflow-y: auto; background: var(--chat); font-size: 0.9em; display: flex; flex-direction: column; gap: 5px; height: 150px; }
-        .msg { margin: 0; }
+        .msg { margin: 0; word-break: break-all; }
         .msg-sys { color: #f1c40f; font-weight: bold; text-align: center; margin: 5px 0; }
         #chat-input-area { display: flex; padding: 10px; background: rgba(0,0,0,0.8); }
         #chat-input { flex: 1; padding: 8px; border-radius: 5px; border: none; background: #333; color: white; }
@@ -79,9 +79,14 @@
     <div id="game-layout">
         
         <div id="poker-table-container">
-            <div id="host-lobby-panel" style="display:none; text-align:center; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px;">
-                ID of the table : <b style="color:var(--accent); user-select:all;" id="my-id">...</b><br>
-                <button class="btn" style="margin-top:10px;" onclick="startGame()">Ready</button>
+            <!-- Panneau Hôte Amélioré -->
+            <div id="host-lobby-panel" style="display:none; text-align:center; background:rgba(0,0,0,0.5); padding:20px; border-radius:10px;">
+                <p>ID de la table :</p>
+                <div style="display:flex; justify-content:center; gap:10px; align-items:center; margin-bottom:15px;">
+                    <b style="color:var(--accent); font-size:1.5em; user-select:all;" id="my-id">...</b>
+                    <button class="btn" onclick="navigator.clipboard.writeText(myId); alert('ID copié !')">📋 Copier</button>
+                </div>
+                <button class="btn" onclick="startGame()">Démarrer la partie</button>
             </div>
 
             <div id="table-center">
@@ -174,8 +179,20 @@
             
             conn.on('close', () => {
                 connections = connections.filter(c => c.peerId !== conn.peer);
-                let p = state.players.find(x => x.id === conn.peer);
-                if(p) { p.status = 'fold'; broadcastSys(`${p.name} a quitté la table.`); syncStateToAll(); }
+                let pIndex = state.players.findIndex(x => x.id === conn.peer);
+                
+                if(pIndex !== -1) { 
+                    let p = state.players[pIndex];
+                    p.status = 'fold'; 
+                    broadcastSys(`🚪 ${p.name} a quitté la table.`);
+                    
+                    // Gérer la déconnexion si c'était son tour
+                    if (state.turnIndex === pIndex && state.step > 0 && state.step < 5) {
+                        processAction(p.id, 'fold', 0);
+                    } else {
+                        syncStateToAll(); 
+                    }
+                }
             });
         });
 
@@ -360,11 +377,13 @@
 
             if(action === 'fold') {
                 p.status = 'fold';
+                state.msg = `${p.name} se couche.`;
             } 
             else if(action === 'call') {
                 let toCall = state.currentBet - p.roundBet;
                 let actualCall = Math.min(toCall, p.chips);
                 forceBet(state.turnIndex, actualCall);
+                state.msg = actualCall > 0 ? `${p.name} suit (${actualCall}$).` : `${p.name} check.`;
             } 
             else if(action === 'raise') {
                 let raiseAmt = parseInt(amount) || 0;
@@ -380,6 +399,7 @@
                         otherP.hasActed = false;
                     }
                 });
+                state.msg = `${p.name} relance à ${p.roundBet}$.`;
             }
 
             checkRoundEnd();
@@ -485,6 +505,7 @@
         }
 
         function evaluatePokerHand(holeCards, communityCards) {
+            // Attention : cette fonction ne gère actuellement pas les kickers de façon poussée
             if(!communityCards || communityCards.length < 5) return 0;
             const allCards = holeCards.concat(communityCards);
             const ranks = allCards.map(c => c.value).sort((a, b) => b - a);
@@ -637,9 +658,13 @@
             addChatSys(msg);
             connections.forEach(c => c.conn.send({ type: 'sys', msg }));
         }
+        
+        // Sécurisation contre les injections HTML / XSS
         function addChatMsg(sender, msg) {
             let box = document.getElementById('chat-messages');
-            box.innerHTML += `<p class="msg"><b>${sender}:</b> ${msg}</p>`;
+            let safeMsg = document.createTextNode(msg).textContent;
+            let safeSender = document.createTextNode(sender).textContent;
+            box.innerHTML += `<p class="msg"><b>${safeSender}:</b> ${safeMsg}</p>`;
             box.scrollTop = box.scrollHeight;
         }
         function addChatSys(msg) {
@@ -652,8 +677,6 @@
     <!-- SCRIPT DE NAVIGATION PAR SWIPE (TACTILE)   -->
     <!-- ========================================== -->
     <script>
-        // 1. Liste de tes jeux dans l'ordre souhaité. 
-        // /!\ Vérifie que les noms des dossiers correspondent bien aux tiens.
         const gamesHubList = [
             "../cybertank/index.html",
             "../tower_defense/index.html",
@@ -668,14 +691,12 @@
         let touchendX = 0;
         
         function handleSwipeGesture() {
-            const swipeThreshold = 75; // Distance minimum (en pixels) pour valider le swipe
+            const swipeThreshold = 75;
             
             if (touchendX < touchstartX - swipeThreshold) {
-                // Swipe vers la gauche (Jeu suivant)
                 navigateGames(1);
             }
             if (touchendX > touchstartX + swipeThreshold) {
-                // Swipe vers la droite (Jeu précédent)
                 navigateGames(-1);
             }
         }
@@ -683,30 +704,22 @@
         function navigateGames(direction) {
             const currentPath = window.location.pathname;
             
-            // Trouve l'index du jeu actuel en regardant l'URL
             let currentIndex = gamesHubList.findIndex(game => {
                 let folderName = game.split('/')[1]; 
                 return currentPath.includes(folderName);
             });
             
-            // Si on ne trouve pas (erreur de nom de dossier), on annule
             if (currentIndex === -1) return;
 
-            // Calcul du prochain jeu avec une boucle (le dernier ramène au premier)
             let nextIndex = (currentIndex + direction + gamesHubList.length) % gamesHubList.length;
-            
-            // Redirection
             window.location.href = gamesHubList[nextIndex];
         }
 
-        // Écoute du début du touché
         document.addEventListener('touchstart', e => {
-            // On ignore le swipe si on touche le canvas pour ne pas gâcher le gameplay
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchstartX = e.changedTouches[0].screenX;
         }, { passive: true });
 
-        // Écoute de la fin du touché
         document.addEventListener('touchend', e => {
             if (e.target.tagName.toLowerCase() === 'canvas') return;
             touchendX = e.changedTouches[0].screenX;
