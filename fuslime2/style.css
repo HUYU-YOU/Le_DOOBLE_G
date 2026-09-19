@@ -233,3 +233,29 @@ body.dark-mode #game-container {
 }
 #game-over button:hover { background: #ff5277; }
 .hidden { display: none !important; }
+/* --- ADAPTATION MOBILE ET GROS ZOOM --- */
+@media (max-width: 800px) {
+    /* On pousse les scores vers le bas pour ne pas toucher les boutons */
+    #game-ui {
+        margin-top: 75px; 
+        width: 90vw;
+    }
+    
+    /* On réduit un peu la taille des textes pour que tout rentre */
+    h1 { 
+        font-size: 28px; 
+    }
+    .score-container { 
+        font-size: 20px; 
+        width: auto; 
+    }
+    .best-score-container { 
+        font-size: 16px; 
+        width: auto; 
+    }
+
+    /* On remonte un poil le cadre pour compenser la marge du haut */
+    #game-frame {
+        top: 55% !important;
+    }
+}
