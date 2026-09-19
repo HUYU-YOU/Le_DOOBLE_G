@@ -5,9 +5,10 @@ const urlParams = new URLSearchParams(window.location.search);
 const forceMode = urlParams.get('mode');
 
 window.addEventListener('DOMContentLoaded', () => {
+    // CORRECTION ICI POUR LE BOUTON PVP
     if (forceMode === 'solo') {
-        document.getElementById('net-button').style.display = 'none';
-        document.getElementById('menu-separator').style.display = 'none';
+        const btnPvp = document.getElementById('btn-pvp');
+        if (btnPvp) btnPvp.style.display = 'none';
     } else if (forceMode === 'multi') {
         document.getElementById('main-menu').style.display = 'none';
         showNetworkMenu();
@@ -41,7 +42,6 @@ function setGameSize(size) {
         container.classList.add('size-full');
         document.getElementById('btn-sz-full').classList.add('active');
         
-        // Code renforcé pour forcer le plein écran sur tous les navigateurs / mobiles
         const docEl = document.documentElement;
         if (!document.fullscreenElement) {
             if (docEl.requestFullscreen) {
@@ -283,10 +283,15 @@ class Tank {
                     }
                 }
 
+                // CORRECTION DU TREMBLEMENT DE L'IA ICI
                 let aimJitter = isDuel ? 0 : 0.15 - (iq * 0.1); 
-                if (hasLOS) { this.turretAngle = baseAngle + (Math.random() - 0.5) * aimJitter; } 
-                else if (isDuel) { this.turretAngle = baseAngle + (Math.random() > 0.5 ? 0.7 : -0.7); } 
-                else { this.turretAngle = baseAngle + (Math.random() - 0.5) * aimJitter; }
+                if (hasLOS) { 
+                    this.turretAngle = baseAngle + (Math.random() - 0.5) * aimJitter; 
+                } else if (isDuel) { 
+                    this.turretAngle = baseAngle; // Le bot ne tremble plus
+                } else { 
+                    this.turretAngle = baseAngle + (Math.random() - 0.5) * aimJitter; 
+                }
 
                 let dodgeVx = 0; let dodgeVy = 0; let dodging = false;
                 let dodgeRadius = 150 + (iq * 100); 
