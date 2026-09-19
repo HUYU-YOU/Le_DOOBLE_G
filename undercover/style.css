@@ -1,0 +1,149 @@
+:root {
+    --bg-color: #1e1e2f;
+    --panel-bg: rgba(30, 30, 46, 0.9);
+    --text-color: #e2e8f0;
+    --accent: #10b981;
+    --danger: #ef4444;
+    --highlight: #3b82f6;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+}
+
+/* Paramètres */
+#settings-btn-img {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 40px;
+    cursor: pointer;
+    z-index: 100;
+    transition: transform 0.2s;
+}
+
+#settings-modal {
+    position: absolute;
+    top: 70px;
+    right: 15px;
+    background: var(--panel-bg);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    display: none;
+    z-index: 100;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#settings-modal.show {
+    display: flex;
+}
+
+/* Conteneur principal */
+#game-container {
+    position: relative;
+    transition: transform 0.3s ease;
+    background: #000;
+    border: 2px solid #334155;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+canvas {
+    display: block;
+    cursor: crosshair;
+}
+
+/* UI Overlays */
+#top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+    pointer-events: none;
+}
+
+#tower-selection, #controls {
+    position: absolute;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(0,0,0,0.7);
+}
+
+#tower-selection { bottom: 50px; }
+#controls { bottom: 0; }
+
+button {
+    background: #4b5563;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s, transform 0.1s;
+}
+
+button:hover:not(:disabled) { background: #6b7280; }
+button:active:not(:disabled) { transform: scale(0.95); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.selected {
+    background: var(--highlight);
+    box-shadow: 0 0 10px var(--highlight);
+}
+
+/* Panneau d'amélioration */
+#upgrade-panel {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    background: var(--panel-bg);
+    padding: 15px;
+    border: 1px solid var(--highlight);
+    border-radius: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    width: 200px;
+}
+
+#upgrade-panel h3 { margin: 0 0 10px 0; color: var(--highlight); text-align: center; }
+#upgrade-panel p { margin: 0; font-size: 0.9em; line-height: 1.5; }
+#btn-upgrade { background: var(--accent); }
+#btn-sell { background: var(--danger); }
+
+/* Écran Game Over */
+#game-over {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    z-index: 50;
+}
+
+#game-over h2 { color: var(--danger); font-size: 3em; margin: 0; }
+#game-over p { font-size: 1.2em; margin-bottom: 20px; }
+#game-over button { background: var(--danger); font-size: 1.2em; padding: 10px 20px; }
