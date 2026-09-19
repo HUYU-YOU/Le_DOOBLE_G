@@ -205,6 +205,9 @@ skinFiles.forEach(file => {
 let CAMERA_ZOOM = 1.0; 
 let cameraX = 0; 
 let cameraY = 0;
+let targetCameraX = 0; // Pour Lerp (fluidité caméra)
+let targetCameraY = 0; 
+
 let mouseX = 0; 
 let mouseY = 0; 
 let worldMouseX = 0; 
@@ -217,7 +220,8 @@ let nexuses = [];
 let projectiles = []; 
 let clickMarkers = [];
 
-// QWERTY par défaut dans le code
+let lastUIUpdate = 0; // Throttle UI Update
+
 let keyboardKeys = { s1: 'q', s2: 'w', ult: 'e' };
 let pendingSpell = null; 
 let hoveredEnemy = null; 
@@ -305,7 +309,8 @@ canvas.addEventListener('mousedown', e => {
         } else {
             players[0].autoAttackTarget = null; 
             players[0].setMovementTarget(worldMouseX, worldMouseY);
-            clickMarkers.push({x: worldMouseX, y: worldMouseY, life: 20, color: '#00f0ff'});
+            // Marqueur de déplacement ammélioré
+            clickMarkers.push({x: worldMouseX, y: worldMouseY, life: 25, color: '#00f0ff', isPing: true});
         }
     }
 });
@@ -397,7 +402,7 @@ class Nexus {
         ctx.closePath();
         
         ctx.fillStyle = this.color; 
-        ctx.shadowBlur = 25; 
+        ctx.shadowBlur = 35; // Lueur augmentée
         ctx.shadowColor = this.color; 
         ctx.fill(); 
         ctx.lineWidth = 4; 
@@ -420,9 +425,21 @@ class Nexus {
             let alliedTurret = turrets.find(t => t.team === this.team && !t.isDead); 
             if (alliedTurret) return; 
         }
-        
         if (this.isDead) return; 
-        this.hp -= amount; 
+        
+        let finalDamage = Math.floor(amount);
+        this.hp -= finalDamage; 
+        
+        // Texte de dégâts
+        clickMarkers.push({
+            x: this.x + (Math.random()*40-20), 
+            y: this.y - 60, 
+            life: 40, 
+            color: '#ff4444', 
+            isText: true, 
+            text: `-${finalDamage}`
+        });
+
         if (this.hp <= 0) { 
             this.hp = 0; 
             this.isDead = true; 
@@ -480,8 +497,11 @@ class Turret {
         ctx.fillStyle = '#222'; 
         ctx.fill(); 
         ctx.lineWidth = 4; 
-        ctx.strokeStyle = this.color; 
+        ctx.strokeStyle = this.color;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
         ctx.stroke();
+        ctx.shadowBlur = 0;
         
         ctx.fillStyle = '#111'; 
         ctx.fillRect(this.x - 40, this.y - 70, 80, 8); 
@@ -493,7 +513,19 @@ class Turret {
     
     takeDamage(amount, attacker) {
         if (this.isDead) return; 
-        this.hp -= amount; 
+        let finalDamage = Math.floor(amount);
+        this.hp -= finalDamage; 
+        
+        // Texte de dégâts
+        clickMarkers.push({
+            x: this.x + (Math.random()*40-20), 
+            y: this.y - 40, 
+            life: 40, 
+            color: '#ff4444', 
+            isText: true, 
+            text: `-${finalDamage}`
+        });
+
         if (this.hp <= 0) { 
             this.hp = 0; 
             this.isDead = true; 
@@ -548,7 +580,6 @@ class Player {
     }
 
     update() {
-        // --- 1. TOUS les temps baissent même si tu es mort (cooldowns, stun, etc) ---
         for(let key in this.cds) {
             if(this.cds[key] > 0) this.cds[key]--;
         }
@@ -558,16 +589,14 @@ class Player {
         if(this.speedBuff > 0) this.speedBuff--;
         if(this.attackAnim > 0) this.attackAnim--;
 
-        // --- 2. Si le joueur est mort, on gère son respawn et on stop l'update ---
         if (this.isDead) { 
             this.respawnTimer--; 
             if (this.respawnTimer <= 0) { 
                 this.respawn(); 
             } 
-            return; // Bloque les actions (mouvements, clics, sorts) pendant la mort
+            return; 
         }
 
-        // --- 3. Si le joueur est vivant, il fait ses actions normales ---
         if (this.autoAttackTarget) {
             if(this.autoAttackTarget.isDead) { 
                 this.autoAttackTarget = null; 
@@ -761,6 +790,7 @@ class Player {
         ctx.textAlign = 'center'; 
         if (this.stunTimer > 0) { 
             ctx.fillStyle = "yellow"; 
+            ctx.font = "bold 14px Arial";
             ctx.fillText("STUN", 0, -this.radius - 35); 
         }
         
@@ -937,7 +967,7 @@ class Player {
                 clickMarkers.push({x: ent.x, y: ent.y, life: 10, color: '#fff', isExplosion: true});
             }
         });
-        clickMarkers.push({x: hitX, y: hitY, life: 10, color: '#fff', isSlash: true, angle: this.angle});
+        clickMarkers.push({x: hitX, y: hitY, life: 15, color: '#fff', isSlash: true, angle: this.angle});
     }
 
     takeDamage(amount, attacker) {
@@ -955,7 +985,7 @@ class Player {
             if (attacker.role === 'bruiser' && this.role === 'marksman') { multiplier = 0.80; }
         }
 
-        let finalDamage = amount * multiplier;
+        let finalDamage = Math.floor(amount * multiplier);
         
         if(this.shield > 0) { 
             this.shield -= finalDamage; 
@@ -963,15 +993,29 @@ class Player {
                 finalDamage = Math.abs(this.shield); 
                 this.shield = 0; 
             } else {
+                clickMarkers.push({
+                    x: this.x + (Math.random()*40-20), 
+                    y: this.y - 40, 
+                    life: 40, 
+                    color: '#00f0ff', 
+                    isText: true, 
+                    text: `Absorbé!`
+                });
                 return;
             }
         }
         
         this.hp -= finalDamage;
         
-        if (isCrit) { 
-            clickMarkers.push({x: this.x, y: this.y - 40, life: 30, color: '#ffbf00', isText: true, text: "EFFICACE!"}); 
-        }
+        // NOUVEAU : Texte de dégâts propre
+        clickMarkers.push({
+            x: this.x + (Math.random() * 40 - 20), 
+            y: this.y - 40, 
+            life: 40, 
+            color: isCrit ? '#ffbf00' : '#ff4444', 
+            isText: true, 
+            text: isCrit ? `Crit! -${finalDamage}` : `-${finalDamage}`
+        });
 
         if (this.hp <= 0) { 
             this.hp = 0; 
@@ -1054,15 +1098,32 @@ class Projectile {
             }
         });
 
+        // Visuel avec lueur Cyberpunk
         ctx.beginPath(); 
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); 
         ctx.fillStyle = this.color; 
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
         ctx.fill();
+        ctx.shadowBlur = 0; // Remise à zero
     }
 }
 
 function updateBot(bot) {
     if (bot.isDead || bot.stunTimer > 0) return;
+    
+    // NOUVEAU : Instinct de survie (Fuir si HP < 25%)
+    if (bot.hp < bot.maxHp * 0.25) {
+        let homeNexus = nexuses.find(n => n.team === bot.team && !n.isDead);
+        if (homeNexus) {
+            let distToBase = Math.hypot(homeNexus.x - bot.x, homeNexus.y - bot.y);
+            if (distToBase > 150) {
+                bot.setMovementTarget(homeNexus.x, homeNexus.y); 
+                bot.autoAttackTarget = null;
+                return;
+            }
+        }
+    }
     
     let target = players[0]; 
     
@@ -1182,6 +1243,8 @@ function startLocalGame() {
 
     cameraX = players[0].x - window.innerWidth / 2; 
     cameraY = players[0].y - window.innerHeight / 2;
+    targetCameraX = cameraX;
+    targetCameraY = cameraY;
     
     gameActive = true; 
     resizeCanvas(); 
@@ -1195,7 +1258,7 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 
 function updateSpellUI() {
-    if(players.length === 0) return; // Retiré le blocage "isDead" pour voir ses sorts mort !
+    if(players.length === 0) return; 
     let p = players[0];
     
     ['s1', 's2', 'ult'].forEach(slot => {
@@ -1210,7 +1273,7 @@ function updateSpellUI() {
             cdText.style.fontSize = '2em';
             cdText.style.fontWeight = 'bold';
             cdText.style.color = '#fff';
-            cdText.style.textShadow = '0 0 10px #ff007f, 0 0 5px #000';
+            cdText.style.textShadow = '0 0 10px #000, 0 0 20px #000';
             cdText.style.zIndex = '10';
             box.appendChild(cdText);
         }
@@ -1279,13 +1342,17 @@ function gameLoop() {
     const panSpeed = 20 / CAMERA_ZOOM; 
     const edgeSize = 50;
     
-    if (mouseX < edgeSize) cameraX -= panSpeed; 
-    if (mouseX > window.innerWidth - edgeSize) cameraX += panSpeed;
-    if (mouseY < edgeSize) cameraY -= panSpeed; 
-    if (mouseY > window.innerHeight - edgeSize) cameraY += panSpeed;
+    // NOUVEAU : Caméra Fluide (Lerp)
+    if (mouseX < edgeSize) targetCameraX -= panSpeed; 
+    if (mouseX > window.innerWidth - edgeSize) targetCameraX += panSpeed;
+    if (mouseY < edgeSize) targetCameraY -= panSpeed; 
+    if (mouseY > window.innerHeight - edgeSize) targetCameraY += panSpeed;
 
-    cameraX = Math.max(0, Math.min(MAP_WIDTH - window.innerWidth / CAMERA_ZOOM, cameraX)); 
-    cameraY = Math.max(0, Math.min(MAP_HEIGHT - window.innerHeight / CAMERA_ZOOM, cameraY));
+    targetCameraX = Math.max(0, Math.min(MAP_WIDTH - window.innerWidth / CAMERA_ZOOM, targetCameraX));
+    targetCameraY = Math.max(0, Math.min(MAP_HEIGHT - window.innerHeight / CAMERA_ZOOM, targetCameraY));
+
+    cameraX += (targetCameraX - cameraX) * 0.1;
+    cameraY += (targetCameraY - cameraY) * 0.1;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
     ctx.save(); 
@@ -1297,6 +1364,12 @@ function gameLoop() {
     } else { 
         ctx.fillStyle = '#111827'; 
         ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT); 
+        // Petite grille pour l'esthétique si l'image ne charge pas
+        ctx.strokeStyle = '#222';
+        for(let i=0; i<MAP_WIDTH; i+=100){
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, MAP_HEIGHT); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(MAP_WIDTH, i); ctx.stroke();
+        }
     }
 
     nexuses.forEach(n => { n.update(); n.draw(); }); 
@@ -1376,22 +1449,43 @@ function gameLoop() {
     
     players.forEach(p => p.draw());
 
+    // Rendu Amélioré des Particules et Textes
     for (let i = clickMarkers.length - 1; i >= 0; i--) {
         let m = clickMarkers[i];
         if (m.isText) {
+            ctx.save();
+            ctx.font = "bold 24px 'Rajdhani', Arial"; 
+            ctx.textAlign = "center";
             ctx.fillStyle = m.color; 
-            ctx.font = "bold 20px Arial"; 
-            ctx.fillText(m.text, m.x, m.y - (30 - m.life)); 
+            ctx.strokeStyle = "#000"; // Contour Noir
+            ctx.lineWidth = 4;
+            
+            let floatY = m.y - (50 - m.life);
+            ctx.globalAlpha = Math.max(0, m.life / 40); // Fade out propre
+            
+            ctx.strokeText(m.text, m.x, floatY);
+            ctx.fillText(m.text, m.x, floatY);
+            ctx.restore();
+            
         } else if (m.isSlash) {
             ctx.save(); 
             ctx.translate(m.x, m.y); 
             ctx.rotate(m.angle); 
             ctx.beginPath(); 
             ctx.arc(0, 0, 40, -Math.PI/3, Math.PI/3); 
-            ctx.strokeStyle = `rgba(255, 255, 255, ${m.life / 10})`; 
+            ctx.strokeStyle = `rgba(255, 255, 255, ${m.life / 15})`; 
             ctx.lineWidth = 10; 
             ctx.stroke(); 
             ctx.restore();
+            
+        } else if (m.isPing) {
+            // Effet radar sympa pour le déplacement
+            ctx.beginPath(); 
+            ctx.arc(m.x, m.y, 30 - m.life, 0, Math.PI*2); 
+            ctx.strokeStyle = `rgba(0, 240, 255, ${m.life/25})`; 
+            ctx.lineWidth = 3; 
+            ctx.stroke();
+            
         } else {
             ctx.beginPath(); 
             ctx.arc(m.x, m.y, 30 - m.life, 0, Math.PI*2); 
@@ -1409,6 +1503,13 @@ function gameLoop() {
     }
 
     ctx.restore(); 
-    updateSpellUI(); 
+    
+    // NOUVEAU : Optimisation des performances de l'UI
+    let now = Date.now();
+    if (now - lastUIUpdate > 100) {
+        updateSpellUI();
+        lastUIUpdate = now;
+    }
+    
     requestAnimationFrame(gameLoop);
 }
