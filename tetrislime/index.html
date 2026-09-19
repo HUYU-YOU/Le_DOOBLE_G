@@ -74,6 +74,10 @@
         <div id="game-ui" style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; gap: 20px; flex-direction: row; padding: 20px; box-sizing: border-box;">
             
             <div class="side-panel left-panel">
+                <div class="panel-box box-hold">
+                    <div class="panel-title" style="color:var(--p3); font-size: 1.5vh;">HOLD</div>
+                    <canvas id="hold-canvas" width="120" height="120"></canvas>
+                </div>
                 <div class="panel-box box-score">
                     <div class="panel-val" id="score">0</div>
                     <div class="best-score-text">BEST: <span id="best-score">0</span></div>
@@ -99,17 +103,28 @@
             </div>
 
             <div id="mobile-controls">
-                <button class="m-btn" ontouchstart="moveLeft(event)">⬅</button>
-                <button class="m-btn" ontouchstart="rotate(event)">↻</button>
-                <button class="m-btn" ontouchstart="drop(event)">⬇</button>
-                <button class="m-btn" ontouchstart="moveRight(event)">➡</button>
+                <div class="mobile-row">
+                    <button class="m-btn m-btn-small" ontouchstart="holdBtn(event)">🎒</button>
+                    <button class="m-btn m-btn-small" ontouchstart="rotate(event)">↻</button>
+                    <button class="m-btn m-btn-small" ontouchstart="doHardDrop(event)">💥</button>
+                </div>
+                <div class="mobile-row">
+                    <button class="m-btn" ontouchstart="moveLeft(event)">⬅</button>
+                    <button class="m-btn" ontouchstart="startSoftDrop(event)" ontouchend="endSoftDrop(event)" ontouchcancel="endSoftDrop(event)">⬇</button>
+                    <button class="m-btn" ontouchstart="moveRight(event)">➡</button>
+                </div>
             </div>
         </div>
 
         <div class="overlay" id="game-over" style="display: none;">
             <h2 id="end-title" style="font-size: 4em; color: var(--p2); text-shadow: 0 0 20px var(--p2);">GAME OVER</h2>
             <p style="font-size: 1.8em;">Score : <span id="final-score" style="color:var(--gold)">0</span></p>
-            <button class="btn-main" onclick="location.reload()">Retour au Menu</button>
+            <p id="rematch-status" style="color: var(--p1); font-size: 1.2em; display: none; margin-bottom: 15px; font-weight: bold;"></p>
+            
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <button class="btn-main" id="btn-rematch" onclick="requestRematch()">Rejouer</button>
+                <button class="btn-main red" onclick="location.reload()" style="font-size: 1.2rem; padding: 15px;">Quitter</button>
+            </div>
         </div>
 
     </div>
