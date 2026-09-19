@@ -258,6 +258,21 @@ function setupConnection() {
             gameState = data.state; updateHUD();
         }
     });
+    
+    // Gérer la déconnexion
+    conn.on('close', handleDisconnect);
+    peer.on('disconnected', handleDisconnect);
+}
+
+function handleDisconnect() {
+    if (!gameActive) return;
+    gameActive = false;
+    document.getElementById('game-over').style.display = 'flex'; 
+    const msg = document.getElementById('end-message');
+    document.getElementById('end-stats').innerText = `NETWORK ERROR`;
+    msg.innerText = "OPPONENT DISCONNECTED"; 
+    msg.style.color = 'var(--gold)'; 
+    msg.style.textShadow = '0 0 20px var(--gold)';
 }
 
 function buildControlsContainer(team) {
@@ -358,7 +373,7 @@ function economyTick() {
         let r = Math.random();
         let isHard = (gameMode === 'hardcore');
 
-        if (isHard) ai.gold += Math.floor(timeElapsed / 10) + 2; 
+        if (isHard) ai.gold += Math.floor(timeElapsed / 15) + 2; 
 
         if (ai.xp >= xpToEvolve[ai.age - 1]) processAction(2, 'evolve', null);
         if (ai.gold > ai.incomeCost * 2 && r > 0.4) processAction(2, 'upgradeEco', null);
@@ -367,46 +382,61 @@ function economyTick() {
         let p2Units = gameState.units.filter(u => u.team === 2);
         let p1Count = p1Units.length;
         let p2Count = p2Units.length;
-        let p1RangedCount = p1Units.filter(u => unitStats[u.type].type === 'ranged').length;
-        let p1MeleeCount = p1Units.filter(u => unitStats[u.type].type === 'melee').length;
 
-        if (p1Count >= p2Count + 2 && ai.gold >= spellStats[1].cost[ai.age - 1]) {
+        // IA SORTS : Calcule la densité ennemie
+        let maxDensity = 0;
+        for (let u1 of p1Units) {
+            let density = p1Units.filter(u2 => Math.abs(u1.x - u2.x) < 200).length;
+            if (density > maxDensity) maxDensity = density;
+        }
+
+        // Lance le sort 1 si une grosse grappe d'ennemis est détectée
+        if (maxDensity >= (isHard ? 3 : 4) && ai.gold >= spellStats[1].cost[ai.age - 1]) {
             processAction(2, 'spell', 1);
         }
-        if (ai.age >= 3 && ai.hp < ai.maxHp * 0.3 && ai.gold >= spellStats[2].cost[ai.age - 1]) {
+        // Soin d'urgence
+        if (ai.age >= 3 && ai.hp < ai.maxHp * 0.4 && ai.gold >= spellStats[2].cost[ai.age - 1]) {
             processAction(2, 'spell', 2);
         }
 
         let availableUnits = Object.keys(unitStats).filter(k => unitStats[k].tech === ai.age);
-        let chosenSpawn = null;
-        for (let idx = availableUnits.length - 1; idx >= 0; idx--) {
-            let uKey = availableUnits[idx];
-            let uData = unitStats[uKey];
+        let p1RangedCount = p1Units.filter(u => unitStats[u.type].type === 'ranged').length;
+        let p1MeleeCount = p1Units.filter(u => unitStats[u.type].type === 'melee').length;
 
-            if (ai.gold >= uData.cost) {
-                if (p1RangedCount > p1MeleeCount + 1 && uData.type === 'melee') {
-                    chosenSpawn = uKey;
-                    break;
-                }
-                
-                let aiRangedCount = p2Units.filter(u => unitStats[u.type].type === 'ranged').length;
-                let aiMeleeCount = p2Units.filter(u => unitStats[u.type].type === 'melee').length;
-                
-                if (r > 0.4 && (aiMeleeCount === aiRangedCount || (aiMeleeCount > aiRangedCount && uData.type === 'ranged') || (aiRangedCount > aiMeleeCount && uData.type === 'melee'))) {
-                    chosenSpawn = uKey; 
-                    break;
+        // IA COMBOS : En mode hardcore, l'IA tente d'économiser pour spawn un tank + un tireur
+        let mostExpensive = unitStats[availableUnits[availableUnits.length - 1]];
+        
+        if (isHard && ai.gold > mostExpensive.cost * 1.5 && r > 0.3) {
+            // Spawn d'abord un tank, puis un DPS
+            let tanks = availableUnits.filter(k => unitStats[k].type === 'melee');
+            let dps = availableUnits.filter(k => unitStats[k].type === 'ranged');
+            if(tanks.length) processAction(2, 'spawn', tanks[tanks.length - 1]);
+            if(dps.length) processAction(2, 'spawn', dps[dps.length - 1]);
+        } else {
+            // Comportement standard d'anti-jeu
+            let chosenSpawn = null;
+            for (let idx = availableUnits.length - 1; idx >= 0; idx--) {
+                let uKey = availableUnits[idx];
+                let uData = unitStats[uKey];
+
+                if (ai.gold >= uData.cost) {
+                    if (p1RangedCount > p1MeleeCount + 1 && uData.type === 'melee') {
+                        chosenSpawn = uKey; break;
+                    }
+                    let aiRangedCount = p2Units.filter(u => unitStats[u.type].type === 'ranged').length;
+                    let aiMeleeCount = p2Units.filter(u => unitStats[u.type].type === 'melee').length;
+                    
+                    if (r > 0.4 && (aiMeleeCount === aiRangedCount || (aiMeleeCount > aiRangedCount && uData.type === 'ranged') || (aiRangedCount > aiMeleeCount && uData.type === 'melee'))) {
+                        chosenSpawn = uKey; break;
+                    }
                 }
             }
-        }
-        
-        if (!chosenSpawn && p1Count > p2Count + 1) {
-            let cheapestUnit = availableUnits[0];
-            if (ai.gold >= unitStats[cheapestUnit].cost) {
-                chosenSpawn = cheapestUnit;
+            if (!chosenSpawn && p1Count > p2Count) {
+                let cheapestUnit = availableUnits[0];
+                if (ai.gold >= unitStats[cheapestUnit].cost) chosenSpawn = cheapestUnit;
             }
+            if (chosenSpawn) processAction(2, 'spawn', chosenSpawn);
         }
-        
-        if (chosenSpawn) processAction(2, 'spawn', chosenSpawn);
     }
     
     [gameState.p1, gameState.p2].forEach(p => { 
@@ -457,7 +487,7 @@ function processAction(team, action, val) {
                             p.gold += u.rew;
                             if (p.age < 3) p.xp += u.xp;
                             addEffect('text', u.x, u.y, team, `+${u.rew}💰`);
-                            addEffect('explosion', u.x + u.w/2, u.y + u.h/2, u.team);
+                            addParticles(u.x + u.w/2, u.y + u.h/2, u.team === 1 ? '#00f0ff' : '#ff0055', 15);
                             gameState.units.splice(i, 1);
                         }
                     }
@@ -480,6 +510,17 @@ function processAction(team, action, val) {
 
 function addEffect(type, x, y, team, text='') {
     gameState.effects.push({ type, x, y, team, text, life: 30, maxLife: 30 });
+}
+
+function addParticles(x, y, color, count) {
+    for(let i=0; i<count; i++) {
+        gameState.effects.push({
+            type: 'particle', x, y, 
+            vx: (Math.random() - 0.5) * 8, 
+            vy: (Math.random() - 0.5) * 8 - 2,
+            life: 20 + Math.random() * 20, maxLife: 40, color: color
+        });
+    }
 }
 
 function addSpear(x, y, team, damage) {
@@ -533,6 +574,11 @@ function updatePhysics() {
                 gameState.effects.splice(i, 1);
             }
         } else {
+            if (eff.type === 'particle') {
+                eff.x += eff.vx;
+                eff.y += eff.vy;
+                eff.vy += 0.5; // Gravité
+            }
             eff.life--;
             if(eff.life <= 0) gameState.effects.splice(i, 1);
         }
@@ -591,7 +637,7 @@ function updatePhysics() {
             killer.gold += u.rew; 
             if (killer.age < 3) killer.xp += u.xp; 
             addEffect('text', u.x, u.y, u.team === 1 ? 2 : 1, `+${u.rew}💰`);
-            addEffect('explosion', u.x + u.w/2, u.y + u.h/2, u.team);
+            addParticles(u.x + u.w/2, u.y + u.h/2, u.team === 1 ? '#00f0ff' : '#ff0055', 15);
             gameState.units.splice(i, 1); 
         }
     }
@@ -790,6 +836,12 @@ function drawGame() {
             ctx.font = "bold 20px Chewy"; ctx.shadowBlur = 5; ctx.shadowColor = '#000';
             ctx.globalAlpha = prog;
             ctx.fillText(eff.text, eff.x, eff.y - (30-eff.life));
+        } else if (eff.type === 'particle') {
+            ctx.fillStyle = eff.color; 
+            ctx.globalAlpha = prog;
+            ctx.beginPath(); 
+            ctx.arc(eff.x, eff.y, prog * 4, 0, Math.PI * 2); 
+            ctx.fill();
         } else if (eff.type === 'spear') {
              ctx.fillStyle = eff.team === 1 ? '#00f0ff' : '#ff0055';
              ctx.fillRect(eff.x, eff.y, eff.w, eff.h);
