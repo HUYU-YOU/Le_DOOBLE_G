@@ -22,30 +22,33 @@
     <div id="toast-container"></div>
     <img id="golden-slime" src="img/goldenslime.png" alt="Golden Slime" draggable="false" onclick="activateGoldenBuff(event)">
 
-    <!-- CONTRÔLES EN HAUT À GAUCHE -->
-    <div id="top-left-controls">
-        <!-- Correction du chemin (utilisation de img/ directement) -->
-        <img id="btn-retour" class="img-btn" src="img/retourhub.png" alt="Retour" 
-             onmouseover="this.src='img/returbhub.png'" 
-             onmouseout="this.src='img/retourhub.png'" 
-             onclick="window.location.href='../index.html'">
-             
-        <button class="btn-3d" id="btn-save" onclick="manualSave()">💾 Sauvegarder</button>
-    </div>
-
-    <!-- CONTRÔLES EN HAUT À DROITE -->
-    <div id="top-right-controls">
-        <div id="crystals-display">🌌 0 Cristaux</div>
+    <!-- EN-TÊTE PRINCIPAL STRUCTURÉ (Plus de bugs de superposition) -->
+    <header id="main-header">
         
-        <!-- Bouton Settings placé à droite avec le bon chemin -->
-        <img id="btn-settings" class="img-btn" src="img/settings1.png" alt="Paramètres" onclick="alert('Paramètres en construction !')">
-    </div>
-
-    <header>
-        <h1>Slime Clicker</h1>
-        <div class="news-ticker">
-            <span class="news-content" id="news-text">Flash Info : Une invasion de Slimes verts serait imminente selon les experts...</span>
+        <!-- ZONE GAUCHE -->
+        <div class="header-left">
+            <img id="btn-retour" class="img-btn" src="Le_DOOBLE_G/img/retourhub.png" alt="Retour" 
+                 onmouseover="this.src='Le_DOOBLE_G/img/returbhub.png'" 
+                 onmouseout="this.src='Le_DOOBLE_G/img/retourhub.png'" 
+                 onclick="window.location.href='../index.html'">
+                 
+            <button class="btn-3d" id="btn-save" onclick="manualSave()">💾 Sauvegarder</button>
         </div>
+        
+        <!-- ZONE CENTRE -->
+        <div class="header-center">
+            <h1>Slime Clicker</h1>
+            <div class="news-ticker">
+                <span class="news-content" id="news-text">Flash Info : Une invasion de Slimes verts serait imminente selon les experts...</span>
+            </div>
+        </div>
+
+        <!-- ZONE DROITE -->
+        <div class="header-right">
+            <div id="crystals-display">🌌 0 Cristaux</div>
+            <img id="btn-settings" class="img-btn" src="Le_DOOBLE_G/img/settings1.png" alt="Paramètres" onclick="alert('Paramètres en construction !')">
+        </div>
+
     </header>
 
     <div id="game-container">
@@ -58,6 +61,7 @@
             
             <div id="slime-square-container">
                 <div id="slime-wrapper">
+                    <!-- Attention ici au chemin, si slm1.png est aussi dans Le_DOOBLE_G, pense à changer le src -->
                     <img id="slime-image" src="img/slm1.png" alt="Big Slime" draggable="false">
                 </div>
             </div>
