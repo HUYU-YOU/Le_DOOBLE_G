@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Slime Clicker - Édition Infinie</title>
+    <!-- Importation des polices Cartoon/Slime -->
     <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Lien vers le fichier CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,20 +24,20 @@
     <div id="toast-container"></div>
     <img id="golden-slime" src="img/goldenslime.png" alt="Golden Slime" draggable="false" onclick="activateGoldenBuff(event)">
 
-    <!-- EN-TÊTE PRINCIPAL STRUCTURÉ (Plus de bugs de superposition) -->
+    <!-- EN-TÊTE PRINCIPAL (Fixe et structuré) -->
     <header id="main-header">
         
-        <!-- ZONE GAUCHE -->
+        <!-- ZONE GAUCHE (Boutons Retour & Save) -->
         <div class="header-left">
-            <img id="btn-retour" class="img-btn" src="Le_DOOBLE_G/img/retourhub.png" alt="Retour" 
-                 onmouseover="this.src='Le_DOOBLE_G/img/returbhub.png'" 
-                 onmouseout="this.src='Le_DOOBLE_G/img/retourhub.png'" 
+            <img id="btn-retour" class="img-btn" src="img/retourhub.png" alt="Retour" 
+                 onmouseover="this.src='img/returbhub.png'" 
+                 onmouseout="this.src='img/retourhub.png'" 
                  onclick="window.location.href='../index.html'">
                  
             <button class="btn-3d" id="btn-save" onclick="manualSave()">💾 Sauvegarder</button>
         </div>
         
-        <!-- ZONE CENTRE -->
+        <!-- ZONE CENTRE (Titre & Infos) -->
         <div class="header-center">
             <h1>Slime Clicker</h1>
             <div class="news-ticker">
@@ -43,17 +45,17 @@
             </div>
         </div>
 
-        <!-- ZONE DROITE -->
+        <!-- ZONE DROITE (Cristaux & Paramètres) -->
         <div class="header-right">
             <div id="crystals-display">🌌 0 Cristaux</div>
-            <img id="btn-settings" class="img-btn" src="Le_DOOBLE_G/img/settings1.png" alt="Paramètres" onclick="alert('Paramètres en construction !')">
+            <img id="btn-settings" class="img-btn" src="img/settings1.png" alt="Paramètres" onclick="alert('Paramètres en construction !')">
         </div>
 
     </header>
 
     <div id="game-container">
         
-        <!-- PANNEAU DE GAUCHE : SLIME (Carré et centré) -->
+        <!-- PANNEAU DE GAUCHE : SLIME (Carré, Fixe, Centré) -->
         <div id="click-area">
             <div id="score-display">0 Slimes</div>
             <div id="sps-display">0 / sec</div>
@@ -61,13 +63,12 @@
             
             <div id="slime-square-container">
                 <div id="slime-wrapper">
-                    <!-- Attention ici au chemin, si slm1.png est aussi dans Le_DOOBLE_G, pense à changer le src -->
                     <img id="slime-image" src="img/slm1.png" alt="Big Slime" draggable="false">
                 </div>
             </div>
         </div>
 
-        <!-- PANNEAU DE DROITE : BOUTIQUE (Défilement uniquement ici) -->
+        <!-- PANNEAU DE DROITE : BOUTIQUE (Le SEUL endroit qui peut défiler) -->
         <div id="shop-area">
             <div class="shop-tabs">
                 <div class="tab-btn active" data-tab="dresseurs" onclick="switchTab('dresseurs')">Bâtiments 🏗️</div>
@@ -116,6 +117,7 @@
 
     </div>
 
+    <!-- Lien vers le fichier JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
