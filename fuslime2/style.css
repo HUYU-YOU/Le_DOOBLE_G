@@ -76,7 +76,7 @@ body.en .btn-hub {
 }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
-/* Fallback si ../img/ n'est pas disponible (jeu lancé hors du hub) */
+/* Fallback si ../img/ n'est pas disponible */
 .settings-fallback {
     font-size: 36px;
     line-height: 45px;
@@ -122,15 +122,15 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 .close-btn:hover { box-shadow: 0 0 20px #00e5ff; transform: scale(1.05); }
 
-/* Interface du Jeu & Scores */
+/* --- Interface du Jeu & Scores --- */
 #game-ui { 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    width: 600px; 
-    max-width: 80vw; 
-    margin-top: 15px; 
-    margin-bottom: 25px; 
+    width: 525px; /* Aligné sur la nouvelle largeur du jeu */
+    max-width: 90vw; 
+    margin-top: 4vh; /* Marge flexible au lieu de pixels fixes */
+    margin-bottom: 20px; 
     z-index: 10; 
     text-shadow: 0 0 10px #000; 
 }
@@ -162,12 +162,14 @@ h1 {
 
 .score-bump { transform: scale(1.4); color: #fff; }
 
+/* --- LE SEAU (Zone de jeu) --- */
 #game-container {
     position: relative;
-    width: 600px;
-    max-width: 80vw; 
-    max-height: 70vh; /* 🔥 NOUVEAU : Le jeu ne dépassera jamais 70% de la hauteur de l'écran */
-    aspect-ratio: 3 / 4; /* Garde tes proportions parfaites */
+    width: 525px;
+    height: 700px;
+    max-width: 90vw; 
+    max-height: 75vh; /* S'assure que ça rentre sur les petits écrans d'ordinateur portable */
+    aspect-ratio: 3 / 4;
     
     background-color: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(4px);
@@ -176,8 +178,6 @@ h1 {
     
     overflow: visible; 
     transition: background-color 0.5s ease;
-
-    margin: 0 auto; 
 }
 
 body.dark-mode #game-container {
@@ -192,10 +192,10 @@ body.dark-mode #game-container {
     z-index: 1;
 }
 
-/* 🔥 LE DESIGN DU CADRE (ÉLARGI SUR LES CÔTÉS ET REMONTÉ À 52%) 🔥 */
+/* 🔥 LE DESIGN DU CADRE (Réajusté) 🔥 */
 #game-frame {
     position: absolute !important;
-    top: 52% !important; 
+    top: 50% !important; 
     left: 50% !important;
     
     width: 118% !important; 
@@ -210,7 +210,7 @@ body.dark-mode #game-container {
     filter: drop-shadow(0 0 15px rgba(0,0,0,0.9)); 
 }
 
-/* Effets Visuels (Particules et Textes) */
+/* --- Effets Visuels (Particules et Textes) OPTIMISÉS --- */
 #effects-container {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; overflow: hidden; z-index: 10;
@@ -218,21 +218,24 @@ body.dark-mode #game-container {
 .floating-text {
     position: absolute; font-weight: bold; font-size: 26px;
     text-shadow: 0 0 5px rgba(0,0,0,1); animation: floatUp 0.8s ease-out forwards;
+    will-change: transform, opacity; /* Optimisation GPU */
 }
 .particle {
     position: absolute; border-radius: 50%; animation: splash 0.5s ease-out forwards;
+    will-change: transform, opacity; /* Optimisation GPU */
 }
 @keyframes floatUp {
-    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-    50% { transform: translate(-50%, -100%) scale(1.2); opacity: 1; }
-    100% { transform: translate(-50%, -150%) scale(1); opacity: 0; }
+    /* translate3d force l'utilisation de la carte graphique, évitant les lags */
+    0% { transform: translate3d(-50%, -50%, 0) scale(0.5); opacity: 1; }
+    50% { transform: translate3d(-50%, -100%, 0) scale(1.2); opacity: 1; }
+    100% { transform: translate3d(-50%, -150%, 0) scale(1); opacity: 0; }
 }
 @keyframes splash {
-    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    0% { transform: translate3d(-50%, -50%, 0) scale(1); opacity: 1; }
+    100% { transform: translate3d(var(--tx), var(--ty), 0) scale(0); opacity: 0; }
 }
 
-/* Game Over */
+/* --- Game Over --- */
 #game-over {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; text-align: center;
@@ -248,27 +251,20 @@ body.dark-mode #game-container {
 
 /* --- ADAPTATION MOBILE ET GROS ZOOM --- */
 @media (max-width: 800px) {
-    /* On pousse les scores vers le bas pour ne pas toucher les boutons */
     #game-ui {
         margin-top: 75px; 
         width: 90vw;
     }
-    
-    /* On réduit un peu la taille des textes pour que tout rentre */
-    h1 { 
-        font-size: 28px; 
-    }
-    .score-container { 
-        font-size: 20px; 
-        width: auto; 
-    }
-    .best-score-container { 
-        font-size: 16px; 
-        width: auto; 
-    }
+    h1 { font-size: 28px; }
+    .score-container { font-size: 20px; width: auto; }
+    .best-score-container { font-size: 16px; width: auto; }
 
-    /* On remonte un poil le cadre pour compenser la marge du haut */
     #game-frame {
         top: 50% !important;
     }
+}
+
+/* --- OPTIMISATION BATTERIE / PERFORMANCES --- */
+@media (prefers-reduced-motion: reduce) {
+    .bg-video-main { display: none !important; }
 }
