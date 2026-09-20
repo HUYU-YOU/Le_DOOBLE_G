@@ -19,7 +19,7 @@
     <div id="game-container" class="size-wide">
         
         <!-- BOUTONS DANS LE CONTAINER -->
-        <a href="../index.html" class="hub-link-wrapper" onmouseenter="hoverHub()" onmouseleave="unhoverHub()">
+        <a href="../index.html" class="hub-link-wrapper" onmouseenter="hoverHub()" onmouseleave="unhoverHub()" title="Retour au Hub" id="hub-link-title">
             <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-btn-img" class="hub-btn">
         </a>
         
@@ -30,15 +30,15 @@
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         
         <div id="hud" style="display: none;">
-            <div class="player-hud" id="h1"><div style="font-weight:bold" id="n1">J1</div><div class="percent" id="p1-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p1-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p1-super"></div></div></div>
-            <div class="player-hud" id="h2"><div style="font-weight:bold" id="n2">J2</div><div class="percent" id="p2-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p2-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p2-super"></div></div></div>
-            <div class="player-hud" id="h3"><div style="font-weight:bold" id="n3">J3</div><div class="percent" id="p3-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p3-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p3-super"></div></div></div>
-            <div class="player-hud" id="h4"><div style="font-weight:bold" id="n4">J4</div><div class="percent" id="p4-pct">0%</div><div style="font-size:0.7em">Vies: <span id="p4-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p4-super"></div></div></div>
+            <div class="player-hud" id="h1"><div style="font-weight:bold" id="n1">J1</div><div class="percent" id="p1-pct">0%</div><div style="font-size:0.7em"><span class="txt-lives">Vies:</span> <span id="p1-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p1-super"></div></div></div>
+            <div class="player-hud" id="h2"><div style="font-weight:bold" id="n2">J2</div><div class="percent" id="p2-pct">0%</div><div style="font-size:0.7em"><span class="txt-lives">Vies:</span> <span id="p2-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p2-super"></div></div></div>
+            <div class="player-hud" id="h3"><div style="font-weight:bold" id="n3">J3</div><div class="percent" id="p3-pct">0%</div><div style="font-size:0.7em"><span class="txt-lives">Vies:</span> <span id="p3-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p3-super"></div></div></div>
+            <div class="player-hud" id="h4"><div style="font-weight:bold" id="n4">J4</div><div class="percent" id="p4-pct">0%</div><div style="font-size:0.7em"><span class="txt-lives">Vies:</span> <span id="p4-l">3</span></div><div class="super-bar-container"><div class="super-bar" id="p4-super"></div></div></div>
         </div>
 
         <!-- MENU PRINCIPAL -->
         <div class="overlay" id="main-menu">
-            <div class="menu-title">CHOOSE YOUR BATTLE</div>
+            <div class="menu-title" id="txt-choose-battle">CHOOSE YOUR BATTLE</div>
             <button class="btn-main" id="btn-local-mode" onclick="autoFullscreen(); openMenu('local');">🎮 Mode Local (1v1 ou IA)</button>
             
             <hr id="menu-separator" style="width: 60%; border: 1px solid rgba(255,255,255,0.1); margin: 25px 0;">
@@ -64,19 +64,19 @@
             </div>
             
             <div id="map-select-container" style="display: none;">
-                <div class="menu-title" style="font-size: 1.2em; margin-top:10px;">Choix de l'Arène</div>
+                <div class="menu-title" id="txt-map-choice" style="font-size: 1.2em; margin-top:10px;">Choix de l'Arène</div>
                 <div class="selection-grid">
-                    <div class="card map-card" onclick="chooseMap(0, this)"><img src="img/map1.png" alt="Map 1">Arène Royale</div>
-                    <div class="card map-card" onclick="chooseMap(1, this)"><img src="img/map2.png" alt="Map 2">Ciel Brisé</div>
-                    <div class="card map-card" onclick="chooseMap(2, this)"><img src="img/map3.png" alt="Map 3">Le Gouffre</div>
+                    <div class="card map-card" onclick="chooseMap(0, this)"><img src="img/map1.png" alt="Map 1"><span id="txt-map-1">Arène Royale</span></div>
+                    <div class="card map-card" onclick="chooseMap(1, this)"><img src="img/map2.png" alt="Map 2"><span id="txt-map-2">Ciel Brisé</span></div>
+                    <div class="card map-card" onclick="chooseMap(2, this)"><img src="img/map3.png" alt="Map 3"><span id="txt-map-3">Le Gouffre</span></div>
                 </div>
             </div>
             
             <button class="btn-main" id="start-local-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startLocalGame()">FIGHT !</button>
             
             <div>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border: none; box-shadow: none;" onclick="location.reload()">Retour</button>
+                <button class="btn-main" id="btn-show-controls-1" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
+                <button class="btn-main" id="btn-back-1" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border: none; box-shadow: none;" onclick="location.reload()">Retour</button>
             </div>
         </div>
 
@@ -84,7 +84,7 @@
         <div class="overlay" id="network-menu" style="display: none;">
             <h2 id="net-title" style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Terminal Réseau</h2>
             <div style="margin-bottom: 20px;">
-                <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;">Ton Combattant : <span id="net-char-name" style="color:var(--p1);">Slime</span></div>
+                <div class="menu-title" style="font-size: 1.2em; margin-bottom: 10px;"><span id="txt-your-fighter">Ton Combattant : </span><span id="net-char-name" style="color:var(--p1);">Slime</span></div>
                 <div id="net-char-grid">
                     <div class="card char-card" onclick="selectNetChar('ninja', this)"><img src="img/NINJA.png"><video src="img/NINJA.mp4" loop muted playsinline></video><b>Ninja</b></div>
                         <div class="card char-card" onclick="selectNetChar('gunner', this)"><img src="img/GUNNER.png"><video src="img/GUNNER.mp4" loop muted playsinline></video><b>Gunner</b></div>
@@ -94,23 +94,23 @@
                         <div class="card char-card" onclick="selectNetChar('pathkiller', this)"><img src="img/PATHKILLER.png"><video src="img/PATHKILLER.mp4" loop muted playsinline></video><b>Pathkiller</b></div>
                 </div>
             </div>
-            <p>ID de ta partie : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
+            <p><span id="txt-game-id">ID de ta partie : </span><span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Création...</span></p>
             <button class="btn-main" id="host-btn" onclick="hostGame()">Créer (Héberger)</button>
             <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="autoFullscreen(); startNetworkGameHost()">Lancer le combat !</button>
-            <p style="margin: 10px 0; color: #888;">OU</p>
+            <p id="txt-or" style="margin: 10px 0; color: #888;">OU</p>
             <input type="text" id="join-id" placeholder="Coller l'ID de l'Hôte">
             <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
             <p id="status-text" style="color: #aaa; margin-top: 10px; font-weight: bold;"></p>
             
             <div>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
-                <button class="btn-main" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border:none; box-shadow:none;" onclick="location.reload()">Retour</button>
+                <button class="btn-main" id="btn-show-controls-2" style="font-size:0.9em; margin-top:15px; background: transparent; border: 1px solid var(--p1); color: var(--p1); box-shadow: none;" onclick="document.getElementById('controls-modal').style.display='flex'">Afficher les Touches</button>
+                <button class="btn-main" id="btn-back-2" style="font-size:0.9em; margin-top:15px; background:#333; color:#fff; border:none; box-shadow:none;" onclick="location.reload()">Retour</button>
             </div>
         </div>
 
         <div class="overlay" id="controls-modal" style="display: none; z-index: 100;">
-            <div class="menu-title" style="color: var(--p1);">Guide de Combat</div>
-            <div class="controls-info" style="font-size: 1em; max-height: 350px; overflow-y: auto;">
+            <div class="menu-title" id="controls-title" style="color: var(--p1);">Guide de Combat</div>
+            <div class="controls-info" id="controls-content" style="font-size: 1em; max-height: 350px; overflow-y: auto;">
                 <b style="color: var(--p1);">Déplacement :</b> A / D (Clavier) ou Flèches<br>
                 <b style="color: var(--p1);">Sauter :</b> W / Espace (Le Ninja a 3 sauts, Slime a 5 sauts)<br>
                 <b style="color: var(--p1);">Bloquer :</b> MAJ (Shift)<br>
@@ -131,7 +131,7 @@
                 - <b>Mage :</b> Frappe au corps-à-corps avec son livre magique.<br>
                 - <b>Pathkiller :</b> Frappe Lourde au corps-à-corps.<br>
             </div>
-            <button class="btn-main" style="margin-top:20px; background: var(--p2); color: #fff; border-color: var(--p2);" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
+            <button class="btn-main" id="btn-close-controls" style="margin-top:20px; background: var(--p2); color: #fff; border-color: var(--p2);" onclick="document.getElementById('controls-modal').style.display='none'">Fermer</button>
         </div>
 
         <div class="overlay" id="game-over-overlay" style="display: none;">
@@ -143,10 +143,18 @@
     <!-- MODAL PARAMETRES -->
     <div id="settings-modal">
         <div class="settings-content">
-            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <h2 id="settings-title" style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
             
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <span id="txt-lang-setting">Langue / Language 🌍</span>
+                <div class="size-options">
+                    <button id="btn-lang-fr" class="btn-size active" onclick="setLanguage('fr')">FR</button>
+                    <button id="btn-lang-en" class="btn-size" onclick="setLanguage('en')">EN</button>
+                </div>
+            </div>
+
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
-                <span>Format de l'Écran 🖥️</span>
+                <span id="txt-screen-format">Format de l'Écran 🖥️</span>
                 <div class="size-options">
                     <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
                     <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
@@ -154,7 +162,7 @@
                 </div>
             </div>
             
-            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+            <button id="btn-close-settings" onclick="toggleSettings()" class="close-btn">Fermer</button>
         </div>
     </div>
 
