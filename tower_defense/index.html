@@ -9,8 +9,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <a href="../index.html" class="hub-link-top">⬅ Retour au Hub</a>
     
+    <!-- BOUTON RETOUR HUB (Image) -->
+    <a href="../index.html" class="hub-link-top"
+       onmouseenter="document.getElementById('hub-img').src='../img/returbhub.png'"
+       onmouseleave="document.getElementById('hub-img').src='../img/retourhub.png'">
+        <img src="../img/retourhub.png" id="hub-img" alt="Retour au Hub">
+    </a>
+    
+    <!-- BOUTON PARAMÈTRES (Animation) -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <div class="orbit-container"><div class="orbit-slime"></div></div>
         <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
@@ -34,7 +41,14 @@
     
     <h1>Protocol Defense: Endless</h1>
     
-    <div id="game-container">
+    <div id="game-container" style="position: relative;">
+        <!-- ÉCRAN D'ACCUEIL -->
+        <div id="start-screen">
+            <h2 class="slime-title">PROTOCOL DEFENSE</h2>
+            <p style="color: #aaa; margin-bottom: 20px;">Initialisez la matrice de défense.</p>
+            <button class="action-btn slime-btn" onclick="startGame()">Démarrer le Système</button>
+        </div>
+
         <!-- Canvas dimensions de base -->
         <canvas id="gameCanvas" width="600" height="450"></canvas>
         <div id="ui-panel">
@@ -75,6 +89,7 @@
             <div id="upgrade-panel">
                 <div style="font-weight:bold; color: #fff;" id="tower-name-display">Noeud Sélectionné</div>
                 <div id="tower-stats" style="font-size:12px; color: #9ca3af; min-height: 55px;"></div>
+                <button class="action-btn" id="btn-target" onclick="cycleTargeting()" style="background:#8b5cf6; color:white;">Cible: Premier</button>
                 <button class="action-btn" id="btn-upgrade" onclick="upgradeSelectedTower()">Optimiser</button>
                 <button class="action-btn" style="background:transparent; border: 1px solid var(--danger); color:var(--danger);" onclick="sellSelectedTower()">Vendre</button>
             </div>
