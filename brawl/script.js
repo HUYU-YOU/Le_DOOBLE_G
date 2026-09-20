@@ -1,3 +1,159 @@
+// --- GESTION DES LANGUES ---
+let currentLang = 'fr';
+const translations = {
+    fr: {
+        hubTitle: "Retour au Hub",
+        localMode: "🎮 Mode Local (1v1 ou IA)",
+        multiTitle: "Arènes Multijoueurs",
+        net1: "🌐 Réseau (1 VS 1)",
+        net2: "🛡️ Réseau (2 VS 2 Équipes)",
+        net4: "⚔️ Réseau (4 Chacun Pour Soi)",
+        botHuman: "👤 Contrôlé par : Humain",
+        botAI: "🤖 IA (Bot)",
+        mapChoice: "Choix de l'Arène",
+        map1: "Arène Royale", map2: "Ciel Brisé", map3: "Le Gouffre",
+        fight: "FIGHT !",
+        showControls: "Afficher les Touches",
+        back: "Retour",
+        netTerminal: "Terminal Réseau",
+        yourFighter: "Ton Combattant : ",
+        gameId: "ID de ta partie : ",
+        hostCreate: "Créer (Héberger)",
+        startCombat: "Lancer le combat !",
+        txtOr: "OU",
+        joinPlaceholder: "Coller l'ID de l'Hôte",
+        join: "Rejoindre",
+        controlsGuide: "Guide de Combat",
+        close: "Fermer",
+        settings: "Paramètres",
+        screenFormat: "Format de l'Écran 🖥️",
+        sizeSmall: "Petit", sizeWide: "Plein Page", sizeFull: "Plein Écran",
+        lives: "Vies:",
+        restartMenu: "Retour au menu de sélection",
+        controlsContent: `
+            <b style="color: var(--p1);">Déplacement :</b> A / D (Clavier) ou Flèches<br>
+            <b style="color: var(--p1);">Sauter :</b> W / Espace (Le Ninja a 3 sauts, Slime a 5 sauts)<br>
+            <b style="color: var(--p1);">Bloquer :</b> MAJ (Shift)<br>
+            <b style="color: var(--p1);">Attaque Ultime :</b> R (Nécessite la jauge jaune pleine)<br>
+            <hr style="border-color: #333; margin: 10px 0;">
+            <b style="color: var(--p2);">Clic Gauche (Attaque Principale) :</b><br>
+            - <b>Slime :</b> Roulade de destruction (fonce en avant).<br>
+            - <b>Ninja :</b> Coup d'épée (mêlée instantanée).<br>
+            - <b>Brute :</b> Coup de poing (mêlée).<br>
+            - <b>Gunner :</b> Maintiens enfoncé pour charger un tir perforant.<br>
+            - <b>Mage :</b> Lance une boule de feu (5 tirs max avant recharge).<br>
+            - <b>Pathkiller :</b> Envoie son Grappin pour attirer l'ennemi.<br><br>
+            <b style="color: var(--p2);">Clic Droit (Capacité Spéciale) :</b><br>
+            - <b>Slime :</b> Attaque basique & Attaque Plongeante (viser en bas).<br>
+            - <b>Ninja :</b> Maintiens pour charger un Shuriken géant.<br>
+            - <b>Brute :</b> Maintiens pour charger et lancer une Corde !<br>
+            - <b>Gunner :</b> Dépose une mine au sol (3 mines actives max).<br>
+            - <b>Mage :</b> Frappe au corps-à-corps avec son livre magique.<br>
+            - <b>Pathkiller :</b> Frappe Lourde au corps-à-corps.<br>`
+    },
+    en: {
+        hubTitle: "Back to Hub",
+        localMode: "🎮 Local Mode (1v1 or AI)",
+        multiTitle: "Multiplayer Arenas",
+        net1: "🌐 Network (1 VS 1)",
+        net2: "🛡️ Network (2 VS 2 Teams)",
+        net4: "⚔️ Network (4 Free For All)",
+        botHuman: "👤 Controlled by: Human",
+        botAI: "🤖 AI (Bot)",
+        mapChoice: "Arena Choice",
+        map1: "Royal Arena", map2: "Shattered Sky", map3: "The Abyss",
+        fight: "FIGHT !",
+        showControls: "Show Controls",
+        back: "Back",
+        netTerminal: "Network Terminal",
+        yourFighter: "Your Fighter: ",
+        gameId: "Your Game ID: ",
+        hostCreate: "Create (Host)",
+        startCombat: "Start Battle!",
+        txtOr: "OR",
+        joinPlaceholder: "Paste Host ID here",
+        join: "Join",
+        controlsGuide: "Combat Guide",
+        close: "Close",
+        settings: "Settings",
+        screenFormat: "Screen Format 🖥️",
+        sizeSmall: "Small", sizeWide: "Wide", sizeFull: "Fullscreen",
+        lives: "Lives:",
+        restartMenu: "Back to Character Select",
+        controlsContent: `
+            <b style="color: var(--p1);">Movement :</b> A / D (Keyboard) or Arrows<br>
+            <b style="color: var(--p1);">Jump :</b> W / Space (Ninja has 3 jumps, Slime has 5)<br>
+            <b style="color: var(--p1);">Block :</b> SHIFT<br>
+            <b style="color: var(--p1);">Ultimate :</b> R (Requires full yellow bar)<br>
+            <hr style="border-color: #333; margin: 10px 0;">
+            <b style="color: var(--p2);">Left Click (Main Attack) :</b><br>
+            - <b>Slime :</b> Destruction Roll (dashes forward).<br>
+            - <b>Ninja :</b> Sword strike (instant melee).<br>
+            - <b>Brute :</b> Heavy punch (melee).<br>
+            - <b>Gunner :</b> Hold to charge a piercing shot.<br>
+            - <b>Mage :</b> Cast a fireball (5 shots max before reload).<br>
+            - <b>Pathkiller :</b> Throw Grapple to pull enemies.<br><br>
+            <b style="color: var(--p2);">Right Click (Special Ability) :</b><br>
+            - <b>Slime :</b> Basic attack & Plunging attack (aim down).<br>
+            - <b>Ninja :</b> Hold to charge a Giant Shuriken.<br>
+            - <b>Brute :</b> Hold to charge and throw a Rope!<br>
+            - <b>Gunner :</b> Place a landmine (3 active mines max).<br>
+            - <b>Mage :</b> Melee strike with magic book.<br>
+            - <b>Pathkiller :</b> Heavy Melee Strike.<br>`
+    }
+};
+
+function setLanguage(lang) {
+    currentLang = lang;
+    const t = translations[lang];
+    
+    // Boutons actifs
+    document.getElementById('btn-lang-fr').classList.toggle('active', lang === 'fr');
+    document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
+    
+    // Textes HUD & Menu
+    document.getElementById('hub-link-title').title = t.hubTitle;
+    document.getElementById('btn-local-mode').innerText = t.localMode;
+    document.getElementById('multi-title').innerText = t.multiTitle;
+    document.getElementById('btn-net-1').innerText = t.net1;
+    document.getElementById('btn-net-2').innerText = t.net2;
+    document.getElementById('btn-net-4').innerText = t.net4;
+    document.getElementById('bot-toggle-btn').innerText = currentIsBot ? t.botAI : t.botHuman;
+    document.getElementById('txt-map-choice').innerText = t.mapChoice;
+    document.getElementById('txt-map-1').innerText = t.map1;
+    document.getElementById('txt-map-2').innerText = t.map2;
+    document.getElementById('txt-map-3').innerText = t.map3;
+    document.getElementById('start-local-btn').innerText = t.fight;
+    
+    document.getElementById('btn-show-controls-1').innerText = t.showControls;
+    document.getElementById('btn-show-controls-2').innerText = t.showControls;
+    document.getElementById('btn-back-1').innerText = t.back;
+    document.getElementById('btn-back-2').innerText = t.back;
+    
+    document.getElementById('net-title').innerText = t.netTerminal;
+    document.getElementById('txt-your-fighter').innerText = t.yourFighter;
+    document.getElementById('txt-game-id').innerText = t.gameId;
+    document.getElementById('host-btn').innerText = t.hostCreate;
+    document.getElementById('start-net-btn').innerText = t.startCombat;
+    document.getElementById('txt-or').innerText = t.txtOr;
+    document.getElementById('join-id').placeholder = t.joinPlaceholder;
+    document.getElementById('join-btn').innerText = t.join;
+    
+    document.getElementById('controls-title').innerText = t.controlsGuide;
+    document.getElementById('controls-content').innerHTML = t.controlsContent;
+    document.getElementById('btn-close-controls').innerText = t.close;
+    
+    document.getElementById('settings-title').innerText = t.settings;
+    document.getElementById('txt-screen-format').innerText = t.screenFormat;
+    document.getElementById('btn-sz-classic').innerText = t.sizeSmall;
+    document.getElementById('btn-sz-wide').innerText = t.sizeWide;
+    document.getElementById('btn-sz-full').innerText = t.sizeFull;
+    document.getElementById('btn-close-settings').innerText = t.close;
+    document.getElementById('btn-restart').innerText = t.restartMenu;
+    
+    document.querySelectorAll('.txt-lives').forEach(el => el.innerText = t.lives);
+}
+
 // --- URL ET MODES DE JEU ---
 const params = new URLSearchParams(window.location.search);
 const forceMode = params.get('mode');
@@ -59,7 +215,7 @@ function toggleSettings() {
 // --- GESTION DE LA TAILLE DU JEU ---
 function setGameSize(size) {
     const container = document.getElementById('game-container');
-    const btns = document.querySelectorAll('.btn-size');
+    const btns = document.querySelectorAll('.btn-size:not(#btn-lang-fr):not(#btn-lang-en)');
     btns.forEach(b => b.classList.remove('active'));
 
     container.classList.remove('size-classic', 'size-wide', 'size-full');
@@ -501,8 +657,12 @@ function openMenu(type) {
 function prepareNetwork(mode) {
     netMode = mode; maxNetPlayers = mode === '1v1' ? 2 : 4; gameMode = 'net_' + mode;
     document.getElementById('main-menu').style.display = 'none'; document.getElementById('network-menu').style.display = 'flex';
-    let modeTitle = mode === '1v1' ? "1 VS 1" : (mode === '2v2' ? "2 VS 2 Équipes" : "4 Joueurs FFA");
-    document.getElementById('net-title').innerText = `Réseau : ${modeTitle}`; document.getElementById('my-id').innerText = "Création...";
+    
+    // Traduction dynamique du titre de mode
+    const t = translations[currentLang];
+    let modeTitle = mode === '1v1' ? "1 VS 1" : (mode === '2v2' ? (currentLang === 'fr' ? "2 VS 2 Équipes" : "2 VS 2 Teams") : (currentLang === 'fr' ? "4 Chacun Pour Soi" : "4 Free For All"));
+    
+    document.getElementById('net-title').innerText = `${t.netTerminal} : ${modeTitle}`; document.getElementById('my-id').innerText = "...";
     let code = 'BRAWL' + Math.floor(1000 + Math.random() * 9000); if(peerNet) peerNet.destroy();
     peerNet = new Peer(code); peerNet.on('open', id => { document.getElementById('my-id').innerText = id; }); playBGM('select');
 }
@@ -516,8 +676,8 @@ function updateHUD() {
 
 function checkGameEnd() {
     let alive = players.filter(pl => pl.lives > 0); let gameOver = false; let txt = ""; let winColor = "#fff";
-    if (gameMode === 'net_2v2') { let team1Alive = players.some(p => (p.id === 1 || p.id === 3) && p.lives > 0); let team2Alive = players.some(p => (p.id === 2 || p.id === 4) && p.lives > 0); if (!team1Alive || !team2Alive) { gameOver = true; if (!team1Alive && !team2Alive) { txt = "MATCH NUL !"; } else if (team1Alive) { txt = "ÉQUIPE 1 GAGNE !"; winColor = players[0].color; } else { txt = "ÉQUIPE 2 GAGNE !"; winColor = players[1].color; } } } 
-    else { if (alive.length <= 1) { gameOver = true; txt = alive.length === 1 ? `JOUEUR ${alive[0].id} GAGNE !` : "MATCH NUL !"; if (alive.length === 1) winColor = alive[0].color; } }
+    if (gameMode === 'net_2v2') { let team1Alive = players.some(p => (p.id === 1 || p.id === 3) && p.lives > 0); let team2Alive = players.some(p => (p.id === 2 || p.id === 4) && p.lives > 0); if (!team1Alive || !team2Alive) { gameOver = true; if (!team1Alive && !team2Alive) { txt = currentLang === 'fr' ? "MATCH NUL !" : "DRAW !"; } else if (team1Alive) { txt = currentLang === 'fr' ? "ÉQUIPE 1 GAGNE !" : "TEAM 1 WINS !"; winColor = players[0].color; } else { txt = currentLang === 'fr' ? "ÉQUIPE 2 GAGNE !" : "TEAM 2 WINS !"; winColor = players[1].color; } } } 
+    else { if (alive.length <= 1) { gameOver = true; txt = alive.length === 1 ? (currentLang === 'fr' ? `JOUEUR ${alive[0].id} GAGNE !` : `PLAYER ${alive[0].id} WINS !`) : (currentLang === 'fr' ? "MATCH NUL !" : "DRAW !"); if (alive.length === 1) winColor = alive[0].color; } }
     if (gameOver) { gameActive = false; document.getElementById('game-over-overlay').style.display = 'flex'; document.getElementById('winner-text').innerText = txt; document.getElementById('winner-text').style.color = winColor; }
 }
 
@@ -525,22 +685,42 @@ function handleRestart() {
     if (gameMode === 'local') {
         document.getElementById('game-over-overlay').style.display = 'none'; document.getElementById('hud').style.display = 'none'; document.getElementById('local-menu').style.display = 'flex';
         document.getElementById('char-select').style.display = 'grid'; document.getElementById('bot-toggle-btn').style.display = 'inline-block'; document.getElementById('map-select-container').style.display = 'none'; document.getElementById('start-local-btn').style.display = 'none';
-        document.getElementById('instruction-title').innerText = "Select player 1"; locSelections = []; gameActive = false; document.getElementById('game-container').style.backgroundImage = 'none'; playBGM('select');
+        document.getElementById('instruction-title').innerText = currentLang === 'fr' ? "Sélection Joueur 1" : "Select player 1"; locSelections = []; gameActive = false; document.getElementById('game-container').style.backgroundImage = 'none'; playBGM('select');
     } else if (isHost) {
         document.getElementById('game-over-overlay').style.display = 'none'; document.getElementById('hud').style.display = 'none'; document.getElementById('network-menu').style.display = 'flex'; document.getElementById('start-net-btn').style.display = 'inline-block'; document.getElementById('host-btn').style.display = 'none';
         gameActive = false; playBGM('select'); if(connsNet.length > 0) connsNet.forEach(c => c.send({type: 'return_to_lobby'}));
-    } else { alert("Seul l'Hôte de la partie peut décider de relancer !"); }
+    } else { alert(currentLang === 'fr' ? "Seul l'Hôte de la partie peut décider de relancer !" : "Only the Host can restart the game!"); }
 }
 
 function drawMapBackground() { let mapImg = imgs[`map${currentMapIdx + 1}`]; if (mapImg && mapImg.complete && mapImg.naturalWidth !== 0) ctx.drawImage(mapImg, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT); else { ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT); } }
 
 let currentIsBot = false;
-function toggleBot() { currentIsBot = !currentIsBot; let btn = document.getElementById('bot-toggle-btn'); if(currentIsBot) { btn.innerHTML = "🤖 IA (Bot)"; btn.style.background = "#ff007f"; btn.style.borderColor = "#ff007f"; } else { btn.innerHTML = "👤 Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333"; } }
+function toggleBot() { 
+    currentIsBot = !currentIsBot; 
+    let btn = document.getElementById('bot-toggle-btn'); 
+    const t = translations[currentLang];
+    if(currentIsBot) { 
+        btn.innerHTML = t.botAI; 
+        btn.style.background = "#ff007f"; 
+        btn.style.borderColor = "#ff007f"; 
+    } else { 
+        btn.innerHTML = t.botHuman; 
+        btn.style.background = "#555"; 
+        btn.style.borderColor = "#333"; 
+    } 
+}
 
 let locSelections = [], locMapChoice = 0;
 function chooseChar(type) { 
-    locSelections.push({ char: type, bot: currentIsBot }); playSound('powerup'); currentIsBot = false; let btn = document.getElementById('bot-toggle-btn'); btn.innerHTML = "👤 Contrôlé par : Humain"; btn.style.background = "#555"; btn.style.borderColor = "#333";
-    if(locSelections.length >= 2) { document.getElementById('instruction-title').innerText = "Choisissez la map"; document.getElementById('char-select').style.display = 'none'; document.getElementById('bot-toggle-btn').style.display = 'none'; document.getElementById('map-select-container').style.display = 'block'; } else { document.getElementById('instruction-title').innerText = `Sélection Joueur ${locSelections.length + 1}`; }
+    locSelections.push({ char: type, bot: currentIsBot }); playSound('powerup'); currentIsBot = false; let btn = document.getElementById('bot-toggle-btn'); 
+    
+    const t = translations[currentLang];
+    btn.innerHTML = t.botHuman; btn.style.background = "#555"; btn.style.borderColor = "#333";
+    if(locSelections.length >= 2) { 
+        document.getElementById('instruction-title').innerText = t.mapChoice; document.getElementById('char-select').style.display = 'none'; document.getElementById('bot-toggle-btn').style.display = 'none'; document.getElementById('map-select-container').style.display = 'block'; 
+    } else { 
+        document.getElementById('instruction-title').innerText = currentLang === 'fr' ? `Sélection Joueur ${locSelections.length + 1}` : `Player ${locSelections.length + 1} Select`; 
+    }
 }
 
 function chooseMap(idx, element) { 
@@ -577,28 +757,28 @@ let peerNet = null; let connsNet = []; let isHost = false; let myPlayerId = 1; l
 function selectNetChar(charName, element) { netSelectedChar = charName; playSound('powerup'); const names = {ninja: 'Ninja', tank: 'Brute', gunner: 'Gunner', mage: 'Mage', pathkiller: 'Pathkiller', slime: 'Slime'}; document.getElementById('net-char-name').innerText = names[charName]; document.querySelectorAll('#net-char-grid .card').forEach(c => c.classList.remove('selected')); element.classList.add('selected'); }
 
 function hostGame() { 
-    let id = document.getElementById('my-id').innerText; if(id === "Création...") return; navigator.clipboard.writeText(id).catch(e => console.log(e)); document.getElementById('status-text').innerText = `ID COPIÉ ! Attente (${connsNet.length + 1}/${maxNetPlayers})...`; 
+    let id = document.getElementById('my-id').innerText; if(id === "...") return; navigator.clipboard.writeText(id).catch(e => console.log(e)); document.getElementById('status-text').innerText = currentLang === 'fr' ? `ID COPIÉ ! Attente (${connsNet.length + 1}/${maxNetPlayers})...` : `ID COPIED ! Waiting (${connsNet.length + 1}/${maxNetPlayers})...`; 
     isHost = true; connsNet = [];
     peerNet.on('connection', c => { 
         if (connsNet.length >= maxNetPlayers - 1) return;
         c.on('data', data => {
-            if (data.type === 'join') { let newId = connsNet.length + 2; c.peerId = newId; netPlayersData.push({id: newId, char: data.char}); connsNet.push(c); c.send({type: 'welcome', id: newId}); document.getElementById('status-text').innerText = `Connectés : ${connsNet.length + 1}/${maxNetPlayers}`; if (connsNet.length === maxNetPlayers - 1) { document.getElementById('status-text').innerText = "Tous les joueurs sont là !"; document.getElementById('host-btn').style.display = 'none'; document.getElementById('start-net-btn').style.display = 'inline-block'; } }
+            if (data.type === 'join') { let newId = connsNet.length + 2; c.peerId = newId; netPlayersData.push({id: newId, char: data.char}); connsNet.push(c); c.send({type: 'welcome', id: newId}); document.getElementById('status-text').innerText = currentLang === 'fr' ? `Connectés : ${connsNet.length + 1}/${maxNetPlayers}` : `Connected: ${connsNet.length + 1}/${maxNetPlayers}`; if (connsNet.length === maxNetPlayers - 1) { document.getElementById('status-text').innerText = currentLang === 'fr' ? "Tous les joueurs sont là !" : "All players joined!"; document.getElementById('host-btn').style.display = 'none'; document.getElementById('start-net-btn').style.display = 'inline-block'; } }
             if (data.type === 'inputs') { netKeys[c.peerId] = data.keys; }
         });
     }); 
 }
 
 function joinGame() { 
-    let id = document.getElementById('join-id').value.trim().toUpperCase(); if (!id) return; document.getElementById('status-text').innerText = "Connexion..."; 
+    let id = document.getElementById('join-id').value.trim().toUpperCase(); if (!id) return; document.getElementById('status-text').innerText = currentLang === 'fr' ? "Connexion..." : "Connecting..."; 
     if (peerNet) peerNet.destroy(); peerNet = new Peer();
     peerNet.on('open', () => {
         let c = peerNet.connect(id, { reliable: true });
         c.on('open', () => { c.send({type: 'join', char: netSelectedChar}); });
         c.on('data', data => {
-            if (data.type === 'welcome') { myPlayerId = data.id; document.getElementById('status-text').innerText = "Connecté! L'Hôte va lancer la partie..."; }
+            if (data.type === 'welcome') { myPlayerId = data.id; document.getElementById('status-text').innerText = currentLang === 'fr' ? "Connecté! L'Hôte va lancer la partie..." : "Connected! Host will start the game..."; }
             if (data.type === 'start') { autoFullscreen(); document.getElementById('network-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; gameActive = true; projectiles = []; particles = []; currentMapIdx = data.mapIdx || 0; if (currentMapIdx === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; } LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM; LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM; playBGM('battle', currentMapIdx); }
             if (data.type === 'state') { platforms = data.state.platforms; projectiles = data.state.projectiles; items = data.state.items; if (players.length !== data.state.players.length) { let tMap = { 'sumo': 'tank', 'ninja': 'ninja', 'gunner': 'gunner', 'mage': 'mage', 'pathkiller': 'pathkiller', 'slime': 'slime' }; players = data.state.players.map(p => new Player(p.id, p.x, tMap[p.skinKey])); players.forEach(p => { document.getElementById(`h${p.id}`).style.display = 'block'; document.getElementById(`n${p.id}`).innerText = `J${p.id}`; }); } data.state.players.forEach((pState, idx) => { Object.assign(players[idx], pState); }); drawClientGame(); updateHUD(); c.send({type: 'inputs', keys: getCtrl(myPlayerId)}); }
-            if (data.type === 'return_to_lobby') { document.getElementById('game-over-overlay').style.display = 'none'; document.getElementById('hud').style.display = 'none'; document.getElementById('network-menu').style.display = 'flex'; gameActive = false; document.getElementById('status-text').innerText = "L'Hôte va relancer..."; playBGM('select'); }
+            if (data.type === 'return_to_lobby') { document.getElementById('game-over-overlay').style.display = 'none'; document.getElementById('hud').style.display = 'none'; document.getElementById('network-menu').style.display = 'flex'; gameActive = false; document.getElementById('status-text').innerText = currentLang === 'fr' ? "L'Hôte va relancer..." : "Host is restarting..."; playBGM('select'); }
         });
     });
 }
