@@ -4,8 +4,10 @@ const settingsBtn = document.getElementById('btn-settings');
 setInterval(() => {
     currentSettingFrame++;
     if (currentSettingFrame > 5) currentSettingFrame = 1;
-    // On utilise img/ comme chemin !
-    settingsBtn.src = `img/settings${currentSettingFrame}.png`;
+    // On remet exactement ton chemin Le_DOOBLE_G pour l'animation
+    if (settingsBtn) {
+        settingsBtn.src = `Le_DOOBLE_G/img/settings${currentSettingFrame}.png`;
+    }
 }, 150);
 // ==========================================
 
