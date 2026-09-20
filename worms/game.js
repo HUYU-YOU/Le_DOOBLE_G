@@ -1,4 +1,3 @@
-// --- INITIALISATION & URL PARAMS ---
 const urlParams = new URLSearchParams(window.location.search);
 const forceMode = urlParams.get('mode');
 
@@ -9,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- GESTION DU PLEIN ECRAN ET PARAMETRES ---
 function autoFullscreen() {
     if (!document.getElementById('game-wrapper').classList.contains('size-full')) {
         setGameSize('wide');
@@ -34,19 +32,15 @@ function setGameSize(size) {
     } else if (size === 'full') {
         container.classList.add('size-full');
         document.getElementById('btn-sz-full').classList.add('active');
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(e => console.log(e));
-        }
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e));
     }
 }
 
 document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement && document.getElementById('game-wrapper').classList.contains('size-full')) {
-        setGameSize('wide');
-    }
+    if (!document.fullscreenElement && document.getElementById('game-wrapper').classList.contains('size-full')) setGameSize('wide');
 });
 
-// --- ANIMATION BOUTON SETTINGS ---
+// SETTINGS ANIMATION
 const settingsBtnImg = document.getElementById('settings-btn-img');
 const animFrames = ['../img/settings1.png', '../img/settings2.png', '../img/settings3.png', '../img/settings5.png'];
 let hoverInterval; let currentFrame = 0;
@@ -63,7 +57,7 @@ function startSettingsAnim() {
 
 function stopSettingsAnim() {
     clearInterval(hoverInterval); hoverInterval = null;
-    if (!settingsBtnImg.src.includes('settings4.png')) { settingsBtnImg.src = '../img/setting.png'; }
+    if (!settingsBtnImg.src.includes('settings4.png')) settingsBtnImg.src = '../img/setting.png';
 }
 
 function clickSettingsAnim() {
@@ -73,31 +67,22 @@ function clickSettingsAnim() {
     setTimeout(() => { settingsBtnImg.src = '../img/setting.png'; }, 300);
 }
 
-function toggleSettings() {
-    document.getElementById('settings-modal').classList.toggle('show');
-}
+function toggleSettings() { document.getElementById('settings-modal').classList.toggle('show'); }
 
-// --- MOTEUR DE JEU JAVASCRIPT ---
-const WIDTH = 800; 
-const HEIGHT = 600; 
-let WORLD_WIDTH = 2000; 
-let WORLD_HEIGHT = 600;
+const WIDTH = 800; const HEIGHT = 600; 
+let WORLD_WIDTH = 2000; let WORLD_HEIGHT = 600;
 const GRAVITY = 0.18; 
 
 let camera = { x: 0, y: 0, zoom: 1 };
-let mouseScreenX = WIDTH / 2; 
-let mouseScreenY = HEIGHT / 2;
+let mouseScreenX = WIDTH / 2; let mouseScreenY = HEIGHT / 2;
 let manualCameraControl = false; 
 
-// Variables pour les nouveaux Effets (Juice)
 let screenShake = 0;
 let globalWind = 0;
 
-// --- GESTION AUDIO (BGM & SFX) ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const bgmPlayer = new Audio();
-bgmPlayer.loop = true;
-bgmPlayer.volume = 0.25;
+bgmPlayer.loop = true; bgmPlayer.volume = 0.25;
 
 function forceAudioUnlock() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -115,9 +100,7 @@ function playBGM(mapId) {
     
     let playPromise = bgmPlayer.play();
     if (playPromise !== undefined) {
-        playPromise.catch(e => {
-            document.addEventListener('click', () => { bgmPlayer.play().catch(e=>{}); }, {once: true});
-        });
+        playPromise.catch(e => { document.addEventListener('click', () => { bgmPlayer.play().catch(e=>{}); }, {once: true}); });
     }
 }
 
@@ -170,7 +153,6 @@ let turnFrames = 480;
 let mapImage = new Image();
 let selectedMapId = 1;
 
-// --- GESTION DES ARMES ---
 function selectWeapon(wType, event) {
     if (event) { event.stopPropagation(); event.preventDefault(); }
     if (gameState !== 'playing') return;
@@ -208,7 +190,6 @@ function selectSlimeMap(id, el) {
     if (sprites['map' + id]) mapImage = sprites['map' + id];
 }
 
-// --- GESTION WEBRTC (PeerJS) ---
 let peer = null; let conn = null; let myPlayerId = 1;
 
 function showOnlineMenu() { document.getElementById('online-menu').classList.remove('hidden'); }
@@ -217,7 +198,6 @@ function hideOnlineMenu() {
     if (peer) { peer.destroy(); peer = null; }
     document.getElementById('conn-status').innerText = ""; 
     document.getElementById('lobby-code-display').innerText = "...";
-    
     if (forceMode === 'multi') window.location.href = '../index.html';
     else document.getElementById('main-menu').classList.remove('hidden');
 }
@@ -225,14 +205,14 @@ function hideOnlineMenu() {
 function hostGame() {
     if (peer) peer.destroy();
     let status = document.getElementById('conn-status'); 
-    status.style.color = "var(--sys)"; status.innerText = "Création du serveur local...";
+    status.style.color = "var(--sys)"; status.innerText = "Creating local server...";
     
     let code = 'SLM' + Math.floor(1000 + Math.random() * 9000);
     peer = new Peer(code);
     
     peer.on('open', (id) => { 
         document.getElementById('lobby-code-display').innerText = id; 
-        status.innerText = "En attente d'un adversaire..."; myPlayerId = 1; 
+        status.innerText = "Waiting for an opponent..."; myPlayerId = 1; 
     });
     
     peer.on('connection', (connection) => { 
@@ -240,41 +220,38 @@ function hostGame() {
         conn.on('open', () => { 
             conn.send({ type: 'map_sync', mapId: selectedMapId });
             setupConnection(); 
-            status.innerText = "Adversaire connecté ! Lancement..."; 
+            status.innerText = "Opponent connected! Launching..."; 
             setTimeout(() => startGame('online'), 1000); 
         }); 
     });
-    peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = "Erreur : " + err.type; });
+    peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = "Error: " + err.type; });
 }
 
 function joinGame() {
     let code = document.getElementById('join-code-input').value.trim().toUpperCase();
-    if(!code) return alert("Code invalide.");
+    if(!code) return alert("Invalid code.");
     if (peer) peer.destroy();
     
     let status = document.getElementById('conn-status'); 
-    status.style.color = "var(--p1)"; status.innerText = "Connexion...";
+    status.style.color = "var(--p1)"; status.innerText = "Connecting...";
     
     peer = new Peer();
     peer.on('open', () => {
         conn = peer.connect(code, { reliable: true });
         conn.on('open', () => { 
             setupConnection(); myPlayerId = 2; 
-            status.style.color = "var(--sys)"; status.innerText = "Connecté !"; 
+            status.style.color = "var(--sys)"; status.innerText = "Connected!"; 
             setTimeout(() => startGame('online'), 1000); 
         });
-        conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Échec de connexion."; });
+        conn.on('error', () => { status.style.color = "var(--p2)"; status.innerText = "Connection failed."; });
     });
-    peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = err.type === 'peer-unavailable' ? "Partie introuvable." : "Erreur : " + err.type; });
+    peer.on('error', (err) => { status.style.color = "var(--p2)"; status.innerText = err.type === 'peer-unavailable' ? "Game not found." : "Error: " + err.type; });
 }
 
 function setupConnection() {
     conn.on('data', (data) => {
         if (data.type === 'map_sync') selectSlimeMap(data.mapId, null);
-        if (data.type === 'weapon_sync') {
-            let w = worms.find(worm => worm.id === data.pid);
-            if (w) w.weapon = data.wType;
-        }
+        if (data.type === 'weapon_sync') { let w = worms.find(worm => worm.id === data.pid); if (w) w.weapon = data.wType; }
         if (data.type === 'sync' && gameState === 'playing') {
             let myTeam = myPlayerId === 1 ? 'A' : 'B';
             let enemy = worms.find(w => w.id === currentPlayer && w.team !== myTeam);
@@ -287,16 +264,14 @@ function setupConnection() {
         if (data.type === 'start_aim') turnFrames = data.frames;
         if (data.type === 'timeout') { isDragging = false; nextTurn(); }
         if (data.type === 'fire') { 
-            let w = worms.find(worm => worm.id === data.pid);
-            if (w) w.triggerAttackAnimation(data.wType);
+            let w = worms.find(worm => worm.id === data.pid); if (w) w.triggerAttackAnimation(data.wType);
             projectile = new Projectile(data.px, data.py, data.vx, data.vy, data.wType); 
             if (data.wType === 'bazooka') playSound('bazooka_fire');
             if (data.wType === 'grenade') playSound('grenade_throw');
             gameState = 'flying'; retreatFrames = 60; 
         }
         if (data.type === 'punch') {
-            let w = worms.find(worm => worm.id === data.pid);
-            if (w) w.triggerAttackAnimation('boxe');
+            let w = worms.find(worm => worm.id === data.pid); if (w) w.triggerAttackAnimation('boxe');
             executePunch(w, data.px, data.py, data.angle, data.color, false);
         }
     });
@@ -304,19 +279,14 @@ function setupConnection() {
 
 function syncPlayerState() {
     if (conn && conn.open && gameMode === 'online') {
-        let myTeam = myPlayerId === 1 ? 'A' : 'B';
-        let me = worms[currentPlayer - 1];
+        let myTeam = myPlayerId === 1 ? 'A' : 'B'; let me = worms[currentPlayer - 1];
         if (me && me.team === myTeam) {
             let dy = isDragging ? (dragStartY - dragCurrentY) : 0;
-            conn.send({ 
-                type: 'sync', x: me.x, y: me.y, facing: me.facing, state: me.state, animFrame: me.animFrame,
-                isAiming: isDragging, aimDy: dy
-            });
+            conn.send({ type: 'sync', x: me.x, y: me.y, facing: me.facing, state: me.state, animFrame: me.animFrame, isAiming: isDragging, aimDy: dy });
         }
     }
 }
 
-// --- PRÉCHARGEMENT DES ASSETS ---
 const sprites = {};
 const imagesToLoad = {
     map1: 'img/map1.png', map2: 'img/map2.png', map3: 'img/map3.png', map4: 'img/map4.png',
@@ -367,7 +337,6 @@ function onLoadComplete() {
     }
 }
 
-// --- CONTRÔLES ---
 const keys = { left: false, right: false, space: false };
 window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft' || e.key === 'q' || e.key === 'a') keys.left = true;
@@ -384,25 +353,19 @@ window.addEventListener('mousemove', (e) => {
     mouseScreenX = (e.clientX - rect.left) * (WIDTH / rect.width); 
     mouseScreenY = (e.clientY - rect.top) * (HEIGHT / rect.height);
 });
-
 window.addEventListener('wheel', (e) => {
     if (e.target.closest('#game-wrapper')) {
         e.preventDefault();
-        let zoomAmount = e.deltaY > 0 ? -0.1 : 0.1;
-        let oldZoom = camera.zoom;
+        let zoomAmount = e.deltaY > 0 ? -0.1 : 0.1; let oldZoom = camera.zoom;
         camera.zoom = Math.max(0.4, Math.min(camera.zoom + zoomAmount, 2.0)); 
-
         let viewW_old = WIDTH / oldZoom; let viewH_old = HEIGHT / oldZoom;
         let viewW_new = WIDTH / camera.zoom; let viewH_new = HEIGHT / camera.zoom;
-        
         camera.x += (viewW_old - viewW_new) / 2; camera.y += (viewH_old - viewH_new) / 2;
     }
 }, { passive: false });
 
-// --- TERRAIN ---
 function generateTerrain() {
-    offscreenTerrain.width = WORLD_WIDTH; 
-    offscreenTerrain.height = WORLD_HEIGHT;
+    offscreenTerrain.width = WORLD_WIDTH; offscreenTerrain.height = WORLD_HEIGHT;
     ctxOffTerrain.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     if (mapImage && mapImage.complete && mapImage.naturalWidth > 0) ctxOffTerrain.drawImage(mapImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     else { ctxOffTerrain.fillStyle = "#45a29e"; ctxOffTerrain.fillRect(0, WORLD_HEIGHT/2, WORLD_WIDTH, WORLD_HEIGHT/2); }
@@ -434,7 +397,6 @@ function getValidSpawn(x, position = 'top') {
     return 100;
 }
 
-// --- CLASSES DU JEU ---
 class Slime {
     constructor(x, y, id, type, color, team, name, isBot = false) {
         this.x = x; this.y = y; this.id = id; this.type = type; this.color = color;
@@ -447,9 +409,8 @@ class Slime {
         this.isAttacking = false; this.attackFrame = 1; this.attackTimer = 0;
         this.lastWeaponUsed = 'bazooka'; this.lastAimTop = false;
     }
-    triggerAttackAnimation(weaponUsed) {
-        this.isAttacking = true; this.attackFrame = 2; this.attackTimer = 0; this.lastWeaponUsed = weaponUsed;
-    }
+    triggerAttackAnimation(weaponUsed) { this.isAttacking = true; this.attackFrame = 2; this.attackTimer = 0; this.lastWeaponUsed = weaponUsed; }
+    
     update() {
         if (this.isDead) return;
 
@@ -462,10 +423,8 @@ class Slime {
         }
 
         let isMyTurn = false;
-        if (gameMode === 'online') {
-            let myTeam = myPlayerId === 1 ? 'A' : 'B';
-            isMyTurn = (this.id === currentPlayer && this.team === myTeam);
-        } else { isMyTurn = (currentPlayer === this.id); }
+        if (gameMode === 'online') { let myTeam = myPlayerId === 1 ? 'A' : 'B'; isMyTurn = (this.id === currentPlayer && this.team === myTeam); } 
+        else { isMyTurn = (currentPlayer === this.id); }
 
         let canMove = isMyTurn && (gameState === 'playing' || (gameState === 'flying' && retreatFrames > 0));
         let wasOnGround = this.isOnGround; this.isOnGround = false;
@@ -476,22 +435,21 @@ class Slime {
             else if (activeKeys.right) { this.vx = 1.5; this.facing = 'r'; if(this.state !== 'air' && this.state !== 'landed') this.state = 'walk'; }
             else { this.vx = 0; if(this.state === 'walk') this.state = 'idle'; }
 
-            if (activeKeys.space && wasOnGround) { 
-                playSound('squish');
-                this.vy = -6.5; this.state = 'air'; this.animFrame = 2; activeKeys.space = false; 
-            }
+            if (activeKeys.space && wasOnGround) { playSound('squish'); this.vy = -6.5; this.state = 'air'; this.animFrame = 2; activeKeys.space = false; }
         } else if (!canMove && wasOnGround) {
             this.vx *= 0.5; if(Math.abs(this.vx) < 0.1) this.vx = 0;
             if (this.state === 'walk') this.state = 'idle';
         }
 
+        if (this.state === 'walk' && Math.random() < 0.35) {
+            particles.push(new Particle(this.x, this.y + 10, (Math.random()-0.5), -Math.random(), "rgba(200,200,200,0.4)", Math.random()*3+2, 20));
+        }
+
         if (this.vx !== 0) {
             let nextX = this.x + this.vx; let step = 0; let maxStep = 8; 
             while (step <= maxStep && isSolid(nextX, this.y + this.radius - step - 1)) step++;
-            
-            if (step > maxStep || isSolid(nextX, this.y - this.radius + 2)) {
-                this.vx = 0; 
-            } else { 
+            if (step > maxStep || isSolid(nextX, this.y - this.radius + 2)) { this.vx = 0; } 
+            else { 
                 this.x = nextX; this.y -= step; 
                 if (wasOnGround && this.vy >= 0) {
                     let drop = 0; let maxDrop = 8;
@@ -506,7 +464,6 @@ class Slime {
         if (this.vy >= 0 && isSolid(this.x, this.y + this.radius)) {
             if (this.state === 'air' && this.vy > 2) { this.state = 'landed'; this.landTimer = 15; } 
             else if (this.state === 'air') this.state = 'idle';
-            
             this.vy = 0; this.isOnGround = true;
             let push = 0; while(isSolid(this.x, this.y + this.radius - 1) && push < 20) { this.y -= 1; push++; }
         } else if (this.vy < 0 && isSolid(this.x, this.y - this.radius)) {
@@ -514,13 +471,11 @@ class Slime {
         } else if (Math.abs(this.vy) > 1.5) { this.state = 'air'; }
 
         let targetScale = isSolid(this.x, this.y - 12) ? 0.35 : 1; 
-        if (!this.scale) this.scale = 1;
-        this.scale += (targetScale - this.scale) * 0.15;
+        if (!this.scale) this.scale = 1; this.scale += (targetScale - this.scale) * 0.15;
         this.radius = 12 * this.scale; 
 
         if (this.state === 'walk') {
-            this.animTimer++;
-            if (this.animTimer > 6) { this.animFrame++; if (this.animFrame > 3) this.animFrame = 1; this.animTimer = 0; }
+            this.animTimer++; if (this.animTimer > 6) { this.animFrame++; if (this.animFrame > 3) this.animFrame = 1; this.animTimer = 0; }
         } else if (this.state === 'air') { this.animFrame = 2; } 
         else if (this.state === 'landed') { this.animFrame = 3; this.landTimer--; if (this.landTimer <= 0) this.state = 'idle'; } 
         else { this.animFrame = 1; }
@@ -528,14 +483,13 @@ class Slime {
         if (this.y > WORLD_HEIGHT + 50) { this.hp = 0; this.isDead = true; checkWin(); }
         if (this.x < 10) this.x = 10; if (this.x > WORLD_WIDTH - 10) this.x = WORLD_WIDTH - 10;
     }
+
     draw() {
         if (this.isDead) return;
         
         let isMe = false;
-        if (gameMode === 'online') {
-            let myTeam = myPlayerId === 1 ? 'A' : 'B';
-            isMe = (this.id === currentPlayer && this.team === myTeam);
-        } else { isMe = (currentPlayer === this.id); }
+        if (gameMode === 'online') { let myTeam = myPlayerId === 1 ? 'A' : 'B'; isMe = (this.id === currentPlayer && this.team === myTeam); } 
+        else { isMe = (currentPlayer === this.id); }
 
         let aiming = (isMe && isDragging) || (!isMe && this.isAiming) || (this.isAiming && this.isBot);
         let currentAimDy = isMe && !this.isBot ? (dragStartY - dragCurrentY) : this.aimDy;
@@ -562,19 +516,26 @@ class Slime {
         else spriteName += `idle_${this.facing}`;
 
         let renderX = this.x; let renderY = this.y;
-        let img = sprites[spriteName];
         
         ctxEnt.save();
-        ctxEnt.translate(renderX, renderY); ctxEnt.scale(this.scale, this.scale);
+        ctxEnt.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctxEnt.beginPath(); ctxEnt.ellipse(renderX, renderY + (6 * this.scale), 18 * this.scale, 6 * this.scale, 0, 0, Math.PI * 2); ctxEnt.fill();
+        
+        let breathX = 1; let breathY = 1;
+        if (this.state === 'idle') { breathX = 1 + Math.sin(Date.now() / 250) * 0.03; breathY = 1 - Math.sin(Date.now() / 250) * 0.03; }
+        else if (this.state === 'air') { breathX = 0.95; breathY = 1.05; }
+        
+        ctxEnt.translate(renderX, renderY); 
+        ctxEnt.scale(this.scale * breathX, this.scale * breathY);
+        
+        let img = sprites[spriteName];
         if (img && img.complete && img.naturalWidth > 0) ctxEnt.drawImage(img, -20, -25, 40, 40);
         else { ctxEnt.fillStyle = this.color; ctxEnt.fillRect(-10, -10, 20, 20); }
         ctxEnt.restore();
 
-        // Affichage Nom
         ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 12px 'Rajdhani'"; ctxEnt.textAlign = "center";
         ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText(this.name, renderX, renderY - 45 * this.scale); ctxEnt.shadowBlur = 0;
 
-        // Affichage HP Canvas (Visuel Stylisé Flottant)
         let barW = 30; let barH = 5; let barY = renderY - 38 * this.scale;
         let hpRatio = Math.max(0, this.hp / 100);
         ctxEnt.fillStyle = "rgba(0,0,0,0.8)"; ctxEnt.fillRect(renderX - barW/2, barY, barW, barH);
@@ -583,7 +544,6 @@ class Slime {
         ctxEnt.shadowBlur = 0;
         ctxEnt.strokeStyle = "rgba(255,255,255,0.4)"; ctxEnt.lineWidth = 1; ctxEnt.strokeRect(renderX - barW/2, barY, barW, barH);
 
-        // Flèche Joueur Courant
         if (currentPlayer === this.id && gameState !== 'end') {
             ctxEnt.fillStyle = (retreatFrames > 0 && gameState === 'flying') ? "#ffaa00" : "#fff";
             ctxEnt.shadowBlur = 10; ctxEnt.shadowColor = ctxEnt.fillStyle;
@@ -605,8 +565,6 @@ class Projectile {
     update() {
         if (!this.active) return;
         this.vy += GRAVITY; 
-        
-        // Vent
         if (this.type === 'bazooka' || this.type === 'grenade') this.vx += globalWind;
         
         let steps = this.type === 'grenade' ? 3 : 1;
@@ -623,6 +581,7 @@ class Projectile {
         
         if (this.type === 'bazooka') {
             particles.push(new Particle(this.x, this.y, 0, 0, "#fff", 2, 10));
+            if (Math.random() < 0.5) { particles.push(new Particle(this.x, this.y, (Math.random()-0.5), (Math.random()-0.5), "rgba(150,150,150,0.5)", Math.random()*4+2, 25)); }
             if (this.y > WORLD_HEIGHT || this.x < 0 || this.x > WORLD_WIDTH) this.explode();
         } else if (this.type === 'grenade') {
             this.timer--;
@@ -646,9 +605,7 @@ class Projectile {
             if (dist < expRadius + 15 && !w.isDead) {
                 let damage = Math.floor((1 - dist / (expRadius + 15)) * (this.type === 'grenade' ? 55 : 45));
                 w.hp -= damage; hitSomeone = true;
-                
-                damageTexts.push(new DamageText(w.x, w.y - 30, damage, "#ff0055")); // Texte Dégât
-
+                damageTexts.push(new DamageText(w.x, w.y - 30, damage, "#ff0055")); 
                 let kbAngle = Math.atan2(w.y - this.y, w.x - this.x);
                 w.vx += Math.cos(kbAngle) * (damage * 0.25); w.vy += Math.sin(kbAngle) * (damage * 0.25) - 4; 
                 if (w.hp <= 0) { w.hp = 0; w.isDead = true; }
@@ -656,7 +613,7 @@ class Projectile {
             }
         });
         
-        screenShake = this.type === 'grenade' ? 15 : 10; // Tremblement écran
+        screenShake = this.type === 'grenade' ? 15 : 10; 
         if (hitSomeone) playSound('hit');
         setTimeout(() => { retreatFrames = 0; nextTurn(); }, 1500);
     }
@@ -671,25 +628,17 @@ class Projectile {
 }
 
 class Particle {
-    constructor(x, y, vx, vy, color, size, life) { 
-        this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = life; this.maxLife = life; 
-    }
+    constructor(x, y, vx, vy, color, size, life) { this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = life; this.maxLife = life; }
     update() { this.x += this.vx; this.y += this.vy; this.life--; }
     draw() { ctxEnt.fillStyle = this.color; ctxEnt.globalAlpha = this.life / this.maxLife; ctxEnt.fillRect(this.x, this.y, this.size, this.size); ctxEnt.globalAlpha = 1; }
 }
 
 class DamageText {
-    constructor(x, y, amount, color) {
-        this.x = x; this.y = y; this.amount = amount; this.color = color;
-        this.life = 45; this.maxLife = 45; this.vy = -1.5; this.vx = (Math.random() - 0.5) * 1.5;
-    }
+    constructor(x, y, amount, color) { this.x = x; this.y = y; this.amount = amount; this.color = color; this.life = 45; this.maxLife = 45; this.vy = -1.5; this.vx = (Math.random() - 0.5) * 1.5; }
     update() { this.x += this.vx; this.y += this.vy; this.life--; }
     draw() {
-        ctxEnt.save(); ctxEnt.globalAlpha = Math.max(0, this.life / this.maxLife);
-        ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 22px 'Rajdhani'"; ctxEnt.textAlign = "center";
-        ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000";
-        ctxEnt.fillText("-" + this.amount, this.x, this.y);
-        ctxEnt.restore();
+        ctxEnt.save(); ctxEnt.globalAlpha = Math.max(0, this.life / this.maxLife); ctxEnt.fillStyle = this.color; ctxEnt.font = "bold 22px 'Rajdhani'"; ctxEnt.textAlign = "center";
+        ctxEnt.shadowBlur = 4; ctxEnt.shadowColor = "#000"; ctxEnt.fillText("-" + this.amount, this.x, this.y); ctxEnt.restore();
     }
 }
 
@@ -701,9 +650,9 @@ function buildUI() {
     ui.innerHTML = `
         <div id="ui-left" class="team-container"></div>
         <div id="ui-center" style="display:flex; flex-direction:column; align-items:center;">
-            <div id="turn-indicator">Tour J1</div>
+            <div id="turn-indicator">P1 Turn</div>
             <div id="turn-timer">08.00s</div>
-            <div id="wind-indicator" class="wind-ui">VENT : <span id="wind-arrow">---</span></div>
+            <div id="wind-indicator" class="wind-ui">WIND: <span id="wind-arrow">---</span></div>
         </div>
         <div id="ui-right" class="team-container"></div>
     `;
@@ -724,7 +673,7 @@ function buildUI() {
 function updateWindUI() {
     let windEl = document.getElementById('wind-arrow');
     if(!windEl) return;
-    if(Math.abs(globalWind) < 0.01) { windEl.innerText = "NUL"; windEl.style.color = "#fff"; }
+    if(Math.abs(globalWind) < 0.01) { windEl.innerText = "NONE"; windEl.style.color = "#fff"; }
     else {
         let intensity = Math.ceil(Math.abs(globalWind) / 0.02);
         let arrow = globalWind > 0 ? ">".repeat(intensity) : "<".repeat(intensity);
@@ -745,30 +694,30 @@ function startGame(mode) {
     if (selectedMapId === 3 && mode !== 'local_ffa') {
         let s1_x = 300, s2_x = WORLD_WIDTH - 300, s3_x = 500, s4_x = WORLD_WIDTH - 500;
         worms = [
-            new Slime(s1_x, getValidSpawn(s1_x, 'top'), 1, 1, 'var(--p1)', 'A', 'Bleu (Haut)', false),
-            new Slime(s2_x, getValidSpawn(s2_x, 'top'), 2, 2, 'var(--p2)', 'B', 'Rose (Haut)', mode === 'ai'),
-            new Slime(s3_x, getValidSpawn(s3_x, 'bottom'), 3, 1, 'var(--p1)', 'A', 'Bleu (Bas)', false),
-            new Slime(s4_x, getValidSpawn(s4_x, 'bottom'), 4, 2, 'var(--p2)', 'B', 'Rose (Bas)', mode === 'ai')
+            new Slime(s1_x, getValidSpawn(s1_x, 'top'), 1, 1, 'var(--p1)', 'A', 'Blue (Top)', false),
+            new Slime(s2_x, getValidSpawn(s2_x, 'top'), 2, 2, 'var(--p2)', 'B', 'Pink (Top)', mode === 'ai'),
+            new Slime(s3_x, getValidSpawn(s3_x, 'bottom'), 3, 1, 'var(--p1)', 'A', 'Blue (Bottom)', false),
+            new Slime(s4_x, getValidSpawn(s4_x, 'bottom'), 4, 2, 'var(--p2)', 'B', 'Pink (Bottom)', mode === 'ai')
         ];
     } else {
         if (mode === 'ai' || mode === 'local_1v1' || mode === 'online') {
             worms = [
-                new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'JOUEUR 1', false),
-                new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 2, 2, 'var(--p2)', 'B', mode === 'ai' ? 'ARTILLERY BOT' : 'JOUEUR 2', mode === 'ai')
+                new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'PLAYER 1', false),
+                new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 2, 2, 'var(--p2)', 'B', mode === 'ai' ? 'ARTILLERY BOT' : 'PLAYER 2', mode === 'ai')
             ];
         } else if (mode === 'local_2v2') {
             worms = [
-                new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false), 
-                new Slime(800, getValidSpawn(800), 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
-                new Slime(1400, getValidSpawn(1400), 3, 1, 'var(--p1)', 'A', 'J3 (Cyan)', false), 
-                new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 4, 2, 'var(--p2)', 'B', 'J4 (Rose)', false)
+                new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'P1 (Cyan)', false), 
+                new Slime(800, getValidSpawn(800), 2, 2, 'var(--p2)', 'B', 'P2 (Pink)', false),
+                new Slime(1400, getValidSpawn(1400), 3, 1, 'var(--p1)', 'A', 'P3 (Cyan)', false), 
+                new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 4, 2, 'var(--p2)', 'B', 'P4 (Pink)', false)
             ];
         } else if (mode === 'local_ffa') {
             worms = [
-                new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'J1 (Cyan)', false), 
-                new Slime(800, getValidSpawn(800), 2, 2, 'var(--p2)', 'B', 'J2 (Rose)', false),
-                new Slime(1400, getValidSpawn(1400), 3, 1, 'var(--p3)', 'C', 'J3 (Or)', false), 
-                new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 4, 2, 'var(--p4)', 'D', 'J4 (Vert)', false)
+                new Slime(200, getValidSpawn(200), 1, 1, 'var(--p1)', 'A', 'P1 (Cyan)', false), 
+                new Slime(800, getValidSpawn(800), 2, 2, 'var(--p2)', 'B', 'P2 (Pink)', false),
+                new Slime(1400, getValidSpawn(1400), 3, 1, 'var(--p3)', 'C', 'P3 (Gold)', false), 
+                new Slime(WORLD_WIDTH - 200, getValidSpawn(WORLD_WIDTH - 200), 4, 2, 'var(--p4)', 'D', 'P4 (Green)', false)
             ];
         }
     }
@@ -790,7 +739,7 @@ function updateUI() {
     let activeWorm = worms[currentPlayer - 1];
     if (activeWorm && gameState !== 'end') {
         let turnInd = document.getElementById('turn-indicator');
-        turnInd.innerText = `TOUR ${activeWorm.name}`; turnInd.style.color = activeWorm.color; turnInd.style.borderColor = activeWorm.color;
+        turnInd.innerText = `TURN ${activeWorm.name}`; turnInd.style.color = activeWorm.color; turnInd.style.borderColor = activeWorm.color;
         let hasControl = !activeWorm.isBot && (gameMode !== 'online' || (myPlayerId === 1 && activeWorm.team === 'A') || (myPlayerId === 2 && activeWorm.team === 'B'));
         if (hasControl) {
             document.getElementById('weapon-panel').classList.remove('hidden');
@@ -812,8 +761,7 @@ function nextTurn() {
 }
 
 function playAITurn() {
-    let ai = worms[currentPlayer - 1];
-    if (!ai || !ai.isBot || ai.isDead) return nextTurn();
+    let ai = worms[currentPlayer - 1]; if (!ai || !ai.isBot || ai.isDead) return nextTurn();
 
     let target = null; let minDist = Infinity;
     worms.forEach(w => {
@@ -877,7 +825,7 @@ function executePunch(worm, px, py, angle, color, isLocalAction) {
                 let dist = Math.hypot(w.x - px, w.y - py);
                 if (dist < 65) {
                     w.hp -= 30; hitSomeone = true;
-                    damageTexts.push(new DamageText(w.x, w.y - 30, 30, "#ffea00")); // Texte Dégât
+                    damageTexts.push(new DamageText(w.x, w.y - 30, 30, "#ffea00")); 
                     w.vx = Math.cos(angle) * 15; w.vy = Math.sin(angle) * 15 - 5; 
                     if (w.hp <= 0) { w.hp = 0; w.isDead = true; }
                 }
@@ -886,7 +834,6 @@ function executePunch(worm, px, py, angle, color, isLocalAction) {
         if (hitSomeone) { playSound('hit'); screenShake = 8; }
         updateUI();
     }
-
     gameState = 'flying'; retreatFrames = 40; 
     if (isLocalAction && conn && conn.open) conn.send({ type: 'punch', px: px, py: py, angle: angle, color: color, pid: worm.id });
     setTimeout(() => { retreatFrames = 0; nextTurn(); }, 1500);
@@ -899,21 +846,20 @@ function checkWin() {
     if (aliveTeams.size <= 1) {
         gameState = 'end'; document.getElementById('weapon-panel').classList.add('hidden');
         let winnerText = document.getElementById('winner-text');
-        if (aliveCount === 0) { winnerText.innerText = "ÉGALITÉ"; winnerText.style.color = "#fff"; } 
+        if (aliveCount === 0) { winnerText.innerText = "DRAW"; winnerText.style.color = "#fff"; } 
         else {
             let winningTeam = Array.from(aliveTeams)[0];
-            if (winningTeam === 'A') { winnerText.innerText = "ÉQUIPE CYAN GAGNE"; winnerText.style.color = "var(--p1)"; }
-            else if (winningTeam === 'B') { winnerText.innerText = "ÉQUIPE ROSE GAGNE"; winnerText.style.color = "var(--p2)"; }
-            else { winnerText.innerText = lastAlivePlayer.name + " GAGNE"; winnerText.style.color = lastAlivePlayer.color; }
+            if (winningTeam === 'A') { winnerText.innerText = "CYAN TEAM WINS"; winnerText.style.color = "var(--p1)"; }
+            else if (winningTeam === 'B') { winnerText.innerText = "PINK TEAM WINS"; winnerText.style.color = "var(--p2)"; }
+            else { winnerText.innerText = lastAlivePlayer.name + " WINS"; winnerText.style.color = lastAlivePlayer.color; }
         }
         setTimeout(() => { document.getElementById('game-over').classList.remove('hidden'); }, 1500);
     }
 }
 
-// --- VISÉE (Joueur Humain) ---
 const gameWrapper = document.getElementById('game-wrapper');
 function startAim(e) {
-    if (e.target.closest('#weapon-panel') || e.target.closest('.btn') || e.target.closest('.hub-link') || e.target.closest('.settings-btn-wrapper')) return; 
+    if (e.target.closest('#weapon-panel') || e.target.closest('.btn') || e.target.closest('.hub-link-wrapper') || e.target.closest('.settings-btn-wrapper')) return; 
     let activeWorm = worms[currentPlayer - 1];
     if (gameState !== 'playing' || activeWorm.isBot) return; 
     let hasControl = (gameMode !== 'online' || (myPlayerId === 1 && activeWorm.team === 'A') || (myPlayerId === 2 && activeWorm.team === 'B'));
@@ -965,7 +911,6 @@ function endAim(e) {
 gameWrapper.addEventListener('mousedown', startAim); window.addEventListener('mousemove', moveAim); window.addEventListener('mouseup', endAim);
 gameWrapper.addEventListener('touchstart', startAim, {passive: false}); window.addEventListener('touchmove', moveAim, {passive: false}); window.addEventListener('touchend', endAim);
 
-// --- CAMERA ET RADAR ---
 function updateCamera() {
     let viewW = WIDTH / camera.zoom; let viewH = HEIGHT / camera.zoom;
     let targetX = camera.x; let targetY = camera.y; manualCameraControl = false;
@@ -1004,7 +949,6 @@ function drawRadar() {
     });
 }
 
-// --- BOUCLE PRINCIPALE ---
 function gameLoop() {
     if (gameState === 'menu') return;
     if (retreatFrames > 0) retreatFrames--;
@@ -1029,13 +973,9 @@ function gameLoop() {
     syncPlayerState(); updateCamera();
 
     let viewW = WIDTH / camera.zoom; let viewH = HEIGHT / camera.zoom;
-
-    // Calcul du Tremblement d'écran
     let shakeOffsetX = 0; let shakeOffsetY = 0;
-    if (screenShake > 0.5) {
-        shakeOffsetX = (Math.random() - 0.5) * screenShake; shakeOffsetY = (Math.random() - 0.5) * screenShake;
-        screenShake *= 0.85;
-    } else { screenShake = 0; }
+    if (screenShake > 0.5) { shakeOffsetX = (Math.random() - 0.5) * screenShake; shakeOffsetY = (Math.random() - 0.5) * screenShake; screenShake *= 0.85; } 
+    else { screenShake = 0; }
 
     ctxTerrain.clearRect(0, 0, WIDTH, HEIGHT);
     ctxTerrain.drawImage(offscreenTerrain, camera.x + shakeOffsetX, camera.y + shakeOffsetY, viewW, viewH, 0, 0, WIDTH, HEIGHT);
@@ -1072,7 +1012,6 @@ function gameLoop() {
     ctxEnt.restore(); drawRadar(); requestAnimationFrame(gameLoop);
 }
 
-// --- SCRIPT NAVIGATION SWIPE GLOBAL ---
 const gamesHubList = [
     "../cybertank/index.html", "../tower_defense/index.html", "../edgeofwar/index.html",
     "../cyber_smash/index.html", "../guessthemanga/index.html", "../drawer/index.html",
@@ -1104,7 +1043,7 @@ function navigateGames(direction) {
 function isExcludedElement(target) {
     const tag = target.tagName.toLowerCase();
     if (tag === 'input' || tag === 'button' || tag === 'canvas' || tag === 'select') return true;
-    if (target.closest('#game-wrapper') || target.closest('#weapon-panel') || target.closest('#settings-modal') || target.closest('.settings-btn-wrapper')) return true;
+    if (target.closest('#game-wrapper') || target.closest('#weapon-panel') || target.closest('#settings-modal') || target.closest('.settings-btn-wrapper') || target.closest('.hub-link-wrapper')) return true;
     return false;
 }
 
