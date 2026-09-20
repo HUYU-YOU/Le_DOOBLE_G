@@ -1,127 +1,126 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Slimes Artillery (Worms-like)</title>
-    
-    <!-- Bibliothèques et Polices -->
+    <title>Worms</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    
-    <!-- Chargement du CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Boutons flottants Hub & Settings -->
-    <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+    <!-- Return to Hub (Image Button) -->
+    <a href="../index.html" class="hub-link-wrapper" 
+       onmouseenter="document.getElementById('hub-btn-img').src='../img/returbhub.png'" 
+       onmouseleave="document.getElementById('hub-btn-img').src='../img/retourhub.png'">
+        <img src="../img/retourhub.png" alt="Return to Hub" id="hub-btn-img" class="hub-btn">
+    </a>
 
+    <!-- Settings Button -->
     <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
         <div class="orbit-container"><div class="orbit-slime"></div></div>
-        <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        <img src="../img/setting.png" alt="Settings" id="settings-btn-img" class="settings-btn">
     </div>
 
-    <!-- Modal Paramètres -->
+    <!-- Settings Modal -->
     <div id="settings-modal">
         <div class="settings-content">
-            <h2>Paramètres</h2>
+            <h2>Settings</h2>
             <div class="setting-item">
-                <span>Format de l'Écran 🖥️</span>
+                <span>Screen Size 🖥️</span>
                 <div class="size-options">
-                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
-                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
-                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Windowed</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Full Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Full Screen</button>
                 </div>
             </div>
-            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+            <button onclick="toggleSettings()" class="close-btn">Close</button>
         </div>
     </div>
 
-    <!-- Conteneur Principal du Jeu -->
+    <!-- Main Game Wrapper -->
     <div id="game-wrapper" class="size-wide">
         <video id="bg-video" autoplay loop muted playsinline>
             <source src="img/background.mp4" type="video/mp4">
         </video>
 
-        <!-- Calques UI In-Game -->
+        <!-- In-Game UI -->
         <div id="ui-layer" class="hidden"></div>
         
         <div id="weapon-panel" class="hidden">
             <button class="weapon-btn active" id="btn-wpn-bazooka" onmousedown="selectWeapon('bazooka', event)" ontouchstart="selectWeapon('bazooka', event)"><span class="w-icon">🚀</span>Bazooka</button>
             <button class="weapon-btn" id="btn-wpn-grenade" onmousedown="selectWeapon('grenade', event)" ontouchstart="selectWeapon('grenade', event)"><span class="w-icon">💣</span>Grenade</button>
-            <button class="weapon-btn" id="btn-wpn-boxe" onmousedown="selectWeapon('boxe', event)" ontouchstart="selectWeapon('boxe', event)"><span class="w-icon">🥊</span>Gant Boxe</button>
+            <button class="weapon-btn" id="btn-wpn-boxe" onmousedown="selectWeapon('boxe', event)" ontouchstart="selectWeapon('boxe', event)"><span class="w-icon">🥊</span>Punch</button>
         </div>
 
-        <!-- Canvas Moteur de Jeu -->
         <canvas id="canvas-terrain" width="800" height="600"></canvas>
         <canvas id="canvas-entities" width="800" height="600"></canvas>
 
-        <!-- Menu Principal -->
+        <!-- Main Menu -->
         <div id="main-menu" class="menu-overlay">
             <h1>Cyber Slimes</h1>
-            <div id="loading-text" class="loader">Chargement des armes...</div>
+            <div id="loading-text" class="loader">Loading weapons...</div>
             
             <div id="menu-buttons" class="hidden">
-                <h3 class="menu-title">ARÈNE DE COMBAT</h3>
+                <h3 class="menu-title">COMBAT ARENA</h3>
                 
                 <div class="selection-grid" id="map-select">
-                    <div class="map-card selected" onclick="selectSlimeMap(1, this)"><img src="img/map1.png" alt="Map 1"><b>Arène Bleue</b></div>
-                    <div class="map-card" onclick="selectSlimeMap(2, this)"><img src="img/map2.png" alt="Map 2"><b>Arène Rouge</b></div>
-                    <div class="map-card" onclick="selectSlimeMap(3, this)"><img src="img/map3.png" alt="Map 3"><b>Arène Géante</b></div>
-                    <div class="map-card" onclick="selectSlimeMap(4, this)"><img src="img/map4.png" alt="Map 4"><b>Arène 4</b></div>
+                    <div class="map-card selected" onclick="selectSlimeMap(1, this)"><img src="img/map1.png" alt="Map 1"><b>Blue Arena</b></div>
+                    <div class="map-card" onclick="selectSlimeMap(2, this)"><img src="img/map2.png" alt="Map 2"><b>Red Arena</b></div>
+                    <div class="map-card" onclick="selectSlimeMap(3, this)"><img src="img/map3.png" alt="Map 3"><b>Giant Arena</b></div>
+                    <div class="map-card" onclick="selectSlimeMap(4, this)"><img src="img/map4.png" alt="Map 4"><b>Arena 4</b></div>
                 </div>
 
                 <div id="local-buttons">
                     <button class="btn" onclick="autoFullscreen(); startGame('local_1v1')">🕹️ 1 VS 1 (Local)</button>
-                    <button class="btn btn-gold" onclick="autoFullscreen(); startGame('local_2v2')">🛡️ 2 VS 2 (Équipes)</button>
-                    <button class="btn btn-pink" onclick="autoFullscreen(); startGame('local_ffa')">⚔️ 4 Joueurs (Chacun pour soi)</button>
-                    <button class="btn" onclick="autoFullscreen(); startGame('ai')" style="border-color:#fff; color:#fff;">🤖 Contre l'IA</button>
+                    <button class="btn btn-gold" onclick="autoFullscreen(); startGame('local_2v2')">🛡️ 2 VS 2 (Teams)</button>
+                    <button class="btn btn-pink" onclick="autoFullscreen(); startGame('local_ffa')">⚔️ 4 Players (FFA)</button>
+                    <button class="btn" onclick="autoFullscreen(); startGame('ai')" style="border-color:#fff; color:#fff;">🤖 VS AI</button>
                 </div>
                 
                 <hr id="menu-separator">
                 
                 <div id="net-button">
-                    <button class="btn" onclick="autoFullscreen(); showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multijoueur (En Ligne)</button>
+                    <button class="btn" onclick="autoFullscreen(); showOnlineMenu()" style="border-color:var(--sys); color:var(--sys)">🌐 Multiplayer (Online)</button>
                 </div>
             </div>
         </div>
 
-        <!-- Menu Multijoueur -->
+        <!-- Multiplayer Menu -->
         <div id="online-menu" class="menu-overlay hidden">
-            <h2 style="color: var(--sys);">LOBBY MULTIJOUEUR</h2>
+            <h2 style="color: var(--sys);">MULTIPLAYER LOBBY</h2>
             
             <div class="lobby-box">
-                <h3>Créer une partie</h3>
-                <h4>CHOIX DE L'ARÈNE</h4>
+                <h3>Create a game</h3>
+                <h4>ARENA SELECTION</h4>
                 <div class="selection-grid lobby-maps">
-                    <div class="map-card selected" onclick="selectSlimeMap(1, this)"><img src="img/map1.png"><b>Arène Bleue</b></div>
-                    <div class="map-card" onclick="selectSlimeMap(2, this)"><img src="img/map2.png"><b>Arène Rouge</b></div>
-                    <div class="map-card" onclick="selectSlimeMap(3, this)"><img src="img/map3.png"><b>Arène Géante</b></div>
-                    <div class="map-card" onclick="selectSlimeMap(4, this)"><img src="img/map4.png"><b>Arène 4</b></div>
+                    <div class="map-card selected" onclick="selectSlimeMap(1, this)"><img src="img/map1.png"><b>Blue Arena</b></div>
+                    <div class="map-card" onclick="selectSlimeMap(2, this)"><img src="img/map2.png"><b>Red Arena</b></div>
+                    <div class="map-card" onclick="selectSlimeMap(3, this)"><img src="img/map3.png"><b>Giant Arena</b></div>
+                    <div class="map-card" onclick="selectSlimeMap(4, this)"><img src="img/map4.png"><b>Arena 4</b></div>
                 </div>
-                <button class="btn" onclick="hostGame()">Héberger</button>
-                <p>Code Hôte : <br><b id="lobby-code-display">...</b></p>
+                <button class="btn" onclick="hostGame()">Host</button>
+                <p>Host Code: <br><b id="lobby-code-display">...</b></p>
             </div>
             
             <div class="lobby-box join-box">
-                <h3>Rejoindre une partie</h3>
-                <input type="text" id="join-code-input" placeholder="Code de l'hôte...">
-                <button class="btn btn-pink" onclick="joinGame()">Rejoindre</button>
+                <h3>Join a game</h3>
+                <input type="text" id="join-code-input" placeholder="Host code...">
+                <button class="btn btn-pink" onclick="joinGame()">Join</button>
             </div>
             
             <div id="conn-status"></div>
-            <button class="btn back-btn" onclick="hideOnlineMenu()">Retour</button>
+            <button class="btn back-btn" onclick="hideOnlineMenu()">Back</button>
         </div>
 
-        <!-- Écran de Fin -->
+        <!-- Game Over Screen -->
         <div id="game-over" class="menu-overlay hidden">
-            <h2 id="winner-text">VICTOIRE</h2>
-            <button class="btn" onclick="location.reload()">Retour au menu</button>
+            <h2 id="winner-text">VICTORY</h2>
+            <button class="btn" onclick="location.reload()">Return to menu</button>
         </div>
     </div>
 
-    <!-- Chargement du JS -->
     <script src="game.js"></script>
 </body>
 </html>
