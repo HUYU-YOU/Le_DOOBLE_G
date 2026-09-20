@@ -4,15 +4,17 @@
 body { background: radial-gradient(circle at center, #2a3d7a 0%, #110e2d 100%); color: white; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; overflow: hidden; transition: background 0.3s; }
 body.dark-mode { background: radial-gradient(circle at center, #1a1a2e 0%, #0d0d1a 100%); }
 
-/* --- EN-TÊTE FLEXIBLE (Gère le zoom à 400% sans casser) --- */
+/* --- EN-TÊTE FLEXIBLE --- */
 .game-header { display: flex; justify-content: space-between; align-items: center; width: 95vw; max-width: 900px; margin-bottom: 2vh; z-index: 100; }
+.left-controls { display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-start; }
 .game-title { font-family: 'Creepster', cursive; color: #39ff14; text-shadow: 3px 3px 0px #000; font-size: clamp(2em, 5vw, 3.5em); letter-spacing: 4px; margin: 0 10px; text-align: center; flex: 1; }
+.right-spacer { flex: 1; }
 
 .hub-btn-wrapper { cursor: pointer; transition: transform 0.2s ease; width: clamp(80px, 15vw, 140px); display: flex; align-items: center; justify-content: flex-start; flex: 0 0 auto; }
 #hub-btn-img { width: 100%; height: auto; filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6)); }
 .hub-btn-wrapper:hover { transform: scale(1.1); }
 
-.settings-btn-wrapper { width: clamp(35px, 8vw, 45px); height: auto; cursor: pointer; display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; }
+.settings-btn-wrapper { width: clamp(35px, 8vw, 45px); height: auto; cursor: pointer; display: flex; align-items: center; flex: 0 0 auto; }
 .settings-btn { width: 100%; height: auto; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); }
 .settings-btn-wrapper:hover .settings-btn { transform: scale(1.15); }
 
