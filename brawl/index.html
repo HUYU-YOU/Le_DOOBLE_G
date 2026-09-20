@@ -16,11 +16,12 @@
     
     <h1 class="game-title">Cyber Smash</h1>
     
-    <!-- CHANGEMENT ICI: class="size-wide" par défaut au lieu de "size-classic" -->
     <div id="game-container" class="size-wide">
         
-        <!-- BOUTONS DANS LE CONTAINER (S'adaptent à toutes les tailles d'écran) -->
-        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+        <!-- BOUTONS DANS LE CONTAINER -->
+        <a href="../index.html" class="hub-link-wrapper" onmouseenter="hoverHub()" onmouseleave="unhoverHub()">
+            <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-btn-img" class="hub-btn">
+        </a>
         
         <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
             <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
@@ -137,9 +138,9 @@
             <div class="menu-title" id="winner-text" style="font-size: 3em;"></div>
             <button class="btn-main" id="btn-restart" onclick="handleRestart()">Retour au menu de sélection</button>
         </div>
-    </div> <!-- FIN DU GAME CONTAINER -->
+    </div>
 
-    <!-- MODAL PARAMETRES (Hors du container pour toujours s'afficher au centre) -->
+    <!-- MODAL PARAMETRES -->
     <div id="settings-modal">
         <div class="settings-content">
             <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
@@ -147,7 +148,6 @@
             <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
                 <span>Format de l'Écran 🖥️</span>
                 <div class="size-options">
-                    <!-- CHANGEMENT ICI: La classe "active" est sur le bouton Plein Page -->
                     <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Petit</button>
                     <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
                     <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
