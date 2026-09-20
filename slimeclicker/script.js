@@ -1,3 +1,14 @@
+// ====== ANIMATION DU BOUTON SETTINGS ======
+let currentSettingFrame = 1;
+const settingsBtn = document.getElementById('btn-settings');
+setInterval(() => {
+    currentSettingFrame++;
+    if (currentSettingFrame > 5) currentSettingFrame = 1;
+    settingsBtn.src = `Le_DOOBLE_G/img/settings${currentSettingFrame}.png`;
+}, 150); // Change l'image toutes les 150ms (ajuste la vitesse si besoin)
+// ==========================================
+
+
 function updateBackground() {
     const ptTime = new Date().toLocaleString("en-US", {timeZone: "Europe/Lisbon"});
     const hour = new Date(ptTime).getHours();
