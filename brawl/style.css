@@ -37,12 +37,12 @@ canvas {
     width: 100vw !important; height: 100vh !important;
     max-width: none; border-radius: 0; border: none; padding: 0; 
     z-index: 999; background: var(--bg); 
-    display: flex; justify-content: center; align-items: center; /* Centrage ajouté */
+    display: flex; justify-content: center; align-items: center;
 }
 #game-container.size-wide canvas, #game-container.size-full canvas {
     width: 100%; height: 100%; max-width: none; max-height: none; 
     border-radius: 0; border: none; 
-    object-fit: contain; /* Remplacé 'fill' par 'contain' pour éviter la déformation */
+    object-fit: contain;
 }
 
 /* OVERLAYS EN GLASSMORPHISM */
@@ -104,13 +104,12 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 
 .controls-info { font-size: 1.1em; color: #fff; margin-top: 15px; line-height: 1.8; text-align: left; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; border: 1px solid var(--p1); }
 
-/* BOUTONS FLOTTANTS (Dans le container pour suivre l'écran) */
-.hub-link { 
-    position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem;
-    background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
-    transition: all 0.3s ease; z-index: 100;
+/* BOUTONS FLOTTANTS D'IMAGE (Dans le container) */
+.hub-link-wrapper { 
+    position: absolute; top: 15px; left: 15px; width: 160px; height: 50px; cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center;
 }
-.hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
+.hub-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.5)); }
+.hub-link-wrapper:hover .hub-btn { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.8)); }
 
 .settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); }
