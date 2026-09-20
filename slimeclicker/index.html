@@ -22,22 +22,24 @@
     <div id="toast-container"></div>
     <img id="golden-slime" src="img/goldenslime.png" alt="Golden Slime" draggable="false" onclick="activateGoldenBuff(event)">
 
-    <!-- CONTRÔLES EN HAUT À GAUCHE (Plus bloqués par le filtre) -->
-    <div id="top-controls">
-        <!-- Bouton Retour Image -->
-        <img id="btn-retour" class="img-btn" src="Le_DOOBLE_G/img/retourhub.png" alt="Retour au Hub" 
-             onmouseover="this.src='Le_DOOBLE_G/img/returbhub.png'" 
-             onmouseout="this.src='Le_DOOBLE_G/img/retourhub.png'" 
+    <!-- CONTRÔLES EN HAUT À GAUCHE -->
+    <div id="top-left-controls">
+        <!-- Correction du chemin (utilisation de img/ directement) -->
+        <img id="btn-retour" class="img-btn" src="img/retourhub.png" alt="Retour" 
+             onmouseover="this.src='img/returbhub.png'" 
+             onmouseout="this.src='img/retourhub.png'" 
              onclick="window.location.href='../index.html'">
              
-        <!-- Bouton Settings Animé -->
-        <img id="btn-settings" class="img-btn" src="Le_DOOBLE_G/img/settings1.png" alt="Paramètres" onclick="alert('Paramètres !')">
-        
-        <!-- Bouton Sauvegarde classique -->
         <button class="btn-3d" id="btn-save" onclick="manualSave()">💾 Sauvegarder</button>
     </div>
 
-    <div id="crystals-display">🌌 0 Cristaux</div>
+    <!-- CONTRÔLES EN HAUT À DROITE -->
+    <div id="top-right-controls">
+        <div id="crystals-display">🌌 0 Cristaux</div>
+        
+        <!-- Bouton Settings placé à droite avec le bon chemin -->
+        <img id="btn-settings" class="img-btn" src="img/settings1.png" alt="Paramètres" onclick="alert('Paramètres en construction !')">
+    </div>
 
     <header>
         <h1>Slime Clicker</h1>
@@ -54,7 +56,6 @@
             <div id="sps-display">0 / sec</div>
             <div id="golden-buff-ui">🔥 PRODUCTION X2 (<span id="golden-time">00:00</span>) 🔥</div>
             
-            <!-- NOUVEAU CONTENEUR CARRÉ -->
             <div id="slime-square-container">
                 <div id="slime-wrapper">
                     <img id="slime-image" src="img/slm1.png" alt="Big Slime" draggable="false">
@@ -62,7 +63,7 @@
             </div>
         </div>
 
-        <!-- PANNEAU DE DROITE : BOUTIQUE (Le seul qui défile) -->
+        <!-- PANNEAU DE DROITE : BOUTIQUE (Défilement uniquement ici) -->
         <div id="shop-area">
             <div class="shop-tabs">
                 <div class="tab-btn active" data-tab="dresseurs" onclick="switchTab('dresseurs')">Bâtiments 🏗️</div>
