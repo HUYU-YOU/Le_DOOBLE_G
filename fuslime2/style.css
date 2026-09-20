@@ -162,12 +162,12 @@ h1 {
 
 .score-bump { transform: scale(1.4); color: #fff; }
 
-/* LE SEAU */
 #game-container {
     position: relative;
     width: 600px;
     max-width: 80vw; 
-    aspect-ratio: 3 / 4;
+    max-height: 70vh; /* 🔥 NOUVEAU : Le jeu ne dépassera jamais 70% de la hauteur de l'écran */
+    aspect-ratio: 3 / 4; /* Garde tes proportions parfaites */
     
     background-color: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(4px);
@@ -176,6 +176,8 @@ h1 {
     
     overflow: visible; 
     transition: background-color 0.5s ease;
+
+    margin: 0 auto; 
 }
 
 body.dark-mode #game-container {
