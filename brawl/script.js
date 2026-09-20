@@ -4,16 +4,24 @@ const forceMode = params.get('mode');
 
 window.addEventListener('DOMContentLoaded', () => {
     if (forceMode === 'solo') {
-        // Saute complètement le menu de base et va directement au local
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('local-menu').style.display = 'flex';
-        window.gameMode = 'local'; // Sécurité
+        window.gameMode = 'local';
     } else if (forceMode === 'multi') {
-        // Cache uniquement les éléments liés au solo
         document.getElementById('btn-local-mode').style.display = 'none';
         document.getElementById('menu-separator').style.display = 'none';
     }
 });
+
+
+// --- ANIMATION BOUTON HUB ---
+const hubBtnImg = document.getElementById('hub-btn-img');
+function hoverHub() {
+    if(hubBtnImg) hubBtnImg.src = '../img/returbhub.png';
+}
+function unhoverHub() {
+    if(hubBtnImg) hubBtnImg.src = '../img/retourhub.png';
+}
 
 
 // --- ANIMATION DU BOUTON SETTINGS ---
@@ -76,7 +84,6 @@ function setGameSize(size) {
 }
 
 function autoFullscreen() {
-    // Passe en Plein Page automatiquement sans forcer l'OS
     if (!document.getElementById('game-container').classList.contains('size-full')) {
         setGameSize('wide');
     }
@@ -545,7 +552,7 @@ function chooseMap(idx, element) {
 
 function startLocalGame() {
     if(gameActive) return; 
-    autoFullscreen(); // Adapte l'écran
+    autoFullscreen(); 
     if (locMapChoice === 1) { CAMERA_ZOOM = 0.75; } else { CAMERA_ZOOM = 1.0; } LOGICAL_WIDTH = canvas.width / CAMERA_ZOOM; LOGICAL_HEIGHT = canvas.height / CAMERA_ZOOM;
     document.getElementById('local-menu').style.display = 'none'; document.getElementById('hud').style.display = 'grid'; platforms = mapData[locMapChoice];
     players = locSelections.map((selection, i) => { document.getElementById(`h${i + 1}`).style.display = 'block'; let p = new Player(i + 1, i===0 ? 150 : (LOGICAL_WIDTH - 150), selection.char); p.isBot = selection.bot; return p; });
