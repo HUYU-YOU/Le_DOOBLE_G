@@ -1,12 +1,11 @@
 :root { 
     --bg: #050811; 
     --p1: #00f0ff; /* Cyan */
-    --p2: #ff007f; /* Rose */
-    --p3: #ffea00; /* Or */
-    --p4: #39ff14; /* Vert */
+    --p2: #ff007f; /* Pink */
+    --p3: #ffea00; /* Gold */
+    --p4: #39ff14; /* Green */
     --sys: #00e5ff; 
     --weapon-bg: rgba(10, 15, 28, 0.85);
-    --panel: rgba(10, 15, 28, 0.85);
 }
 
 body, html { 
@@ -16,7 +15,6 @@ body, html {
     min-height: 100vh; user-select: none; overflow: hidden; touch-action: none;
 }
 
-/* --- CONTENEUR PRINCIPAL DU JEU --- */
 #game-wrapper { 
     position: relative; width: 100%; max-width: 800px; height: 600px; 
     border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0, 240, 255, 0.1); 
@@ -24,7 +22,6 @@ body, html {
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* --- TAILLES D'ÉCRAN --- */
 .size-classic { width: 800px; height: 600px; }
 #game-wrapper.size-wide, #game-wrapper.size-full {
     position: fixed !important; top: 0; left: 0; 
@@ -39,15 +36,21 @@ canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 #canvas-terrain { z-index: 2; } 
 #canvas-entities { z-index: 3; }
 
-/* --- BOUTONS HUB ET PARAMÈTRES --- */
-.hub-link { 
-    position: absolute; top: 15px; left: 15px; color: rgba(255,255,255,0.8); text-decoration: none; font-weight: bold; font-size: 1.2rem;
-    background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.3); backdrop-filter: blur(10px);
-    transition: all 0.3s ease; z-index: 100;
+/* RETURN TO HUB BUTTON (IMAGE) */
+.hub-link-wrapper { 
+    position: absolute; top: 15px; left: 15px; display: inline-block; cursor: pointer; z-index: 1000;
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-.hub-link:hover { color: #fff; background: rgba(0, 240, 255, 0.2); border-color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: translateX(-5px); }
+.hub-btn {
+    height: 45px; width: auto; object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.5));
+    transition: filter 0.3s;
+}
+.hub-link-wrapper:hover { transform: scale(1.05) translateX(-2px); }
+.hub-link-wrapper:hover .hub-btn { filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.9)); }
 
-.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 100; }
+/* SETTINGS BUTTON */
+.settings-btn-wrapper { position: absolute; top: 15px; right: 25px; width: 45px; height: 45px; cursor: pointer; z-index: 1000; }
 .settings-btn { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s ease; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.8)); position: relative; z-index: 2;}
 .orbit-container { position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px; border-radius: 50%; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1;}
 .orbit-slime { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 14px; background: var(--p4); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 15px var(--p4), 0 0 5px #ffffff; }
@@ -55,7 +58,6 @@ canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .settings-btn-wrapper:hover .orbit-container { opacity: 1; animation: spinOrbit 1.2s linear infinite; }
 @keyframes spinOrbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* --- MODAL PARAMETRES --- */
 #settings-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
 #settings-modal.show { opacity: 1; pointer-events: auto; }
 .settings-content { background: rgba(15, 20, 30, 0.95); border: 2px solid var(--p1); border-radius: 15px; padding: 30px 40px; color: white; text-align: center; box-shadow: 0 0 30px rgba(0,229,255,0.4); min-width: 380px; }
@@ -68,7 +70,6 @@ canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .close-btn { background: var(--p1); color: #000; border: none; padding: 10px 25px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
 .close-btn:hover { box-shadow: 0 0 20px var(--p1); transform: scale(1.05); }
 
-/* --- MENUS (Glassmorphism) --- */
 .menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,20,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(15px); }
 .menu-overlay h1, .menu-overlay h2 { font-size: 3.5rem; margin-bottom: 20px; text-transform: uppercase; color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--sys); letter-spacing: 5px; text-align: center;}
 .menu-title { font-size: 1.4em; margin-bottom: 15px; color: var(--p1); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--p1);}
@@ -77,13 +78,11 @@ canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 #menu-separator { width: 80%; border: 1px solid rgba(255,255,255,0.1); margin: 20px 0; }
 #net-button { width: 100%; display: flex; justify-content: center; }
 
-/* Grille de maps */
 .selection-grid { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
 .map-card { background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); text-align: center; transition: all 0.3s ease; width: 140px; }
 .map-card:hover, .map-card.selected { background: rgba(0, 240, 255, 0.15); transform: translateY(-5px); border-color: var(--p1); box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
 .map-card img { width: 120px; height: 70px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
 
-/* BOUTONS D'ACTION */
 .btn { 
     background: rgba(0,0,0,0.5); color: #fff; border: 2px solid var(--p1); padding: 12px 30px; 
     font-size: 1.3em; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; 
@@ -98,7 +97,6 @@ canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .btn-gold { border-color: var(--p3); box-shadow: 0 0 15px rgba(255, 234, 0, 0.2); }
 .btn-gold:hover { background: var(--p3); color: #000; box-shadow: 0 0 25px var(--p3); }
 
-/* LOBBY & ONLINE */
 .lobby-box { background: rgba(0,0,0,0.6); padding: 25px; border-radius: 15px; border: 1px solid var(--p1); margin-bottom: 20px; text-align: center; width: 90%; max-width: 500px; backdrop-filter: blur(10px); }
 .lobby-box h3 { color: #fff; margin-top: 0; font-size: 1.4em; text-transform: uppercase; }
 .lobby-box h4 { color: var(--p1); margin-bottom: 15px; font-size: 1.1em; letter-spacing: 1px; }
@@ -116,36 +114,15 @@ canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .hidden { display: none !important; }
 #winner-text { font-size: 4rem; text-align: center; }
 
-/* --- UI IN-GAME ET BARRES DE VIE (NOUVEAU DESIGN) --- */
 #ui-layer { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 20px; box-sizing: border-box; z-index: 100; pointer-events: none; }
 .team-container { display: flex; flex-direction: column; gap: 10px; width: 20%;}
 .player-info { background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); text-align: center; backdrop-filter: blur(8px); box-shadow: 0 5px 15px rgba(0,0,0,0.5);}
 .player-info b { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
 
-/* Belles barres de vie UI */
-.hp-bar-bg { 
-    width: 100%; height: 18px; 
-    background: rgba(10, 15, 25, 0.9); 
-    border-radius: 4px; margin-top: 8px; 
-    overflow: hidden; 
-    border: 1px solid rgba(255,255,255,0.4); 
-    box-shadow: inset 0 0 5px #000;
-    position: relative;
-}
-.hp-bar { 
-    height: 100%; 
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s; 
-    background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
-    background-size: 20px 20px;
-    animation: stripemove 1s linear infinite;
-}
+.hp-bar-bg { width: 100%; height: 18px; background: rgba(10, 15, 25, 0.9); border-radius: 4px; margin-top: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.4); box-shadow: inset 0 0 5px #000; position: relative;}
+.hp-bar { height: 100%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s; background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent); background-size: 20px 20px; animation: stripemove 1s linear infinite;}
 @keyframes stripemove { 0% { background-position: 20px 0; } 100% { background-position: 0 0; } }
-
-.hp-txt {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    text-align: center; line-height: 18px; font-size: 0.9em; font-weight: bold;
-    color: #fff; text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
-}
+.hp-txt { position: absolute; top: 0; left: 0; width: 100%; height: 100%; text-align: center; line-height: 18px; font-size: 0.9em; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;}
 
 #turn-indicator { font-size: 1.3em; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.8); padding: 10px 25px; border-radius: 20px; border: 2px solid #fff; transition: 0.3s; text-align: center; backdrop-filter: blur(8px); }
 #turn-timer { font-size: 2em; font-family: monospace; font-weight: bold; margin-top: 5px; text-shadow: 0 0 5px #fff; transition: color 0.2s; text-align: center;}
@@ -153,22 +130,15 @@ canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .timer-danger { color: #ff0000 !important; text-shadow: 0 0 15px #ff0000 !important; animation: pulse-timer 0.5s infinite; }
 .timer-aim { color: #ffea00 !important; text-shadow: 0 0 15px #ffea00 !important; }
 
-/* UI INDICATEUR DE VENT */
-.wind-ui {
-    margin-top: 5px; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.2); font-weight: bold; font-family: 'Rajdhani';
-    letter-spacing: 1px; font-size: 1.1em;
-}
+.wind-ui { margin-top: 5px; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; font-family: 'Rajdhani'; letter-spacing: 1px; font-size: 1.1em; }
 #wind-arrow { font-family: monospace; letter-spacing: -2px; }
 
-/* --- PANNEAU D'ARMES --- */
 #weapon-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: var(--weapon-bg); padding: 15px 25px; border-radius: 20px; border: 1px solid var(--p1); z-index: 100; box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); backdrop-filter: blur(12px); transition: 0.3s; }
 .weapon-btn { background: rgba(0,0,0,0.5); border: 2px solid #444; color: #fff; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-size: 1.1em; font-family: 'Rajdhani', sans-serif; font-weight: bold; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; min-width: 90px;}
 .weapon-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; transform: translateY(-3px);}
 .weapon-btn.active { background: rgba(0, 240, 255, 0.2); border-color: var(--p1); color: var(--p1); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); transform: translateY(-5px);}
 .w-icon { font-size: 1.8em; margin-bottom: 5px; }
 
-/* MEDIA QUERIES */
 @media (max-width: 800px) {
     #ui-layer { padding: 0 10px; }
     .team-container { width: 30%; }
