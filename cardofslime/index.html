@@ -10,20 +10,25 @@
 </head>
 <body onclick="startMusic()">
     
-    <!-- NOUVEAU : Un en-tête flexible pour empêcher la superposition -->
+    <!-- EN-TÊTE FLEXIBLE : Boutons à gauche, Titre au centre -->
     <div class="game-header">
-        <!-- Bouton de gauche -->
-        <a href="../index.html" class="hub-btn-wrapper">
-            <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-btn-img">
-        </a>
+        <div class="left-controls">
+            <!-- Bouton Retour -->
+            <a href="../index.html" class="hub-btn-wrapper">
+                <img src="../img/retourhub.png" alt="Retour au Hub" id="hub-btn-img">
+            </a>
+            
+            <!-- Bouton Paramètres -->
+            <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+                <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+            </div>
+        </div>
         
         <!-- Titre au centre -->
         <h1 class="game-title">Card of Slime</h1>
         
-        <!-- Bouton de droite -->
-        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
-            <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
-        </div>
+        <!-- Espace pour centrer correctement le titre -->
+        <div class="right-spacer"></div>
     </div>
 
     <div id="settings-modal">
