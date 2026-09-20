@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Slime Clicker - Édition Infinie</title>
-    <!-- Importation des polices Cartoon/Slime -->
     <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
-    <!-- Lien vers le fichier CSS externe -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <!-- Popups -->
     <div id="afk-modal">
         <div class="afk-content">
             <h2>Pendant ton absence...</h2>
@@ -20,12 +19,24 @@
             <button class="btn-3d" style="background-color: var(--slime-blue); box-shadow: 0 5px 0 #2a8bc2; font-size: 1.2rem; padding: 12px 30px; margin-top: 20px;" onclick="document.getElementById('afk-modal').style.display='none'">Super !</button>
         </div>
     </div>
-
     <div id="toast-container"></div>
-
     <img id="golden-slime" src="img/goldenslime.png" alt="Golden Slime" draggable="false" onclick="activateGoldenBuff(event)">
-    <a href="../index.html" class="btn-3d header-btn" id="btn-retour-hub">&#11013; Retour au Hub</a>
-    <button class="btn-3d header-btn" id="btn-save" onclick="manualSave()">💾 Sauvegarder</button>
+
+    <!-- CONTRÔLES EN HAUT À GAUCHE (Plus bloqués par le filtre) -->
+    <div id="top-controls">
+        <!-- Bouton Retour Image -->
+        <img id="btn-retour" class="img-btn" src="Le_DOOBLE_G/img/retourhub.png" alt="Retour au Hub" 
+             onmouseover="this.src='Le_DOOBLE_G/img/returbhub.png'" 
+             onmouseout="this.src='Le_DOOBLE_G/img/retourhub.png'" 
+             onclick="window.location.href='../index.html'">
+             
+        <!-- Bouton Settings Animé -->
+        <img id="btn-settings" class="img-btn" src="Le_DOOBLE_G/img/settings1.png" alt="Paramètres" onclick="alert('Paramètres !')">
+        
+        <!-- Bouton Sauvegarde classique -->
+        <button class="btn-3d" id="btn-save" onclick="manualSave()">💾 Sauvegarder</button>
+    </div>
+
     <div id="crystals-display">🌌 0 Cristaux</div>
 
     <header>
@@ -37,18 +48,22 @@
 
     <div id="game-container">
         
+        <!-- PANNEAU DE GAUCHE : SLIME (Carré et centré) -->
         <div id="click-area">
             <div id="score-display">0 Slimes</div>
             <div id="sps-display">0 / sec</div>
             <div id="golden-buff-ui">🔥 PRODUCTION X2 (<span id="golden-time">00:00</span>) 🔥</div>
             
-            <div id="slime-wrapper">
-                <img id="slime-image" src="img/slm1.png" alt="Big Slime" draggable="false">
+            <!-- NOUVEAU CONTENEUR CARRÉ -->
+            <div id="slime-square-container">
+                <div id="slime-wrapper">
+                    <img id="slime-image" src="img/slm1.png" alt="Big Slime" draggable="false">
+                </div>
             </div>
         </div>
 
+        <!-- PANNEAU DE DROITE : BOUTIQUE (Le seul qui défile) -->
         <div id="shop-area">
-            
             <div class="shop-tabs">
                 <div class="tab-btn active" data-tab="dresseurs" onclick="switchTab('dresseurs')">Bâtiments 🏗️</div>
                 <div class="tab-btn" data-tab="labo" onclick="switchTab('labo')">Labo 🧬</div>
@@ -78,33 +93,24 @@
                     <div class="crystal-icon">🌌</div>
                     <h2 style="color: #e8b0ff; font-family: var(--font-title); font-size: 2rem; margin:0;">Cristaux Quantiques</h2>
                     <p style="color: var(--text-muted); font-weight: 700; margin-bottom: 20px;">Chaque Cristal offre un bonus <strong>permanent de +1%</strong> sur votre production.</p>
-                    
                     <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; border: 2px solid var(--panel-border);">
                         <p style="margin: 0; font-size: 1.2rem; font-weight: 700;">Cristaux actuels : <strong style="color: #e8b0ff; font-family: var(--font-title); font-size:1.5rem;" id="current-crystals">0</strong></p>
                         <p style="margin: 5px 0 0 0; font-size: 1rem; color: var(--slime-green); font-weight: 700;">Bonus actif : <strong id="crystal-bonus">0%</strong></p>
                     </div>
-
                     <div style="margin-top: 30px;">
                         <p style="margin: 0; font-weight: 700; font-size: 1.1rem;">Cristaux à gagner en réinitialisant :</p>
                         <h1 style="margin: 10px 0; color: var(--slime-gold); font-size: 3.5rem; text-shadow: 0 4px 0 #ccaa00; font-family: var(--font-title);">+<span id="crystals-to-gain">0</span></h1>
-                        <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">(Basé sur le total historique généré)</p>
                     </div>
-
                     <button id="prestige-btn" class="disabled" onclick="doPrestige()">Mutation Quantique</button>
-                    <p style="font-size: 0.9rem; color: var(--slime-pink); margin-top: 15px; font-weight: 700;">⚠️ Attention : Réinitialise vos Slimes et Bâtiments !</p>
-                    
                     <div class="danger-zone">
                         <button id="reset-btn" onclick="hardReset()">☠️ RÉINITIALISATION TOTALE</button>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px; font-weight: 700;">Efface absolument TOUT de la sauvegarde.</p>
                     </div>
                 </div>
             </div>
-
         </div>
 
     </div>
 
-    <!-- Lien vers le fichier JavaScript externe -->
     <script src="script.js"></script>
 </body>
 </html>
