@@ -29,7 +29,6 @@ body, html {
     border-bottom: 4px solid var(--panel-border);
 }
 
-/* Maintien des zones gauche/droite à la même largeur pour centrer le titre */
 .header-left, .header-right {
     display: flex; gap: 15px; align-items: center; width: 350px;
 }
