@@ -4,10 +4,10 @@ const settingsBtn = document.getElementById('btn-settings');
 setInterval(() => {
     currentSettingFrame++;
     if (currentSettingFrame > 5) currentSettingFrame = 1;
-    settingsBtn.src = `Le_DOOBLE_G/img/settings${currentSettingFrame}.png`;
-}, 150); // Change l'image toutes les 150ms (ajuste la vitesse si besoin)
+    // On utilise img/ comme chemin !
+    settingsBtn.src = `img/settings${currentSettingFrame}.png`;
+}, 150);
 // ==========================================
-
 
 function updateBackground() {
     const ptTime = new Date().toLocaleString("en-US", {timeZone: "Europe/Lisbon"});
@@ -191,7 +191,7 @@ function doPrestige() {
     if (toGain <= 0) return;
     if (confirm(`Muter ?\nVous perdrez vos Slimes et Bâtiments, mais gagnerez ${toGain} Cristaux (+${toGain}% bonus permanent).`)) {
         game.cristaux += toGain; game.slimes = 0; game.upgradesBought = []; buildings.forEach(b => b.count = 0);
-        document.getElementById('crystals-display').style.display = 'inline-block';
+        document.getElementById('crystals-display').style.display = 'block';
         saveGame(); renderShop(); renderUpgrades(); updateUI(); switchTab('dresseurs'); checkAchievements();
     }
 }
