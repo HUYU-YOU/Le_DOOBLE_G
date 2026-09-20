@@ -737,24 +737,21 @@ function updateLogic() {
 }
 
 function gameLoop(timestamp) {
-    if (!isGameStarted) {
-        requestAnimationFrame(gameLoop);
-        return; 
-    }
-
     if (!lastTime) lastTime = timestamp;
     let deltaTime = (timestamp - lastTime) / (1000 / 60); 
     lastTime = timestamp;
     if (deltaTime > 5) deltaTime = 5; 
 
-    if (gameOver) return; 
-    
-    timeAccumulator += gameSpeed * deltaTime;
-    while(timeAccumulator >= 1 && !gameOver) {
-        updateLogic();
-        timeAccumulator -= 1;
+    // On exécute la logique du jeu UNIQUEMENT si le jeu est lancé
+    if (isGameStarted && !gameOver) {
+        timeAccumulator += gameSpeed * deltaTime;
+        while(timeAccumulator >= 1 && !gameOver) {
+            updateLogic();
+            timeAccumulator -= 1;
+        }
     }
 
+    // --- LE RENDU GRAPHIQUE SE FAIT TOUJOURS (Même sur l'écran d'accueil) ---
     ctx.clearRect(0, 0, logicalWidth, logicalHeight); 
     
     // APPLICATION DU SCREEN SHAKE
