@@ -1,6 +1,8 @@
 // ==========================================
 // 1. GESTION DES PARAMETRES ET DU THEME
 // ==========================================
+let syncTimer = 0; // Ajout pour la synchronisation réseau
+
 function toggleSettings() {
     const modal = document.getElementById('settings-modal');
     modal.classList.toggle('show');
@@ -351,10 +353,44 @@ function setupConnectionEvents() {
             if (cardData.type.includes('spell')) {
                 castSpell(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
             } else {
-                spawnEntity(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y);
+                spawnEntity(cardData, isHost ? 'player' : 'enemy', 100 - data.x, 100 - data.y, data.spawnId);
             }
         } else if (data.type === 'emote') { 
             showEmote(data.emotePath, 'enemy'); 
+        } else if (data.type === 'sync_state' && !isHost) {
+            // MULTIJOUEUR : Le Client reçoit la vérité du Host
+            gameTime = data.time;
+            
+            // 1. Mise à jour des HP et positions
+            data.entities.forEach(serverEnt => {
+                let localEnt = activeEntities.find(e => e.id === serverEnt.id);
+                if (localEnt) {
+                    localEnt.hp = serverEnt.hp;
+                    if (localEnt.hpBar) {
+                        localEnt.hpBar.style.width = `${Math.max(0, (localEnt.hp / localEnt.maxHp) * 100)}%`;
+                    }
+                    
+                    // Recadrage fluide de la position (téléportation si gros lag)
+                    let dist = Math.hypot(localEnt.x - serverEnt.x, localEnt.y - serverEnt.y);
+                    if (dist > 5) {
+                        localEnt.x = serverEnt.x;
+                        localEnt.y = serverEnt.y;
+                    } else if (dist > 1) {
+                        localEnt.x += (serverEnt.x - localEnt.x) * 0.1;
+                        localEnt.y += (serverEnt.y - localEnt.y) * 0.1;
+                    }
+                    localEnt.element.style.left = `${localEnt.x}%`; 
+                    localEnt.element.style.top = `${localEnt.y}%`;
+                }
+            });
+
+            // 2. Nettoyer les morts (Si le Host dit qu'elle n'existe plus, on la tue)
+            activeEntities.forEach(localEnt => {
+                // Délai de grâce de 1s pour éviter de tuer nos propres troupes en cours de déploiement réseau
+                if (performance.now() - localEnt.spawnTime > 1000 && !data.entities.find(e => e.id === localEnt.id)) {
+                    localEnt.hp = 0; 
+                }
+            });
         }
     });
 }
@@ -567,14 +603,18 @@ function handleArenaClick(e) {
     updateSlimeUI(); 
     playSound('sfx-spawn');
 
+    // NOUVEAU : On génère l'ID avant de spawn pour la synchronisation
+    const spawnId = Math.random().toString(36).substr(2, 9);
+
     if (cardData.type.includes('spell')) {
         castSpell(cardData, 'player', clickX, clickY);
     } else {
-        spawnEntity(cardData, 'player', clickX, clickY);
+        spawnEntity(cardData, 'player', clickX, clickY, spawnId);
     }
 
     if (conn && conn.open) {
-        conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY });
+        // NOUVEAU : On envoie le spawnId au réseau
+        conn.send({ type: 'spawn', cardId: hand[selectedCardIndex], x: clickX, y: clickY, spawnId: spawnId });
     }
     
     drawPile.push(hand[selectedCardIndex]); 
@@ -588,10 +628,9 @@ function handleArenaClick(e) {
 // ==========================================
 // 7. GESTION DES ENTITÉS ET SORTS (SPAWN)
 // ==========================================
-function spawnEntity(data, team, x, y) {
+function spawnEntity(data, team, x, y, forceId = null) {
     const el = document.createElement('div');
     el.className = `entity team-${team} ${data.type === 'building' ? 'building' : ''} ${data.isFlying ? 'is-flying' : ''}`;
-    el.dataset.id = data.id;
     
     let initFacing = team === 'player' ? 'back' : 'front';
     let initLane = x < 50 ? 'left' : 'right';
@@ -619,15 +658,20 @@ function spawnEntity(data, team, x, y) {
 
     arena.appendChild(el);
     
+    // NOUVEAU : On utilise l'ID envoyé par le réseau s'il existe
+    const entityId = forceId || Math.random().toString(36).substr(2, 9);
+    el.dataset.id = entityId;
+
     activeEntities.push({
-        id: Math.random().toString(36).substr(2, 9), 
+        id: entityId, 
         team: team, x: x, y: y, lane: initLane, color: data.color, hp: data.hp, maxHp: data.hp, dmg: data.dmg || 0, 
         range: data.range, speed: data.speed, atkSpeed: data.atkSpeed || 1000, 
         isRanged: data.isRanged || false, targetBuilding: data.targetBuilding || false,
         isFlying: data.isFlying || false, targetsAir: data.targetsAir || false, 
         hasTurret: data.hasTurret || false, isStacked: data.isStacked || false, skins: data.skins, facing: initFacing,
         state: 'idle', animTimer: 0, animFrame: 0, stunDuration: data.stunDuration || null, 
-        lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, lastSpawn: 0,
+        lifetime: data.lifetime || null, spawnRate: data.spawnRate || null, spawnId: data.spawnId || null, 
+        lastSpawn: 0, spawnCount: 0, spawnTime: performance.now(), // <-- Ajout pour le réseau
         stunTimer: 0, slowTimer: 0, lastAttack: 0, element: el, turretElement: turretEl, hpBar: el.querySelector('.entity-hp-fill')
     });
 }
@@ -898,6 +942,19 @@ function gameLoop(currentTime) {
         if(enemySlime < MAX_SLIME) enemySlime++; 
     }
 
+    // LE HOST ENVOIE LA SYNCHRONISATION 5 FOIS PAR SECONDE
+    if (conn && conn.open && isHost) {
+        syncTimer += dt;
+        if (syncTimer >= 0.2) {
+            syncTimer = 0;
+            conn.send({
+                type: 'sync_state',
+                time: gameTime,
+                entities: activeEntities.map(e => ({ id: e.id, hp: e.hp, x: e.x, y: e.y }))
+            });
+        }
+    }
+
     // ANIMATIONS DES SORTS
     activeSpells = activeSpells.filter(spell => {
         // Lancer balistique
@@ -988,9 +1045,12 @@ function gameLoop(currentTime) {
                 spell.lastSpawn += dt * 1000;
                 if(spell.lastSpawn >= spell.spawnRate) {
                     spell.lastSpawn = 0; 
+                    spell.spawnCount = (spell.spawnCount || 0) + 1;
+                    // NOUVEAU : ID commun pour les invocations réseau
+                    let childId = "spell_" + Math.floor(spell.x) + "_" + Math.floor(spell.y) + "_" + spell.spawnCount; 
                     const angle = Math.random() * Math.PI * 2; 
                     const dist = Math.random() * spell.radius;
-                    spawnEntity(cardDatabase[spell.spawnId], spell.team, spell.x + Math.cos(angle) * dist, spell.y + Math.sin(angle) * dist);
+                    spawnEntity(cardDatabase[spell.spawnId], spell.team, spell.x + Math.cos(angle) * dist, spell.y + Math.sin(angle) * dist, childId);
                 }
             }
             if(spell.duration <= 0) { 
@@ -1017,7 +1077,6 @@ function gameLoop(currentTime) {
     // PROJECTILES
     activeProjectiles = activeProjectiles.filter(p => {
         if(p.target.hp <= 0) { 
-            // La cible est morte en vol : on joue quand même une petite explosion
             createParticles(p.x, p.y, '#ffcc00'); 
             p.element.remove(); 
             return false; 
@@ -1028,7 +1087,6 @@ function gameLoop(currentTime) {
             takeDamage(p.target, p.dmg); 
             if(p.stunDuration) p.target.stunTimer = p.stunDuration;
             
-            // Particules d'impact adaptées à la couleur de l'équipe
             createParticles(p.target.x, p.target.y, p.team === 'player' ? '#39ff14' : '#ff3366');
             
             p.element.remove(); 
@@ -1073,7 +1131,10 @@ function gameLoop(currentTime) {
             unit.lastSpawn += dt * 1000; 
             if (unit.lastSpawn >= unit.spawnRate) { 
                 unit.lastSpawn = 0; 
-                spawnEntity(cardDatabase[unit.spawnId], unit.team, unit.x, unit.y + (unit.team === 'player' ? -5 : 5)); 
+                unit.spawnCount = (unit.spawnCount || 0) + 1;
+                // NOUVEAU : ID commun pour les invocations de l'usine
+                let childId = unit.id + "_s" + unit.spawnCount; 
+                spawnEntity(cardDatabase[unit.spawnId], unit.team, unit.x, unit.y + (unit.team === 'player' ? -5 : 5), childId); 
             } 
         }
         if (unit.lifetime) { 
