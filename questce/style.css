@@ -124,7 +124,10 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
 #my-secret-card {
     display: flex; align-items: center; gap: 10px; margin-top: 4px;
 }
-#my-secret-card svg { width: 46px; height: 46px; border-radius: 6px; background: #10192b; border: 1px solid var(--p4); }
+#my-secret-card img {
+    width: 46px; height: 46px; object-fit: cover;
+    border-radius: 6px; background: #10192b; border: 1px solid var(--p4);
+}
 #my-secret-card .secret-name { font-size: 1.25rem; font-weight: bold; color: var(--p4); text-transform: uppercase; }
 
 #center-status {
@@ -171,8 +174,9 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     border-color: var(--p1);
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
 }
-.char-card svg, .char-card img {
-    height: 70%; max-height: 82px; width: auto; object-fit: contain; pointer-events: none;
+.char-card img {
+    height: 72%; max-height: 85px; width: auto; max-width: 90%;
+    object-fit: contain; border-radius: 6px; pointer-events: none;
 }
 .char-name {
     font-weight: bold; font-size: 1rem; letter-spacing: 1px;
@@ -248,6 +252,8 @@ input:focus { outline: none; box-shadow: 0 0 15px var(--p1); }
     background: rgba(15, 22, 40, 0.95); border: 2px solid var(--p1);
     border-radius: 12px; padding: 12px 20px; text-align: center;
 }
-.reveal-card svg { width: 85px; height: 85px; }
+.reveal-card img {
+    width: 85px; height: 85px; object-fit: cover; border-radius: 8px; margin: 6px 0;
+}
 
 #yt-player-container { position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
