@@ -3,72 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Undercover</title>
+    <title>Undercover — Cyber-Spy</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Bouton Paramètres -->
-    <img id="settings-btn-img" src="../img/setting.png" 
-         onclick="clickSettingsAnim()" 
-         onmouseover="startSettingsAnim()" 
+    <img id="settings-btn-img" src="../img/setting.png"
+         onclick="clickSettingsAnim()"
+         onmouseover="startSettingsAnim()"
          onmouseout="stopSettingsAnim()" alt="Paramètres">
 
     <!-- Menu Paramètres -->
     <div id="settings-modal" class="modal">
-        <h3>Taille de l'écran</h3>
-        <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Classique</button>
-        <button id="btn-sz-wide" class="btn-size" onclick="setGameSize('wide')">Large</button>
-        <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+        <h3 data-i18n="settingsTitle">Paramètres</h3>
+        <div class="settings-group">
+            <label data-i18n="screenSize">Taille de l'écran</label>
+            <div class="btn-row">
+                <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Classique</button>
+                <button id="btn-sz-wide" class="btn-size" onclick="setGameSize('wide')">Large</button>
+                <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+            </div>
+        </div>
+        <div class="settings-group">
+            <label data-i18n="language">Langue / Language</label>
+            <div class="btn-row">
+                <button id="btn-lang-fr" class="btn-lang active" onclick="setLanguage('fr')">🇫🇷 FR</button>
+                <button id="btn-lang-en" class="btn-lang" onclick="setLanguage('en')">🇬🇧 EN</button>
+            </div>
+        </div>
+        <div class="settings-group">
+            <button id="btn-mute" onclick="toggleMute()">🔊 Son : ON</button>
+        </div>
     </div>
 
-    <!-- Conteneur Principal du Jeu -->
+    <!-- Conteneur Principal -->
     <div id="game-container">
-        
-        <!-- UI Supérieure (Ressources) -->
-        <div id="top-bar">
-            <div>💰 Or: <span id="gold-display">150</span></div>
-            <div>❤️ Vies: <span id="lives-display">20</span></div>
-            <div>🌊 Vague: <span id="wave-display">0</span></div>
-        </div>
+        <header class="game-header">
+            <div class="title-block">
+                <span class="badge">CYBER-SPY</span>
+                <h1>UNDERCOVER</h1>
+            </div>
+            <div class="header-meta">
+                <span id="dict-count">0 paires</span>
+            </div>
+        </header>
 
-        <!-- Zone de Rendu -->
-        <canvas id="gameCanvas"></canvas>
+        <!-- ÉCRAN 1 : CONFIGURATION (LOBBY) -->
+        <section id="screen-setup" class="screen active">
+            <div class="card">
+                <h2 data-i18n="agentsTitle">1. Agents en mission</h2>
+                <div class="add-player-row">
+                    <input type="text" id="player-name-input" maxlength="18" placeholder="Nom de l'agent...">
+                    <button id="btn-add-player" class="btn-primary" onclick="addPlayer()">+ Ajouter</button>
+                </div>
+                <ul id="players-list" class="players-list"></ul>
+                <p id="setup-error" class="error-msg"></p>
+            </div>
 
-        <!-- UI Inférieure (Boutons Tours) -->
-        <div id="tower-selection">
-            <button id="btn-tower-1" onclick="selectTower(1)">Fantassin (20)</button>
-            <button id="btn-tower-2" onclick="selectTower(2)">Tireur (60)</button>
-            <button id="btn-tower-3" onclick="selectTower(3)">Blindé (120)</button>
-            <button id="btn-tower-4" onclick="selectTower(4)">Sniper (100)</button>
-            <button id="btn-tower-5" onclick="selectTower(5)">Bombardier (90)</button>
-            <button id="btn-tower-6" onclick="selectTower(6)">Alchimiste (80)</button>
-        </div>
+            <div class="card">
+                <h2 data-i18n="missionConfig">2. Paramètres de mission</h2>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label data-i18n="undercoverCount">Undercovers</label>
+                        <div class="stepper">
+                            <button onclick="changeRoleCount('undercover', -1)">−</button>
+                            <span id="uc-count-display">1</span>
+                            <button onclick="changeRoleCount('undercover', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <label>Mr. White</label>
+                        <div class="stepper">
+                            <button onclick="changeRoleCount('mrwhite', -1)">−</button>
+                            <span id="mw-count-display">0</span>
+                            <button onclick="changeRoleCount('mrwhite', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Contrôles de Vague -->
-        <div id="controls">
-            <button id="btn-wave" onclick="startWave()">Démarrer Scan !</button>
-            <button id="btn-auto" onclick="toggleAuto()">Auto-Scan: OFF</button>
-            <button id="btn-speed" onclick="toggleSpeed()">Vitesse: x1</button>
-        </div>
+                <div class="category-box">
+                    <label for="category-select" data-i18n="categoryLabel">Catégorie du dictionnaire</label>
+                    <select id="category-select"></select>
+                </div>
+            </div>
 
-        <!-- Panneau d'Amélioration (Caché par défaut) -->
-        <div id="upgrade-panel">
-            <h3 id="tower-name-display">Nom Tour</h3>
-            <p id="tower-stats">Stats ici...</p>
-            <button id="btn-upgrade" onclick="upgradeSelectedTower()">Optimiser</button>
-            <button id="btn-sell" onclick="sellSelectedTower()">Vendre</button>
-        </div>
+            <button id="btn-start-game" class="btn-launch" onclick="startGame()" data-i18n="startMission">
+                LANCER LA MISSION
+            </button>
+        </section>
 
-        <!-- Écran de Fin de Jeu -->
-        <div id="game-over">
-            <h2>ÉCHEC CRITIQUE</h2>
-            <p id="survive-message"></p>
-            <button onclick="location.reload()">Rebooter le système</button>
-        </div>
+        <!-- ÉCRAN 2 : DISTRIBUTION DES MOTS -->
+        <section id="screen-distribute" class="screen">
+            <div class="card center-card">
+                <span id="dist-progress" class="pill">Agent 1 / 4</span>
+                <h2 id="dist-player-name">Agent 1</h2>
+                <p id="dist-instruction" class="muted"></p>
+
+                <div id="secret-box" class="secret-box hidden">
+                    <span id="secret-role-hint" class="secret-hint"></span>
+                    <div id="secret-word" class="secret-word">???</div>
+                </div>
+
+                <button id="btn-reveal-word" class="btn-primary btn-big" onclick="revealWord()">
+                    👁️ Révéler mon mot
+                </button>
+                <button id="btn-next-player" class="btn-launch btn-big hidden" onclick="nextDistribution()">
+                    🔒 Cacher &amp; Suivant
+                </button>
+            </div>
+        </section>
+
+        <!-- ÉCRAN 3 : DÉBAT & VOTE -->
+        <section id="screen-play" class="screen">
+            <div class="card">
+                <div class="round-header">
+                    <span id="round-badge" class="pill">Tour 1</span>
+                    <span id="alive-counter" class="muted">4 agents actifs</span>
+                </div>
+                <div id="starter-banner" class="starter-banner"></div>
+                <p class="muted small-info" id="play-instruction"></p>
+
+                <div id="vote-grid" class="vote-grid"></div>
+            </div>
+
+            <div class="action-bar">
+                <button id="btn-eliminate" class="btn-danger btn-big" onclick="confirmElimination()" disabled>
+                    Éliminer l'agent sélectionné
+                </button>
+                <button class="btn-secondary" onclick="backToLobby()">Abandonner</button>
+            </div>
+        </section>
+
+        <!-- ÉCRAN 4 : RÉVÉLATION D'ÉLIMINATION / DERNIÈRE CHANCE MR. WHITE -->
+        <section id="screen-reveal-elim" class="screen">
+            <div class="card center-card">
+                <span class="pill danger-pill" id="elim-title">AGENT ÉLIMINÉ</span>
+                <h2 id="elim-player-name"></h2>
+                <div id="elim-role-badge" class="role-badge"></div>
+                <p id="elim-message" class="muted"></p>
+
+                <!-- Zone dédiée à Mr. White -->
+                <div id="mrwhite-guess-box" class="mrwhite-box hidden">
+                    <p id="mrwhite-prompt"></p>
+                    <input type="text" id="mrwhite-input" placeholder="Mot des Civils...">
+                    <button class="btn-launch" onclick="submitMrWhiteGuess()" id="btn-mw-submit">
+                        Valider la tentative
+                    </button>
+                </div>
+
+                <button id="btn-continue-round" class="btn-primary btn-big" onclick="continueAfterElimination()">
+                    Continuer la mission
+                </button>
+            </div>
+        </section>
+
+        <!-- ÉCRAN 5 : FIN DE PARTIE -->
+        <section id="screen-gameover" class="screen">
+            <div class="card center-card">
+                <span class="pill" id="winner-tag">FIN DE MISSION</span>
+                <h2 id="winner-title"></h2>
+                <p id="winner-subtitle" class="muted"></p>
+
+                <div class="words-recap">
+                    <div class="word-pill civil-pill">
+                        <small id="label-civil-word">Mot Civil</small>
+                        <strong id="recap-civil-word">—</strong>
+                    </div>
+                    <div class="word-pill uc-pill">
+                        <small id="label-uc-word">Mot Undercover</small>
+                        <strong id="recap-uc-word">—</strong>
+                    </div>
+                </div>
+
+                <ul id="final-roles-list" class="final-roles-list"></ul>
+
+                <div class="action-bar">
+                    <button class="btn-launch btn-big" onclick="playAgainSamePlayers()" id="btn-replay">
+                        Rejouer (mêmes agents)
+                    </button>
+                    <button class="btn-secondary" onclick="backToLobby()" id="btn-lobby">
+                        Modifier les joueurs
+                    </button>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <!-- Scripts -->
+    <!-- IMPORTANT : mots.js DOIT être chargé avant main.js -->
+    <script src="mots.js"></script>
     <script src="main.js"></script>
-    <script src="mots.js"></script> <!-- Uniquement si chargé sur la même page -->
 </body>
 </html>
