@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Qui est-ce ? - Multijoueur</title>
+    
+    <!-- Librairie PeerJS pour le multijoueur -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <!-- API YouTube pour la musique de fond -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Player Musique YouTube -->
+    <div id="yt-player-container"><div id="yt-player"></div></div>
+
+    <h1 class="game-title">Qui est-ce ?</h1>
+
+    <div id="game-container" class="size-wide">
+
+        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+            <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        </div>
+
+        <!-- MENU MULTIJOUEUR -->
+        <div class="overlay" id="network-menu">
+            <h2 style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Qui est-ce ?</h2>
+            <div class="menu-title" style="font-size: 1.2em; margin-bottom: 20px; color: #aaa;">Duel 1v1 • 20 Personnages</div>
+
+            <input type="text" id="pseudo" placeholder="Ton Pseudo" required>
+
+            <p style="margin-top:15px;">Code de ton salon : <span id="my-id" style="color:#0ff;font-weight:bold;font-size:1.5em;">Génération...</span></p>
+            <button class="btn-main" id="host-btn" onclick="autoFullscreen(); hostGame()">Héberger une partie</button>
+            <button class="btn-main" id="start-net-btn" style="display:none; background:var(--sys); color:#000;" onclick="startGame()">Commencer le duel !</button>
+
+            <p style="margin: 10px 0; color: #888; font-weight: bold;">--- OU ---</p>
+
+            <input type="text" id="join-id" placeholder="Code du salon (ex: QUI1234)" style="text-transform: uppercase;">
+            <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
+
+            <p id="status-text" style="color: var(--p3); margin-top: 15px; font-weight: bold; font-size: 1.2em;"></p>
+        </div>
+
+        <!-- ZONE DE JEU -->
+        <div id="board-area" style="display: none;">
+
+            <!-- Barre du haut : Infos adversaire + Log + Mon perso secret -->
+            <div id="top-bar">
+                <div class="hud-box" id="opponent-box">
+                    <div class="hud-label">ADVERSAIRE</div>
+                    <div id="opp-name" style="color: var(--p2); font-weight: bold; font-size: 1.3rem;">...</div>
+                    <div class="hud-sub">Restants : <span id="opp-remaining" style="color: var(--p4); font-weight: bold;">20</span> / 20</div>
+                </div>
+
+                <div id="center-status">
+                    <div id="turn-badge">EN ATTENTE...</div>
+                    <div id="game-log">La partie commence ! Clique sur les cartes pour les éliminer.</div>
+                </div>
+
+                <div class="hud-box" id="secret-box">
+                    <div class="hud-label">TON PERSONNAGE SECRET</div>
+                    <div id="my-secret-card"></div>
+                </div>
+            </div>
+
+            <!-- GRILLE DES 20 PERSONNAGES (5 x 4) -->
+            <div id="characters-grid"></div>
+
+            <!-- PANNEAU D'ACTIONS EN BAS -->
+            <div id="bottom-controls">
+                
+                <!-- Panel : Poser une question (quand c'est mon tour) -->
+                <div id="ask-panel" style="display: none;">
+                    <div class="quick-questions">
+                        <button class="btn-chip" onclick="fillQuestion('A-t-il des lunettes ?')">👓 Lunettes</button>
+                        <button class="btn-chip" onclick="fillQuestion('A-t-il un chapeau ?')">🎩 Chapeau</button>
+                        <button class="btn-chip" onclick="fillQuestion('A-t-il une barbe ou moustache ?')">🧔 Barbe</button>
+                        <button class="btn-chip" onclick="fillQuestion('Est-ce une femme ?')">👩 Femme</button>
+                        <button class="btn-chip" onclick="fillQuestion('A-t-il des boucles d\'oreilles ?')">💎 Boucles</button>
+                        <button class="btn-chip" onclick="fillQuestion('Est-il chauve ?')">👨‍🦲 Chauve</button>
+                    </div>
+                    <div class="ask-row">
+                        <input type="text" id="question-input" placeholder="Pose ta question (ex: A-t-il les cheveux blonds ?)" onkeydown="if(event.key==='Enter') sendQuestion()">
+                        <button class="btn-action" onclick="sendQuestion()">Poser</button>
+                        <button class="btn-action red" id="btn-guess-mode" onclick="toggleGuessMode()">🎯 Deviner</button>
+                    </div>
+                </div>
+
+                <!-- Panel : Répondre OUI / NON (quand l'adversaire pose une question) -->
+                <div id="answer-panel" style="display: none;">
+                    <div id="incoming-question">Question reçue...</div>
+                    <div class="answer-btns">
+                        <button class="btn-action green" onclick="sendAnswer(true)">✅ OUI</button>
+                        <button class="btn-action red" onclick="sendAnswer(false)">❌ NON</button>
+                    </div>
+                </div>
+
+                <!-- Panel : Attente -->
+                <div id="wait-panel" style="display: none;">
+                    <span id="wait-text">En attente de l'adversaire... (Tu peux toujours baisser tes cartes)</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ÉCRAN DE FIN DE PARTIE -->
+        <div class="overlay" id="game-over-overlay" style="display: none;">
+            <div class="menu-title" id="winner-text" style="font-size: 2.8em; margin-bottom: 10px;">PARTIE TERMINÉE</div>
+            <div id="gameover-reason" style="font-size: 1.3em; color: #ddd; margin-bottom: 20px;"></div>
+            <div id="reveal-secrets"></div>
+            <button class="btn-main" id="btn-rematch" style="display: none;" onclick="startGame()">Rejouer une manche</button>
+            <button class="btn-main red" onclick="location.reload()">Retour au menu</button>
+        </div>
+
+    </div>
+
+    <!-- MODAL PARAMETRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Classique</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
+    </div>
+
+    <script src="quiestce.js"></script>
+</body>
+</html>
