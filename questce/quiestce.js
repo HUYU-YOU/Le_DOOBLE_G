@@ -70,7 +70,7 @@ function playSFX(name) {
 }
 
 // ==========================================
-// LES 20 PERSONNAGES (IMAGES : assets/1.png à assets/20.png)
+// LES 25 PERSONNAGES (IMAGES : assets/1.png à assets/25.png)
 // Tu peux modifier les noms ci-dessous si tu veux qu'ils collent à tes dessins
 // ==========================================
 const CHARACTERS = [
@@ -93,7 +93,12 @@ const CHARACTERS = [
     { id: 17, name: "Perso 17" },
     { id: 18, name: "Perso 18" },
     { id: 19, name: "Perso 19" },
-    { id: 20, name: "Perso 20" }
+    { id: 20, name: "Perso 20" },
+    { id: 21, name: "Perso 21" },
+    { id: 22, name: "Perso 22" },
+    { id: 23, name: "Perso 23" },
+    { id: 24, name: "Perso 24" },
+    { id: 25, name: "Perso 25" }
 ];
 
 function getAvatarHTML(c) {
