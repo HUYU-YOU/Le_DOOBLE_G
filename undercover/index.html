@@ -2,195 +2,179 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Undercover — Cyber-Spy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Undercover - Cyber-Spy</title>
+
+    <!-- Librairie PeerJS pour le multijoueur -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Bouton Paramètres -->
-    <img id="settings-btn-img" src="../img/setting.png"
-         onclick="clickSettingsAnim()"
-         onmouseover="startSettingsAnim()"
-         onmouseout="stopSettingsAnim()" alt="Paramètres">
 
-    <!-- Menu Paramètres -->
-    <div id="settings-modal" class="modal">
-        <h3 data-i18n="settingsTitle">Paramètres</h3>
-        <div class="settings-group">
-            <label data-i18n="screenSize">Taille de l'écran</label>
-            <div class="btn-row">
-                <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Classique</button>
-                <button id="btn-sz-wide" class="btn-size" onclick="setGameSize('wide')">Large</button>
-                <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
-            </div>
-        </div>
-        <div class="settings-group">
-            <label data-i18n="language">Langue / Language</label>
-            <div class="btn-row">
-                <button id="btn-lang-fr" class="btn-lang active" onclick="setLanguage('fr')">🇫🇷 FR</button>
-                <button id="btn-lang-en" class="btn-lang" onclick="setLanguage('en')">🇬🇧 EN</button>
-            </div>
-        </div>
-        <div class="settings-group">
-            <button id="btn-mute" onclick="toggleMute()">🔊 Son : ON</button>
-        </div>
-    </div>
+    <h1 class="game-title">Undercover</h1>
 
-    <!-- Conteneur Principal -->
-    <div id="game-container">
-        <header class="game-header">
-            <div class="title-block">
-                <span class="badge">CYBER-SPY</span>
-                <h1>UNDERCOVER</h1>
-            </div>
-            <div class="header-meta">
-                <span id="dict-count">0 paires</span>
-            </div>
-        </header>
+    <div id="game-container" class="size-wide">
 
-        <!-- ÉCRAN 1 : CONFIGURATION (LOBBY) -->
-        <section id="screen-setup" class="screen active">
-            <div class="card">
-                <h2 data-i18n="agentsTitle">1. Agents en mission</h2>
-                <div class="add-player-row">
-                    <input type="text" id="player-name-input" maxlength="18" placeholder="Nom de l'agent...">
-                    <button id="btn-add-player" class="btn-primary" onclick="addPlayer()">+ Ajouter</button>
+        <a href="../index.html" class="hub-link">⬅ Retour au Hub</a>
+
+        <div class="settings-btn-wrapper" onmouseenter="startSettingsAnim()" onmouseleave="stopSettingsAnim()" onclick="clickSettingsAnim()">
+            <img src="../img/setting.png" alt="Paramètres" id="settings-btn-img" class="settings-btn">
+        </div>
+
+        <!-- MENU MULTIJOUEUR -->
+        <div class="overlay" id="network-menu">
+            <h2 style="color: var(--p1); font-size: 2.5em; margin-bottom: 5px; text-transform: uppercase;">Undercover</h2>
+            <div class="menu-title" style="font-size: 1.2em; margin-bottom: 18px; color: #aaa;">Connexion Multijoueur (3 à 6 joueurs)</div>
+
+            <input type="text" id="pseudo" placeholder="Ton Pseudo" maxlength="16" required>
+
+            <p style="margin-top: 15px; margin-bottom: 5px;">
+                Code de ton salon : <span id="my-id" style="color:#0ff; font-weight:bold; font-size:1.5em;">Génération...</span>
+            </p>
+            <button class="btn-main" id="host-btn" onclick="autoFullscreen(); hostGame()">Héberger une partie</button>
+
+            <!-- Zone Salon d'attente (visible une fois hébergé ou rejoint) -->
+            <div id="lobby-panel" style="display: none;">
+                <div class="lobby-header">
+                    <span>Agents dans le salon : <strong id="lobby-count" style="color:var(--p1);">0 / 6</strong></span>
                 </div>
-                <ul id="players-list" class="players-list"></ul>
-                <p id="setup-error" class="error-msg"></p>
-            </div>
+                <div id="lobby-players" class="lobby-players"></div>
 
-            <div class="card">
-                <h2 data-i18n="missionConfig">2. Paramètres de mission</h2>
-                <div class="config-grid">
-                    <div class="config-item">
-                        <label data-i18n="undercoverCount">Undercovers</label>
-                        <div class="stepper">
-                            <button onclick="changeRoleCount('undercover', -1)">−</button>
-                            <span id="uc-count-display">1</span>
-                            <button onclick="changeRoleCount('undercover', 1)">+</button>
-                        </div>
+                <!-- Options réservées à l'hôte -->
+                <div id="host-options" style="display: none;">
+                    <div class="host-selects">
+                        <select id="lang-select" onchange="updateLobbyOptions()">
+                            <option value="fr">🇫🇷 Français</option>
+                            <option value="en">🇬🇧 English</option>
+                        </select>
+                        <select id="category-select" onchange="updateLobbyOptions()"></select>
                     </div>
-                    <div class="config-item">
-                        <label>Mr. White</label>
-                        <div class="stepper">
-                            <button onclick="changeRoleCount('mrwhite', -1)">−</button>
-                            <span id="mw-count-display">0</span>
-                            <button onclick="changeRoleCount('mrwhite', 1)">+</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="category-box">
-                    <label for="category-select" data-i18n="categoryLabel">Catégorie du dictionnaire</label>
-                    <select id="category-select"></select>
-                </div>
-            </div>
-
-            <button id="btn-start-game" class="btn-launch" onclick="startGame()" data-i18n="startMission">
-                LANCER LA MISSION
-            </button>
-        </section>
-
-        <!-- ÉCRAN 2 : DISTRIBUTION DES MOTS -->
-        <section id="screen-distribute" class="screen">
-            <div class="card center-card">
-                <span id="dist-progress" class="pill">Agent 1 / 4</span>
-                <h2 id="dist-player-name">Agent 1</h2>
-                <p id="dist-instruction" class="muted"></p>
-
-                <div id="secret-box" class="secret-box hidden">
-                    <span id="secret-role-hint" class="secret-hint"></span>
-                    <div id="secret-word" class="secret-word">???</div>
-                </div>
-
-                <button id="btn-reveal-word" class="btn-primary btn-big" onclick="revealWord()">
-                    👁️ Révéler mon mot
-                </button>
-                <button id="btn-next-player" class="btn-launch btn-big hidden" onclick="nextDistribution()">
-                    🔒 Cacher &amp; Suivant
-                </button>
-            </div>
-        </section>
-
-        <!-- ÉCRAN 3 : DÉBAT & VOTE -->
-        <section id="screen-play" class="screen">
-            <div class="card">
-                <div class="round-header">
-                    <span id="round-badge" class="pill">Tour 1</span>
-                    <span id="alive-counter" class="muted">4 agents actifs</span>
-                </div>
-                <div id="starter-banner" class="starter-banner"></div>
-                <p class="muted small-info" id="play-instruction"></p>
-
-                <div id="vote-grid" class="vote-grid"></div>
-            </div>
-
-            <div class="action-bar">
-                <button id="btn-eliminate" class="btn-danger btn-big" onclick="confirmElimination()" disabled>
-                    Éliminer l'agent sélectionné
-                </button>
-                <button class="btn-secondary" onclick="backToLobby()">Abandonner</button>
-            </div>
-        </section>
-
-        <!-- ÉCRAN 4 : RÉVÉLATION D'ÉLIMINATION / DERNIÈRE CHANCE MR. WHITE -->
-        <section id="screen-reveal-elim" class="screen">
-            <div class="card center-card">
-                <span class="pill danger-pill" id="elim-title">AGENT ÉLIMINÉ</span>
-                <h2 id="elim-player-name"></h2>
-                <div id="elim-role-badge" class="role-badge"></div>
-                <p id="elim-message" class="muted"></p>
-
-                <!-- Zone dédiée à Mr. White -->
-                <div id="mrwhite-guess-box" class="mrwhite-box hidden">
-                    <p id="mrwhite-prompt"></p>
-                    <input type="text" id="mrwhite-input" placeholder="Mot des Civils...">
-                    <button class="btn-launch" onclick="submitMrWhiteGuess()" id="btn-mw-submit">
-                        Valider la tentative
+                    <button class="btn-main green" id="start-net-btn" onclick="startGame()" disabled>
+                        Commencer (min 3 joueurs)
                     </button>
                 </div>
-
-                <button id="btn-continue-round" class="btn-primary btn-big" onclick="continueAfterElimination()">
-                    Continuer la mission
-                </button>
             </div>
-        </section>
 
-        <!-- ÉCRAN 5 : FIN DE PARTIE -->
-        <section id="screen-gameover" class="screen">
-            <div class="card center-card">
-                <span class="pill" id="winner-tag">FIN DE MISSION</span>
-                <h2 id="winner-title"></h2>
-                <p id="winner-subtitle" class="muted"></p>
+            <!-- Zone Rejoindre (cachée une fois dans un salon) -->
+            <div id="join-section">
+                <p style="margin: 15px 0; color: #888; font-weight: bold;">--- OU ---</p>
+                <input type="text" id="join-id" placeholder="Code du salon (ex: SPY1234)" style="text-transform: uppercase;">
+                <br>
+                <button class="btn-main red" id="join-btn" onclick="autoFullscreen(); joinGame()">Rejoindre</button>
+            </div>
+
+            <p id="status-text" style="color: var(--p3); margin-top: 15px; font-weight: bold; font-size: 1.15em;"></p>
+        </div>
+
+        <!-- ZONE DE JEU -->
+        <div id="game-area" style="display: none;">
+
+            <!-- Bandeau Haut : Tour & Log -->
+            <div id="top-hud">
+                <div class="round-pill" id="round-display">MANCHE 1</div>
+                <div id="game-log">La mission démarre...</div>
+                <div class="room-pill" id="room-badge">SALON</div>
+            </div>
+
+            <!-- Grille des Agents (jusqu'à 6 cartes) -->
+            <div id="players-grid"></div>
+
+            <!-- Zone Bas : Ton Mot Secret + Action (Indice ou Vote) -->
+            <div id="bottom-bar">
+                <div id="secret-word-card" onclick="toggleWordVisibility()" title="Cliquer pour masquer / afficher">
+                    <span class="secret-label">TON MOT SECRET (cliquer pour cacher)</span>
+                    <div id="my-word-display">???</div>
+                </div>
+
+                <!-- Panel d'envoi d'indice -->
+                <div id="clue-panel" class="action-box" style="display: none;">
+                    <div class="action-title" style="color: var(--p4);">⚡ C'EST TON TOUR — DONNE UN INDICE</div>
+                    <div class="clue-input-row">
+                        <input type="text" id="clue-input" placeholder="Un mot ou indice court..." maxlength="28">
+                        <button class="btn-main small" onclick="sendClue()">Envoyer</button>
+                    </div>
+                </div>
+
+                <!-- Panel d'attente -->
+                <div id="wait-panel" class="action-box" style="display: none;">
+                    <div id="wait-text" style="color: #aaa; font-size: 1.15rem; font-weight: bold;">En attente...</div>
+                </div>
+
+                <!-- Panel de vote -->
+                <div id="vote-panel" class="action-box" style="display: none;">
+                    <div class="action-title" style="color: var(--p2);">🗳️ PHASE DE VOTE — QUI EST L'UNDERCOVER ?</div>
+                    <div class="vote-row">
+                        <span id="selected-target-label">Clique sur un agent suspect au-dessus</span>
+                        <button class="btn-main red small" id="confirm-vote-btn" onclick="sendVote()" disabled>Voter</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERLAY RÉVÉLATION D'ÉLIMINATION -->
+        <div class="overlay" id="reveal-overlay" style="display: none;">
+            <div class="reveal-card">
+                <div class="menu-title" id="reveal-title" style="margin-bottom: 10px;">RÉSULTAT DU VOTE</div>
+                <div id="reveal-target" style="font-size: 2.2em; font-weight: bold; margin: 5px 0;"></div>
+                <div id="reveal-role-badge" class="role-badge"></div>
+                <p id="reveal-msg" style="color: #ccc; font-size: 1.2em; margin: 12px 0;"></p>
+                <div id="reveal-votes-detail" class="votes-detail"></div>
+                <button class="btn-main green" id="btn-next-round" style="display: none;" onclick="nextRound()">Tour suivant</button>
+                <p id="wait-host-next" style="color: #888; font-weight: bold; margin-top: 10px;">En attente de l'hôte...</p>
+            </div>
+        </div>
+
+        <!-- ÉCRAN DE FIN DE PARTIE -->
+        <div class="overlay" id="game-over-overlay" style="display: none;">
+            <div class="gameover-card">
+                <div class="menu-title" id="winner-text" style="font-size: 2.5em; margin-bottom: 8px;">FIN DE MISSION</div>
+                <p id="winner-sub" style="color: #ccc; font-size: 1.2em; margin-top: 0;"></p>
 
                 <div class="words-recap">
-                    <div class="word-pill civil-pill">
-                        <small id="label-civil-word">Mot Civil</small>
-                        <strong id="recap-civil-word">—</strong>
+                    <div class="recap-box civil-box">
+                        <span>MOT DES CIVILS</span>
+                        <strong id="final-civil-word">—</strong>
                     </div>
-                    <div class="word-pill uc-pill">
-                        <small id="label-uc-word">Mot Undercover</small>
-                        <strong id="recap-uc-word">—</strong>
+                    <div class="recap-box uc-box">
+                        <span>MOT UNDERCOVER</span>
+                        <strong id="final-uc-word">—</strong>
                     </div>
                 </div>
 
-                <ul id="final-roles-list" class="final-roles-list"></ul>
+                <div id="final-roles-list" class="final-roles-list"></div>
 
-                <div class="action-bar">
-                    <button class="btn-launch btn-big" onclick="playAgainSamePlayers()" id="btn-replay">
-                        Rejouer (mêmes agents)
-                    </button>
-                    <button class="btn-secondary" onclick="backToLobby()" id="btn-lobby">
-                        Modifier les joueurs
-                    </button>
+                <div class="gameover-actions">
+                    <button class="btn-main green" id="btn-replay-host" style="display: none;" onclick="startGame()">Rejouer une manche</button>
+                    <button class="btn-main red" onclick="location.reload()">Quitter le salon</button>
                 </div>
             </div>
-        </section>
+        </div>
+
+    </div> <!-- FIN DU GAME CONTAINER -->
+
+    <!-- MODAL PARAMÈTRES -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 style="margin-top: 0; color: var(--p1); text-transform: uppercase; letter-spacing: 2px;">Paramètres</h2>
+            <div class="setting-item" style="flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <span>Format de l'Écran 🖥️</span>
+                <div class="size-options">
+                    <button id="btn-sz-classic" class="btn-size" onclick="setGameSize('classic')">Classique</button>
+                    <button id="btn-sz-wide" class="btn-size active" onclick="setGameSize('wide')">Plein Page</button>
+                    <button id="btn-sz-full" class="btn-size" onclick="setGameSize('full')">Plein Écran</button>
+                </div>
+            </div>
+            <div class="setting-item" style="margin-bottom: 20px;">
+                <button id="btn-mute" class="btn-size active" onclick="toggleMute()">🔊 Effets Sonores : ON</button>
+            </div>
+            <button onclick="toggleSettings()" class="close-btn">Fermer</button>
+        </div>
     </div>
 
-    <!-- IMPORTANT : mots.js DOIT être chargé avant main.js -->
+    <!-- IMPORTANT : mots.js DOIT être chargé avant undercover.js -->
     <script src="mots.js"></script>
-    <script src="main.js"></script>
+    <script src="undercover.js"></script>
 </body>
 </html>
