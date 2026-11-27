@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MYRMIDON — Le Village-Fourmilière</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ================= PORTAIL COMPTE & CONNEXION ================= -->
+  <div id="auth-overlay" class="overlay">
+    <div class="auth-card wood-panel">
+      <div class="auth-header">
+        <div class="auth-crest">🐜</div>
+        <h1>MYRMIDON</h1>
+        <p class="subtitle">Le Village-Fourmilière • Édition Stratégie & Invocations</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="tab-btn active" data-auth-tab="register">Créer une Colonie</button>
+        <button class="tab-btn" data-auth-tab="login">Connexion</button>
+      </div>
+
+      <!-- Inscription -->
+      <form id="form-register" class="auth-form">
+        <div class="field">
+          <label for="reg-user">Nom de ta Colonie (3-18 caractères)</label>
+          <input id="reg-user" type="text" required minlength="3" maxlength="18" placeholder="Ex: ImperiumRouge" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="reg-email">Adresse Email</label>
+          <input id="reg-email" type="email" required placeholder="commandant@fourmiliere.fr" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="reg-pass">Mot de passe (Haché SHA-256)</label>
+          <input id="reg-pass" type="password" required minlength="6" placeholder="••••••••" autocomplete="new-password" />
+          <div class="pwd-meter"><div id="pwd-bar"></div></div>
+          <small id="pwd-hint">Minimum 6 caractères + chiffres/majuscules recommandés</small>
+        </div>
+        <div class="founder-banner">
+          🎁 <strong>Pack Fondateur offert :</strong> 5 🔮 Cocons Mystiques + 1 ☯️ Cocon Solaire/Abysse !
+        </div>
+        <button type="submit" class="btn btn-gold btn-lg">Fonder ma Fourmilière</button>
+      </form>
+
+      <!-- Connexion -->
+      <form id="form-login" class="auth-form hidden">
+        <div class="field">
+          <label for="log-user">Nom de Colonie</label>
+          <input id="log-user" type="text" required placeholder="Ton pseudo" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="log-pass">Mot de passe</label>
+          <input id="log-pass" type="password" required placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-gold btn-lg">Entrer dans la Fourmilière</button>
+      </form>
+
+      <div id="auth-error" class="auth-error hidden"></div>
+
+      <div class="auth-footer">
+        <button id="btn-demo-login" class="btn btn-outline">⚡ Mode Démo Rapide (Compte pré-rempli)</button>
+        <p class="sec-note">🔒 Sauvegarde chiffrée locale + schéma SQL PostgreSQL inclus dans le menu Compte</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= BARRE SUPÉRIEURE (HUD) ================= -->
+  <header id="top-hud">
+    <!-- GAUCHE : LES FOURMIS & LE TERRITOIRE -->
+    <div class="hud-group hud-left" title="Tes effectifs de fourmis et ton territoire">
+      <div class="hud-pill" title="Territoire conquis (cm²)">
+        <span class="ico">🗺️</span>
+        <div>
+          <strong id="hud-terrain">120</strong>
+          <small>cm²</small>
+        </div>
+      </div>
+      <div class="hud-pill" title="Ouvrières (Récolte, Fusion & XP Pucerons)">
+        <span class="ico">🐜</span>
+        <div>
+          <strong id="hud-workers">450</strong>
+          <small>Ouvrières</small>
+        </div>
+      </div>
+      <div class="hud-pill" title="Soldates Classiques (PvP & Boss Humain)">
+        <span class="ico">⚔️</span>
+        <div>
+          <strong id="hud-soldiers">300</strong>
+          <small>Soldates <span id="hud-soldier-lvl" class="badge-mini">Niv.1</span></small>
+        </div>
+      </div>
+      <div class="hud-pill pill-coma" id="hud-coma-pill" title="Fourmis dans le Coma (Zéro mort définitive)">
+        <span class="ico">💤</span>
+        <div>
+          <strong id="hud-coma">0</strong>
+          <small>Coma</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTRE : IDENTITÉ COLONIE & MÉTÉO -->
+    <div class="hud-center">
+      <button id="btn-weather" class="weather-chip" title="Changer l'ambiance météo de surface">☀️ Soleil Doré</button>
+      <div id="war-debuff-badge" class="debuff-chip hidden" title="Malus suite à une défaite en guerre">⚠️ Impact Guerre (-15% Prod)</div>
+    </div>
+
+    <!-- DROITE : MATÉRIAUX, COCONS & COMPTE -->
+    <div class="hud-group hud-right" title="Tes matériaux et cocons d'invocation">
+      <div class="hud-pill" title="Miellat (Améliorations & Niveau des Élites)">
+        <span class="ico">🍯</span>
+        <div>
+          <strong id="hud-honey">2 500</strong>
+          <small>Miellat</small>
+        </div>
+      </div>
+      <div class="hud-pill" title="Résine d'Ambre (Construction & Bassin)">
+        <span class="ico">💎</span>
+        <div>
+          <strong id="hud-resin">1 200</strong>
+          <small>Résine</small>
+        </div>
+      </div>
+      <div class="hud-pill" title="100 Éclats = +1 Cocon Mystique automatique">
+        <span class="ico">🧩</span>
+        <div>
+          <strong id="hud-shards">35/100</strong>
+          <small>Éclats</small>
+        </div>
+      </div>
+      <div class="hud-pill pill-cocoon" id="btn-quick-summon" title="Cocons Mystiques (Cliquer pour ouvrir la Couveuse)">
+        <span class="ico">🔮</span>
+        <div>
+          <strong id="hud-cocoons">5</strong>
+          <small>Cocons</small>
+        </div>
+      </div>
+      <div class="hud-pill pill-ld" title="Cocons Solaire & Abysse (Light & Dark)">
+        <span class="ico">☯️</span>
+        <div>
+          <strong id="hud-ld">1</strong>
+          <small>Solaire/Abysse</small>
+        </div>
+      </div>
+      <div class="hud-pill" title="Médailles de Gloire PvP">
+        <span class="ico">🏅</span>
+        <div>
+          <strong id="hud-medals">50</strong>
+          <small>Gloire</small>
+        </div>
+      </div>
+      <button id="btn-account" class="btn-hud-account" title="Mon Compte & Sécurité SQL">
+        🛡️ <span id="hud-username">Colonie</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= VILLAGE-FOURMILIÈRE INTERACTIF ================= -->
+  <main id="village-viewport">
+    <div id="village-stage">
+      <!-- DÉCOR SVG : SURFACE ARBORÉE + COUPE GÉOLOGIQUE + GALERIES -->
+      <svg id="village-bg-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4e8a6b" />
+            <stop offset="65%" stop-color="#88be84" />
+            <stop offset="100%" stop-color="#d7d293" />
+          </linearGradient>
+          <linearGradient id="soilGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#472d1c" />
+            <stop offset="35%" stop-color="#311d12" />
+            <stop offset="75%" stop-color="#22130b" />
+            <stop offset="100%" stop-color="#140a06" />
+          </linearGradient>
+          <linearGradient id="sunBeam" x1="0.8" y1="0" x2="0.2" y2="1">
+            <stop offset="0%" stop-color="#fff4b8" stop-opacity="0.45" />
+            <stop offset="100%" stop-color="#fff4b8" stop-opacity="0" />
+          </linearGradient>
+          <radialGradient id="amberGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f6b93b" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="#f6b93b" stop-opacity="0" />
+          </radialGradient>
+          <filter id="softGlow">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Ciel & Forêt lointaine -->
+        <rect x="0" y="0" width="1600" height="210" fill="url(#skyGrad)" />
+        <path d="M0,185 Q240,120 480,168 T960,155 T1420,165 L1600,150 L1600,220 L0,220 Z" fill="#2e593e" opacity="0.55" />
+        <path d="M0,195 Q300,150 650,188 T1280,175 L1600,185 L1600,230 L0,230 Z" fill="#23452d" />
+
+        <!-- Grand Chêne à gauche -->
+        <path d="M135,200 C150,115 140,40 165,0 L255,0 C240,65 250,130 278,200 Z" fill="#3a2315" />
+        <ellipse cx="180" cy="40" rx="185" ry="75" fill="#264e32" />
+        <ellipse cx="290" cy="58" rx="135" ry="58" fill="#32663f" />
+
+        <!-- Rayons de soleil vers la sortie (Haut-Droite) -->
+        <polygon points="1220,0 1580,0 1440,260 1120,240" fill="url(#sunBeam)" />
+        <circle cx="1410" cy="70" r="46" fill="#fff3b0" opacity="0.7" filter="url(#softGlow)" />
+
+        <!-- Coupe du Sol & Strates Souterraines -->
+        <path d="M0,188 Q200,172 420,192 T890,185 T1280,178 Q1440,168 1600,184 L1600,900 L0,900 Z" fill="url(#soilGrad)" />
+        <!-- Couche d'herbe en surface -->
+        <path d="M0,188 Q200,172 420,192 T890,185 T1280,178 Q1440,168 1600,184 L1600,204 Q1440,190 1280,200 T890,206 T420,212 Q200,194 0,208 Z" fill="#4f8f41" />
+
+        <!-- Racines géantes descendant sous terre -->
+        <path d="M165,196 C155,280 95,330 70,420" stroke="#4c2e19" stroke-width="18" fill="none" stroke-linecap="round" />
+        <path d="M235,196 C265,285 335,310 385,375" stroke="#4c2e19" stroke-width="14" fill="none" stroke-linecap="round" />
+        <path d="M200,196 C200,270 215,340 190,465" stroke="#3c2312" stroke-width="10" fill="none" stroke-linecap="round" />
+
+        <!-- Veines d'ambre décoratives -->
+        <circle cx="810" cy="480" r="180" fill="url(#amberGlow)" />
+        <circle cx="480" cy="510" r="150" fill="url(#amberGlow)" />
+
+        <!-- GALERIES SOUTERRAINES (Tunnels reliés aux salles) -->
+        <g id="tunnel-network" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <!-- Bordure sombre des tunnels -->
+          <path d="M210,730 C210,600 220,515 245,445 C295,435 390,475 495,500 C610,510 700,490 805,495 C925,500 1030,505 1135,515 C1245,505 1335,440 1375,355 C1405,295 1410,235 1385,175"
+                stroke="#120905" stroke-width="64" />
+          <path d="M495,500 C515,390 545,320 565,305 C675,295 835,295 925,305 C1065,315 1205,320 1325,335"
+                stroke="#120905" stroke-width="54" />
+          <path d="M495,500 C555,615 680,725 805,735 C955,735 1075,655 1135,515"
+                stroke="#120905" stroke-width="56" />
+          <path d="M210,730 C375,745 595,745 805,735"
+                stroke="#120905" stroke-width="54" />
+
+          <!-- Intérieur terre battue des tunnels -->
+          <path d="M210,730 C210,600 220,515 245,445 C295,435 390,475 495,500 C610,510 700,490 805,495 C925,500 1030,505 1135,515 C1245,505 1335,440 1375,355 C1405,295 1410,235 1385,175"
+                stroke="#6b4428" stroke-width="46" />
+          <path d="M495,500 C515,390 545,320 565,305 C675,295 835,295 925,305 C1065,315 1205,320 1325,335"
+                stroke="#6b4428" stroke-width="38" />
+          <path d="M495,500 C555,615 680,725 805,735 C955,735 1075,655 1135,515"
+                stroke="#6b4428" stroke-width="40" />
+          <path d="M210,730 C375,745 595,745 805,735"
+                stroke="#6b4428" stroke-width="38" />
+
+          <!-- Piste claire centrale -->
+          <path d="M210,730 C210,600 220,515 245,445 C295,435 390,475 495,500 C610,510 700,490 805,495 C925,500 1030,505 1135,515 C1245,505 1335,440 1375,355 C1405,295 1410,235 1385,175"
+                stroke="#8c5c38" stroke-width="14" stroke-dasharray="10 18" opacity="0.45" />
+        </g>
+
+        <!-- Champignons bioluminescents décoratifs -->
+        <g opacity="0.85">
+          <ellipse cx="105" cy="640" rx="18" ry="9" fill="#3ce6a5" />
+          <rect x="102" y="640" width="6" height="14" fill="#c7f9e5" />
+          <ellipse cx="1475" cy="680" rx="22" ry="10" fill="#a875ff" />
+          <rect x="1471" y="680" width="8" height="16" fill="#e6d4ff" />
+          <ellipse cx="645" cy="610" rx="14" ry="7" fill="#f6c453" />
+          <rect x="642" y="610" width="5" height="12" fill="#fff0c2" />
+        </g>
+      </svg>
+
+      <!-- COUCHE 1 : SALLES & BOUTIQUES DU VILLAGE-FOURMILIÈRE -->
+      <div id="rooms-layer">
+        <!-- SORTIE EN HAUT À DROITE : S'AVENTURER DEHORS -->
+        <button class="room-node room-exit" id="room-outside" data-room="outside" style="left:86%; top:18%;">
+          <div class="room-art exit-art">
+            <span class="sun-ring"></span>
+            <span class="room-emoji">🌿</span>
+          </div>
+          <div class="room-tag tag-exit">S'aventurer Dehors <small>PvE • PvP • Humain</small></div>
+        </button>
+
+        <!-- BOUTIQUE 1 : ARCHITECTE ROYAL (BÂTIMENTS) -->
+        <button class="room-node room-shop" id="room-shop-arch" data-room="shop-arch" style="left:35%; top:33%;">
+          <div class="room-art shop-arch-art">
+            <span class="awning"></span>
+            <span class="room-emoji">🏪</span>
+          </div>
+          <div class="room-tag tag-shop">Architecte Royal <small>Boutique Bâtiments</small></div>
+        </button>
+
+        <!-- BOUTIQUE 2 : MARCHÉ DU SCARABÉE D'OR (COCONS) -->
+        <button class="room-node room-shop" id="room-shop-market" data-room="shop-market" style="left:58%; top:33%;">
+          <div class="room-art shop-market-art">
+            <span class="awning awning-gold"></span>
+            <span class="room-emoji">🛒</span>
+          </div>
+          <div class="room-tag tag-shop">Scarabée d'Or <small>Boutique Cocons</small></div>
+        </button>
+
+        <!-- BOUTIQUE 3 : ÉCHOPPE DE GLOIRE & PASSE -->
+        <button class="room-node room-shop" id="room-shop-glory" data-room="shop-glory" style="left:81%; top:37%;">
+          <div class="room-art shop-glory-art">
+            <span class="awning awning-purple"></span>
+            <span class="room-emoji">🏅</span>
+          </div>
+          <div class="room-tag tag-shop">Échoppe Gloire <small>PvP & Passe Saison</small></div>
+        </button>
+
+        <!-- SALLE : ÉLEVAGE DE PUCERONS (ACHETABLE) -->
+        <button class="room-node" id="room-aphids" data-room="aphids" style="left:15%; top:49%;">
+          <div class="room-art aphids-art">
+            <span class="room-emoji">🌿</span>
+          </div>
+          <div class="room-tag">Élevage Pucerons <small id="lbl-aphids">À acheter</small></div>
+        </button>
+
+        <!-- SALLE : COUVEUSE MYSTIQUE -->
+        <button class="room-node" id="room-hatchery" data-room="hatchery" style="left:31%; top:56%;">
+          <div class="room-art hatchery-art">
+            <span class="crystal-pulse"></span>
+            <span class="room-emoji">🔮</span>
+          </div>
+          <div class="room-tag tag-magic">Couveuse Mystique <small>Invocations</small></div>
+        </button>
+
+        <!-- SALLE : BASSIN DE SOIN (NIV 1-20) -->
+        <button class="room-node" id="room-pool" data-room="pool" style="left:50%; top:55%;">
+          <div class="room-art pool-art">
+            <span class="water-flow"></span>
+            <span class="room-emoji">💚</span>
+          </div>
+          <div class="room-tag tag-heal">Bassin de Soin <small id="lbl-pool">Niv. 1 / 20</small></div>
+        </button>
+
+        <!-- SALLE : LABO D'ÉVOLUTION & ÉVEIL -->
+        <button class="room-node" id="room-lab" data-room="lab" style="left:71%; top:57%;">
+          <div class="room-art lab-art">
+            <span class="room-emoji">🧪</span>
+          </div>
+          <div class="room-tag">Labo & Éveil ★ <small>Sans Runes</small></div>
+        </button>
+
+        <!-- SALLE : LOGE DE LA REINE (BAS-GAUCHE) -->
+        <button class="room-node room-queen" id="room-queen" data-room="queen" style="left:13%; top:81%;">
+          <div class="room-art queen-art">
+            <span class="queen-aura"></span>
+            <span class="room-emoji">👑</span>
+          </div>
+          <div class="room-tag tag-royal">Loge de la Reine <small id="lbl-queen">Ponte H24</small></div>
+        </button>
+
+        <!-- SALLE : SANCTUAIRE DE FUSION 5★ (ACHETABLE) -->
+        <button class="room-node" id="room-fusion" data-room="fusion" style="left:50%; top:82%;">
+          <div class="room-art fusion-art">
+            <span class="room-emoji">🧬</span>
+          </div>
+          <div class="room-tag tag-magic">Sanctuaire Fusion 5★ <small id="lbl-fusion">À acheter</small></div>
+        </button>
+      </div>
+
+      <!-- COUCHE 2 : BULLES DE RÉCOLTE DIRECTE -->
+      <div id="bubbles-layer"></div>
+
+      <!-- COUCHE 3 : UNIQUEMENT TES FOURMIS INVOQUÉES EN BALADE -->
+      <div id="ants-layer"></div>
+      <div id="empty-gallery-hint" class="empty-hint hidden">
+        🔮 Aucune fourmi invoquée dans tes galeries — Clique sur la <strong>Couveuse Mystique</strong> pour éclore ton premier Cocon !
+      </div>
+    </div>
+
+    <!-- DOCK BAS-GAUCHE : MES FOURMIS INVOQUÉES DANS LES GALERIES -->
+    <aside id="roster-dock" class="wood-bar">
+      <div class="dock-head">
+        <span>🐜 Mes Fourmis Invoquées (<strong id="dock-count">0</strong>)</span>
+        <small>Clique pour cibler & inspecter</small>
+      </div>
+      <div id="dock-list" class="dock-list"></div>
+    </aside>
+
+    <!-- DOCK BAS-DROITE : RACCOURCIS -->
+    <aside id="quick-dock">
+      <button id="btn-direct-hatch" class="btn btn-purple" title="Éclore immédiatement 1 Cocon Mystique dans la galerie">⚡ Éclore +1 Cocon</button>
+      <button id="btn-open-boss" class="btn btn-crimson" title="Boss Communautaire Quotidien : L'Humain">🥾 Boss Humain</button>
+      <button id="btn-open-tuto" class="btn btn-wood" title="Revoir le tutoriel de la Reine">📜 Tuto</button>
+      <button id="btn-test-pack" class="btn btn-outline" title="Mode Test : recevoir des ressources et cocons">+Test</button>
+    </aside>
+  </main>
+
+  <!-- ================= MODALE GÉNÉRIQUE ================= -->
+  <div id="modal-backdrop" class="overlay hidden">
+    <div id="modal-window" class="wood-panel modal-window">
+      <div class="modal-header">
+        <h2 id="modal-title">Titre</h2>
+        <button id="modal-close" class="btn-close" aria-label="Fermer">✕</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ================= CINÉMATIQUE D'ÉCLOSION DE COCON ================= -->
+  <div id="summon-cinematic" class="overlay hidden">
+    <div class="cine-stage">
+      <div id="cine-lightning" class="cine-lightning hidden"></div>
+      <div id="cine-cocoon" class="cine-cocoon">🔮</div>
+      <div id="cine-result" class="cine-result hidden"></div>
+      <button id="cine-close" class="btn btn-gold hidden">Envoyer dans ma Fourmilière 🐜</button>
+    </div>
+  </div>
+
+  <!-- ================= TUTORIEL GUIDÉ DE LA REINE ================= -->
+  <div id="tuto-overlay" class="tuto-box wood-panel hidden">
+    <div class="tuto-avatar">👑</div>
+    <div class="tuto-content">
+      <h3 id="tuto-title">Bienvenue dans ta Fourmilière !</h3>
+      <p id="tuto-text"></p>
+      <div class="tuto-actions">
+        <span id="tuto-step">Étape 1 / 5</span>
+        <div>
+          <button id="tuto-skip" class="btn btn-outline btn-sm">Passer</button>
+          <button id="tuto-next" class="btn btn-gold btn-sm">Suivant →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= NOTIFICATIONS TOAST ================= -->
+  <div id="toast-container"></div>
+
+  <script src="game.js"></script>
+</body>
+</html>
